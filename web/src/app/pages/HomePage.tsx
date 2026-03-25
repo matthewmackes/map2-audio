@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { type ComponentType, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Package, Music as MusicNotes, Waveform } from '@carbon/icons-react'
+import { ArrowRight, BareMetalServer, Package, Music as MusicNotes, Waveform } from '@carbon/icons-react'
 import { FxDrums } from '../components/icons/effectIcons'
 import { ClickableTile } from '@carbon/react'
 import {
@@ -13,53 +13,109 @@ import {
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
-import { useWebSocketConnection, useWebSocketTopic } from '../../map2/hooks/useWebSocket'
-import { chainsApi } from '../../map2/api'
-import type { Chain, ChainPlugin } from '../../map2/types'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
+import type { NodeSummary, NodeTopology } from '../types/node'
 import './HomePage.css'
 
-// ── Signal chain summary ────────────────────────────────────────────────────
+// ── Audio flow summary ──────────────────────────────────────────────────────
 
-function formatSignalChain(plugins: ChainPlugin[]): string {
-  if (!plugins || plugins.length === 0) return 'No processors loaded'
-  const active = plugins
-    .filter((p) => !p.bypassed)
-    .sort((a, b) => a.position - b.position)
-  if (active.length === 0) return 'All processors bypassed'
-  return active.map((p) => p.name).join(' → ')
+interface AudioFlowPath {
+  id: string
+  nodes: NodeSummary[]
 }
 
-function useActiveChainSummary() {
-  const [chain, setChain] = useState<Chain | null>(null)
-  useWebSocketConnection()
+function getFriendlyNodeName(node: NodeSummary): string {
+  return node.display_label?.trim() || node.hostname
+}
 
-  useEffect(() => {
-    let cancelled = false
-    chainsApi.list().then((res) => {
-      if (cancelled) return
-      const active = res.chains?.find((c) => c.is_active) ?? res.chains?.[0]
-      if (active) setChain(active)
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [])
+function buildAudioFlowPaths(topology: NodeTopology | undefined): AudioFlowPath[] {
+  const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
+  const activeEdges = Array.isArray(topology?.audio_edges)
+    ? topology.audio_edges.filter((edge) => edge.active)
+    : []
 
-  useWebSocketTopic('chain_updates', () => {
-    chainsApi.list().then((res) => {
-      const active = res.chains?.find((c) => c.is_active) ?? res.chains?.[0]
-      if (active) setChain(active)
-    }).catch(() => {})
+  if (nodes.length === 0 || activeEdges.length === 0) {
+    return []
+  }
+
+  const nodeMap = new Map(nodes.map((node) => [node.node_id, node]))
+  const adjacency = new Map<string, string[]>()
+  const incomingCounts = new Map<string, number>()
+
+  activeEdges.forEach((edge) => {
+    if (!nodeMap.has(edge.source_node_id) || !nodeMap.has(edge.dest_node_id)) {
+      return
+    }
+    const next = adjacency.get(edge.source_node_id) ?? []
+    if (!next.includes(edge.dest_node_id)) {
+      next.push(edge.dest_node_id)
+      adjacency.set(edge.source_node_id, next)
+      incomingCounts.set(edge.dest_node_id, (incomingCounts.get(edge.dest_node_id) ?? 0) + 1)
+    }
   })
 
-  return chain ? formatSignalChain(chain.plugins) : null
+  if (adjacency.size === 0) {
+    return []
+  }
+
+  const startIds = Array.from(adjacency.keys()).filter((nodeId) => (incomingCounts.get(nodeId) ?? 0) === 0)
+  const orderedStarts = (startIds.length > 0 ? startIds : [activeEdges[0].source_node_id]).sort((left, right) => {
+    const leftName = getFriendlyNodeName(nodeMap.get(left) as NodeSummary)
+    const rightName = getFriendlyNodeName(nodeMap.get(right) as NodeSummary)
+    return leftName.localeCompare(rightName)
+  })
+  const collected = new Set<string>()
+  const paths: AudioFlowPath[] = []
+
+  function visit(nodeId: string, trail: string[]) {
+    if (trail.includes(nodeId)) {
+      const cyclePath = [...trail, nodeId]
+      const key = cyclePath.join('>')
+      if (!collected.has(key)) {
+        collected.add(key)
+        paths.push({
+          id: key,
+          nodes: cyclePath
+            .map((id) => nodeMap.get(id))
+            .filter((node): node is NodeSummary => Boolean(node)),
+        })
+      }
+      return
+    }
+
+    const nextTrail = [...trail, nodeId]
+    const nextIds = [...(adjacency.get(nodeId) ?? [])].sort((left, right) => {
+      const leftName = getFriendlyNodeName(nodeMap.get(left) as NodeSummary)
+      const rightName = getFriendlyNodeName(nodeMap.get(right) as NodeSummary)
+      return leftName.localeCompare(rightName)
+    })
+    if (nextIds.length === 0) {
+      const key = nextTrail.join('>')
+      if (!collected.has(key)) {
+        collected.add(key)
+        paths.push({
+          id: key,
+          nodes: nextTrail
+            .map((id) => nodeMap.get(id))
+            .filter((node): node is NodeSummary => Boolean(node)),
+        })
+      }
+      return
+    }
+
+    nextIds.forEach((nextId) => visit(nextId, nextTrail))
+  }
+
+  orderedStarts.forEach((startId) => visit(startId, []))
+
+  return paths.filter((path) => path.nodes.length > 0)
 }
 
 // ── Node status for Platforms card ──────────────────────────────────────────
 
-function useNodeStatusLabel(): string | null {
-  const topology = useNodeTopology()
-  const nodes = topology.data?.nodes
+function useNodeStatusLabel(topology: NodeTopology | undefined): string | null {
+  const nodes = topology?.nodes
   if (!nodes || !Array.isArray(nodes)) return null
 
   const total = nodes.length
@@ -76,7 +132,7 @@ function useNodeStatusLabel(): string | null {
 interface WorkspaceCard {
   id: string
   to: string
-  icon: React.ComponentType<{ size?: number }>
+  icon: ComponentType<{ size?: number }>
   title: string
   description: string
 }
@@ -89,7 +145,7 @@ const HERO_CARD: WorkspaceCard = {
   description: 'Signal flow, routing, and snapshots',
 }
 
-const MIDDLE_CARDS: WorkspaceCard[] = [
+const RIGHT_COLUMN_CARDS: WorkspaceCard[] = [
   {
     id: 'midi-hub',
     to: '/midi-hub',
@@ -111,6 +167,9 @@ const MIDDLE_CARDS: WorkspaceCard[] = [
     title: 'Platforms',
     description: 'System setup and node status',
   },
+]
+
+const LEFT_COLUMN_CARDS: WorkspaceCard[] = [
   {
     id: 'drums',
     to: '/drums',
@@ -132,8 +191,8 @@ const MIDDLE_CARDS: WorkspaceCard[] = [
 export function HomePage() {
   const navigate = useNavigate()
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
-  const chainSummary = useActiveChainSummary()
-  const nodeStatusLabel = useNodeStatusLabel()
+  const topology = useNodeTopology()
+  const nodeStatusLabel = useNodeStatusLabel(topology.data)
   const remediationSummary = usePlatformRemediationSummary()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
@@ -143,6 +202,7 @@ export function HomePage() {
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const remediationCounts = remediationSummary.data?.counts
+  const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
 
   const remediationPills = [
     { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
@@ -162,25 +222,58 @@ export function HomePage() {
   return (
     <div className="hp2-root">
       <nav className="hp2-layout" aria-label="Workspaces">
-        {/* ── Hero: Audio Grid ─────────────────────────────────── */}
-        <ClickableTile
-          className="hp2-card hp2-card--hero"
-          onClick={() => navigate(HERO_CARD.to)}
-        >
-          <div className="hp2-card__body">
-            <HERO_CARD.icon size={24} />
-            <h2 className="hp2-card__title">{HERO_CARD.title}</h2>
-            <p className="hp2-card__desc">{HERO_CARD.description}</p>
-            {chainSummary ? (
-              <p className="hp2-card__chain">{chainSummary}</p>
-            ) : null}
-          </div>
-          <ArrowRight size={20} className="hp2-card__arrow" />
-        </ClickableTile>
+        <div className="hp2-column hp2-column--left">
+          <ClickableTile
+            className="hp2-card hp2-card--hero"
+            onClick={() => navigate(HERO_CARD.to)}
+          >
+            <div className="hp2-card__body">
+              <HERO_CARD.icon size={24} />
+              <h2 className="hp2-card__title">{HERO_CARD.title}</h2>
+              <p className="hp2-card__desc">{HERO_CARD.description}</p>
+              <div className="hp2-card__flow" aria-label="Audio Grid signal flow">
+                {audioFlowPaths.length > 0 ? (
+                  audioFlowPaths.map((path) => (
+                    <div key={path.id} className="hp2-card__flow-row">
+                      {path.nodes.map((node, index) => (
+                        <div key={`${path.id}-${node.node_id}-${index}`} className="hp2-card__flow-segment">
+                          <span className="hp2-card__flow-node">
+                            <BareMetalServer size={14} aria-hidden />
+                            <span>{getFriendlyNodeName(node)}</span>
+                          </span>
+                          {index < path.nodes.length - 1 ? <ArrowRight size={14} aria-hidden className="hp2-card__flow-arrow" /> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <p className="hp2-card__flow-empty">No Active Flow</p>
+                )}
+              </div>
+            </div>
+            <ArrowRight size={20} className="hp2-card__arrow" />
+          </ClickableTile>
 
-        {/* ── Middle tier ──────────────────────────────────────── */}
-        <div className="hp2-middle">
-          {MIDDLE_CARDS.map((card) => {
+          <div className="hp2-subgrid" aria-label="Performance workspaces">
+            {LEFT_COLUMN_CARDS.map((card) => (
+              <ClickableTile
+                key={card.id}
+                className="hp2-card hp2-card--subgrid"
+                onClick={() => navigate(card.to)}
+              >
+                <div className="hp2-card__body">
+                  <card.icon size={20} />
+                  <h2 className="hp2-card__title">{card.title}</h2>
+                  <p className="hp2-card__desc">{card.description}</p>
+                </div>
+                <ArrowRight size={16} className="hp2-card__arrow" />
+              </ClickableTile>
+            ))}
+          </div>
+        </div>
+
+        <div className="hp2-column hp2-column--right">
+          {RIGHT_COLUMN_CARDS.map((card) => {
             const dynamicDesc =
               card.id === 'platforms' && nodeStatusLabel
                 ? nodeStatusLabel

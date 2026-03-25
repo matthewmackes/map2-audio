@@ -50,12 +50,6 @@ jest.mock('../../map2/hooks/useWebSocket', () => ({
   useWebSocketTopic: () => undefined,
 }))
 
-jest.mock('../../map2/api', () => ({
-  chainsApi: {
-    list: jest.fn(async () => ({ chains: [] })),
-  },
-}))
-
 function makeJsonResponse(body: unknown, ok = true): Response {
   return {
     ok,
@@ -155,6 +149,7 @@ describe('HomePage landing', () => {
     expect(screen.getByText('Audio Artifacts')).toBeTruthy()
     expect(screen.getByText('Drum Machine')).toBeTruthy()
     expect(screen.getByText('SynthForge')).toBeTruthy()
+    expect(screen.getByText('No Active Flow')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
   })
