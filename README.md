@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**814** Python | **1235** TypeScript | **298** C++/H | **123** Docs | **866** total commits | **2** stars | **0** forks | **0** open issues
+**815** Python | **1073** TypeScript | **298** C++/H | **123** Docs | **868** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ce88fc8b`](https://github.com/matthewmackes/map2-audio/commit/ce88fc8b1374061dde207f7a070ac7e78f209469) | Delete PiPedal legacy frontend tree | Map2 Audio | 2026-03-25 |
+| [`178d00f1`](https://github.com/matthewmackes/map2-audio/commit/178d00f1471f60210b616f66c3cee44f2f705ca2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`08f47f9a`](https://github.com/matthewmackes/map2-audio/commit/08f47f9a860e298ed493fc6b7284e74edefc6965) | Resolve remaining duplicate cluster routes | Map2 Audio | 2026-03-25 |
 | [`927f4014`](https://github.com/matthewmackes/map2-audio/commit/927f4014da54a2bf291889a92bcca57acbf633e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`2a9b11e4`](https://github.com/matthewmackes/map2-audio/commit/2a9b11e4050f6a5d03181563a3fdcb9822a80e58) | Complete route audit cleanup and health consolidation | Map2 Audio | 2026-03-25 |
 | [`bf234dd9`](https://github.com/matthewmackes/map2-audio/commit/bf234dd9e8038b56f9f34c762f59d6389f6da578) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`a36e6ffa`](https://github.com/matthewmackes/map2-audio/commit/a36e6ffa14a186284e706746f7b7e5cc4c74aeb0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 | [`b715c834`](https://github.com/matthewmackes/map2-audio/commit/b715c8341702e89d47ece13f539082a7b8edadc6) | Block unregistered route CI task | Map2 Audio | 2026-03-25 |
-| [`6fe343f7`](https://github.com/matthewmackes/map2-audio/commit/6fe343f72026032ccf8395e82b2b109b5b51f626) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
-| [`412cf874`](https://github.com/matthewmackes/map2-audio/commit/412cf87434e79fc6eda74f898b8cfe57eaf8e3eb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
