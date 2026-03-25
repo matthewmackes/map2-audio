@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Completed T400 drum modal history/layout/command expansion
+Last updated: 2026-03-25 - Added T407 theme settings modal-flow reorganization
 
 ## Active Blockers Only
 
@@ -6323,4 +6323,284 @@ Last updated: 2026-03-24 07:54 EDT - Codex
   - Left shared advanced-menu and non-Labs platform shell styles untouched, so the change stays local to the routed `/labs` GUI rather than altering the broader platform shell or topbar menu surfaces.
   - Validation passed with `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx` and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new build failures).
   - Exploratory run `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/PlatformShellPage.test.tsx` still hit pre-existing failures in `src/app/pages/PlatformShellPage.test.tsx` around legacy “Unified Platform Stack” expectations; left unchanged because they are unrelated to this Labs CSS slice.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n “license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX” README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+## Platform Audit — Dead Code, Prefix Collisions, and Consolidation (Epic)
+
+Full audit report: `.claude/plans/lively-toasting-music.md`
+
+### Phase A: Safe Deletions
+
+ID: T388
+Status: [ ] Todo
+Title: Delete PiPedal legacy directory (229 dead files, zero imports)
+Description:
+- Goal / acceptance criteria: Remove `web/src/pipedal/` entirely — 229 files with zero imports from `web/src/app/`. Verify `npm run build` succeeds afterward.
+- Why it matters: ~15,000 lines of dead predecessor-project code adding noise to searches, IDE indexing, and bundle analysis.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Directory deleted, build passes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T389
+Status: [ ] Todo
+Title: Delete dead rate_limiter.py (525 lines, zero imports)
+Description:
+- Goal / acceptance criteria: Delete `app/middleware/rate_limiter.py`. Confirm zero imports via grep. The active rate limiter is `app/middleware/rate_limiting.py` (TokenBucket).
+- Why it matters: Dead middleware file with a conflicting algorithm (SlidingWindow) that could confuse future developers.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: File deleted, `pytest` passes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T390
+Status: [ ] Todo
+Title: Delete dead configuration_distributor.py (388 lines, zero imports)
+Description:
+- Goal / acceptance criteria: Delete `app/services/cluster/configuration_distributor.py`. The active distributor is `app/services/cluster/config_distributor.py`.
+- Why it matters: Duplicate Git-based config distribution service with zero imports — causes confusion about which is canonical.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: File deleted, `pytest` passes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T391
+Status: [ ] Todo
+Title: Delete 7 unregistered route files with no callers
+Description:
+- Goal / acceptance criteria: Delete these route files that are never registered in `app/main.py` and have no frontend callers: `app/routes/base.py`, `app/routes/connection_pool.py`, `app/routes/request_queue.py`, `app/routes/websocket_metrics.py`, `app/routes/prometheus_exporter.py`, `app/routes/prometheus_metrics.py`, `app/routes/chains_ab_mode.py`. Verify server starts without errors.
+- Why it matters: Dead route files that define APIRouters but are never mounted — misleading for developers and cluttering the routes directory.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: 7 files deleted, server starts cleanly.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T392
+Status: [ ] Todo
+Title: Delete abandoned email_notifications route and frontend hook
+Description:
+- Goal / acceptance criteria: Delete `app/routes/email_notifications.py` and `web/src/app/hooks/useEmailNotifications.ts` — both exist but neither is wired in (route not registered in main.py, hook not imported by any component). Alternatively, if email notifications are wanted, register the route and wire the hook.
+- Why it matters: Abandoned feature where both backend and frontend layers exist but are disconnected — creates false expectations.
+- Dependencies: User decision: activate or delete
+- Estimated effort: Low
+- Required outputs: Both files deleted (or both activated), build + tests pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T393
+Status: [ ] Todo
+Title: Delete stale worklog docs and duplicate workspace file
+Description:
+- Goal / acceptance criteria: Delete `worklog/incomplete-tasks-inventory.txt` (last updated 2026-02-14), `worklog/incomplete-tasks-plan.md`, and `map2-audio.code-workspace` (duplicate of `MAP2-AUDIO.code-workspace`). Verify and delete `app/tui/dashboard.py` if unused (separate from standalone `tui/` directory).
+- Why it matters: Stale documents and duplicate config files add noise.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Files deleted.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+### Phase B: Fix Critical Route Prefix Collisions
+
+ID: T394
+Status: [ ] Todo
+Title: Resolve NAM route prefix collision — both nam.py and nam_models.py use /api/nam
+Description:
+- Goal / acceptance criteria: Both `app/routes/nam.py:30` and `app/routes/nam_models.py:19` declare `APIRouter(prefix=”/api/nam”)` and both are registered in `main.py:594`. FastAPI registers in list order — overlapping endpoint paths in the second module are silently unreachable. Merge `nam_models.py` into `nam.py`, or change its prefix to `/api/nam/models`. Verify all /api/nam endpoints respond correctly.
+- Why it matters: CRITICAL — silent endpoint shadowing in production. Developers adding endpoints to `nam_models.py` that overlap with `nam.py` create dead code without knowing it.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: No duplicate prefixes, all NAM endpoints verified.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T395
+Status: [ ] Todo
+Title: Resolve cluster update route prefix collision — both cluster_update.py and cluster_update_hybrid.py use /api/cluster/update
+Description:
+- Goal / acceptance criteria: Both `app/routes/cluster_update.py:18` and `app/routes/cluster_update_hybrid.py:17` declare `APIRouter(prefix=”/api/cluster/update”)` and both are registered. Merge or change hybrid prefix to `/api/cluster/update/hybrid`. Verify all cluster update endpoints respond correctly.
+- Why it matters: CRITICAL — same silent shadowing risk as T394.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: No duplicate prefixes, all cluster update endpoints verified.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T396
+Status: [ ] Todo
+Title: Resolve MIDI cluster route prefix collision — both midi_cluster.py and midi_cluster_proxy.py use /api/midi/cluster
+Description:
+- Goal / acceptance criteria: Both `app/routes/midi_cluster.py:19` and `app/routes/midi_cluster_proxy.py:11` declare `APIRouter(prefix=”/api/midi/cluster”)` and both are registered. Move proxy to `/api/midi/cluster/proxy` or merge. Verify all MIDI cluster endpoints respond correctly.
+- Why it matters: CRITICAL — proxy forwarding logic may shadow native cluster endpoints.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: No duplicate prefixes, all MIDI cluster endpoints verified.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T397
+Status: [ ] Todo
+Title: Decide on unregistered health_monitor.py route — register or delete
+Description:
+- Goal / acceptance criteria: `app/routes/health_monitor.py` has an APIRouter with WebSocket handlers but is NOT registered in `main.py`. Either register it (if health monitor WebSocket functionality is wanted) or delete it.
+- Why it matters: Dead route with implemented WebSocket handlers sitting unused — creates false expectations about platform capabilities.
+- Dependencies: T401 (health monitoring consolidation) may inform this decision
+- Estimated effort: Low
+- Required outputs: Route registered or deleted, server starts cleanly.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+### Phase C: Consolidate Duplicates
+
+ID: T398
+Status: [ ] Todo
+Title: Complete plugin loader unification — migrate remaining imports to plugin_loader_unified.py
+Description:
+- Goal / acceptance criteria: `app/services/plugin_loader_unified.py` claims to consolidate `plugin_loader_v2.py`, `lv2_discovery.py`, and `lv2_enhanced.py`, but production code in `folder_scanner.py`, `plugins.py`, and `plugin_scanner.py` still imports the legacy loaders directly. Migrate all production imports to the unified loader. Update tests. Then delete `plugin_loader_v2.py` and `plugin_manager_v3.py`. Evaluate whether `lv2_discovery.py`/`lv2_enhanced.py` should be kept as internal modules or deleted.
+- Why it matters: 5 coexisting plugin loader implementations create import fragility, confusion about which is canonical, and risk of behavioral divergence.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Single canonical loader, legacy files deleted, all plugin operations work, `pytest` passes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T399
+Status: [ ] Todo
+Title: Extract shared scraper_base from IR and SoundFont libraries
+Description:
+- Goal / acceptance criteria: `app/services/ir_library/scraper_base.py` (551 lines) and `app/services/soundfont_library/scraper_base.py` (415 lines) have near-identical structure (DownloadState enum, checksum verification, async download pipeline). Extract a shared `app/services/common/scraper_base.py` and have both libraries inherit from it.
+- Why it matters: ~400 lines of duplicated infrastructure code that must be maintained in lockstep.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Shared base class, both library scraper bases refactored, all scraping tests pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T400
+Status: [ ] Todo
+Title: Clarify preset/snapshot route naming confusion
+Description:
+- Goal / acceptance criteria: `app/routes/presets.py` serves snapshot data at `/api/snapshots` but is named “presets” — confusing when 4 other preset-related routes exist (`plugin_presets.py`, `preset_exchange.py`, `preset_migration.py`, `snapshots.py`). Rename `presets.py` to match its actual purpose or merge into `snapshots.py`.
+- Why it matters: Naming mismatch between filename and endpoint prefix causes developer confusion.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Clear naming, no broken frontend calls.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+### Phase D: Refactor Fragmented Subsystems
+
+ID: T401
+Status: [ ] Todo
+Title: Consolidate health monitoring hierarchy (8 services, 5 routes)
+Description:
+- Goal / acceptance criteria: Define a canonical health service hierarchy. Currently fragmented across 8 services (`health_checker.py`, `health_monitor.py`, `audio_health_monitor.py`, `plugin_health.py`, `node_health_service.py`, `deployment_health.py`, `cluster/health_aggregator.py`, `cluster/post_update_health.py`) and 5 routes (`health.py`, `health_monitor.py` NOT registered, `cluster_health.py`, `cluster_health_extended.py`, `deployment_health.py`). Establish clear aggregation hierarchy, consolidate overlapping scopes, expose unified `GET /api/health` returning structured subsystem status.
+- Why it matters: Fragmented health monitoring makes operational visibility unreliable and adds maintenance burden.
+- Dependencies: T397 (health_monitor route decision)
+- Estimated effort: High
+- Required outputs: Clear health service hierarchy documented, redundant services consolidated, unified health endpoint.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T402
+Status: [ ] Todo
+Title: Inline models_compat.py legacy bridge
+Description:
+- Goal / acceptance criteria: `app/models_compat.py` (101 lines) is a bridge for old `promoted_advanced_routes` → new `pinned_routes`. It is actively imported via `app/models.py` but adds unnecessary indirection. Move the compat validators directly into the models package.
+- Why it matters: Reduces indirection and removes a legacy compatibility layer.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: `models_compat.py` deleted, validators inlined, imports still resolve.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+### Phase E: Strengthen Tests and Verification
+
+ID: T403
+Status: [ ] Todo
+Title: Add route prefix uniqueness CI check
+Description:
+- Goal / acceptance criteria: Create a test that scans all registered route modules, extracts their APIRouter prefixes, and asserts no two registered routers share the same prefix. This is how 3 prefix collisions (T394-T396) went undetected.
+- Why it matters: Prevents future route prefix collisions from silently entering the codebase.
+- Dependencies: T394, T395, T396 (collisions must be fixed first for the test to pass)
+- Estimated effort: Low
+- Required outputs: New test file, runs in CI, catches duplicate prefixes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T404
+Status: [ ] Todo
+Title: Update plugin tests to use unified loader instead of legacy loaders
+Description:
+- Goal / acceptance criteria: Tests currently import `plugin_loader_v2` and `plugin_manager_v3` which are deletion candidates in T398. Migrate these test imports to use `plugin_loader_unified` so tests don't break when legacy loaders are deleted.
+- Why it matters: Test/production import mismatch — tests validate behavior through loaders that production code no longer uses.
+- Dependencies: T398 (plugin loader unification)
+- Estimated effort: Medium
+- Required outputs: All plugin tests import from unified loader, `pytest` passes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T405
+Status: [ ] Todo
+Title: Add health monitoring integration test coverage
+Description:
+- Goal / acceptance criteria: Currently 1 test file for 13 health implementation files. Add integration tests covering the health aggregation hierarchy, audio health monitor, plugin health, and cluster health endpoints.
+- Why it matters: Health monitoring is the most fragmented subsystem (T401) and the least tested — any consolidation work needs a test safety net.
+- Dependencies: T401 (consolidation defines what to test)
+- Estimated effort: Medium
+- Required outputs: New test files, meaningful coverage of health service hierarchy.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T406
+Status: [ ] Todo
+Title: Add unregistered-route-file CI check
+Description:
+- Goal / acceptance criteria: Create a test that scans `app/routes/` for all files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list or individually registered. This prevents abandoned route files from accumulating (9 were found in this audit).
+- Why it matters: Prevents dead route files from silently growing — catches forgotten registrations and abandoned experiments.
+- Dependencies: T391, T392 (dead routes must be cleaned up first)
+- Estimated effort: Low
+- Required outputs: New test file, runs in CI.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 - Codex
+
+ID: T407
+Status: [✓] Done
+Title: Reorganize GUI theme settings into a staged modal flow
+Description:
+- Goal / acceptance criteria: Refactor the existing theme settings surface so it no longer behaves like one long page inside a dialog. Present theme presets, retained legacy themes, and optional system-branding controls as a series of focused modals/steps while preserving current apply, delete, and toggle behavior.
+- Why it matters: The current Theme Page is scroll-heavy and page-like, which makes theme selection and system-branding tasks harder to scan and complete quickly.
+- Dependencies: Existing `web/src/app/components/ThemeCreatorDialog.tsx`, related CSS/tests, and current Carbon modal patterns already used in the web app.
+- Estimated effort: Medium
+- Required outputs: Updated theme dialog flow, refreshed styling, focused frontend regression coverage, and validation evidence for the touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 06:50 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/components/ThemeCreatorDialog.tsx` from a single page-like `Modal` into a staged `ComposedModal` flow with an overview entry screen plus focused presets, legacy-theme, and system-branding steps.
+  - Refreshed `web/src/app/components/ThemeCreatorDialog.css` so the new step cards and modal sections use tokenized Carbon layout, hover, and card styling instead of one stacked scrolling page.
+  - Expanded `web/src/app/components/ThemeCreatorDialog.test.tsx` with focused coverage for overview-to-preset navigation, legacy-theme modal access, and system-branding toggle actions.
+  - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand web/src/app/components/ThemeCreatorDialog.test.tsx`.
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
