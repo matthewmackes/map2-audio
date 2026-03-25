@@ -7021,40 +7021,68 @@ Last updated: 2026-03-25 14:12 EDT - Codex
   - Added `tui/src/screens/HomeScreen.tsx` with live-backed system summary, CPU/RAM progress bars, active-chain detection, connected MIDI endpoint count, and quick-navigation hints.
   - Verified the rendered home screen in a live `npm start` smoke against `http://localhost:8080`.
 ID: T412-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Metering and CPU screens
 Description:
 - Goal / acceptance criteria: Implement real-time Metering Screen (per-channel VU bars, peak hold, clipping) and CPU/Performance Screen (per-core bars, RT thread table, latency).
 - Dependencies: T412-subB, T412-subD
 - Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:50 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/MeteringScreen.tsx` and `tui/src/screens/CpuScreen.tsx`, wired into the shell, and backed them with live `/api/audio/levels`, `/api/audio/status`, and `/api/engine/cpu` polling.
+  - Corrected `web/src/map2/api.ts` CPU client paths so the shared client targets the registered `/api/engine/cpu` routes.
 ID: T412-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audio Grid and PipeWire screens
 Description:
 - Goal / acceptance criteria: Implement Audio Grid Screen (text-mode signal chain, plugin list, bypass toggle, parameter editing) and PipeWire Screen.
 - Dependencies: T412-subB, T412-subD
 - Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:50 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/AudioGridScreen.tsx` with active-chain signal-flow rendering and chain inventory, plus `tui/src/screens/PipeWireScreen.tsx` with daemon, clock, device, and stream summaries.
 ID: T412-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Hub and Devices screens
 Description:
 - Goal / acceptance criteria: Implement MIDI Hub Screen (5-tab layout) and Devices Screen (USB audio interface status).
 - Dependencies: T412-subB, T412-subD
 - Estimated effort: Large
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:50 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/MidiHubScreen.tsx` with hub/cluster summaries and port inventory, and `tui/src/screens/DevicesScreen.tsx` with USB audio diagnostics plus MIDI endpoint tables.
+  - Extended `web/src/map2/api.ts` with `usbApi.getDevices()` so the TUI reuses the shared client surface instead of bespoke fetches.
 ID: T412-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: MPX1 Screen
 Description:
 - Goal / acceptance criteria: Implement MPX1 Screen with tabbed views: Panel, Editor, Library, MIDI Map, Diagnostics.
 - Dependencies: T412-subB, T412-subD
 - Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:50 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/Mpx1Screen.tsx` with terminal tab switching for Panel, Editor, Library, MIDI Map, and Diagnostics, all populated from the shared `mpx1Api` client.
 ID: T412-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cluster, AVB, and Tesira screens
 Description:
 - Goal / acceptance criteria: Implement Cluster Screen, AVB Screen (with ASCII routing matrix), and Tesira Screen.
 - Dependencies: T412-subB, T412-subD
 - Estimated effort: Large
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:50 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/ClusterScreen.tsx`, `tui/src/screens/AvbScreen.tsx`, and `tui/src/screens/TesiraScreen.tsx` to surface service health, AVB operational state, and Tesira fleet status from live backend APIs.
+  - Added `tui/src/hooks/usePollingResource.ts` as the shared polling layer used across the new terminal screens.
 ID: T412-subK
 Status: [ ] Todo
 Title: Artifacts, Settings, and Diagnostics screens

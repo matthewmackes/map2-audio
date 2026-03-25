@@ -1063,6 +1063,35 @@ export const usbApi = {
       channels_in?: number;
       channels_out?: number;
     }>(`${API_BASE}/usb/hotone/primary`),
+
+  getDevices: () =>
+    fetchJson<{
+      hotone_detected: boolean;
+      device_count: number;
+      primary_device?: {
+        name: string;
+        vendor_id?: string;
+        product_id?: string;
+        model?: string;
+        bus?: string;
+        device?: string;
+        usb_speed?: string;
+        power_control?: string;
+        autosuspend_delay_ms?: number;
+        alsa_card?: string;
+        alsa_device?: string;
+        is_autosuspend_disabled?: boolean;
+      } | null;
+      all_devices: Array<{
+        name: string;
+        model?: string;
+        bus?: string;
+        device?: string;
+        alsa_device?: string;
+        power_control?: string;
+      }>;
+      recommendations: string[];
+    }>(`${API_BASE}/usb/devices`),
 };
 
 // ==================== Chains API ====================
@@ -6393,27 +6422,27 @@ export const spectrumApi = {
 export const cpuMetricsApi = {
   /** Get CPU metrics */
   getMetrics: () =>
-    fetchJson<import('./types').CPUMetricsData>(`${API_BASE}/cpu`),
+    fetchJson<import('./types').CPUMetricsData>(`${API_BASE}/engine/cpu`),
 
   /** Get total CPU usage */
   getTotal: () =>
-    fetchJson<{ total: number }>(`${API_BASE}/cpu/total`),
+    fetchJson<{ cpu_percent: number; running: boolean | number }>(`${API_BASE}/engine/cpu/total`),
 
   /** Get per-plugin CPU */
   getPluginCPU: (pluginId: string) =>
-    fetchJson<{ plugin_id: string; cpu_percent: number }>(`${API_BASE}/cpu/plugin/${pluginId}`),
+    fetchJson<{ instance_id: number; cpu_percent: number }>(`${API_BASE}/engine/cpu/plugin/${pluginId}`),
 
   /** Get all plugin CPU stats */
   getAllPluginCPU: () =>
-    fetchJson<{ plugins: Record<string, number> }>(`${API_BASE}/cpu/plugins`),
+    fetchJson<{ plugins: Record<string, number> }>(`${API_BASE}/engine/cpu/plugins`),
 
   /** Get xrun count */
   getXruns: () =>
-    fetchJson<{ xruns: number }>(`${API_BASE}/cpu/xruns`),
+    fetchJson<{ xrun_count: number }>(`${API_BASE}/engine/cpu/xruns`),
 
   /** Get headroom */
   getHeadroom: () =>
-    fetchJson<{ headroom_percent: number }>(`${API_BASE}/cpu/headroom`),
+    fetchJson<{ headroom_percent: number }>(`${API_BASE}/engine/cpu/headroom`),
 };
 
 // ==================== Backup ====================

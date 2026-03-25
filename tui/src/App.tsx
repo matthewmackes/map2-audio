@@ -7,7 +7,17 @@ import { useTerminalSize } from './hooks/useTerminalSize'
 import { AppShell } from './shell/AppShell'
 import { CommandPalette } from './shell/CommandPalette'
 import { HelpOverlay } from './shell/HelpOverlay'
+import { AudioGridScreen } from './screens/AudioGridScreen'
+import { AvbScreen } from './screens/AvbScreen'
+import { ClusterScreen } from './screens/ClusterScreen'
+import { CpuScreen } from './screens/CpuScreen'
+import { DevicesScreen } from './screens/DevicesScreen'
 import { HomeScreen } from './screens/HomeScreen'
+import { MeteringScreen } from './screens/MeteringScreen'
+import { MidiHubScreen } from './screens/MidiHubScreen'
+import { Mpx1Screen } from './screens/Mpx1Screen'
+import { PipeWireScreen } from './screens/PipeWireScreen'
+import { TesiraScreen } from './screens/TesiraScreen'
 import type { ScreenId } from './navigation/types'
 
 function PlaceholderScreen({ title, description }: { title: string; description: string }) {
@@ -113,10 +123,43 @@ export function App({
   })
 
   let body: React.ReactNode
-  if (router.current.id === 'home') {
-    body = <HomeScreen />
-  } else {
-    body = <PlaceholderScreen title={screen.title} description={screen.description} />
+  switch (router.current.id) {
+    case 'home':
+      body = <HomeScreen />
+      break
+    case 'metering':
+      body = <MeteringScreen />
+      break
+    case 'cpu':
+      body = <CpuScreen />
+      break
+    case 'audio-grid':
+      body = <AudioGridScreen />
+      break
+    case 'pipewire':
+      body = <PipeWireScreen />
+      break
+    case 'midi-hub':
+      body = <MidiHubScreen />
+      break
+    case 'devices':
+      body = <DevicesScreen />
+      break
+    case 'mpx1':
+      body = <Mpx1Screen />
+      break
+    case 'cluster':
+      body = <ClusterScreen />
+      break
+    case 'avb':
+      body = <AvbScreen />
+      break
+    case 'tesira':
+      body = <TesiraScreen />
+      break
+    default:
+      body = <PlaceholderScreen title={screen.title} description={screen.description} />
+      break
   }
 
   return (

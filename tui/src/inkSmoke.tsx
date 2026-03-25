@@ -6,6 +6,18 @@ import { FilterableList } from './components/FilterableList'
 import { ProgressBar } from './components/ProgressBar'
 import { TabBar } from './components/TabBar'
 import { configureNodeMap2Runtime } from './runtime/map2NodeRuntime'
+import { AudioGridScreen } from './screens/AudioGridScreen'
+import { ClusterScreen } from './screens/ClusterScreen'
+import { MeteringScreen } from './screens/MeteringScreen'
+import { MidiHubScreen } from './screens/MidiHubScreen'
+import { Mpx1Screen } from './screens/Mpx1Screen'
+
+async function assertScreenFrame(label: string, element: React.ReactElement, pattern: RegExp): Promise<void> {
+  const screen = render(element)
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+  assert.match(screen.lastFrame() ?? '', pattern, `${label} did not render expected content`)
+  screen.unmount()
+}
 
 async function main(): Promise<void> {
   configureNodeMap2Runtime({ apiBase: 'http://localhost:8080' })
@@ -28,6 +40,12 @@ async function main(): Promise<void> {
   assert.match(frame, /MAP2 \/ Home/)
   assert.match(frame, /System Summary|Loading home screen/)
   app.unmount()
+
+  await assertScreenFrame('Metering', <MeteringScreen />, /Input \/ Output Meters|Loading meters/)
+  await assertScreenFrame('Audio Grid', <AudioGridScreen />, /Signal Flow|Loading chains/)
+  await assertScreenFrame('MIDI Hub', <MidiHubScreen />, /Hub Status|Loading MIDI hub/)
+  await assertScreenFrame('MPX1', <Mpx1Screen />, /MPX1|Loading MPX1/)
+  await assertScreenFrame('Cluster', <ClusterScreen />, /Cluster \/ Services|Loading cluster view/)
 }
 
 void main().catch((error) => {
