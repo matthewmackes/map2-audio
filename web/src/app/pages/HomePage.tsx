@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Package, Music as MusicNotes } from '@carbon/icons-react'
 import { ClickableTile } from '@carbon/react'
@@ -106,7 +106,7 @@ const MIDDLE_CARDS: WorkspaceCard[] = [
     to: '/platforms/overview',
     icon: MapClusterFabricIcon,
     title: 'Platforms',
-    description: '', // dynamic — filled by node status
+    description: 'System setup and node status',
   },
 ]
 

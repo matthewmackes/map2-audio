@@ -13,28 +13,37 @@
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   flex: 1;
-  align-content: start;
 }
 
-/* ── Cards (shared) ──────────────────────────────────────────────────────── */
+/* ── Cards (shared) — override Carbon ClickableTile defaults ─────────────── */
 
+.hp2-card.cds--tile--clickable,
 .hp2-card {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 1.5rem;
+  min-block-size: 0;
   background: var(--cds-layer-01);
   color: var(--cds-text-primary);
   text-decoration: none;
   text-align: left;
   border: none;
+  outline: none;
   cursor: pointer;
   transition: background-color 120ms ease;
 }
 
+.hp2-card.cds--tile--clickable:hover,
 .hp2-card:hover {
   background: var(--cds-layer-hover-01);
+}
+
+.hp2-card.cds--tile--clickable:focus,
+.hp2-card:focus {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
 }
 
 .hp2-card__body {
@@ -76,8 +85,9 @@
 
 /* ── Hero card — Audio Grid ─────────────────────────────────────────────── */
 
+.hp2-card--hero.cds--tile--clickable,
 .hp2-card--hero {
-  min-height: 16rem;
+  min-height: 100%;
 }
 
 .hp2-card--hero .hp2-card__title {
@@ -87,7 +97,7 @@
 /* ── Signal chain readout ───────────────────────────────────────────────── */
 
 .hp2-card__chain {
-  margin: 0.5rem 0 0;
+  margin: 0.75rem 0 0;
   padding: 0.5rem 0.75rem;
   background: var(--cds-layer-02, #262626);
   color: var(--cds-text-secondary);
@@ -107,7 +117,9 @@
   gap: 1px;
 }
 
+.hp2-card--middle.cds--tile--clickable,
 .hp2-card--middle {
+  flex: 1;
   min-height: 0;
   padding: 1.25rem 1.5rem;
 }
@@ -142,6 +154,7 @@
     grid-template-columns: 1fr;
   }
 
+  .hp2-card--hero.cds--tile--clickable,
   .hp2-card--hero {
     min-height: 10rem;
   }
