@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**814** Python | **1235** TypeScript | **298** C++/H | **123** Docs | **841** total commits | **2** stars | **0** forks | **0** open issues
+**815** Python | **1235** TypeScript | **298** C++/H | **123** Docs | **844** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d8cd1886`](https://github.com/matthewmackes/map2-audio/commit/d8cd18862becd21753cf0dd21f62e785074717a4) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
+| [`94a22ec7`](https://github.com/matthewmackes/map2-audio/commit/94a22ec70516f39d6177090f350b7482044c8a27) | Resolve NAM route prefix collision | Map2 Audio | 2026-03-25 |
+| [`62b60593`](https://github.com/matthewmackes/map2-audio/commit/62b60593197e59ed328d5364eac1eb4d866bf950) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`aae9a6a8`](https://github.com/matthewmackes/map2-audio/commit/aae9a6a8bdc3bfad625bf629733da56eea32437f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 | [`60bb588e`](https://github.com/matthewmackes/map2-audio/commit/60bb588e3c7ed313e08ce4ea7f602e06e831d63c) | Delete disconnected email and cleanup dead files | Map2 Audio | 2026-03-25 |
 | [`cde66d4a`](https://github.com/matthewmackes/map2-audio/commit/cde66d4ad06e663e5aae344a90fdfb3737920f15) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`c853455d`](https://github.com/matthewmackes/map2-audio/commit/c853455d972c2e745911174aad35ea691415e6f5) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 | [`3c827b8e`](https://github.com/matthewmackes/map2-audio/commit/3c827b8e68e1b8da1a89739c715053e34617577e) | Reorganize Theme workspace into modal flow | Map2 Audio | 2026-03-25 |
-| [`bcb4e9a6`](https://github.com/matthewmackes/map2-audio/commit/bcb4e9a6b28c44f877c0ffc2574de0f2960f7cba) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
-| [`5c430b9b`](https://github.com/matthewmackes/map2-audio/commit/5c430b9b028d9e1420c843be42a02942fcd11e4e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
-| [`812b4ac4`](https://github.com/matthewmackes/map2-audio/commit/812b4ac4c494266233a8977a9ca68d27f8e94ac6) | Reorganize theme settings into staged modals | Map2 Audio | 2026-03-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
