@@ -6477,7 +6477,7 @@ Last updated: 2026-03-25 08:05 EDT - Codex
   - Validation passed with `pytest tests/test_route_prefix_collisions_phase_a.py tests/test_midi_cluster_api_routes.py -q`.
 
 ID: T397
-Status: [ ] Todo
+Status: [✓] Done
 Title: Decide on unregistered health_monitor.py route — register or delete
 Description:
 - Goal / acceptance criteria: `app/routes/health_monitor.py` has an APIRouter with WebSocket handlers but is NOT registered in `main.py`. Either register it (if health monitor WebSocket functionality is wanted) or delete it.
@@ -6487,7 +6487,10 @@ Description:
 - Required outputs: Route registered or deleted, server starts cleanly.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:20 EDT - Codex
+- Completion notes:
+  - Deleted the unregistered `app/routes/health_monitor.py` route module after confirming there were no backend or frontend callers and that the live health surface already runs through `health.py` and related service integrations.
+  - Validation passed with `pytest tests/test_health_routes.py tests/test_health_monitor.py -q`.
 
 ### Phase C: Consolidate Duplicates
 
@@ -6546,7 +6549,7 @@ Assigned to: Codex
 Last updated: 2026-03-25 - Codex
 
 ID: T402
-Status: [ ] Todo
+Status: [✓] Done
 Title: Inline models_compat.py legacy bridge
 Description:
 - Goal / acceptance criteria: `app/models_compat.py` (101 lines) is a bridge for old `promoted_advanced_routes` → new `pinned_routes`. It is actively imported via `app/models.py` but adds unnecessary indirection. Move the compat validators directly into the models package.
@@ -6556,7 +6559,11 @@ Description:
 - Required outputs: `models_compat.py` deleted, validators inlined, imports still resolve.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:20 EDT - Codex
+- Completion notes:
+  - Inlined the legacy shared Pydantic models and the `promoted_advanced_routes` to `pinned_routes` coercion validators directly into `app/models/__init__.py`, making the package the single source of truth for `app.models` imports.
+  - Deleted the dead shim files `app/models.py` and `app/models_compat.py`.
+  - Validation passed with `pytest tests/test_special_settings_routes.py tests/test_improvements.py -q` and a direct import smoke check for `SpecialSettingsUpdateRequest`, `AudioStatusResponse`, and `SystemHealthResponse`.
 
 ### Phase E: Strengthen Tests and Verification
 
