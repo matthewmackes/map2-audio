@@ -1,6 +1,41 @@
-# MAP2 Unified Textual Console
+# MAP2 Terminal Interfaces
 
-The local MAP2 console now runs through one Textual host app: [tui/app.py](/home/mm/map2-audio/tui/app.py).
+The repository now carries two terminal surfaces:
+
+- The legacy Textual console at [app.py](/home/mm/map2-audio/tui/app.py)
+- The new standalone Ink TUI at [main.tsx](/home/mm/map2-audio/tui/src/main.tsx)
+
+## Ink TUI
+
+Start the Ink app:
+
+```bash
+npm --prefix tui start
+```
+
+Useful flags:
+
+```bash
+npm --prefix tui start -- --help
+npm --prefix tui start -- --api-url http://localhost:8080
+npm --prefix tui start -- --no-color
+npm --prefix tui start -- --verbose
+```
+
+The Ink build and validation commands are:
+
+```bash
+npm --prefix tui run build
+npm --prefix tui test
+```
+
+The implemented screens currently cover `Home`, `Metering`, `CPU`, `Audio Grid`, `PipeWire`, `MIDI Hub`, `Devices`, `MPX1`, `Cluster`, `AVB`, `Tesira`, `Artifacts`, `Settings`, and `Diagnostics`.
+
+The app is designed to remain usable in `80x24`; the smoke suite exercises live render coverage for representative screens against a running backend.
+
+## Textual Console
+
+The local MAP2 Textual console still runs through [app.py](/home/mm/map2-audio/tui/app.py).
 
 ## Start
 

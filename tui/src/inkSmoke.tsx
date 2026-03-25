@@ -7,10 +7,13 @@ import { ProgressBar } from './components/ProgressBar'
 import { TabBar } from './components/TabBar'
 import { configureNodeMap2Runtime } from './runtime/map2NodeRuntime'
 import { AudioGridScreen } from './screens/AudioGridScreen'
+import { ArtifactsScreen } from './screens/ArtifactsScreen'
 import { ClusterScreen } from './screens/ClusterScreen'
+import { DiagnosticsScreen } from './screens/DiagnosticsScreen'
 import { MeteringScreen } from './screens/MeteringScreen'
 import { MidiHubScreen } from './screens/MidiHubScreen'
 import { Mpx1Screen } from './screens/Mpx1Screen'
+import { SettingsScreen } from './screens/SettingsScreen'
 
 async function assertScreenFrame(label: string, element: React.ReactElement, pattern: RegExp): Promise<void> {
   const screen = render(element)
@@ -46,6 +49,9 @@ async function main(): Promise<void> {
   await assertScreenFrame('MIDI Hub', <MidiHubScreen />, /Hub Status|Loading MIDI hub/)
   await assertScreenFrame('MPX1', <Mpx1Screen />, /MPX1|Loading MPX1/)
   await assertScreenFrame('Cluster', <ClusterScreen />, /Cluster \/ Services|Loading cluster view/)
+  await assertScreenFrame('Artifacts', <ArtifactsScreen />, /Snapshots|Loading artifacts/)
+  await assertScreenFrame('Settings', <SettingsScreen />, /Realtime|Loading settings/)
+  await assertScreenFrame('Diagnostics', <DiagnosticsScreen />, /History \/ Metrics|Loading diagnostics/)
 }
 
 void main().catch((error) => {

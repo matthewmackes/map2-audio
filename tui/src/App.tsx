@@ -8,15 +8,18 @@ import { AppShell } from './shell/AppShell'
 import { CommandPalette } from './shell/CommandPalette'
 import { HelpOverlay } from './shell/HelpOverlay'
 import { AudioGridScreen } from './screens/AudioGridScreen'
+import { ArtifactsScreen } from './screens/ArtifactsScreen'
 import { AvbScreen } from './screens/AvbScreen'
 import { ClusterScreen } from './screens/ClusterScreen'
 import { CpuScreen } from './screens/CpuScreen'
+import { DiagnosticsScreen } from './screens/DiagnosticsScreen'
 import { DevicesScreen } from './screens/DevicesScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { MeteringScreen } from './screens/MeteringScreen'
 import { MidiHubScreen } from './screens/MidiHubScreen'
 import { Mpx1Screen } from './screens/Mpx1Screen'
 import { PipeWireScreen } from './screens/PipeWireScreen'
+import { SettingsScreen } from './screens/SettingsScreen'
 import { TesiraScreen } from './screens/TesiraScreen'
 import type { ScreenId } from './navigation/types'
 
@@ -156,6 +159,15 @@ export function App({
       break
     case 'tesira':
       body = <TesiraScreen />
+      break
+    case 'artifacts':
+      body = <ArtifactsScreen />
+      break
+    case 'settings':
+      body = <SettingsScreen />
+      break
+    case 'diagnostics':
+      body = <DiagnosticsScreen />
       break
     default:
       body = <PlaceholderScreen title={screen.title} description={screen.description} />

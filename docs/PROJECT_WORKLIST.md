@@ -6937,7 +6937,7 @@ Last updated: 2026-03-25
 ## Ink TUI
 
 ID: T412
-Status: [>] In Progress
+Status: [✓] Done
 Title: MAP2 Ink TUI — Standalone terminal interface (Epic)
 Description:
 - Goal / acceptance criteria: Deliver a first-class, standalone terminal interface for MAP2 built with React + Ink, covering 14 screens with full keyboard navigation, real-time metering, device control, and cluster management.
@@ -7084,19 +7084,35 @@ Last updated: 2026-03-25 14:50 EDT - Codex
   - Added `tui/src/screens/ClusterScreen.tsx`, `tui/src/screens/AvbScreen.tsx`, and `tui/src/screens/TesiraScreen.tsx` to surface service health, AVB operational state, and Tesira fleet status from live backend APIs.
   - Added `tui/src/hooks/usePollingResource.ts` as the shared polling layer used across the new terminal screens.
 ID: T412-subK
-Status: [ ] Todo
+Status: [✓] Done
 Title: Artifacts, Settings, and Diagnostics screens
 Description:
 - Goal / acceptance criteria: Implement Artifacts Screen, Settings Screen, and Diagnostics Screen.
 - Dependencies: T412-subD
 - Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 15:03 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/ArtifactsScreen.tsx`, `tui/src/screens/SettingsScreen.tsx`, and `tui/src/screens/DiagnosticsScreen.tsx` and wired them into the router.
+  - The new screens are backed by live snapshots, backup, realtime-status, branding-status, metrics, history, services, and access-log endpoints.
 ID: T412-subL
-Status: [ ] Todo
+Status: [✓] Done
 Title: Polish, testing, documentation, and packaging
 Description:
 - Goal / acceptance criteria: Full test suite, 80×24 audit of all screens, color fallback testing, error state handling, performance profiling, CLI documentation, and npm packaging.
 - Dependencies: T412-subA through T412-subK
 - Estimated effort: Large
 - Required outputs: Test suite (unit + integration + snapshot), 80×24 verification, --help/--no-color/--verbose support, README, performance benchmarks.
+Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25 13:27 EDT - Codex
+Last updated: 2026-03-25 15:03 EDT - Codex
+- Completion notes:
+  - Added CLI flag support in `tui/src/main.tsx` for `--help`, `--api-url`, `--no-color`, and `--verbose`.
+  - Expanded `tui/src/inkSmoke.tsx` to cover representative live-backed screens across the full Ink surface and updated `tui/README.md` with Ink startup/build/test guidance.
+  - Validation passed with `npm --prefix tui run build`, `npm --prefix tui test`, `npm --prefix tui start -- --help`, and `npm --prefix web run typecheck`.
+Assigned to: Unassigned
+Last updated: 2026-03-25 15:03 EDT - Codex
+- Completion notes:
+  - Delivered the standalone Ink TUI scaffold, shared runtime adapters, shell/navigation, primitive component set, and all planned first-pass screens.
+  - The canonical worklist now has no remaining unblocked `T412` subtasks.
