@@ -22,6 +22,16 @@
   min-height: 0;
 }
 
+.hp2-column--left {
+  display: grid;
+  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.hp2-column--right {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
 /* ── Cards (shared) — override Carbon ClickableTile defaults ─────────────── */
 
 .hp2-card.cds--tile--clickable,
@@ -117,7 +127,7 @@
 
 .hp2-card--hero.cds--tile--clickable,
 .hp2-card--hero {
-  min-height: 100%;
+  min-height: 0;
 }
 
 .hp2-card--hero .hp2-card__title {
@@ -231,6 +241,12 @@
 
   .hp2-layout {
     grid-template-columns: 1fr;
+  }
+
+  .hp2-column--left,
+  .hp2-column--right {
+    display: flex;
+    flex-direction: column;
   }
 
   .hp2-subgrid {
