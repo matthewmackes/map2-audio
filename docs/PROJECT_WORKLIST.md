@@ -7007,7 +7007,7 @@ Last updated: 2026-03-26 18:05 EDT - Codex
   - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T447
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Add test coverage for 58 untested route modules
 Description:
 - Goal / acceptance criteria: 58 of 108 route modules have no corresponding test file. Prioritize adding tests for: cluster_update, cluster_update_hybrid, deployment_health, midi_v2, midi_cluster_proxy, nam_models, preset_exchange, preset_migration, plugin_presets, soundfonts, and other high-traffic routes.
@@ -7016,9 +7016,58 @@ Description:
 - Estimated effort: High (phased)
 - Required outputs: Test files for top-priority untested routes.
 - Full list of untested routes: audio_diagnostics, audio_path, backup, base, cluster_nodes, cluster_plugin_inventory, cluster_update_hybrid, cluster_update, core_plugins, cpu_metrics, dashboard, deployment_health, dev_proxy, drums, dynamics, filters, flow_failover, folders, guitar, h3000, history, impulse_response, lcd_events, lexi_love, loudness, midi_cluster_proxy, midi_learn, midi_v2, modulation, monitoring, nam_models, network, nodes, packages, parallel, passionfx, peavey5150, performance, pitch, platform_remediation, plugin_appearances, plugin_packages, plugin_presets, plugin_scanner, plugin_tags, preset_exchange, preset_migration, raft_api, reverb, sessions, shopping, soundfonts, spectrum, ssh_trust, system_tests, tweedbassman, upload, usb_devices, websocket_rt
-Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Subtasks:
+- ID: T447-subA
+  Status: [✓] Done
+  Title: Add route tests for deployment health and cluster update surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `deployment_health.py`, `cluster_update.py`, and `cluster_update_hybrid.py`, including success-path payload shaping plus representative error/idle cases.
+  - Why it matters: These operator-facing maintenance routes can regress silently without route-level coverage.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:40 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_deployment_health_routes.py`, `tests/test_cluster_update_routes.py`, and `tests/test_cluster_update_hybrid_routes.py` to cover the previously untested `deployment_health.py`, `cluster_update.py`, and `cluster_update_hybrid.py` route modules.
+    - The new coverage locks down deployment-health status/readiness/remediation behavior, cluster-update idle and manifest-handling behavior, and hybrid-update application/full-update/git-branch responses through route-level `TestClient` assertions with patched service seams.
+    - Validation: `pytest -q tests/test_deployment_health_routes.py tests/test_cluster_update_routes.py tests/test_cluster_update_hybrid_routes.py` -> PASS (`14 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+- ID: T447-subB
+  Status: [ ] Todo
+  Title: Add route tests for MIDI v2 and MIDI cluster proxy surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `midi_v2.py` and `midi_cluster_proxy.py`, covering core CRUD/proxy behavior and representative error handling.
+  - Why it matters: These routes sit on high-traffic controller and cluster forwarding paths.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:28 EDT - Codex
+- ID: T447-subC
+  Status: [ ] Todo
+  Title: Add route tests for NAM, SoundFont, and preset migration surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `nam_models.py`, `soundfonts.py`, and `preset_migration.py`, including success/error paths for file and metadata handling.
+  - Why it matters: These library-management routes are actively used and currently unguarded by route tests.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:28 EDT - Codex
+- ID: T447-subD
+  Status: [ ] Todo
+  Title: Add route tests for preset exchange and plugin preset surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `preset_exchange.py` and `plugin_presets.py`, covering import/export/library flows and representative failure handling.
+  - Why it matters: These preset-management routes still have no direct route-level regression coverage.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:28 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-03-26 18:40 EDT - Codex
 
 ID: T448
 Status: [✓] Done
