@@ -6820,7 +6820,7 @@ Last updated: 2026-03-26 17:30 EDT - Codex
   - Licensing review: touched route/util/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T437
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete or decide on web/src/pages/ClusterAdmin.tsx (legacy, zero imports)
 Description:
 - Goal / acceptance criteria: `web/src/pages/ClusterAdmin.tsx` is the only file in `web/src/pages/` (legacy location). It exports `ClusterAdmin` but is NOT imported anywhere in `web/src/app/`. Either delete it or migrate to `web/src/app/pages/`.
@@ -6829,8 +6829,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: File deleted or migrated.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:12 EDT - Codex
+- Completion notes:
+  - Deleted the orphaned legacy page `web/src/pages/ClusterAdmin.tsx` after confirming it had zero remaining imports anywhere under `web/src`, leaving no live code in the old `web/src/pages/` location.
+  - Validation: `rg -n "ClusterAdmin" web/src` -> no matches; `npm --prefix web run typecheck` -> PASS.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T438
 Status: [✓] Done
@@ -6955,7 +6959,7 @@ Last updated: 2026-03-26 - Audit v2
 ### Phase D: Documentation Truthfulness
 
 ID: T445
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove stale pipedal references from docs/TRANSPLANTATION_GUIDE.md
 Description:
 - Goal / acceptance criteria: `docs/TRANSPLANTATION_GUIDE.md` references `map2-pipedal-test.service` at lines 497 and 562. PiPedal has been fully removed from the codebase. Update the transplantation guide to remove these references.
@@ -6964,8 +6968,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: Updated doc.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:12 EDT - Codex
+- Completion notes:
+  - Removed the stale `map2-pipedal-test.service` references from `docs/TRANSPLANTATION_GUIDE.md`, so the service inventory and directory-tree example no longer mention a deleted PiPedal-era unit.
+  - Validation: `rg -n "map2-pipedal-test.service|pipedal" docs/TRANSPLANTATION_GUIDE.md` -> no matches.
+  - Licensing review: touched documentation/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ### Phase E: Test Coverage
 

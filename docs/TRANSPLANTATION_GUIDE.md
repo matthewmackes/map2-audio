@@ -494,7 +494,6 @@ MAP2_DEPLOYMENT_MODE=AUDIO-NODE
 | `map2-lcd.service` | LCD display driver (optional HW) |
 | `map2-lcd-boot.service` | LCD boot splash (optional HW) |
 | `map2-port80-proxy.service` | Port 80 → 8080 proxy |
-| `map2-pipedal-test.service` | PipeDal engine boot test |
 
 ### 7.14 systemd Drop-In Overrides
 
@@ -559,7 +558,6 @@ MAP2_DEPLOYMENT_MODE=AUDIO-NODE
 │   ├── map2-lcd-boot.service
 │   ├── map2-system-check.service
 │   ├── map2-port80-proxy.service
-│   ├── map2-pipedal-test.service
 │   └── modes/
 │       ├── audio.conf                  ← Audio mode drop-in
 │       ├── all-in-one.conf             ← All-in-one mode drop-in
