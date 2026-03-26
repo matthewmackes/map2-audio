@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**819** Python | **1138** TypeScript | **300** C++/H | **123** Docs | **885** total commits | **2** stars | **0** forks | **0** open issues
+**820** Python | **1147** TypeScript | **300** C++/H | **123** Docs | **887** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,7 +172,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-25 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
 | [MAP2 Adoption Workflow Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/ADOPTION_WORKFLOW_RUNBOOK.md) | 2026-03-23 |
 | [Node Status Grid — Quick Start Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_QUICK_START.md) | 2026-03-23 |
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6daf89c6`](https://github.com/matthewmackes/map2-audio/commit/6daf89c666d6bb1e0ee8b31b82b016e4600b5449) | Ship latest platform web and TUI updates | Map2 Audio | 2026-03-26 |
+| [`40ea4982`](https://github.com/matthewmackes/map2-audio/commit/40ea4982ef97e35e94d150abbd733971cfb60d79) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`1ed41666`](https://github.com/matthewmackes/map2-audio/commit/1ed4166641b176d981ff98fd443fd706cb272f1b) | Update home page labs launcher and sync workspace state | Map2 Audio | 2026-03-26 |
 | [`8a368afc`](https://github.com/matthewmackes/map2-audio/commit/8a368afc2c6d92ce5b6311b14ac022d196389bdb) | Hide add-effect control on inactive flows | Map2 Audio | 2026-03-25 |
 | [`a0959306`](https://github.com/matthewmackes/map2-audio/commit/a0959306fe0465db71a5c770e99c06c6346fd023) | Adjust home page card height balance | Map2 Audio | 2026-03-25 |
 | [`9fa0297b`](https://github.com/matthewmackes/map2-audio/commit/9fa0297b22f6236e13b35637af623d5381825122) | Update home page tile layout and live flow readout | Map2 Audio | 2026-03-25 |
 | [`8d64695b`](https://github.com/matthewmackes/map2-audio/commit/8d64695b5b60a8abcfaa815cdddd17b60cec283f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`90446202`](https://github.com/matthewmackes/map2-audio/commit/904462023e288e556a3725ec05ad0c83acb0b48f) | Add platforms remediation, SynthForge page, and deploymen... | Map2 Audio | 2026-03-25 |
-| [`538cd284`](https://github.com/matthewmackes/map2-audio/commit/538cd28417505cd7be4bde01188f4780a6820d8b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
-| [`2602b529`](https://github.com/matthewmackes/map2-audio/commit/2602b5292bbc03059e05c852efef1fc9782beaf9) | Align Audio Artifacts left rail with workspace shell | Map2 Audio | 2026-03-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
