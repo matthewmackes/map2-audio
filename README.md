@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**824** Python | **1151** TypeScript | **300** C++/H | **123** Docs | **899** total commits | **2** stars | **0** forks | **0** open issues
+**824** Python | **1152** TypeScript | **300** C++/H | **124** Docs | **901** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -173,11 +173,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-26 |
+| [Global Work List](https://github.com/matthewmackes/map2-audio/blob/master/docs/global-work-list.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
 | [MAP2 Adoption Workflow Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/ADOPTION_WORKFLOW_RUNBOOK.md) | 2026-03-23 |
 | [Node Status Grid — Quick Start Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_QUICK_START.md) | 2026-03-23 |
 | [Node Status Grid Implementation — Complete Summary](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_SUMMARY.md) | 2026-03-23 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-21 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`295aafb6`](https://github.com/matthewmackes/map2-audio/commit/295aafb6136c3a867d0872fe6ed9fd18b655f776) | Add plugin output routing updates and parameter control p... | Map2 Audio | 2026-03-26 |
+| [`4009655a`](https://github.com/matthewmackes/map2-audio/commit/4009655a002ae5865e0b63fd0854183658f4e36b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`391d19ff`](https://github.com/matthewmackes/map2-audio/commit/391d19ff3d09ced84a5b9aa4f39e354233fb4d9f) | Restore AVDECC capabilities in hardened backend service | Map2 Audio | 2026-03-26 |
 | [`721d972a`](https://github.com/matthewmackes/map2-audio/commit/721d972a90b3f5edb3bd338ae8c63e2c651a2d00) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`53d35855`](https://github.com/matthewmackes/map2-audio/commit/53d3585537c9ae589c1c1f2d0b6573cdf5d150da) | Harden PTP monitor runtime socket handling | Map2 Audio | 2026-03-26 |
 | [`c4a265e0`](https://github.com/matthewmackes/map2-audio/commit/c4a265e06a6e925fc9522a013eb8991ad0dda09b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`2ea7578b`](https://github.com/matthewmackes/map2-audio/commit/2ea7578b96f91ad8fe31755d15d61e683b1465a2) | Harden manifest remediation and stabilize update compatib... | Map2 Audio | 2026-03-26 |
 | [`3d145c2e`](https://github.com/matthewmackes/map2-audio/commit/3d145c2e134a11dc5bb6cef96575a0fd746b5845) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`605d4336`](https://github.com/matthewmackes/map2-audio/commit/605d43363bb5b5bfc67aa34d456fc5b42ce49e25) | Close clean-deploy loop work item | Map2 Audio | 2026-03-26 |
-| [`791fab17`](https://github.com/matthewmackes/map2-audio/commit/791fab17456f9ae68928ff6c926456f76e252e00) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
