@@ -6970,7 +6970,7 @@ Last updated: 2026-03-26 - Audit v2
 ### Phase E: Test Coverage
 
 ID: T446
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add route prefix uniqueness CI test
 Description:
 - Goal / acceptance criteria: Create a test that extracts all APIRouter prefixes from registered route modules and asserts no two registered routers share a prefix unless their endpoint paths are verified non-overlapping. This would have caught the /api/chains collision and the other shared-prefix cases.
@@ -6979,8 +6979,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: New test file in tests/, runs in CI.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:05 EDT - Codex
+- Completion notes:
+  - Added `tests/test_route_prefix_uniqueness_policy.py`, a static AST-based CI guard that extracts the primary `router` prefix from every registered route module, computes each module’s declared route surface, and fails if the live shared-prefix inventory diverges from the explicitly audited allowlist.
+  - The new policy codifies the currently reviewed shared-prefix groups as: `""` (`drums`, `expression`, `websocket`, `websocket_rt`), `/api` (`effects_loops`, `health`), `/api/cluster` (`cluster_admin`, `cluster_flows`, `cluster_health`), `/api/deployment` (`deployment`, `deployment_health`), and `/api/lcd` (`lcd`, `lcd_events`). For every allowed group, the test also proves the declared method/path pairs are non-overlapping.
+  - This means a future duplicate like the removed `/api/chains` collision now fails in CI immediately unless the new shared prefix is explicitly audited and added to the allowlist.
+  - Validation: `pytest -q tests/test_route_prefix_uniqueness_policy.py tests/test_shared_route_prefix_audits.py tests/test_route_registration_policy.py` -> PASS (`6 passed, 1 warning`); `python3 - <<'PY' ... ast.parse("tests/test_route_prefix_uniqueness_policy.py") ... PY` -> PASS.
+  - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T447
 Status: [ ] Todo
