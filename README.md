@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**824** Python | **1152** TypeScript | **300** C++/H | **124** Docs | **903** total commits | **2** stars | **0** forks | **0** open issues
+**822** Python | **1152** TypeScript | **300** C++/H | **124** Docs | **905** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -190,7 +190,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8d74acb0`](https://github.com/matthewmackes/map2-audio/commit/8d74acb0ac4ed6c4642a786a01dffaed5b821aca) | Remove stale LV2 services and dead PiPedal compatibility ... | Map2 Audio | 2026-03-26 |
+| [`6d033177`](https://github.com/matthewmackes/map2-audio/commit/6d033177395b21a2ed3d1e8b10e31427025c6049) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`812d0e55`](https://github.com/matthewmackes/map2-audio/commit/812d0e55fae96bc450d232312c5cf2d64c906c14) | Add plugin-position fallback for NAM and IR asset editors | Map2 Audio | 2026-03-26 |
 | [`81e28dbe`](https://github.com/matthewmackes/map2-audio/commit/81e28dbea1c7939e7dfc7b9b61cec064a7ecb77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`295aafb6`](https://github.com/matthewmackes/map2-audio/commit/295aafb6136c3a867d0872fe6ed9fd18b655f776) | Add plugin output routing updates and parameter control p... | Map2 Audio | 2026-03-26 |
 | [`4009655a`](https://github.com/matthewmackes/map2-audio/commit/4009655a002ae5865e0b63fd0854183658f4e36b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`391d19ff`](https://github.com/matthewmackes/map2-audio/commit/391d19ff3d09ced84a5b9aa4f39e354233fb4d9f) | Restore AVDECC capabilities in hardened backend service | Map2 Audio | 2026-03-26 |
 | [`721d972a`](https://github.com/matthewmackes/map2-audio/commit/721d972a90b3f5edb3bd338ae8c63e2c651a2d00) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`53d35855`](https://github.com/matthewmackes/map2-audio/commit/53d3585537c9ae589c1c1f2d0b6573cdf5d150da) | Harden PTP monitor runtime socket handling | Map2 Audio | 2026-03-26 |
-| [`c4a265e0`](https://github.com/matthewmackes/map2-audio/commit/c4a265e06a6e925fc9522a013eb8991ad0dda09b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
