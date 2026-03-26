@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.services.midi_hub.midi_discovery import get_midi_discovery_service
 
@@ -49,4 +49,13 @@ async def proxy_midi_hub(request: Request, node_id: str, path: str):
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Proxy error contacting node {node_id}: {exc}")
 
-    return response
+    response_headers = {
+        key: value
+        for key, value in response.headers.items()
+        if key.lower() not in {"content-length", "transfer-encoding", "connection", "content-encoding"}
+    }
+    return Response(
+        content=response.content,
+        status_code=response.status_code,
+        headers=response_headers,
+    )

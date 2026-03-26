@@ -7034,7 +7034,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_deployment_health_routes.py tests/test_cluster_update_routes.py tests/test_cluster_update_hybrid_routes.py` -> PASS (`14 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
     - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subB
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for MIDI v2 and MIDI cluster proxy surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `midi_v2.py` and `midi_cluster_proxy.py`, covering core CRUD/proxy behavior and representative error handling.
@@ -7043,7 +7043,12 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 18:28 EDT - Codex
+  Last updated: 2026-03-26 18:45 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_midi_v2_routes.py` and `tests/test_midi_cluster_proxy_routes.py` to cover the previously untested `midi_v2.py` and `midi_cluster_proxy.py` route modules, focusing on mapping CRUD/list behavior, duplicate-safe `plugin_position` handling, learn-status normalization, proxy forwarding, and timeout/error paths.
+    - Fixed `app/routes/midi_cluster_proxy.py` so the proxy route now returns the upstream response body and status via a real FastAPI `Response` instead of JSON-encoding the internal `httpx.Response` object, which the new proxy test reproduced.
+    - Validation: `pytest -q tests/test_midi_v2_routes.py tests/test_midi_cluster_proxy_routes.py` -> PASS (`10 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
+    - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subC
   Status: [ ] Todo
   Title: Add route tests for NAM, SoundFont, and preset migration surfaces
@@ -7067,7 +7072,7 @@ Subtasks:
   Assigned to: Codex
   Last updated: 2026-03-26 18:28 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 18:40 EDT - Codex
+Last updated: 2026-03-26 18:45 EDT - Codex
 
 ID: T448
 Status: [✓] Done
