@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 10:31 EDT - Added T428 to restore a clean git tree after repeated commit/push/deploy loops
+Last updated: 2026-03-26 10:33 EDT - Closed T428 after restoring a clean git tree across repeated port-3000 deploy loops
 
 ID: T428
-Status: [>] In Progress
+Status: [✓] Done
 Title: Keep the commit-push-deploy loop clean after port-3000 rebuilds
 Description:
 - Goal / acceptance criteria: Ensure a clean `commit -> push both remotes -> rebuild/restart port 3000` cycle does not leave tracked deploy byproducts dirty afterward. The fix must stop `logs/deploy-build.log` and any resulting unnecessary version churn from polluting the tree after a successful deploy, and it must be validated with a real deploy loop on this host.
@@ -19,7 +19,12 @@ Description:
 - Required outputs: clean-tree deploy fix, focused validation via a real deploy cycle, licensing/worklist notes, and completion notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-26 10:31 EDT - Codex
+Last updated: 2026-03-26 10:33 EDT - Codex
+- Completion notes:
+  - Identified the real source of the repeated deploy churn: `scripts/build/deploy` streams `npm run build` through `tee "$LOG_DIR/deploy-build.log"` before the prebuild version generator runs, so the tracked `logs/deploy-build.log` file made the repository appear dirty mid-build and forced `scripts/generate_platform_version.py` to mint a new version on every port-3000 restart.
+  - Removed `logs/deploy-build.log` from the git index while leaving the deploy script and ignored `logs/` directory behavior intact, so the same runtime log file still exists for operators but no longer pollutes `git status` or trips the version generator during clean rebuilds.
+  - Validation: after committing/pushing the cleanup and rerunning `npm --prefix web run deploy`, port `3000` restarted successfully on bundle `index-BQ0SNilJ.js` and `git status --short` returned clean immediately afterward, confirming the commit/push/deploy loop is now repeatable without tracked residue.
+  - Licensing review: touched worklist/deploy-artifact tracking remain MAP2-owned repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing web/src/app/hooks tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T427
 Status: [✓] Done
