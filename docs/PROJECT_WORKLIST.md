@@ -6931,7 +6931,7 @@ Last updated: 2026-03-26 17:58 EDT - Codex
 ### Phase C: Consolidation
 
 ID: T443
-Status: [ ] Todo
+Status: [✓] Done
 Title: Health monitoring hierarchy documentation and cleanup
 Description:
 - Goal / acceptance criteria: 9 health-related services exist with an undocumented aggregation hierarchy. `system_health_summary.py` (last modified 2026-03-25) appears to be the top-level aggregator, importing from `health_monitor`, `audio_health_monitor`, `node_health_service`, and `deployment_health`. Document this hierarchy. Determine if `health_checker.py` (8K, Jan 20) is still needed or superseded by `system_health_summary.py`.
@@ -6940,8 +6940,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Architecture document for health monitoring, identification of any truly dead services.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:20 EDT - Codex
+- Completion notes:
+  - Added `docs/HEALTH_MONITORING_HIERARCHY.md` to document the steady-state ownership chain from the public `/api/health`, `/api/node/health`, `/api/deployment/health*`, and `/api/cluster/health*` routes down through `system_health_summary.py`, `health_monitor.py`, `audio_health_monitor.py`, `node_health_service.py`, `deployment_health.py`, `cluster/health_aggregator.py`, plus the scoped specialty modules.
+  - Removed `app/services/health_checker.py` after confirming it had no live imports in the current app or test suite and is functionally superseded by the active `app/services/circuit_breaker.py` path plus `app/services/system_health_summary.py`.
+  - Validation: `pytest -q tests/test_health_routes.py tests/test_health_services.py tests/test_health_monitor.py tests/test_node_api.py tests/test_circuit_breaker.py` -> PASS (`60 passed, 5 warnings`); `rg -n "health_checker" app tests` now only matches the still-live `deployment_health_checker` symbols rather than a separate legacy helper.
+  - Licensing review: touched backend/doc/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T444
 Status: [✓] Done
