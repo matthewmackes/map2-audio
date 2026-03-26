@@ -1,16 +1,9 @@
 """
-Cluster Management API Endpoints
+Cluster administration and orchestration routes under /api/cluster.
 
-FastAPI routes for cluster administration and monitoring:
-- GET /api/cluster/nodes - List all nodes with health
-- GET /api/cluster/health - Aggregate cluster health
-- GET /api/cluster/status - Overall cluster state
-- GET /api/cluster/metrics - Time series metrics
-- POST /api/cluster/nodes/{id}/update - Trigger update
-- POST /api/cluster/nodes/{id}/reboot - Reboot node
-- GET /api/cluster/summary - Quick summary
-
-All endpoints protected by mTLS and RBAC.
+This module owns setup, status, metrics, node lifecycle, update, backup, and
+topology endpoints. Health-only endpoints live in `cluster_health.py`, and flow
+assignment endpoints live in `cluster_flows.py`.
 """
 
 import asyncio

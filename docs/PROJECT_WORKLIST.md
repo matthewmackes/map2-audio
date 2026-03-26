@@ -6887,7 +6887,7 @@ Last updated: 2026-03-26 18:06 EDT - Codex
   - Licensing review: touched route/frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T441
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audit /api/cluster prefix shared by 3 route files
 Description:
 - Goal / acceptance criteria: Three registered route files share `prefix="/api/cluster"`: `cluster_admin.py:41`, `cluster_flows.py:14`, `cluster_health.py:16`. While their endpoint paths currently don't overlap (/node/*, /setup, /status, /metrics vs /flows/*, /nodes vs /health, /online-nodes, /offline-nodes), this is fragile. Verify no endpoint path collisions exist. Consider whether any should get more specific prefixes.
@@ -6896,11 +6896,17 @@ Description:
 - Estimated effort: Low (audit only, may need no changes)
 - Required outputs: Documented assessment of collision risk; prefix changes if needed.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 17:58 EDT - Codex
+- Completion notes:
+  - Audited the registered `/api/cluster` routers in `app/routes/cluster_admin.py`, `app/routes/cluster_flows.py`, and `app/routes/cluster_health.py` and confirmed they are currently segmented by subtrees rather than colliding method/path pairs: admin owns setup/status/metrics/node/update/backup/topology endpoints, flows owns `/flows/*` plus `/nodes` maintenance operations, and health owns `/health*` plus online/offline summaries.
+  - Added `tests/test_shared_route_prefix_audits.py` to assert those three routers remain method/path-disjoint, and tightened the module header in `app/routes/cluster_admin.py` so it no longer incorrectly claims ownership of the health endpoints that actually live in `cluster_health.py`.
+  - Decision: no prefix change required at this time because the live surface is disjoint and already covered by both the new shared-prefix audit and the existing global route-registration policy test.
+  - Validation: `pytest -q tests/test_shared_route_prefix_audits.py tests/test_route_registration_policy.py` -> PASS (`5 passed, 1 warning`); `rg -n 'prefix="/api/cluster"|prefix="/api/deployment"|/api/cluster/health|/api/deployment/health/mode|/api/deployment/health' app/routes tests/test_shared_route_prefix_audits.py` confirms the audited ownership split and shared-prefix assertions.
+  - Licensing review: touched route/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T442
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audit /api/deployment prefix shared by deployment.py and deployment_health.py
 Description:
 - Goal / acceptance criteria: Both `deployment.py:29` and `deployment_health.py:24` use `prefix="/api/deployment"`. Their endpoints appear non-overlapping (/mode, /status, /config, /verify vs /health/*, /remediation/*), but both have `/health` sub-paths (`deployment.py` has `/health/mode`, `deployment_health.py` has `/health`). Verify no actual shadowing and consider consolidation.
@@ -6909,8 +6915,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Confirmed no shadowing, or prefixes adjusted.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 17:58 EDT - Codex
+- Completion notes:
+  - Audited the shared `/api/deployment` namespace across `app/routes/deployment.py` and `app/routes/deployment_health.py` and confirmed the current surface is non-overlapping: deployment owns `/mode`, `/status`, `/config`, `/verify`, and `/health/mode`, while deployment-health owns `/health`, `/health/checks`, `/health/status`, `/health/readiness`, `/remediation/*`, and `/readiness-checklist`.
+  - Added executable coverage in `tests/test_shared_route_prefix_audits.py` proving the shared deployment namespace has no duplicate method/path pairs and explicitly pinning the intentional split between `/api/deployment/health` and `/api/deployment/health/mode`.
+  - Decision: no prefix change required now because `/api/deployment/health` and `/api/deployment/health/mode` do not shadow each other in FastAPI and the new regression test protects against future overlap.
+  - Validation: `pytest -q tests/test_shared_route_prefix_audits.py tests/test_route_registration_policy.py` -> PASS (`5 passed, 1 warning`); `rg -n 'prefix="/api/cluster"|prefix="/api/deployment"|/api/cluster/health|/api/deployment/health/mode|/api/deployment/health' app/routes tests/test_shared_route_prefix_audits.py` confirms the audited deployment-health ownership split.
+  - Licensing review: touched route/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ### Phase C: Consolidation
 
