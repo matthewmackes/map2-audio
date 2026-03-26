@@ -6944,7 +6944,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
 ID: T444
-Status: [ ] Todo
+Status: [✓] Done
 Title: Evaluate web/src/shared/PluginChooser for migration to app/components
 Description:
 - Goal / acceptance criteria: `web/src/shared/components/PluginChooser/` (23 files) is imported from 2 active files: `PluginAppearanceIcon.tsx` (LegacyPluginIcon, PluginType). This is the only remaining content in `web/src/shared/`. Either migrate PluginChooser into `web/src/app/components/` or at minimum document why it lives in `shared/`.
@@ -6953,8 +6953,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: PluginChooser migrated or documented, build passes.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:18 EDT - Codex
+- Completion notes:
+  - Added `web/src/shared/README.md` documenting why `components/PluginChooser/` remains in `shared/`: the chooser UI is still consumed by `web/src/map2/components/ChainBuilder.tsx`, while `web/src/app/components/pluginAppearance/PluginAppearanceIcon.tsx` reuses the chooser’s legacy glyph/type compatibility surface, so moving it under `app/components` today would create an inverted `map2 -> app` dependency.
+  - The documentation also captures the migration trigger for a future move and notes that the sibling `shared/constants/` files are currently unreferenced compatibility stubs, so they do not change the ownership decision.
+  - Validation: `rg -n "shared/components/PluginChooser|pluginAppearance/PluginAppearanceIcon|shared/constants" web/src` confirms the current cross-surface consumers plus the unreferenced constants note; `npm --prefix web run typecheck` -> PASS.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ### Phase D: Documentation Truthfulness
 
