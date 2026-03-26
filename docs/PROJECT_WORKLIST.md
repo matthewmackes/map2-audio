@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 10:02 EDT - Closed T425 after shipping hybrid update progress tracking and the single-node progress modal
+Last updated: 2026-03-26 10:26 EDT - Closed T427 after restoring single-node update compatibility across legacy and hybrid application update routes
+
+ID: T427
+Status: [✓] Done
+Title: Restore single-node application updates when frontend and backend restart out of sync
+Description:
+- Goal / acceptance criteria: Ensure the single-node Platforms update flow keeps working when the web bundle expects the newer hybrid update URLs but the running backend still serves the legacy application update URLs, and preserve correct behavior after the backend later restarts onto the new hybrid routes. The fix must remove the operator-facing HTTP 404 from `Check for Updates`, cover both modal and platform-shell data reads, and include focused regression validation.
+- Why it matters: The current host shows the new update modal, but the backend process predates the hybrid route rename. That staggered rollout turns `Check for Updates` into a visible production failure even though both sides are otherwise healthy.
+- Dependencies: T425
+- Estimated effort: Low
+- Required outputs: frontend compatibility fallback for legacy/new application update endpoints, focused regression tests, validation evidence against the live host behavior, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 10:26 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/hooks/updateApplicationApi.ts` so the single-node update client now prefers the new `/api/cluster/update/hybrid/...` application update routes, falls back to the older `/api/cluster/update/...` application routes on HTTP 404, and re-promotes the hybrid routes automatically once the backend restarts onto the newer API surface.
+  - Updated both `web/src/app/hooks/useNodeOperations.ts` and `web/src/app/hooks/usePlatformShellData.ts` to use the shared compatibility helper for the update trigger, live progress polling, and local hybrid-version reads, which keeps the modal and the single-node summary cards aligned across staggered frontend/backend rollouts.
+  - Added focused regression coverage in `web/src/app/hooks/updateApplicationApi.test.ts` for three cases: hybrid-first success, POST fallback to the legacy application route after a 404, and switching the preferred route back to hybrid after a backend restart removes the legacy path.
+  - Live-host evidence: the current `127.0.0.1:8080` backend OpenAPI still exposes `/api/cluster/update/application*` but not `/api/cluster/update/hybrid/application*`, while the current web source expects the hybrid paths. This regression is therefore a compatibility gap between deployed frontend and backend generations, not a missing route in the current source tree.
+  - Licensing review: touched frontend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing web/src/app/hooks tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/hooks/updateApplicationApi.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only.
 
 ID: T426
 Status: [✓] Done

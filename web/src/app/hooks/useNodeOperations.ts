@@ -9,6 +9,8 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { fetchUpdateApplicationJson, postUpdateApplicationJson } from './updateApplicationApi'
+
 // ── Response types ──────────────────────────────────────────────────────────
 
 export interface PlatformVersionInfo {
@@ -243,14 +245,14 @@ export function useNodeOperations(): NodeOperationsData {
 
   const applicationStatusQ = useQuery({
     queryKey: KEYS.applicationStatus,
-    queryFn: () => fetchJson<HybridApplicationStatusInfo>('/api/cluster/update/hybrid/application/status'),
+    queryFn: () => fetchUpdateApplicationJson<HybridApplicationStatusInfo>('/application/status'),
     refetchInterval: 1_500,
     staleTime: 1_000,
   })
 
   const hybridVersionQ = useQuery({
     queryKey: KEYS.updateHybridVersion,
-    queryFn: () => fetchJson<UpdateHybridVersionInfo>('/api/cluster/update/hybrid/application/version'),
+    queryFn: () => fetchUpdateApplicationJson<UpdateHybridVersionInfo>('/application/version'),
     refetchInterval: 30_000,
     staleTime: 20_000,
   })
@@ -294,7 +296,7 @@ export function useNodeOperations(): NodeOperationsData {
 
   const updateMut = useMutation({
     mutationFn: (opts: { version?: string; branch?: string; force?: boolean }) =>
-      postJson<TriggerApplicationUpdateResult>('/api/cluster/update/hybrid/application', {
+      postUpdateApplicationJson<TriggerApplicationUpdateResult>('/application', {
         mode: 'auto',
         version: opts.version,
         branch: opts.branch ?? 'master',

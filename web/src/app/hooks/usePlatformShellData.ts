@@ -49,6 +49,7 @@ import type {
   HybridApplicationStatusInfo,
   UpdateHybridVersionInfo,
 } from './useNodeOperations'
+import { fetchUpdateApplicationJson } from './updateApplicationApi'
 
 interface DeploymentModeResponse {
   mode?: string
@@ -331,22 +332,14 @@ export function usePlatformShellData(): PlatformShellData {
 
   const nodeApplicationStatusQuery = useQuery<HybridApplicationStatusInfo>({
     queryKey: ['platform', 'node-application-status'],
-    queryFn: async () => {
-      const r = await fetch('/api/cluster/update/hybrid/application/status')
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      return r.json() as Promise<HybridApplicationStatusInfo>
-    },
+    queryFn: () => fetchUpdateApplicationJson<HybridApplicationStatusInfo>('/application/status'),
     refetchInterval: 5000,
     staleTime: 2000,
   })
 
   const nodeHybridVersionQuery = useQuery<UpdateHybridVersionInfo>({
     queryKey: ['platform', 'node-hybrid-version'],
-    queryFn: async () => {
-      const r = await fetch('/api/cluster/update/hybrid/application/version')
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      return r.json() as Promise<UpdateHybridVersionInfo>
-    },
+    queryFn: () => fetchUpdateApplicationJson<UpdateHybridVersionInfo>('/application/version'),
     refetchInterval: 30000,
     staleTime: 20000,
   })
