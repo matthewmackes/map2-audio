@@ -7082,7 +7082,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_preset_exchange_routes.py tests/test_plugin_presets_routes.py` -> PASS (`8 passed, 26 warnings`).
     - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subE
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for folder scanning and plugin tag metadata surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `folders.py` and `plugin_tags.py`, covering folder stats/scan state and plugin-tag metadata/search flows with representative success/error cases.
@@ -7091,7 +7091,12 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 18:56 EDT - Codex
+  Last updated: 2026-03-26 19:11 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_folders_routes.py` and `tests/test_plugin_tags_routes.py` to cover the previously untested `folders.py` and `plugin_tags.py` route modules, including folder stats/path/count payloads, scan background-task dispatch and conflict guards, predefined tag metadata, plugin metadata CRUD, bulk tag updates, search filtering, and favorites listing.
+    - Fixed `app/routes/plugin_tags.py` so the add/remove/favorite mutation routes now `refresh()` the ORM row after `commit()`, which prevents `MissingGreenlet` failures caused by reading expired attributes under the repository's `expire_on_commit=True` async session policy.
+    - Validation: `pytest -q tests/test_folders_routes.py tests/test_plugin_tags_routes.py` -> PASS (`7 passed, 11 warnings`).
+    - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subF
   Status: [ ] Todo
   Title: Add route tests for dashboard and CPU metrics surfaces
@@ -7104,7 +7109,7 @@ Subtasks:
   Assigned to: Codex
   Last updated: 2026-03-26 18:56 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 19:05 EDT - Codex
+Last updated: 2026-03-26 19:11 EDT - Codex
 
 ID: T448
 Status: [✓] Done

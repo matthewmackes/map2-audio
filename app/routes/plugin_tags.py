@@ -272,6 +272,7 @@ async def add_tags_to_plugin(uri: str, request: PluginTagsRequest):
             plugin.tags = list(new_tags)
 
         await session.commit()
+        await session.refresh(plugin)
 
         return {
             "success": True,
@@ -297,6 +298,7 @@ async def remove_tags_from_plugin(uri: str, request: PluginTagsRequest):
         plugin.tags = list(remaining_tags)
 
         await session.commit()
+        await session.refresh(plugin)
 
         return {
             "success": True,
@@ -433,6 +435,7 @@ async def toggle_favorite(uri: str, is_favorite: bool = True):
             plugin.is_favorite = is_favorite
 
         await session.commit()
+        await session.refresh(plugin)
 
         return {
             "success": True,
