@@ -197,7 +197,7 @@ class PluginScanner(Singleton):
         return self.plugin_cache
 
     def _scan_lv2_fallback(self, scan_time: str) -> None:
-        """Fallback LV2 scanning without lv2_enhanced."""
+        """Fallback LV2 scanning without the richer unified metadata path."""
         for lv2_path in self._lv2_paths:
             if not os.path.isdir(lv2_path):
                 continue

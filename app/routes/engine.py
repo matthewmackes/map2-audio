@@ -609,36 +609,3 @@ async def get_plugin_vu_levels():
     service = get_engine_service()
     return await service.get_plugin_vu_levels()
 
-
-# ============================================================================
-# PiPedal Compatibility Routes
-# These provide backward compatibility with code expecting /api/pipedal/* endpoints
-# ============================================================================
-
-pipedal_compat_router = APIRouter(prefix="/api/pipedal", tags=["pipedal-compat"])
-
-
-@pipedal_compat_router.get("/status")
-async def pipedal_status():
-    """PiPedal compatibility: Get status"""
-    return await get_status()
-
-
-@pipedal_compat_router.get("/plugins")
-async def pipedal_plugins():
-    """PiPedal compatibility: List plugins"""
-    result = await list_plugins()
-    result["engine"] = "pipedal"  # Pretend to be pipedal for compatibility
-    return result
-
-
-@pipedal_compat_router.post("/initialize")
-async def pipedal_initialize(request: InitializeRequest):
-    """PiPedal compatibility: Initialize"""
-    return await initialize(request)
-
-
-@pipedal_compat_router.get("/audio/status")
-async def pipedal_audio_status():
-    """PiPedal compatibility: Audio status"""
-    return await get_audio_status()

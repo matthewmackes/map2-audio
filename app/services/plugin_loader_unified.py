@@ -2,10 +2,10 @@
 Unified Plugin Loader - Consolidated LV2 Plugin Management
 
 This module provides a single unified API for LV2 plugin discovery and management,
-consolidating functionality from:
-- plugin_loader_v2.py (Real lilv-based discovery)
-- lv2_discovery.py (Persistent caching)
-- lv2_enhanced.py (Full LV2 spec compliance)
+consolidating the older split loaders into one maintained path:
+- legacy lilv-based discovery
+- legacy persistent caching
+- legacy richer LV2 metadata/spec-compliance helpers
 
 Features:
 - Real lilv-based plugin discovery with graceful fallback
