@@ -76,7 +76,10 @@ describe('ThemePage', () => {
 
   beforeEach(() => {
     window.localStorage.clear()
-    useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
+    useEffectsSettingsStore.setState({
+      reducedEffectsEnabled: false,
+      pageTransitionPreset: 'hyperactive-block',
+    })
     mockUpdateSpecialSettings.mockReset()
     mockDiscover.mockReset()
     mockGetAllPlugins.mockReset()
@@ -209,6 +212,17 @@ describe('ThemePage', () => {
     return waitFor(() => {
       expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('inter')
       expect(document.documentElement.style.getPropertyValue('--font-ui')).toContain('Inter')
+    })
+  })
+
+  it('persists the selected page transition preset from the motion modal', async () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /pager slide/i }))
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"pageTransitionPreset":"pager-slide"')
     })
   })
 

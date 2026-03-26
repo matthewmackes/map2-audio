@@ -97,7 +97,13 @@ map2_run_ink_tui() {
     local root
     root="$(map2_repo_root)"
     cd "${root}"
-    exec npm --prefix tui start -- "$@"
+    if [[ -f "${root}/tui/dist/main.js" ]] && command -v node >/dev/null 2>&1; then
+        exec node "${root}/tui/dist/main.js" "$@"
+    fi
+    if [[ -x "${root}/tui/node_modules/.bin/tsx" ]]; then
+        exec "${root}/tui/node_modules/.bin/tsx" "${root}/tui/src/main.tsx" "$@"
+    fi
+    exec npm --prefix tui --silent start -- "$@"
 }
 
 map2_run_touchscreen() {

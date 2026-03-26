@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react'
-import { Box, Text, useInput } from 'ink'
+import { Box, Text, useApp, useInput } from 'ink'
+import { clearTerminalCanvas } from './cli'
 import { screenRegistry, screenRegistryById } from './navigation/screenRegistry'
 import { useScreenRouter } from './hooks/useScreenRouter'
 import { useStatusBar } from './hooks/useStatusBar'
 import { useTerminalSize } from './hooks/useTerminalSize'
+import { oledPalette } from './palette'
 import { AppShell } from './shell/AppShell'
 import { CommandPalette } from './shell/CommandPalette'
 import { HelpOverlay } from './shell/HelpOverlay'
@@ -26,23 +28,30 @@ import type { ScreenId } from './navigation/types'
 function PlaceholderScreen({ title, description }: { title: string; description: string }) {
   return (
     <Box flexDirection="column">
-      <Text color="cyan">{title}</Text>
-      <Text color="gray">{description}</Text>
+      <Text color={oledPalette.accent}>{title}</Text>
+      <Text color={oledPalette.muted}>{description}</Text>
     </Box>
   )
 }
 
 export function App({
   apiBase = 'http://localhost:8080/api',
+  initialScreen = 'home',
 }: {
   apiBase?: string
+  initialScreen?: ScreenId
 }) {
-  const router = useScreenRouter('home')
+  const { exit } = useApp()
+  const router = useScreenRouter(initialScreen)
   const terminal = useTerminalSize()
   const [showHelp, setShowHelp] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [paletteQuery, setPaletteQuery] = useState('')
   const [paletteIndex, setPaletteIndex] = useState(0)
+  const currentScreenIndex = useMemo(
+    () => screenRegistry.findIndex((entry) => entry.id === router.current.id),
+    [router.current.id],
+  )
 
   const filteredScreens = useMemo(
     () => screenRegistry.filter((screen) => `${screen.title} ${screen.description}`.toLowerCase().includes(paletteQuery.toLowerCase())),
@@ -50,9 +59,26 @@ export function App({
   )
 
   useInput((input, key) => {
+    if (key.ctrl && input === 'q') {
+      exit()
+      return
+    }
+
+    if (!showPalette && input.toLowerCase() === 'q') {
+      exit()
+      return
+    }
+
     if (key.ctrl && input === 'p') {
       setShowPalette((current) => !current)
+      setPaletteQuery('')
+      setPaletteIndex(0)
       setShowHelp(false)
+      return
+    }
+
+    if (key.ctrl && input === 'l') {
+      clearTerminalCanvas()
       return
     }
 
@@ -80,7 +106,7 @@ export function App({
       if (key.return) {
         const nextScreen = filteredScreens[paletteIndex]
         if (nextScreen) {
-          router.push(nextScreen.id)
+          router.replace(nextScreen.id)
           setShowPalette(false)
           setPaletteQuery('')
           setPaletteIndex(0)
@@ -107,19 +133,33 @@ export function App({
       return
     }
 
-    const numericIndex = Number.parseInt(input, 10)
-    if (!Number.isNaN(numericIndex) && numericIndex >= 1 && numericIndex <= 9) {
-      const pinnedScreen = screenRegistry[numericIndex - 1]
-      if (pinnedScreen) {
-        router.push(pinnedScreen.id)
+    if (input === '[' || input === ']') {
+      const offset = input === ']' ? 1 : -1
+      const nextIndex = (currentScreenIndex + offset + screenRegistry.length) % screenRegistry.length
+      const nextScreen = screenRegistry[nextIndex]
+      if (nextScreen) {
+        router.replace(nextScreen.id)
       }
       return
     }
-  })
+
+    const numericIndex = Number.parseInt(input, 10)
+    if (!Number.isNaN(numericIndex) && numericIndex >= 1 && numericIndex <= 9) {
+      if (router.current.id === 'home') {
+        return
+      }
+      const pinnedScreen = screenRegistry[numericIndex - 1]
+      if (pinnedScreen) {
+        router.replace(pinnedScreen.id)
+      }
+      return
+    }
+  }, { isActive: true })
 
   const screen = screenRegistryById[router.current.id]
   const status = useStatusBar({
     apiBase,
+    currentScreenId: screen.id,
     currentScreen: screen.title,
     connectionLabel: 'Live backend',
     terminalColumns: terminal.columns,
@@ -128,7 +168,7 @@ export function App({
   let body: React.ReactNode
   switch (router.current.id) {
     case 'home':
-      body = <HomeScreen />
+      body = <HomeScreen enableLiveHotkeys={!showHelp && !showPalette} />
       break
     case 'metering':
       body = <MeteringScreen />
@@ -177,9 +217,10 @@ export function App({
   return (
     <AppShell
       title={`MAP2 / ${screen.title}`}
-      subtitle={`Stack depth ${router.stack.length}`}
+      subtitle={screen.description}
       statusLeft={status.left}
       statusRight={status.right}
+      terminalColumns={terminal.columns}
     >
       {showHelp ? <HelpOverlay /> : null}
       {showPalette ? <CommandPalette query={paletteQuery} screens={filteredScreens} activeIndex={paletteIndex} /> : null}

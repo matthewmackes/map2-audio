@@ -1,5 +1,6 @@
 import React from 'react'
 import { Text } from 'ink'
+import { oledPalette } from '../palette'
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
@@ -12,9 +13,9 @@ export function ProgressBar({ value, width = 24, label }: { value: number; width
   return (
     <Text>
       {label ? `${label} ` : ''}
-      <Text color="green">{'█'.repeat(filled)}</Text>
-      <Text color="gray">{'░'.repeat(empty)}</Text>
-      <Text color="gray"> {(normalized * 100).toFixed(0)}%</Text>
+      <Text color={oledPalette.success}>{'█'.repeat(filled)}</Text>
+      <Text color={oledPalette.idle}>{'░'.repeat(empty)}</Text>
+      <Text color={oledPalette.muted}> {(normalized * 100).toFixed(0)}%</Text>
     </Text>
   )
 }

@@ -655,6 +655,41 @@
   align-items: start;
 }
 
+.theme-page__motion-choice-grid {
+  display: grid;
+  gap: var(--cds-spacing-04);
+}
+
+.theme-page__motion-choice-tile {
+  min-inline-size: 0;
+}
+
+.theme-page__motion-choice-copy {
+  display: grid;
+  gap: var(--cds-spacing-03);
+}
+
+.theme-page__motion-choice-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-03);
+}
+
+.theme-page__motion-choice-chip {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  padding: 0 0.625rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--cds-text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .theme-page__motion-actions {
   display: flex;
   flex-wrap: wrap;

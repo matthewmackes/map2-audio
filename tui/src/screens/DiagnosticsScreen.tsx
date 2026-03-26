@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function DiagnosticsScreen() {
   const load = useCallback(async () => {
@@ -23,7 +24,7 @@ export function DiagnosticsScreen() {
     return <Spinner label="Loading diagnostics" />
   }
   if (error) {
-    return <BoxPanel title="Diagnostics"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Diagnostics"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null
@@ -50,7 +51,7 @@ export function DiagnosticsScreen() {
         <DataTable columns={['Service', 'State', 'Health']} rows={serviceRows} />
       </BoxPanel>
       <BoxPanel title="Access Logs">
-        {logRows.length ? <DataTable columns={['Time', 'Method', 'Path']} rows={logRows} /> : <Text color="gray">No recent access logs.</Text>}
+        {logRows.length ? <DataTable columns={['Time', 'Method', 'Path']} rows={logRows} /> : <Text color={oledPalette.muted}>No recent access logs.</Text>}
       </BoxPanel>
     </Box>
   )

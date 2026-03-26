@@ -17,10 +17,15 @@ import {
   type CarbonIconType,
 } from '@carbon/icons-react'
 import {
+  Button,
   ClickableTile,
+  ComposedModal,
   DataTable,
   InlineLoading,
   InlineNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   SkeletonPlaceholder,
   SkeletonText,
@@ -58,6 +63,11 @@ import {
   useMidiClusterEndpoints,
   useMidiClusterNodes,
 } from '../../hooks/useMidiCluster'
+import {
+  useNodeOperations,
+  type HybridApplicationStatusInfo,
+  type HybridApplicationUpdateStepInfo,
+} from '../../hooks/useNodeOperations'
 import { usePlatformShellData } from '../../hooks/usePlatformShellData'
 import type {
   PlatformAlert,
@@ -107,6 +117,69 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
 }
 
+const FALLBACK_UPDATE_PROGRESS_STEPS: HybridApplicationUpdateStepInfo[] = [
+  {
+    key: 'detect-mode',
+    question: 'Which update path should MAP2 use?',
+    detail: 'Determine whether this node should update through Git or RPM.',
+    status: 'pending',
+  },
+  {
+    key: 'identify-current-build',
+    question: 'What build is currently installed?',
+    detail: 'Read the currently installed commit or package version before changing anything.',
+    status: 'pending',
+  },
+  {
+    key: 'validate-source',
+    question: 'Is the update source healthy?',
+    detail: 'Validate that the selected repository or package source is usable.',
+    status: 'pending',
+  },
+  {
+    key: 'prepare-local-state',
+    question: 'Can the node prepare its local state safely?',
+    detail: 'Prepare the working tree or mark why that step is not needed for this mode.',
+    status: 'pending',
+  },
+  {
+    key: 'fetch-update-payload',
+    question: 'Can MAP2 fetch the requested update payload?',
+    detail: 'Reach the remote branch or package metadata needed for the update.',
+    status: 'pending',
+  },
+  {
+    key: 'apply-target-version',
+    question: 'Can the target application version be applied?',
+    detail: 'Checkout the requested branch or install the requested package.',
+    status: 'pending',
+  },
+  {
+    key: 'refresh-runtime-dependencies',
+    question: 'Can runtime dependencies be refreshed?',
+    detail: 'Refresh Python or packaged runtime dependencies required by the updated build.',
+    status: 'pending',
+  },
+  {
+    key: 'refresh-frontend-dependencies',
+    question: 'Can frontend dependencies be refreshed?',
+    detail: 'Refresh frontend dependencies when the update mode requires a rebuild.',
+    status: 'pending',
+  },
+  {
+    key: 'rebuild-frontend-assets',
+    question: 'Can the frontend bundle be rebuilt cleanly?',
+    detail: 'Rebuild the production frontend assets if they are not shipped prebuilt.',
+    status: 'pending',
+  },
+  {
+    key: 'validate-and-finalize',
+    question: 'Does validation confirm the update is safe to keep?',
+    detail: 'Run post-update validation and publish the final result back to the operator.',
+    status: 'pending',
+  },
+]
+
 type PinnableNavTarget = PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,6 +221,45 @@ function renderCellValue(headerKey: string, value: PlatformTableValue) {
     return <span className={`platform-shell__table-alert${text === 'Clear' ? ' is-clear' : ''}`}>{text}</span>
   }
   return text
+}
+
+function updateProgressTagType(status: string): 'green' | 'warm-gray' | 'red' | 'cool-gray' | 'blue' {
+  switch (status) {
+    case 'completed':
+      return 'green'
+    case 'running':
+      return 'blue'
+    case 'failed':
+      return 'red'
+    case 'skipped':
+      return 'warm-gray'
+    default:
+      return 'cool-gray'
+  }
+}
+
+function updateProgressLabel(status: string): string {
+  switch (status) {
+    case 'running':
+      return 'In Progress'
+    case 'completed':
+      return 'Completed'
+    case 'failed':
+      return 'Failed'
+    case 'skipped':
+      return 'Skipped'
+    case 'idle':
+      return 'Idle'
+    default:
+      return humanizeStatus(status)
+  }
+}
+
+function formatIsoTimestamp(value?: string | null): string | null {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString()
 }
 
 function SidebarNavigation({
@@ -479,6 +591,362 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
   )
 }
 
+// ── Single-Node Operations Panel ─────────────────────────────────────────────
+
+function UpdateProgressModal({
+  open,
+  status,
+  hybridVersion,
+  launchError,
+  onClose,
+}: {
+  open: boolean
+  status: HybridApplicationStatusInfo | undefined
+  hybridVersion: { version?: string; mode?: string; branch?: string; updated_at?: string } | undefined
+  launchError: string | null
+  onClose: () => void
+}) {
+  const steps = status?.steps?.length ? status.steps : FALLBACK_UPDATE_PROGRESS_STEPS
+  const activeStepIndex = status?.current_step_index ?? steps.findIndex((step) => step.status === 'running')
+  const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : null
+  const versionLabel = status?.current_version ?? hybridVersion?.version ?? 'pending'
+  const modeLabel = status?.mode ?? hybridVersion?.mode ?? 'unknown'
+  const branchLabel = hybridVersion?.branch
+  const startedAt = formatIsoTimestamp(status?.started_at)
+  const completedAt = formatIsoTimestamp(status?.completed_at)
+  const progressError = launchError ?? status?.error ?? null
+
+  return (
+    <ComposedModal open={open} size="lg" onClose={onClose}>
+      <ModalHeader
+        title="Application Update Progress"
+        label="Single Node"
+        closeModal={onClose}
+      />
+      <ModalBody hasScrollingContent>
+        <div className="platform-shell__update-progress-modal">
+          <div className="platform-shell__update-progress-summary">
+            <div className="platform-shell__update-progress-tags">
+              <Tag type={updateProgressTagType(status?.status ?? 'idle')}>
+                {updateProgressLabel(status?.status ?? 'idle')}
+              </Tag>
+              <Tag type="cool-gray">{modeLabel.toUpperCase()}</Tag>
+              {branchLabel && <Tag type="cool-gray">{branchLabel}</Tag>}
+            </div>
+            <p className="platform-shell__update-progress-copy">
+              The backend is answering 10 update questions one at a time so you can verify exactly what happens after clicking update.
+            </p>
+            <div className="platform-shell__update-progress-meta">
+              <span>Current build: {versionLabel}</span>
+              {startedAt && <span>Started: {startedAt}</span>}
+              {completedAt && <span>Finished: {completedAt}</span>}
+            </div>
+          </div>
+
+          {activeStep ? (
+            <div className="platform-shell__update-progress-current">
+              <span className="platform-shell__update-progress-current-eyebrow">
+                Question {activeStepIndex + 1} of {steps.length}
+              </span>
+              <h4>{activeStep.question}</h4>
+              <p>{activeStep.result ?? status?.message ?? activeStep.detail}</p>
+            </div>
+          ) : (
+            <div className="platform-shell__update-progress-current">
+              <span className="platform-shell__update-progress-current-eyebrow">
+                {status?.status === 'completed' ? 'All 10 questions answered' : 'Waiting for update activity'}
+              </span>
+              <h4>{status?.status === 'failed' ? 'Update failed before completing the workflow' : 'Update workflow ready'}</h4>
+              <p>{status?.message ?? 'Open the update flow to inspect each question as it is answered.'}</p>
+            </div>
+          )}
+
+          {progressError && (
+            <InlineNotification
+              kind="error"
+              lowContrast
+              hideCloseButton
+              title="Update error"
+              subtitle={progressError}
+            />
+          )}
+
+          <ol className="platform-shell__update-progress-steps">
+            {steps.map((step, index) => {
+              const isRunning = step.status === 'running'
+              const isCompleted = step.status === 'completed'
+              const isFailed = step.status === 'failed'
+              const className = [
+                'platform-shell__update-progress-step',
+                isRunning ? 'is-running' : '',
+                isCompleted ? 'is-completed' : '',
+                isFailed ? 'is-failed' : '',
+              ].filter(Boolean).join(' ')
+
+              return (
+                <li key={step.key} className={className}>
+                  <div className="platform-shell__update-progress-step-index">{index + 1}</div>
+                  <div className="platform-shell__update-progress-step-copy">
+                    <div className="platform-shell__update-progress-step-title-row">
+                      <strong>{step.question}</strong>
+                      <Tag type={updateProgressTagType(step.status)}>{updateProgressLabel(step.status)}</Tag>
+                    </div>
+                    <p>{step.result ?? step.detail}</p>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button kind="secondary" onClick={onClose}>
+          Close
+        </Button>
+      </ModalFooter>
+    </ComposedModal>
+  )
+}
+
+function SingleNodeOperations() {
+  const ops = useNodeOperations()
+  const [updateModalOpen, setUpdateModalOpen] = useState(false)
+  const [updateLaunchError, setUpdateLaunchError] = useState<string | null>(null)
+
+  const updateInProgress = Boolean(ops.applicationStatus?.running)
+  const updateActionPending = ops.isUpdating && !updateInProgress
+  const updateLabel = updateInProgress ? 'View Update Progress' : updateActionPending ? 'Updating…' : 'Check for Updates'
+  const backupLabel = ops.isBackingUp ? 'Creating…' : 'Create Backup'
+  const updateBranch = ops.hybridVersion?.branch ?? 'master'
+
+  useEffect(() => {
+    if (ops.applicationStatus?.running) {
+      setUpdateModalOpen(true)
+      setUpdateLaunchError(null)
+    }
+  }, [ops.applicationStatus?.running])
+
+  const handleCheckForUpdates = () => {
+    setUpdateModalOpen(true)
+    setUpdateLaunchError(null)
+    if (updateInProgress) return
+    void ops.triggerUpdate({ branch: updateBranch }).catch((error: unknown) => {
+      setUpdateLaunchError(error instanceof Error ? error.message : 'Failed to start update')
+    })
+  }
+
+  return (
+    <section className="platform-shell__node-operations" aria-label="Node operations">
+      <div className="platform-shell__detail-head">
+        <div>
+          <h3>Node Operations</h3>
+          <p>Version, deployment, update, backup, and remediation actions for this node.</p>
+        </div>
+        <div className="platform-shell__nodes-tags">
+          {ops.version && (
+            <Tag type={ops.version.dirty ? 'warm-gray' : 'green'}>
+              v{ops.version.version?.slice(0, 8)}{ops.version.dirty ? '*' : ''}
+            </Tag>
+          )}
+          {ops.deploymentMode && (
+            <Tag type="cool-gray">{ops.deploymentMode.mode}</Tag>
+          )}
+          {(updateInProgress || updateActionPending) && (
+            <Tag type="blue">Update in progress</Tag>
+          )}
+        </div>
+      </div>
+
+      <div className="platform-shell__node-ops-grid">
+        {/* Update actions */}
+        <div className="platform-shell__node-ops-group">
+          <h4>Updates</h4>
+          <div className="platform-shell__node-ops-actions">
+            <Button
+              kind="primary"
+              size="sm"
+              disabled={updateActionPending}
+              onClick={handleCheckForUpdates}
+            >
+              {updateActionPending && <InlineLoading description="" />}
+              {updateLabel}
+            </Button>
+            {ops.updateStatus?.status === 'in_progress' && (
+              <Button
+                kind="danger--ghost"
+                size="sm"
+                onClick={() => ops.abortUpdate()}
+              >
+                Abort Update
+              </Button>
+            )}
+          </div>
+          {ops.hybridVersion && (
+            <p className="platform-shell__node-ops-detail">
+              Mode: {ops.hybridVersion.mode} · {ops.hybridVersion.branch ?? ops.hybridVersion.version}
+              {ops.hybridVersion.updated_at && ` · Updated ${new Date(ops.hybridVersion.updated_at).toLocaleDateString()}`}
+            </p>
+          )}
+          {ops.applicationStatus && (
+            <p className="platform-shell__node-ops-detail">
+              {ops.applicationStatus.running && ops.applicationStatus.current_step_index !== null && ops.applicationStatus.current_step_index !== undefined
+                ? `Question ${ops.applicationStatus.current_step_index + 1}/10 · ${ops.applicationStatus.message}`
+                : ops.applicationStatus.message}
+            </p>
+          )}
+        </div>
+
+        {/* Backup actions */}
+        <div className="platform-shell__node-ops-group">
+          <h4>Backup &amp; Restore</h4>
+          <div className="platform-shell__node-ops-actions">
+            <Button
+              kind="secondary"
+              size="sm"
+              disabled={ops.isBackingUp}
+              onClick={() => ops.triggerBackup()}
+            >
+              {ops.isBackingUp && <InlineLoading description="" />}
+              {backupLabel}
+            </Button>
+            {ops.backups.length > 0 && (
+              <Button
+                kind="ghost"
+                size="sm"
+                disabled={ops.isRestoring}
+                onClick={() => ops.restoreBackup(ops.backups[0].backup_id)}
+              >
+                {ops.isRestoring ? 'Restoring…' : `Restore Latest (${new Date(ops.backups[0].created_at).toLocaleDateString()})`}
+              </Button>
+            )}
+          </div>
+          <p className="platform-shell__node-ops-detail">
+            {ops.backupStatus?.total_backups ?? 0} snapshots
+            {ops.backupStatus?.latest_backup_date && ` · Latest: ${new Date(ops.backupStatus.latest_backup_date).toLocaleDateString()}`}
+          </p>
+        </div>
+
+        {/* Deployment mode actions */}
+        <div className="platform-shell__node-ops-group">
+          <h4>Deployment Mode</h4>
+          <div className="platform-shell__node-ops-actions">
+            {['ALL-IN-ONE', 'AUDIO-NODE', 'CONTROL-NODE', 'FRONTEND-ONLY'].map((mode) => (
+              <Button
+                key={mode}
+                kind={ops.deploymentMode?.mode === mode ? 'primary' : 'ghost'}
+                size="sm"
+                disabled={ops.isSwitchingMode || ops.deploymentMode?.mode === mode}
+                onClick={() => ops.switchDeploymentMode(mode)}
+              >
+                {mode.replace(/-/g, ' ')}
+              </Button>
+            ))}
+          </div>
+          {ops.deploymentStatus?.services && (
+            <p className="platform-shell__node-ops-detail">
+              {Object.entries(ops.deploymentStatus.services)
+                .filter(([, v]) => v.status === 'running')
+                .map(([k]) => k)
+                .join(', ') || 'No services running'}
+            </p>
+          )}
+        </div>
+
+        {/* Health & Remediation */}
+        <div className="platform-shell__node-ops-group">
+          <h4>Health &amp; Remediation</h4>
+          <div className="platform-shell__node-ops-actions">
+            <Button
+              kind="ghost"
+              size="sm"
+              disabled={ops.isRemediating}
+              onClick={() => ops.triggerRemediation('RESTART_BACKEND')}
+            >
+              Restart Backend
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              disabled={ops.isRemediating}
+              onClick={() => ops.triggerRemediation('RESTART_WEB_UI')}
+            >
+              Restart Web UI
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              disabled={ops.isRemediating}
+              onClick={() => ops.triggerRemediation('CHECK_NETWORK')}
+            >
+              Check Network
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              disabled={ops.isRemediating}
+              onClick={() => ops.triggerRemediation('REDISCOVER_PEERS')}
+            >
+              Rediscover Peers
+            </Button>
+          </div>
+          {ops.manifestDrift?.drifted && (
+            <>
+              <InlineNotification
+                kind="warning"
+                lowContrast
+                hideCloseButton
+                title="Manifest drift detected"
+                subtitle={`${ops.manifestDrift.nodes?.length ?? 0} node(s) have drifted packages.`}
+              />
+              <div className="platform-shell__node-ops-actions" style={{ marginTop: '0.5rem' }}>
+                <Button
+                  kind="tertiary"
+                  size="sm"
+                  onClick={() => {
+                    const localNodeId = ops.health ? 'local' : ''
+                    ops.captureManifest(localNodeId)
+                  }}
+                >
+                  Capture Manifest
+                </Button>
+                {ops.manifestDrift.nodes?.map((node) => (
+                  <Button
+                    key={node.node_id}
+                    kind="danger--tertiary"
+                    size="sm"
+                    onClick={() => ops.enforceManifest(node.node_id)}
+                  >
+                    Enforce on {node.hostname}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {ops.errors.length > 0 && ops.errors.map((err, i) => (
+        <InlineNotification
+          key={i}
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Operation error"
+          subtitle={err}
+        />
+      ))}
+
+      <UpdateProgressModal
+        open={updateModalOpen}
+        status={ops.applicationStatus}
+        hybridVersion={ops.hybridVersion}
+        launchError={updateLaunchError}
+        onClose={() => setUpdateModalOpen(false)}
+      />
+    </section>
+  )
+}
+
 // ── Layer Workspace ──────────────────────────────────────────────────────────
 
 function LayerWorkspace({ layer, alerts, onDismissAlert }: {
@@ -490,6 +958,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   const [selectedMidiRowId, setSelectedMidiRowId] = useState<string | null>(null)
   const isClusterLayer = layer.id === 'cluster-dashboard'
   const isMidiLayer = layer.id === 'midi-cluster'
+  const isSingleNodeLayer = layer.id === 'single-node'
 
   useEffect(() => { setSelectedMidiRowId(null) }, [layer.id])
   useEffect(() => {
@@ -521,6 +990,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
           <LayerSummaryTiles items={layer.gridItems} />
           <LayerDataTable layer={layer} onRowSelect={isMidiLayer ? setSelectedMidiRowId : undefined} selectedRowId={selectedMidiRowId} />
           {isMidiLayer && <MidiClusterNodeDetail selectedEndpointId={selectedMidiRowId} />}
+          {isSingleNodeLayer && <SingleNodeOperations />}
         </>
       )}
     </motion.section>

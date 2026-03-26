@@ -51,6 +51,7 @@ import { IconPickerModal } from '../components/pluginAppearance/IconPickerModal'
 import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppearanceIcon'
 import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
 import { usePluginAppearances } from '../hooks/usePluginAppearances'
+import type { PageTransitionPreset } from '../stores/effectsSettingsStore'
 import './ThemePage.css'
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
@@ -83,6 +84,20 @@ function baseShellDescription(base: BaseShell): string {
 
 function usesCssVariables(theme: Theme): boolean {
   return Object.values(theme.colors).some((value) => typeof value === 'string' && value.includes('var('))
+}
+
+function pageTransitionPresetLabel(preset: PageTransitionPreset): string {
+  switch (preset) {
+    case 'pager-slide':
+      return 'Pager slide'
+    case 'hyperactive-block':
+    default:
+      return 'Hyperactive block'
+  }
+}
+
+function isPageTransitionPreset(value: string): value is PageTransitionPreset {
+  return value === 'hyperactive-block' || value === 'pager-slide'
 }
 
 function resolvePreviewTheme(themeId: string, theme: Theme): Theme {
@@ -230,6 +245,23 @@ const SUGGESTED_DIRECTIONS: Array<{
   },
 ]
 
+const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
+  id: PageTransitionPreset
+  name: string
+  description: string
+}> = [
+  {
+    id: 'hyperactive-block',
+    name: 'Hyperactive Block Reveal',
+    description: 'Blueprint-style blocks sweep across supported shell routes for a harder-edged transition cue.',
+  },
+  {
+    id: 'pager-slide',
+    name: 'Pager Slide',
+    description: 'Bring the next page in with a horizontal pager-style glide inspired by card-deck navigation.',
+  },
+]
+
 type ThemeWorkspaceModal =
   | 'library'
   | 'directions'
@@ -324,9 +356,11 @@ export function ThemePage() {
   } = useSpecialSettings()
   const {
     reducedEffectsEnabled,
+    pageTransitionPreset,
     prefersReducedMotion,
     shouldReduceEffects,
     setReducedEffectsEnabled,
+    setPageTransitionPreset,
   } = useReducedEffectsPreference()
   const [themeLibraryVersion, setThemeLibraryVersion] = useState(0)
   const [draftBase, setDraftBase] = useState<BaseShell>(() => (theme.carbonTheme ?? 'g100') as BaseShell)
@@ -565,7 +599,7 @@ export function ThemePage() {
           : activeModal === 'typography'
             ? 'Platform GUI font'
             : activeModal === 'motion'
-              ? 'Reduce Effects Mode'
+              ? 'Motion & effects'
               : activeModal === 'category'
                 ? 'Category color theming'
                 : ''
@@ -995,14 +1029,19 @@ export function ThemePage() {
         <div className="theme-page__section-head">
           <div>
             <p className="theme-page__card-eyebrow">Motion</p>
-            <h2 className="theme-page__section-title">Reduce Effects Mode</h2>
+            <h2 className="theme-page__section-title">Motion & effects</h2>
             <p className="theme-page__section-copy">
-              Save a lighter transition profile for Home, Audio Artifacts, JUCE Grid, and MIDI Hub while keeping the shell responsive on slower hosts.
+              Tune the routed shell&apos;s transition style, reduced-effects preference, and Theme-linked special settings in one place.
             </p>
           </div>
-          <Tag type={reducedEffectsEnabled ? 'green' : 'warm-gray'} size="sm">
-            {reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
-          </Tag>
+          <div className="theme-page__section-tags">
+            <Tag type="blue" size="sm">
+              {pageTransitionPresetLabel(pageTransitionPreset)}
+            </Tag>
+            <Tag type={reducedEffectsEnabled ? 'green' : 'warm-gray'} size="sm">
+              {reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
+            </Tag>
+          </div>
         </div>
         <div className="theme-page__motion-strip">
           <div className="theme-page__motion-card">
@@ -1021,6 +1060,45 @@ export function ThemePage() {
               toggled={reducedEffectsEnabled}
               onToggle={setReducedEffectsEnabled}
             />
+          </div>
+          <div className="theme-page__motion-card">
+            <div className="theme-page__motion-head">
+              <PaintBrush size={20} aria-hidden />
+              <div>
+                <strong>Page transition style</strong>
+                <p>Choose how supported shell routes animate. Reduced motion still forces the minimal fade.</p>
+              </div>
+            </div>
+            <TileGroup
+              className="theme-page__motion-choice-grid"
+              legend="Page transition style"
+              name="theme-page-transition-style"
+              valueSelected={pageTransitionPreset}
+              onChange={(value) => {
+                if (typeof value === 'string' && isPageTransitionPreset(value)) {
+                  setPageTransitionPreset(value)
+                }
+              }}
+            >
+              {PAGE_TRANSITION_PRESET_OPTIONS.map((preset) => (
+                <RadioTile
+                  key={preset.id}
+                  id={`theme-page-transition-${preset.id}`}
+                  value={preset.id}
+                  className="theme-page__motion-choice-tile"
+                >
+                  <div className="theme-page__motion-choice-copy">
+                    <div className="theme-page__motion-choice-head">
+                      <strong>{preset.name}</strong>
+                      <span className="theme-page__motion-choice-chip">
+                        {preset.id === pageTransitionPreset ? 'Selected' : 'Available'}
+                      </span>
+                    </div>
+                    <p>{preset.description}</p>
+                  </div>
+                </RadioTile>
+              ))}
+            </TileGroup>
           </div>
           <div className="theme-page__motion-card">
             <div className="theme-page__motion-head">
@@ -1516,6 +1594,7 @@ export function ThemePage() {
             <Tag type="blue" size="sm">{theme.name}</Tag>
             <Tag type="cool-gray" size="sm">{carbonThemeLabel(theme.carbonTheme)}</Tag>
             <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
+            <Tag type="purple" size="sm">{pageTransitionPresetLabel(pageTransitionPreset)}</Tag>
             <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
               {shouldReduceEffects ? 'Reduced effects' : 'Full effects'}
             </Tag>
@@ -1582,9 +1661,9 @@ export function ThemePage() {
           onOpen={() => setActiveModal('typography')}
         />
         <ThemeWorkspaceLauncher
-          title="Reduce Effects Mode"
-          description="Adjust motion and special settings in a focused accessibility modal."
-          tag={reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
+          title="Motion & effects"
+          description="Adjust transition style, reduced-effects behavior, and special settings in one focused modal."
+          tag={pageTransitionPresetLabel(pageTransitionPreset)}
           buttonLabel="Open motion modal"
           onOpen={() => setActiveModal('motion')}
         />

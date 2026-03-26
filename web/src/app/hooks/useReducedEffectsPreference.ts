@@ -12,7 +12,9 @@ function getPrefersReducedMotion(): boolean {
 
 export function useReducedEffectsPreference() {
   const reducedEffectsEnabled = useEffectsSettingsStore((state) => state.reducedEffectsEnabled)
+  const pageTransitionPreset = useEffectsSettingsStore((state) => state.pageTransitionPreset)
   const setReducedEffectsEnabled = useEffectsSettingsStore((state) => state.setReducedEffectsEnabled)
+  const setPageTransitionPreset = useEffectsSettingsStore((state) => state.setPageTransitionPreset)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(getPrefersReducedMotion)
 
   useEffect(() => {
@@ -38,8 +40,11 @@ export function useReducedEffectsPreference() {
 
   return {
     reducedEffectsEnabled,
+    pageTransitionPreset,
     prefersReducedMotion,
     shouldReduceEffects: reducedEffectsEnabled || prefersReducedMotion,
     setReducedEffectsEnabled,
+    setPageTransitionPreset,
+    resolvedPageTransitionMode: reducedEffectsEnabled || prefersReducedMotion ? 'fade' : pageTransitionPreset,
   }
 }

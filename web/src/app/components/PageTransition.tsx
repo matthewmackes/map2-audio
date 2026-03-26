@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigationType } from 'react-router-dom'
 
 import { MapClusterFabricIcon } from './icons/map'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
@@ -10,7 +10,8 @@ type TransitionScope = {
   id: 'home' | 'audio-artifacts' | 'juce-grid' | 'midi-hub'
 }
 
-type TransitionMode = 'block' | 'fade'
+type TransitionMode = 'block' | 'fade' | 'pager'
+type TransitionDirection = 'forward' | 'backward'
 
 interface PageTransitionProps {
   children: ReactNode
@@ -20,10 +21,12 @@ interface TransitionSnapshot {
   key: number
   mode: TransitionMode
   scope: TransitionScope
+  direction: TransitionDirection
 }
 
 const BLOCK_REVEAL_DURATION_MS = 880
 const FADE_DURATION_MS = 220
+const PAGER_SLIDE_DURATION_MS = 520
 const TRANSITION_BLOCK_COLUMNS = 8
 const TRANSITION_BLOCK_ROWS = 5
 const TRANSITION_BLOCK_MOBILE_COLUMNS = 5
@@ -64,13 +67,14 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
 
 export function PageTransition({ children }: PageTransitionProps) {
   const location = useLocation()
-  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const navigationType = useNavigationType()
+  const { resolvedPageTransitionMode } = useReducedEffectsPreference()
   const previousPathnameRef = useRef(location.pathname)
   const timeoutRef = useRef<number | null>(null)
   const [transition, setTransition] = useState<TransitionSnapshot | null>(null)
   const currentScope = useMemo(() => getLandingTransitionScope(location.pathname), [location.pathname])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previousPathname = previousPathnameRef.current
 
     if (previousPathname === location.pathname) {
@@ -89,10 +93,18 @@ export function PageTransition({ children }: PageTransitionProps) {
       timeoutRef.current = null
     }
 
+    const mode: TransitionMode =
+      resolvedPageTransitionMode === 'fade'
+        ? 'fade'
+        : resolvedPageTransitionMode === 'pager-slide'
+          ? 'pager'
+          : 'block'
+
     const nextTransition: TransitionSnapshot = {
       key: Date.now(),
-      mode: shouldReduceEffects ? 'fade' : 'block',
+      mode,
       scope: currentScope ?? previousScope ?? FALLBACK_SCOPE,
+      direction: navigationType === 'POP' ? 'backward' : 'forward',
     }
 
     setTransition(nextTransition)
@@ -100,10 +112,14 @@ export function PageTransition({ children }: PageTransitionProps) {
     timeoutRef.current = window.setTimeout(() => {
       setTransition(null)
       timeoutRef.current = null
-    }, nextTransition.mode === 'fade' ? FADE_DURATION_MS : BLOCK_REVEAL_DURATION_MS)
+    }, nextTransition.mode === 'fade'
+      ? FADE_DURATION_MS
+      : nextTransition.mode === 'pager'
+        ? PAGER_SLIDE_DURATION_MS
+        : BLOCK_REVEAL_DURATION_MS)
 
     return undefined
-  }, [currentScope, location.pathname, shouldReduceEffects])
+  }, [currentScope, location.pathname, navigationType, resolvedPageTransitionMode])
 
   useEffect(() => () => {
     if (timeoutRef.current !== null) {
@@ -112,12 +128,16 @@ export function PageTransition({ children }: PageTransitionProps) {
   }, [])
 
   return (
-    <div className="page-transition-scope">
-      {children}
+    <div className={`page-transition-scope${transition?.mode === 'pager' ? ' page-transition-scope--pager-active' : ''}`}>
+      <div
+        className={`page-transition-scope__content${transition?.mode === 'pager' ? ` page-transition-scope__content--pager page-transition-scope__content--${transition.direction}` : ''}`}
+      >
+        {children}
+      </div>
       {transition ? (
         <div
           key={transition.key}
-          className={`landing-route-transition landing-route-transition--${transition.mode} landing-route-transition--${transition.scope.id}`}
+          className={`landing-route-transition landing-route-transition--${transition.mode} landing-route-transition--${transition.scope.id} landing-route-transition--${transition.direction}`}
           data-testid="landing-route-transition"
           aria-hidden="true"
         >
@@ -138,8 +158,10 @@ export function PageTransition({ children }: PageTransitionProps) {
                 </span>
               ))}
             </div>
-          ) : (
+          ) : transition.mode === 'fade' ? (
             <span className="landing-route-transition__fade-panel" />
+          ) : (
+            <span className={`landing-route-transition__pager-band landing-route-transition__pager-band--${transition.direction}`} />
           )}
         </div>
       ) : null}

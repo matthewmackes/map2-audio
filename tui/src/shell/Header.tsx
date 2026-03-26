@@ -1,5 +1,6 @@
 import React from 'react'
 import { Box, Text } from 'ink'
+import { oledPalette } from '../palette'
 
 export function Header({
   title,
@@ -10,8 +11,8 @@ export function Header({
 }) {
   return (
     <Box justifyContent="space-between">
-      <Text color="cyan">{title}</Text>
-      <Text color="gray">{subtitle}</Text>
+      <Text color={oledPalette.accent}>{title}</Text>
+      <Text color={oledPalette.muted}>{subtitle}</Text>
     </Box>
   )
 }

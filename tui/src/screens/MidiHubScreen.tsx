@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function MidiHubScreen() {
   const load = useCallback(async () => {
@@ -23,7 +24,7 @@ export function MidiHubScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="MIDI Hub"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="MIDI Hub"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {

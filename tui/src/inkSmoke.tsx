@@ -40,8 +40,8 @@ async function main(): Promise<void> {
   const app = render(<App apiBase="http://localhost:8080/api" />)
   await new Promise((resolve) => setTimeout(resolve, 1200))
   const frame = app.lastFrame() ?? ''
-  assert.match(frame, /MAP2 \/ Home/)
-  assert.match(frame, /System Summary|Loading home screen/)
+  assert.match(frame, /MAP2 \/ Signal Chains Live/)
+  assert.match(frame, /Signal Chains Live|Loading live chain/)
   app.unmount()
 
   await assertScreenFrame('Metering', <MeteringScreen />, /Input \/ Output Meters|Loading meters/)

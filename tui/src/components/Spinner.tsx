@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Text } from 'ink'
+import { oledPalette } from '../palette'
 
 const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
@@ -14,5 +15,5 @@ export function Spinner({ label = 'Loading' }: { label?: string }) {
     return () => clearInterval(timer)
   }, [])
 
-  return <Text color="cyan">{FRAMES[index]} {label}</Text>
+  return <Text color={oledPalette.accent}>{FRAMES[index]} {label}</Text>
 }

@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function DevicesScreen() {
   const load = useCallback(async () => {
@@ -19,7 +20,7 @@ export function DevicesScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="Devices"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Devices"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {
@@ -37,7 +38,7 @@ export function DevicesScreen() {
         <Text>Hotone/Jogg detected: {data.usbDevices.hotone_detected ? 'Yes' : 'No'}</Text>
         <Text>Primary device: {data.usbDevices.primary_device?.name ?? 'n/a'} ({data.usbDevices.primary_device?.alsa_device ?? 'n/a'})</Text>
         {data.usbDevices.recommendations.map((message) => (
-          <Text key={message} color="yellow">{message}</Text>
+          <Text key={message} color={oledPalette.warning}>{message}</Text>
         ))}
       </BoxPanel>
       <BoxPanel title="MIDI Endpoints">

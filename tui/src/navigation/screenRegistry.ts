@@ -1,7 +1,7 @@
 import type { ScreenDefinition, ScreenId } from './types'
 
 export const screenRegistry: ScreenDefinition[] = [
-  { id: 'home', title: 'Home', shortTitle: 'Home', description: 'System summary and quick navigation', keyHint: '1' },
+  { id: 'home', title: 'Signal Chains Live', shortTitle: 'Live', description: '8-slot live bypass, meters, and plugin order', keyHint: '1' },
   { id: 'metering', title: 'Metering', shortTitle: 'Meters', description: 'Live input and output levels', keyHint: '2' },
   { id: 'cpu', title: 'CPU', shortTitle: 'CPU', description: 'Performance counters and latency', keyHint: '3' },
   { id: 'audio-grid', title: 'Audio Grid', shortTitle: 'Grid', description: 'Signal-chain overview and plugin flow', keyHint: '4' },

@@ -1,12 +1,13 @@
 import React from 'react'
 import { Box, Text } from 'ink'
+import { oledPalette } from '../palette'
 
 export function ConfirmDialog({ title, body }: { title: string; body: string }) {
   return (
-    <Box flexDirection="column" borderStyle="double" borderColor="yellow" paddingX={1}>
-      <Text color="yellow">{title}</Text>
+    <Box flexDirection="column" borderStyle="double" borderColor={oledPalette.warning} paddingX={1}>
+      <Text color={oledPalette.warning}>{title}</Text>
       <Text>{body}</Text>
-      <Text color="gray">Press y to confirm or n to cancel.</Text>
+      <Text color={oledPalette.muted}>Press y to confirm or n to cancel.</Text>
     </Box>
   )
 }

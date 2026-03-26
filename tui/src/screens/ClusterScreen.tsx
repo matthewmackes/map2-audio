@@ -4,6 +4,7 @@ import { healthApi, servicesApi } from '../../../web/src/map2/api'
 import { BoxPanel } from '../components/BoxPanel'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function ClusterScreen() {
   const load = useCallback(async () => {
@@ -17,7 +18,7 @@ export function ClusterScreen() {
     return <Spinner label="Loading cluster view" />
   }
   if (error) {
-    return <BoxPanel title="Cluster"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Cluster"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null

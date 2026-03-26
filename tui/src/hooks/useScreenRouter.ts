@@ -25,13 +25,13 @@ export function useScreenRouter(initialScreen: ScreenId = 'home'): ScreenRouterS
         if (!screenRegistryById[id]) {
           return
         }
-        setStack((previous) => [...previous, { id }])
+        setStack((previous) => (previous[previous.length - 1]?.id === id ? previous : [...previous, { id }]))
       },
       replace: (id: ScreenId) => {
         if (!screenRegistryById[id]) {
           return
         }
-        setStack((previous) => [...previous.slice(0, -1), { id }])
+        setStack((previous) => (previous[previous.length - 1]?.id === id ? previous : [...previous.slice(0, -1), { id }]))
       },
       pop: () => {
         setStack((previous) => (previous.length > 1 ? previous.slice(0, -1) : previous))

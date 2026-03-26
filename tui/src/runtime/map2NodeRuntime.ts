@@ -1,4 +1,4 @@
-import { configureMap2Runtime } from '../../../web/src/map2/runtime'
+import { configureMap2Runtime, type RuntimeWebSocketConstructor } from '../../../web/src/map2/runtime'
 
 function normalizeApiBase(rawValue?: string): string {
   const trimmed = rawValue?.trim()
@@ -24,19 +24,26 @@ function toWsBaseUrl(apiBase: string, explicitWsBase?: string): string {
     .replace(/^https:/, 'wss:')
 }
 
-export function configureNodeMap2Runtime(options?: { apiBase?: string; wsBaseUrl?: string }): {
+export function configureNodeMap2Runtime(options?: {
+  apiBase?: string
+  wsBaseUrl?: string
+  fetch?: typeof fetch
+  webSocket?: RuntimeWebSocketConstructor
+}): {
   apiBase: string
   wsBaseUrl: string
 } {
   const apiBase = normalizeApiBase(options?.apiBase ?? process.env.MAP2_API_URL)
   const wsBaseUrl = toWsBaseUrl(apiBase, options?.wsBaseUrl ?? process.env.MAP2_WS_URL)
   const runtimeUrl = new URL(apiBase)
+  const fetchImpl = options?.fetch ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined)
+  const webSocketImpl = options?.webSocket ?? (globalThis.WebSocket as RuntimeWebSocketConstructor | undefined)
 
   configureMap2Runtime({
     apiBase,
     wsBaseUrl,
-    fetch: globalThis.fetch.bind(globalThis),
-    webSocket: globalThis.WebSocket,
+    ...(fetchImpl ? { fetch: fetchImpl } : {}),
+    ...(webSocketImpl ? { webSocket: webSocketImpl } : {}),
     storage: null,
     dispatchEvent: () => {},
     envApiBase: apiBase,

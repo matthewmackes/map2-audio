@@ -60,7 +60,10 @@ describe('PageTransition', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     window.localStorage.clear()
-    useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
+    useEffectsSettingsStore.setState({
+      reducedEffectsEnabled: false,
+      pageTransitionPreset: 'hyperactive-block',
+    })
     setMatchMedia(false)
   })
 
@@ -96,6 +99,16 @@ describe('PageTransition', () => {
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--midi-hub')
   })
 
+  it('uses the pager slide preset when selected in effects settings', () => {
+    useEffectsSettingsStore.setState({ pageTransitionPreset: 'pager-slide' })
+    renderHarness('/')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
+
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--pager')
+    expect(document.querySelector('.page-transition-scope__content--pager')).not.toBeNull()
+  })
+
   it('skips the transition for unrelated route changes', () => {
     renderHarness('/about')
 
@@ -107,6 +120,18 @@ describe('PageTransition', () => {
 
   it('falls back to the minimal fade when system reduced motion is enabled', () => {
     setMatchMedia(true)
+    renderHarness('/')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
+
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--fade')
+  })
+
+  it('falls back to the minimal fade when saved reduced-effects mode is enabled', () => {
+    useEffectsSettingsStore.setState({
+      reducedEffectsEnabled: true,
+      pageTransitionPreset: 'pager-slide',
+    })
     renderHarness('/')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))

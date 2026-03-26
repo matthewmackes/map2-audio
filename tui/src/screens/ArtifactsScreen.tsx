@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function ArtifactsScreen() {
   const load = useCallback(async () => {
@@ -18,7 +19,7 @@ export function ArtifactsScreen() {
     return <Spinner label="Loading artifacts" />
   }
   if (error) {
-    return <BoxPanel title="Artifacts"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Artifacts"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null
@@ -38,10 +39,10 @@ export function ArtifactsScreen() {
   return (
     <Box flexDirection="column">
       <BoxPanel title="Snapshots">
-        {snapshotRows.length ? <DataTable columns={['ID', 'Name', 'Category']} rows={snapshotRows} /> : <Text color="gray">No snapshots available.</Text>}
+        {snapshotRows.length ? <DataTable columns={['ID', 'Name', 'Category']} rows={snapshotRows} /> : <Text color={oledPalette.muted}>No snapshots available.</Text>}
       </BoxPanel>
       <BoxPanel title="Backups">
-        {backupRows.length ? <DataTable columns={['ID', 'Created', 'Description']} rows={backupRows} /> : <Text color="gray">No backups recorded.</Text>}
+        {backupRows.length ? <DataTable columns={['ID', 'Created', 'Description']} rows={backupRows} /> : <Text color={oledPalette.muted}>No backups recorded.</Text>}
       </BoxPanel>
     </Box>
   )

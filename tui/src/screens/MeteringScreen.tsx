@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { Spinner } from '../components/Spinner'
 import { VuMeter } from '../components/VuMeter'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function MeteringScreen() {
   const load = useCallback(async () => {
@@ -19,7 +20,7 @@ export function MeteringScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="Metering"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Metering"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {
@@ -33,7 +34,7 @@ export function MeteringScreen() {
         <VuMeter label="In R" level={data.levels.input_right ?? 0} />
         <VuMeter label="Out L" level={data.levels.output_left ?? 0} />
         <VuMeter label="Out R" level={data.levels.output_right ?? 0} />
-        <Text color="gray">Audio ready: {(data.status as { audio_running?: boolean; running?: boolean }).audio_running ?? (data.status as { running?: boolean }).running ? 'Yes' : 'No'}</Text>
+        <Text color={oledPalette.muted}>Audio ready: {(data.status as { audio_running?: boolean; running?: boolean }).audio_running ?? (data.status as { running?: boolean }).running ? 'Yes' : 'No'}</Text>
       </BoxPanel>
     </Box>
   )

@@ -6,7 +6,128 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-25 - Closed T416 after promoting SynthForge to a standalone routed workspace
+Last updated: 2026-03-26 10:02 EDT - Closed T425 after shipping hybrid update progress tracking and the single-node progress modal
+
+ID: T426
+Status: [✓] Done
+Title: Add explicit exit controls and an OLED-friendly color palette to the Ink TUI
+Description:
+- Goal / acceptance criteria: Add a first-class operator exit path to `map2-tui` and refactor the Ink TUI color usage around one OLED-oriented palette rather than scattered named ANSI colors. The implementation must expose a discoverable quit interaction, update the shell/help/status affordances to document it, move the shared TUI color semantics onto centralized palette tokens, and refresh focused docs/tests/validation evidence.
+- Why it matters: `map2-tui` is now an operator-facing live surface. It still relies on implicit terminal exit behavior and inconsistent legacy color choices that are harder to read on high-contrast OLED displays.
+- Dependencies: T421; T422
+- Estimated effort: Medium
+- Required outputs: exit-key wiring, centralized OLED palette updates across the Ink TUI, focused docs/tests/validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 10:01 EDT - Codex
+- Completion notes:
+  - Added explicit exit controls in `tui/src/App.tsx`: `q` now exits from normal screen flow, `Ctrl+Q` exits globally, and the shell/status/help surfaces document the quit path so operators do not need to rely on implicit terminal interrupts.
+  - Introduced the shared OLED palette in `tui/src/palette.ts` and refactored the Ink shell, shared components, and operational screens to use centralized semantic colors instead of mixed raw ANSI names. The resulting theme uses bright cyan for navigation/focus, neon green for healthy/live state, amber for warnings, coral red for failures, and muted sage for secondary detail on black backgrounds.
+  - Updated operator-facing docs/help text in `tui/src/cli.ts`, `tui/src/cli.test.ts`, `tui/src/hooks/useStatusBar.ts`, `tui/src/shell/HelpOverlay.tsx`, and `tui/README.md` so exit controls and the new OLED-oriented presentation are discoverable from both `--help` and the interactive shell.
+  - Extended the palette pass across the live home screen and the rest of the Ink operational surfaces so errors, warnings, table headers, progress bars, VU meters, tabs, key hints, status dots, and panel borders now share one consistent color contract.
+  - Licensing review: touched TUI/doc/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing tui tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix tui run build` -> PASS; `npm --prefix tui test` -> PASS; `pytest -q tests/test_branding_shell.py` -> PASS; `./map2-tui --help` -> PASS; `./map2-tui --list-screens` -> PASS.
+
+ID: T425
+Status: [✓] Done
+Title: Add a step-by-step update progress modal for single-node platform updates
+Description:
+- Goal / acceptance criteria: When the operator clicks `Check for Updates` in the single-node platform workspace, open a modal immediately and show a concrete 10-step progress list tied to the real hybrid update workflow instead of leaving the action as an opaque background request. The progress surface must explain what the update path is doing, reflect success/failure, and preserve the existing update action entrypoint.
+- Why it matters: The current UI triggers the hybrid application updater but only surfaces coarse status from a different cluster update endpoint, so operators cannot verify what is happening after they click the update button.
+- Dependencies: Existing single-node operations UI (`web/src/app/components/Platform/PlatformModal.tsx`), node operations hook (`web/src/app/hooks/useNodeOperations.ts`), hybrid update routes/services (`app/routes/cluster_update_hybrid.py`, `app/services/cluster/hybrid_update_manager.py`)
+- Estimated effort: Medium
+- Required outputs: backend hybrid progress state/reporting, frontend modal wiring with a 10-step progress list, focused regression coverage, validation evidence, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 10:02 EDT - Codex
+- Completion notes:
+  - Verified the two concrete reasons the update button felt opaque/broken: the single-node UI was polling `/api/cluster/update/status` even though the button calls the hybrid application updater, and the hybrid updater itself was hardcoded to `/opt/map2-audio`, which is not a valid repo/RPM install on this host.
+  - Reworked the hybrid update backend in `app/services/cluster/hybrid_update_manager.py`, `app/services/cluster/map2_git_updater.py`, and `app/routes/cluster_update_hybrid.py` so the updater now derives its app root from the running codebase, reports a real 10-question progress model during Git/RPM updates, exposes that state from `/api/cluster/update/hybrid/application/status`, and returns a flat local version payload from `/api/cluster/update/hybrid/application/version` that matches the existing frontend hook contract.
+  - Updated `web/src/app/hooks/useNodeOperations.ts`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/components/Platform/PlatformModal.tsx`, and `web/src/app/pages/PlatformShellPage.css` so `Check for Updates` opens a modal immediately, lists the 10 progress questions/steps one at a time with backend-reported state, and reflects the hybrid updater’s live question/status in the single-node cards/table instead of leaving the page stuck on the unrelated orchestrator status.
+  - Added focused regression coverage in `web/src/app/components/Platform/PlatformModal.test.tsx` and `tests/test_hybrid_update_manager_progress.py` for both the click-to-modal path and the backend 10-step progress payload.
+  - Licensing review: touched backend/frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `python3 -m py_compile app/routes/cluster_update_hybrid.py app/services/cluster/hybrid_update_manager.py app/services/cluster/map2_git_updater.py tests/test_hybrid_update_manager_progress.py` -> PASS; `pytest tests/test_hybrid_update_manager_progress.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only.
+
+ID: T424
+Status: [✓] Done
+Title: Harden page-transition preset persistence and fallback semantics
+Description:
+- Goal / acceptance criteria: Ensure the new Theme page-transition preset remains safe when older or malformed local-storage data is present, and add focused regression coverage proving reduced-effects mode still overrides the selected preset to the minimal fade path.
+- Why it matters: The new motion preference is persisted locally, so the shell should not trust arbitrary stored values or let the selected preset bypass accessibility fallbacks.
+- Dependencies: T423
+- Estimated effort: Low
+- Required outputs: persisted-settings hardening in the effects store, focused regression coverage, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 09:22 EDT - Codex
+- Completion notes:
+  - Hardened `web/src/app/stores/effectsSettingsStore.ts` so persisted motion settings are merged through a normalization step: invalid `pageTransitionPreset` values now fall back to `hyperactive-block` instead of being trusted blindly from local storage.
+  - Added focused store coverage in `web/src/app/stores/effectsSettingsStore.test.ts` proving malformed persisted transition presets rehydrate back to the safe default.
+  - Extended `web/src/app/components/PageTransition.test.tsx` so the reduced-effects toggle is now explicitly verified to override the selected pager preset and force the minimal fade transition path.
+  - Licensing review: touched frontend/worklist test/store files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/PageTransition.test.tsx web/src/app/stores/effectsSettingsStore.test.ts web/src/app/pages/ThemePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only.
+
+ID: T423
+Status: [✓] Done
+Title: Add selectable Theme page-transition presets and ship the pager-style transition option
+Description:
+- Goal / acceptance criteria: Extend the Theme workspace motion/effects controls so operators can choose the page-transition style used by the routed web shell. Keep the existing transition available, add a new pager-style slide option based on the referenced React pager behavior, persist the choice locally, honor reduced-motion fallback behavior, and add focused tests/validation evidence.
+- Why it matters: The Theme workspace already owns motion/effects preferences, but page transitions are currently fixed. Operators need a first-class way to choose a lighter or more directional transition language without patching code.
+- Dependencies: Existing Theme workspace motion modal (`web/src/app/pages/ThemePage.tsx`), effects settings store (`web/src/app/stores/effectsSettingsStore.ts`), shared route transition layer (`web/src/app/components/PageTransition.tsx`)
+- Estimated effort: Medium
+- Required outputs: persisted transition preset wiring, Theme motion UI updates, shared transition implementation/CSS, focused tests/validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 09:02 EDT - Codex
+- Completion notes:
+  - Extended the persisted effects settings store in `web/src/app/stores/effectsSettingsStore.ts` so Theme motion preferences now save both the reduced-effects toggle and a first-class `pageTransitionPreset` choice.
+  - Expanded the Theme workspace motion modal in `web/src/app/pages/ThemePage.tsx` / `web/src/app/pages/ThemePage.css` to cover motion and effects more broadly, including a new radio-tile selector for `Hyperactive Block Reveal` and `Pager Slide`, plus updated launcher/hero labels so the chosen transition style is visible.
+  - Updated the shared route transition layer in `web/src/app/components/PageTransition.tsx` / `web/src/app/components/PageTransition.css` so eligible shell routes now honor the saved preset: the existing block reveal remains available, the new pager option applies a horizontal slide treatment, and reduced-motion or saved reduced-effects mode still force the minimal fade fallback.
+  - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` and `web/src/app/components/PageTransition.test.tsx` proving the preset persists from Theme and changes the active route-transition class/behavior.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx web/src/app/components/PageTransition.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only.
+
+ID: T422
+Status: [✓] Done
+Title: Rebuild MAP2 Ink TUI around an 8-slot Signal Chains Live home screen
+Description:
+- Goal / acceptance criteria: Redesign `map2-tui` so the operator-first entry experience is `Signal Chains Live` rather than a generic system dashboard. The first screen must surface the active chain, live meters, plugin order, and bypass state for the first 8 plugins in the current chain. Number keys `1-8` must instantly toggle bypass for those plugins with no confirmation step, and the UI must emphasize plugin identity labels over generic telemetry. The screen should provide strong combined feedback for bypass changes, and the implementation must add/update focused docs/tests/validation evidence.
+- Why it matters: The current Ink TUI is navigable, but it is not yet optimized for the primary live-performance task the operator identified: fast, unambiguous bypass control on the active chain.
+- Dependencies: T412; T421
+- Estimated effort: Medium
+- Required outputs: updated Ink TUI home/live-control implementation, live bypass input wiring, focused docs/tests/validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 09:03 EDT - Codex
+- Completion notes:
+  - Rebuilt the Ink TUI home screen in `tui/src/screens/HomeScreen.tsx` around `Signal Chains Live`: the first view now centers the active chain, compact `2x2` I/O metering, ordered plugin rack state, and an operator-first live bypass workflow instead of a generic dashboard.
+  - Added a dedicated live-rack helper layer in `tui/src/screens/signalChainsLive.ts` so slot identity labels are clearer and slot order is always derived from plugin position rather than whatever array order the backend returns.
+  - Wired `1-8` to instant bypass toggles on the live screen with optimistic state, polling-safe pending-state overlay, a brief flash pulse, and a compact event strip; chains longer than 8 plugins are now explicitly flagged as unsupported for live-screen use and should be trimmed before performance.
+  - Updated the operator-facing surfaces so the shipped CLI/docs describe the real interaction model: `tui/src/cli.ts` now advertises the live home-screen behavior in `--help`, `tui/src/navigation/screenRegistry.ts` labels the home screen as an 8-slot live rack, and both `tui/README.md` and `README.md` now describe `map2-tui` as opening on `Signal Chains Live`.
+  - Added focused coverage in `tui/src/screens/signalChainsLive.test.ts` for active-chain selection, ordered slot mapping, identity labels, and bypass-event formatting; existing CLI/status/smoke coverage continues to validate the launcher and render path.
+  - Licensing review: touched TUI/doc/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing tui tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix tui run build` -> PASS; `npm --prefix tui test` -> PASS; `pytest -q tests/test_branding_shell.py` -> PASS; `./map2-tui --help` -> PASS; `./map2-tui --list-screens` -> PASS.
+
+ID: T421
+Status: [✓] Done
+Title: Harden MAP2 Ink TUI launcher, clean startup canvas, and complete the CLI contract
+Description:
+- Goal / acceptance criteria: Upgrade `map2-tui` from a thin npm/dev wrapper into an operator-grade launcher. The shipped CLI must start on a clean canvas, fail fast on malformed arguments, expose first-class screen-selection/help affordances, degrade cleanly when stdin is not a TTY/raw mode is unavailable, and tighten the top-level Ink shell behavior so the documented options feel complete rather than preview-grade. Update the relevant docs/tests/worklist notes and capture validation evidence.
+- Why it matters: `map2-tui` is now an advertised first-class entrypoint, so startup noise, weak argument handling, and incomplete operator affordances turn directly into production friction.
+- Dependencies: T412; T415
+- Estimated effort: Medium
+- Required outputs: launcher/runtime code updates, focused docs/help updates, focused tests or validation evidence, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 15:02 EDT - Codex
+- Completion notes:
+  - Reworked the `map2-tui` launch path so the shell bootstrap now prefers a direct Ink entrypoint (`tui/dist/main.js` when present, otherwise the local `tsx` binary) instead of always routing through `npm start`, which removes the npm banner noise from operator-facing help and validation output.
+  - Added a real CLI contract in `tui/src/cli.ts`: `map2-tui` now supports clean `--help`, `--list-screens`, positional or `--screen` startup selection, `--no-clear`, strict `--api-url` handling, and fail-fast rejection for malformed/unknown flags before Ink renders.
+  - Added the requested clean-canvas startup behavior by clearing the terminal on interactive launch by default, plus a runtime `Ctrl+L` clear action and a `--no-clear` escape hatch.
+  - Hardened the interactive shell so non-TTY launches fail with one explicit operator-facing message instead of an Ink raw-mode stack trace, narrowed the status bar for `80x24`, removed the lingering preview label, and switched top-level navigation to replace/cycle behavior (`[` / `]`) instead of stacking duplicate history entries.
+  - Added focused validation coverage in `tui/src/cli.test.ts`, `tui/src/shell/StatusBar.test.tsx`, `tui/src/runtime/map2NodeRuntime.test.ts`, and `tests/test_branding_shell.py`, and refreshed `README.md` plus `tui/README.md` so the documented launcher flow matches the shipped Ink TUI behavior.
+  - Licensing review: touched shell/TUI/doc/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix tui run build` -> PASS; `npm --prefix tui test` -> PASS; `pytest -q tests/test_branding_shell.py` -> PASS; `./map2-tui --help` -> PASS; `./map2-tui --list-screens` -> PASS; `./map2-tui --bogus` -> exit 2 with usage; `./map2-tui --screen diagnostics` -> exit 1 with the expected non-TTY guard message in non-interactive execution.
 
 ID: T420
 Status: [✓] Done

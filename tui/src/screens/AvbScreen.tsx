@@ -4,6 +4,7 @@ import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
 import { avbApi } from '../../../web/src/map2/api'
 import { Text } from 'ink'
+import { oledPalette } from '../palette'
 
 export function AvbScreen() {
   const load = useCallback(async () => {
@@ -17,7 +18,7 @@ export function AvbScreen() {
     return <Spinner label="Loading AVB" />
   }
   if (error) {
-    return <BoxPanel title="AVB"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="AVB"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null

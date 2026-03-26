@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 import { truncateLabel } from '../utils/formatters'
 
 export function AudioGridScreen() {
@@ -15,7 +16,7 @@ export function AudioGridScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="Audio Grid"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Audio Grid"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {

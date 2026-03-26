@@ -4,6 +4,7 @@ import { servicesApi, systemApi } from '../../../web/src/map2/api'
 import { BoxPanel } from '../components/BoxPanel'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function SettingsScreen() {
   const load = useCallback(async () => {
@@ -21,7 +22,7 @@ export function SettingsScreen() {
     return <Spinner label="Loading settings" />
   }
   if (error) {
-    return <BoxPanel title="Settings"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Settings"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null

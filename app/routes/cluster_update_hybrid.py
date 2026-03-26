@@ -11,7 +11,6 @@ from typing import Optional
 from app.services.cluster.hybrid_update_manager import (
     get_hybrid_update_manager,
     UpdateMode,
-    UpdateEnvironment
 )
 
 router = APIRouter(prefix="/api/cluster/update/hybrid", tags=["cluster-update"])
@@ -94,21 +93,11 @@ async def get_application_status():
     - environment: Deployment environment
     - current_version: Current application version
     - running: Whether update is currently running
-    - last_update: Timestamp of last update
+    - steps: Ten-question step list for the current hybrid update workflow
     """
     try:
         manager = get_hybrid_update_manager()
-        
-        version = manager.get_current_version()
-        
-        return {
-            "status": "ok",
-            "mode": manager.mode.value,
-            "environment": manager.config.environment.value,
-            "current_version": version,
-            "running": False,  # Would check actual update orchestrator
-            "last_update": None  # Would fetch from db
-        }
+        return manager.get_application_status()
         
     except Exception as e:
         raise HTTPException(500, f"Failed to get status: {e}")
@@ -117,39 +106,26 @@ async def get_application_status():
 @router.get("/application/version")
 async def get_application_versions():
     """
-    Get application versions across cluster nodes.
+    Get local application version details for the hybrid updater.
     
-    Returns per-node version information:
-    - Each node's current version
-    - Update mode (git/rpm)
-    - Last update timestamp
-    - Git branch (if applicable)
-    
-    Useful for detecting version drift in cluster.
+    Returns:
+    - version: Current local application version or commit
+    - mode: Active update mode (git/rpm)
+    - updated_at: Timestamp of the last completed application update, if known
+    - branch: Active git branch when the updater is in git mode
     """
     try:
         manager = get_hybrid_update_manager()
-        registry = get_cluster_registry()
-        
-        nodes = registry.get_all_nodes()
-        versions = {}
-        
-        for node in nodes:
-            # In real implementation, would query each node's status
-            # For now, return current node info
-            node_id = node.get("id")
-            if not node_id:
-                continue
-            versions[node_id] = {
-                "version": manager.get_current_version(),
-                "mode": manager.mode.value,
-                "updated_at": None,
-                "branch": manager.config.git_branch if manager.mode == UpdateMode.GIT else None
-            }
-        
+        progress = manager.get_application_status()
+        branch = None
+        if manager.mode == UpdateMode.GIT:
+            branch = await manager.git_updater.get_current_branch()
+
         return {
-            "status": "ok",
-            "nodes": versions
+            "version": progress.get("current_version") or manager.get_current_version(),
+            "mode": manager.mode.value,
+            "updated_at": progress.get("completed_at"),
+            "branch": branch,
         }
         
     except Exception as e:

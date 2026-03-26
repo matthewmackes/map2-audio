@@ -1,5 +1,6 @@
 import React from 'react'
 import { Box, Text } from 'ink'
+import { oledPalette } from '../palette'
 
 export function DataTable({
   columns,
@@ -10,7 +11,7 @@ export function DataTable({
 }) {
   return (
     <Box flexDirection="column">
-      <Text color="cyan">{columns.join(' | ')}</Text>
+      <Text color={oledPalette.accent}>{columns.join(' | ')}</Text>
       {rows.map((row, index) => (
         <Text key={`row-${index}`}>{row.join(' | ')}</Text>
       ))}

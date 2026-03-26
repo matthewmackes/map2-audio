@@ -1,11 +1,8 @@
 import React from 'react'
-import { Box, Text } from 'ink'
+import { Text } from 'ink'
+import { oledPalette } from '../palette'
+import { formatStatusLine } from './statusLine'
 
-export function StatusBar({ left, right }: { left: string; right: string }) {
-  return (
-    <Box justifyContent="space-between">
-      <Text color="gray">{left}</Text>
-      <Text color="gray">{right}</Text>
-    </Box>
-  )
+export function StatusBar({ left, right, columns }: { left: string; right: string; columns: number }) {
+  return <Text color={oledPalette.muted}>{formatStatusLine(left, right, columns)}</Text>
 }

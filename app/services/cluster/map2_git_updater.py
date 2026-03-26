@@ -18,12 +18,14 @@ import os
 import subprocess
 import logging
 import asyncio
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_APP_PATH = Path(__file__).resolve().parents[3]
 
 
 @dataclass
@@ -46,7 +48,7 @@ class MAP2GitUpdater:
     Handles updating MAP2 application by pulling latest code from repository.
     """
 
-    def __init__(self, app_path: str = "/opt/map2-audio"):
+    def __init__(self, app_path: str = str(DEFAULT_APP_PATH)):
         """
         Initialize git updater.
         
@@ -85,7 +87,8 @@ class MAP2GitUpdater:
         self,
         branch: str = "main",
         node_id: Optional[str] = None,
-        validate: bool = True
+        validate: bool = True,
+        progress_callback: Optional[Callable[[str, str, Optional[str]], None]] = None,
     ) -> UpdateResult:
         """
         Update MAP2 application to latest version on specified branch.
@@ -106,61 +109,137 @@ class MAP2GitUpdater:
             logger.info(f"Starting update from commit {commit_before} to branch {branch}")
 
             # Step 1: Check repository state
+            progress_callback and progress_callback(
+                "validate-source",
+                "running",
+                f"Validating repository state at {self.app_path}",
+            )
             is_repo_ok = await self._validate_repository(node_id)
             if not is_repo_ok:
+                progress_callback and progress_callback(
+                    "validate-source",
+                    "failed",
+                    "Repository validation failed",
+                )
                 return UpdateResult(
                     success=False,
                     commit_before=commit_before,
                     error="Repository validation failed",
                     duration_seconds=(datetime.now() - start_time).total_seconds()
                 )
+            progress_callback and progress_callback(
+                "validate-source",
+                "completed",
+                "Repository validation passed",
+            )
 
             # Step 2: Stash local changes
+            progress_callback and progress_callback(
+                "prepare-local-state",
+                "running",
+                "Stashing local changes before applying the update",
+            )
             stash_result = await self._stash_changes(node_id)
             if not stash_result[0]:
+                progress_callback and progress_callback(
+                    "prepare-local-state",
+                    "failed",
+                    f"Failed to stash changes: {stash_result[1]}",
+                )
                 return UpdateResult(
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to stash changes: {stash_result[1]}",
                     duration_seconds=(datetime.now() - start_time).total_seconds()
                 )
+            progress_callback and progress_callback(
+                "prepare-local-state",
+                "completed",
+                stash_result[1],
+            )
 
             # Step 3: Fetch latest from remote
+            progress_callback and progress_callback(
+                "fetch-update-payload",
+                "running",
+                f"Fetching branch {branch} from origin",
+            )
             fetch_result = await self._run_command(
                 f"cd {self.app_path} && git fetch origin {branch}",
                 node_id
             )
             if fetch_result.returncode != 0:
+                progress_callback and progress_callback(
+                    "fetch-update-payload",
+                    "failed",
+                    f"Failed to fetch from remote: {fetch_result.stderr}",
+                )
                 return UpdateResult(
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to fetch from remote: {fetch_result.stderr}",
                     duration_seconds=(datetime.now() - start_time).total_seconds()
                 )
+            progress_callback and progress_callback(
+                "fetch-update-payload",
+                "completed",
+                f"Fetched origin/{branch}",
+            )
 
             # Step 4: Checkout and merge branch
+            progress_callback and progress_callback(
+                "apply-target-version",
+                "running",
+                f"Checking out origin/{branch}",
+            )
             checkout_result = await self._run_command(
                 f"cd {self.app_path} && git checkout origin/{branch}",
                 node_id
             )
             if checkout_result.returncode != 0:
+                progress_callback and progress_callback(
+                    "apply-target-version",
+                    "failed",
+                    f"Failed to checkout branch: {checkout_result.stderr}",
+                )
                 return UpdateResult(
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to checkout branch: {checkout_result.stderr}",
                     duration_seconds=(datetime.now() - start_time).total_seconds()
                 )
+            progress_callback and progress_callback(
+                "apply-target-version",
+                "completed",
+                f"Checked out origin/{branch}",
+            )
 
             # Step 5: Install Python dependencies
+            progress_callback and progress_callback(
+                "refresh-runtime-dependencies",
+                "running",
+                "Refreshing Python dependencies from requirements.txt",
+            )
             pip_result = await self._run_command(
                 f"cd {self.app_path} && pip install -q -r requirements.txt",
                 node_id
             )
             if pip_result.returncode != 0:
                 logger.warning(f"Pip install had warnings: {pip_result.stderr}")
+                progress_callback and progress_callback(
+                    "refresh-runtime-dependencies",
+                    "completed",
+                    f"Dependency refresh reported issues: {pip_result.stderr.strip() or 'see logs'}",
+                )
+            else:
+                progress_callback and progress_callback(
+                    "refresh-runtime-dependencies",
+                    "completed",
+                    "Python dependencies refreshed",
+                )
 
             # Step 6: Build frontend
-            frontend_result = await self._build_frontend(node_id)
+            frontend_result = await self._build_frontend(node_id, progress_callback=progress_callback)
             if not frontend_result[0]:
                 logger.warning(f"Frontend build had issues: {frontend_result[1]}")
 
@@ -171,11 +250,27 @@ class MAP2GitUpdater:
             validation_ok = True
             validation_msg = ""
             if validate:
+                progress_callback and progress_callback(
+                    "validate-and-finalize",
+                    "running",
+                    "Running post-update validation checks",
+                )
                 validation_ok, validation_msg = await self._validate_after_update(node_id)
+            else:
+                progress_callback and progress_callback(
+                    "validate-and-finalize",
+                    "skipped",
+                    "Validation disabled for this update run",
+                )
 
             duration = (datetime.now() - start_time).total_seconds()
 
             if validation_ok:
+                progress_callback and progress_callback(
+                    "validate-and-finalize",
+                    "completed",
+                    f"Validation passed on commit {commit_after[:8]}",
+                )
                 logger.info(f"Update successful: {commit_before} -> {commit_after}")
                 return UpdateResult(
                     success=True,
@@ -185,6 +280,11 @@ class MAP2GitUpdater:
                     duration_seconds=duration
                 )
             else:
+                progress_callback and progress_callback(
+                    "validate-and-finalize",
+                    "failed",
+                    f"Validation failed: {validation_msg}",
+                )
                 logger.error(f"Validation failed after update: {validation_msg}")
                 # Attempt rollback
                 await self._rollback_to_commit(commit_before, node_id)
@@ -287,22 +387,48 @@ class MAP2GitUpdater:
 
     async def _build_frontend(
         self,
-        node_id: Optional[str] = None
+        node_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[str, str, Optional[str]], None]] = None,
     ) -> Tuple[bool, str]:
         """Build React frontend."""
         try:
             web_dir = self.app_path / "web"
 
             # Install dependencies
+            progress_callback and progress_callback(
+                "refresh-frontend-dependencies",
+                "running",
+                "Refreshing frontend dependencies with npm ci",
+            )
             npm_install = await self._run_command(
                 f"cd {web_dir} && npm ci --quiet",
                 node_id
             )
 
             if npm_install.returncode != 0:
+                progress_callback and progress_callback(
+                    "refresh-frontend-dependencies",
+                    "failed",
+                    f"npm ci failed: {npm_install.stderr}",
+                )
+                progress_callback and progress_callback(
+                    "rebuild-frontend-assets",
+                    "skipped",
+                    "Build skipped because npm ci did not complete cleanly",
+                )
                 return False, f"npm install failed: {npm_install.stderr}"
+            progress_callback and progress_callback(
+                "refresh-frontend-dependencies",
+                "completed",
+                "Frontend dependencies refreshed",
+            )
 
             # Build production bundle
+            progress_callback and progress_callback(
+                "rebuild-frontend-assets",
+                "running",
+                "Building the production frontend bundle",
+            )
             npm_build = await self._run_command(
                 f"cd {web_dir} && npm run build --quiet",
                 node_id
@@ -310,8 +436,18 @@ class MAP2GitUpdater:
 
             if npm_build.returncode == 0:
                 logger.info("Frontend built successfully")
+                progress_callback and progress_callback(
+                    "rebuild-frontend-assets",
+                    "completed",
+                    "Frontend build completed",
+                )
                 return True, "Frontend built"
             else:
+                progress_callback and progress_callback(
+                    "rebuild-frontend-assets",
+                    "failed",
+                    f"npm build failed: {npm_build.stderr}",
+                )
                 return False, f"npm build failed: {npm_build.stderr}"
 
         except Exception as e:
@@ -412,7 +548,7 @@ class MAP2GitUpdater:
             raise
 
 
-def get_git_updater(app_path: str = "/opt/map2-audio") -> MAP2GitUpdater:
+def get_git_updater(app_path: str = str(DEFAULT_APP_PATH)) -> MAP2GitUpdater:
     """Get singleton instance of git updater."""
     global _git_updater_instance
     if "_git_updater_instance" not in globals():

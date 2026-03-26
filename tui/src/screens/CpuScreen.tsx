@@ -6,6 +6,7 @@ import { DataTable } from '../components/DataTable'
 import { ProgressBar } from '../components/ProgressBar'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 import { formatMillis, formatPercent } from '../utils/formatters'
 
 export function CpuScreen() {
@@ -16,7 +17,7 @@ export function CpuScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="CPU"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="CPU"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {
@@ -33,13 +34,13 @@ export function CpuScreen() {
         <ProgressBar label="Total" value={(data.totalCpuPercent ?? 0) / 100} />
         <ProgressBar label="Audio" value={(data.audioCallbackPercent ?? 0) / 100} />
         <ProgressBar label="Headroom" value={(data.headroomPercent ?? 0) / 100} />
-        <Text color="gray">
+        <Text color={oledPalette.muted}>
           Budget {formatMillis(data.budgetMs)} | Callback {formatMillis(data.currentCallbackMs)} | XRuns {data.xrunCount ?? 0}
         </Text>
       </BoxPanel>
 
       <BoxPanel title="Per-Plugin CPU">
-        {pluginRows.length ? <DataTable columns={['Plugin', 'CPU']} rows={pluginRows} /> : <Text color="gray">No per-plugin CPU samples yet.</Text>}
+        {pluginRows.length ? <DataTable columns={['Plugin', 'CPU']} rows={pluginRows} /> : <Text color={oledPalette.muted}>No per-plugin CPU samples yet.</Text>}
       </BoxPanel>
     </Box>
   )

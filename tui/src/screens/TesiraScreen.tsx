@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function TesiraScreen() {
   const load = useCallback(async () => {
@@ -18,7 +19,7 @@ export function TesiraScreen() {
     return <Spinner label="Loading Tesira fleet" />
   }
   if (error) {
-    return <BoxPanel title="Tesira"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="Tesira"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
   if (!data) {
     return null

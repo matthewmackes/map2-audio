@@ -6,6 +6,7 @@ import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { TabBar } from '../components/TabBar'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 const tabs = [
   { id: 'panel', label: 'Panel' },
@@ -47,7 +48,7 @@ export function Mpx1Screen() {
   }
 
   if (error) {
-    return <BoxPanel title="MPX1"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="MPX1"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {
@@ -88,7 +89,7 @@ export function Mpx1Screen() {
       <BoxPanel title="MPX1">
         <TabBar tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label }))} activeId={activeTab} />
         <Box marginTop={1} flexDirection="column">{body}</Box>
-        <Text color="gray">Use `[` and `]` to switch MPX1 tabs.</Text>
+        <Text color={oledPalette.muted}>Use `[` and `]` to switch MPX1 tabs.</Text>
       </BoxPanel>
     </Box>
   )

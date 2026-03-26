@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Text } from 'ink'
+import { Box } from 'ink'
 import { Header } from './Header'
 import { StatusBar } from './StatusBar'
 
@@ -9,21 +9,22 @@ export function AppShell({
   children,
   statusLeft,
   statusRight,
+  terminalColumns,
 }: {
   title: string
   subtitle: string
   children: React.ReactNode
   statusLeft: string
   statusRight: string
+  terminalColumns: number
 }) {
   return (
     <Box flexDirection="column">
       <Header title={title} subtitle={subtitle} />
-      <Text color="gray">MAP2 Ink TUI preview</Text>
       <Box flexDirection="column" marginTop={1} marginBottom={1}>
         {children}
       </Box>
-      <StatusBar left={statusLeft} right={statusRight} />
+      <StatusBar left={statusLeft} right={statusRight} columns={terminalColumns} />
     </Box>
   )
 }

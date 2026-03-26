@@ -27,6 +27,21 @@ def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedP
     )
 
 
+def _run_unchecked(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    merged_env = os.environ.copy()
+    merged_env.update(BASE_ENV)
+    if env:
+        merged_env.update(env)
+    return subprocess.run(
+        list(args),
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=merged_env,
+    )
+
+
 def _run_shell(command: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return _run("bash", "--noprofile", "--norc", "-c", command, env=env)
 
@@ -76,6 +91,23 @@ def test_map2_help_uses_unified_shell_actions() -> None:
     assert "Quad Cortex touchscreen app" in result.stdout
     assert "map2 workflow" in result.stdout
     assert "Ctrl+Z" in result.stdout
+
+
+def test_ink_tui_help_is_clean_and_lists_operator_flags() -> None:
+    result = _run("bash", "map2.sh", "ink", "--help")
+    assert "Usage: map2-tui [screen] [options]" in result.stdout
+    assert "--list-screens" in result.stdout
+    assert "--screen SCREEN" in result.stdout
+    assert "--no-clear" in result.stdout
+    assert "map2-ink-tui@" not in result.stdout
+    assert "npm --prefix tui start" not in result.stdout
+
+
+def test_ink_tui_rejects_unknown_flags_before_rendering() -> None:
+    result = _run_unchecked("bash", "map2.sh", "ink", "--bogus")
+    assert result.returncode == 2
+    assert "Unknown option: --bogus" in result.stderr
+    assert "Usage: map2-tui [screen] [options]" in result.stderr
 
 
 def test_legacy_shell_setup_script_is_deprecated_and_has_no_framework_menu() -> None:

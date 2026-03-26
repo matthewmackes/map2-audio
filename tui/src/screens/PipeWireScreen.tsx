@@ -5,6 +5,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { DataTable } from '../components/DataTable'
 import { Spinner } from '../components/Spinner'
 import { usePollingResource } from '../hooks/usePollingResource'
+import { oledPalette } from '../palette'
 
 export function PipeWireScreen() {
   const load = useCallback(async () => {
@@ -23,7 +24,7 @@ export function PipeWireScreen() {
   }
 
   if (error) {
-    return <BoxPanel title="PipeWire"><Text color="red">{error}</Text></BoxPanel>
+    return <BoxPanel title="PipeWire"><Text color={oledPalette.danger}>{error}</Text></BoxPanel>
   }
 
   if (!data) {

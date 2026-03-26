@@ -108,7 +108,7 @@ All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, 
 | Audio Engine | C++ / JUCE 8.0.0, Neural Amp Modeler |
 | Backend API | Python / FastAPI, SQLite, Uvicorn |
 | Web Dashboard | React 19, Material UI 7, Vite |
-| TUI Console | Python / Textual (SSH-friendly) |
+| Terminal UIs | Python / Textual, React / Ink |
 | Audio Server | PipeWire via JACK protocol |
 | OS / RT | Fedora Linux, isolated CPU cores, SCHED_FIFO |
 | Clustering | Multi-node with AVB/802.1AS support (installed by default; removable) |
@@ -133,8 +133,10 @@ sudo bash install_on_new_host.sh --uninstall-avb    # Remove AVB configuration a
 # Or start individual components
 systemctl start map2-backend          # Backend API (port 8080)
 ./scripts/start_web.sh                # Web dashboard (port 3000)
-python -m tui.node_console            # TUI management console
-./map2-tui                            # Ink TUI launcher
+python -m tui.node_console            # Textual management console
+./map2-tui                            # Ink TUI launcher (opens Signal Chains Live)
+./map2-tui --list-screens             # Show available Ink screens
+./map2-tui --screen diagnostics       # Launch Ink TUI on a specific screen
 ```
 
 <details>

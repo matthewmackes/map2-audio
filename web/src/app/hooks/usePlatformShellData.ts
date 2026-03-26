@@ -38,6 +38,17 @@ import type {
   PlatformTableRow,
 } from '../platform/model'
 import { PLATFORM_LAYER_META, makePlatformHealthRecord } from '../platform/model'
+import type {
+  PlatformVersionInfo,
+  UpdateStatusInfo,
+  BackupStatusInfo,
+  HealthCheckInfo,
+  RemediationSummaryInfo,
+  ManifestDriftInfo,
+  DeploymentStatusInfo,
+  HybridApplicationStatusInfo,
+  UpdateHybridVersionInfo,
+} from './useNodeOperations'
 
 interface DeploymentModeResponse {
   mode?: string
@@ -294,6 +305,107 @@ export function usePlatformShellData(): PlatformShellData {
     staleTime: 5000,
   })
 
+  // ── Node operations queries (version, update, backup, health, remediation) ──
+
+  const nodeVersionQuery = useQuery<PlatformVersionInfo>({
+    queryKey: ['platform', 'node-version'],
+    queryFn: async () => {
+      const r = await fetch('/api/version')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<PlatformVersionInfo>
+    },
+    refetchInterval: 30000,
+    staleTime: 20000,
+  })
+
+  const nodeUpdateStatusQuery = useQuery<UpdateStatusInfo>({
+    queryKey: ['platform', 'node-update-status'],
+    queryFn: async () => {
+      const r = await fetch('/api/cluster/update/status')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<UpdateStatusInfo>
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
+  })
+
+  const nodeApplicationStatusQuery = useQuery<HybridApplicationStatusInfo>({
+    queryKey: ['platform', 'node-application-status'],
+    queryFn: async () => {
+      const r = await fetch('/api/cluster/update/hybrid/application/status')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<HybridApplicationStatusInfo>
+    },
+    refetchInterval: 5000,
+    staleTime: 2000,
+  })
+
+  const nodeHybridVersionQuery = useQuery<UpdateHybridVersionInfo>({
+    queryKey: ['platform', 'node-hybrid-version'],
+    queryFn: async () => {
+      const r = await fetch('/api/cluster/update/hybrid/application/version')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<UpdateHybridVersionInfo>
+    },
+    refetchInterval: 30000,
+    staleTime: 20000,
+  })
+
+  const nodeBackupStatusQuery = useQuery<BackupStatusInfo>({
+    queryKey: ['platform', 'node-backup-status'],
+    queryFn: async () => {
+      const r = await fetch('/api/backup/status')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<BackupStatusInfo>
+    },
+    refetchInterval: 30000,
+    staleTime: 20000,
+  })
+
+  const nodeHealthQuery = useQuery<HealthCheckInfo>({
+    queryKey: ['platform', 'node-health'],
+    queryFn: async () => {
+      const r = await fetch('/api/health')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<HealthCheckInfo>
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
+  })
+
+  const nodeDeployStatusQuery = useQuery<DeploymentStatusInfo>({
+    queryKey: ['platform', 'node-deploy-status'],
+    queryFn: async () => {
+      const r = await fetch('/api/deployment/status')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<DeploymentStatusInfo>
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
+  })
+
+  const nodeRemediationQuery = useQuery<RemediationSummaryInfo>({
+    queryKey: ['platform', 'node-remediation'],
+    queryFn: async () => {
+      const r = await fetch('/api/platform-remediation/summary')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<RemediationSummaryInfo>
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
+  })
+
+  const nodeManifestDriftQuery = useQuery<ManifestDriftInfo>({
+    queryKey: ['platform', 'node-manifest-drift'],
+    queryFn: async () => {
+      const r = await fetch('/api/cluster/update/manifest/drift')
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json() as Promise<ManifestDriftInfo>
+    },
+    refetchInterval: 30000,
+    staleTime: 20000,
+  })
+
   const topology = topologyQuery.data
   const topologyNodes = Array.isArray(topology?.nodes) ? topology.nodes : []
   const topologyAudioEdges = Array.isArray(topology?.audio_edges) ? topology.audio_edges : []
@@ -340,6 +452,17 @@ export function usePlatformShellData(): PlatformShellData {
   const observatoryStatus = observatoryStatusQuery.data
   const operationCount = observatorySchema.catalog.reduce((sum, group) => sum + group.endpoints.length, 0)
   const diffCount = observatorySchema.diff.added.length + observatorySchema.diff.modified.length + observatorySchema.diff.removed.length
+
+  // ── Node operations derived values ──
+  const nodeVersion = nodeVersionQuery.data
+  const nodeUpdateStatus = nodeUpdateStatusQuery.data
+  const nodeApplicationStatus = nodeApplicationStatusQuery.data
+  const nodeHybridVersion = nodeHybridVersionQuery.data
+  const nodeBackupStatus = nodeBackupStatusQuery.data
+  const nodeHealthCheck = nodeHealthQuery.data
+  const nodeDeployStatus = nodeDeployStatusQuery.data
+  const nodeRemediation = nodeRemediationQuery.data
+  const nodeManifestDrift = nodeManifestDriftQuery.data
 
   const layers = useMemo<PlatformLayerData[]>(() => {
     const overviewNotifications: PlatformNotification[] = []
@@ -690,42 +813,135 @@ export function usePlatformShellData(): PlatformShellData {
           tone: (platformNode?.xrun_count ?? pipewire.xruns) > 0 ? 'warning' : 'healthy',
         },
       ],
-      gridItems: [
-        {
-          id: 'node-services',
-          title: 'Node Services',
-          eyebrow: 'Single Node',
-          metric: `${Number(Boolean(platformNode?.services.backend)) + Number(Boolean(platformNode?.services.juce_engine)) + Number(Boolean(platformNode?.services.pipewire))}/3 online`,
-          helper: 'Backend, JUCE engine, PipeWire',
-          status: nodeHealth,
-          alertCount: nodeNotifications.length,
-        },
-        {
-          id: 'node-interfaces',
-          title: 'Node Interfaces',
-          eyebrow: 'Network',
-          metric: platformNodeIsRemote ? 'Remote' : String(localInterfaces),
-          helper: platformNodeIsRemote
-            ? `${platformNode?.hostname ?? 'pending'} · interface inventory only available on the local host`
-            : `${networkQuery.data?.hostname ?? platformNode?.hostname ?? 'pending'} · ${networkQuery.data?.internet_connected ? 'Internet up' : 'Isolated'}`,
-          status: platformNodeIsRemote || localInterfaces > 0 ? 'healthy' : 'warning',
-        },
-        {
-          id: 'node-streams',
-          title: 'Node Streams',
-          eyebrow: 'Audio',
-          metric: String(platformNodeStreamCount + (platformNodeIsRemote ? 0 : pipewire.streams.length)),
-          helper: platformNodeIsRemote
-            ? `${platformNodeStreamCount} cluster edges visible for this remote node`
-            : `${platformNodeStreamCount} cluster edges · ${pipewire.streams.length} PipeWire streams`,
-          status: (platformNode?.xrun_count ?? 0) > 0 || pipewire.hasXruns ? 'warning' : 'healthy',
-        },
-      ],
+      gridItems: (() => {
+        const applicationUpdateIsActive = Boolean(nodeApplicationStatus?.running)
+        const orchestratorUpdateIsActive = nodeUpdateStatus?.status === 'in_progress' || nodeUpdateStatus?.status === 'rolling_back'
+        const updateIsActive = applicationUpdateIsActive || orchestratorUpdateIsActive
+        const updateStatusLabel = nodeApplicationStatus?.status ?? nodeUpdateStatus?.status ?? 'idle'
+        const updateHealth: PlatformHealth = updateIsActive
+          ? 'warning'
+          : updateStatusLabel === 'failed'
+            ? 'critical'
+            : 'healthy'
+        const applicationStepLabel = nodeApplicationStatus?.current_step_index !== null && nodeApplicationStatus?.current_step_index !== undefined
+          ? `Question ${nodeApplicationStatus.current_step_index + 1}/10`
+          : null
+        const versionDisplay = nodeVersion?.version
+          ? `${nodeVersion.version.slice(0, 8)}${nodeVersion.dirty ? '*' : ''}`
+          : nodeHybridVersion?.version?.slice(0, 12) ?? 'pending'
+        const deployModeLabel = deploymentMode
+        const backupCount = nodeBackupStatus?.total_backups ?? 0
+        const backupLatest = nodeBackupStatus?.latest_backup_date
+          ? new Date(nodeBackupStatus.latest_backup_date).toLocaleDateString()
+          : 'Never'
+        const remediationCount = Object.values(nodeRemediation?.counts ?? {}).reduce((s, v) => s + v, 0)
+        const manifestDrifted = nodeManifestDrift?.drifted ?? false
+        const healthUptime = nodeHealthCheck?.uptime_seconds
+          ? nodeHealthCheck.uptime_seconds >= 86400
+            ? `${Math.floor(nodeHealthCheck.uptime_seconds / 86400)}d`
+            : nodeHealthCheck.uptime_seconds >= 3600
+              ? `${Math.floor(nodeHealthCheck.uptime_seconds / 3600)}h`
+              : `${Math.floor(nodeHealthCheck.uptime_seconds / 60)}m`
+          : 'n/a'
+
+        return [
+          {
+            id: 'node-services',
+            title: 'Node Services',
+            eyebrow: 'Single Node',
+            metric: `${Number(Boolean(platformNode?.services.backend)) + Number(Boolean(platformNode?.services.juce_engine)) + Number(Boolean(platformNode?.services.pipewire))}/3 online`,
+            helper: 'Backend, JUCE engine, PipeWire',
+            status: nodeHealth,
+            alertCount: nodeNotifications.length,
+          },
+          {
+            id: 'node-version',
+            title: 'Platform Version',
+            eyebrow: 'Release',
+            metric: versionDisplay,
+            helper: nodeVersion?.build_channel
+              ? `Channel: ${nodeVersion.build_channel} · API ${nodeVersion.api_version ?? 'n/a'}`
+              : nodeHybridVersion?.mode === 'git'
+                ? `Branch: ${nodeHybridVersion.branch ?? 'master'}`
+                : 'Version info pending',
+            status: nodeVersion?.dirty ? 'warning' : 'healthy',
+          },
+          {
+            id: 'node-deployment',
+            title: 'Deployment Mode',
+            eyebrow: 'Configuration',
+            metric: deployModeLabel,
+            helper: (() => {
+              if (!nodeDeployStatus?.services) return 'Service status pending'
+              const svcEntries = Object.entries(nodeDeployStatus.services)
+              const running = svcEntries.filter(([, v]) => v.status === 'running').length
+              return `${running}/${svcEntries.length} services running`
+            })(),
+            status: deployModeLabel === 'Unknown' ? 'warning' : 'healthy',
+          },
+          {
+            id: 'node-update-status',
+            title: 'Update Status',
+            eyebrow: 'Updates',
+            metric: updateIsActive ? 'In Progress' : updateStatusLabel === 'failed' ? 'Failed' : 'Idle',
+            helper: updateIsActive
+              ? applicationStepLabel
+                ? `${applicationStepLabel} · ${nodeApplicationStatus?.message ?? 'Hybrid update in progress'}`
+                : `${nodeUpdateStatus?.completed_nodes ?? 0}/${nodeUpdateStatus?.total_nodes ?? '?'} nodes done`
+              : nodeApplicationStatus?.message ?? nodeUpdateStatus?.message ?? 'No update in progress',
+            status: updateHealth,
+          },
+          {
+            id: 'node-backup',
+            title: 'Backups',
+            eyebrow: 'Recovery',
+            metric: `${backupCount} snapshot${backupCount === 1 ? '' : 's'}`,
+            helper: `Latest: ${backupLatest}`,
+            status: backupCount > 0 ? 'healthy' : 'warning',
+          },
+          {
+            id: 'node-health-check',
+            title: 'Health Check',
+            eyebrow: 'Diagnostics',
+            metric: nodeHealthCheck?.status ?? 'pending',
+            helper: `Uptime ${healthUptime} · Audio ${nodeHealthCheck?.audio?.engine_running ? 'running' : 'stopped'}`,
+            status: stringToHealth(nodeHealthCheck?.status),
+          },
+          {
+            id: 'node-interfaces',
+            title: 'Node Interfaces',
+            eyebrow: 'Network',
+            metric: platformNodeIsRemote ? 'Remote' : String(localInterfaces),
+            helper: platformNodeIsRemote
+              ? `${platformNode?.hostname ?? 'pending'} · interface inventory only available on the local host`
+              : `${networkQuery.data?.hostname ?? platformNode?.hostname ?? 'pending'} · ${networkQuery.data?.internet_connected ? 'Internet up' : 'Isolated'}`,
+            status: platformNodeIsRemote || localInterfaces > 0 ? 'healthy' : 'warning',
+          },
+          {
+            id: 'node-streams',
+            title: 'Node Streams',
+            eyebrow: 'Audio',
+            metric: String(platformNodeStreamCount + (platformNodeIsRemote ? 0 : pipewire.streams.length)),
+            helper: platformNodeIsRemote
+              ? `${platformNodeStreamCount} cluster edges visible for this remote node`
+              : `${platformNodeStreamCount} cluster edges · ${pipewire.streams.length} PipeWire streams`,
+            status: (platformNode?.xrun_count ?? 0) > 0 || pipewire.hasXruns ? 'warning' : 'healthy',
+          },
+          {
+            id: 'node-remediation',
+            title: 'Remediation',
+            eyebrow: 'Maintenance',
+            metric: remediationCount > 0 ? `${remediationCount} action${remediationCount === 1 ? '' : 's'}` : 'Clear',
+            helper: manifestDrifted ? 'Manifest drift detected' : 'No drift detected',
+            status: manifestDrifted ? 'warning' : remediationCount > 0 ? 'warning' : 'healthy',
+          },
+        ] satisfies PlatformGridItem[]
+      })(),
       tableColumns: [
-        { key: 'name', header: 'Service' },
+        { key: 'name', header: 'Service / Subsystem' },
         { key: 'status', header: 'Status' },
-        { key: 'metric1', header: 'CPU' },
-        { key: 'metric2', header: 'Memory' },
+        { key: 'metric1', header: 'Detail' },
+        { key: 'metric2', header: 'Info' },
         { key: 'alerts', header: 'Alerts' },
       ] satisfies PlatformTableColumn[],
       tableRows: [
@@ -755,11 +971,86 @@ export function usePlatformShellData(): PlatformShellData {
             ? (platformNode?.services.pipewire ? 'Cluster topology healthy' : 'Unavailable')
             : pipewire.alerts.length > 0 ? `${pipewire.alerts.length} alert${pipewire.alerts.length === 1 ? '' : 's'}` : 'Clear',
         },
+        {
+          id: 'version',
+          name: 'Platform Version',
+          status: nodeVersion ? (nodeVersion.dirty ? 'warning' : 'healthy') : 'unknown',
+          metric1: nodeVersion?.version ?? 'pending',
+          metric2: nodeVersion?.build_channel ?? (nodeHybridVersion?.mode ?? 'n/a'),
+          alerts: nodeVersion?.dirty ? 'Dirty build' : 'Clear',
+        },
+        {
+          id: 'deployment',
+          name: 'Deployment Mode',
+          status: deploymentMode !== 'Unknown' ? 'healthy' : 'warning',
+          metric1: deploymentMode,
+          metric2: (() => {
+            if (!nodeDeployStatus?.services) return 'pending'
+            const svcEntries = Object.entries(nodeDeployStatus.services)
+            const running = svcEntries.filter(([, v]) => v.status === 'running').length
+            return `${running}/${svcEntries.length} running`
+          })(),
+          alerts: 'Clear',
+        },
+        {
+          id: 'update',
+          name: 'Update System',
+          status: nodeApplicationStatus?.running || nodeUpdateStatus?.status === 'in_progress' || nodeUpdateStatus?.status === 'rolling_back'
+            ? 'warning'
+            : (nodeApplicationStatus?.status ?? nodeUpdateStatus?.status) === 'failed'
+              ? 'critical'
+              : 'healthy',
+          metric1: nodeApplicationStatus?.running
+            ? `Question ${(nodeApplicationStatus.current_step_index ?? 0) + 1}/10`
+            : nodeApplicationStatus?.status ?? nodeUpdateStatus?.status ?? 'idle',
+          metric2: nodeApplicationStatus?.running
+            ? nodeApplicationStatus.message
+            : nodeUpdateStatus?.current_node ?? nodeApplicationStatus?.message ?? 'n/a',
+          alerts: (nodeApplicationStatus?.status ?? nodeUpdateStatus?.status) === 'failed'
+            ? nodeApplicationStatus?.error ?? nodeApplicationStatus?.message ?? nodeUpdateStatus?.message ?? 'Update failed'
+            : nodeApplicationStatus?.running
+              ? nodeApplicationStatus.message
+              : nodeUpdateStatus?.status === 'in_progress'
+                ? `${nodeUpdateStatus.completed_nodes ?? 0}/${nodeUpdateStatus.total_nodes ?? '?'}`
+                : 'Clear',
+        },
+        {
+          id: 'backup',
+          name: 'Backup System',
+          status: (nodeBackupStatus?.total_backups ?? 0) > 0 ? 'healthy' : 'warning',
+          metric1: `${nodeBackupStatus?.total_backups ?? 0} snapshots`,
+          metric2: nodeBackupStatus?.latest_backup_date
+            ? new Date(nodeBackupStatus.latest_backup_date).toLocaleDateString()
+            : 'No backups',
+          alerts: (nodeBackupStatus?.total_backups ?? 0) === 0 ? 'No backups' : 'Clear',
+        },
+        {
+          id: 'health-check',
+          name: 'Health Monitor',
+          status: stringToHealth(nodeHealthCheck?.status),
+          metric1: nodeHealthCheck?.status ?? 'pending',
+          metric2: nodeHealthCheck?.uptime_seconds
+            ? `Up ${Math.floor(nodeHealthCheck.uptime_seconds / 3600)}h`
+            : 'n/a',
+          alerts: nodeHealthCheck?.audio?.xrun_count
+            ? `${nodeHealthCheck.audio.xrun_count} xruns`
+            : 'Clear',
+        },
+        {
+          id: 'remediation',
+          name: 'Remediation',
+          status: nodeManifestDrift?.drifted ? 'warning' : 'healthy',
+          metric1: nodeRemediation?.status ?? 'pending',
+          metric2: nodeManifestDrift?.drifted
+            ? `${nodeManifestDrift.nodes?.length ?? 0} drifted`
+            : 'No drift',
+          alerts: nodeManifestDrift?.drifted ? 'Drift detected' : 'Clear',
+        },
       ],
-      tableTitle: 'Single-node services',
+      tableTitle: 'Single-node services and platform operations',
       tableDescription: platformNodeIsRemote
-        ? 'Operational service posture for the selected remote node using cluster topology telemetry.'
-        : 'Operational service posture for the local node, aligned to CPU, memory, and alert pressure.',
+        ? 'Service posture and platform operations for the selected remote node.'
+        : 'Service posture and platform operations for the local node — version, deployment, updates, backups, health, and remediation.',
       notifications: nodeNotifications,
     } satisfies PlatformLayerData
 
@@ -1181,6 +1472,14 @@ export function usePlatformShellData(): PlatformShellData {
     totalNodes,
     tsnStatusQuery.data,
     warningNodes,
+    nodeVersion,
+    nodeUpdateStatus,
+    nodeHybridVersion,
+    nodeBackupStatus,
+    nodeHealthCheck,
+    nodeDeployStatus,
+    nodeRemediation,
+    nodeManifestDrift,
   ])
 
   const summaryMetrics = useMemo<PlatformSummaryMetric[]>(() => {
