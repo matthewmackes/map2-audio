@@ -105,7 +105,7 @@ export default function ChainABMode({
     if (!sourceChain) return;
 
     try {
-      const response = await fetch(`/api/chains/${sourceChain.id}/duplicate`, {
+      const response = await fetch(`/api/chains/ab/${sourceChain.id}/duplicate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newChainName, include_settings: true }),

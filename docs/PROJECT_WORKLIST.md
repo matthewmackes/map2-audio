@@ -6869,7 +6869,7 @@ Last updated: 2026-03-26 17:24 EDT - Codex
 ### Phase B: Route Prefix Collisions (CRITICAL)
 
 ID: T440
-Status: [ ] Todo
+Status: [✓] Done
 Title: CRITICAL — Resolve /api/chains prefix collision between chains.py and chains_ab_mode.py
 Description:
 - Goal / acceptance criteria: Both `app/routes/chains.py:21` and `app/routes/chains_ab_mode.py:13` declare `APIRouter(prefix="/api/chains")` and BOTH are registered in `route_modules`. The endpoint paths do NOT overlap (chains.py has CRUD, chains_ab_mode.py has duplicate/blend/compare/morph/dsp-load), but sharing a prefix is fragile and could cause shadowing if overlapping paths are ever added. Either merge chains_ab_mode.py into chains.py or change its prefix to `/api/chains/ab`.
@@ -6878,8 +6878,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: No duplicate prefixes among registered routes.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 18:06 EDT - Codex
+- Completion notes:
+  - Moved the A/B chain router in `app/routes/chains_ab_mode.py` from `/api/chains` to the dedicated `/api/chains/ab` prefix, eliminating the registered-router prefix collision with `app/routes/chains.py` while preserving the existing duplicate, blend, compare, morph, and DSP-load endpoints under an A/B-specific namespace.
+  - Updated the live frontend consumers in `web/src/map2/components/ChainBuilder.tsx` and `web/src/map2/components/ChainABMode.tsx`, plus the route-registration test coverage in `tests/test_chains_ab_mode_route_registration.py`, so the client contract now follows the dedicated A/B prefix end to end.
+  - Validation: `pytest -q tests/test_chains_ab_mode_route_registration.py tests/test_chains_ab_mode_identity.py` -> PASS (`5 passed`); `npm --prefix web run typecheck` -> PASS; `rg -n '"/api/chains/\\{chain_id\\}/duplicate|"/api/chains/\\{chain_id\\}/blend|"/api/chains/\\{chain_a_id\\}/compare/\\{chain_b_id\\}|"/api/chains/\\{chain_id\\}/morph|/api/chains/ab/.*/duplicate|/api/chains/ab/.*/blend|/api/chains/ab/.*/dsp-load|/api/chains/.*/duplicate|/api/chains/.*/blend|/api/chains/.*/dsp-load' app web/src tests docs` confirms live consumers now point at `/api/chains/ab` (the remaining `/api/chains/...` hit is a historical evidence snapshot under `docs/fit-for-purpose-evidence/20260223/openapi.json`).
+  - Licensing review: touched route/frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T441
 Status: [ ] Todo

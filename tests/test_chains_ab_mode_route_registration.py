@@ -23,7 +23,11 @@ def test_chains_ab_mode_routes_are_registered_in_main():
 def test_chains_ab_mode_router_exposes_live_ab_endpoints():
     paths = _paths()
 
-    assert "/api/chains/{chain_id}/duplicate" in paths
-    assert "/api/chains/{chain_id}/blend" in paths
-    assert "/api/chains/{chain_a_id}/compare/{chain_b_id}" in paths
-    assert "/api/chains/{chain_id}/morph" in paths
+    assert "/api/chains/ab/{chain_id}/duplicate" in paths
+    assert "/api/chains/ab/{chain_id}/blend" in paths
+    assert "/api/chains/ab/{chain_a_id}/compare/{chain_b_id}" in paths
+    assert "/api/chains/ab/{chain_id}/morph" in paths
+
+
+def test_chains_ab_mode_router_uses_dedicated_prefix():
+    assert chains_ab_mode.router.prefix == "/api/chains/ab"

@@ -10,7 +10,7 @@ try:
     from app.services.chain_service import ChainService
     from app.services.event_publisher import event_publisher, EventType
 
-    router = APIRouter(prefix="/api/chains", tags=["chains"])
+    router = APIRouter(prefix="/api/chains/ab", tags=["chains"])
 
     class ChainBlendConfig(BaseModel):
         """Configuration for A/B chain blending"""

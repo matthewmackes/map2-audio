@@ -460,7 +460,7 @@ export default function ChainBuilder() {
     const updateDspLoads = async () => {
       if (selectedChainIdA) {
         try {
-          const res = await fetch(`/api/chains/${selectedChainIdA}/dsp-load`);
+          const res = await fetch(`/api/chains/ab/${selectedChainIdA}/dsp-load`);
           if (res.ok) {
             const data = await res.json();
             setDspLoadA(data.total_dsp_load_percent);
@@ -469,7 +469,7 @@ export default function ChainBuilder() {
       }
       if (selectedChainIdB) {
         try {
-          const res = await fetch(`/api/chains/${selectedChainIdB}/dsp-load`);
+          const res = await fetch(`/api/chains/ab/${selectedChainIdB}/dsp-load`);
           if (res.ok) {
             const data = await res.json();
             setDspLoadB(data.total_dsp_load_percent);
@@ -946,7 +946,7 @@ export default function ChainBuilder() {
     setCurrentBlend(newBlend);
     if (selectedChainIdA && selectedChainIdB) {
       try {
-        await fetch(`/api/chains/${selectedChainIdA}/blend`, {
+        await fetch(`/api/chains/ab/${selectedChainIdA}/blend`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
