@@ -10,6 +10,7 @@ import type { HorizontalSignalChainProps } from './types'
 import { HorizontalPluginNode } from './HorizontalPluginNode'
 import { SidechainConnector } from './SidechainConnector'
 import { getDisplayPluginName } from '../../../map2/displayNames'
+import { buildPluginOrderRef, samePluginIdentity } from '../../../map2/utils/pluginIdentity'
 
 interface SignalInfo {
   channels: number
@@ -73,6 +74,7 @@ export function HorizontalSignalChain({
   plugins,
   pluginMeta,
   selectedPluginUri,
+  selectedPluginPosition,
   onPluginSelect,
   onPluginReorder,
   onToggleBypass,
@@ -117,7 +119,7 @@ export function HorizontalSignalChain({
     const [movedPlugin] = newOrder.splice(draggedIndex, 1)
     newOrder.splice(targetIndex, 0, movedPlugin)
 
-    onPluginReorder(newOrder.map((p) => p.uri))
+    onPluginReorder(newOrder.map((plugin) => buildPluginOrderRef(plugin)))
     setDraggedIndex(null)
     setDragOverIndex(null)
   }, [draggedIndex, plugins, onPluginReorder])
@@ -132,23 +134,26 @@ export function HorizontalSignalChain({
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!selectedPluginUri) return
 
-    const currentIndex = plugins.findIndex((p) => p.uri === selectedPluginUri)
+    const currentIndex = plugins.findIndex((plugin) => (
+      plugin.uri === selectedPluginUri
+      && (typeof selectedPluginPosition !== 'number' || plugin.position === selectedPluginPosition)
+    ))
     if (currentIndex === -1) return
 
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault()
       const nextIndex = Math.min(currentIndex + 1, plugins.length - 1)
       if (nextIndex !== currentIndex) {
-        onPluginSelect(plugins[nextIndex].uri)
+        onPluginSelect(plugins[nextIndex].uri, plugins[nextIndex].position)
       }
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault()
       const prevIndex = Math.max(currentIndex - 1, 0)
       if (prevIndex !== currentIndex) {
-        onPluginSelect(plugins[prevIndex].uri)
+        onPluginSelect(plugins[prevIndex].uri, plugins[prevIndex].position)
       }
     }
-  }, [selectedPluginUri, plugins, onPluginSelect])
+  }, [selectedPluginPosition, selectedPluginUri, plugins, onPluginSelect])
 
   // Get channel count from first plugin or default
   const inputChannels = plugins[0]?.in_ports ?? 2
@@ -176,7 +181,13 @@ export function HorizontalSignalChain({
       {/* Plugin Nodes */}
       {plugins.map((plugin, index) => {
         const meta = pluginMeta[plugin.uri]
-        const isSelected = plugin.uri === selectedPluginUri
+        const isSelected = Boolean(
+          selectedPluginUri
+          && samePluginIdentity(
+            { uri: selectedPluginUri, position: selectedPluginPosition ?? plugin.position },
+            plugin,
+          ),
+        )
         const isDragTarget = dragOverIndex === index && draggedIndex !== index
         const pluginActive = isActive && !plugin.bypassed
         const nextPlugin = plugins[index + 1]
@@ -188,7 +199,7 @@ export function HorizontalSignalChain({
         const sidechainSourceInfo = sidechainSources?.find(s => s.id === sidechainSource)
 
         return (
-          <div key={plugin.uri} className={`h-plugin-wrapper ${hasSidechain ? 'has-sidechain' : ''}`}>
+          <div key={`${plugin.uri}:${plugin.position}`} className={`h-plugin-wrapper ${hasSidechain ? 'has-sidechain' : ''}`}>
             <div className={`h-drop-indicator ${isDragTarget ? 'visible' : ''}`} />
             {/* Sidechain connector above plugin */}
             {hasSidechain && (
@@ -197,17 +208,17 @@ export function HorizontalSignalChain({
                 sourceChainLabel={sidechainSourceInfo?.chainLabel}
                 isConnected={!!sidechainSource}
                 isActive={isActive && !!sidechainSource}
-                onClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri) : undefined}
+                onClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri, plugin.position) : undefined}
               />
             )}
             <HorizontalPluginNode
               plugin={plugin}
               meta={meta}
               isSelected={isSelected}
-              onSelect={() => onPluginSelect(plugin.uri)}
-              onToggleBypass={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
-              onDelete={onDeletePlugin ? () => onDeletePlugin(plugin.uri) : undefined}
-              onSidechainClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri) : undefined}
+              onSelect={() => onPluginSelect(plugin.uri, plugin.position)}
+              onToggleBypass={() => onToggleBypass(plugin.uri, !plugin.bypassed, plugin.position)}
+              onDelete={onDeletePlugin ? () => onDeletePlugin(plugin.uri, plugin.position) : undefined}
+              onSidechainClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri, plugin.position) : undefined}
               onDragStart={handleDragStart(index)}
               onDragOver={handleDragOver(index)}
               onDrop={handleDrop(index)}

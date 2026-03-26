@@ -6,7 +6,7 @@
  * MIT License - Robin E. R. Davies
  */
 
-import type { ChainPlugin, Plugin } from '../../../map2/types'
+import type { ChainPlugin, Plugin, PluginOrderRef } from '../../../map2/types'
 
 /** Sidechain source options for a plugin */
 export interface SidechainSource {
@@ -27,16 +27,18 @@ export interface HorizontalSignalChainProps {
   pluginMeta: Record<string, Plugin>
   /** Currently selected plugin URI */
   selectedPluginUri: string | null
+  /** Currently selected plugin chain position */
+  selectedPluginPosition?: number | null
   /** Callback when a plugin is selected */
-  onPluginSelect: (uri: string) => void
+  onPluginSelect: (uri: string, position: number) => void
   /** Callback when plugins are reordered */
-  onPluginReorder: (pluginUris: string[]) => void
+  onPluginReorder: (pluginOrder: PluginOrderRef[]) => void
   /** Callback to toggle plugin bypass state */
-  onToggleBypass: (uri: string, bypassed: boolean) => void
+  onToggleBypass: (uri: string, bypassed: boolean, position: number) => void
   /** Callback to delete a plugin */
-  onDeletePlugin?: (uri: string) => void
+  onDeletePlugin?: (uri: string, position: number) => void
   /** Callback when sidechain config is requested for a plugin */
-  onSidechainConfig?: (uri: string) => void
+  onSidechainConfig?: (uri: string, position: number) => void
   /** Available sidechain sources */
   sidechainSources?: SidechainSource[]
   /** Chain label for this signal chain (A, B, C, etc.) */

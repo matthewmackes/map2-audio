@@ -412,7 +412,10 @@ export function LV2PluginParameterEditor({
   const accentColor = catConfig.color
 
   // Real-time output data from WebSocket
-  const { outputPorts: pluginOutputValues } = usePluginOutput(plugin.uri)
+  const { outputPorts: pluginOutputValues } = usePluginOutput({
+    uri: plugin.uri,
+    instanceId: plugin.instance_id,
+  })
 
   // State
   const [parameterValues, setParameterValues] = useState<Record<number, number>>({})

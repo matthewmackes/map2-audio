@@ -1858,16 +1858,17 @@ export default function ChainBuilder() {
           {selectedChain?.plugins && selectedChain.plugins.length > 0 ? (
             <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
               {selectedChain.plugins.map((plugin) => (
-                <Box key={plugin.uri} sx={{ mb: 2 }}>
+                <Box key={getPluginIdentityKey(plugin)} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                     {getDisplayPluginName(plugin.name, plugin.uri)}
                   </Typography>
                   <Box sx={{ pl: 2 }}>
                     {plugin.parameters?.map((param) => {
-                      const paramId = `${plugin.uri}:${param.symbol}`;
+                      const pluginPosition = typeof plugin.position === 'number' ? plugin.position : undefined;
+                      const paramId = `${plugin.uri}:${param.index}${pluginPosition !== undefined ? `@${pluginPosition}` : ''}`;
                       return (
                         <Button
-                          key={param.index}
+                          key={`${getPluginIdentityKey(plugin)}:${param.index}`}
                           variant="outlined"
                           size="small"
                           fullWidth
@@ -1876,6 +1877,10 @@ export default function ChainBuilder() {
                             try {
                               await automationApi.createLane({
                                 parameter_id: paramId,
+                                plugin_uri: plugin.uri,
+                                plugin_position: pluginPosition,
+                                param_index: param.index,
+                                param_name: param.name,
                                 points: [],
                                 enabled: true,
                               });

@@ -782,7 +782,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Header className={`topbar-pro${isTabletTouchRoute ? ' topbar-pro--juce-grid-tablet' : ''}`} aria-label="MAP2 primary navigation shell">
         <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
           {renderNavItem(heroHomeTopNavItem)}
-          <LatencyPressureShellReadout />
         </HeaderNavigation>
 
         <HeaderNavigation className="nav-tabs-center" aria-label="Pinned navigation">
@@ -809,6 +808,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
             <NodeNavBar />
           </HeaderNavigation>
+          <LatencyPressureShellReadout />
         </HeaderGlobalBar>
 
         {navOpen && (

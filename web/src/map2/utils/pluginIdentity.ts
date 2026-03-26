@@ -45,5 +45,17 @@ export function samePluginIdentity(
   if (!left || !right) {
     return false
   }
+
+  const leftInstanceId = hasInstanceId(left) && isFiniteNonNegativeInteger(left.instance_id) && left.instance_id > 0
+    ? left.instance_id
+    : undefined
+  const rightInstanceId = hasInstanceId(right) && isFiniteNonNegativeInteger(right.instance_id) && right.instance_id > 0
+    ? right.instance_id
+    : undefined
+
+  if (leftInstanceId !== undefined && rightInstanceId !== undefined) {
+    return leftInstanceId === rightInstanceId
+  }
+
   return left.uri === right.uri && left.position === right.position
 }

@@ -131,7 +131,7 @@ describe('AppShell navigation', () => {
     expect(container.querySelector('.topbar-pro__hero-home-mark')).toBeTruthy()
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
-    expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+    expect(container.querySelector('.nav-tabs-right-container')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
   })
 
   it('uses the compact shell treatment only for touch-tablet /juce-grid', () => {
@@ -159,7 +159,7 @@ describe('AppShell navigation', () => {
 
     expect(container.querySelector('.app-shell--juce-grid-tablet')).toBeTruthy()
     expect(container.querySelector('.topbar-pro--juce-grid-tablet')).toBeTruthy()
-    expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+    expect(container.querySelector('.nav-tabs-right-container')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
     expect(container.querySelector('.nav-tabs-right')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
   })
 

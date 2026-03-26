@@ -10,8 +10,9 @@
  * Uses the MAP2 WebSocket infrastructure with topic-based subscriptions.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getWsBaseUrl } from '../../map2/api';
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity';
 import type {
   PeakData,
   OutputPortValue,
@@ -23,14 +24,44 @@ import type {
 // Stable empty array to avoid recreating on every render
 const EMPTY_PLUGIN_URIS: string[] = [];
 
+export interface PluginOutputIdentity {
+  uri: string;
+  instanceId?: number | null;
+  pluginPosition?: number | null;
+}
+
+type PluginOutputTarget = string | PluginOutputIdentity;
+
+function toPluginOutputIdentity(target: PluginOutputTarget): PluginOutputIdentity {
+  if (typeof target === 'string') {
+    return { uri: target };
+  }
+
+  return target;
+}
+
+function getOutputIdentityKey(target: {
+  uri: string;
+  instance_id?: number | null;
+  plugin_position?: number | null;
+  instanceId?: number | null;
+  pluginPosition?: number | null;
+}): string {
+  return getPluginIdentityKeyFromParts(
+    target.uri,
+    target.plugin_position ?? target.pluginPosition,
+    target.instance_id ?? target.instanceId,
+  );
+}
+
 export interface PluginOutputState {
-  /** Peak data keyed by plugin URI and port symbol */
+  /** Peak data keyed by plugin runtime identity and port symbol */
   peaks: Record<string, Record<string, PeakData>>;
-  /** Output port values keyed by plugin URI and port index */
+  /** Output port values keyed by plugin runtime identity and port index */
   outputPorts: Record<string, Record<number, number>>;
-  /** Tuner data keyed by plugin URI */
+  /** Tuner data keyed by plugin runtime identity */
   tuners: Record<string, TunerData>;
-  /** Spectrum data keyed by plugin URI */
+  /** Spectrum data keyed by plugin runtime identity */
   spectrums: Record<string, SpectrumData>;
   /** Connection status */
   connected: boolean;
@@ -124,31 +155,47 @@ export function usePluginOutputs(options: UsePluginOutputsOptions = {}) {
             switch (message.type) {
               case 'peak_update': {
                 const data = message.data as PeakData;
-                if (!next.peaks[data.uri]) {
-                  next.peaks[data.uri] = {};
+                const pluginKey = getOutputIdentityKey(data);
+                if (!next.peaks[pluginKey]) {
+                  next.peaks[pluginKey] = {};
                 }
-                next.peaks[data.uri][data.port_symbol] = data;
+                next.peaks[pluginKey][data.port_symbol] = data;
+                if (pluginKey !== data.uri && !next.peaks[data.uri]) {
+                  next.peaks[data.uri] = next.peaks[pluginKey];
+                }
                 break;
               }
 
               case 'output_port_update': {
                 const data = message.data as OutputPortValue;
-                if (!next.outputPorts[data.uri]) {
-                  next.outputPorts[data.uri] = {};
+                const pluginKey = getOutputIdentityKey(data);
+                if (!next.outputPorts[pluginKey]) {
+                  next.outputPorts[pluginKey] = {};
                 }
-                next.outputPorts[data.uri][data.port_index] = data.value;
+                next.outputPorts[pluginKey][data.port_index] = data.value;
+                if (pluginKey !== data.uri && !next.outputPorts[data.uri]) {
+                  next.outputPorts[data.uri] = next.outputPorts[pluginKey];
+                }
                 break;
               }
 
               case 'tuner_update': {
                 const data = message.data as TunerData;
-                next.tuners[data.uri] = data;
+                const pluginKey = getOutputIdentityKey(data);
+                next.tuners[pluginKey] = data;
+                if (pluginKey !== data.uri && !next.tuners[data.uri]) {
+                  next.tuners[data.uri] = data;
+                }
                 break;
               }
 
               case 'spectrum_update': {
                 const data = message.data as SpectrumData;
-                next.spectrums[data.uri] = data;
+                const pluginKey = getOutputIdentityKey(data);
+                next.spectrums[pluginKey] = data;
+                if (pluginKey !== data.uri && !next.spectrums[data.uri]) {
+                  next.spectrums[data.uri] = data;
+                }
                 break;
               }
             }
@@ -190,12 +237,15 @@ export function usePluginOutputs(options: UsePluginOutputsOptions = {}) {
   }, [autoConnect, connect, disconnect]);
 
   // Get data for a specific plugin
-  const getPluginData = useCallback((uri: string) => {
+  const getPluginData = useCallback((target: PluginOutputTarget) => {
+    const identity = toPluginOutputIdentity(target);
+    const pluginKey = getOutputIdentityKey(identity);
+
     return {
-      peaks: state.peaks[uri] || {},
-      outputPorts: state.outputPorts[uri] || {},
-      tuner: state.tuners[uri],
-      spectrum: state.spectrums[uri],
+      peaks: state.peaks[pluginKey] || state.peaks[identity.uri] || {},
+      outputPorts: state.outputPorts[pluginKey] || state.outputPorts[identity.uri] || {},
+      tuner: state.tuners[pluginKey] || state.tuners[identity.uri],
+      spectrum: state.spectrums[pluginKey] || state.spectrums[identity.uri],
     };
   }, [state]);
 
@@ -222,17 +272,19 @@ export function usePluginOutputs(options: UsePluginOutputsOptions = {}) {
 /**
  * Hook for a single plugin's output data
  */
-export function usePluginOutput(pluginUri: string) {
+export function usePluginOutput(target: PluginOutputTarget) {
+  const identity = toPluginOutputIdentity(target);
+  const pluginUris = useMemo(() => [identity.uri], [identity.uri]);
   const { getPluginData, connected, clearClip } = usePluginOutputs({
-    pluginUris: [pluginUri],
+    pluginUris,
   });
 
-  const data = getPluginData(pluginUri);
+  const data = getPluginData(identity);
 
   return {
     ...data,
     connected,
-    clearClip: (portSymbol?: string) => clearClip(pluginUri, portSymbol),
+    clearClip: (portSymbol?: string) => clearClip(identity.uri, portSymbol),
   };
 }
 

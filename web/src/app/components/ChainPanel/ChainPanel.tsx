@@ -6,7 +6,7 @@
  */
 
 import { Music, TrashCan, VolumeMute, VolumeUp } from '@carbon/icons-react'
-import type { Chain, ChainPlugin, Plugin } from '../../../map2/types'
+import type { Chain, ChainPlugin, Plugin, PluginOrderRef } from '../../../map2/types'
 import { HorizontalSignalChain } from '../HorizontalSignalChain'
 
 export interface ChainSlot {
@@ -29,10 +29,11 @@ export interface ChainPanelProps {
   availableChains: Chain[]
   pluginMeta: Record<string, Plugin>
   selectedPluginUri: string | null
-  onPluginSelect: (uri: string) => void
-  onPluginReorder: (pluginUris: string[]) => void
-  onToggleBypass: (uri: string, bypassed: boolean) => void
-  onDeletePlugin?: (uri: string) => void
+  selectedPluginPosition?: number | null
+  onPluginSelect: (uri: string, position: number) => void
+  onPluginReorder: (pluginOrder: PluginOrderRef[]) => void
+  onToggleBypass: (uri: string, bypassed: boolean, position: number) => void
+  onDeletePlugin?: (uri: string, position: number) => void
   onMuteToggle: () => void
   onSoloToggle: () => void
   onDeleteFlow?: () => void
@@ -49,6 +50,7 @@ export function ChainPanel({
   availableChains,
   pluginMeta,
   selectedPluginUri,
+  selectedPluginPosition,
   onPluginSelect,
   onPluginReorder,
   onToggleBypass,
@@ -139,6 +141,7 @@ export function ChainPanel({
             plugins={chain.plugins}
             pluginMeta={pluginMeta}
             selectedPluginUri={isActive ? selectedPluginUri : null}
+            selectedPluginPosition={isActive ? selectedPluginPosition : null}
             onPluginSelect={onPluginSelect}
             onPluginReorder={onPluginReorder}
             onToggleBypass={onToggleBypass}

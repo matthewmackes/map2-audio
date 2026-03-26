@@ -77,6 +77,8 @@ class PeakData:
     """Real-time peak meter data."""
     uri: str
     port_symbol: str
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     peak: float = 0.0
     rms: float = 0.0
     hold_peak: float = 0.0
@@ -91,6 +93,8 @@ class OutputPortValue:
     port_index: int
     symbol: str
     value: float
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     timestamp: float = field(default_factory=time.time)
 
 
@@ -98,6 +102,8 @@ class OutputPortValue:
 class TunerData:
     """Tuner data from analyser plugins."""
     uri: str
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     frequency_hz: float = 0.0
     note_name: str = "A"
     octave: int = 4
@@ -110,6 +116,8 @@ class TunerData:
 class SpectrumData:
     """Spectrum analyzer data."""
     uri: str
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     frequencies: List[float] = field(default_factory=list)
     magnitudes: List[float] = field(default_factory=list)
     bin_count: int = 0
@@ -244,6 +252,9 @@ class PluginOutputService:
         
         # Spectrum data per plugin
         self._spectrum_data: Dict[str, SpectrumData] = {}
+
+        # Runtime identity metadata per tracked plugin
+        self._plugin_identity: Dict[str, Dict[str, Optional[int] | str]] = {}
         
         # Subscribers
         self._subscribers: List[Callable] = []
@@ -251,6 +262,44 @@ class PluginOutputService:
         # Running state
         self._running = False
         self._task: Optional[asyncio.Task] = None
+
+    @staticmethod
+    def _normalize_instance_id(instance_id: Optional[int]) -> Optional[int]:
+        return instance_id if isinstance(instance_id, int) and instance_id > 0 else None
+
+    @staticmethod
+    def _normalize_plugin_position(plugin_position: Optional[int]) -> Optional[int]:
+        return plugin_position if isinstance(plugin_position, int) and plugin_position >= 0 else None
+
+    def _plugin_key(
+        self,
+        uri: str,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> str:
+        normalized_instance_id = self._normalize_instance_id(instance_id)
+        if normalized_instance_id is not None:
+            return f"instance:{normalized_instance_id}"
+
+        normalized_plugin_position = self._normalize_plugin_position(plugin_position)
+        if normalized_plugin_position is not None:
+            return f"position:{uri}:{normalized_plugin_position}"
+
+        return uri
+
+    def _remember_plugin_identity(
+        self,
+        uri: str,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> str:
+        plugin_key = self._plugin_key(uri, instance_id, plugin_position)
+        self._plugin_identity[plugin_key] = {
+            "uri": uri,
+            "instance_id": self._normalize_instance_id(instance_id),
+            "plugin_position": self._normalize_plugin_position(plugin_position),
+        }
+        return plugin_key
         
     async def start(self) -> None:
         """Start the output service update loop."""
@@ -281,36 +330,98 @@ class PluginOutputService:
         if callback in self._subscribers:
             self._subscribers.remove(callback)
             
-    def register_plugin(self, uri: str, output_ports: List[OutputPort]) -> None:
+    def register_plugin(
+        self,
+        uri: str,
+        output_ports: List[OutputPort],
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Register a plugin and its output ports."""
+        plugin_key = self._remember_plugin_identity(uri, instance_id, plugin_position)
         for port in output_ports:
             if port.designation in (OutputDesignation.METER, OutputDesignation.GAIN_REDUCTION):
-                self._peak_meters[uri][port.symbol] = PeakMeter()
-            self._output_values[uri][port.index] = port.min_value
-            
-    def unregister_plugin(self, uri: str) -> None:
+                self._peak_meters[plugin_key][port.symbol] = PeakMeter()
+            self._output_values[plugin_key][port.index] = port.min_value
+
+    def unregister_plugin(
+        self,
+        uri: str,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Unregister a plugin."""
-        self._peak_meters.pop(uri, None)
-        self._output_values.pop(uri, None)
-        self._tuner_data.pop(uri, None)
-        self._spectrum_data.pop(uri, None)
-        
-    def update_output_port(self, uri: str, port_index: int, value: float) -> None:
+        plugin_key = self._plugin_key(uri, instance_id, plugin_position)
+        if (
+            self._normalize_instance_id(instance_id) is None
+            and self._normalize_plugin_position(plugin_position) is None
+        ):
+            matching_keys = [
+                key for key, identity in self._plugin_identity.items()
+                if identity.get("uri") == uri
+            ]
+        else:
+            matching_keys = [plugin_key]
+
+        for key in matching_keys:
+            self._peak_meters.pop(key, None)
+            self._output_values.pop(key, None)
+            self._tuner_data.pop(key, None)
+            self._spectrum_data.pop(key, None)
+            self._plugin_identity.pop(key, None)
+
+    def update_output_port(
+        self,
+        uri: str,
+        port_index: int,
+        value: float,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Update an output port value."""
-        self._output_values[uri][port_index] = value
-        
-    def update_peak_meter(self, uri: str, port_symbol: str, samples: List[float]) -> None:
+        plugin_key = self._remember_plugin_identity(uri, instance_id, plugin_position)
+        self._output_values[plugin_key][port_index] = value
+
+    def update_peak_meter(
+        self,
+        uri: str,
+        port_symbol: str,
+        samples: List[float],
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Update peak meter with audio samples."""
-        if uri in self._peak_meters and port_symbol in self._peak_meters[uri]:
-            self._peak_meters[uri][port_symbol].process_samples(samples)
-            
-    def update_tuner_data(self, uri: str, data: TunerData) -> None:
+        plugin_key = self._remember_plugin_identity(uri, instance_id, plugin_position)
+        if plugin_key in self._peak_meters and port_symbol in self._peak_meters[plugin_key]:
+            self._peak_meters[plugin_key][port_symbol].process_samples(samples)
+
+    def update_tuner_data(
+        self,
+        uri: str,
+        data: TunerData,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Update tuner data."""
-        self._tuner_data[uri] = data
-        
-    def update_spectrum_data(self, uri: str, data: SpectrumData) -> None:
+        plugin_key = self._remember_plugin_identity(uri, instance_id, plugin_position)
+        data.uri = uri
+        data.instance_id = self._normalize_instance_id(instance_id)
+        data.plugin_position = self._normalize_plugin_position(plugin_position)
+        self._tuner_data[plugin_key] = data
+
+    def update_spectrum_data(
+        self,
+        uri: str,
+        data: SpectrumData,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Update spectrum data."""
-        self._spectrum_data[uri] = data
+        plugin_key = self._remember_plugin_identity(uri, instance_id, plugin_position)
+        data.uri = uri
+        data.instance_id = self._normalize_instance_id(instance_id)
+        data.plugin_position = self._normalize_plugin_position(plugin_position)
+        self._spectrum_data[plugin_key] = data
         
     async def _update_loop(self) -> None:
         """Main update loop for collecting and distributing data."""
@@ -331,15 +442,20 @@ class PluginOutputService:
         updates = []
         
         # Collect peak data
-        for uri, meters in self._peak_meters.items():
+        for plugin_key, meters in self._peak_meters.items():
+            identity = self._plugin_identity.get(plugin_key, {"uri": plugin_key, "instance_id": None, "plugin_position": None})
             for symbol, meter in meters.items():
                 peak_data = meter.get_levels()
-                peak_data.uri = uri
+                peak_data.uri = str(identity["uri"])
+                peak_data.instance_id = self._normalize_instance_id(identity.get("instance_id"))  # type: ignore[arg-type]
+                peak_data.plugin_position = self._normalize_plugin_position(identity.get("plugin_position"))  # type: ignore[arg-type]
                 peak_data.port_symbol = symbol
                 updates.append({
                     "type": "peak_update",
                     "data": {
                         "uri": peak_data.uri,
+                        "instance_id": peak_data.instance_id,
+                        "plugin_position": peak_data.plugin_position,
                         "port_symbol": peak_data.port_symbol,
                         "peak": peak_data.peak,
                         "rms": peak_data.rms,
@@ -350,12 +466,15 @@ class PluginOutputService:
                 })
                 
         # Collect output port values
-        for uri, ports in self._output_values.items():
+        for plugin_key, ports in self._output_values.items():
+            identity = self._plugin_identity.get(plugin_key, {"uri": plugin_key, "instance_id": None, "plugin_position": None})
             for port_index, value in ports.items():
                 updates.append({
                     "type": "output_port_update",
                     "data": {
-                        "uri": uri,
+                        "uri": identity["uri"],
+                        "instance_id": self._normalize_instance_id(identity.get("instance_id")),  # type: ignore[arg-type]
+                        "plugin_position": self._normalize_plugin_position(identity.get("plugin_position")),  # type: ignore[arg-type]
                         "port_index": port_index,
                         "value": value,
                         "timestamp": time.time()
@@ -363,11 +482,14 @@ class PluginOutputService:
                 })
                 
         # Collect tuner data
-        for uri, data in self._tuner_data.items():
+        for plugin_key, data in self._tuner_data.items():
+            identity = self._plugin_identity.get(plugin_key, {"uri": data.uri, "instance_id": data.instance_id, "plugin_position": data.plugin_position})
             updates.append({
                 "type": "tuner_update",
                 "data": {
-                    "uri": data.uri,
+                    "uri": identity["uri"],
+                    "instance_id": self._normalize_instance_id(identity.get("instance_id")),  # type: ignore[arg-type]
+                    "plugin_position": self._normalize_plugin_position(identity.get("plugin_position")),  # type: ignore[arg-type]
                     "frequency_hz": data.frequency_hz,
                     "note_name": data.note_name,
                     "octave": data.octave,
@@ -378,11 +500,14 @@ class PluginOutputService:
             })
             
         # Collect spectrum data
-        for uri, data in self._spectrum_data.items():
+        for plugin_key, data in self._spectrum_data.items():
+            identity = self._plugin_identity.get(plugin_key, {"uri": data.uri, "instance_id": data.instance_id, "plugin_position": data.plugin_position})
             updates.append({
                 "type": "spectrum_update",
                 "data": {
-                    "uri": data.uri,
+                    "uri": identity["uri"],
+                    "instance_id": self._normalize_instance_id(identity.get("instance_id")),  # type: ignore[arg-type]
+                    "plugin_position": self._normalize_plugin_position(identity.get("plugin_position")),  # type: ignore[arg-type]
                     "frequencies": data.frequencies,
                     "magnitudes": data.magnitudes,
                     "bin_count": data.bin_count,

@@ -1084,6 +1084,8 @@ export interface PortNotification {
 /** Real-time peak meter data */
 export interface PeakData {
   uri: string;
+  instance_id?: number;
+  plugin_position?: number;
   port_symbol: string;
   peak: number;
   rms: number;
@@ -1095,6 +1097,8 @@ export interface PeakData {
 /** Real-time output port values */
 export interface OutputPortValue {
   uri: string;
+  instance_id?: number;
+  plugin_position?: number;
   port_index: number;
   symbol: string;
   value: number;
@@ -1104,6 +1108,8 @@ export interface OutputPortValue {
 /** Tuner data from analyser plugins */
 export interface TunerData {
   uri: string;
+  instance_id?: number;
+  plugin_position?: number;
   frequency_hz: number;
   note_name: string;
   octave: number;
@@ -1115,6 +1121,8 @@ export interface TunerData {
 /** Spectrum analyzer data */
 export interface SpectrumData {
   uri: string;
+  instance_id?: number;
+  plugin_position?: number;
   frequencies: number[];
   magnitudes: number[];
   bin_count: number;

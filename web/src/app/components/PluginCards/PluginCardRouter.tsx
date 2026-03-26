@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { pluginsApi, chainsApi } from '../../../map2/api'
 import type { Plugin } from '../../../map2/types'
+import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { getPluginCardComponent, getTemplateCardComponent } from './registry'
 import { getCategoryConfig, type PluginCardProps, type PluginCardTemplate, type PluginRealtimeData } from './types'
 import { usePluginOutput } from '../../hooks/usePluginOutputs'
@@ -109,7 +110,12 @@ export function PluginCardRouter({
   }, [chainId, bypassMutation])
 
   // Get real-time output data for this plugin
-  const pluginOutput = usePluginOutput(plugin.uri)
+  const pluginOutput = usePluginOutput({
+    uri: plugin.uri,
+    instanceId: plugin.instance_id,
+    pluginPosition,
+  })
+  const pluginRuntimeKey = getPluginIdentityKeyFromParts(plugin.uri, pluginPosition, plugin.instance_id)
 
   // Build real-time data from output ports
   const realtimeData = useMemo<PluginRealtimeData>(() => {
@@ -167,7 +173,7 @@ export function PluginCardRouter({
   if (CardComponent) {
     return (
       <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 12 }}><div style={{ width: 24, height: 24, border: '3px solid rgba(150,150,150,0.2)', borderTopColor: '#90caf9', borderRadius: '50%', animation: 'map2spin .8s linear infinite' }} /></div>}>
-        <CardComponent {...cardProps} />
+        <CardComponent key={pluginRuntimeKey} {...cardProps} />
       </Suspense>
     )
   }
@@ -178,6 +184,7 @@ export function PluginCardRouter({
 
   return (
     <LV2PluginParameterEditor
+      key={pluginRuntimeKey}
       plugin={plugin}
       onAddToChain={onAddToChain}
       showAddToChain={showAddToChain}

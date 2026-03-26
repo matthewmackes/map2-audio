@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 12:37 EDT - Completed T432 to restore AVDECC packet-socket capability under backend systemd hardening
+Last updated: 2026-03-26 - Fresh platform audit v2: replaced stale T388-T406 with verified T413-T427
+
+ID: T433
+Status: [✓] Done
+Title: Move the shell latency readout to the far-right side of the top navigation bar
+Description:
+- Goal / acceptance criteria: Update the web app shell so the latency pressure readout currently rendered beside the home mark on the left side of the top navigation bar instead renders at the far-right edge of the desktop/tablet top bar, without regressing the existing node navigation cluster or compact `/juce-grid` shell treatment. Refresh focused shell tests to assert the new placement.
+- Why it matters: The operator request is to move the live latency meter from the left side of the nav chrome to the far-right side, where it aligns with the rest of the node/runtime status affordances and frees the hero/home area from status clutter.
+- Dependencies: `web/src/app/layout/AppShell.tsx`; `web/src/app/layout/AppShell.test.tsx`
+- Estimated effort: Low
+- Required outputs: App shell layout update, focused shell test updates, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 15:19 EDT - Codex
+- Completion notes:
+  - Moved `LatencyPressureShellReadout` out of the left primary-nav group in `web/src/app/layout/AppShell.tsx` and appended it after the right-side node navigation cluster so the meter now renders at the far-right edge of the shell header.
+  - Updated `web/src/app/layout/AppShell.test.tsx` to assert the latency readout lives under `.nav-tabs-right-container` for both the standard shell and compact `/juce-grid` tablet shell.
+  - Licensing review: touched files remain MAP2-owned AGPL-covered frontend/worklist artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src/app/layout` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up tasks.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T432
 Status: [✓] Done
@@ -6715,15 +6733,222 @@ Last updated: 2026-03-24 07:54 EDT - Codex
   - Exploratory run `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/PlatformShellPage.test.tsx` still hit pre-existing failures in `src/app/pages/PlatformShellPage.test.tsx` around legacy “Unified Platform Stack” expectations; left unchanged because they are unrelated to this Labs CSS slice.
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n “license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX” README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
-## Platform Audit — Dead Code, Prefix Collisions, and Consolidation (Epic)
+## Platform Audit v2 — Verified Fresh Audit (2026-03-26)
 
-Full audit report: `.claude/plans/lively-toasting-music.md`
+Supersedes all T388–T406 entries from the 2026-03-25 stale audit. Those tasks were based on
+incorrect data (pipedal/ already deleted, rate_limiter.py already deleted, several prefix
+collisions already fixed). This section contains only verified findings from 2026-03-26.
 
-### Phase A: Safe Deletions
+### Previous Audit Status
 
-ID: T388
-Status: [✓] Done
-Title: Delete PiPedal legacy directory (229 dead files, zero imports)
+T388–T406 (2026-03-25): SUPERSEDED. Most issues were already resolved by other agents before
+the audit was written. Marking all as `[~] Cancelled` — replaced by T413–T427 below.
+
+### Phase A: Dead Code Removal
+
+ID: T413
+Status: [ ] Todo
+Title: Delete dead lv2_discovery.py service (zero imports, 13K lines)
+Description:
+- Goal / acceptance criteria: Delete `app/services/lv2_discovery.py`. Confirmed zero imports across the entire codebase (all production code now uses `plugin_loader_unified.py`). File last modified 2026-02-14.
+- Why it matters: Dead 13K-line service file that was absorbed into `plugin_loader_unified.py` but never deleted.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: File deleted, `pytest` passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T414
+Status: [ ] Todo
+Title: Delete dead lv2_enhanced.py service (only a comment reference remains, 18K lines)
+Description:
+- Goal / acceptance criteria: Delete `app/services/lv2_enhanced.py`. Only reference is a comment string in `plugin_scanner.py:200` ("Fallback LV2 scanning without lv2_enhanced") — not an actual import. All production code uses `plugin_loader_unified.py`. File last modified 2026-02-11.
+- Why it matters: Dead 18K-line service file absorbed into unified loader but never removed.
+- Dependencies: T413 (delete together)
+- Estimated effort: Low
+- Required outputs: File deleted, comment reference updated, `pytest` passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T415
+Status: [ ] Todo
+Title: Delete unregistered route base.py or formalize as utility module
+Description:
+- Goal / acceptance criteria: `app/routes/base.py` defines `APIRouter(prefix="/api/example")` but is NOT in the `route_modules` list in `main.py:594`. However, `reverb.py` imports `api_route` and `StandardResponses` from it as utilities. Either: (a) rename/move to `app/utils/route_helpers.py` since it's used as a utility not a route, or (b) register it if the example endpoints are wanted.
+- Why it matters: A route file that's actually used as a utility import but has dead example endpoints.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Clear separation of utility vs. route concerns.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T416
+Status: [ ] Todo
+Title: Delete or decide on web/src/pages/ClusterAdmin.tsx (legacy, zero imports)
+Description:
+- Goal / acceptance criteria: `web/src/pages/ClusterAdmin.tsx` is the only file in `web/src/pages/` (legacy location). It exports `ClusterAdmin` but is NOT imported anywhere in `web/src/app/`. Either delete it or migrate to `web/src/app/pages/`.
+- Why it matters: Orphaned legacy page component in the wrong directory.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: File deleted or migrated.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T417
+Status: [ ] Todo
+Title: Delete stale worklog/completion-summary-2026-02-14.md
+Description:
+- Goal / acceptance criteria: Delete `worklog/completion-summary-2026-02-14.md` — over 5 weeks old, all work referenced is in the archive.
+- Why it matters: Stale documentation cluttering the repo.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: File deleted.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T418
+Status: [ ] Todo
+Title: Remove unregistered pipedal_compat_router from engine.py
+Description:
+- Goal / acceptance criteria: `app/routes/engine.py:618` defines `pipedal_compat_router = APIRouter(prefix="/api/pipedal")` with 4 endpoints (status, plugins, initialize, audio/status). This router is NEVER registered in `main.py` — `grep` confirms zero references to `pipedal_compat_router` in main.py. Delete these dead endpoints.
+- Why it matters: ~30 lines of dead legacy PiPedal compatibility code inside an otherwise active route file.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Dead router removed from engine.py, server starts cleanly.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+### Phase B: Route Prefix Collisions (CRITICAL)
+
+ID: T419
+Status: [ ] Todo
+Title: CRITICAL — Resolve /api/chains prefix collision between chains.py and chains_ab_mode.py
+Description:
+- Goal / acceptance criteria: Both `app/routes/chains.py:21` and `app/routes/chains_ab_mode.py:13` declare `APIRouter(prefix="/api/chains")` and BOTH are registered in `route_modules`. The endpoint paths do NOT overlap (chains.py has CRUD, chains_ab_mode.py has duplicate/blend/compare/morph/dsp-load), but sharing a prefix is fragile and could cause shadowing if overlapping paths are ever added. Either merge chains_ab_mode.py into chains.py or change its prefix to `/api/chains/ab`.
+- Why it matters: CRITICAL — Two registered routers on the same prefix is a latent shadowing risk and violates FastAPI best practices.
+- Dependencies: Check frontend API calls to A/B mode endpoints
+- Estimated effort: Medium
+- Required outputs: No duplicate prefixes among registered routes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T420
+Status: [ ] Todo
+Title: Audit /api/cluster prefix shared by 3 route files
+Description:
+- Goal / acceptance criteria: Three registered route files share `prefix="/api/cluster"`: `cluster_admin.py:41`, `cluster_flows.py:14`, `cluster_health.py:16`. While their endpoint paths currently don't overlap (/node/*, /setup, /status, /metrics vs /flows/*, /nodes vs /health, /online-nodes, /offline-nodes), this is fragile. Verify no endpoint path collisions exist. Consider whether any should get more specific prefixes.
+- Why it matters: Three routers on the same prefix creates collision risk as endpoints grow.
+- Dependencies: None
+- Estimated effort: Low (audit only, may need no changes)
+- Required outputs: Documented assessment of collision risk; prefix changes if needed.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T421
+Status: [ ] Todo
+Title: Audit /api/deployment prefix shared by deployment.py and deployment_health.py
+Description:
+- Goal / acceptance criteria: Both `deployment.py:29` and `deployment_health.py:24` use `prefix="/api/deployment"`. Their endpoints appear non-overlapping (/mode, /status, /config, /verify vs /health/*, /remediation/*), but both have `/health` sub-paths (`deployment.py` has `/health/mode`, `deployment_health.py` has `/health`). Verify no actual shadowing and consider consolidation.
+- Why it matters: Potential endpoint path collision at `/api/deployment/health`.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Confirmed no shadowing, or prefixes adjusted.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+### Phase C: Consolidation
+
+ID: T422
+Status: [ ] Todo
+Title: Health monitoring hierarchy documentation and cleanup
+Description:
+- Goal / acceptance criteria: 9 health-related services exist with an undocumented aggregation hierarchy. `system_health_summary.py` (last modified 2026-03-25) appears to be the top-level aggregator, importing from `health_monitor`, `audio_health_monitor`, `node_health_service`, and `deployment_health`. Document this hierarchy. Determine if `health_checker.py` (8K, Jan 20) is still needed or superseded by `system_health_summary.py`.
+- Why it matters: 9 health services without documented hierarchy makes operational behavior unclear.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Architecture document for health monitoring, identification of any truly dead services.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T423
+Status: [ ] Todo
+Title: Evaluate web/src/shared/PluginChooser for migration to app/components
+Description:
+- Goal / acceptance criteria: `web/src/shared/components/PluginChooser/` (23 files) is imported from 2 active files: `PluginAppearanceIcon.tsx` (LegacyPluginIcon, PluginType). This is the only remaining content in `web/src/shared/`. Either migrate PluginChooser into `web/src/app/components/` or at minimum document why it lives in `shared/`.
+- Why it matters: Stale directory structure — `shared/` only serves 2 import paths.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: PluginChooser migrated or documented, build passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+### Phase D: Documentation Truthfulness
+
+ID: T424
+Status: [ ] Todo
+Title: Remove stale pipedal references from docs/TRANSPLANTATION_GUIDE.md
+Description:
+- Goal / acceptance criteria: `docs/TRANSPLANTATION_GUIDE.md` references `map2-pipedal-test.service` at lines 497 and 562. PiPedal has been fully removed from the codebase. Update the transplantation guide to remove these references.
+- Why it matters: Documentation references a deleted subsystem, misleading new developers.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated doc.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+### Phase E: Test Coverage
+
+ID: T425
+Status: [ ] Todo
+Title: Add route prefix uniqueness CI test
+Description:
+- Goal / acceptance criteria: Create a test that extracts all APIRouter prefixes from registered route modules and asserts no two registered routers share a prefix unless their endpoint paths are verified non-overlapping. This would have caught the /api/chains collision and the other shared-prefix cases.
+- Why it matters: 4 prefix collisions/shared-prefix cases found in this audit — automated detection prevents recurrence.
+- Dependencies: T419, T420, T421 (resolve collisions first)
+- Estimated effort: Low
+- Required outputs: New test file in tests/, runs in CI.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T426
+Status: [ ] Todo
+Title: Add test coverage for 58 untested route modules
+Description:
+- Goal / acceptance criteria: 58 of 108 route modules have no corresponding test file. Prioritize adding tests for: cluster_update, cluster_update_hybrid, deployment_health, midi_v2, midi_cluster_proxy, nam_models, preset_exchange, preset_migration, plugin_presets, soundfonts, and other high-traffic routes.
+- Why it matters: Over 50% of route modules lack test coverage.
+- Dependencies: None
+- Estimated effort: High (phased)
+- Required outputs: Test files for top-priority untested routes.
+- Full list of untested routes: audio_diagnostics, audio_path, backup, base, cluster_nodes, cluster_plugin_inventory, cluster_update_hybrid, cluster_update, core_plugins, cpu_metrics, dashboard, deployment_health, dev_proxy, drums, dynamics, filters, flow_failover, folders, guitar, h3000, history, impulse_response, lcd_events, lexi_love, loudness, midi_cluster_proxy, midi_learn, midi_v2, modulation, monitoring, nam_models, network, nodes, packages, parallel, passionfx, peavey5150, performance, pitch, platform_remediation, plugin_appearances, plugin_packages, plugin_presets, plugin_scanner, plugin_tags, preset_exchange, preset_migration, raft_api, reverb, sessions, shopping, soundfonts, spectrum, ssh_trust, system_tests, tweedbassman, upload, usb_devices, websocket_rt
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
+
+ID: T427
+Status: [ ] Todo
+Title: Add unregistered-route-file CI check
+Description:
+- Goal / acceptance criteria: Create a test that scans `app/routes/` for files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list, individually registered, or documented as a utility-only module (like base.py). Currently only base.py is unregistered, plus the dead `pipedal_compat_router` inside engine.py.
+- Why it matters: Prevents abandoned route files from accumulating undetected.
+- Dependencies: T415, T418 (clean up existing unregistered routes first)
+- Estimated effort: Low
+- Required outputs: New test file, runs in CI.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-26 - Audit v2
 Description:
 - Goal / acceptance criteria: Remove `web/src/pipedal/` entirely — 229 files with zero imports from `web/src/app/`. Verify `npm run build` succeeds afterward.
 - Why it matters: ~15,000 lines of dead predecessor-project code adding noise to searches, IDE indexing, and bundle analysis.
