@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 26, 2026 (ProtectSystem override fix + manifest degraded-read hardening)
+> **Last Updated**: March 26, 2026 (ProtectSystem override fix + PTP monitor runtime-socket hardening)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1035,6 +1035,13 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `systemctl show map2-backend.service -p ProtectSystem -p ReadWritePaths`; `curl -i http://127.0.0.1:8080/api/platform-remediation/summary`; `curl -i http://127.0.0.1:8080/api/platform-remediation/sync/history`; `curl -i http://127.0.0.1:8080/api/cluster/update/manifest`; `curl -i http://127.0.0.1:8080/api/cluster/update/manifest/drift`
 - **Lesson**: Under systemd hardening, `ReadWritePaths` is part of the API contract. A later override can silently shadow the base unit and break backend state even when the repository unit looks correct.
 
+**13. `pmc -u` Needs A Writable Client Socket Path Under Hardening**
+- **Problem**: After the manifest/storage fix, the backend still spammed the journal with `pmc` failures: `uds: bind failed: Read-only file system`.
+- **Root Cause**: `pmc -u` defaults its local client socket to `/var/run/pmc.$pid`; inside the hardened backend namespace that path remained read-only even though `/run/map2-audio` was writable.
+- **Fix**: Reserve a unique `pmc` client socket path under `/run/map2-audio`, pass it via `pmc -u -i <path>`, clean it up after each query, and skip the direct `pmc` path entirely when a writable runtime socket cannot be prepared.
+- **Verification**: `curl -i http://127.0.0.1:8080/api/avb/ptp/status`; `journalctl -u map2-backend.service --since '<restart time>' --no-pager | rg "pmc|uds: bind failed|failed to open transport"`; `pytest -q tests/test_ptp_monitor.py tests/test_avb_service_stats.py`
+- **Lesson**: Hardening bugs are not limited to persisted state. Any helper that creates transient UNIX sockets must bind them under an explicitly writable runtime path, not `/var/run` by default.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1430,6 +1437,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-26] - PTP Monitor Runtime Socket Fix Under Hardening
+- **Section**: Gotchas & Learned Fixes (#13), Server Management Gotchas
+- **Change**: Documented the need to force `pmc -u` client sockets under `/run/map2-audio` and to skip direct `pmc` execution when that writable runtime path cannot be prepared.
+- **Reason**: Even after the main backend writable-path contract was fixed, the live service kept spamming `uds: bind failed: Read-only file system` because `pmc` still defaulted to `/var/run/pmc.$pid`.
+- **Impact**: Future AVB/PTP hardening work should audit transient UNIX-socket clients the same way it audits persisted state paths.
+- **Files**: `.github/copilot-instructions.md`, `app/services/avb/ptp_monitor.py`, `tests/test_ptp_monitor.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-26] - ProtectSystem Override Fix For Manifest-Backed Routes
 - **Section**: Gotchas & Learned Fixes (#12), Server Management Gotchas

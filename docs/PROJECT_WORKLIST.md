@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 12:22 EDT - Completed T430 to harden Platforms remediation and manifest routes against read-only backend state storage
+Last updated: 2026-03-26 12:32 EDT - Completed T431 to stop pmc UDS bind failures under backend systemd hardening
+
+ID: T431
+Status: [✓] Done
+Title: Stop pmc PTP monitor socket failures under backend systemd hardening
+Description:
+- Goal / acceptance criteria: Ensure the backend PTP monitor no longer spawns `pmc` processes that fail with `uds: bind failed: Read-only file system` under `ProtectSystem=strict`. The fix must keep PTP status queries functional by binding any `pmc -u` client socket under a backend-writable runtime path, add focused regression tests, and eliminate the repeated journal spam after a backend restart.
+- Why it matters: Even after T430 restored `/var/lib/map2`, the live backend still logs continuous `pmc` UDS bind failures because `pmc -u` defaults its client socket to `/var/run/pmc.$pid`, which is still read-only inside the hardened backend namespace. That obscures real AVB/PTP issues and keeps the host in a noisy partial-failure state.
+- Dependencies: T430; `app/services/avb/ptp_monitor.py`; backend runtime path `/run/map2-audio`
+- Estimated effort: Low
+- Required outputs: PTP monitor runtime-path fix, focused tests, live backend verification, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 12:32 EDT - Codex
+- Completion notes:
+  - Updated `app/services/avb/ptp_monitor.py` so `pmc -u` now reserves a unique client socket path under `/run/map2-audio`, cleans that path up after each query, and skips direct `pmc` execution altogether when a writable runtime socket path cannot be prepared.
+  - Kept the PTP monitor behavior safe under hardening: if the writable client socket cannot be reserved or `pmc` still fails, the monitor falls back to journal parsing instead of reintroducing repeated read-only UDS bind spam.
+  - Added focused regression coverage in `tests/test_ptp_monitor.py` for both the writable-runtime-socket path and the no-writable-socket fallback path, and reran the existing AVB stats route coverage to ensure the higher-level API contract remains intact.
+  - Live-host verification: restarted `map2-backend.service`, confirmed `curl -i http://127.0.0.1:8080/api/avb/ptp/status` returned `200`, and verified `journalctl -u map2-backend.service --since '2026-03-26 12:31:10' --no-pager | rg -n "pmc|uds: bind failed|failed to open transport"` returned no matches, showing the new backend process stopped the repeated `pmc` read-only socket failures.
+  - Licensing review: touched backend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reused the current-cycle scans `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_ptp_monitor.py tests/test_avb_service_stats.py` -> PASS; `python3 -m py_compile app/services/avb/ptp_monitor.py tests/test_ptp_monitor.py` -> PASS; live `map2-backend.service` restart -> PASS.
 
 ID: T430
 Status: [✓] Done

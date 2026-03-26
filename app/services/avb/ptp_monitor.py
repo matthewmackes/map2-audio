@@ -7,13 +7,22 @@ Gracefully handles ptp4l not running by returning available=False.
 
 import asyncio
 import logging
-import subprocess
+import os
 import re
+import shutil
+import subprocess
 from dataclasses import dataclass, asdict
+from pathlib import Path
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
+_PMC_RUNTIME_DIR = Path("/run/map2-audio")
+
+
+def _utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
@@ -48,6 +57,46 @@ class PTPMonitor:
         self.last_status: Optional[PTPStatus] = None
         self._monitoring = False
         self._monitor_task: Optional[asyncio.Task] = None
+
+    def _reserve_pmc_client_socket_path(self) -> Optional[Path]:
+        try:
+            _PMC_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            logger.debug("Unable to prepare pmc runtime directory %s: %s", _PMC_RUNTIME_DIR, exc)
+            return None
+        return _PMC_RUNTIME_DIR / f"pmc.{os.getpid()}.{uuid4().hex}"
+
+    async def _run_pmc_query(self, command: str) -> Optional[str]:
+        client_socket = self._reserve_pmc_client_socket_path()
+        if client_socket is None:
+            return None
+
+        try:
+            try:
+                client_socket.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+            proc = await asyncio.create_subprocess_exec(
+                "pmc", "-u", "-b", "0",
+                "-i", str(client_socket),
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=2.0)
+
+            if proc.returncode != 0:
+                logger.debug("pmc failed: %s", stderr.decode().strip())
+                return None
+
+            return stdout.decode()
+        finally:
+            try:
+                client_socket.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     async def get_status(self) -> PTPStatus:
         """
@@ -87,7 +136,7 @@ class PTPMonitor:
             return PTPStatus(
                 available=True,
                 state="INITIALIZING",
-                last_update=datetime.utcnow().isoformat()
+                last_update=_utcnow_iso()
             )
 
         except subprocess.TimeoutExpired:
@@ -102,26 +151,13 @@ class PTPMonitor:
         """Query ptp4l via pmc (PTP management client)"""
         try:
             # Check if pmc is available
-            import shutil
             if not shutil.which("pmc"):
                 logger.debug("pmc not found")
                 return None
 
-            # Query current dataset (includes offset, GM, etc.)
-            proc = await asyncio.create_subprocess_exec(
-                "pmc", "-u", "-b", "0",
-                "GET CURRENT_DATA_SET",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=2.0)
-
-            if proc.returncode != 0:
-                logger.debug(f"pmc failed: {stderr.decode()}")
+            output = await self._run_pmc_query("GET CURRENT_DATA_SET")
+            if not output:
                 return None
-
-            output = stdout.decode()
 
             # Parse pmc output
             # Example:
@@ -150,15 +186,9 @@ class PTPMonitor:
                 state = "UNKNOWN"
 
             # Get parent dataset for GM info
-            proc2 = await asyncio.create_subprocess_exec(
-                "pmc", "-u", "-b", "0",
-                "GET PARENT_DATA_SET",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            stdout2, _ = await asyncio.wait_for(proc2.communicate(), timeout=2.0)
-            output2 = stdout2.decode()
+            output2 = await self._run_pmc_query("GET PARENT_DATA_SET")
+            if output2 is None:
+                output2 = ""
 
             # Parse GM identity
             gm_match = re.search(r'grandmasterIdentity\s+([0-9a-f.]+)', output2)
@@ -177,7 +207,7 @@ class PTPMonitor:
                 grandmaster_id=gm_id,
                 grandmaster_priority1=gm_priority,
                 grandmaster_clock_class=gm_class,
-                last_update=datetime.utcnow().isoformat()
+                last_update=_utcnow_iso()
             )
 
         except asyncio.TimeoutError:
@@ -217,7 +247,7 @@ class PTPMonitor:
                     state=state or "UNKNOWN",
                     offset_ns=offset_ns,
                     mean_path_delay_ns=delay_ns,
-                    last_update=datetime.utcnow().isoformat()
+                    last_update=_utcnow_iso()
                 )
 
             return None
