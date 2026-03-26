@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**822** Python | **1152** TypeScript | **300** C++/H | **124** Docs | **907** total commits | **2** stars | **0** forks | **0** open issues
+**822** Python | **1152** TypeScript | **300** C++/H | **124** Docs | **909** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c5b83526`](https://github.com/matthewmackes/map2-audio/commit/c5b83526a67c3d4cc695ff05335b8dfcf769fec3) | Move chain A/B routes onto a dedicated prefix | Map2 Audio | 2026-03-26 |
+| [`a632d1c0`](https://github.com/matthewmackes/map2-audio/commit/a632d1c0e60c4323568375e446c6b2392f3de47f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`a4387712`](https://github.com/matthewmackes/map2-audio/commit/a438771227cef454c8e2ae3aa084ea21d751d4bb) | Move route helpers out of app.routes and tighten router p... | Map2 Audio | 2026-03-26 |
 | [`f7f60462`](https://github.com/matthewmackes/map2-audio/commit/f7f60462daf11efd5932b0d3f15abb730f3c4ee3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`8d74acb0`](https://github.com/matthewmackes/map2-audio/commit/8d74acb0ac4ed6c4642a786a01dffaed5b821aca) | Remove stale LV2 services and dead PiPedal compatibility ... | Map2 Audio | 2026-03-26 |
 | [`6d033177`](https://github.com/matthewmackes/map2-audio/commit/6d033177395b21a2ed3d1e8b10e31427025c6049) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`812d0e55`](https://github.com/matthewmackes/map2-audio/commit/812d0e55fae96bc450d232312c5cf2d64c906c14) | Add plugin-position fallback for NAM and IR asset editors | Map2 Audio | 2026-03-26 |
 | [`81e28dbe`](https://github.com/matthewmackes/map2-audio/commit/81e28dbea1c7939e7dfc7b9b61cec064a7ecb77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`295aafb6`](https://github.com/matthewmackes/map2-audio/commit/295aafb6136c3a867d0872fe6ed9fd18b655f776) | Add plugin output routing updates and parameter control p... | Map2 Audio | 2026-03-26 |
-| [`4009655a`](https://github.com/matthewmackes/map2-audio/commit/4009655a002ae5865e0b63fd0854183658f4e36b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
