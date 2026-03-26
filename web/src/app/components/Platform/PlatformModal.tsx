@@ -66,8 +66,8 @@ import {
 import {
   useNodeOperations,
   type HybridApplicationStatusInfo,
-  type HybridApplicationUpdateStepInfo,
 } from '../../hooks/useNodeOperations'
+import { makePendingUpdateApplicationSteps } from '../../hooks/updateApplicationProgressModel'
 import { usePlatformShellData } from '../../hooks/usePlatformShellData'
 import type {
   PlatformAlert,
@@ -116,69 +116,6 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
 }
-
-const FALLBACK_UPDATE_PROGRESS_STEPS: HybridApplicationUpdateStepInfo[] = [
-  {
-    key: 'detect-mode',
-    question: 'Which update path should MAP2 use?',
-    detail: 'Determine whether this node should update through Git or RPM.',
-    status: 'pending',
-  },
-  {
-    key: 'identify-current-build',
-    question: 'What build is currently installed?',
-    detail: 'Read the currently installed commit or package version before changing anything.',
-    status: 'pending',
-  },
-  {
-    key: 'validate-source',
-    question: 'Is the update source healthy?',
-    detail: 'Validate that the selected repository or package source is usable.',
-    status: 'pending',
-  },
-  {
-    key: 'prepare-local-state',
-    question: 'Can the node prepare its local state safely?',
-    detail: 'Prepare the working tree or mark why that step is not needed for this mode.',
-    status: 'pending',
-  },
-  {
-    key: 'fetch-update-payload',
-    question: 'Can MAP2 fetch the requested update payload?',
-    detail: 'Reach the remote branch or package metadata needed for the update.',
-    status: 'pending',
-  },
-  {
-    key: 'apply-target-version',
-    question: 'Can the target application version be applied?',
-    detail: 'Checkout the requested branch or install the requested package.',
-    status: 'pending',
-  },
-  {
-    key: 'refresh-runtime-dependencies',
-    question: 'Can runtime dependencies be refreshed?',
-    detail: 'Refresh Python or packaged runtime dependencies required by the updated build.',
-    status: 'pending',
-  },
-  {
-    key: 'refresh-frontend-dependencies',
-    question: 'Can frontend dependencies be refreshed?',
-    detail: 'Refresh frontend dependencies when the update mode requires a rebuild.',
-    status: 'pending',
-  },
-  {
-    key: 'rebuild-frontend-assets',
-    question: 'Can the frontend bundle be rebuilt cleanly?',
-    detail: 'Rebuild the production frontend assets if they are not shipped prebuilt.',
-    status: 'pending',
-  },
-  {
-    key: 'validate-and-finalize',
-    question: 'Does validation confirm the update is safe to keep?',
-    detail: 'Run post-update validation and publish the final result back to the operator.',
-    status: 'pending',
-  },
-]
 
 type PinnableNavTarget = PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem
 
@@ -606,7 +543,7 @@ function UpdateProgressModal({
   launchError: string | null
   onClose: () => void
 }) {
-  const steps = status?.steps?.length ? status.steps : FALLBACK_UPDATE_PROGRESS_STEPS
+  const steps = status?.steps?.length ? status.steps : makePendingUpdateApplicationSteps()
   const activeStepIndex = status?.current_step_index ?? steps.findIndex((step) => step.status === 'running')
   const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : null
   const versionLabel = status?.current_version ?? hybridVersion?.version ?? 'pending'

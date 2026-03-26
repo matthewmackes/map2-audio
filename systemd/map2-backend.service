@@ -105,7 +105,7 @@ CapabilityBoundingSet=CAP_SYS_NICE
 # Security hardening (NoNewPrivileges removed - RT scheduling via RTKit requires new privileges)
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /home/mm/.config/pipewire /home/mm/.local/share /home/mm/.cache /tmp /etc/map2 /run/map2-audio
+ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /home/mm/.config/pipewire /home/mm/.local/share /home/mm/.cache /tmp /etc/map2 /run/map2-audio /var/lib/map2 /var/log/map2
 
 [Install]
 WantedBy=multi-user.target

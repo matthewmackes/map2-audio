@@ -22,6 +22,7 @@ import {
 
 import {
   type RemediationNode,
+  type RemediationWorkflowStatus,
   type RemediationSummary,
   type RemediationWorkflow,
   usePlatformRemediationActions,
@@ -216,6 +217,7 @@ export function PlatformRemediationWorkflow({
       onCaptureSource={(sourceNodeId) => actions.captureSource.mutateAsync(sourceNodeId)}
       onSyncNow={() => actions.runSync.mutateAsync({ nodeIds: selectedNodeIds })}
       onFixNode={(nodeId) => actions.fixSync.mutateAsync(nodeId)}
+      syncStatus={summary?.workflows?.sync}
       historyItems={historyQuery.data?.items ?? []}
       onRestore={(historyFile) => actions.restoreSync.mutateAsync(historyFile)}
       busy={
@@ -442,6 +444,7 @@ function SyncWorkflow({
   onCaptureSource,
   onSyncNow,
   onFixNode,
+  syncStatus,
   historyItems,
   onRestore,
   busy,
@@ -456,11 +459,14 @@ function SyncWorkflow({
   onCaptureSource: (sourceNodeId: string) => Promise<unknown>
   onSyncNow: () => Promise<unknown>
   onFixNode: (nodeId: string) => Promise<unknown>
+  syncStatus?: RemediationWorkflowStatus
   historyItems: Array<{ history_file: string; timestamp?: string | null; source_node?: string | null }>
   onRestore: (historyFile: string) => Promise<unknown>
   busy: boolean
 }) {
   const [selectedHistory, setSelectedHistory] = useState<string>('')
+  const syncUnavailable = syncStatus?.available === false
+  const syncUnavailableMessage = syncStatus?.detail ?? 'Release sync is temporarily unavailable on this node. Adoption and cloned-node recovery still work.'
 
   return (
     <section className="platform-remediation__section">
@@ -470,6 +476,12 @@ function SyncWorkflow({
           <p>Use the version manifest as the held release level, compare live node builds, and sync targets in parallel.</p>
         </div>
       </div>
+      {syncUnavailable ? (
+        <Tile className="platform-remediation__card">
+          <strong>Release sync unavailable</strong>
+          <p>{syncUnavailableMessage}</p>
+        </Tile>
+      ) : null}
       <div className="platform-remediation__split">
         <Tile className="platform-remediation__card">
           <div className="platform-remediation__card-header">
@@ -480,10 +492,14 @@ function SyncWorkflow({
             legend="Registered nodes"
             name="sync-source"
             valueSelected={currentSource?.node_id ?? ''}
-            onChange={(value) => { void onCaptureSource(String(value)) }}
+            onChange={(value) => {
+              if (!syncUnavailable) {
+                void onCaptureSource(String(value))
+              }
+            }}
           >
             {sourceNodes.map((node) => (
-              <RadioTile key={node.node_id} id={`source-${node.node_id}`} value={node.node_id}>
+              <RadioTile key={node.node_id} id={`source-${node.node_id}`} value={node.node_id} disabled={syncUnavailable || busy}>
                 {node.hostname} {node.version ? `· ${node.version}` : ''}
               </RadioTile>
             ))}
@@ -498,6 +514,7 @@ function SyncWorkflow({
             className="platform-remediation__select"
             aria-label="Manifest history"
             value={selectedHistory}
+            disabled={syncUnavailable || busy}
             onChange={(event) => setSelectedHistory(event.target.value)}
           >
             <option value="">Select manifest history</option>
@@ -508,7 +525,7 @@ function SyncWorkflow({
             ))}
           </select>
           <div className="platform-remediation__action-row">
-            <Button size="sm" kind="secondary" disabled={!selectedHistory || busy} onClick={() => void onRestore(selectedHistory)}>
+            <Button size="sm" kind="secondary" disabled={syncUnavailable || !selectedHistory || busy} onClick={() => void onRestore(selectedHistory)}>
               Rollback to release
             </Button>
           </div>
@@ -529,6 +546,7 @@ function SyncWorkflow({
                 id={`sync-node-${node.node_id}`}
                 checked={selectedNodeIds.includes(node.node_id)}
                 labelText=""
+                disabled={syncUnavailable || busy}
                 onChange={(_, { checked }) => onToggleNode(node.node_id, Boolean(checked))}
               />
               <div className="platform-remediation__selector-copy">
@@ -538,12 +556,12 @@ function SyncWorkflow({
               <div className="platform-remediation__tag-row">
                 {node.sync_states.map((state) => <Tag key={state} type={stateTagType(state)}>{humanizeState(state)}</Tag>)}
               </div>
-              <Button kind="ghost" size="sm" disabled={busy} onClick={() => void onFixNode(node.node_id)}>Fix</Button>
+              <Button kind="ghost" size="sm" disabled={syncUnavailable || busy} onClick={() => void onFixNode(node.node_id)}>Fix</Button>
             </label>
           ))}
         </div>
         <div className="platform-remediation__action-row">
-          <Button size="sm" disabled={selectedNodes.length === 0 || busy} onClick={() => void onSyncNow()}>Sync now</Button>
+          <Button size="sm" disabled={syncUnavailable || selectedNodes.length === 0 || busy} onClick={() => void onSyncNow()}>Sync now</Button>
         </div>
       </Tile>
       {summary?.manifest?.timestamp ? (

@@ -119,8 +119,16 @@ const makeNodeOperations = (overrides: Record<string, unknown> = {}) => ({
   backupStatus: { total_backups: 0 },
   backups: [],
   health: { status: 'healthy', uptime_seconds: 3600, services: {} },
-  remediation: { status: 'healthy', counts: {} },
-  manifestDrift: { drifted: false, nodes: [] },
+  remediation: {
+    status: 'ok',
+    counts: { adoption: {}, sync: {}, clone: {} },
+    workflows: {
+      adoption: { available: true, state: 'ready' },
+      sync: { available: true, state: 'ready' },
+      clone: { available: true, state: 'ready' },
+    },
+  },
+  manifestDrift: { status: 'ok', available: true, drifted: false, nodes: [] },
   isLoading: false,
   errors: [],
   triggerUpdate: mockTriggerUpdate,

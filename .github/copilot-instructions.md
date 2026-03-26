@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 25, 2026 (Ink TUI shell launcher integrated into MAP2 bash experience)
+> **Last Updated**: March 26, 2026 (ProtectSystem override fix + manifest degraded-read hardening)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1028,6 +1028,13 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `./map2-tui --help`; `./map2.sh ink --help`; `bash -ic 'type map2-tui; type map2-ink; type map2'`
 - **Lesson**: When adding a new operator-facing surface, update the bash bootstrap and alias layer together with the docs; otherwise the documented shell command path will silently keep launching the old tool.
 
+**12. `ProtectSystem=strict` Overrides Must Preserve `/var/lib/map2`**
+- **Problem**: Platforms remediation and manifest read routes started failing with `500` even though the source tree already pointed manifest state at `/var/lib/map2`.
+- **Root Cause**: The live `map2-backend.service.d/override.conf` replaced `ReadWritePaths` with only `~/.local/share` and `~/.cache`, so the backend process saw `/var/lib/map2/version_manifest_history` on a read-only mount and crashed during manifest initialization.
+- **Fix**: Keep `/var/lib/map2` and `/var/log/map2` in every effective backend `ReadWritePaths` definition, detect read-only manifest storage in `VersionManifest` without eagerly `mkdir`-ing, and make manifest-backed read routes degrade to structured `200` responses while write routes stay strict `503`s.
+- **Verification**: `systemctl show map2-backend.service -p ProtectSystem -p ReadWritePaths`; `curl -i http://127.0.0.1:8080/api/platform-remediation/summary`; `curl -i http://127.0.0.1:8080/api/platform-remediation/sync/history`; `curl -i http://127.0.0.1:8080/api/cluster/update/manifest`; `curl -i http://127.0.0.1:8080/api/cluster/update/manifest/drift`
+- **Lesson**: Under systemd hardening, `ReadWritePaths` is part of the API contract. A later override can silently shadow the base unit and break backend state even when the repository unit looks correct.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1423,6 +1430,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-26] - ProtectSystem Override Fix For Manifest-Backed Routes
+- **Section**: Gotchas & Learned Fixes (#12), Server Management Gotchas
+- **Change**: Documented that the backend manifest/remediation surfaces depend on `/var/lib/map2` remaining in every effective `ReadWritePaths` definition and that manifest-backed reads must degrade cleanly when storage is unavailable.
+- **Reason**: A live override narrowed the writable allowlist to `~/.local/share` and `~/.cache`, which made `/api/platform-remediation/summary` and `/api/cluster/update/manifest*` fail with `500` until the backend unit contract and route hardening were fixed together.
+- **Impact**: Future service-hardening or realtime override edits should preserve the canonical MAP2 state paths and verify the remediation/manifest endpoints immediately after restart.
+- **Files**: `.github/copilot-instructions.md`, `systemd/map2-backend.service`, `scripts/setup_realtime.sh`, `ReadMe-Make_New_Node.txt`, `app/services/cluster/version_manifest.py`, `app/routes/platform_remediation.py`, `app/routes/cluster_update.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-24] - Stable Platform Version Artifacts Across Rebuild Loops
 - **Section**: Gotchas & Learned Fixes (#10), Build & Deployment Workflow

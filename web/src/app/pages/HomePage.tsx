@@ -205,6 +205,7 @@ export function HomePage() {
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
   const remediationCounts = remediationSummary.data?.counts
+  const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
   const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
 
   const remediationPills = [
@@ -220,7 +221,7 @@ export function HomePage() {
     { workflow: 'sync' as const, state: 'rollback_available', count: remediationCounts?.sync?.rollback_available ?? 0, label: 'Rollback' },
     { workflow: 'clone' as const, state: 'confirmed_clone', count: remediationCounts?.clone?.confirmed_clone ?? 0, label: 'Confirmed Clone' },
     { workflow: 'clone' as const, state: 'suspected_clone', count: remediationCounts?.clone?.suspected_clone ?? 0, label: 'Suspected Clone' },
-  ].filter((pill) => pill.count > 0)
+  ].filter((pill) => pill.count > 0 && (pill.workflow !== 'sync' || syncWorkflowAvailable))
 
   return (
     <div className="hp2-root">
@@ -279,7 +280,7 @@ export function HomePage() {
           {RIGHT_COLUMN_CARDS.map((card) => {
             const dynamicDesc =
               card.id === 'platforms' && nodeStatusLabel
-                ? nodeStatusLabel
+                ? (syncWorkflowAvailable ? nodeStatusLabel : 'Sync unavailable')
                 : card.description
 
             return (
@@ -291,7 +292,7 @@ export function HomePage() {
                 <div className="hp2-card__body">
                   <card.icon size={20} />
                   <h2 className="hp2-card__title">{card.title}</h2>
-                  {card.id === 'platforms' && remediationPills.length > 0 ? (
+                  {card.id === 'platforms' && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
                     <div className="hp2-card__pills" aria-label="Platforms remediation pills">
                       {remediationPills.map((pill) => (
                         <button
@@ -313,6 +314,9 @@ export function HomePage() {
                           {pill.label}: {pill.count}
                         </button>
                       ))}
+                      {!syncWorkflowAvailable ? (
+                        <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
+                      ) : null}
                     </div>
                   ) : null}
                   <p className="hp2-card__desc">{dynamicDesc}</p>

@@ -631,7 +631,7 @@ ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum ${TARGET_QUA
 CPUAffinity=${AUDIO_CPUS//,/ }
 AmbientCapabilities=CAP_SYS_NICE
 CapabilityBoundingSet=CAP_SYS_NICE
-ReadWritePaths=/home/$USER/.local/share /home/$USER/.cache"
+ReadWritePaths=/home/$USER/.local/share /home/$USER/.cache /var/lib/map2 /var/log/map2 /etc/map2 /tmp /run/map2-audio"
 
     if $DRY_RUN; then
         dry "write $SYS_DROPINS_DIR/override.conf"

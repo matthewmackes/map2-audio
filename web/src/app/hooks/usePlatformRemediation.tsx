@@ -3,6 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export type RemediationWorkflow = 'adoption' | 'sync' | 'clone'
 
+export interface RemediationWorkflowStatus {
+  available: boolean
+  state: 'ready' | 'unavailable'
+  reason?: string | null
+  detail?: string | null
+}
+
 export interface RemediationNode {
   node_id: string
   hostname: string
@@ -36,11 +43,16 @@ export interface RemediationNode {
 }
 
 export interface RemediationSummary {
-  status: string
+  status: 'ok' | 'degraded'
   counts: {
     adoption: Record<string, number>
     sync: Record<string, number>
     clone: Record<string, number>
+  }
+  workflows?: {
+    adoption?: RemediationWorkflowStatus
+    sync?: RemediationWorkflowStatus
+    clone?: RemediationWorkflowStatus
   }
   manifest?: {
     source_node?: string | null
@@ -54,6 +66,14 @@ export interface RemediationHistoryEntry {
   timestamp?: string | null
   source_node?: string | null
   package_count?: number | null
+}
+
+export interface RemediationHistoryResponse {
+  status: 'ok' | 'degraded'
+  available: boolean
+  reason?: string | null
+  detail?: string | null
+  items: RemediationHistoryEntry[]
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -74,7 +94,7 @@ export function usePlatformRemediationSummary() {
 }
 
 export function usePlatformRemediationHistory() {
-  return useQuery<{ status: string; items: RemediationHistoryEntry[] }>({
+  return useQuery<RemediationHistoryResponse>({
     queryKey: ['platform-remediation', 'sync-history'],
     queryFn: () => fetchJson('/api/platform-remediation/sync/history'),
     staleTime: 0,

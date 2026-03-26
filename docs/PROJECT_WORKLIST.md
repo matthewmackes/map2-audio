@@ -6,7 +6,49 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 10:33 EDT - Closed T428 after restoring a clean git tree across repeated port-3000 deploy loops
+Last updated: 2026-03-26 12:22 EDT - Completed T430 to harden Platforms remediation and manifest routes against read-only backend state storage
+
+ID: T430
+Status: [✓] Done
+Title: Prevent Platforms remediation and manifest routes from failing when backend state storage is read-only
+Description:
+- Goal / acceptance criteria: Ensure `GET /api/platform-remediation/summary`, `GET /api/platform-remediation/sync/history`, `GET /api/cluster/update/manifest`, and `GET /api/cluster/update/manifest/drift` no longer fail with `500` when manifest storage is unavailable. Fix the backend service hardening so `/var/lib/map2` is writable under `ProtectSystem=strict`, keep `/var/lib/map2` as the canonical persisted state root, and degrade the frontend to a simple sync-unavailable state while preserving adoption/clone workflows.
+- Why it matters: The current live backend runs with `ProtectSystem=strict` and no `/var/lib/map2` in `ReadWritePaths`, so one manifest-storage failure breaks multiple operator-facing remediation and update surfaces.
+- Dependencies: T417; T419; current backend systemd/runtime contract
+- Estimated effort: Medium
+- Required outputs: backend service contract fix, manifest-storage hardening, simplified remediation/update UX, focused tests, live verification, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 12:22 EDT - Codex
+- Completion notes:
+  - Refactored `app/services/cluster/version_manifest.py` so manifest construction and read helpers no longer eagerly create `/var/lib/map2/version_manifest_history`, added typed storage-availability metadata, and taught the storage probe to detect read-only mounts instead of relying on `os.access()` alone.
+  - Hardened `app/routes/platform_remediation.py` and `app/routes/cluster_update.py` so manifest-backed read surfaces return structured `200` degraded/unavailable payloads while manifest write actions stay strict and return `503` with operator-facing storage details.
+  - Updated the Platforms frontend to treat degraded remediation/manifest reads as valid state: `web/src/app/hooks/usePlatformRemediation.tsx`, `web/src/app/hooks/useNodeOperations.ts`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/components/Platform/PlatformRemediationWorkflow.tsx`, and `web/src/app/pages/HomePage.tsx` now keep adoption/clone flows usable and show a simple `Sync unavailable` state instead of a top-level fetch failure.
+  - Added focused regression coverage in `tests/test_version_manifest_resilience.py`, `tests/test_manifest_route_resilience.py`, `tests/test_backend_service_contract.py`, `web/src/app/components/Platform/PlatformRemediationWorkflow.test.tsx`, and `web/src/app/pages/HomePage.test.tsx`.
+  - Live-host rollout/verification: patched both `/etc/systemd/system/map2-backend.service` and `/etc/systemd/system/map2-backend.service.d/override.conf` so `ReadWritePaths` now includes `/var/lib/map2` and `/var/log/map2`, created those canonical directories with `mm:mm` ownership, reloaded systemd, and restarted `map2-backend.service`; afterward `systemctl show map2-backend.service -p ProtectSystem -p ReadWritePaths -p ActiveState -p SubState` reported `ProtectSystem=strict`, the expected writable paths, and `active/running`, while `curl -i http://127.0.0.1:8080/api/platform-remediation/summary`, `/api/platform-remediation/sync/history`, `/api/cluster/update/manifest`, and `/api/cluster/update/manifest/drift` all returned `200`.
+  - Licensing review: touched backend/frontend/systemd/doc/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_version_manifest_resilience.py tests/test_manifest_route_resilience.py tests/test_backend_service_contract.py tests/test_adoption_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformRemediationWorkflow.test.tsx web/src/app/pages/HomePage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `python3 -m py_compile app/services/cluster/version_manifest.py app/routes/platform_remediation.py app/routes/cluster_update.py tests/test_version_manifest_resilience.py tests/test_manifest_route_resilience.py tests/test_backend_service_contract.py` -> PASS.
+
+ID: T429
+Status: [✓] Done
+Title: Stop single-node application update progress from hanging on legacy backend payloads
+Description:
+- Goal / acceptance criteria: Ensure the single-node Platforms update modal no longer hangs on placeholder `pending` steps when the live backend is still serving the older `/api/cluster/update/application*` contract. The frontend must normalize legacy status/version payloads, surface synchronous legacy update failures as real modal failures instead of idle/pending placeholders, and the live host should be rolled onto the current backend/frontend generation so the modal can render real progress data.
+- Why it matters: The current host still exposes the legacy application-update endpoints on port `8080`, where `GET /application/status` and `GET /application/version` return older payload shapes and `POST /application` can fail synchronously with `Repository validation failed`. The current frontend only falls back by URL, so the modal keeps rendering all steps as `pending` instead of showing the actual failure or live progress state.
+- Dependencies: T427; running services on ports `3000` and `8080`; `web/src/app/hooks/updateApplicationApi.ts`; `web/src/app/hooks/useNodeOperations.ts`; `web/src/app/components/Platform/PlatformModal.tsx`
+- Estimated effort: Medium
+- Required outputs: frontend legacy-contract normalization, focused regression tests, live service restart/verification, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 11:40 EDT - Codex
+- Completion notes:
+  - Added a shared progress blueprint in `web/src/app/hooks/updateApplicationProgressModel.ts` and rewired `web/src/app/components/Platform/PlatformModal.tsx` to use it, so the modal renders one canonical 10-step model instead of an ad hoc fallback list.
+  - Reworked `web/src/app/hooks/updateApplicationApi.ts` so the frontend now normalizes legacy `/api/cluster/update/application*` status/version payloads into the hybrid progress contract, preserves synchronous legacy POST failures as explicit failed progress state, and keeps route preference sticky until the backend restarts onto the newer hybrid endpoints.
+  - Updated `web/src/app/hooks/useNodeOperations.ts` and `web/src/app/hooks/usePlatformShellData.ts` to consume the normalized helpers, and made the update mutation throw on legacy synchronous failures so the UI surfaces a real launch error instead of resetting to an idle/pending placeholder.
+  - Added focused regression coverage in `web/src/app/hooks/updateApplicationApi.test.ts` for hybrid-first success, legacy POST fallback, legacy status/version normalization, preserved synchronous failure state, and route re-promotion after a backend restart.
+  - Live-host rollout/verification: the old Mar 24 backend process on port `8080` was replaced by forcing the `map2-backend.service`-owned `uvicorn` PID to restart under `Restart=on-failure`, after which `GET /api/cluster/update/hybrid/application/status` and `/version` returned `200` with the current hybrid payloads while the legacy `/api/cluster/update/application*` routes returned `404`; `npm --prefix web run deploy` then rebuilt and restarted port `3000`, which is now serving bundle `index-uoD1dik7.js` and proxying the same hybrid status payload successfully.
+  - Licensing review: touched frontend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing web/src/app/hooks tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/hooks/updateApplicationApi.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only; `curl -i http://127.0.0.1:8080/api/cluster/update/hybrid/application/status` -> 200; `curl -i http://127.0.0.1:3000/api/cluster/update/hybrid/application/status` -> 200; `curl -i http://127.0.0.1:3000/` -> 200.
 
 ID: T428
 Status: [✓] Done

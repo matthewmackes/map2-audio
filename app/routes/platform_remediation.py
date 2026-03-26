@@ -18,7 +18,11 @@ from pydantic import BaseModel, Field
 from app.services.cluster.integration_helpers import get_node_client
 from app.services.cluster.node_visibility import VisibleRemoteNode, get_visible_remote_nodes
 from app.services.cluster.registry import get_cluster_registry
-from app.services.cluster.version_manifest import get_version_manifest
+from app.services.cluster.version_manifest import (
+    ManifestStorageStatus,
+    ManifestStorageUnavailableError,
+    get_version_manifest,
+)
 from app.utils.platform_version import get_platform_version_payload
 
 logger = logging.getLogger(__name__)
@@ -46,6 +50,36 @@ class SyncRestoreRequest(BaseModel):
 class CloneRecoverRequest(BaseModel):
     node_ids: list[str] = Field(default_factory=list)
     management_node_ip: Optional[str] = None
+
+
+def _workflow_status(
+    *,
+    available: bool,
+    reason: Optional[str] = None,
+    detail: Optional[str] = None,
+) -> dict[str, Any]:
+    return {
+        "available": available,
+        "state": "ready" if available else "unavailable",
+        "reason": reason,
+        "detail": detail,
+    }
+
+
+def _sync_workflow_status(status: ManifestStorageStatus) -> dict[str, Any]:
+    return _workflow_status(
+        available=status.available,
+        reason=status.reason,
+        detail=status.detail,
+    )
+
+
+def _require_sync_storage() -> tuple[Any, ManifestStorageStatus]:
+    service = get_version_manifest()
+    status = service.get_storage_status()
+    if not status.available:
+        raise HTTPException(status_code=503, detail=status.detail or "Version manifest storage is unavailable")
+    return service, status
 
 
 def _slugify(value: str, fallback: str = "node") -> str:
@@ -121,8 +155,8 @@ async def _collect_bootstrap_status_for_node(node: VisibleRemoteNode) -> dict[st
     }
 
 
-def _manifest_history_entries() -> list[dict[str, Any]]:
-    service = get_version_manifest()
+def _manifest_history_entries(service=None) -> list[dict[str, Any]]:
+    service = service or get_version_manifest()
     history: list[dict[str, Any]] = []
     for filename in service.list_manifest_history():
         path = service.history_dir / filename
@@ -140,9 +174,13 @@ def _manifest_history_entries() -> list[dict[str, Any]]:
     return history
 
 
-async def _build_remediation_nodes() -> list[dict[str, Any]]:
+async def _build_remediation_nodes(
+    *,
+    sync_available: bool,
+    manifest: Optional[dict[str, Any]],
+    history: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     _, visible_nodes = get_visible_remote_nodes()
-    local_node_id = socket.gethostname() or "local"
     local_version = get_platform_version_payload()
 
     nodes = sorted(visible_nodes.values(), key=lambda item: item.node_id)
@@ -161,11 +199,8 @@ async def _build_remediation_nodes() -> list[dict[str, Any]]:
         if result.get("remote_fingerprint")
     )
 
-    service = get_version_manifest()
-    manifest = service.get_manifest()
-    held_source = manifest.get("source_node") if isinstance(manifest, dict) else None
-    history = _manifest_history_entries()
-    rollback_available = bool(history)
+    held_source = manifest.get("source_node") if sync_available and isinstance(manifest, dict) else None
+    rollback_available = bool(sync_available and history)
 
     rendered: list[dict[str, Any]] = []
     for node in nodes:
@@ -174,14 +209,15 @@ async def _build_remediation_nodes() -> list[dict[str, Any]]:
         adoption_state = node.adoption_state or ("ready" if node.registered else "candidate")
 
         sync_states: list[str] = []
-        if held_source:
-            sync_states.append("held")
-        if rollback_available:
-            sync_states.append("rollback_available")
-        if version_info.get("error"):
-            sync_states.append("failed")
-        elif version_info.get("version") and version_info.get("version") != local_version.get("version"):
-            sync_states.append("outdated")
+        if sync_available:
+            if held_source:
+                sync_states.append("held")
+            if rollback_available:
+                sync_states.append("rollback_available")
+            if version_info.get("error"):
+                sync_states.append("failed")
+            elif version_info.get("version") and version_info.get("version") != local_version.get("version"):
+                sync_states.append("outdated")
 
         clone_states: list[str] = []
         fingerprint = bootstrap_info.get("remote_fingerprint")
@@ -214,7 +250,7 @@ async def _build_remediation_nodes() -> list[dict[str, Any]]:
             "remote_fingerprint": fingerprint,
             "sync_states": sync_states,
             "clone_states": clone_states,
-            "is_source_of_truth": held_source == node.node_id,
+            "is_source_of_truth": bool(sync_available and held_source == node.node_id),
             "rollback_available": rollback_available,
         })
 
@@ -246,14 +282,27 @@ def _summarize_counts(nodes: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
 
 @router.get("/summary")
 async def get_platform_remediation_summary() -> dict[str, Any]:
-    nodes = await _build_remediation_nodes()
-    manifest = get_version_manifest().get_manifest()
+    service = get_version_manifest()
+    storage_status = service.get_storage_status()
+    sync_available = storage_status.available
+    manifest = service.get_manifest() if sync_available else None
+    history = _manifest_history_entries(service) if sync_available else []
+    nodes = await _build_remediation_nodes(
+        sync_available=sync_available,
+        manifest=manifest if isinstance(manifest, dict) else None,
+        history=history,
+    )
     return {
-        "status": "ok",
+        "status": "ok" if sync_available else "degraded",
         "counts": _summarize_counts(nodes),
         "manifest": {
             "source_node": manifest.get("source_node") if isinstance(manifest, dict) else None,
             "timestamp": manifest.get("timestamp") if isinstance(manifest, dict) else None,
+        },
+        "workflows": {
+            "adoption": _workflow_status(available=True),
+            "sync": _sync_workflow_status(storage_status),
+            "clone": _workflow_status(available=True),
         },
         "nodes": nodes,
     }
@@ -261,26 +310,47 @@ async def get_platform_remediation_summary() -> dict[str, Any]:
 
 @router.get("/sync/history")
 async def list_sync_history() -> dict[str, Any]:
-    return {"status": "ok", "items": _manifest_history_entries()}
+    service = get_version_manifest()
+    storage_status = service.get_storage_status()
+    if not storage_status.available:
+        return {
+            "status": "degraded",
+            "available": False,
+            "reason": storage_status.reason,
+            "detail": storage_status.detail,
+            "items": [],
+        }
+    return {
+        "status": "ok",
+        "available": True,
+        "reason": None,
+        "detail": None,
+        "items": _manifest_history_entries(service),
+    }
 
 
 @router.post("/sync/capture")
 async def capture_sync_source(request: SyncCaptureRequest) -> dict[str, Any]:
+    service, _ = _require_sync_storage()
     try:
-        manifest = await asyncio.to_thread(get_version_manifest().capture_manifest, request.source_node_id)
+        manifest = await asyncio.to_thread(service.capture_manifest, request.source_node_id)
         return {"status": "ok", "manifest": manifest}
+    except ManifestStorageUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=exc.status.detail or "Version manifest storage is unavailable") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to capture source-of-truth manifest: {exc}") from exc
 
 
 @router.post("/sync/run")
 async def run_sync(request: SyncRunRequest) -> dict[str, Any]:
-    service = get_version_manifest()
+    service, _ = _require_sync_storage()
 
     async def run_one(node_id: str) -> dict[str, Any]:
         try:
             result = await asyncio.to_thread(service.enforce_manifest, node_id, request.dry_run)
             return {"node_id": node_id, **result}
+        except ManifestStorageUnavailableError as exc:
+            return {"node_id": node_id, "status": "failed", "detail": exc.status.detail or "Version manifest storage is unavailable"}
         except Exception as exc:
             return {"node_id": node_id, "status": "failed", "detail": str(exc)}
 
@@ -290,7 +360,7 @@ async def run_sync(request: SyncRunRequest) -> dict[str, Any]:
 
 @router.post("/sync/restore")
 async def restore_sync_history(request: SyncRestoreRequest) -> dict[str, Any]:
-    service = get_version_manifest()
+    service, _ = _require_sync_storage()
     history_path = service.history_dir / request.history_file
     if not history_path.exists():
         raise HTTPException(status_code=404, detail=f"Manifest history file not found: {request.history_file}")
@@ -298,31 +368,38 @@ async def restore_sync_history(request: SyncRestoreRequest) -> dict[str, Any]:
         shutil.copyfile(history_path, service.manifest_path)
         payload = json.loads(service.manifest_path.read_text(encoding="utf-8"))
         return {"status": "ok", "manifest": payload}
+    except ManifestStorageUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=exc.status.detail or "Version manifest storage is unavailable") from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to restore manifest history: {exc}") from exc
 
 
 @router.post("/sync/fix")
 async def fix_sync_node(request: SyncRunRequest) -> dict[str, Any]:
-    service = get_version_manifest()
+    service, _ = _require_sync_storage()
 
     async def fix_one(node_id: str) -> dict[str, Any]:
-        diff = await asyncio.to_thread(service.compare_node, node_id)
-        packages = sorted(set(diff.added + list(diff.mismatched.keys())))
-        if not packages:
-            return {"node_id": node_id, "status": "ok", "message": "No packages require reinstall"}
-        node_client = get_node_client(node_id, get_cluster_registry())
-        if not node_client:
-            return {"node_id": node_id, "status": "failed", "detail": "Node client unavailable"}
-        cmd = "dnf reinstall -y " + " ".join(packages)
-        rc, stdout, stderr = await asyncio.to_thread(node_client.execute_command, cmd, timeout=900, check_returncode=False)
-        return {
-            "node_id": node_id,
-            "status": "ok" if rc == 0 else "failed",
-            "stdout": stdout[-2000:],
-            "stderr": stderr[-2000:],
-            "command": cmd,
-        }
+        try:
+            diff = await asyncio.to_thread(service.compare_node, node_id)
+            packages = sorted(set(diff.added + list(diff.mismatched.keys())))
+            if not packages:
+                return {"node_id": node_id, "status": "ok", "message": "No packages require reinstall"}
+            node_client = get_node_client(node_id, get_cluster_registry())
+            if not node_client:
+                return {"node_id": node_id, "status": "failed", "detail": "Node client unavailable"}
+            cmd = "dnf reinstall -y " + " ".join(packages)
+            rc, stdout, stderr = await asyncio.to_thread(node_client.execute_command, cmd, timeout=900, check_returncode=False)
+            return {
+                "node_id": node_id,
+                "status": "ok" if rc == 0 else "failed",
+                "stdout": stdout[-2000:],
+                "stderr": stderr[-2000:],
+                "command": cmd,
+            }
+        except ManifestStorageUnavailableError as exc:
+            return {"node_id": node_id, "status": "failed", "detail": exc.status.detail or "Version manifest storage is unavailable"}
+        except Exception as exc:
+            return {"node_id": node_id, "status": "failed", "detail": str(exc)}
 
     results = await asyncio.gather(*[fix_one(node_id) for node_id in request.node_ids])
     return {"status": "ok", "results": results}

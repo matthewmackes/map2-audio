@@ -260,4 +260,53 @@ describe('HomePage landing', () => {
     expect(screen.getByText('Source-of-truth sync')).toBeTruthy()
     expect(screen.getByText('MAP2-REMOTE-2')).toBeTruthy()
   })
+
+  it('shows a neutral sync unavailable indicator instead of sync remediation pills when manifest storage is unavailable', async () => {
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url === '/api/platform-remediation/summary') {
+          return makeJsonResponse({
+            status: 'degraded',
+            counts: {
+              adoption: { ready: 1 },
+              sync: { outdated: 2, held: 1 },
+              clone: {},
+            },
+            workflows: {
+              adoption: { available: true, state: 'ready' },
+              sync: {
+                available: false,
+                state: 'unavailable',
+                reason: 'read_only_filesystem',
+                detail: 'Version manifest storage is unavailable at /var/lib/map2/version_manifest_history because /var/lib/map2 is mounted read-only.',
+              },
+              clone: { available: true, state: 'ready' },
+            },
+            nodes: [
+              {
+                node_id: 'NODE-2',
+                hostname: 'MAP2-REMOTE-2',
+                visible: true,
+                registered: true,
+                is_online: true,
+                adoption_state: 'ready',
+                version: '1.2.3',
+                sync_states: [],
+                clone_states: [],
+                is_source_of_truth: false,
+                rollback_available: false,
+              },
+            ],
+          })
+        }
+        return defaultFetchResponse(input, init)
+      },
+    )
+
+    renderHome()
+
+    expect((await screen.findAllByText('Sync unavailable')).length).toBeGreaterThanOrEqual(2)
+    expect(screen.queryByRole('button', { name: 'Outdated: 2' })).toBeNull()
+  })
 })

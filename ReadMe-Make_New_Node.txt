@@ -524,7 +524,7 @@
      CPUAffinity=4 5
      AmbientCapabilities=CAP_SYS_NICE
      CapabilityBoundingSet=CAP_SYS_NICE
-     ReadWritePaths=/home/mm/.local/share /home/mm/.cache
+     ReadWritePaths=/home/mm/.local/share /home/mm/.cache /var/lib/map2 /var/log/map2 /etc/map2 /tmp /run/map2-audio
      EOF
 
      NOTE: CPUAffinity=4 5 MUST match the isolcpus= cores in GRUB (Step 13).

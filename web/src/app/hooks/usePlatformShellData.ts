@@ -49,7 +49,7 @@ import type {
   HybridApplicationStatusInfo,
   UpdateHybridVersionInfo,
 } from './useNodeOperations'
-import { fetchUpdateApplicationJson } from './updateApplicationApi'
+import { fetchUpdateApplicationStatus, fetchUpdateApplicationVersion } from './updateApplicationApi'
 
 interface DeploymentModeResponse {
   mode?: string
@@ -128,6 +128,15 @@ function formatBandwidthMbps(channels: number | undefined, sampleRate: number | 
   }
   const bitrateMbps = ((channels ?? 0) * (sampleRate ?? 0) * 32) / 1_000_000
   return `${bitrateMbps.toFixed(1)} Mb/s`
+}
+
+function sumRemediationCounts(counts: RemediationSummaryInfo['counts'] | undefined): number {
+  if (!counts) {
+    return 0
+  }
+  return [counts.adoption, counts.sync, counts.clone]
+    .flatMap((group) => Object.values(group ?? {}))
+    .reduce((sum, value) => sum + value, 0)
 }
 
 function healthRank(health: PlatformHealth): number {
@@ -332,14 +341,14 @@ export function usePlatformShellData(): PlatformShellData {
 
   const nodeApplicationStatusQuery = useQuery<HybridApplicationStatusInfo>({
     queryKey: ['platform', 'node-application-status'],
-    queryFn: () => fetchUpdateApplicationJson<HybridApplicationStatusInfo>('/application/status'),
+    queryFn: () => fetchUpdateApplicationStatus(),
     refetchInterval: 5000,
     staleTime: 2000,
   })
 
   const nodeHybridVersionQuery = useQuery<UpdateHybridVersionInfo>({
     queryKey: ['platform', 'node-hybrid-version'],
-    queryFn: () => fetchUpdateApplicationJson<UpdateHybridVersionInfo>('/application/version'),
+    queryFn: () => fetchUpdateApplicationVersion(),
     refetchInterval: 30000,
     staleTime: 20000,
   })
@@ -827,8 +836,9 @@ export function usePlatformShellData(): PlatformShellData {
         const backupLatest = nodeBackupStatus?.latest_backup_date
           ? new Date(nodeBackupStatus.latest_backup_date).toLocaleDateString()
           : 'Never'
-        const remediationCount = Object.values(nodeRemediation?.counts ?? {}).reduce((s, v) => s + v, 0)
+        const remediationCount = sumRemediationCounts(nodeRemediation?.counts)
         const manifestDrifted = nodeManifestDrift?.drifted ?? false
+        const syncUnavailable = nodeRemediation?.workflows?.sync?.available === false
         const healthUptime = nodeHealthCheck?.uptime_seconds
           ? nodeHealthCheck.uptime_seconds >= 86400
             ? `${Math.floor(nodeHealthCheck.uptime_seconds / 86400)}d`
@@ -924,9 +934,17 @@ export function usePlatformShellData(): PlatformShellData {
             id: 'node-remediation',
             title: 'Remediation',
             eyebrow: 'Maintenance',
-            metric: remediationCount > 0 ? `${remediationCount} action${remediationCount === 1 ? '' : 's'}` : 'Clear',
-            helper: manifestDrifted ? 'Manifest drift detected' : 'No drift detected',
-            status: manifestDrifted ? 'warning' : remediationCount > 0 ? 'warning' : 'healthy',
+            metric: syncUnavailable
+              ? 'Sync unavailable'
+              : remediationCount > 0
+                ? `${remediationCount} action${remediationCount === 1 ? '' : 's'}`
+                : 'Clear',
+            helper: syncUnavailable
+              ? 'Release sync is temporarily unavailable on this node.'
+              : manifestDrifted
+                ? 'Manifest drift detected'
+                : 'No drift detected',
+            status: syncUnavailable || manifestDrifted ? 'warning' : remediationCount > 0 ? 'warning' : 'healthy',
           },
         ] satisfies PlatformGridItem[]
       })(),
@@ -1032,12 +1050,18 @@ export function usePlatformShellData(): PlatformShellData {
         {
           id: 'remediation',
           name: 'Remediation',
-          status: nodeManifestDrift?.drifted ? 'warning' : 'healthy',
+          status: nodeRemediation?.workflows?.sync?.available === false || nodeManifestDrift?.drifted ? 'warning' : 'healthy',
           metric1: nodeRemediation?.status ?? 'pending',
-          metric2: nodeManifestDrift?.drifted
-            ? `${nodeManifestDrift.nodes?.length ?? 0} drifted`
-            : 'No drift',
-          alerts: nodeManifestDrift?.drifted ? 'Drift detected' : 'Clear',
+          metric2: nodeRemediation?.workflows?.sync?.available === false
+            ? 'Sync unavailable'
+            : nodeManifestDrift?.drifted
+              ? `${nodeManifestDrift.nodes?.length ?? 0} drifted`
+              : 'No drift',
+          alerts: nodeRemediation?.workflows?.sync?.available === false
+            ? 'Sync unavailable'
+            : nodeManifestDrift?.drifted
+              ? 'Drift detected'
+              : 'Clear',
         },
       ],
       tableTitle: 'Single-node services and platform operations',

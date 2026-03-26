@@ -5,17 +5,20 @@ Tracks the golden package set for all cluster nodes and detects drift.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-from datetime import datetime
+from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
 from pathlib import Path
+import errno
 import json
 import logging
+import os
 import subprocess
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.integration_helpers import HybridNodeClient
 
 logger = logging.getLogger(__name__)
+_READ_ONLY_STATVFS_FLAG = getattr(os, "ST_RDONLY", 1)
 
 
 @dataclass
@@ -34,29 +37,121 @@ class ManifestDiff:
         }
 
 
+@dataclass(frozen=True)
+class ManifestStorageStatus:
+    """Writable-state availability for version manifest operations."""
+
+    available: bool
+    reason: Optional[str]
+    detail: Optional[str]
+    target_path: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "available": self.available,
+            "reason": self.reason,
+            "detail": self.detail,
+            "target_path": self.target_path,
+        }
+
+
+class ManifestStorageUnavailableError(RuntimeError):
+    """Raised when manifest-backed write workflows cannot access state storage."""
+
+    def __init__(self, status: ManifestStorageStatus):
+        self.status = status
+        super().__init__(status.detail or "Version manifest storage is unavailable")
+
+
+def _nearest_existing_path(path: Path) -> Path:
+    current = path
+    while not current.exists():
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return current
+
+
+def _path_on_read_only_filesystem(path: Path) -> bool:
+    try:
+        stats = os.statvfs(path)
+    except (AttributeError, OSError):
+        return False
+    return bool(getattr(stats, "f_flag", 0) & _READ_ONLY_STATVFS_FLAG)
+
+
+def _build_storage_status(target_path: Path) -> ManifestStorageStatus:
+    probe_path = _nearest_existing_path(target_path)
+    if _path_on_read_only_filesystem(probe_path):
+        return ManifestStorageStatus(
+            available=False,
+            reason="read_only_filesystem",
+            detail=f"Version manifest storage is unavailable at {target_path} because {probe_path} is mounted read-only.",
+            target_path=str(target_path),
+        )
+    if os.access(probe_path, os.W_OK):
+        return ManifestStorageStatus(
+            available=True,
+            reason=None,
+            detail=None,
+            target_path=str(target_path),
+        )
+    return ManifestStorageStatus(
+        available=False,
+        reason="permission_denied",
+        detail=f"Version manifest storage is unavailable at {target_path} because {probe_path} is not writable.",
+        target_path=str(target_path),
+    )
+
+
 class VersionManifest:
     """Golden package manifest manager."""
 
     def __init__(self, manifest_path: str = "/var/lib/map2/version_manifest.json"):
         self.manifest_path = Path(manifest_path)
         self.history_dir = self.manifest_path.parent / "version_manifest_history"
-        self.history_dir.mkdir(parents=True, exist_ok=True)
         self.registry = get_cluster_registry()
 
+    def get_storage_status(self) -> ManifestStorageStatus:
+        return _build_storage_status(self.history_dir)
+
+    def require_storage(self) -> ManifestStorageStatus:
+        status = self.get_storage_status()
+        if not status.available:
+            raise ManifestStorageUnavailableError(status)
+        return status
+
+    def _ensure_storage_ready(self) -> None:
+        self.require_storage()
+        try:
+            self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            self.history_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            reason = "read_only_filesystem" if exc.errno == errno.EROFS else "storage_unavailable"
+            raise ManifestStorageUnavailableError(
+                ManifestStorageStatus(
+                    available=False,
+                    reason=reason,
+                    detail=f"Version manifest storage is unavailable at {self.history_dir}: {exc}",
+                    target_path=str(self.history_dir),
+                )
+            ) from exc
+
     def _save_manifest(self, manifest: Dict) -> None:
-        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.manifest_path, "w") as f:
+        self._ensure_storage_ready()
+        with open(self.manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
-        timestamp = manifest.get("timestamp", datetime.utcnow().isoformat())
+        timestamp = manifest.get("timestamp", datetime.now(timezone.utc).isoformat())
         history_file = self.history_dir / f"manifest_{timestamp.replace(':', '')}.json"
-        with open(history_file, "w") as f:
+        with open(history_file, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
     def get_manifest(self) -> Optional[Dict]:
         if not self.manifest_path.exists():
             return None
-        with open(self.manifest_path, "r") as f:
+        with open(self.manifest_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def list_manifest_history(self) -> List[str]:
@@ -106,7 +201,7 @@ class VersionManifest:
         """Capture a golden manifest from a source node."""
         packages = self._get_node_packages(source_node_id)
         manifest = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "source_node": source_node_id,
             "package_count": len(packages),
             "packages": packages,
@@ -211,3 +306,9 @@ def get_version_manifest() -> VersionManifest:
     if _manifest_manager is None:
         _manifest_manager = VersionManifest()
     return _manifest_manager
+
+
+def set_version_manifest(manager: Optional[VersionManifest]) -> None:
+    """Override the singleton for tests or explicit runtime wiring."""
+    global _manifest_manager
+    _manifest_manager = manager

@@ -12,7 +12,10 @@ from datetime import datetime
 
 from app.services.cluster.update_orchestrator import get_update_orchestrator
 from app.services.cluster.update_rollback import UpdateRollbackManager, RollbackReason
-from app.services.cluster.version_manifest import get_version_manifest as get_version_manifest_service
+from app.services.cluster.version_manifest import (
+    ManifestStorageUnavailableError,
+    get_version_manifest as get_version_manifest_service,
+)
 from app.services.cluster.registry import get_cluster_registry
 
 router = APIRouter(prefix="/api/cluster/update", tags=["cluster-update"])
@@ -52,6 +55,45 @@ class ManifestCaptureRequest(BaseModel):
 class ManifestEnforceRequest(BaseModel):
     node_id: str
     dry_run: bool = True
+
+
+def _manifest_storage_response(*, available: bool, reason: Optional[str], detail: Optional[str]) -> Dict[str, Any]:
+    return {
+        "available": available,
+        "reason": reason,
+        "detail": detail,
+    }
+
+
+def _raise_manifest_storage_unavailable(detail: Optional[str]) -> None:
+    raise HTTPException(status_code=503, detail=detail or "Version manifest storage is unavailable")
+
+
+def _summarize_manifest_drift(drift: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    registry = get_cluster_registry()
+    nodes: List[Dict[str, Any]] = []
+    for node_id, result in drift.items():
+        if not isinstance(result, dict) or "error" in result:
+            continue
+        package_count = (
+            len(result.get("added") or [])
+            + len(result.get("removed") or [])
+            + len(result.get("mismatched") or {})
+        )
+        if package_count <= 0:
+            continue
+        node_row = registry.get_node(node_id) if registry else None
+        nodes.append(
+            {
+                "node_id": node_id,
+                "hostname": (node_row or {}).get("hostname", node_id),
+                "packages_drifted": package_count,
+            }
+        )
+    return {
+        "drifted": bool(nodes),
+        "nodes": nodes,
+    }
 
 
 @router.post("/trigger", response_model=UpdateResponse)
@@ -272,10 +314,18 @@ async def rollback_to_snapshot(snapshot_id: str):
 async def get_version_manifest_endpoint():
     """Get current golden version manifest."""
     try:
-        manifest = get_version_manifest_service().get_manifest()
-        if not manifest:
-            raise HTTPException(404, "No version manifest found")
-        return {"status": "ok", "manifest": manifest}
+        service = get_version_manifest_service()
+        storage = service.get_storage_status()
+        manifest = service.get_manifest() if storage.available else None
+        return {
+            "status": "ok" if storage.available else "degraded",
+            **_manifest_storage_response(
+                available=storage.available,
+                reason=storage.reason,
+                detail=storage.detail,
+            ),
+            "manifest": manifest,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -286,8 +336,16 @@ async def get_version_manifest_endpoint():
 async def capture_version_manifest(request: ManifestCaptureRequest):
     """Capture a new golden manifest from a source node."""
     try:
-        manifest = get_version_manifest_service().capture_manifest(request.source_node_id)
+        service = get_version_manifest_service()
+        storage = service.get_storage_status()
+        if not storage.available:
+            _raise_manifest_storage_unavailable(storage.detail)
+        manifest = service.capture_manifest(request.source_node_id)
         return {"status": "ok", "manifest": manifest}
+    except HTTPException:
+        raise
+    except ManifestStorageUnavailableError as exc:
+        _raise_manifest_storage_unavailable(exc.status.detail)
     except Exception as e:
         raise HTTPException(500, f"Failed to capture manifest: {e}")
 
@@ -296,8 +354,52 @@ async def capture_version_manifest(request: ManifestCaptureRequest):
 async def get_manifest_drift():
     """Compare all nodes against the current manifest."""
     try:
-        drift = get_version_manifest_service().compare_all_nodes()
-        return {"status": "ok", "drift": drift}
+        service = get_version_manifest_service()
+        storage = service.get_storage_status()
+        if not storage.available:
+            return {
+                "status": "degraded",
+                **_manifest_storage_response(
+                    available=False,
+                    reason=storage.reason,
+                    detail=storage.detail,
+                ),
+                "drifted": False,
+                "nodes": [],
+            }
+        manifest = service.get_manifest()
+        if not manifest:
+            return {
+                "status": "ok",
+                **_manifest_storage_response(
+                    available=True,
+                    reason=None,
+                    detail=None,
+                ),
+                "drifted": False,
+                "nodes": [],
+            }
+        drift = service.compare_all_nodes()
+        return {
+            "status": "ok",
+            **_manifest_storage_response(
+                available=True,
+                reason=None,
+                detail=None,
+            ),
+            **_summarize_manifest_drift(drift),
+        }
+    except ManifestStorageUnavailableError as exc:
+        return {
+            "status": "degraded",
+            **_manifest_storage_response(
+                available=False,
+                reason=exc.status.reason,
+                detail=exc.status.detail,
+            ),
+            "drifted": False,
+            "nodes": [],
+        }
     except Exception as e:
         raise HTTPException(500, f"Failed to compare manifest: {e}")
 
@@ -306,10 +408,18 @@ async def get_manifest_drift():
 async def enforce_manifest(request: ManifestEnforceRequest):
     """Enforce manifest on a node (dry-run by default)."""
     try:
-        result = get_version_manifest_service().enforce_manifest(
+        service = get_version_manifest_service()
+        storage = service.get_storage_status()
+        if not storage.available:
+            _raise_manifest_storage_unavailable(storage.detail)
+        result = service.enforce_manifest(
             request.node_id, dry_run=request.dry_run
         )
         return {"status": "ok", "result": result}
+    except HTTPException:
+        raise
+    except ManifestStorageUnavailableError as exc:
+        _raise_manifest_storage_unavailable(exc.status.detail)
     except Exception as e:
         raise HTTPException(500, f"Failed to enforce manifest: {e}")
 

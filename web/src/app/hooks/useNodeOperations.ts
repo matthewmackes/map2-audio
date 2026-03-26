@@ -9,7 +9,11 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { fetchUpdateApplicationJson, postUpdateApplicationJson } from './updateApplicationApi'
+import {
+  fetchUpdateApplicationStatus,
+  fetchUpdateApplicationVersion,
+  triggerUpdateApplication,
+} from './updateApplicationApi'
 
 // ── Response types ──────────────────────────────────────────────────────────
 
@@ -115,9 +119,25 @@ export interface HealthCheckInfo {
   }
 }
 
+export interface WorkflowAvailabilityInfo {
+  available: boolean
+  state: 'ready' | 'unavailable'
+  reason?: string | null
+  detail?: string | null
+}
+
 export interface RemediationSummaryInfo {
-  status: string
-  counts: Record<string, number>
+  status: 'ok' | 'degraded'
+  counts: {
+    adoption: Record<string, number>
+    sync: Record<string, number>
+    clone: Record<string, number>
+  }
+  workflows?: {
+    adoption?: WorkflowAvailabilityInfo
+    sync?: WorkflowAvailabilityInfo
+    clone?: WorkflowAvailabilityInfo
+  }
   manifest?: { source_node?: string; timestamp?: string }
   nodes?: Array<{
     node_id: string
@@ -129,6 +149,10 @@ export interface RemediationSummaryInfo {
 }
 
 export interface ManifestDriftInfo {
+  status?: 'ok' | 'degraded'
+  available?: boolean
+  reason?: string | null
+  detail?: string | null
   drifted: boolean
   nodes: Array<{
     node_id: string
@@ -245,14 +269,14 @@ export function useNodeOperations(): NodeOperationsData {
 
   const applicationStatusQ = useQuery({
     queryKey: KEYS.applicationStatus,
-    queryFn: () => fetchUpdateApplicationJson<HybridApplicationStatusInfo>('/application/status'),
+    queryFn: () => fetchUpdateApplicationStatus(),
     refetchInterval: 1_500,
     staleTime: 1_000,
   })
 
   const hybridVersionQ = useQuery({
     queryKey: KEYS.updateHybridVersion,
-    queryFn: () => fetchUpdateApplicationJson<UpdateHybridVersionInfo>('/application/version'),
+    queryFn: () => fetchUpdateApplicationVersion(),
     refetchInterval: 30_000,
     staleTime: 20_000,
   })
@@ -295,13 +319,13 @@ export function useNodeOperations(): NodeOperationsData {
   // ── Mutations ───────────────────────────────────────────────────────────
 
   const updateMut = useMutation({
-    mutationFn: (opts: { version?: string; branch?: string; force?: boolean }) =>
-      postUpdateApplicationJson<TriggerApplicationUpdateResult>('/application', {
-        mode: 'auto',
-        version: opts.version,
-        branch: opts.branch ?? 'master',
-        force: opts.force ?? false,
-      }),
+    mutationFn: async (opts: { version?: string; branch?: string; force?: boolean }) => {
+      const result = await triggerUpdateApplication(opts)
+      if (result.status !== 'ok' || result.success === false) {
+        throw new Error(result.message || 'Application update failed')
+      }
+      return result
+    },
     onMutate: async () => {
       await qc.invalidateQueries({ queryKey: KEYS.applicationStatus })
     },
@@ -310,6 +334,10 @@ export function useNodeOperations(): NodeOperationsData {
       qc.invalidateQueries({ queryKey: KEYS.updateStatus })
       qc.invalidateQueries({ queryKey: KEYS.updateHybridVersion })
       qc.invalidateQueries({ queryKey: KEYS.version })
+    },
+    onError: () => {
+      qc.invalidateQueries({ queryKey: KEYS.applicationStatus })
+      qc.invalidateQueries({ queryKey: KEYS.updateHybridVersion })
     },
   })
 

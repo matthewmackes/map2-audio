@@ -106,6 +106,12 @@
   background: var(--cds-layer-hover-02);
 }
 
+.hp2-card__pill--neutral {
+  cursor: default;
+  color: var(--cds-text-secondary);
+  background: var(--cds-layer-01);
+}
+
 /* ── Arrow on hover ─────────────────────────────────────────────────────── */
 
 .hp2-card__arrow {
