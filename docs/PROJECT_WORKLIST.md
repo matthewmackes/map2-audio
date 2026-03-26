@@ -7098,7 +7098,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_folders_routes.py tests/test_plugin_tags_routes.py` -> PASS (`7 passed, 11 warnings`).
     - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subF
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for dashboard and CPU metrics surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `dashboard.py` and `cpu_metrics.py`, covering aggregated summary payloads plus running/offline engine cases.
@@ -7107,9 +7107,47 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 18:56 EDT - Codex
+  Last updated: 2026-03-26 19:16 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_dashboard_routes.py` and `tests/test_cpu_metrics_routes.py` to cover the previously untested `dashboard.py` and `cpu_metrics.py` route modules, including overview/performance/reliability summary aggregation, optional audio/plugin health sections, and live/offline engine CPU endpoint behavior.
+    - The new coverage locks down the response math for queue success rates, circuit/pool counts, recovery counters, plugin health aggregation, and callback-budget utilization so future dashboard refactors have direct route-level guardrails.
+    - Validation: `pytest -q tests/test_dashboard_routes.py tests/test_cpu_metrics_routes.py` -> PASS (`4 passed`).
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+- ID: T447-subG
+  Status: [ ] Todo
+  Title: Add route tests for audio diagnostics, audio path, upload, and plugin scanner surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `audio_diagnostics.py`, `audio_path.py`, `upload.py`, and `plugin_scanner.py`, covering diagnostics summaries plus representative upload/scan success and failure cases.
+  - Why it matters: These routes touch operator troubleshooting and asset ingress paths that still lack route-level regression coverage.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 19:16 EDT - Codex
+- ID: T447-subH
+  Status: [ ] Todo
+  Title: Add route tests for monitoring, network, SSH trust, system test, and websocket observability surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `monitoring.py`, `network.py`, `ssh_trust.py`, `system_tests.py`, and `websocket_rt.py`, covering representative status, control, and error paths.
+  - Why it matters: These runtime-operations surfaces remain untested despite being directly used for deployment and troubleshooting.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 19:16 EDT - Codex
+- ID: T447-subI
+  Status: [ ] Todo
+  Title: Add route tests for node and cluster inventory surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `cluster_nodes.py`, `cluster_plugin_inventory.py`, `nodes.py`, `packages.py`, and `platform_remediation.py`, covering representative list/status/update contracts.
+  - Why it matters: Core node and deployment inventory routes still have no direct route tests after the current observability slice.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 19:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 19:11 EDT - Codex
+Last updated: 2026-03-26 19:16 EDT - Codex
 
 ID: T448
 Status: [✓] Done
