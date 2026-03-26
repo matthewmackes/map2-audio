@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**824** Python | **1151** TypeScript | **300** C++/H | **124** Docs | **915** total commits | **3** stars | **0** forks | **0** open issues
+**824** Python | **1151** TypeScript | **300** C++/H | **124** Docs | **917** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7b2d8e7e`](https://github.com/matthewmackes/map2-audio/commit/7b2d8e7ef15ff32fe6698c03c36bd65ea1b0a9ca) | Document why PluginChooser remains in shared | Map2 Audio | 2026-03-26 |
+| [`93915600`](https://github.com/matthewmackes/map2-audio/commit/93915600daf0a41ef8e1ead2f61c17bafe920836) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`f9f672c0`](https://github.com/matthewmackes/map2-audio/commit/f9f672c01526acf417a16b4b75d7cd1bafe6c4bf) | Remove the orphaned ClusterAdmin page and stale PiPedal docs | Map2 Audio | 2026-03-26 |
 | [`dc33df92`](https://github.com/matthewmackes/map2-audio/commit/dc33df9228fe4bebd0be991bee4e90a001a5128f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`e1ea06f0`](https://github.com/matthewmackes/map2-audio/commit/e1ea06f030ecc8802e361c3abc4847373797bc8f) | Add CI coverage for shared route prefix audits | Map2 Audio | 2026-03-26 |
 | [`7bb41f63`](https://github.com/matthewmackes/map2-audio/commit/7bb41f6309e133d7c25c5c134da2e527b0848bd2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`eccc3a93`](https://github.com/matthewmackes/map2-audio/commit/eccc3a9334b1061d97d8e2c8555603ac96155e33) | Audit shared cluster and deployment route prefixes | Map2 Audio | 2026-03-26 |
 | [`d1e45b43`](https://github.com/matthewmackes/map2-audio/commit/d1e45b43c4c5d5951daaaae6b93b4867bbfd5339) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`c5b83526`](https://github.com/matthewmackes/map2-audio/commit/c5b83526a67c3d4cc695ff05335b8dfcf769fec3) | Move chain A/B routes onto a dedicated prefix | Map2 Audio | 2026-03-26 |
-| [`a632d1c0`](https://github.com/matthewmackes/map2-audio/commit/a632d1c0e60c4323568375e446c6b2392f3de47f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
