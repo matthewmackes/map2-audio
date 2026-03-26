@@ -1,6 +1,7 @@
 import { type ComponentType, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BareMetalServer, Package, Music as MusicNotes, Waveform } from '@carbon/icons-react'
+import { ArrowRight, BareMetalServer, Package, Waveform } from '@carbon/icons-react'
+import { Beaker } from 'lucide-react'
 import { FxDrums } from '../components/icons/effectIcons'
 import { ClickableTile } from '@carbon/react'
 import {
@@ -14,6 +15,7 @@ import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
+import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import type { NodeSummary, NodeTopology } from '../types/node'
 import './HomePage.css'
@@ -147,11 +149,11 @@ const HERO_CARD: WorkspaceCard = {
 
 const RIGHT_COLUMN_CARDS: WorkspaceCard[] = [
   {
-    id: 'midi-hub',
-    to: '/midi-hub',
-    icon: MusicNotes,
-    title: 'MIDI Hub',
-    description: 'Controllers, mappings, and routing',
+    id: 'labs',
+    to: '/labs',
+    icon: Beaker,
+    title: 'Labs',
+    description: 'Experimental routes and advanced workspaces',
   },
   {
     id: 'artifacts',
@@ -201,6 +203,7 @@ export function HomePage() {
   } | null>(null)
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
+  const platformStatus = useHomePlatformStatus()
   const remediationCounts = remediationSummary.data?.counts
   const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
 
@@ -323,7 +326,7 @@ export function HomePage() {
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="hp2-footer">
-        {MAP2_PLATFORM_VERSION} · {hostname}
+        {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
       </footer>
       {activeRemediation ? (
         <PlatformRemediationWorkflow

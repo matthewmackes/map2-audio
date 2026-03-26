@@ -145,7 +145,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByText('Platforms')).toBeTruthy()
     expect(screen.getByText('Audio Grid')).toBeTruthy()
-    expect(screen.getByText('MIDI Hub')).toBeTruthy()
+    expect(screen.getByText('Labs')).toBeTruthy()
     expect(screen.getByText('Audio Artifacts')).toBeTruthy()
     expect(screen.getByText('Drum Machine')).toBeTruthy()
     expect(screen.getByText('SynthForge')).toBeTruthy()
