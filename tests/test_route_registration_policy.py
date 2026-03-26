@@ -12,18 +12,43 @@ ROUTES_DIR = REPO_ROOT / "app" / "routes"
 MAIN_PATH = REPO_ROOT / "app" / "main.py"
 
 
-def _route_files_with_apirouter() -> set[str]:
-    route_files: set[str] = set()
+def _apirouter_assignments() -> dict[str, set[str]]:
+    assignments: dict[str, set[str]] = {}
     for path in ROUTES_DIR.glob("*.py"):
         if path.name == "__init__.py":
             continue
         module = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        if any(
-            isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "APIRouter"
-            for node in ast.walk(module)
-        ):
-            route_files.add(path.stem)
-    return route_files
+        module_assignments: set[str] = set()
+        for node in ast.walk(module):
+            value = None
+            targets: list[ast.expr] = []
+            if isinstance(node, ast.Assign):
+                value = node.value
+                targets = list(node.targets)
+            elif isinstance(node, ast.AnnAssign):
+                value = node.value
+                targets = [node.target]
+
+            if not isinstance(value, ast.Call):
+                continue
+            if not isinstance(value.func, ast.Name) or value.func.id != "APIRouter":
+                continue
+
+            for target in targets:
+                if isinstance(target, ast.Name):
+                    module_assignments.add(target.id)
+
+        if module_assignments:
+            assignments[path.stem] = module_assignments
+    return assignments
+
+
+def _route_files_with_primary_router() -> set[str]:
+    return {
+        module_name
+        for module_name, assignments in _apirouter_assignments().items()
+        if "router" in assignments
+    }
 
 
 def _registered_route_modules() -> set[str]:
@@ -41,10 +66,21 @@ def _registered_route_modules() -> set[str]:
 
 
 def test_every_apirouter_file_is_registered():
-    route_files = _route_files_with_apirouter()
+    route_files = _route_files_with_primary_router()
     registered_modules = _registered_route_modules()
 
     assert route_files - registered_modules == set()
+
+
+def test_route_modules_do_not_define_extra_router_variables():
+    extra_routers = {
+        f"{module_name}.{router_name}"
+        for module_name, assignments in _apirouter_assignments().items()
+        for router_name in assignments
+        if router_name != "router"
+    }
+
+    assert extra_routers == set()
 
 
 def test_registered_http_routes_have_unique_method_path_pairs():

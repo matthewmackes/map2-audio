@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 - Cycle 2 dead-code cleanup complete for T434/T435/T438/T439
+Last updated: 2026-03-26 - Cycle 3 route-helper and CI cleanup complete for T436/T448
 
 ID: T449
 Status: [✓] Done
@@ -6802,7 +6802,7 @@ Last updated: 2026-03-26 17:24 EDT - Codex
   - Licensing review: touched route/service/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app worklog tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T436
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete unregistered route base.py or formalize as utility module
 Description:
 - Goal / acceptance criteria: `app/routes/base.py` defines `APIRouter(prefix="/api/example")` but is NOT in the `route_modules` list in `main.py:594`. However, `reverb.py` imports `api_route` and `StandardResponses` from it as utilities. Either: (a) rename/move to `app/utils/route_helpers.py` since it's used as a utility not a route, or (b) register it if the example endpoints are wanted.
@@ -6811,8 +6811,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Clear separation of utility vs. route concerns.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 17:30 EDT - Codex
+- Completion notes:
+  - Formalized `app/routes/base.py` as a real utility module by moving the shared decorators/response helpers into the new `app/utils/route_helpers.py`, deleting the misleading route-path file, and updating `app/routes/reverb.py` to import from the utility location.
+  - This removes the last utility-only module from `app/routes/`, so route policy now has a clean boundary between actual router modules and reusable helper code.
+  - Validation: `pytest -q tests/test_route_registration_policy.py` -> PASS (`3 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `rg -n "app\\.routes\\.base|route_helpers" app tests | head -n 80` shows only the new `app.utils.route_helpers` import in `app/routes/reverb.py`.
+  - Licensing review: touched route/util/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T437
 Status: [ ] Todo
@@ -6975,7 +6980,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
 ID: T448
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add unregistered-route-file CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans `app/routes/` for files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list, individually registered, or documented as a utility-only module (like base.py). Currently only base.py is unregistered, plus the dead `pipedal_compat_router` inside engine.py.
@@ -6984,8 +6989,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: New test file, runs in CI.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-26 - Audit v2
+Assigned to: Codex
+Last updated: 2026-03-26 17:30 EDT - Codex
+- Completion notes:
+  - Strengthened `tests/test_route_registration_policy.py` so CI now parses concrete `APIRouter(...)` assignments, verifies every primary `router` module is actually registered, and hard-fails any extra router variables beyond `router`, which closes the blind spot that previously allowed `pipedal_compat_router` to hide inside a registered file.
+  - With `T436` and `T439` complete, the unregistered-route policy no longer needs a utility-module exception for `base.py`, and future abandoned router objects now fail the policy test deterministically.
+  - Validation: `pytest -q tests/test_route_registration_policy.py` -> PASS (`3 passed`, existing `ServiceManager` deprecation warning only); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
+  - Licensing review: touched route/util/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Description:
 - Goal / acceptance criteria: Remove `web/src/pipedal/` entirely — 229 files with zero imports from `web/src/app/`. Verify `npm run build` succeeds afterward.
 - Why it matters: ~15,000 lines of dead predecessor-project code adding noise to searches, IDE indexing, and bundle analysis.
