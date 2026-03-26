@@ -15,6 +15,7 @@ import { ReverbIRManagerDialog } from '../../../loaders/ReverbIRManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { irApi } from '../../../../../map2/api'
+import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
 
 const REVERB_IR_URI = 'map2://juce/convolution/reverb'
 
@@ -38,6 +39,7 @@ interface ReverbIRCardProps extends PluginCardProps {
 
 function ReverbIRCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#a855f7',
   compact = false,
   onOpenMidiMappings,
@@ -46,11 +48,16 @@ function ReverbIRCardBase({
   const [dialogOpen, setDialogOpen] = useState(false)
   const { pushToast } = useToasts()
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+  const statusScopeKey = getPluginIdentityKeyFromParts(REVERB_IR_URI, resolvedPluginPosition, instanceId)
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'reverb', 'status', instanceId ?? 'global'],
+    queryKey: ['ir', 'reverb', 'status', statusScopeKey],
     queryFn: async () => {
-      const status = await irApi.getTypeStatus('reverb', { instanceId })
+      const status = await irApi.getTypeStatus('reverb', {
+        instanceId,
+        pluginPosition: resolvedPluginPosition,
+      })
       return {
         loaded: status.loaded ?? status.loaded_reverb ?? status.active_reverb ?? null,
         mix: status.mix ?? 30,
@@ -76,20 +83,24 @@ function ReverbIRCardBase({
   const setMix = useCallback(async (value: number) => {
     if (instanceId) {
       await irApi.setReverbMixForInstance(value, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await irApi.setReverbMixAtPosition(value, resolvedPluginPosition)
     } else {
       await fetch(`/api/ir/set-reverb-mix/${value}`, { method: 'POST' })
     }
     queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
       await irApi.setReverbBypassForInstance(bypass, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await irApi.setReverbBypassAtPosition(bypass, resolvedPluginPosition)
     } else {
       await fetch(`/api/ir/set-reverb-bypass/${bypass}`, { method: 'POST' })
     }
     queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const status = statusQuery.data
   const reverbs = listQuery.data || []
@@ -109,6 +120,8 @@ function ReverbIRCardBase({
       if (data.filename) {
         if (instanceId) {
           await irApi.loadReverbToInstance(data.filename, instanceId)
+        } else if (resolvedPluginPosition !== undefined) {
+          await irApi.loadReverbAtPosition(data.filename, resolvedPluginPosition)
         } else {
           const loadResponse = await fetch(`/api/ir/reverbs/${encodeURIComponent(data.filename)}/load`, {
             method: 'POST',
@@ -185,6 +198,7 @@ function ReverbIRCardBase({
         onClose={() => setDialogOpen(false)}
         onLoadReverbIR={() => setDialogOpen(false)}
         instanceId={instanceId}
+        pluginPosition={resolvedPluginPosition}
       />
     </>
   )

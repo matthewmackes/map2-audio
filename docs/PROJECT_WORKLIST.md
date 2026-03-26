@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 - Fresh platform audit v2: replaced stale T388-T406 with verified T413-T427
+Last updated: 2026-03-26 - T449 done; stale audit IDs corrected to T434-T448
+
+ID: T449
+Status: [✓] Done
+Title: Restore position-scoped NAM and IR selected-block asset workflows when instance ids are absent
+Description:
+- Goal / acceptance criteria: Ensure the JUCE Grid selected-block NAM, Cabinet IR, and Reverb IR cards still target the correct live plugin when the runtime payload exposes `plugin.position` but omits `instance_id`. Route card status, manager-dialog loads, and card-level mutations/uploads through a duplicate-safe `plugin_position` fallback on both the frontend API client and backend NAM/IR routes; add focused backend/frontend regression coverage; and keep the worklist/audit ledger consistent.
+- Why it matters: The instance-aware NAM/IR work from `T324` assumes `plugin.instance_id` is always present, but real selected-block runtime payloads can still arrive with position-only identity, which silently drops these asset workflows back toward global state and breaks duplicate-instance correctness.
+- Dependencies: T324; current dirty NAM/IR selected-block follow-up in `app/routes/nam.py`, `app/routes/ir.py`, `app/services/juce_engine_service.py`, `web/src/app/components/PluginCards/Custom/JUCE/*`, `web/src/app/components/loaders/*`, `web/src/map2/api.ts`
+- Estimated effort: Medium
+- Required outputs: Position-scoped runtime fallback across NAM/IR routes and cards, focused backend/frontend regression tests, validation evidence, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 17:20 EDT - Codex
+- Completion notes:
+  - Extended the NAM and IR backend routes in `app/routes/nam.py` and `app/routes/ir.py` so all selected-block status/load/control endpoints accept `plugin_position` in addition to `instance_id`, resolve the live processor instance through `app/services/juce_engine_service.py`, and return safe position-scoped fallback payloads instead of falling back to global singleton state when only chain position is available.
+  - Updated `web/src/map2/api.ts`, `web/src/app/components/PluginCards/PluginCardRouter.tsx`, `web/src/app/components/PluginCards/types.ts`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, and `web/src/app/components/loaders/IRManagerDialog.tsx` so the selected-block cards and shared manager dialogs now key/query/mutate by duplicate-safe runtime identity, preferring `instance_id` and cleanly falling back to `pluginPosition`.
+  - Fixed the compatibility wrappers in `web/src/app/components/loaders/IRManagerDialog.tsx` so `CabinetIRManagerDialog` and `ReverbIRManagerDialog` expose the new `pluginPosition` prop, which unblocked the production bundle build after the runtime-scope change.
+  - Added focused regression coverage in `tests/test_nam_ir_instance_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, and `web/src/app/components/loaders/IRManagerDialog.test.tsx` for the position-scoped fallback path.
+  - Repaired the stale audit-v2 task IDs in the lower worklist section so the fresh outstanding audit items now consistently read `T434` through `T448`, removing the misleading duplicate `T413` through `T427` todo markers.
+  - Licensing review: touched backend/frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_nam_ir_instance_routes.py` -> PASS (`5 passed`); `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS (`19 passed`); `npm --prefix web test -- --runInBand web/src/app/components/loaders/IRManagerDialog.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
 
 ID: T433
 Status: [✓] Done
@@ -6742,11 +6763,11 @@ collisions already fixed). This section contains only verified findings from 202
 ### Previous Audit Status
 
 T388–T406 (2026-03-25): SUPERSEDED. Most issues were already resolved by other agents before
-the audit was written. Marking all as `[~] Cancelled` — replaced by T413–T427 below.
+the audit was written. Marking all as `[~] Cancelled` — replaced by T434–T448 below.
 
 ### Phase A: Dead Code Removal
 
-ID: T413
+ID: T434
 Status: [ ] Todo
 Title: Delete dead lv2_discovery.py service (zero imports, 13K lines)
 Description:
@@ -6759,20 +6780,20 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T414
+ID: T435
 Status: [ ] Todo
 Title: Delete dead lv2_enhanced.py service (only a comment reference remains, 18K lines)
 Description:
 - Goal / acceptance criteria: Delete `app/services/lv2_enhanced.py`. Only reference is a comment string in `plugin_scanner.py:200` ("Fallback LV2 scanning without lv2_enhanced") — not an actual import. All production code uses `plugin_loader_unified.py`. File last modified 2026-02-11.
 - Why it matters: Dead 18K-line service file absorbed into unified loader but never removed.
-- Dependencies: T413 (delete together)
+- Dependencies: T434 (delete together)
 - Estimated effort: Low
 - Required outputs: File deleted, comment reference updated, `pytest` passes.
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T415
+ID: T436
 Status: [ ] Todo
 Title: Delete unregistered route base.py or formalize as utility module
 Description:
@@ -6785,7 +6806,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T416
+ID: T437
 Status: [ ] Todo
 Title: Delete or decide on web/src/pages/ClusterAdmin.tsx (legacy, zero imports)
 Description:
@@ -6798,7 +6819,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T417
+ID: T438
 Status: [ ] Todo
 Title: Delete stale worklog/completion-summary-2026-02-14.md
 Description:
@@ -6811,7 +6832,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T418
+ID: T439
 Status: [ ] Todo
 Title: Remove unregistered pipedal_compat_router from engine.py
 Description:
@@ -6826,7 +6847,7 @@ Last updated: 2026-03-26 - Audit v2
 
 ### Phase B: Route Prefix Collisions (CRITICAL)
 
-ID: T419
+ID: T440
 Status: [ ] Todo
 Title: CRITICAL — Resolve /api/chains prefix collision between chains.py and chains_ab_mode.py
 Description:
@@ -6839,7 +6860,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T420
+ID: T441
 Status: [ ] Todo
 Title: Audit /api/cluster prefix shared by 3 route files
 Description:
@@ -6852,7 +6873,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T421
+ID: T442
 Status: [ ] Todo
 Title: Audit /api/deployment prefix shared by deployment.py and deployment_health.py
 Description:
@@ -6867,7 +6888,7 @@ Last updated: 2026-03-26 - Audit v2
 
 ### Phase C: Consolidation
 
-ID: T422
+ID: T443
 Status: [ ] Todo
 Title: Health monitoring hierarchy documentation and cleanup
 Description:
@@ -6880,7 +6901,7 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T423
+ID: T444
 Status: [ ] Todo
 Title: Evaluate web/src/shared/PluginChooser for migration to app/components
 Description:
@@ -6895,7 +6916,7 @@ Last updated: 2026-03-26 - Audit v2
 
 ### Phase D: Documentation Truthfulness
 
-ID: T424
+ID: T445
 Status: [ ] Todo
 Title: Remove stale pipedal references from docs/TRANSPLANTATION_GUIDE.md
 Description:
@@ -6910,20 +6931,20 @@ Last updated: 2026-03-26 - Audit v2
 
 ### Phase E: Test Coverage
 
-ID: T425
+ID: T446
 Status: [ ] Todo
 Title: Add route prefix uniqueness CI test
 Description:
 - Goal / acceptance criteria: Create a test that extracts all APIRouter prefixes from registered route modules and asserts no two registered routers share a prefix unless their endpoint paths are verified non-overlapping. This would have caught the /api/chains collision and the other shared-prefix cases.
 - Why it matters: 4 prefix collisions/shared-prefix cases found in this audit — automated detection prevents recurrence.
-- Dependencies: T419, T420, T421 (resolve collisions first)
+- Dependencies: T440, T441, T442 (resolve collisions first)
 - Estimated effort: Low
 - Required outputs: New test file in tests/, runs in CI.
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T426
+ID: T447
 Status: [ ] Todo
 Title: Add test coverage for 58 untested route modules
 Description:
@@ -6937,13 +6958,13 @@ Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-26 - Audit v2
 
-ID: T427
+ID: T448
 Status: [ ] Todo
 Title: Add unregistered-route-file CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans `app/routes/` for files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list, individually registered, or documented as a utility-only module (like base.py). Currently only base.py is unregistered, plus the dead `pipedal_compat_router` inside engine.py.
 - Why it matters: Prevents abandoned route files from accumulating undetected.
-- Dependencies: T415, T418 (clean up existing unregistered routes first)
+- Dependencies: T436, T439 (clean up existing unregistered routes first)
 - Estimated effort: Low
 - Required outputs: New test file, runs in CI.
 Subtasks: None

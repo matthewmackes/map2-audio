@@ -411,6 +411,19 @@ class JuceEngineService(Singleton):
             )
         return None
 
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: Optional[int] = None,
+        fallback_instance_id: Optional[int] = None,
+    ) -> Optional[int]:
+        """Resolve a live engine instance by explicit id or URI + chain position."""
+        if isinstance(fallback_instance_id, int) and fallback_instance_id > 0:
+            return fallback_instance_id
+        if not self._engine:
+            return None
+        return await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+
     @staticmethod
     def _runtime_item_latency_samples(item: Dict[str, Any]) -> Optional[int]:
         for key in ("latency_samples", "reported_latency_samples", "latency"):

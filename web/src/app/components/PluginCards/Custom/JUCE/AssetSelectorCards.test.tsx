@@ -5,18 +5,24 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mockNAMGetStatus = jest.fn()
 const mockNAMGetInstanceStatus = jest.fn()
+const mockNAMGetStatusAtPosition = jest.fn()
 const mockNAMLoadModelToInstance = jest.fn()
+const mockNAMLoadModelAtPosition = jest.fn()
 const mockIRGetTypeStatus = jest.fn()
 const mockListCabinets = jest.fn()
 const mockListReverbs = jest.fn()
 const mockIRLoadCabinetToInstance = jest.fn()
 const mockIRLoadReverbToInstance = jest.fn()
+const mockIRLoadCabinetAtPosition = jest.fn()
+const mockIRLoadReverbAtPosition = jest.fn()
 
 jest.mock('../../../../../map2/api', () => ({
   namApi: {
     getStatus: (...args: unknown[]) => mockNAMGetStatus(...args),
     getInstanceStatus: (...args: unknown[]) => mockNAMGetInstanceStatus(...args),
+    getStatusAtPosition: (...args: unknown[]) => mockNAMGetStatusAtPosition(...args),
     loadModelToInstance: (...args: unknown[]) => mockNAMLoadModelToInstance(...args),
+    loadModelAtPosition: (...args: unknown[]) => mockNAMLoadModelAtPosition(...args),
   },
   irApi: {
     getTypeStatus: (...args: unknown[]) => mockIRGetTypeStatus(...args),
@@ -24,6 +30,8 @@ jest.mock('../../../../../map2/api', () => ({
     listReverbs: (...args: unknown[]) => mockListReverbs(...args),
     loadCabinetToInstance: (...args: unknown[]) => mockIRLoadCabinetToInstance(...args),
     loadReverbToInstance: (...args: unknown[]) => mockIRLoadReverbToInstance(...args),
+    loadCabinetAtPosition: (...args: unknown[]) => mockIRLoadCabinetAtPosition(...args),
+    loadReverbAtPosition: (...args: unknown[]) => mockIRLoadReverbAtPosition(...args),
   },
 }))
 
@@ -134,12 +142,16 @@ describe('JUCE asset selector cards', () => {
   beforeEach(() => {
     mockNAMGetStatus.mockReset()
     mockNAMGetInstanceStatus.mockReset()
+    mockNAMGetStatusAtPosition.mockReset()
     mockNAMLoadModelToInstance.mockReset()
+    mockNAMLoadModelAtPosition.mockReset()
     mockIRGetTypeStatus.mockReset()
     mockListCabinets.mockReset()
     mockListReverbs.mockReset()
     mockIRLoadCabinetToInstance.mockReset()
     mockIRLoadReverbToInstance.mockReset()
+    mockIRLoadCabinetAtPosition.mockReset()
+    mockIRLoadReverbAtPosition.mockReset()
 
     mockNAMGetStatus.mockResolvedValue({
       available: true,
@@ -198,9 +210,28 @@ describe('JUCE asset selector cards', () => {
       peakOutput: -8,
       latency: 0,
     })
+    mockNAMGetStatusAtPosition.mockResolvedValue({
+      available: true,
+      activeModel: 'Position Crunch',
+      loading: false,
+      bypass: false,
+      inputLevel: -11,
+      outputLevel: -7,
+      input_gain: 2,
+      output_gain: -2,
+      normalize: true,
+      availableModels: ['Position Crunch'],
+      mix: 100,
+      peakInput: -11,
+      peakOutput: -7,
+      latency: 0,
+    })
     mockNAMLoadModelToInstance.mockResolvedValue({ status: 'ok' })
+    mockNAMLoadModelAtPosition.mockResolvedValue({ status: 'ok' })
     mockIRLoadCabinetToInstance.mockResolvedValue({ status: 'ok' })
     mockIRLoadReverbToInstance.mockResolvedValue({ status: 'ok' })
+    mockIRLoadCabinetAtPosition.mockResolvedValue({ status: 'ok' })
+    mockIRLoadReverbAtPosition.mockResolvedValue({ status: 'ok' })
 
     global.fetch = jest.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -455,6 +486,62 @@ describe('JUCE asset selector cards', () => {
       expect(mockNAMLoadModelToInstance).toHaveBeenCalledWith('Uploaded NAM', 101)
       expect(mockIRLoadCabinetToInstance).toHaveBeenCalledWith('Uploaded Cabinet.wav', 202)
       expect(mockIRLoadReverbToInstance).toHaveBeenCalledWith('Uploaded Reverb.wav', 303)
+    })
+  })
+
+  it('uses position-scoped load APIs for NAM and IR cards when plugin positions are present without instance ids', async () => {
+    renderCard(
+      <>
+        <NAMCard
+          plugin={makePlugin('NAM', 'Amplifier')}
+          pluginPosition={4}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#ff6b6b"
+        />
+        <CabinetIRCard
+          plugin={makePlugin('Cabinet IR', 'Convolution')}
+          pluginPosition={5}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#f97316"
+        />
+        <ReverbIRCard
+          plugin={makePlugin('Reverb IR', 'Convolution')}
+          pluginPosition={6}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#a855f7"
+        />
+      </>,
+    )
+
+    await waitFor(() => {
+      expect(mockNAMGetStatusAtPosition).toHaveBeenCalledWith(4)
+      expect(mockIRGetTypeStatus).toHaveBeenCalledWith('cabinet', { instanceId: undefined, pluginPosition: 5 })
+      expect(mockIRGetTypeStatus).toHaveBeenCalledWith('reverb', { instanceId: undefined, pluginPosition: 6 })
+    })
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model to selected block'), {
+      target: {
+        files: [new File(['nam-data'], 'position-upload.nam', { type: 'application/octet-stream' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'position-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload reverb IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'position-reverb.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockNAMLoadModelAtPosition).toHaveBeenCalledWith('Uploaded NAM', 4)
+      expect(mockIRLoadCabinetAtPosition).toHaveBeenCalledWith('Uploaded Cabinet.wav', 5)
+      expect(mockIRLoadReverbAtPosition).toHaveBeenCalledWith('Uploaded Reverb.wav', 6)
     })
   })
 })

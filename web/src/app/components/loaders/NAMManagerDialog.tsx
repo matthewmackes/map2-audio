@@ -18,9 +18,12 @@ import {
 import { MachineLearningModel, Renew, StarFilled } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
+import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { AssetUploadButton } from './AssetUploadButton'
 import { useToasts } from '../Toasts'
 import './ModelManagerDialogs.css'
+
+const NAM_PLUGIN_URI = 'map2://juce/nam'
 
 interface FeaturedModel {
   id: string | number
@@ -38,13 +41,16 @@ interface Props {
   onClose: () => void
   onLoadNAM?: (modelName: string) => void
   instanceId?: number
+  pluginPosition?: number
 }
 
-export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId }: Props) {
+export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginPosition }: Props) {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+  const statusScopeKey = getPluginIdentityKeyFromParts(NAM_PLUGIN_URI, resolvedPluginPosition, instanceId)
 
   const modelsQuery = useQuery<NAMModelsResponse>({
     queryKey: ['nam', 'models'],
@@ -65,11 +71,13 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId }: Props
   })
 
   const statusQuery = useQuery<NAMStatus>({
-    queryKey: ['nam', 'status', instanceId ?? 'global'],
+    queryKey: ['nam', 'status', statusScopeKey],
     queryFn: () => (
       typeof instanceId === 'number' && instanceId > 0
         ? namApi.getInstanceStatus(instanceId)
-        : namApi.getStatus()
+        : resolvedPluginPosition !== undefined
+          ? namApi.getStatusAtPosition(resolvedPluginPosition)
+          : namApi.getStatus()
     ),
     enabled: open,
   })
@@ -78,7 +86,9 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId }: Props
     mutationFn: (name: string) => (
       typeof instanceId === 'number' && instanceId > 0
         ? namApi.loadModelToInstance(name, instanceId)
-        : namApi.loadModel(name)
+        : resolvedPluginPosition !== undefined
+          ? namApi.loadModelAtPosition(name, resolvedPluginPosition)
+          : namApi.loadModel(name)
     ),
     onSuccess: (_, name) => {
       queryClient.invalidateQueries({ queryKey: ['nam'] })

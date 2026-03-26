@@ -430,6 +430,22 @@ function appendQueryParams(
   return `${url}${separator}${serialized}`
 }
 
+export interface PluginRuntimeScopeOptions {
+  instanceId?: number
+  pluginPosition?: number
+  nodeId?: string | null
+}
+
+function appendPluginRuntimeQuery(url: string, options?: PluginRuntimeScopeOptions): string {
+  return appendNodeQuery(
+    appendQueryParams(url, {
+      instance_id: options?.instanceId,
+      plugin_position: options?.pluginPosition,
+    }),
+    options?.nodeId,
+  )
+}
+
 function scopedNodePath(path: string, nodeId?: string | null): string {
   if (!nodeId || nodeId === 'all') {
     return `${API_BASE}${path}`
@@ -3505,11 +3521,11 @@ export const irApi = {
 
   getTypeStatus: (
     type: 'cabinet' | 'reverb',
-    options?: { instanceId?: number; nodeId?: string | null },
+    options?: { instanceId?: number; pluginPosition?: number; nodeId?: string | null },
   ) => fetchJson<IRStatus>(
-    appendNodeQuery(
-      appendQueryParams(`${API_BASE}/ir/status`, { type, instance_id: options?.instanceId }),
-      options?.nodeId,
+    appendPluginRuntimeQuery(
+      appendQueryParams(`${API_BASE}/ir/status`, { type }),
+      options,
     ),
   ),
 
@@ -3531,64 +3547,85 @@ export const irApi = {
 
   loadCabinetToInstance: (irName: string, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  loadCabinetAtPosition: (irName: string, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   loadReverbToInstance: (irName: string, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  loadReverbAtPosition: (irName: string, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   setCabinetMixForInstance: (mix: number, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; mix: number; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/set-cabinet-mix/${mix}`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-cabinet-mix/${mix}`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setCabinetMixAtPosition: (mix: number, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; mix: number; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-cabinet-mix/${mix}`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   setReverbMixForInstance: (mix: number, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; mix: number; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/set-reverb-mix/${mix}`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-reverb-mix/${mix}`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setReverbMixAtPosition: (mix: number, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; mix: number; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-reverb-mix/${mix}`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   setCabinetBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; bypass: boolean; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/set-cabinet-bypass/${bypass}`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-cabinet-bypass/${bypass}`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setCabinetBypassAtPosition: (bypass: boolean, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-cabinet-bypass/${bypass}`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   setReverbBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; bypass: boolean; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/set-reverb-bypass/${bypass}`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-reverb-bypass/${bypass}`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setReverbBypassAtPosition: (bypass: boolean, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/set-reverb-bypass/${bypass}`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   navigateCabinetToInstance: (direction: 'prev' | 'next', instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/ir/navigate-cabinet/${direction}`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/ir/navigate-cabinet/${direction}`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  navigateCabinetAtPosition: (direction: 'prev' | 'next', pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/ir/navigate-cabinet/${direction}`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
@@ -3792,10 +3829,12 @@ export const namApi = {
 
   getInstanceStatus: (instanceId: number, nodeId?: string | null) =>
     fetchJson<NAMStatus>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/status`, { instance_id: instanceId }),
-        nodeId,
-      )
+      appendPluginRuntimeQuery(`${API_BASE}/nam/status`, { instanceId, nodeId })
+    ),
+
+  getStatusAtPosition: (pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<NAMStatus>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/status`, { pluginPosition, nodeId })
     ),
 
   getCategories: () => fetchJson<NAMCategoriesResponse>(`${API_BASE}/nam/categories`),
@@ -3827,10 +3866,15 @@ export const namApi = {
 
   loadModelToInstance: (modelName: string, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; model: string }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { instanceId, nodeId }),
+      {
+        method: 'POST',
+      }
+    ),
+
+  loadModelAtPosition: (modelName: string, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; model: string }>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { pluginPosition, nodeId }),
       {
         method: 'POST',
       }
@@ -3844,10 +3888,16 @@ export const namApi = {
 
   setInputGainForInstance: (gainDb: number, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; input_gain: number }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/input-gain`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/input-gain`, { instanceId, nodeId }),
+      {
+        method: 'POST',
+        body: JSON.stringify({ gain_db: gainDb }),
+      }
+    ),
+
+  setInputGainAtPosition: (gainDb: number, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; input_gain: number }>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/input-gain`, { pluginPosition, nodeId }),
       {
         method: 'POST',
         body: JSON.stringify({ gain_db: gainDb }),
@@ -3856,10 +3906,16 @@ export const namApi = {
 
   setOutputGainForInstance: (gainDb: number, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; output_gain: number }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/output-gain`, { instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/output-gain`, { instanceId, nodeId }),
+      {
+        method: 'POST',
+        body: JSON.stringify({ gain_db: gainDb }),
+      }
+    ),
+
+  setOutputGainAtPosition: (gainDb: number, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; output_gain: number }>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/output-gain`, { pluginPosition, nodeId }),
       {
         method: 'POST',
         body: JSON.stringify({ gain_db: gainDb }),
@@ -3868,19 +3924,25 @@ export const namApi = {
 
   setBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; bypass: boolean }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/bypass`, { bypass, instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/bypass`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setBypassAtPosition: (bypass: boolean, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean }>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/bypass`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 
   setNormalizeForInstance: (normalize: boolean, instanceId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; normalize: boolean }>(
-      appendNodeQuery(
-        appendQueryParams(`${API_BASE}/nam/normalize`, { normalize, instance_id: instanceId }),
-        nodeId,
-      ),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/normalize`, { instanceId, nodeId }),
+      { method: 'POST' }
+    ),
+
+  setNormalizeAtPosition: (normalize: boolean, pluginPosition: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; normalize: boolean }>(
+      appendPluginRuntimeQuery(`${API_BASE}/nam/normalize`, { pluginPosition, nodeId }),
       { method: 'POST' }
     ),
 

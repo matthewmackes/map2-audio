@@ -20,6 +20,7 @@ export type IconComponent = FC<SVGProps<SVGSVGElement> & { size?: number }>
 /** Props passed to all plugin card components */
 export interface PluginCardProps {
   plugin: Plugin
+  pluginPosition?: number
   parameterValues: Record<number, number>
   onParameterChange: (paramIndex: number, value: number) => void
   onParameterChangeEnd?: () => void

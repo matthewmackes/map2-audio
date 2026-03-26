@@ -18,11 +18,17 @@ import {
 import { Renew, VolumeUp, Waveform } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
+import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { AssetUploadButton } from './AssetUploadButton'
 import { useToasts } from '../Toasts'
 import './ModelManagerDialogs.css'
 
 export type IRType = 'cabinet' | 'reverb'
+
+const IR_PLUGIN_URIS: Record<IRType, string> = {
+  cabinet: 'map2://juce/convolution/cabinet',
+  reverb: 'map2://juce/convolution/reverb',
+}
 
 interface IRTypeConfig {
   title: string
@@ -33,7 +39,7 @@ interface IRTypeConfig {
   defaultLabel: string
   icon: typeof VolumeUp
   listQueryFn: () => Promise<IRsResponse>
-  loadFn: (name: string, instanceId?: number) => Promise<unknown>
+  loadFn: (name: string, instanceId?: number, pluginPosition?: number) => Promise<unknown>
   uploadFn: (file: File) => Promise<unknown>
   queryKey: string
   loadedKey: keyof IRStatus
@@ -49,9 +55,11 @@ const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
     defaultLabel: 'Cabinet IR',
     icon: VolumeUp,
     listQueryFn: irApi.listCabinets,
-    loadFn: (name, instanceId) => (
+    loadFn: (name, instanceId, pluginPosition) => (
       typeof instanceId === 'number' && instanceId > 0
         ? irApi.loadCabinetToInstance(name, instanceId)
+        : typeof pluginPosition === 'number' && pluginPosition >= 0
+          ? irApi.loadCabinetAtPosition(name, pluginPosition)
         : irApi.loadCabinet(name)
     ),
     uploadFn: irApi.uploadCabinet,
@@ -67,9 +75,11 @@ const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
     defaultLabel: 'Reverb IR',
     icon: Waveform,
     listQueryFn: irApi.listReverbs,
-    loadFn: (name, instanceId) => (
+    loadFn: (name, instanceId, pluginPosition) => (
       typeof instanceId === 'number' && instanceId > 0
         ? irApi.loadReverbToInstance(name, instanceId)
+        : typeof pluginPosition === 'number' && pluginPosition >= 0
+          ? irApi.loadReverbAtPosition(name, pluginPosition)
         : irApi.loadReverb(name)
     ),
     uploadFn: irApi.uploadReverb,
@@ -84,6 +94,7 @@ interface Props {
   onClose: () => void
   onLoad?: (irName: string) => void
   instanceId?: number
+  pluginPosition?: number
 }
 
 function formatMeta(duration?: number, size?: number, sampleRate?: number, fallback?: string): string {
@@ -96,7 +107,7 @@ function formatMeta(duration?: number, size?: number, sampleRate?: number, fallb
   return sampleRate ? `${base} @ ${(sampleRate / 1000).toFixed(1)} kHz` : base
 }
 
-export function IRManagerDialog({ type, open, onClose, onLoad, instanceId }: Props) {
+export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, pluginPosition }: Props) {
   const config = IR_CONFIGS[type]
   const Icon = config.icon
 
@@ -104,6 +115,8 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId }: Pro
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+  const statusScopeKey = getPluginIdentityKeyFromParts(IR_PLUGIN_URIS[type], resolvedPluginPosition, instanceId)
 
   const irsQuery = useQuery<IRsResponse>({
     queryKey: ['ir', config.queryKey],
@@ -112,13 +125,16 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId }: Pro
   })
 
   const statusQuery = useQuery<IRStatus>({
-    queryKey: ['ir', 'status', type, instanceId ?? 'global'],
-    queryFn: () => irApi.getTypeStatus(type, { instanceId }),
+    queryKey: ['ir', 'status', type, statusScopeKey],
+    queryFn: () => irApi.getTypeStatus(type, {
+      instanceId,
+      pluginPosition: resolvedPluginPosition,
+    }),
     enabled: open,
   })
 
   const loadMutation = useMutation({
-    mutationFn: (name: string) => config.loadFn(name, instanceId),
+    mutationFn: (name: string) => config.loadFn(name, instanceId, resolvedPluginPosition),
     onSuccess: (_, name) => {
       queryClient.invalidateQueries({ queryKey: ['ir'] })
       pushToast(`Loaded ${type} IR: ${name}`, 'success')
@@ -304,13 +320,24 @@ export function CabinetIRManagerDialog({
   onClose,
   onLoadCabinetIR,
   instanceId,
+  pluginPosition,
 }: {
   open: boolean
   onClose: () => void
   onLoadCabinetIR?: (irName: string) => void
   instanceId?: number
+  pluginPosition?: number
 }) {
-  return <IRManagerDialog type="cabinet" open={open} onClose={onClose} onLoad={onLoadCabinetIR} instanceId={instanceId} />
+  return (
+    <IRManagerDialog
+      type="cabinet"
+      open={open}
+      onClose={onClose}
+      onLoad={onLoadCabinetIR}
+      instanceId={instanceId}
+      pluginPosition={pluginPosition}
+    />
+  )
 }
 
 export function ReverbIRManagerDialog({
@@ -318,11 +345,22 @@ export function ReverbIRManagerDialog({
   onClose,
   onLoadReverbIR,
   instanceId,
+  pluginPosition,
 }: {
   open: boolean
   onClose: () => void
   onLoadReverbIR?: (irName: string) => void
   instanceId?: number
+  pluginPosition?: number
 }) {
-  return <IRManagerDialog type="reverb" open={open} onClose={onClose} onLoad={onLoadReverbIR} instanceId={instanceId} />
+  return (
+    <IRManagerDialog
+      type="reverb"
+      open={open}
+      onClose={onClose}
+      onLoad={onLoadReverbIR}
+      instanceId={instanceId}
+      pluginPosition={pluginPosition}
+    />
+  )
 }

@@ -8,8 +8,10 @@ const mockListReverbs = jest.fn()
 const mockGetTypeStatus = jest.fn()
 const mockLoadCabinet = jest.fn()
 const mockLoadCabinetToInstance = jest.fn()
+const mockLoadCabinetAtPosition = jest.fn()
 const mockLoadReverb = jest.fn()
 const mockLoadReverbToInstance = jest.fn()
+const mockLoadReverbAtPosition = jest.fn()
 const mockUploadCabinet = jest.fn()
 const mockUploadReverb = jest.fn()
 const mockPushToast = jest.fn()
@@ -21,8 +23,10 @@ jest.mock('../../../map2/api', () => ({
     getTypeStatus: (...args: unknown[]) => mockGetTypeStatus(...args),
     loadCabinet: (...args: unknown[]) => mockLoadCabinet(...args),
     loadCabinetToInstance: (...args: unknown[]) => mockLoadCabinetToInstance(...args),
+    loadCabinetAtPosition: (...args: unknown[]) => mockLoadCabinetAtPosition(...args),
     loadReverb: (...args: unknown[]) => mockLoadReverb(...args),
     loadReverbToInstance: (...args: unknown[]) => mockLoadReverbToInstance(...args),
+    loadReverbAtPosition: (...args: unknown[]) => mockLoadReverbAtPosition(...args),
     uploadCabinet: (...args: unknown[]) => mockUploadCabinet(...args),
     uploadReverb: (...args: unknown[]) => mockUploadReverb(...args),
   },
@@ -36,7 +40,7 @@ jest.mock('../Toasts', () => ({
 
 import { IRManagerDialog } from './IRManagerDialog'
 
-function renderDialog(instanceId?: number) {
+function renderDialog(instanceId?: number, pluginPosition?: number) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -46,7 +50,7 @@ function renderDialog(instanceId?: number) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <IRManagerDialog type="cabinet" open onClose={jest.fn()} instanceId={instanceId} />
+      <IRManagerDialog type="cabinet" open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
     </QueryClientProvider>,
   )
 }
@@ -58,8 +62,10 @@ describe('IRManagerDialog', () => {
     mockGetTypeStatus.mockReset()
     mockLoadCabinet.mockReset()
     mockLoadCabinetToInstance.mockReset()
+    mockLoadCabinetAtPosition.mockReset()
     mockLoadReverb.mockReset()
     mockLoadReverbToInstance.mockReset()
+    mockLoadReverbAtPosition.mockReset()
     mockUploadCabinet.mockReset()
     mockUploadReverb.mockReset()
     mockPushToast.mockReset()
@@ -101,6 +107,7 @@ describe('IRManagerDialog', () => {
     mockGetTypeStatus.mockResolvedValue({ available: true, loaded_cabinet: 'Cab B' })
     mockLoadCabinet.mockResolvedValue({})
     mockLoadCabinetToInstance.mockResolvedValue({})
+    mockLoadCabinetAtPosition.mockResolvedValue({})
     mockUploadCabinet.mockResolvedValue({ filename: 'new-cab.wav' })
   })
 
@@ -169,6 +176,24 @@ describe('IRManagerDialog', () => {
 
     await waitFor(() => {
       expect(mockLoadCabinetToInstance).toHaveBeenCalledWith('Cab A', 21)
+    })
+    expect(mockLoadCabinet).not.toHaveBeenCalled()
+  })
+
+  it('uses position-scoped cabinet load calls when pluginPosition is provided', async () => {
+    renderDialog(undefined, 7)
+
+    await screen.findByText('Cab A')
+
+    expect(mockGetTypeStatus).toHaveBeenCalledWith('cabinet', {
+      instanceId: undefined,
+      pluginPosition: 7,
+    })
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(mockLoadCabinetAtPosition).toHaveBeenCalledWith('Cab A', 7)
     })
     expect(mockLoadCabinet).not.toHaveBeenCalled()
   })

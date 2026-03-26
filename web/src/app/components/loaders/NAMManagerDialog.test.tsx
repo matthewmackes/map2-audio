@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const mockListModels = jest.fn()
 const mockGetStatus = jest.fn()
 const mockGetInstanceStatus = jest.fn()
+const mockGetStatusAtPosition = jest.fn()
 const mockLoadModel = jest.fn()
 const mockLoadModelToInstance = jest.fn()
+const mockLoadModelAtPosition = jest.fn()
 const mockUpload = jest.fn()
 const mockPushToast = jest.fn()
 const mockFetch = jest.fn()
@@ -17,8 +19,10 @@ jest.mock('../../../map2/api', () => ({
     listModels: (...args: unknown[]) => mockListModels(...args),
     getStatus: (...args: unknown[]) => mockGetStatus(...args),
     getInstanceStatus: (...args: unknown[]) => mockGetInstanceStatus(...args),
+    getStatusAtPosition: (...args: unknown[]) => mockGetStatusAtPosition(...args),
     loadModel: (...args: unknown[]) => mockLoadModel(...args),
     loadModelToInstance: (...args: unknown[]) => mockLoadModelToInstance(...args),
+    loadModelAtPosition: (...args: unknown[]) => mockLoadModelAtPosition(...args),
     upload: (...args: unknown[]) => mockUpload(...args),
   },
 }))
@@ -31,7 +35,7 @@ jest.mock('../Toasts', () => ({
 
 import { NAMManagerDialog } from './NAMManagerDialog'
 
-function renderDialog(instanceId?: number) {
+function renderDialog(instanceId?: number, pluginPosition?: number) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -41,7 +45,7 @@ function renderDialog(instanceId?: number) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} />
+      <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
     </QueryClientProvider>,
   )
 }
@@ -51,8 +55,10 @@ describe('NAMManagerDialog', () => {
     mockListModels.mockReset()
     mockGetStatus.mockReset()
     mockGetInstanceStatus.mockReset()
+    mockGetStatusAtPosition.mockReset()
     mockLoadModel.mockReset()
     mockLoadModelToInstance.mockReset()
+    mockLoadModelAtPosition.mockReset()
     mockUpload.mockReset()
     mockPushToast.mockReset()
     mockFetch.mockReset()
@@ -124,6 +130,18 @@ describe('NAMManagerDialog', () => {
       latency: 0,
       availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
     })
+    mockGetStatusAtPosition.mockResolvedValue({
+      available: true,
+      activeModel: 'Mesa Mark V',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -141,6 +159,7 @@ describe('NAMManagerDialog', () => {
 
     mockLoadModel.mockResolvedValue({})
     mockLoadModelToInstance.mockResolvedValue({})
+    mockLoadModelAtPosition.mockResolvedValue({})
     mockUpload.mockResolvedValue({ model: { name: 'uploaded.nam' } })
   })
 
@@ -205,6 +224,21 @@ describe('NAMManagerDialog', () => {
 
     await waitFor(() => {
       expect(mockLoadModelToInstance).toHaveBeenCalledWith('Tube Screamer OD', 17)
+    })
+    expect(mockLoadModel).not.toHaveBeenCalled()
+  })
+
+  it('uses position-scoped NAM status and load calls when pluginPosition is provided', async () => {
+    renderDialog(undefined, 9)
+
+    await screen.findByText('Mesa Mark V')
+
+    expect(mockGetStatusAtPosition).toHaveBeenCalledWith(9)
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(mockLoadModelAtPosition).toHaveBeenCalledWith('Tube Screamer OD', 9)
     })
     expect(mockLoadModel).not.toHaveBeenCalled()
   })

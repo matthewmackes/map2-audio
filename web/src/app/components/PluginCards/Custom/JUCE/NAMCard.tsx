@@ -26,6 +26,7 @@ import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { namApi } from '../../../../../map2/api'
 import type { NAMStatus as ApiNAMStatus } from '../../../../../map2/types'
+import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
 
 // Plugin URI for MIDI mappings
 const NAM_URI = 'map2://juce/nam'
@@ -70,6 +71,7 @@ interface NAMCardProps extends PluginCardProps {
 
 function NAMCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#ff6b6b',
   compact = false,
   onOpenMidiMappings,
@@ -78,11 +80,17 @@ function NAMCardBase({
   const [managerOpen, setManagerOpen] = useState(false)
   const { pushToast } = useToasts()
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+  const statusScopeKey = getPluginIdentityKeyFromParts(NAM_URI, resolvedPluginPosition, instanceId)
 
   const statusQuery = useQuery({
-    queryKey: ['nam', 'status', instanceId ?? 'global'],
+    queryKey: ['nam', 'status', statusScopeKey],
     queryFn: async () => normalizeNAMStatus(
-      instanceId ? await namApi.getInstanceStatus(instanceId) : await namApi.getStatus()
+      instanceId
+        ? await namApi.getInstanceStatus(instanceId)
+        : resolvedPluginPosition !== undefined
+          ? await namApi.getStatusAtPosition(resolvedPluginPosition)
+          : await namApi.getStatus()
     ),
     refetchInterval: 500, // Fast updates for level meters
   })
@@ -90,6 +98,8 @@ function NAMCardBase({
   const setInputGain = useCallback(async (value: number) => {
     if (instanceId) {
       await namApi.setInputGainForInstance(value, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await namApi.setInputGainAtPosition(value, resolvedPluginPosition)
     } else {
       await fetch('/api/nam/input-gain', {
         method: 'POST',
@@ -98,11 +108,13 @@ function NAMCardBase({
       })
     }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const setOutputGain = useCallback(async (value: number) => {
     if (instanceId) {
       await namApi.setOutputGainForInstance(value, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await namApi.setOutputGainAtPosition(value, resolvedPluginPosition)
     } else {
       await fetch('/api/nam/output-gain', {
         method: 'POST',
@@ -111,11 +123,13 @@ function NAMCardBase({
       })
     }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const setNormalize = useCallback(async (normalize: boolean) => {
     if (instanceId) {
       await namApi.setNormalizeForInstance(normalize, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await namApi.setNormalizeAtPosition(normalize, resolvedPluginPosition)
     } else {
       await fetch('/api/nam/normalize', {
         method: 'POST',
@@ -124,11 +138,13 @@ function NAMCardBase({
       })
     }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
       await namApi.setBypassForInstance(bypass, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await namApi.setBypassAtPosition(bypass, resolvedPluginPosition)
     } else {
       await fetch('/api/nam/bypass', {
         method: 'POST',
@@ -137,7 +153,7 @@ function NAMCardBase({
       })
     }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
@@ -158,6 +174,8 @@ function NAMCardBase({
       if (uploadedName) {
         if (instanceId) {
           await namApi.loadModelToInstance(uploadedName, instanceId)
+        } else if (resolvedPluginPosition !== undefined) {
+          await namApi.loadModelAtPosition(uploadedName, resolvedPluginPosition)
         } else {
           const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
             method: 'POST',
@@ -383,6 +401,7 @@ function NAMCardBase({
         onClose={() => setManagerOpen(false)}
         onLoadNAM={() => setManagerOpen(false)}
         instanceId={instanceId}
+        pluginPosition={resolvedPluginPosition}
       />
     </>
   )

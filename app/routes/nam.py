@@ -12,6 +12,7 @@ IMPORTANT: Audio processing is handled ONLY by the JUCE C++ NAMProcessor.
 The Python side handles file management and metadata only.
 """
 
+import asyncio
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -28,6 +29,7 @@ try:
     from sqlalchemy import or_
 
     router = APIRouter(prefix="/api/nam", tags=["nam"])
+    NAM_PLUGIN_URI = "map2://juce/nam"
 
     # ==================== Pydantic Models ====================
 
@@ -105,6 +107,29 @@ try:
                 return m['path']
         return None
 
+    def _has_plugin_position(plugin_position: Optional[int]) -> bool:
+        return isinstance(plugin_position, int) and plugin_position >= 0
+
+    async def _resolve_scoped_instance_id(
+        engine,
+        instance_id: Optional[int],
+        plugin_position: Optional[int],
+    ) -> Optional[int]:
+        if isinstance(instance_id, int) and instance_id > 0:
+            return instance_id
+        if not _has_plugin_position(plugin_position):
+            return None
+
+        resolver = getattr(engine, "resolve_instance_id", None)
+        if callable(resolver):
+            return await resolver(NAM_PLUGIN_URI, plugin_position)
+
+        legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
+        if callable(legacy_resolver):
+            return await asyncio.to_thread(legacy_resolver, NAM_PLUGIN_URI, plugin_position)
+
+        return None
+
     # ==================== Status Endpoints ====================
 
     @router.get("/")
@@ -120,15 +145,20 @@ try:
         return status
 
     @router.get("/status")
-    async def get_nam_status(instance_id: Optional[int] = Query(None)):
+    async def get_nam_status(
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Get NAM model status for frontend.
 
         Returns the format expected by the frontend NAMStatus interface.
         """
         engine = get_audio_engine()
 
-        if isinstance(instance_id, int) and instance_id > 0:
-            instance_info = await engine.get_nam_model_info_instance(instance_id)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            instance_info = await engine.get_nam_model_info_instance(scoped_instance_id)
             models = _scan_nam_models()
             model_names = [m['name'] for m in models]
             return {
@@ -146,6 +176,26 @@ try:
                 "input_gain": float(instance_info.get("input_gain", 0.0)),
                 "output_gain": float(instance_info.get("output_gain", 0.0)),
                 "normalize": bool(instance_info.get("normalize", True)),
+            }
+
+        if _has_plugin_position(plugin_position):
+            models = _scan_nam_models()
+            model_names = [m['name'] for m in models]
+            return {
+                "available": True,
+                "activeModel": None,
+                "loading": False,
+                "mix": 100,
+                "bypass": False,
+                "inputLevel": -100.0,
+                "outputLevel": -100.0,
+                "peakInput": -100.0,
+                "peakOutput": -100.0,
+                "latency": 0,
+                "availableModels": model_names,
+                "input_gain": 0.0,
+                "output_gain": 0.0,
+                "normalize": True,
             }
 
         # Get status from JUCE engine
@@ -358,7 +408,11 @@ try:
     # ==================== Load/Unload (RT-safe via JUCE) ====================
 
     @router.post("/models/{model_name}/load")
-    async def load_nam_model(model_name: str, instance_id: Optional[int] = Query(None)):
+    async def load_nam_model(
+        model_name: str,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Load a NAM model via RT-safe JUCE C++ engine.
 
         This is the ONLY way to load NAM models for real-time audio.
@@ -371,8 +425,11 @@ try:
 
         # Load via JUCE engine (RT-safe)
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            success = await engine.load_nam_model_instance(instance_id, model_path)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            success = await engine.load_nam_model_instance(scoped_instance_id, model_path)
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             success = await engine.load_nam_model(model_path)
 
@@ -383,18 +440,28 @@ try:
         return {"status": "loading", "model": model_name, "path": model_path}
 
     @router.post("/models/{model_name}/activate")
-    async def activate_nam_model(model_name: str, instance_id: Optional[int] = Query(None)):
+    async def activate_nam_model(
+        model_name: str,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Activate a NAM model (alias for load)."""
-        return await load_nam_model(model_name, instance_id)
+        return await load_nam_model(model_name, instance_id, plugin_position)
 
     @router.post("/unload")
-    async def unload_nam_model(instance_id: Optional[int] = Query(None)):
+    async def unload_nam_model(
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Unload the current NAM model."""
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            unloaded = await engine.unload_nam_model_instance(instance_id)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            unloaded = await engine.unload_nam_model_instance(scoped_instance_id)
             if not unloaded:
-                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             await engine.unload_nam_model()
         return {"status": "unloaded"}
@@ -402,49 +469,77 @@ try:
     # ==================== Controls ====================
 
     @router.post("/bypass")
-    async def set_nam_bypass(bypass: bool = True, instance_id: Optional[int] = Query(None)):
+    async def set_nam_bypass(
+        bypass: bool = True,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Set NAM bypass state."""
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            updated = await engine.set_nam_bypass_instance(instance_id, bypass)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            updated = await engine.set_nam_bypass_instance(scoped_instance_id, bypass)
             if not updated:
-                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             await engine.set_nam_bypass(bypass)
         return {"status": "ok", "bypass": bypass}
 
     @router.post("/input-gain")
-    async def set_nam_input_gain(request: NAMGainRequest, instance_id: Optional[int] = Query(None)):
+    async def set_nam_input_gain(
+        request: NAMGainRequest,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Set NAM input gain in dB."""
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            updated = await engine.set_nam_input_gain_instance(instance_id, request.gain_db)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            updated = await engine.set_nam_input_gain_instance(scoped_instance_id, request.gain_db)
             if not updated:
-                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             await engine.set_nam_input_gain(request.gain_db)
         return {"status": "ok", "input_gain": request.gain_db}
 
     @router.post("/output-gain")
-    async def set_nam_output_gain(request: NAMGainRequest, instance_id: Optional[int] = Query(None)):
+    async def set_nam_output_gain(
+        request: NAMGainRequest,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Set NAM output gain in dB."""
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            updated = await engine.set_nam_output_gain_instance(instance_id, request.gain_db)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            updated = await engine.set_nam_output_gain_instance(scoped_instance_id, request.gain_db)
             if not updated:
-                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             await engine.set_nam_output_gain(request.gain_db)
         return {"status": "ok", "output_gain": request.gain_db}
 
     @router.post("/normalize")
-    async def set_nam_normalize(normalize: bool = True, instance_id: Optional[int] = Query(None)):
+    async def set_nam_normalize(
+        normalize: bool = True,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Enable/disable NAM output normalization."""
         engine = get_audio_engine()
-        if isinstance(instance_id, int) and instance_id > 0:
-            updated = await engine.set_nam_normalize_instance(instance_id, normalize)
+        scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
+            updated = await engine.set_nam_normalize_instance(scoped_instance_id, normalize)
             if not updated:
-                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
+        elif _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
         else:
             await engine.set_nam_normalize(normalize)
         return {"status": "ok", "normalize": normalize}

@@ -23,6 +23,33 @@ class _FakeNamEngine:
         }
 
 
+class _FakePositionScopedNamEngine:
+    def __init__(self):
+        self.resolve_calls: list[tuple[str, int | None]] = []
+        self.load_calls: list[tuple[int, str]] = []
+
+    async def resolve_instance_id(self, plugin_uri: str, plugin_position: int | None = None):
+        self.resolve_calls.append((plugin_uri, plugin_position))
+        return 84 if plugin_uri == "map2://juce/nam" and plugin_position == 5 else None
+
+    async def load_nam_model_instance(self, instance_id: int, model_path: str) -> bool:
+        self.load_calls.append((instance_id, model_path))
+        return True
+
+    async def get_nam_model_info_instance(self, instance_id: int):
+        assert instance_id == 84
+        return {
+            "name": "Scoped Crunch",
+            "loaded": True,
+            "bypass": False,
+            "input_level": -16.0,
+            "output_level": -8.0,
+            "input_gain": 2.0,
+            "output_gain": -1.0,
+            "normalize": True,
+        }
+
+
 class _FakeIrEngine:
     def __init__(self):
         self.load_calls: list[tuple[int, str]] = []
@@ -38,6 +65,32 @@ class _FakeIrEngine:
             "loaded": True,
             "mix": 72.0,
             "bypass": True,
+            "length_samples": 4096,
+            "length_ms": 85.333,
+            "sample_rate": 48000.0,
+        }
+
+
+class _FakePositionScopedIrEngine:
+    def __init__(self):
+        self.resolve_calls: list[tuple[str, int | None]] = []
+        self.load_calls: list[tuple[int, str]] = []
+
+    async def resolve_instance_id(self, plugin_uri: str, plugin_position: int | None = None):
+        self.resolve_calls.append((plugin_uri, plugin_position))
+        return 17 if plugin_uri == "map2://juce/convolution/cabinet" and plugin_position == 6 else None
+
+    async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
+        self.load_calls.append((instance_id, path))
+        return True
+
+    async def get_ir_info_instance(self, instance_id: int):
+        assert instance_id == 17
+        return {
+            "name": "Scoped Mesa",
+            "loaded": True,
+            "mix": 63.0,
+            "bypass": False,
             "length_samples": 4096,
             "length_ms": 85.333,
             "sample_rate": 48000.0,
@@ -61,6 +114,33 @@ def test_nam_status_uses_instance_engine_when_instance_id_present(monkeypatch):
     assert payload["normalize"] is True
 
 
+def test_nam_routes_resolve_position_scoped_instances_when_instance_id_is_absent(monkeypatch):
+    engine = _FakePositionScopedNamEngine()
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [
+            {"name": "Scoped Crunch", "path": "/tmp/scoped-crunch.nam"},
+            {"name": "Clean Glass", "path": "/tmp/clean-glass.nam"},
+        ],
+    )
+
+    load_payload = asyncio.run(nam_routes.load_nam_model("Scoped Crunch", plugin_position=5))
+    status_payload = asyncio.run(nam_routes.get_nam_status(plugin_position=5))
+
+    assert engine.resolve_calls == [
+        ("map2://juce/nam", 5),
+        ("map2://juce/nam", 5),
+    ]
+    assert engine.load_calls == [(84, "/tmp/scoped-crunch.nam")]
+    assert load_payload["status"] == "loading"
+    assert status_payload["activeModel"] == "Scoped Crunch"
+    assert status_payload["availableModels"] == ["Scoped Crunch", "Clean Glass"]
+    assert status_payload["input_gain"] == 2.0
+    assert status_payload["output_gain"] == -1.0
+
+
 def test_ir_routes_load_and_report_status_per_instance(monkeypatch):
     engine = _FakeIrEngine()
     monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
@@ -79,6 +159,30 @@ def test_ir_routes_load_and_report_status_per_instance(monkeypatch):
     assert status_payload["loaded_cabinet"] == "Mesa OS"
     assert status_payload["mix"] == 72.0
     assert status_payload["bypass"] is True
+
+
+def test_ir_routes_resolve_position_scoped_instances_when_instance_id_is_absent(monkeypatch):
+    engine = _FakePositionScopedIrEngine()
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Scoped Mesa", "path": f"/tmp/{ir_type}-scoped.wav", "size_mb": 1.5}],
+    )
+
+    load_payload = asyncio.run(ir_routes.load_cabinet_ir("Scoped Mesa", plugin_position=6))
+    status_payload = asyncio.run(ir_routes.get_ir_status(type="cabinet", plugin_position=6))
+
+    assert engine.resolve_calls == [
+        ("map2://juce/convolution/cabinet", 6),
+        ("map2://juce/convolution/cabinet", 6),
+    ]
+    assert engine.load_calls == [(17, "/tmp/cabinet-scoped.wav")]
+    assert load_payload["status"] == "loaded"
+    assert status_payload["loaded"] == "Scoped Mesa"
+    assert status_payload["loaded_cabinet"] == "Scoped Mesa"
+    assert status_payload["mix"] == 63.0
+    assert status_payload["bypass"] is False
 
 
 def test_upload_service_rejects_traversal_and_saves_safe_name(monkeypatch, tmp_path: Path):

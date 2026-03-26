@@ -159,6 +159,7 @@ export function PluginCardRouter({
   // Build props for the card
   const cardProps: PluginCardProps = {
     plugin,
+    pluginPosition,
     parameterValues,
     onParameterChange: handleParameterChange,
     onParameterChangeEnd: handleParameterChangeEnd,

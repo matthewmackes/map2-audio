@@ -14,6 +14,7 @@ import { CabinetIRManagerDialog } from '../../../loaders/CabinetIRManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { irApi } from '../../../../../map2/api'
+import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
 
 const CABINET_IR_URI = 'map2://juce/convolution/cabinet'
 
@@ -36,6 +37,7 @@ interface CabinetIRCardProps extends PluginCardProps {
 
 function CabinetIRCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#f97316',
   compact = false,
   onOpenMidiMappings,
@@ -44,11 +46,16 @@ function CabinetIRCardBase({
   const [dialogOpen, setDialogOpen] = useState(false)
   const { pushToast } = useToasts()
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+  const statusScopeKey = getPluginIdentityKeyFromParts(CABINET_IR_URI, resolvedPluginPosition, instanceId)
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'cabinet', 'status', instanceId ?? 'global'],
+    queryKey: ['ir', 'cabinet', 'status', statusScopeKey],
     queryFn: async () => {
-      const status = await irApi.getTypeStatus('cabinet', { instanceId })
+      const status = await irApi.getTypeStatus('cabinet', {
+        instanceId,
+        pluginPosition: resolvedPluginPosition,
+      })
       return {
         loaded: status.loaded ?? status.loaded_cabinet ?? status.active_cabinet ?? null,
         mix: status.mix ?? 100,
@@ -73,29 +80,35 @@ function CabinetIRCardBase({
   const setMix = useCallback(async (value: number) => {
     if (instanceId) {
       await irApi.setCabinetMixForInstance(value, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await irApi.setCabinetMixAtPosition(value, resolvedPluginPosition)
     } else {
       await fetch(`/api/ir/set-cabinet-mix/${value}`, { method: 'POST' })
     }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
       await irApi.setCabinetBypassForInstance(bypass, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await irApi.setCabinetBypassAtPosition(bypass, resolvedPluginPosition)
     } else {
       await fetch(`/api/ir/set-cabinet-bypass/${bypass}`, { method: 'POST' })
     }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const navigate = useCallback(async (direction: 'prev' | 'next') => {
     if (instanceId) {
       await irApi.navigateCabinetToInstance(direction, instanceId)
+    } else if (resolvedPluginPosition !== undefined) {
+      await irApi.navigateCabinetAtPosition(direction, resolvedPluginPosition)
     } else {
       await fetch(`/api/ir/navigate-cabinet/${direction}`, { method: 'POST' })
     }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient])
+  }, [instanceId, queryClient, resolvedPluginPosition])
 
   const status = statusQuery.data
   const cabinets = listQuery.data || []
@@ -115,6 +128,8 @@ function CabinetIRCardBase({
       if (data.filename) {
         if (instanceId) {
           await irApi.loadCabinetToInstance(data.filename, instanceId)
+        } else if (resolvedPluginPosition !== undefined) {
+          await irApi.loadCabinetAtPosition(data.filename, resolvedPluginPosition)
         } else {
           const loadResponse = await fetch(`/api/ir/cabinets/${encodeURIComponent(data.filename)}/load`, {
             method: 'POST',
@@ -183,6 +198,7 @@ function CabinetIRCardBase({
         onClose={() => setDialogOpen(false)}
         onLoadCabinetIR={() => setDialogOpen(false)}
         instanceId={instanceId}
+        pluginPosition={resolvedPluginPosition}
       />
     </>
   )
