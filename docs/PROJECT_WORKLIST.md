@@ -6,7 +6,20 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 10:26 EDT - Closed T427 after restoring single-node update compatibility across legacy and hybrid application update routes
+Last updated: 2026-03-26 10:31 EDT - Added T428 to restore a clean git tree after repeated commit/push/deploy loops
+
+ID: T428
+Status: [>] In Progress
+Title: Keep the commit-push-deploy loop clean after port-3000 rebuilds
+Description:
+- Goal / acceptance criteria: Ensure a clean `commit -> push both remotes -> rebuild/restart port 3000` cycle does not leave tracked deploy byproducts dirty afterward. The fix must stop `logs/deploy-build.log` and any resulting unnecessary version churn from polluting the tree after a successful deploy, and it must be validated with a real deploy loop on this host.
+- Why it matters: The first cycle completed successfully but immediately dirtied `VERSION`, `version.json`, and `logs/deploy-build.log`, which breaks the user's requested repeatable three-cycle workflow and obscures whether later code changes are real or just deploy residue.
+- Dependencies: T427; `scripts/build/deploy`; `scripts/generate_platform_version.py`; tracked deploy artifacts `VERSION`, `version.json`, `logs/deploy-build.log`
+- Estimated effort: Low
+- Required outputs: clean-tree deploy fix, focused validation via a real deploy cycle, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 10:31 EDT - Codex
 
 ID: T427
 Status: [✓] Done
