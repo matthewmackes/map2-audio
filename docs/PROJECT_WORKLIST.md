@@ -7066,7 +7066,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_nam_models_routes.py tests/test_soundfonts_routes.py tests/test_preset_migration_routes.py` -> PASS (`10 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
     - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subD
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for preset exchange and plugin preset surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `preset_exchange.py` and `plugin_presets.py`, covering import/export/library flows and representative failure handling.
@@ -7075,9 +7075,36 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 18:28 EDT - Codex
+  Last updated: 2026-03-26 19:05 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_preset_exchange_routes.py` and `tests/test_plugin_presets_routes.py` to cover the previously untested `preset_exchange.py` and `plugin_presets.py` route modules through route-level `TestClient` assertions backed by temporary async SQLite databases and patched service seams.
+    - The new coverage locks down preset import persistence/history, cluster preset export/import and asset download flows, content-distributor delegation, plugin preset CRUD/listing behavior, default/favorite/load mutations, aggregate category/tag/favorite summaries, and lifecycle maintenance endpoints.
+    - Validation: `pytest -q tests/test_preset_exchange_routes.py tests/test_plugin_presets_routes.py` -> PASS (`8 passed, 26 warnings`).
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+- ID: T447-subE
+  Status: [ ] Todo
+  Title: Add route tests for folder scanning and plugin tag metadata surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `folders.py` and `plugin_tags.py`, covering folder stats/scan state and plugin-tag metadata/search flows with representative success/error cases.
+  - Why it matters: These organization and asset-management routes remain untested despite active UI dependencies.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:56 EDT - Codex
+- ID: T447-subF
+  Status: [ ] Todo
+  Title: Add route tests for dashboard and CPU metrics surfaces
+  Description:
+  - Goal / acceptance criteria: Add focused route coverage for `dashboard.py` and `cpu_metrics.py`, covering aggregated summary payloads plus running/offline engine cases.
+  - Why it matters: These operator-facing observability routes currently have no direct route-level regression coverage.
+  - Dependencies: None
+  - Estimated effort: Medium
+  - Required outputs: New tests covering the route modules and validation evidence.
+  Assigned to: Codex
+  Last updated: 2026-03-26 18:56 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 18:50 EDT - Codex
+Last updated: 2026-03-26 19:05 EDT - Codex
 
 ID: T448
 Status: [✓] Done
