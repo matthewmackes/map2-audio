@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**824** Python | **1151** TypeScript | **300** C++/H | **124** Docs | **917** total commits | **3** stars | **0** forks | **0** open issues
+**823** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **919** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,12 +172,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Health Monitoring Hierarchy](https://github.com/matthewmackes/map2-audio/blob/master/docs/HEALTH_MONITORING_HIERARCHY.md) | 2026-03-26 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-26 |
 | [MAP2 Audio Platform — Complete Transplantation / Reinstallation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/TRANSPLANTATION_GUIDE.md) | 2026-03-26 |
 | [Global Work List](https://github.com/matthewmackes/map2-audio/blob/master/docs/global-work-list.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
 | [MAP2 Adoption Workflow Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/ADOPTION_WORKFLOW_RUNBOOK.md) | 2026-03-23 |
-| [Node Status Grid — Quick Start Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_QUICK_START.md) | 2026-03-23 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ff7b71ca`](https://github.com/matthewmackes/map2-audio/commit/ff7b71cab80106c98127e70cf0d4b84b6610644d) | Document health hierarchy and remove dead health checker | Map2 Audio | 2026-03-26 |
+| [`952abe71`](https://github.com/matthewmackes/map2-audio/commit/952abe71d82072dc999acf9ce2716a0db8f3e950) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`7b2d8e7e`](https://github.com/matthewmackes/map2-audio/commit/7b2d8e7ef15ff32fe6698c03c36bd65ea1b0a9ca) | Document why PluginChooser remains in shared | Map2 Audio | 2026-03-26 |
 | [`93915600`](https://github.com/matthewmackes/map2-audio/commit/93915600daf0a41ef8e1ead2f61c17bafe920836) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`f9f672c0`](https://github.com/matthewmackes/map2-audio/commit/f9f672c01526acf417a16b4b75d7cd1bafe6c4bf) | Remove the orphaned ClusterAdmin page and stale PiPedal docs | Map2 Audio | 2026-03-26 |
 | [`dc33df92`](https://github.com/matthewmackes/map2-audio/commit/dc33df9228fe4bebd0be991bee4e90a001a5128f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`e1ea06f0`](https://github.com/matthewmackes/map2-audio/commit/e1ea06f030ecc8802e361c3abc4847373797bc8f) | Add CI coverage for shared route prefix audits | Map2 Audio | 2026-03-26 |
 | [`7bb41f63`](https://github.com/matthewmackes/map2-audio/commit/7bb41f6309e133d7c25c5c134da2e527b0848bd2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`eccc3a93`](https://github.com/matthewmackes/map2-audio/commit/eccc3a9334b1061d97d8e2c8555603ac96155e33) | Audit shared cluster and deployment route prefixes | Map2 Audio | 2026-03-26 |
-| [`d1e45b43`](https://github.com/matthewmackes/map2-audio/commit/d1e45b43c4c5d5951daaaae6b93b4867bbfd5339) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
