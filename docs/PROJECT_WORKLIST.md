@@ -7050,7 +7050,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_midi_v2_routes.py tests/test_midi_cluster_proxy_routes.py` -> PASS (`10 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
     - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subC
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for NAM, SoundFont, and preset migration surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `nam_models.py`, `soundfonts.py`, and `preset_migration.py`, including success/error paths for file and metadata handling.
@@ -7059,7 +7059,12 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 18:28 EDT - Codex
+  Last updated: 2026-03-26 18:50 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_nam_models_routes.py`, `tests/test_soundfonts_routes.py`, and `tests/test_preset_migration_routes.py` to cover the previously untested `nam_models.py`, `soundfonts.py`, and `preset_migration.py` route modules, focusing on library listing, file validation/deletion, SoundFont scanning/preset parsing/library metadata, and preset-detection/migration/create flows.
+    - The new coverage keeps these file- and metadata-heavy routes pinned to their current response contracts without requiring the full backing libraries in test setup by mocking the parser/library service seams.
+    - Validation: `pytest -q tests/test_nam_models_routes.py tests/test_soundfonts_routes.py tests/test_preset_migration_routes.py` -> PASS (`10 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subD
   Status: [ ] Todo
   Title: Add route tests for preset exchange and plugin preset surfaces
@@ -7072,7 +7077,7 @@ Subtasks:
   Assigned to: Codex
   Last updated: 2026-03-26 18:28 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 18:45 EDT - Codex
+Last updated: 2026-03-26 18:50 EDT - Codex
 
 ID: T448
 Status: [✓] Done
