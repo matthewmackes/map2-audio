@@ -522,8 +522,8 @@
      ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
      ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 64
      CPUAffinity=4 5
-     AmbientCapabilities=CAP_SYS_NICE
-     CapabilityBoundingSet=CAP_SYS_NICE
+     AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
+     CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
      ReadWritePaths=/home/mm/.local/share /home/mm/.cache /var/lib/map2 /var/log/map2 /etc/map2 /tmp /run/map2-audio
      EOF
 

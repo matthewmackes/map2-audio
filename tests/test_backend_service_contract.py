@@ -22,6 +22,8 @@ def test_backend_service_unit_allows_canonical_map2_state_paths_under_strict_pro
     read_write_paths = _read_write_paths_from_unit(unit_text)
     assert "/var/lib/map2" in read_write_paths
     assert "/var/log/map2" in read_write_paths
+    assert "AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW" in unit_text
+    assert "CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW" in unit_text
 
 
 def test_backend_override_guidance_keeps_canonical_map2_state_paths():
@@ -31,3 +33,8 @@ def test_backend_override_guidance_keeps_canonical_map2_state_paths():
     for required_path in ("/var/lib/map2", "/var/log/map2", "/etc/map2", "/run/map2-audio"):
         assert required_path in setup_text
         assert required_path in new_node_text
+
+    assert "AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW" in setup_text
+    assert "CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW" in setup_text
+    assert "AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW" in new_node_text
+    assert "CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW" in new_node_text

@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 12:32 EDT - Completed T431 to stop pmc UDS bind failures under backend systemd hardening
+Last updated: 2026-03-26 12:37 EDT - Completed T432 to restore AVDECC packet-socket capability under backend systemd hardening
+
+ID: T432
+Status: [✓] Done
+Title: Restore AVDECC packet-socket capability under backend systemd hardening
+Description:
+- Goal / acceptance criteria: Ensure the hardened backend service can initialize the AVDECC controller without failing packet-socket creation for lack of `CAP_NET_RAW`. The fix must update the canonical backend unit, generated override guidance, and installed live unit/override; add a regression check for the capability contract; and verify the backend restart no longer logs the `CAP_NET_RAW may be required` controller-startup failure.
+- Why it matters: The live backend still logs `[AVDECC] Controller creation failed ... Attempt to create packet socket failed - CAP_NET_RAW may be required`, which leaves AVDECC discovery/control unavailable even though the rest of the AVB/PTP stack is healthy. This is the next hardening gap after T430/T431.
+- Dependencies: T430; T431; `systemd/map2-backend.service`; `scripts/setup_realtime.sh`; `ReadMe-Make_New_Node.txt`
+- Estimated effort: Low
+- Required outputs: capability contract fix in repo/live service files, focused regression test, live backend verification, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-26 12:37 EDT - Codex
+- Completion notes:
+  - Updated `systemd/map2-backend.service`, `scripts/setup_realtime.sh`, and `ReadMe-Make_New_Node.txt` so the backend capability contract now includes both `CAP_SYS_NICE` and `CAP_NET_RAW`, preserving JUCE realtime scheduling and allowing AVDECC/libpcap packet sockets under systemd hardening.
+  - Extended `tests/test_backend_service_contract.py` so the repo unit and generated override guidance now regress both the canonical writable-state paths and the required capability pair.
+  - Patched the installed `/etc/systemd/system/map2-backend.service` and `/etc/systemd/system/map2-backend.service.d/override.conf` to carry `CAP_NET_RAW`, then reloaded systemd and restarted `map2-backend.service`.
+  - Live-host verification: `systemctl show map2-backend.service -p AmbientCapabilities -p CapabilityBoundingSet` now reports `cap_net_raw cap_sys_nice`; `journalctl -u map2-backend.service --since '2026-03-26 12:35:00' --no-pager | rg -n "AVDECC|packet socket|CAP_NET_RAW|Warning: Failed to start AVDECC controller"` shows `[AVDECC] Controller started on enp11s0` instead of the earlier permission failure; and `curl -i http://127.0.0.1:8080/api/avb/avdecc/entities` returns `200`.
+  - Licensing review: touched systemd/doc/test files remain MAP2-owned AGPL-covered repository artifacts; reused the current-cycle scans `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_backend_service_contract.py` -> PASS; live `map2-backend.service` restart -> PASS; live AVDECC controller startup verification -> PASS.
 
 ID: T431
 Status: [✓] Done

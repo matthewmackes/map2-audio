@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 26, 2026 (ProtectSystem override fix + PTP monitor runtime-socket hardening)
+> **Last Updated**: March 26, 2026 (ProtectSystem override fix + AVDECC capability hardening)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1042,6 +1042,13 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `curl -i http://127.0.0.1:8080/api/avb/ptp/status`; `journalctl -u map2-backend.service --since '<restart time>' --no-pager | rg "pmc|uds: bind failed|failed to open transport"`; `pytest -q tests/test_ptp_monitor.py tests/test_avb_service_stats.py`
 - **Lesson**: Hardening bugs are not limited to persisted state. Any helper that creates transient UNIX sockets must bind them under an explicitly writable runtime path, not `/var/run` by default.
 
+**14. AVDECC Controller Startup Also Depends On `CAP_NET_RAW`**
+- **Problem**: Even after writable-path hardening was fixed, the backend still logged `[AVDECC] Controller creation failed ... Attempt to create packet socket failed - CAP_NET_RAW may be required` and AVDECC discovery never came up.
+- **Root Cause**: The hardened backend service only granted `CAP_SYS_NICE`, which is enough for JUCE realtime scheduling but not for the AVDECC/libpcap packet sockets used by controller startup.
+- **Fix**: Carry `CAP_NET_RAW` alongside `CAP_SYS_NICE` in the canonical backend unit, the generated override guidance, and the installed live unit/override, then restart the backend so the AVDECC controller can open packet sockets on the AVB interface.
+- **Verification**: `systemctl show map2-backend.service -p AmbientCapabilities -p CapabilityBoundingSet`; `journalctl -u map2-backend.service --since '<restart time>' --no-pager | rg "AVDECC|packet socket|CAP_NET_RAW"`; `curl -i http://127.0.0.1:8080/api/avb/avdecc/entities`
+- **Lesson**: Under systemd hardening, capability sets are part of the live feature contract. Realtime audio and packet-capture-based discovery often need different capabilities, and the service unit must declare both explicitly.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1437,6 +1444,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-26] - AVDECC Packet-Socket Capability Fix Under Hardening
+- **Section**: Gotchas & Learned Fixes (#14), Server Management Gotchas
+- **Change**: Documented that the backend needs `CAP_NET_RAW` in addition to `CAP_SYS_NICE` so AVDECC controller startup can create packet sockets under the hardened systemd service.
+- **Reason**: The live backend kept logging `CAP_NET_RAW may be required` and silently disabled AVDECC discovery until the capability contract was corrected in both the repo and installed unit files.
+- **Impact**: Future hardening changes should audit capability requirements for each subsystem, not just writable paths, before declaring the service contract complete.
+- **Files**: `.github/copilot-instructions.md`, `systemd/map2-backend.service`, `scripts/setup_realtime.sh`, `ReadMe-Make_New_Node.txt`, `tests/test_backend_service_contract.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-26] - PTP Monitor Runtime Socket Fix Under Hardening
 - **Section**: Gotchas & Learned Fixes (#13), Server Management Gotchas

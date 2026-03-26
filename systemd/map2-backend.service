@@ -96,11 +96,12 @@ CPUAffinity=4 5
 IOSchedulingClass=realtime
 IOSchedulingPriority=1
 
-# Allow RT scheduling for the JUCE audio callback thread.
+# Allow RT scheduling for the JUCE audio callback thread and AVDECC packet sockets.
 # CAP_SYS_NICE: permits pthread_setschedparam(SCHED_FIFO) without root.
-# AmbientCapabilities: the capability is inherited by child threads (audio thread).
-AmbientCapabilities=CAP_SYS_NICE
-CapabilityBoundingSet=CAP_SYS_NICE
+# CAP_NET_RAW: permits AVDECC/libpcap packet sockets on the AVB interface.
+# AmbientCapabilities: the capabilities are inherited by child threads/processes.
+AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
 
 # Security hardening (NoNewPrivileges removed - RT scheduling via RTKit requires new privileges)
 ProtectSystem=strict
