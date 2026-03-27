@@ -78,11 +78,16 @@ class _FakeIrEngine:
 
 class _FakePositionScopedIrEngine:
     def __init__(self):
-        self.resolve_calls: list[tuple[str, int | None]] = []
+        self.resolve_calls: list[tuple[str, int | None, int | None]] = []
         self.load_calls: list[tuple[int, str]] = []
 
-    async def resolve_instance_id(self, plugin_uri: str, plugin_position: int | None = None):
-        self.resolve_calls.append((plugin_uri, plugin_position))
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: int | None = None,
+        fallback_instance_id: int | None = None,
+    ):
+        self.resolve_calls.append((plugin_uri, plugin_position, fallback_instance_id))
         return 17 if plugin_uri == "map2://juce/convolution/cabinet" and plugin_position == 6 else None
 
     async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
@@ -195,8 +200,8 @@ def test_ir_routes_resolve_position_scoped_instances_when_instance_id_is_absent(
     status_payload = asyncio.run(ir_routes.get_ir_status(type="cabinet", plugin_position=6))
 
     assert engine.resolve_calls == [
-        ("map2://juce/convolution/cabinet", 6),
-        ("map2://juce/convolution/cabinet", 6),
+        ("map2://juce/convolution/cabinet", 6, None),
+        ("map2://juce/convolution/cabinet", 6, None),
     ]
     assert engine.load_calls == [(17, "/tmp/cabinet-scoped.wav")]
     assert load_payload["status"] == "loaded"
@@ -204,6 +209,50 @@ def test_ir_routes_resolve_position_scoped_instances_when_instance_id_is_absent(
     assert status_payload["loaded_cabinet"] == "Scoped Mesa"
     assert status_payload["mix"] == 63.0
     assert status_payload["bypass"] is False
+
+
+def test_ir_routes_recover_from_stale_explicit_instance_ids_using_plugin_position(monkeypatch):
+    engine = _FakePositionScopedIrEngine()
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Scoped Mesa", "path": f"/tmp/{ir_type}-scoped.wav", "size_mb": 1.5}],
+    )
+
+    payload = asyncio.run(ir_routes.load_cabinet_ir("Scoped Mesa", instance_id=999, plugin_position=6))
+
+    assert engine.resolve_calls == [("map2://juce/convolution/cabinet", 6, 999)]
+    assert engine.load_calls == [(17, "/tmp/cabinet-scoped.wav")]
+    assert payload["status"] == "loaded"
+
+
+class _FakeMissingScopedIrEngine:
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: int | None = None,
+        fallback_instance_id: int | None = None,
+    ):
+        del plugin_uri, plugin_position, fallback_instance_id
+        return None
+
+
+def test_ir_status_rejects_invalid_explicit_instance_id_without_global_fallback(monkeypatch):
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: _FakeMissingScopedIrEngine())
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Scoped Mesa", "path": f"/tmp/{ir_type}-scoped.wav", "size_mb": 1.5}],
+    )
+
+    try:
+        asyncio.run(ir_routes.get_ir_status(type="cabinet", instance_id=999))
+    except ir_routes.HTTPException as exc:
+        assert exc.status_code == 404
+        assert exc.detail == "IR instance not found: 999"
+    else:
+        raise AssertionError("Expected invalid scoped IR request to fail closed")
 
 
 def test_upload_service_rejects_traversal_and_saves_safe_name(monkeypatch, tmp_path: Path):

@@ -124,20 +124,48 @@ try:
     def _has_plugin_position(plugin_position: Optional[int]) -> bool:
         return isinstance(plugin_position, int) and plugin_position >= 0
 
+    def _has_explicit_instance_id(instance_id: Optional[int]) -> bool:
+        return isinstance(instance_id, int) and instance_id > 0
+
+    def _is_scoped_ir_request(instance_id: Optional[int], plugin_position: Optional[int]) -> bool:
+        return _has_explicit_instance_id(instance_id) or _has_plugin_position(plugin_position)
+
+    def _raise_scoped_ir_not_found(
+        ir_type: str,
+        instance_id: Optional[int],
+        plugin_position: Optional[int],
+    ) -> None:
+        if _has_plugin_position(plugin_position):
+            raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found at position: {plugin_position}")
+        if _has_explicit_instance_id(instance_id):
+            raise HTTPException(status_code=404, detail=f"IR instance not found: {instance_id}")
+        raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found")
+
     async def _resolve_scoped_instance_id(
         ir_type: str,
         instance_id: Optional[int],
         plugin_position: Optional[int],
     ) -> Optional[int]:
-        if isinstance(instance_id, int) and instance_id > 0:
-            return instance_id
-        if not _has_plugin_position(plugin_position):
-            return None
-
+        explicit_instance_id = instance_id if _has_explicit_instance_id(instance_id) else None
         engine = get_audio_engine()
         resolver = getattr(engine, "resolve_instance_id", None)
         if callable(resolver):
-            return await resolver(IR_PLUGIN_URIS[ir_type], plugin_position)
+            try:
+                resolved_instance_id = await resolver(
+                    IR_PLUGIN_URIS[ir_type],
+                    plugin_position,
+                    fallback_instance_id=explicit_instance_id,
+                )
+            except TypeError:
+                resolved_instance_id = await resolver(IR_PLUGIN_URIS[ir_type], plugin_position)
+                if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+                    resolved_instance_id = explicit_instance_id
+            return resolved_instance_id if isinstance(resolved_instance_id, int) and resolved_instance_id > 0 else None
+
+        if explicit_instance_id is not None:
+            return explicit_instance_id
+        if not _has_plugin_position(plugin_position):
+            return None
 
         legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
         if callable(legacy_resolver):
@@ -179,8 +207,8 @@ try:
                 success = await engine.load_reverb_ir_instance(scoped_instance_id, ir_path)
             if not success:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
-            raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found at position: {plugin_position}")
+        elif _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         else:
             success = _ir_processor.load_ir(ir_name, ir_type)
             if not success:
@@ -203,8 +231,8 @@ try:
             updated = await engine.set_ir_mix_instance(scoped_instance_id, mix)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
-            raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found at position: {plugin_position}")
+        elif _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         elif ir_type == "cabinet":
             _ir_processor.set_cabinet_mix(mix)
         else:
@@ -224,8 +252,8 @@ try:
             updated = await engine.set_ir_bypass_instance(scoped_instance_id, bypass)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
-            raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found at position: {plugin_position}")
+        elif _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         elif ir_type == "cabinet":
             _ir_processor.set_cabinet_bypass(bypass)
         else:
@@ -248,8 +276,8 @@ try:
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             info = await get_audio_engine().get_ir_info_instance(scoped_instance_id)
             current_name = info.get("name") if info.get("loaded") else None
-        elif _has_plugin_position(plugin_position):
-            raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR instance not found at position: {plugin_position}")
+        elif _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         else:
             current_ir = _ir_processor.active_cabinet_ir if ir_type == "cabinet" else _ir_processor.active_reverb_ir
             current_name = current_ir.name if current_ir else None
@@ -278,14 +306,8 @@ try:
         scoped_instance_id = await _resolve_scoped_instance_id(type, instance_id, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             return await _get_instance_ir_status(scoped_instance_id, type)
-        if _has_plugin_position(plugin_position):
-            return _build_ir_status_payload(
-                type,
-                _scan_irs(type),
-                loaded_name=None,
-                mix=100.0 if type == "cabinet" else 30.0,
-                bypass=False,
-            )
+        if _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(type, instance_id, plugin_position)
 
         irs = _scan_irs(type)
         active_ir = _ir_processor.active_cabinet_ir if type == "cabinet" else _ir_processor.active_reverb_ir
@@ -415,8 +437,8 @@ try:
             unloaded = await get_audio_engine().unload_ir_instance(scoped_instance_id)
             if not unloaded:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
-            raise HTTPException(status_code=404, detail=f"{type.title()} IR instance not found at position: {plugin_position}")
+        elif _is_scoped_ir_request(instance_id, plugin_position):
+            _raise_scoped_ir_not_found(type, instance_id, plugin_position)
         elif type == "cabinet":
             _ir_processor.unload_ir("cabinet")
         else:

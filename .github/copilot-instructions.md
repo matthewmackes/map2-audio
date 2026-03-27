@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 backend parameter read scoping)
+> **Last Updated**: March 27, 2026 (T453 IR scope fail-closed routing)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1231,6 +1231,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_plugin_parameter_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py`
 - **Lesson**: For duplicate plugin URIs, read paths need the same runtime-identity resolution as write paths. Never call a plugin-parameter engine API from a route until the live `instance_id` has been resolved or validated.
 
+**25. Scoped IR Routes Must Fail Closed Instead Of Falling Back To The Global Singleton (HIGH - Mar 27, 2026)**
+- **Files**: `app/routes/ir.py`, `tests/test_nam_ir_instance_routes.py`
+- **Problem**: Scoped IR status/load/mix/bypass/unload flows could still fall through to the legacy `_ir_processor` singleton when an explicit `instance_id` was stale or no longer resolvable.
+- **Root Cause**: The IR route helper returned explicit instance ids without validation, and unresolved scoped requests only raised for `plugin_position` misses; invalid explicit `instance_id` requests could therefore drift into the global fallback path.
+- **Fix**: Resolve scoped IR requests through `engine.resolve_instance_id()` when available, let `plugin_position` recover stale explicit ids, and raise `404` for any unresolved scoped IR request instead of touching `_ir_processor`.
+- **Verification**: `pytest -q tests/test_nam_ir_instance_routes.py`
+- **Lesson**: Once a route accepts runtime identity, failure to resolve that identity is an error, not permission to operate on a global singleton.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1501,6 +1509,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Fail-Closed Scoped IR Routing
+- **Section**: Gotchas & Learned Fixes (#25), Python Backend Gotchas
+- **Change**: Documented that scoped IR routes must validate/recover explicit `instance_id` values through the live engine resolver and raise `404` when scoped resolution fails, rather than falling through to `_ir_processor`.
+- **Reason**: The T453 audit found a remaining global-singleton leak in the IR asset/status route family even after duplicate-safe NAM and plugin-parameter routing had been hardened.
+- **Impact**: Future IR route work should preserve a strict boundary between instance-scoped requests and legacy global fallback behavior, preventing duplicate-instance cross-talk and wrong-target asset operations.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/ir.py`, `tests/test_nam_ir_instance_routes.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Backend Runtime-Identity Scoping For Plugin Parameter Reads
 - **Section**: Gotchas & Learned Fixes (#24), Python Backend Gotchas
