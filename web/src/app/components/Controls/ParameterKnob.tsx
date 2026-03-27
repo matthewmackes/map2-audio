@@ -1,4 +1,4 @@
-import { createParameterDescriptor } from '../../data/parameterSchema'
+import { resolveParameterDescriptor } from '../../data/parameterSchema'
 import { ParameterKnob as SharedParameterKnob } from '../ParameterControl'
 
 interface ParameterKnobProps {
@@ -14,6 +14,8 @@ interface ParameterKnobProps {
   accentColor?: string
   disabled?: boolean
   isLogarithmic?: boolean
+  pluginId?: string
+  paramKey?: string
   valueFormatter?: (value: number) => string
   size?: 'small' | 'medium' | 'large' | 'responsive'
   midi?: {
@@ -36,10 +38,12 @@ export function ParameterKnob({
   accentColor = '#0f62fe',
   disabled = false,
   isLogarithmic,
+  pluginId,
+  paramKey,
   valueFormatter,
   size = 'responsive',
 }: ParameterKnobProps) {
-  const descriptor = createParameterDescriptor({
+  const descriptor = resolveParameterDescriptor({
     min,
     max,
     step,
@@ -47,7 +51,8 @@ export function ParameterKnob({
     defaultValue: defaultValue ?? min,
     name: label,
     symbol: label,
-  })
+    scale: isLogarithmic ? 'log' : undefined,
+  }, { pluginId, paramKey })
 
   // Logarithmic controls still benefit from the frequency/time profile inference,
   // but the shared primitive now owns the interaction model across all cards.

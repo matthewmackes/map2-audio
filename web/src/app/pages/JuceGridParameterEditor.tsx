@@ -386,6 +386,9 @@ export function JuceGridParameterEditor({
                         max={parameter.max}
                         step={parameter.is_toggled ? 1 : undefined}
                         defaultValue={parameter.default}
+                        pluginId={plugin.uri}
+                        paramKey={parameter.symbol || parameter.name}
+                        scale={parameter.is_log ? 'log' : undefined}
                         onChange={(value) => handleParameterChange(parameter.symbol, value)}
                         onChangeEnd={() => handleParameterChangeEnd(parameter.symbol)}
                         accentColor={accentColor}

@@ -8,6 +8,8 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useFilters, FilterType, EQBandParams } from '../../hooks/useFilters'
 import { ParameterKnob } from '../Controls/ParameterKnob'
+import { ParameterControl } from '../ParameterControl'
+import { requireParameterDescriptor } from '../../data/parameterSchema'
 
 interface EQCardProps {
   accentColor?: string
@@ -24,6 +26,8 @@ const FILTER_TYPES: { value: FilterType; label: string }[] = [
   { value: 'bandpass', label: 'Band Pass' },
   { value: 'notch', label: 'Notch' },
 ]
+
+const EQ_FREQUENCY_DESCRIPTOR = requireParameterDescriptor('map2://juce/eq/parametric', 'bandFrequency')
 
 // Logarithmic frequency scale for visualization
 const VIS_FREQUENCIES = Array.from({ length: 256 }, (_, i) => {
@@ -299,18 +303,15 @@ export function EQCard({
           </div>
 
           <div className="eq-band-knobs">
-            <ParameterKnob
+            <ParameterControl
+              descriptor={EQ_FREQUENCY_DESCRIPTOR}
+              variant="knob"
               label="Frequency"
               value={selectedBandData.frequency}
-              min={20}
-              max={20000}
-              defaultValue={1000}
-              step={1}
-              unit="Hz"
-              onChange={(v) => setBandFrequency(selectedBand, v)}
+              onLiveChange={(value) => setBandFrequency(selectedBand, value)}
               accentColor={accentColor}
               size="medium"
-              isLogarithmic
+              showBounds={false}
               valueFormatter={formatFrequency}
             />
             <ParameterKnob
@@ -357,17 +358,15 @@ export function EQCard({
                 </button>
               </div>
               <div className="eq-expanded-band-knobs">
-                <ParameterKnob
+                <ParameterControl
+                  descriptor={EQ_FREQUENCY_DESCRIPTOR}
+                  variant="knob"
                   label="Freq"
                   value={band.frequency}
-                  min={20}
-                  max={20000}
-                  step={1}
-                  unit="Hz"
-                  onChange={(v) => setBandFrequency(index, v)}
+                  onLiveChange={(value) => setBandFrequency(index, value)}
                   accentColor={accentColor}
                   size="small"
-                  isLogarithmic
+                  showBounds={false}
                   valueFormatter={formatFrequency}
                 />
                 <ParameterKnob

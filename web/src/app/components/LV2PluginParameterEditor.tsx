@@ -40,6 +40,7 @@ interface LV2PluginParameterEditorProps {
 
 // Parameter Control Component - Smart control based on parameter type
 function ParameterControl({
+  pluginId,
   param,
   value,
   onChange,
@@ -47,6 +48,7 @@ function ParameterControl({
   accentColor,
   disabled,
 }: {
+  pluginId: string
   param: PluginParameter
   value: number
   onChange: (value: number) => void
@@ -200,6 +202,9 @@ function ParameterControl({
         min={param.min}
         max={param.max}
         step={step}
+        pluginId={pluginId}
+        paramKey={param.symbol || param.name}
+        scale={param.is_log ? 'log' : undefined}
         onChange={(v) => {
           setLocalValue(v)
           onChange(v)
@@ -1242,6 +1247,7 @@ export function LV2PluginParameterEditor({
                     {params.map(param => (
                       <ParameterControl
                         key={param.index}
+                        pluginId={plugin.uri}
                         param={param}
                         value={parameterValues[param.index] ?? param.default}
                         onChange={(value) => handleParameterChange(param.index, value)}

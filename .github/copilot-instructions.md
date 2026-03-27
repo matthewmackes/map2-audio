@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (parameter-control runtime pilot)
+> **Last Updated**: March 27, 2026 (parameter-control validation hardening)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1271,6 +1271,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/ParameterControl/scale.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/components/LV2PluginParameterEditor.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In MAP2, shared control refactors must separate runtime capability from migration timing. Do not globally flip wrapper semantics when introducing the new control stack; opt individual surfaces into non-legacy commit behavior only when their side effects are ready for it.
 
+**30. Parameter-Control Validation Must Lock Formatting, Clamping, And No-Op Commit Behavior (MEDIUM - Mar 27, 2026)**
+- **Files**: `docs/validation/parameter-controls-validation.md`, `web/src/app/components/ParameterControl/format.test.ts`, `web/src/app/components/ParameterControl/ParameterControl.test.tsx`
+- **Problem**: Pilot migrations can appear complete while still drifting on shared formatter/parser rules or emitting redundant blur commits, which quietly reintroduces inconsistent UX and unnecessary mutation traffic.
+- **Root Cause**: The first parameter-control pass proved descriptor adoption on the pilot surfaces, but it did not yet encode kHz/dB formatting, descriptor-bound clamping, or the "draft returns to committed value" blur case as explicit runtime regressions.
+- **Fix**: Add focused shared-runtime tests for formatting/clamping and no-op blur commit suppression, then capture the consistency criteria plus frontend-only performance/audio-safety rationale in `docs/validation/parameter-controls-validation.md`.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/format.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For shared parameter-control work, surface migration tests are necessary but not sufficient. Always pin the formatter/parser contract and blur-commit deduplication in explicit runtime tests before closing the validation slice.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1541,6 +1549,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Parameter-Control Validation Hardening
+- **Section**: Gotchas & Learned Fixes (#30), Update Log
+- **Change**: Documented the rule that shared parameter-control validation must include formatter/parser regressions, descriptor-bound clamping, and no-op blur commit suppression, and linked that evidence to the finished validation document.
+- **Reason**: The pilot migrations were implemented and passing, but `T459` still needed explicit runtime evidence for consistency and mutation-suppression behavior before the validation slice could be called complete.
+- **Impact**: Future parameter-control migrations now have a concrete validation checklist and shared-runtime regression pattern instead of relying only on per-surface wiring tests.
+- **Files**: `.github/copilot-instructions.md`, `docs/validation/parameter-controls-validation.md`, `web/src/app/components/ParameterControl/format.test.ts`, `web/src/app/components/ParameterControl/ParameterControl.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Shared Parameter-Control Runtime + Calibration Pilot
 - **Section**: Gotchas & Learned Fixes (#29), User Preferences

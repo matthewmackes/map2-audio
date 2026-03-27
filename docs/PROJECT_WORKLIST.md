@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - parameter-control runtime and calibration pilot advanced
+Last updated: 2026-03-27 - parameter-control validation/doc hardening in progress
 
 ID: T453
 Status: [✓] Done
@@ -8189,7 +8189,7 @@ Last updated: 2026-03-27 14:13 EDT - Codex
 ## Epic: Parameter Control Runtime
 
 ID: T456
-Status: [>] In Progress
+Status: [✓] Done
 Title: Normalize missing parameter metadata for the shared parameter-control runtime
 Description:
 - Goal / acceptance criteria: Add or backfill missing defaults, explicit scale declarations, display precision, fine-step and large-step values, and commit-policy hints for runtime-driven parameter surfaces such as JUCE Grid, MPX1, IntelFX, LV2, and dynamic Tesira editors.
@@ -8199,13 +8199,16 @@ Description:
 - Required outputs: Updated runtime parameter metadata contracts and follow-up implementation notes.
 Subtasks:
 - T456-subA: [✓] Done - extend `ParameterDescriptor` / seed normalization for scale, classification, precision, fine-step, large-step, and commit-policy defaults
-- T456-subB: [ ] Todo - seed canonical metadata for the first pilot controls and runtime-derived parameter editors
+- T456-subB: [✓] Done - seed canonical metadata for the first pilot controls and runtime-derived parameter editors
 Assigned to: Unassigned
-Last updated: 2026-03-27 15:52 EDT - Codex
-- Progress notes:
+Last updated: 2026-03-27 16:26 EDT - Codex
+- Completion notes:
   - Extended `web/src/app/data/parameterSchema.ts` so runtime descriptors can now normalize missing `scale`, `precision`, `fineStep`, `largeStep`, `classification`, and `commitStrategy` metadata instead of leaving those semantics implicit in individual surfaces.
   - Added focused regression coverage in `web/src/app/data/parameterSchema.test.ts` and `web/src/app/hooks/useParameterSchema.test.tsx` for normalized runtime hydration, log/calibration classification hints, and commit-policy defaults.
   - The first shared runtime slice now consumes the normalized metadata directly: `web/src/app/components/NumericInput/NumericInput.tsx` respects non-legacy `commitStrategy`, `fineStep`, and `largeStep`, which keeps the remaining metadata-seeding work (`T456-subB`) focused on surface-specific canonical overrides instead of core control behavior.
+  - Seeded canonical descriptors for the first pilot surfaces in `web/src/app/data/parameterSchema.ts` (`drums:transportSwing`, `map2://juce/eq/parametric:bandFrequency`, `map2://juce/multieffect/passionfx:phaserStages`) and added `resolveParameterDescriptor()` so runtime-derived editors can merge those canonical overrides onto their fallback metadata instead of rebuilding interaction semantics ad hoc.
+  - Updated the shared wrapper entry points in `web/src/app/components/Controls/NumberInput.tsx`, `web/src/app/components/Controls/ParameterKnob.tsx`, `web/src/app/components/Controls/ParameterSlider.tsx`, and `web/src/map2/components/NumberInput.tsx` to accept `pluginId` / `paramKey` descriptor identity, then wired `web/src/app/components/LV2PluginParameterEditor.tsx` and `web/src/app/pages/JuceGridParameterEditor.tsx` to pass runtime plugin identity so the generic editors can pick up seeded log/stepped metadata without bespoke control logic.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T457
 Status: [✓] Done
@@ -8230,7 +8233,7 @@ Last updated: 2026-03-27 15:52 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/ParameterControl/scale.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/hooks/useParameterSchema.test.tsx` -> PASS (`25 passed`); `npm --prefix web test -- --runInBand web/src/app/components/LV2PluginParameterEditor.test.tsx` -> PASS (`3 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T458
-Status: [>] In Progress
+Status: [✓] Done
 Title: Migrate the first four pilot parameter-control surfaces to the shared system
 Description:
 - Goal / acceptance criteria: Replace the four selected pilot surfaces with the new control system, preserving correct engine behavior while adding explicit live/commit semantics. Initial pilot targets are `DrumsPage` swing, `EQCard` frequency, `PassionFXCard` stages, and `MIDICommanderSetup` deadzone fields as documented in `docs/migration/parameter-controls-phase1.md`.
@@ -8239,18 +8242,23 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Pilot control migrations, focused tests, and migration notes for the next wave.
 Subtasks:
-- T458-subA: [ ] Todo - migrate `DrumsPage` swing to the shared slider control
-- T458-subB: [ ] Todo - migrate `EQCard` frequency and `PassionFXCard` stages to the shared knob control
+- T458-subA: [✓] Done - migrate `DrumsPage` swing to the shared slider control
+- T458-subB: [✓] Done - migrate `EQCard` frequency and `PassionFXCard` stages to the shared knob control
 - T458-subC: [✓] Done - migrate `MIDICommanderSetup` deadzone fields to the shared numeric control
 Assigned to: Unassigned
-Last updated: 2026-03-27 15:52 EDT - Codex
-- Progress notes:
+Last updated: 2026-03-27 16:26 EDT - Codex
+- Completion notes:
   - Migrated the `MIDICommanderSetup` calibration deadzone fields in `web/src/app/components/MIDICommanderSetup.tsx` from the legacy numeric wrapper to the shared `ParameterControl` numeric variant, using blur commit semantics plus local draft state so the backend calibration mutation only fires once per finalized edit.
   - Added pair-safe deadzone normalization in `web/src/app/components/MIDICommanderSetup.tsx` so `deadzone_low` can never exceed `deadzone_high` and vice versa, with the clamp happening inside the local draft before the committed mutation payload is emitted.
   - Added focused regression coverage in `web/src/app/components/MIDICommanderSetup.test.tsx` for blur-only commit behavior and high/low deadzone clamping.
+  - Migrated `web/src/app/pages/DrumsPage.tsx` transport swing off the raw range input and onto the shared `ParameterControl` slider variant using the seeded `drums:transportSwing` descriptor, preserving the live `updateTransport.mutate({ swing })` path while keeping the existing `0..100` percent readout.
+  - Migrated `web/src/app/components/EQ/EQCard.tsx` frequency controls in both the selected-band editor and the expanded per-band editor to the shared `ParameterControl` knob with the seeded log-scaled `bandFrequency` descriptor, preserving the existing `Hz` / `kHz` formatter while eliminating per-site log wiring.
+  - Migrated the PassionFX `Stages` control in `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.tsx` to the shared `ParameterControl` knob with the seeded `phaserStages` stepped descriptor, so drag/keyboard/text-entry snapping stays on even values without local rounding code in the card.
+  - Added focused migration regression coverage in `web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/components/EQ/EQCard.test.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx` for shared-control wiring, log descriptor usage, and stepped-stage semantics.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T459
-Status: [ ] Todo
+Status: [✓] Done
 Title: Validate parameter-control consistency, performance, and audio safety
 Description:
 - Goal / acceptance criteria: Verify correct values, clamping, formatting, interaction smoothness, keyboard access, render stability, and audio-safe live updates across every migrated control; produce the required validation document.
@@ -8258,9 +8266,18 @@ Description:
 - Dependencies: T457; T458
 - Estimated effort: Medium
 - Required outputs: `docs/validation/parameter-controls-validation.md` and regression evidence.
-Subtasks: None
+Subtasks:
+- T459-subA: [✓] Done - write the migrated-control validation matrix and capture consistency criteria per surface
+- T459-subB: [✓] Done - add missing regression coverage for migrated control formatting, clamping, and commit sequencing
+- T459-subC: [✓] Done - record performance/audio-safety evidence and finalize `docs/validation/parameter-controls-validation.md`
 Assigned to: Unassigned
-Last updated: 2026-03-27 14:11 EDT - Codex
+Last updated: 2026-03-27 16:44 EDT - Codex
+- Completion notes:
+  - Finalized `docs/validation/parameter-controls-validation.md` with the completed pilot-surface matrix, shared consistency criteria, command log, and explicit frontend-only performance/audio-safety evidence for the shared parameter-control runtime.
+  - Added shared formatting/clamping regression coverage in `web/src/app/components/ParameterControl/format.test.ts` for kHz formatting, signed dB formatting, and descriptor-bound parsing/clamping.
+  - Extended `web/src/app/components/ParameterControl/ParameterControl.test.tsx` so blur-commit controls now prove they suppress duplicate commit callbacks when the draft returns to the committed value before blur.
+  - Kept the still-open Audio Table mutation harness work isolated under `T454-subN`; after confirming the new row-mutation harness stayed brittle, I removed that unstable test attempt and restored `web/src/app/pages/AudioTablePage.test.tsx` / `web/src/app/pages/audioTableKeyboard.test.ts` to the last passing path instead of mixing unrelated harness churn into the completed parameter-control slice.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/format.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS (`63 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`36 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T460
 Status: [ ] Todo

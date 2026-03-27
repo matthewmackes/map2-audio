@@ -1,6 +1,10 @@
 import type { CSSProperties } from 'react'
 
-import { createParameterDescriptor, type SensitivityProfile } from '../../app/data/parameterSchema'
+import {
+  resolveParameterDescriptor,
+  type ParameterScale,
+  type SensitivityProfile,
+} from '../../app/data/parameterSchema'
 import { ParameterNumericInput } from '../../app/components/ParameterControl'
 
 interface NumberInputProps {
@@ -13,6 +17,9 @@ interface NumberInputProps {
   defaultValue?: number
   precision?: number
   profile?: SensitivityProfile
+  scale?: ParameterScale
+  pluginId?: string
+  paramKey?: string
   onChange?: (value: number) => void
   onChangeCommitted?: (value: number) => void
   disabled?: boolean
@@ -37,6 +44,9 @@ export function NumberInput({
   defaultValue = value,
   precision,
   profile,
+  scale,
+  pluginId,
+  paramKey,
   onChange,
   onChangeCommitted,
   disabled = false,
@@ -50,7 +60,7 @@ export function NumberInput({
   accentColor = '#0f62fe',
   className = '',
 }: NumberInputProps) {
-  const descriptor = createParameterDescriptor({
+  const descriptor = resolveParameterDescriptor({
     min,
     max,
     step,
@@ -60,7 +70,8 @@ export function NumberInput({
     symbol: label,
     precision,
     profile,
-  })
+    scale,
+  }, { pluginId, paramKey })
 
   return (
     <div style={{ width: fullWidth ? '100%' : undefined, ...(sx as CSSProperties) }}>

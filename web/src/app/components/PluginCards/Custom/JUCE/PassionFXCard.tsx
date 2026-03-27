@@ -13,11 +13,14 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterControl } from '../../../ParameterControl'
+import { requireParameterDescriptor } from '../../../../data/parameterSchema'
 import type { PluginCardProps } from '../../types'
 
 
 // Plugin URI for MIDI mappings
 const PASSIONFX_URI = 'map2://juce/multieffect/passionfx'
+const PASSIONFX_STAGES_DESCRIPTOR = requireParameterDescriptor(PASSIONFX_URI, 'phaserStages')
 
 // Parameter indices (must match juce_processors.json order)
 const PARAM = {
@@ -950,18 +953,15 @@ function PassionFXCardBase({
       children: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div className="carbon-param-row">
-            <ParameterKnob
+            <ParameterControl
+              descriptor={PASSIONFX_STAGES_DESCRIPTOR}
+              variant="knob"
               label="Stages"
               value={parameters.phaserStages}
-              min={2}
-              max={16}
-              defaultValue={4}
-              step={2}
-              unit=""
-              onChange={(value) => setPhaserStages(Math.round(value / 2) * 2)}
+              onLiveChange={setPhaserStages}
               accentColor="#a5d6a7"
               size={knobSize}
-              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_STAGES }}
+              showBounds={false}
             />
             <ParameterKnob
               label="Ph Feed"

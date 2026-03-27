@@ -477,7 +477,6 @@ describe('AudioTablePage — Row Controls', () => {
     })
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
   })
-
 })
 
 // ============================================================================

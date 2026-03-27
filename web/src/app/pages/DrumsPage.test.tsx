@@ -124,6 +124,29 @@ jest.mock('@/app/components/Controls/NumberInput', () => ({
   ),
 }))
 
+jest.mock('@/app/components/ParameterControl', () => ({
+  ParameterControl: ({
+    ariaLabel,
+    label,
+    value,
+    onLiveChange,
+  }: {
+    ariaLabel?: string
+    label?: string
+    value: number
+    onLiveChange?: (value: number) => void
+  }) => (
+    <label>
+      <span>{label ?? ariaLabel}</span>
+      <input
+        aria-label={ariaLabel ?? label}
+        value={value}
+        onChange={(event) => onLiveChange?.(Number(event.currentTarget.value))}
+      />
+    </label>
+  ),
+}))
+
 jest.mock('@carbon/react', () => {
   const React = jest.requireActual('react')
   const TabsContext = React.createContext<{ onChange?: (payload: { selectedIndex: number }) => void } | null>(null)
@@ -1154,6 +1177,14 @@ describe('DrumsPage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Practice' }))
     expect(liveRegion).toHaveTextContent('Practice mode selected.')
+  })
+
+  it('updates transport swing through the shared slider live path', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Swing'), { target: { value: '27' } })
+
+    expect(mockUpdateTransportMutate).toHaveBeenCalledWith({ swing: 27 })
   })
 
   it('shows the backing track browser and filters tracks', () => {

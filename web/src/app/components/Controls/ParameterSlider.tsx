@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { createParameterDescriptor, type SensitivityProfile } from '../../data/parameterSchema'
+import { resolveParameterDescriptor, type ParameterScale, type SensitivityProfile } from '../../data/parameterSchema'
 import { ParameterSlider as SharedParameterSlider } from '../ParameterControl'
 
 interface ParameterSliderProps {
@@ -13,6 +13,9 @@ interface ParameterSliderProps {
   defaultValue?: number
   precision?: number
   profile?: SensitivityProfile
+  scale?: ParameterScale
+  pluginId?: string
+  paramKey?: string
   onChange?: (value: number) => void
   onChangeEnd?: () => void
   disabled?: boolean
@@ -36,6 +39,9 @@ export function ParameterSlider({
   defaultValue = value,
   precision,
   profile,
+  scale,
+  pluginId,
+  paramKey,
   onChange,
   onChangeEnd,
   disabled = false,
@@ -48,7 +54,7 @@ export function ParameterSlider({
   accentColor = '#0f62fe',
   className = '',
 }: ParameterSliderProps) {
-  const descriptor = createParameterDescriptor({
+  const descriptor = resolveParameterDescriptor({
     min,
     max,
     step,
@@ -58,7 +64,8 @@ export function ParameterSlider({
     symbol: label,
     precision,
     profile,
-  })
+    scale,
+  }, { pluginId, paramKey })
 
   return (
     <SharedParameterSlider

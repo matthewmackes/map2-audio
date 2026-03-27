@@ -12,6 +12,7 @@ import {
   sensitivityProfiles,
   validateParameterSchema,
   parameterSchema,
+  resolveParameterDescriptor,
   type ParameterRegistry,
 } from './parameterSchema'
 
@@ -150,5 +151,53 @@ describe('parameterSchema', () => {
     expect(descriptor.commitStrategy).toBe('blur')
     expect(descriptor.fineStep).toBe(1)
     expect(descriptor.largeStep).toBe(10)
+  })
+
+  it('seeds canonical descriptors for the first pilot controls', () => {
+    expect(getParameterDescriptor('drums', 'transportSwing')).toMatchObject({
+      min: 0,
+      max: 100,
+      unit: '%',
+      classification: 'CONTINUOUS_LINEAR',
+      largeStep: 5,
+    })
+    expect(getParameterDescriptor('map2://juce/eq/parametric', 'bandFrequency')).toMatchObject({
+      min: 20,
+      max: 20_000,
+      unit: 'Hz',
+      scale: 'log',
+      classification: 'CONTINUOUS_LOG',
+    })
+    expect(getParameterDescriptor('map2://juce/multieffect/passionfx', 'phaserStages')).toMatchObject({
+      min: 2,
+      max: 16,
+      step: 2,
+      classification: 'STEPPED_NUMERIC',
+      largeStep: 4,
+    })
+  })
+
+  it('resolves canonical overrides for runtime-derived editor descriptors', () => {
+    const descriptor = resolveParameterDescriptor({
+      min: 0,
+      max: 100,
+      defaultValue: 50,
+      step: 5,
+      unit: '%',
+      name: 'Stages',
+      symbol: 'phaserStages',
+    }, {
+      pluginId: 'map2://juce/multieffect/passionfx',
+      paramKey: 'phaserStages',
+    })
+
+    expect(descriptor).toMatchObject({
+      min: 2,
+      max: 16,
+      step: 2,
+      defaultValue: 4,
+      classification: 'STEPPED_NUMERIC',
+      largeStep: 4,
+    })
   })
 })

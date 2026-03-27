@@ -84,6 +84,11 @@ export interface ParameterDescriptorSeed {
   skewExponent?: number
 }
 
+export interface ParameterDescriptorLookup {
+  pluginId?: string | null
+  paramKey?: string | null
+}
+
 export const sensitivityProfiles: Record<SensitivityProfile, NumericInputSensitivityConfig> = {
   default: {
     fineDivisor: 10,
@@ -214,6 +219,46 @@ const baseParameterSchema: ParameterRegistry = {
     unit: '',
     defaultValue: 0,
     profile: 'integer',
+  },
+  [buildParameterKey('drums', 'transportSwing')]: {
+    min: 0,
+    max: 100,
+    step: 1,
+    unit: '%',
+    defaultValue: 0,
+    profile: 'default',
+    precision: 0,
+    classification: 'CONTINUOUS_LINEAR',
+    fineStep: 1,
+    largeStep: 5,
+    commitStrategy: 'pointer-up',
+  },
+  [buildParameterKey('map2://juce/eq/parametric', 'bandFrequency')]: {
+    min: 20,
+    max: 20_000,
+    step: 1,
+    unit: 'Hz',
+    defaultValue: 1000,
+    profile: 'frequency',
+    precision: 0,
+    scale: 'log',
+    classification: 'CONTINUOUS_LOG',
+    fineStep: 1,
+    largeStep: 500,
+    commitStrategy: 'pointer-up',
+  },
+  [buildParameterKey('map2://juce/multieffect/passionfx', 'phaserStages')]: {
+    min: 2,
+    max: 16,
+    step: 2,
+    unit: '',
+    defaultValue: 4,
+    profile: 'integer',
+    precision: 0,
+    classification: 'STEPPED_NUMERIC',
+    fineStep: 2,
+    largeStep: 4,
+    commitStrategy: 'pointer-up',
   },
 }
 
@@ -473,6 +518,20 @@ function normalizeRegistry(registry: ParameterRegistry): ParameterRegistry {
 
 export function createParameterDescriptor(seed: ParameterDescriptorSeed): NormalizedParameterDescriptor {
   return normalizeParameterDescriptor(seed)
+}
+
+export function resolveParameterDescriptor(
+  seed: ParameterDescriptorSeed,
+  lookup: ParameterDescriptorLookup = {},
+): NormalizedParameterDescriptor {
+  const pluginId = typeof lookup.pluginId === 'string' ? lookup.pluginId.trim() : ''
+  const paramKey = typeof lookup.paramKey === 'string' ? lookup.paramKey.trim() : ''
+  const canonicalDescriptor = pluginId && paramKey ? getParameterDescriptor(pluginId, paramKey) : undefined
+
+  return normalizeParameterDescriptor({
+    ...seed,
+    ...(canonicalDescriptor ?? {}),
+  })
 }
 
 export function hydrateParameterSchema(registry: ParameterRegistry): ParameterRegistry {

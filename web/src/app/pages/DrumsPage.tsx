@@ -28,6 +28,8 @@ import {
 
 import { PageHeader } from '@/app/components/PageHeader'
 import { NumberInput } from '@/app/components/Controls/NumberInput'
+import { ParameterControl } from '@/app/components/ParameterControl'
+import { requireParameterDescriptor } from '@/app/data/parameterSchema'
 import { useLocation } from 'react-router-dom'
 import './DrumsPage.css'
 import {
@@ -171,6 +173,8 @@ const CC_TARGET_OPTIONS: Array<{ value: DrumCcTarget; label: string }> = [
   { value: 'synth_body_decay_ms', label: 'Synth Body Decay' },
   { value: 'synth_tone_amount', label: 'Synth Tone' },
 ]
+
+const DRUM_TRANSPORT_SWING_DESCRIPTOR = requireParameterDescriptor('drums', 'transportSwing')
 
 const shellStyle: Record<string, React.CSSProperties> = {
   page: {
@@ -3743,15 +3747,17 @@ export function DrumsWorkspace({
               <span>Groove</span>
               <strong>{transport.swing}%</strong>
             </div>
-            <input
-              aria-label="Swing"
-              type="range"
-              min={0}
-              max={100}
-              step={1}
+            <ParameterControl
+              descriptor={DRUM_TRANSPORT_SWING_DESCRIPTOR}
+              variant="slider"
+              ariaLabel="Swing"
               value={transport.swing}
-              onChange={(event) => updateTransport.mutate({ swing: Number(event.currentTarget.value) })}
-              style={shellStyle.range}
+              onLiveChange={(value) => updateTransport.mutate({ swing: value })}
+              accentColor={activeModeMeta.accent}
+              size="small"
+              showLabel={false}
+              showBounds={false}
+              className="drums-transport-swing"
             />
           </div>
 
