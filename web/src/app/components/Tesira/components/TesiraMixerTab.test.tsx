@@ -73,9 +73,12 @@ describe('TesiraMixerTab', () => {
     fireEvent.change(screen.getByLabelText('Router tag'), {
       target: { value: 'RouterMain' },
     })
-    fireEvent.change(screen.getByLabelText('Gain from input 1 to output 1'), {
+    const gainInput = screen.getByRole('slider', { name: 'Gain from input 1 to output 1' })
+    fireEvent.focus(gainInput)
+    fireEvent.change(gainInput, {
       target: { value: '-3' },
     })
+    fireEvent.blur(gainInput)
     fireEvent.click(screen.getByRole('button', { name: 'Apply gain for input 1 to output 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Mute input 1 to output 1' }))
 

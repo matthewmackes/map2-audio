@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
 import { useSetTesiraDspParam, useTesiraDspBlock, useTesiraDspParams } from '../hooks/useTesiraApi'
+import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDspBlockPanelProps {
@@ -36,10 +37,6 @@ function coerceDraftValue(raw: string): unknown {
   return raw
 }
 
-function normalizeNumericInput(value: string): string {
-  return value.replace(/[^0-9.\-]/g, '')
-}
-
 function normalizePositiveIntegerInput(value: string): string {
   return value.replace(/[^0-9]/g, '')
 }
@@ -48,6 +45,18 @@ function parsePositiveInteger(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10)
   if (Number.isNaN(parsed)) return fallback
   return Math.max(1, parsed)
+}
+
+function resolvePrecision(step: number): number {
+  if (!Number.isFinite(step) || step <= 0) {
+    return 0
+  }
+
+  const normalized = step.toFixed(12).replace(/0+$/, '').replace(/\.$/, '')
+  if (!normalized.includes('.')) {
+    return 0
+  }
+  return normalized.split('.')[1]?.length ?? 0
 }
 
 export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPanelProps) {
@@ -59,7 +68,7 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
   const [localError, setLocalError] = useState<string | null>(null)
   const [matrixInput, setMatrixInput] = useState('1')
   const [matrixOutput, setMatrixOutput] = useState('1')
-  const [matrixGain, setMatrixGain] = useState('0')
+  const [matrixGain, setMatrixGain] = useState(0)
   const [matrixMute, setMatrixMute] = useState(false)
 
   const values = useMemo(
@@ -109,6 +118,14 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
       Boolean((block.data?.parameter_map as Record<string, unknown> | undefined)?.crosspointLevelOut),
     [block.data?.parameter_map, sortedKeys],
   )
+
+  const crosspointGainDefinition = useMemo(
+    () => ((block.data?.parameter_map?.crosspointLevelOut ?? {}) as Record<string, unknown>),
+    [block.data?.parameter_map],
+  )
+  const crosspointGainMin = typeof crosspointGainDefinition.min_value === 'number' ? crosspointGainDefinition.min_value : -100
+  const crosspointGainMax = typeof crosspointGainDefinition.max_value === 'number' ? crosspointGainDefinition.max_value : 24
+  const crosspointGainStep = typeof crosspointGainDefinition.step === 'number' ? crosspointGainDefinition.step : 0.1
 
   useEffect(() => {
     const nextDrafts = buildDraftValues(values)
@@ -204,21 +221,27 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
                 onChange={(event) => setMatrixOutput(normalizePositiveIntegerInput(event.target.value))}
                 inputMode="numeric"
               />
-              <TextInput
-                id={`tesira-dsp-matrix-gain-${instanceTag}`}
-                labelText="Gain dB"
+              <NumberInput
+                label="Gain dB"
+                className="tesira-dsp-panel__range"
+                min={crosspointGainMin}
+                max={crosspointGainMax}
+                step={crosspointGainStep}
                 value={matrixGain}
-                onChange={(event) => setMatrixGain(normalizeNumericInput(event.target.value))}
-                inputMode="decimal"
+                unit="dB"
+                precision={resolvePrecision(crosspointGainStep)}
+                size="small"
+                showBounds={false}
+                fullWidth
+                onChange={(value) => setMatrixGain(value)}
               />
               <Button
                 size="sm"
                 kind="secondary"
                 disabled={setParam.isPending}
                 onClick={() => {
-                  const parsed = Number(matrixGain)
-                  if (!Number.isFinite(parsed)) return
-                  void applyOne('crosspointLevelOut', parsed, matrixArgs)
+                  if (!Number.isFinite(matrixGain)) return
+                  void applyOne('crosspointLevelOut', matrixGain, matrixArgs)
                 }}
               >
                 Apply gain
@@ -279,16 +302,36 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
                   />
                 ) : (
                   <div className="tesira-dsp-panel__param-editor">
-                    <TextInput
-                      id={`tesira-dsp-value-${instanceTag}-${key}`}
-                      labelText={`Value for ${key}`}
-                      value={drafts[key] ?? ''}
-                      onChange={(event) => setDrafts((prev) => ({
-                        ...prev,
-                        [key]: event.target.value,
-                      }))}
-                      inputMode={useSlider ? 'decimal' : undefined}
-                    />
+                    {useSlider ? (
+                      <NumberInput
+                        label={`Value for ${key}`}
+                        className="tesira-dsp-panel__range"
+                        min={min ?? 0}
+                        max={max ?? 1}
+                        step={step}
+                        value={Number.isFinite(numeric) ? Number(numeric) : min ?? 0}
+                        unit={unit || undefined}
+                        precision={resolvePrecision(step)}
+                        size="small"
+                        showBounds={false}
+                        showLabel={false}
+                        fullWidth
+                        onChange={(value) => setDrafts((prev) => ({
+                          ...prev,
+                          [key]: String(value),
+                        }))}
+                      />
+                    ) : (
+                      <TextInput
+                        id={`tesira-dsp-value-${instanceTag}-${key}`}
+                        labelText={`Value for ${key}`}
+                        value={drafts[key] ?? ''}
+                        onChange={(event) => setDrafts((prev) => ({
+                          ...prev,
+                          [key]: event.target.value,
+                        }))}
+                      />
+                    )}
                     <Button
                       size="sm"
                       kind="secondary"
@@ -301,22 +344,6 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
                     </Button>
                   </div>
                 )}
-
-                {useSlider ? (
-                  <input
-                    className="tesira-dsp-panel__range"
-                    type="range"
-                    value={Number.isFinite(numeric) ? Number(numeric) : min}
-                    min={min}
-                    max={max}
-                    step={step}
-                    onChange={(event) => setDrafts((prev) => ({
-                      ...prev,
-                      [key]: event.currentTarget.value,
-                    }))}
-                    aria-label={`Slider for ${key}`}
-                  />
-                ) : null}
               </div>
             )
           })}

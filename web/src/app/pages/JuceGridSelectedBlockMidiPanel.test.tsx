@@ -132,6 +132,27 @@ describe('JuceGridSelectedBlockMidiPanel', () => {
     })
   })
 
+  it('saves edited CC and range drafts through the text-mode numeric fields', async () => {
+    renderPanel()
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith({ plugin_uri: 'map2://juce/modulation/chorus' })
+    })
+
+    fireEvent.change(screen.getByLabelText('CC'), { target: { value: '74' } })
+    fireEvent.change(screen.getByLabelText('Min'), { target: { value: '0.2' } })
+    fireEvent.change(screen.getByLabelText('Max'), { target: { value: '0.8' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create mapping' }))
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.createMapping).toHaveBeenCalledWith(expect.objectContaining({
+        cc: 74,
+        min_val: 0.2,
+        max_val: 0.8,
+      }))
+    })
+  })
+
   it('sends a real toe-position feedback test for the selected mapping', async () => {
     renderPanel({
       mappings: [

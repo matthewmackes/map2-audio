@@ -3,6 +3,7 @@ import { VolumeMute, VolumeUp } from '@carbon/icons-react'
 import { Button, Tag, TextInput, Tile } from '@carbon/react'
 import { useTesiraDevice, useSetLevel, useSetMute } from '../hooks/useTesiraApi'
 import { useTesiraMeters } from '../hooks/useTesiraWebSocket'
+import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
 interface TesiraLevelsTabProps {
@@ -12,19 +13,10 @@ interface TesiraLevelsTabProps {
 const MAX_VISIBLE_CHANNELS = 16
 const LEVEL_MIN_DB = -60
 const LEVEL_MAX_DB = 12
-const DEFAULT_LEVEL_DB = '0'
+const DEFAULT_LEVEL_DB = 0
 
 function clampLevel(value: number): number {
   return Math.max(LEVEL_MIN_DB, Math.min(LEVEL_MAX_DB, value))
-}
-
-function normalizeLevelInput(value: string): string {
-  return value.replace(/[^0-9.\-]/g, '')
-}
-
-function parseLevel(value: string, fallback: number): number {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? clampLevel(parsed) : fallback
 }
 
 function meterPercent(level: number): number {
@@ -45,7 +37,7 @@ export function TesiraLevelsTab({ deviceId }: TesiraLevelsTabProps) {
   const [meters, setMeters] = useState<Record<string, number[]>>({})
   const [selectedTag, setSelectedTag] = useState('LevelControl1')
   const [tagTouched, setTagTouched] = useState(false)
-  const [levelDrafts, setLevelDrafts] = useState<Record<number, string>>({})
+  const [levelDrafts, setLevelDrafts] = useState<Record<number, number>>({})
 
   const defaultTag = useMemo(
     () => device?.avb_streams?.[0]?.name ?? 'LevelControl1',
@@ -91,9 +83,9 @@ export function TesiraLevelsTab({ deviceId }: TesiraLevelsTabProps) {
   }, [numChannels])
 
   const handleApplyLevel = (channel: number) => {
-    const levelDb = parseLevel(levelDrafts[channel] ?? DEFAULT_LEVEL_DB, 0)
+    const levelDb = clampLevel(levelDrafts[channel] ?? DEFAULT_LEVEL_DB)
     setLevel.mutate({ deviceId, tag: selectedTag, channel, levelDb })
-    setLevelDrafts((prev) => ({ ...prev, [channel]: String(levelDb) }))
+    setLevelDrafts((prev) => ({ ...prev, [channel]: levelDb }))
   }
 
   const handleMute = (channel: number, muted: boolean) => {
@@ -138,8 +130,7 @@ export function TesiraLevelsTab({ deviceId }: TesiraLevelsTabProps) {
       <div className="tesira-levels-tab__grid">
         {Array.from({ length: numChannels }, (_, channel) => {
           const meterLevel = meters[selectedTag]?.[channel] ?? LEVEL_MIN_DB
-          const draft = levelDrafts[channel] ?? DEFAULT_LEVEL_DB
-          const draftNumber = parseLevel(draft, 0)
+          const draftNumber = levelDrafts[channel] ?? DEFAULT_LEVEL_DB
 
           return (
             <Tile key={channel} className="tesira-levels-tab__channel">
@@ -161,33 +152,26 @@ export function TesiraLevelsTab({ deviceId }: TesiraLevelsTabProps) {
                 />
               </div>
 
-              <TextInput
-                id={`tesira-level-${deviceId}-${channel}`}
-                labelText={`Level dB channel ${channel + 1}`}
-                value={draft}
-                onChange={(event) => {
-                  setLevelDrafts((prev) => ({
-                    ...prev,
-                    [channel]: normalizeLevelInput(event.target.value),
-                  }))
-                }}
-                inputMode="decimal"
-              />
-
-              <input
+              <NumberInput
+                label={`Level dB channel ${channel + 1}`}
                 className="tesira-levels-tab__range"
-                type="range"
                 min={LEVEL_MIN_DB}
                 max={LEVEL_MAX_DB}
                 step={0.5}
                 value={draftNumber}
-                onChange={(event) => {
+                unit="dB"
+                profile="gain-db"
+                precision={1}
+                size="small"
+                showLabel={false}
+                showBounds={false}
+                fullWidth
+                onChange={(value) => {
                   setLevelDrafts((prev) => ({
                     ...prev,
-                    [channel]: event.currentTarget.value,
+                    [channel]: clampLevel(value),
                   }))
                 }}
-                aria-label={`Level slider channel ${channel + 1}`}
               />
 
               <div className="tesira-levels-tab__actions">

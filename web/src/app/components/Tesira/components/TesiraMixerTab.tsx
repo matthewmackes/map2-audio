@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Renew } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import { useSetCrosspoint, useSetCrosspointMute, useTesiraCrosspointMatrix } from '../hooks/useTesiraApi'
+import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
 interface TesiraMixerTabProps {
@@ -11,12 +12,11 @@ interface TesiraMixerTabProps {
 const DEFAULT_ROWS = 4
 const DEFAULT_COLS = 4
 
-function clampMatrixSize(value: string, fallback: number) {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed)) {
+function clampMatrixSize(value: number, fallback: number) {
+  if (!Number.isFinite(value)) {
     return fallback
   }
-  return Math.min(32, Math.max(1, Math.round(parsed)))
+  return Math.min(32, Math.max(1, Math.round(value)))
 }
 
 function crosspointKey(row: number, col: number) {
@@ -99,19 +99,29 @@ export function TesiraMixerTab({ deviceId }: TesiraMixerTabProps) {
             value={instanceTag}
             onChange={(event) => setInstanceTag(event.target.value)}
           />
-          <TextInput
-            id={`tesira-mixer-rows-${deviceId}`}
-            type="number"
-            labelText="Inputs"
-            value={String(rows)}
-            onChange={(event) => setRows(clampMatrixSize(event.target.value, rows))}
+          <NumberInput
+            label="Inputs"
+            min={1}
+            max={32}
+            step={1}
+            value={rows}
+            profile="integer"
+            precision={0}
+            size="small"
+            showBounds={false}
+            onChange={(value) => setRows(clampMatrixSize(value, rows))}
           />
-          <TextInput
-            id={`tesira-mixer-cols-${deviceId}`}
-            type="number"
-            labelText="Outputs"
-            value={String(cols)}
-            onChange={(event) => setCols(clampMatrixSize(event.target.value, cols))}
+          <NumberInput
+            label="Outputs"
+            min={1}
+            max={32}
+            step={1}
+            value={cols}
+            profile="integer"
+            precision={0}
+            size="small"
+            showBounds={false}
+            onChange={(value) => setCols(clampMatrixSize(value, cols))}
           />
           <div className="tesira-mixer-tab__actions">
             <Button
@@ -185,18 +195,22 @@ export function TesiraMixerTab({ deviceId }: TesiraMixerTabProps) {
                                 {muted ? 'Muted' : 'Live'}
                               </Tag>
                             </div>
-                            <input
-                              id={`tesira-mixer-gain-${inputNumber}-${outputNumber}`}
+                            <NumberInput
+                              label={`Gain from input ${inputNumber} to output ${outputNumber}`}
                               className="tesira-mixer-tab__range"
-                              type="range"
                               min={-60}
                               max={12}
                               step={0.5}
                               value={gain}
-                              aria-label={`Gain from input ${inputNumber} to output ${outputNumber}`}
-                              onChange={(event) => {
-                                const next = Number(event.currentTarget.value)
-                                setGainDrafts((state) => ({ ...state, [key]: next }))
+                              unit="dB"
+                              profile="gain-db"
+                              precision={1}
+                              size="small"
+                              showLabel={false}
+                              showBounds={false}
+                              fullWidth
+                              onChange={(value) => {
+                                setGainDrafts((state) => ({ ...state, [key]: value }))
                               }}
                             />
                             <div className="tesira-mixer-tab__cell-actions">

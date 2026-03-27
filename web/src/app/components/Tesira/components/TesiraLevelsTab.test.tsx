@@ -70,9 +70,12 @@ describe('TesiraLevelsTab', () => {
       expect(screen.getByDisplayValue('LevelControl1')).toBeTruthy()
     })
 
-    fireEvent.change(screen.getByLabelText('Level dB channel 1'), {
+    const levelInput = screen.getByRole('slider', { name: 'Level dB channel 1' })
+    fireEvent.focus(levelInput)
+    fireEvent.change(levelInput, {
       target: { value: '-18' },
     })
+    fireEvent.blur(levelInput)
     fireEvent.click(screen.getByRole('button', { name: 'Set level for channel 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Mute channel 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Unmute channel 1' }))

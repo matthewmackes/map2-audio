@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (parameter-control audit safe-subset + Tesira draft-sync guard)
+> **Last Updated**: March 27, 2026 (Tesira apply-button migration + nullable MIDI draft cleanup)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1295,6 +1295,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `timeout 60s npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraEQTab.test.tsx web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/components/MPX1/MPX1Knob.test.tsx web/src/app/components/ParameterControl/ParameterControl.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In MAP2, any effect that mirrors fetched objects into draft UI state must short-circuit on semantic equality. Query layers and tests routinely recreate value objects, and reference-only dependencies are not enough to prevent render loops.
 
+**33. Use Shared Numeric Controls Only Where The Surface Has A Real Local Draft Value (MEDIUM - Mar 27, 2026)**
+- **Files**: `web/src/app/components/Tesira/components/TesiraMixerTab.tsx`, `web/src/app/components/Tesira/components/TesiraLevelsTab.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx`, `web/src/app/pages/JuceGridSelectedBlockMidiPanel.tsx`
+- **Problem**: `T460-subF` still had a mixed tail of raw `input[type=range|number]` controls across Tesira apply-button panels and the selected-block JUCE Grid MIDI draft editor.
+- **Root Cause**: The shared `NumberInput` works well for staged numeric drafts that always have a concrete value, but `JuceGridSelectedBlockMidiPanel` intentionally uses nullable blank strings for CC/feedback drafts and would lose that behavior under a forced non-nullable migration.
+- **Fix**: Move the Tesira mixer/levels/DSP apply-button controls onto shared `NumberInput` while keeping their explicit Apply/Set mutations local-draft driven, and convert the nullable JUCE Grid MIDI fields to sanitized text-mode numeric inputs instead of forcing a shared-control swap that would erase blank draft state.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For `T460`, remove raw range/number controls in two lanes: use shared numeric controls for real numeric drafts, and use sanitized text inputs where `''` is a valid part of the draft contract.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1579,6 +1587,13 @@ Target: < 5 ms total
 - **Reason**: The wrapper-retirement follow-up surfaced a real state-sync bug while validating the next shared-control slice, and the remaining apply-button draft surfaces need an explicit reminder that they are not blind drop-in migrations.
 - **Impact**: Future assistants can keep pushing `T460-subF` without reintroducing the Tesira render loop or swapping shared controls into draft/apply workflows that still need a dedicated commit strategy.
 - **Files**: `.github/copilot-instructions.md`, `web/src/app/components/Tesira/components/TesiraEQTab.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/TweedBassmanCard.tsx`, `web/src/app/components/MPX1/MPX1Knob.tsx`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-03-27] - Tesira Apply-Button Migration + Nullable MIDI Draft Cleanup
+- **Section**: Gotchas & Learned Fixes (#33), Update Log
+- **Change**: Documented the safe migration rule for the remaining `T460-subF` surfaces: Tesira mixer/levels/DSP apply-button controls now use shared `NumberInput` with local draft state, while `JuceGridSelectedBlockMidiPanel` drops raw `type="number"` fields via sanitized text-mode numeric inputs so nullable MIDI drafts stay intact.
+- **Reason**: The raw-input audit tail was down to draft/apply panels where a blind shared-control swap could either reintroduce mutation-timing regressions or erase intentional blank draft semantics.
+- **Impact**: Future assistants can keep narrowing `T460-subF` without reopening the same design question; the remaining raw-input backlog is now isolated to `DrumsPage.tsx`, and nullable MIDI drafts have an explicit non-shared migration rule until shared controls support blank state.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/Tesira/components/TesiraMixerTab.tsx`, `web/src/app/components/Tesira/components/TesiraLevelsTab.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx`, `web/src/app/pages/JuceGridSelectedBlockMidiPanel.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Parameter-Control Validation Hardening
 - **Section**: Gotchas & Learned Fixes (#30), Update Log

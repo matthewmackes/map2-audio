@@ -68,6 +68,22 @@ function formatDraftNumber(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : String(rounded)
 }
 
+function sanitizeIntegerDraft(rawValue: string): string {
+  return rawValue.replace(/[^0-9]/g, '')
+}
+
+function sanitizeFloatDraft(rawValue: string): string {
+  const trimmed = rawValue.trim()
+  if (trimmed === '') {
+    return ''
+  }
+
+  const sign = trimmed.startsWith('-') ? '-' : ''
+  const unsigned = trimmed.replace(/[^0-9.]/g, '')
+  const [whole = '', ...fraction] = unsigned.split('.')
+  return `${sign}${whole}${fraction.length > 0 ? `.${fraction.join('')}` : ''}`
+}
+
 function parseDraftInteger(rawValue: string, min: number, max: number): number | null {
   const parsed = Number.parseInt(rawValue, 10)
   if (!Number.isFinite(parsed)) {
@@ -569,11 +585,9 @@ export function JuceGridSelectedBlockMidiPanel({
                         <span>CC</span>
                         <TextInput
                           id={`juce-grid-selected-midi-cc-${plugin.position}-${selectedRow.parameter.index}`}
-                          type="number"
                           value={draft.cc}
-                          onChange={(event) => handleDraftChange({ cc: event.currentTarget.value })}
-                          min={0}
-                          max={127}
+                          onChange={(event) => handleDraftChange({ cc: sanitizeIntegerDraft(event.currentTarget.value) })}
+                          inputMode="numeric"
                           size="md"
                           hideLabel
                           labelText="CC"
@@ -628,10 +642,9 @@ export function JuceGridSelectedBlockMidiPanel({
                         <span>Min</span>
                         <TextInput
                           id={`juce-grid-selected-midi-min-${plugin.position}-${selectedRow.parameter.index}`}
-                          type="number"
-                          step="0.01"
                           value={draft.min}
-                          onChange={(event) => handleDraftChange({ min: event.currentTarget.value })}
+                          onChange={(event) => handleDraftChange({ min: sanitizeFloatDraft(event.currentTarget.value) })}
+                          inputMode="decimal"
                           size="md"
                           hideLabel
                           labelText="Min"
@@ -641,10 +654,9 @@ export function JuceGridSelectedBlockMidiPanel({
                         <span>Max</span>
                         <TextInput
                           id={`juce-grid-selected-midi-max-${plugin.position}-${selectedRow.parameter.index}`}
-                          type="number"
-                          step="0.01"
                           value={draft.max}
-                          onChange={(event) => handleDraftChange({ max: event.currentTarget.value })}
+                          onChange={(event) => handleDraftChange({ max: sanitizeFloatDraft(event.currentTarget.value) })}
+                          inputMode="decimal"
                           size="md"
                           hideLabel
                           labelText="Max"
@@ -700,11 +712,9 @@ export function JuceGridSelectedBlockMidiPanel({
                           <span>Feedback CC</span>
                           <TextInput
                             id={`juce-grid-selected-midi-feedback-cc-${plugin.position}-${selectedRow.parameter.index}`}
-                            type="number"
-                            min={0}
-                            max={127}
                             value={draft.feedbackCc}
-                            onChange={(event) => handleDraftChange({ feedbackCc: event.currentTarget.value })}
+                            onChange={(event) => handleDraftChange({ feedbackCc: sanitizeIntegerDraft(event.currentTarget.value) })}
+                            inputMode="numeric"
                             size="md"
                             hideLabel
                             labelText="Feedback CC"
