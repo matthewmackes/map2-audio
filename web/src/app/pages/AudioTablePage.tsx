@@ -17,6 +17,7 @@ import {
   useEffect,
   useRef,
   type CSSProperties,
+  type ChangeEvent,
 } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -509,8 +510,21 @@ export function AudioTablePage() {
   })
 
   const setParameterMutation = useMutation({
-    mutationFn: async ({ uri, paramIndex, value }: { chainId: number; uri: string; paramIndex: number; value: number }) => {
-      pluginsApi.setParameterBatched(uri, paramIndex, value)
+    mutationFn: async ({
+      uri,
+      paramIndex,
+      value,
+      instanceId,
+      pluginPosition,
+    }: {
+      chainId: number
+      uri: string
+      paramIndex: number
+      value: number
+      instanceId?: number
+      pluginPosition?: number
+    }) => {
+      pluginsApi.setParameterBatched(uri, paramIndex, value, instanceId, pluginPosition)
       await pluginsApi.flushParameterBatch()
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['chains'] }),
@@ -521,6 +535,13 @@ export function AudioTablePage() {
   const chains: Chain[] = useMemo(() => chainsQuery.data?.chains ?? [], [chainsQuery.data])
 
   const allPlugins: Plugin[] = useMemo(() => pluginsQuery.data?.plugins ?? [], [pluginsQuery.data])
+  const pluginInventoryByUri = useMemo(() => {
+    const inventory = new Map<string, Plugin>()
+    for (const plugin of allPlugins) {
+      inventory.set(plugin.uri, plugin)
+    }
+    return inventory
+  }, [allPlugins])
 
   const pluginGroups = useMemo(
     () => categorizePlugins(allPlugins, favorites),
@@ -555,35 +576,68 @@ export function AudioTablePage() {
   // Dynamic parameter columns per flow
   const parameterColumnsPerFlow = useMemo(() => {
     return flowData.map(fd => {
-      // For now, use plugin.parameters as basic param data (the chain includes them)
       const paramMap = new Map<string, PluginParameter[]>()
       for (const p of fd.plugins) {
         const key = `${p.uri}::${p.position}`
-        // Convert parameters Record to PluginParameter array
-        const params: PluginParameter[] = Object.entries(p.parameters).map(([symbol, value], idx) => ({
-          index: idx,
-          name: symbol,
-          symbol,
-          min: 0,
-          max: 1,
-          default: 0,
-          value,
-          is_toggled: false,
-          is_log: false,
-        }))
+        const catalogParams = pluginInventoryByUri.get(p.uri)?.parameters ?? []
+        const valuesBySymbol = p.parameters ?? {}
+        const params: PluginParameter[] = []
+        const seenSymbols = new Set<string>()
+
+        for (const meta of catalogParams) {
+          if (!(meta.symbol in valuesBySymbol)) {
+            continue
+          }
+          seenSymbols.add(meta.symbol)
+          params.push({
+            ...meta,
+            value: valuesBySymbol[meta.symbol],
+          })
+        }
+
+        for (const [symbol, value] of Object.entries(valuesBySymbol)) {
+          if (seenSymbols.has(symbol)) {
+            continue
+          }
+          params.push({
+            index: params.length,
+            name: symbol,
+            symbol,
+            min: 0,
+            max: 1,
+            default: value,
+            value,
+            is_toggled: false,
+            is_log: false,
+          })
+        }
+
         paramMap.set(key, params)
       }
       return buildParameterColumns(fd.plugins, paramMap)
     })
-  }, [flowData])
+  }, [flowData, pluginInventoryByUri])
+
+  const allParameterColumns = useMemo(() => {
+    const deduped = new Map<string, ColumnDef>()
+    for (const flowColumns of parameterColumnsPerFlow) {
+      for (const column of flowColumns) {
+        deduped.set(column.key, column)
+      }
+    }
+    return Array.from(deduped.values())
+  }, [parameterColumnsPerFlow])
 
   // Assembled visible columns
-  const visibleColumns = useMemo(
-    () => assembleVisibleColumns(columnVisibility, []),
-    [columnVisibility],
+  const visibleColumnsPerFlow = useMemo(
+    () => parameterColumnsPerFlow.map(parameterColumns => assembleVisibleColumns(columnVisibility, parameterColumns)),
+    [columnVisibility, parameterColumnsPerFlow],
   )
 
-  const dataTableHeaders = useMemo(() => toDataTableHeaders(visibleColumns), [visibleColumns])
+  const dataTableHeadersPerFlow = useMemo(
+    () => visibleColumnsPerFlow.map(columns => toDataTableHeaders(columns)),
+    [visibleColumnsPerFlow],
+  )
 
   // ── Keyboard navigation ─────────────────────────────────────────────────
 
@@ -701,8 +755,15 @@ export function AudioTablePage() {
     reorderMutation.mutate({ chainId, order: reordered })
   }, [reorderMutation])
 
-  const handleParameterChange = useCallback((chainId: number, uri: string, paramIndex: number, value: number) => {
-    setParameterMutation.mutate({ chainId, uri, paramIndex, value })
+  const handleParameterChange = useCallback((
+    chainId: number,
+    uri: string,
+    paramIndex: number,
+    value: number,
+    instanceId?: number,
+    pluginPosition?: number,
+  ) => {
+    setParameterMutation.mutate({ chainId, uri, paramIndex, value, instanceId, pluginPosition })
   }, [setParameterMutation])
 
   // ── Column picker ───────────────────────────────────────────────────────
@@ -865,6 +926,28 @@ export function AudioTablePage() {
             itemText={`${columnVisibility.outputLevel ? '✓' : '  '} Output Level`}
             onClick={() => toggleColumnGroup('outputLevel')}
           />
+          {allParameterColumns.length > 0 && (
+            <OverflowMenuItem
+              hasDivider
+              itemText="Parameter Columns"
+              onClick={() => {}}
+            />
+          )}
+          {allParameterColumns.map(column => (
+            <OverflowMenuItem
+              key={column.key}
+              itemText={`${columnVisibility.parameters[column.key] !== false ? '✓' : '  '} ${pluginInventoryByUri.get(column.pluginUri ?? '')?.name ?? column.pluginUri ?? 'Plugin'}: ${column.header}`}
+              onClick={() => {
+                setColumnVisibility(prev => ({
+                  ...prev,
+                  parameters: {
+                    ...prev.parameters,
+                    [column.key]: prev.parameters[column.key] === false,
+                  },
+                }))
+              }}
+            />
+          ))}
         </OverflowMenu>
       </div>
 
@@ -879,8 +962,8 @@ export function AudioTablePage() {
           chains={chains}
           ports={ports}
           pluginGroups={pluginGroups}
-          visibleColumns={visibleColumns}
-          dataTableHeaders={dataTableHeaders}
+          visibleColumns={visibleColumnsPerFlow[flowIndex] ?? assembleVisibleColumns(columnVisibility, [])}
+          dataTableHeaders={dataTableHeadersPerFlow[flowIndex] ?? toDataTableHeaders(assembleVisibleColumns(columnVisibility, []))}
           search={search}
           peaksMap={peaksMap}
           onSearchChange={setSearch}
@@ -943,7 +1026,14 @@ interface FlowTableSectionProps {
   onRemovePlugin: (chainId: number, uri: string, position: number) => void
   onAddPlugin: (chainId: number, uri: string) => void
   onPositionChange: (chainId: number, plugins: Chain['plugins'], from: number, to: number) => void
-  onParameterChange: (chainId: number, uri: string, paramIndex: number, value: number) => void
+  onParameterChange: (
+    chainId: number,
+    uri: string,
+    paramIndex: number,
+    value: number,
+    instanceId?: number,
+    pluginPosition?: number,
+  ) => void
   onRemoveFlow: (index: number) => void
   canRemoveFlow: boolean
   onCreateChain: (name: string) => void
@@ -980,6 +1070,113 @@ function FlowTableSection({
   onRenameChain,
 }: FlowTableSectionProps) {
   const [addPluginUri, setAddPluginUri] = useState<string | null>(null)
+
+  const renderParameterCell = useCallback((
+    plugin: Chain['plugins'][number],
+    rowIdx: number,
+    column: ColumnDef,
+  ): React.ReactNode => {
+    if (!chain || column.group !== 'parameter' || !column.pluginUri || !column.paramSymbol) {
+      return ''
+    }
+    if (plugin.uri !== column.pluginUri || !(column.paramSymbol in plugin.parameters)) {
+      return ''
+    }
+
+    const paramValue = plugin.parameters[column.paramSymbol]
+    const inputId = `${slot.id}-${rowIdx}-${column.key.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+
+    if (column.paramIsToggled) {
+      return (
+        <Checkbox
+          id={inputId}
+          checked={paramValue >= 0.5}
+          labelText=""
+          hideLabel
+          onChange={(_checked: boolean, evt: ChangeEvent<HTMLInputElement>) => {
+            onParameterChange(
+              chain.id,
+              plugin.uri,
+              column.paramIndex ?? 0,
+              evt.target.checked ? 1 : 0,
+              plugin.instance_id,
+              plugin.position,
+            )
+          }}
+        />
+      )
+    }
+
+    const isDiscreteIntegerRange = Number.isInteger(column.paramMin)
+      && Number.isInteger(column.paramMax)
+      && Number.isInteger(paramValue)
+      && (column.paramMax ?? 0) - (column.paramMin ?? 0) <= 8
+
+    if (isDiscreteIntegerRange) {
+      const min = column.paramMin ?? 0
+      const max = column.paramMax ?? min
+      return (
+        <Select
+          id={inputId}
+          size="sm"
+          hideLabel
+          labelText=""
+          value={String(Math.round(paramValue))}
+          onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
+            onParameterChange(
+              chain.id,
+              plugin.uri,
+              column.paramIndex ?? 0,
+              Number(evt.target.value),
+              plugin.instance_id,
+              plugin.position,
+            )
+          }}
+        >
+          {Array.from({ length: max - min + 1 }, (_, offset) => {
+            const optionValue = min + offset
+            return (
+              <SelectItem
+                key={optionValue}
+                text={String(optionValue)}
+                value={String(optionValue)}
+              />
+            )
+          })}
+        </Select>
+      )
+    }
+
+    const min = column.paramMin ?? 0
+    const max = column.paramMax ?? 1
+    const span = Math.abs(max - min)
+    const step = span > 0 ? Math.max(span / 100, 0.01) : 0.01
+
+    return (
+      <CarbonNumberInput
+        id={inputId}
+        size="sm"
+        min={min}
+        max={max}
+        step={step}
+        value={paramValue}
+        label=""
+        hideLabel
+        hideSteppers
+        onChange={(_evt: unknown, { value }: { value: string | number }) => {
+          onParameterChange(
+            chain.id,
+            plugin.uri,
+            column.paramIndex ?? 0,
+            Number(value),
+            plugin.instance_id,
+            plugin.position,
+          )
+        }}
+        style={{ width: 88 }}
+      />
+    )
+  }, [chain, onParameterChange, slot.id])
 
   // Build DataTable rows
   const rows = useMemo(() => {
@@ -1052,12 +1249,19 @@ function FlowTableSection({
         autoRecorded: <Tag type="cool-gray" size="sm">—</Tag>,
       }
 
+      for (const column of visibleColumns) {
+        if (column.group !== 'parameter') {
+          continue
+        }
+        cells[column.key] = renderParameterCell(plugin, rowIdx, column)
+      }
+
       return {
         id: `${slot.id}-plugin-${rowIdx}`,
         ...cells,
       }
     })
-  }, [plugins, slot.id, chain, peaksMap, onBypassToggle, onRemovePlugin, onPositionChange])
+  }, [plugins, slot.id, chain, peaksMap, onBypassToggle, onRemovePlugin, onPositionChange, renderParameterCell, visibleColumns])
 
   // Chain selector items
   const chainItems = useMemo(() => {

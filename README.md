@@ -176,7 +176,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-27 |
 | [Health Monitoring Hierarchy](https://github.com/matthewmackes/map2-audio/blob/master/docs/HEALTH_MONITORING_HIERARCHY.md) | 2026-03-26 |
 | [MAP2 Audio Platform — Complete Transplantation / Reinstallation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/TRANSPLANTATION_GUIDE.md) | 2026-03-26 |
-| [Global Work List](https://github.com/matthewmackes/map2-audio/blob/master/docs/global-work-list.md) | 2026-03-26 |
+| [Parameter Control Standard](https://github.com/matthewmackes/map2-audio/blob/master/docs/specs/parameter-control-standard.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
 <!-- RECENT-DOCS:END -->
 

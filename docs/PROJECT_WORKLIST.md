@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T454 audio-table scaffold in progress
+Last updated: 2026-03-27 - T455 side-tracker cleanup complete; T456-T460 imported
 
 ID: T453
 Status: [✓] Done
@@ -8135,23 +8135,116 @@ Description:
 
 Subtasks:
 - T454-subA: [✓] Done - Page scaffold — AudioTablePage.tsx with lazy route, nav entry, responsive layout, mobile/tablet handling
-- T454-subB: [ ] Flow table sections — one Carbon DataTable per flow slot with static columns (Position, Name, Bypass, Actions, Input dB, Output dB)
-- T454-subC: [ ] Flow header rows — color label, chain dropdown (CRUD), mute/solo, dry/wet, port dropdowns, remove flow
-- T454-subD: [ ] Shared state integration — read/write same localStorage keys and React Query cache as JUCE-GRID
-- T454-subE: [ ] Inline editing — number inputs for continuous params, dropdowns for discrete, bypass checkbox, position reorder, batched parameter writes
-- T454-subF: [ ] Dynamic parameter columns — column picker, per-plugin parameter scanning, union columns, empty cells for non-matching plugins
-- T454-subG: [ ] Add plugin row — empty last row with categorized grouped dropdown (Favorites/Effects/Instruments/Native)
+- T454-subB: [✓] Done - Flow table sections — one Carbon DataTable per flow slot with static columns (Position, Name, Bypass, Actions, Input dB, Output dB)
+- T454-subC: [✓] Done - Flow header rows — color label, chain dropdown (CRUD), mute/solo, dry/wet, port dropdowns, remove flow
+- T454-subD: [✓] Done - Shared state integration — read/write same localStorage keys and React Query cache as JUCE-GRID
+- T454-subE: [✓] Done - Inline editing — number inputs for continuous params, dropdowns for discrete, bypass checkbox, position reorder, batched parameter writes
+- T454-subF: [✓] Done - Dynamic parameter columns — column picker, per-plugin parameter scanning, union columns, empty cells for non-matching plugins
+- T454-subG: [✓] Done - Add plugin row — empty last row with categorized grouped dropdown (Favorites/Effects/Instruments/Native)
 - T454-subH: [ ] Toolbar — routing dropdown + inline mode controls, preset dropdown, undo/redo, automation transport, search, column picker, batch actions
 - T454-subI: [ ] MIDI columns — CC#, Channel, Curve, Min, Max editable inline per plugin row
-- T454-subJ: [ ] Real-time data — numeric dB levels from usePluginOutputs, automation state indicators
-- T454-subK: [ ] Keyboard navigation — Tab/Enter/Escape/Arrow cell navigation, Delete for remove, Ctrl+Z/Y for undo/redo
-- T454-subL: [ ] Flow slot management — Add Flow button, Remove Flow per header, 2-6 flow range enforcement
+- T454-subJ: [✓] Done - Real-time data — numeric dB levels from usePluginOutputs, automation state indicators
+- T454-subK: [✓] Done - Keyboard navigation — Tab/Enter/Escape/Arrow cell navigation, Delete for remove, Ctrl+Z/Y for undo/redo
+- T454-subL: [✓] Done - Flow slot management — Add Flow button, Remove Flow per header, 2-6 flow range enforcement
 - T454-subM: [ ] Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
-- T454-subN: [ ] Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
-Assigned to: Unassigned
-Last updated: 2026-03-27 13:26 EDT - Codex
+- T454-subN: [>] In Progress - Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
+Assigned to: Codex
+Last updated: 2026-03-27 14:08 EDT - Codex
 - Progress notes:
   - `/audio-table` route wiring, the advanced-menu entry, the main page scaffold, and the supporting `audioTableColumns.ts` / `audioTableKeyboard.ts` helpers are now present in `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/*`.
   - The first release-loop deploy for this scaffold failed on real API/type-contract drift in `web/src/app/pages/AudioTablePage.tsx`: it imported `AudioPort` from the wrong module, treated `ChainsResponse`, `PluginDiscoverResponse`, and `AudioPortsResponse` as flat arrays, and called `pluginsApi.setParameterBatched()` with the wrong argument order.
   - Repaired the current build blockers by sourcing `AudioPort` from `web/src/map2/api.ts`, reading `chainsQuery.data?.chains` / `pluginsQuery.data?.plugins`, flattening audio ports from `portsQuery.data.inputs` and `portsQuery.data.outputs`, and fixing the batched parameter mutation signature while keeping the newer runtime peak-map plumbing intact.
-  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run deploy` -> PASS (bundle `index-Bnwf4JYy.js`, `map2-web-prod.service` active, `http://127.0.0.1:3000/` -> `200`). Additional `T454` subtasks remain open because the page is now deployable but not yet feature-complete.
+  - Extended `web/src/app/pages/AudioTablePage.tsx` so each flow now assembles parameter metadata from plugin discovery, renders unioned parameter columns per flow, exposes inline numeric and discrete parameter cells, surfaces runtime dB values from `usePluginOutputs`, and keeps the add-plugin row, shared-state flow controls, and column picker on the same JUCE-grid storage contract.
+  - Added focused frontend validation in `web/src/app/pages/AudioTablePage.test.tsx` and `web/src/app/pages/audioTableKeyboard.test.ts` covering scaffold render, flow CRUD, shared-state persistence, add-plugin row presence, dynamic parameter headers/cells, real-time dB readout, and keyboard helper shortcuts/navigation; the remaining end-to-end mutation-focused integration tail stays tracked under `T454-subN`.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`28 passed`); `npm --prefix web run typecheck` -> PASS. Additional `T454` subtasks remain open because toolbar batch actions, MIDI cell editing, the cluster section, and fuller mutation/integration coverage are not yet complete.
+
+---
+
+## Epic: Worklist Hygiene
+
+ID: T455
+Status: [✓] Done
+Title: Retire duplicate side trackers and merge live backlog into the canonical worklist
+Description:
+- Goal / acceptance criteria: Audit the repository for non-canonical work trackers, retire any duplicate live tracker files so they no longer behave like active ledgers, merge any still-live outstanding work into `docs/PROJECT_WORKLIST.md` with canonical IDs, and update obvious repo-facing references so contributors land on the canonical file first.
+- Why it matters: `docs/PROJECT_WORKLIST.md` is the declared source of truth in the active Claude/Gemini/Copilot instructions, but `docs/global-work-list.md` and `.claude/plan-plugin-optimization.md` still read like active trackers. That creates conflicting IDs, stale unchecked boxes, and a high chance that future work gets recorded in the wrong place.
+- Dependencies: Current directive files naming `docs/PROJECT_WORKLIST.md` as canonical; scan results for `docs/global-work-list.md`, `.claude/plan-plugin-optimization.md`, `README.md`, and other task-like docs.
+- Estimated effort: Low
+- Required outputs: Canonical worklist merge of any live outstanding backlog, archival/redirect notes in duplicate tracker files, updated repo-facing references, and completion notes summarizing whether any real outstanding work was found.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-27 14:13 EDT - Codex
+- Completion notes:
+  - Confirmed the active instruction files already converge on `docs/PROJECT_WORKLIST.md` as canonical: `docs/CLAUDE.md`, `.gemini/instructions.md`, and `.github/copilot-instructions.md` all point there.
+  - Retired `docs/global-work-list.md` as an archived duplicate tracker and rewrote it into a redirect note that explicitly sends future work to `docs/PROJECT_WORKLIST.md`.
+  - Imported the only real still-live unmerged backlog from the duplicate list into canonical tasks `T456` through `T460`. Those tasks cover the numeric-control follow-up work described by the planning artifacts in `docs/audits/numeric-controls-audit.md`, `docs/specs/parameter-control-standard.md`, `docs/architecture/parameter-controls.md`, and `docs/migration/parameter-controls-phase1.md`.
+  - Rewrote `.claude/plan-plugin-optimization.md` as historical reference only after verifying that the card files, deployment manifests, and plugin discovery wiring named by that plan already exist in the repo; no separate live backlog had to be imported from that file.
+  - Updated `README.md` so the recent-docs table no longer points readers at the retired duplicate worklist.
+  - Outstanding-work result: yes, but only one real unmerged backlog was found. The open numeric-control implementation work from the retired duplicate ledger is now tracked canonically as `T456` through `T460`. No additional live outstanding work was found in the retired `.claude` plan; the other task-like docs reviewed were historical references, specs, reports, or checklists rather than active project ledgers.
+
+## Epic: Parameter Control Runtime
+
+ID: T456
+Status: [ ] Todo
+Title: Normalize missing parameter metadata for the shared parameter-control runtime
+Description:
+- Goal / acceptance criteria: Add or backfill missing defaults, explicit scale declarations, display precision, fine-step and large-step values, and commit-policy hints for runtime-driven parameter surfaces such as JUCE Grid, MPX1, IntelFX, LV2, and dynamic Tesira editors.
+- Why it matters: The shared control layer cannot behave consistently when source registries only provide min/max and leave scale, precision, default, and commit semantics implicit.
+- Dependencies: T455; existing planning artifacts in `docs/audits/numeric-controls-audit.md`, `docs/specs/parameter-control-standard.md`, and `docs/architecture/parameter-controls.md`
+- Estimated effort: Medium
+- Required outputs: Updated runtime parameter metadata contracts and follow-up implementation notes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-27 14:11 EDT - Codex
+
+ID: T457
+Status: [ ] Todo
+Title: Implement the shared live/commit parameter-control runtime
+Description:
+- Goal / acceptance criteria: Build the shared interaction hook, scale utilities, formatter/parser utilities, dispatch layer, and the new `ParameterControl` family without regressing keyboard or accessibility behavior.
+- Why it matters: The current primitives conflate live and commit updates and still allow raw inputs to bypass the shared contract.
+- Dependencies: T456; `docs/specs/parameter-control-standard.md`; `docs/architecture/parameter-controls.md`
+- Estimated effort: High
+- Required outputs: Shared component/runtime implementation, focused tests, and backwards-compatible wrappers for staged migration.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-27 14:11 EDT - Codex
+
+ID: T458
+Status: [ ] Todo
+Title: Migrate the first four pilot parameter-control surfaces to the shared system
+Description:
+- Goal / acceptance criteria: Replace the four selected pilot surfaces with the new control system, preserving correct engine behavior while adding explicit live/commit semantics. Initial pilot targets are `DrumsPage` swing, `EQCard` frequency, `PassionFXCard` stages, and `MIDICommanderSetup` deadzone fields as documented in `docs/migration/parameter-controls-phase1.md`.
+- Why it matters: The pilot slice is the proof point for the architecture, interaction standard, and performance plan.
+- Dependencies: T457; `docs/migration/parameter-controls-phase1.md`
+- Estimated effort: Medium
+- Required outputs: Pilot control migrations, focused tests, and migration notes for the next wave.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-27 14:11 EDT - Codex
+
+ID: T459
+Status: [ ] Todo
+Title: Validate parameter-control consistency, performance, and audio safety
+Description:
+- Goal / acceptance criteria: Verify correct values, clamping, formatting, interaction smoothness, keyboard access, render stability, and audio-safe live updates across every migrated control; produce the required validation document.
+- Why it matters: The refactor is only complete once the shared controls feel identical across modules and do not introduce UI lag or engine artifacts.
+- Dependencies: T457; T458
+- Estimated effort: Medium
+- Required outputs: `docs/validation/parameter-controls-validation.md` and regression evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-27 14:11 EDT - Codex
+
+ID: T460
+Status: [ ] Todo
+Title: Remove legacy wrappers and raw numeric inputs after migration coverage is broad enough
+Description:
+- Goal / acceptance criteria: Retire raw `input[type=range|number]` parameter controls, the `ParameterSlider` alias, and any remaining one-off knob widgets after the shared system covers all required surfaces.
+- Why it matters: Leaving old and new stacks active indefinitely will preserve the current inconsistency problem.
+- Dependencies: T457; T458; T459
+- Estimated effort: Medium
+- Required outputs: Cleanup plan, removals, and compatibility notes for downstream contributors.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-27 14:11 EDT - Codex
