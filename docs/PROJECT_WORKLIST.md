@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T453 IR scoped fallback removal completed
+Last updated: 2026-03-27 - T453 NAM scoped status methods completed
 
 ID: T453
 Status: [>] In Progress
@@ -45,7 +45,7 @@ Subtasks:
 - T453-subA: [ ] Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
 - T453-subB: [ ] Add instance_id/plugin_position to EQ/filter routes
 - T453-subC: [✓] Done - Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
-- T453-subD: [ ] Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
+- T453-subD: [✓] Done - Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
 - T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
 - T453-subF: [✓] Done - Remove silent global fallback in IR routes — raise HTTPException when instance resolution fails instead of falling through to _ir_processor singleton
 - T453-subG: [✓] Done - Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
@@ -53,7 +53,7 @@ Subtasks:
 - T453-subI: [✓] Done - Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
 - T453-subJ: [✓] Done - Add regression tests — backend multi-instance parameter isolation tests plus frontend scoped query key/WebSocket instance filtering coverage
 Assigned to: Codex
-Last updated: 2026-03-27 11:36 EDT - Codex
+Last updated: 2026-03-27 11:41 EDT - Codex
 - Progress notes:
   - Unified the NAM and IR selected-block status query keys around scope-specific identity, then updated `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` so successful loads/uploads only invalidate the active status query (plus the relevant asset-list query on uploads) instead of globally invalidating every `['nam']` or `['ir']` query.
   - Added `matchesScopedParameterUpdate()` in `web/src/map2/hooks/useWebSocket.ts` and rewired `useBatchedParameter()` to require matching `instance_id` and/or `plugin_position` before accepting single or batched websocket parameter updates, preventing duplicate-instance UI cross-talk on shared URI/parameter pairs.
@@ -69,6 +69,11 @@ Last updated: 2026-03-27 11:36 EDT - Codex
   - Updated `.github/copilot-instructions.md` with the fail-closed scoped IR rule so future asset/status route work does not reintroduce global singleton fallthrough under duplicate-instance workflows.
   - Licensing review: touched backend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `pytest -q tests/test_nam_ir_instance_routes.py` -> PASS (`8 passed`).
+  - Added scoped NAM status helpers in `app/services/juce_engine_service.py` for `model_loaded`, `loading`, `bypass`, `normalize`, `input_gain`, `output_gain`, `input_level`, and `output_level`, plus `get_nam_status_instance()`, all sourced from the duplicate-safe `get_nam_model_info_instance()` payload instead of the global singleton status path.
+  - Expanded `tests/test_juce_engine_service_instance_resolution.py` with service-level regression coverage for instance-scoped NAM status reads and safe defaults when no engine is available.
+  - Updated `.github/copilot-instructions.md` with the rule that duplicate-safe NAM status consumers should use instance-scoped helpers at the service layer instead of reusing global NAM status methods.
+  - Licensing review: touched backend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py` -> PASS (`15 passed`).
   - Licensing review: touched frontend/worklist/test/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts` -> PASS (`28 passed`); `npm --prefix web run typecheck` -> PASS.
 

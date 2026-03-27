@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 IR scope fail-closed routing)
+> **Last Updated**: March 27, 2026 (T453 NAM instance status helpers)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1239,6 +1239,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_nam_ir_instance_routes.py`
 - **Lesson**: Once a route accepts runtime identity, failure to resolve that identity is an error, not permission to operate on a global singleton.
 
+**26. Duplicate-Safe NAM Status Reads Need Service-Level Instance Helpers (HIGH - Mar 27, 2026)**
+- **Files**: `app/services/juce_engine_service.py`, `tests/test_juce_engine_service_instance_resolution.py`
+- **Problem**: Duplicate-safe NAM routes had to unpack `get_nam_model_info_instance()` manually because the service only exposed global NAM status helpers such as `is_nam_bypassed()` and `get_nam_input_level()`.
+- **Root Cause**: The service layer never added instance-scoped variants for the NAM status fields after instance-scoped model info support landed.
+- **Fix**: Add `*_instance` NAM status helpers plus `get_nam_status_instance()` and source them from `get_nam_model_info_instance()` so instance-scoped consumers never need to fall back to the global NAM singleton API.
+- **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py`
+- **Lesson**: When instance-scoped route logic depends on a global-only service API, fix the service surface instead of duplicating per-route unpacking logic.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1509,6 +1517,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - NAM Instance-Scoped Service Status Helpers
+- **Section**: Gotchas & Learned Fixes (#26), Python Backend Gotchas
+- **Change**: Documented the need for service-level `*_instance` NAM status helpers sourced from `get_nam_model_info_instance()` so duplicate-safe consumers can avoid the global NAM singleton query path.
+- **Reason**: The T453 backend audit found that NAM routes had duplicate-safe instance info but the service surface still encouraged global status reads for bypass/loading/levels/gains/normalize.
+- **Impact**: Future NAM consumers can stay duplicate-safe by default and no longer need ad-hoc route-local status extraction logic.
+- **Files**: `.github/copilot-instructions.md`, `app/services/juce_engine_service.py`, `tests/test_juce_engine_service_instance_resolution.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Fail-Closed Scoped IR Routing
 - **Section**: Gotchas & Learned Fixes (#25), Python Backend Gotchas

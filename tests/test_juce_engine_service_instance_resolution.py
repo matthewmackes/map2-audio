@@ -24,6 +24,25 @@ class _FakeTelemetryEngine(_FakePedalboardEngine):
         return dict(self._cpu_metrics)
 
 
+class _FakeNamInstanceInfoEngine:
+    def is_nam_available(self):
+        return True
+
+    def get_nam_model_info_instance(self, instance_id: int):
+        assert instance_id == 42
+        return {
+            "name": "Scoped Crunch",
+            "loaded": True,
+            "loading": False,
+            "bypass": True,
+            "input_level": -17.5,
+            "output_level": -9.25,
+            "input_gain": 2.5,
+            "output_gain": -1.5,
+            "normalize": False,
+        }
+
+
 def test_get_instance_id_for_uri_prefers_matching_position_for_duplicates():
     service = JuceEngineService()
     service._engine = _FakePedalboardEngine([  # noqa: SLF001 - explicit unit isolation
@@ -110,3 +129,46 @@ def test_get_runtime_plugin_cpu_telemetry_uses_instance_ids():
             "latency_samples": 32,
         },
     ]
+
+
+def test_get_nam_status_instance_reads_duplicate_safe_instance_info():
+    service = JuceEngineService()
+    service._engine = _FakeNamInstanceInfoEngine()  # noqa: SLF001 - explicit unit isolation
+
+    status = asyncio.run(service.get_nam_status_instance(42))
+
+    assert status == {
+        "available": True,
+        "model_loaded": True,
+        "loading": False,
+        "bypassed": True,
+        "normalized": False,
+        "input_gain": 2.5,
+        "output_gain": -1.5,
+        "input_level": -17.5,
+        "output_level": -9.25,
+        "model_info": {
+            "name": "Scoped Crunch",
+            "loaded": True,
+            "loading": False,
+            "bypass": True,
+            "input_level": -17.5,
+            "output_level": -9.25,
+            "input_gain": 2.5,
+            "output_gain": -1.5,
+            "normalize": False,
+        },
+    }
+
+
+def test_nam_instance_status_helpers_return_safe_defaults_without_engine():
+    service = JuceEngineService()
+
+    assert asyncio.run(service.is_nam_model_loaded_instance(77)) is False
+    assert asyncio.run(service.is_nam_loading_instance(77)) is False
+    assert asyncio.run(service.is_nam_bypassed_instance(77)) is False
+    assert asyncio.run(service.is_nam_normalized_instance(77)) is True
+    assert asyncio.run(service.get_nam_input_gain_instance(77)) == 0.0
+    assert asyncio.run(service.get_nam_output_gain_instance(77)) == 0.0
+    assert asyncio.run(service.get_nam_input_level_instance(77)) == -100.0
+    assert asyncio.run(service.get_nam_output_level_instance(77)) == -100.0

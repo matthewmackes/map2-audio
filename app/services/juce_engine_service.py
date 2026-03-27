@@ -2049,6 +2049,14 @@ class JuceEngineService(Singleton):
                 "bypass": False,
             }
 
+    async def is_nam_model_loaded_instance(self, instance_id: int) -> bool:
+        info = await self.get_nam_model_info_instance(instance_id)
+        return bool(info.get("loaded", False))
+
+    async def is_nam_loading_instance(self, instance_id: int) -> bool:
+        info = await self.get_nam_model_info_instance(instance_id)
+        return bool(info.get("loading", False))
+
     async def set_nam_input_gain(self, db: float) -> None:
         """Set NAM input gain in dB"""
         if self._engine:
@@ -2072,6 +2080,13 @@ class JuceEngineService(Singleton):
         try:
             return self._engine.get_nam_input_gain()
         except AttributeError:
+            return 0.0
+
+    async def get_nam_input_gain_instance(self, instance_id: int) -> float:
+        info = await self.get_nam_model_info_instance(instance_id)
+        try:
+            return float(info.get("input_gain", 0.0))
+        except (TypeError, ValueError):
             return 0.0
 
     async def set_nam_output_gain(self, db: float) -> None:
@@ -2099,6 +2114,13 @@ class JuceEngineService(Singleton):
         except AttributeError:
             return 0.0
 
+    async def get_nam_output_gain_instance(self, instance_id: int) -> float:
+        info = await self.get_nam_model_info_instance(instance_id)
+        try:
+            return float(info.get("output_gain", 0.0))
+        except (TypeError, ValueError):
+            return 0.0
+
     async def set_nam_bypass(self, bypass: bool) -> None:
         """Set NAM bypass state"""
         if self._engine:
@@ -2123,6 +2145,10 @@ class JuceEngineService(Singleton):
             return self._engine.is_nam_bypassed()
         except AttributeError:
             return False
+
+    async def is_nam_bypassed_instance(self, instance_id: int) -> bool:
+        info = await self.get_nam_model_info_instance(instance_id)
+        return bool(info.get("bypass", False))
 
     async def set_nam_normalize(self, normalize: bool) -> None:
         """Enable/disable NAM output normalization"""
@@ -2149,6 +2175,10 @@ class JuceEngineService(Singleton):
         except AttributeError:
             return True
 
+    async def is_nam_normalized_instance(self, instance_id: int) -> bool:
+        info = await self.get_nam_model_info_instance(instance_id)
+        return bool(info.get("normalize", True))
+
     async def get_nam_input_level(self) -> float:
         """Get NAM input metering level in dB"""
         if not self._engine:
@@ -2156,6 +2186,13 @@ class JuceEngineService(Singleton):
         try:
             return self._engine.get_nam_input_level()
         except AttributeError:
+            return -100.0
+
+    async def get_nam_input_level_instance(self, instance_id: int) -> float:
+        info = await self.get_nam_model_info_instance(instance_id)
+        try:
+            return float(info.get("input_level", -100.0))
+        except (TypeError, ValueError):
             return -100.0
 
     async def get_nam_output_level(self) -> float:
@@ -2166,6 +2203,28 @@ class JuceEngineService(Singleton):
             return self._engine.get_nam_output_level()
         except AttributeError:
             return -100.0
+
+    async def get_nam_output_level_instance(self, instance_id: int) -> float:
+        info = await self.get_nam_model_info_instance(instance_id)
+        try:
+            return float(info.get("output_level", -100.0))
+        except (TypeError, ValueError):
+            return -100.0
+
+    async def get_nam_status_instance(self, instance_id: int) -> Dict[str, Any]:
+        model_info = await self.get_nam_model_info_instance(instance_id)
+        return {
+            "available": await self.is_nam_available(),
+            "model_loaded": await self.is_nam_model_loaded_instance(instance_id),
+            "loading": await self.is_nam_loading_instance(instance_id),
+            "bypassed": await self.is_nam_bypassed_instance(instance_id),
+            "normalized": await self.is_nam_normalized_instance(instance_id),
+            "input_gain": await self.get_nam_input_gain_instance(instance_id),
+            "output_gain": await self.get_nam_output_gain_instance(instance_id),
+            "input_level": await self.get_nam_input_level_instance(instance_id),
+            "output_level": await self.get_nam_output_level_instance(instance_id),
+            "model_info": model_info,
+        }
 
     async def get_nam_status(self) -> Dict[str, Any]:
         """Get comprehensive NAM status"""
