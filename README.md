@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**855** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **948** total commits | **3** stars | **0** forks | **0** open issues
+**855** Python | **1153** TypeScript | **300** C++/H | **125** Docs | **951** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`97b0057b`](https://github.com/matthewmackes/map2-audio/commit/97b0057be7ff04da130751e29f11b8f203981aad) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-27 |
+| [`715e5bcc`](https://github.com/matthewmackes/map2-audio/commit/715e5bcc3e1e89480e6b110ad71b7e8356269729) | fix: scope duplicate-instance frontend runtime updates | Map2 Audio | 2026-03-27 |
+| [`5c04925d`](https://github.com/matthewmackes/map2-audio/commit/5c04925d2ab660c01c6a9c1159404f740419276d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`54bb74cd`](https://github.com/matthewmackes/map2-audio/commit/54bb74cdf76cffacabb7536f08638a846ab25cb2) | fix: recover NAM chooser from stale scoped instance ids | Map2 Audio | 2026-03-27 |
 | [`a1ee3056`](https://github.com/matthewmackes/map2-audio/commit/a1ee3056aea52d829d3eb3cb4f8fbe002bc990af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`24fc2cea`](https://github.com/matthewmackes/map2-audio/commit/24fc2cea1ba1b874c6a968d04d4708ef4e63b988) | Cycle 3 follow-up: harden serve_web_dist shutdown | Map2 Audio | 2026-03-27 |
 | [`847d6fea`](https://github.com/matthewmackes/map2-audio/commit/847d6feaf91b957da48ca955686805ac2fa177b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`d6fdc37f`](https://github.com/matthewmackes/map2-audio/commit/d6fdc37f19785e630e09dab85428ab322fe667cf) | Cycle 3: close T451 web production stop path | Map2 Audio | 2026-03-27 |
-| [`097b2e5c`](https://github.com/matthewmackes/map2-audio/commit/097b2e5c7879ffcd927acf2d780649eeec9ae6b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`76476913`](https://github.com/matthewmackes/map2-audio/commit/764769132dbcf327d12db476eafbdf13fb370154) | Cycle 2: close T450 restart and Tesira retry follow-up | Map2 Audio | 2026-03-27 |
-| [`e8aa5f21`](https://github.com/matthewmackes/map2-audio/commit/e8aa5f2123b1d0be0f392a9e9a9a91ee97581be4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
