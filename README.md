@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**851** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **938** total commits | **3** stars | **0** forks | **0** open issues
+**855** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **940** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,12 +172,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-27 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-27 |
 | [Health Monitoring Hierarchy](https://github.com/matthewmackes/map2-audio/blob/master/docs/HEALTH_MONITORING_HIERARCHY.md) | 2026-03-26 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-26 |
 | [MAP2 Audio Platform — Complete Transplantation / Reinstallation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/TRANSPLANTATION_GUIDE.md) | 2026-03-26 |
 | [Global Work List](https://github.com/matthewmackes/map2-audio/blob/master/docs/global-work-list.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
-| [MAP2 Adoption Workflow Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/ADOPTION_WORKFLOW_RUNBOOK.md) | 2026-03-23 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d722564f`](https://github.com/matthewmackes/map2-audio/commit/d722564fb194d08f6d37e278866a88d572ab2cfc) | Cycle 1: close T209 API reliability qualification | Map2 Audio | 2026-03-27 |
+| [`100c21bc`](https://github.com/matthewmackes/map2-audio/commit/100c21bce7741a06212fd9ec92511bc67108ce41) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`ef182815`](https://github.com/matthewmackes/map2-audio/commit/ef18281529f5372bc0671990393eec404b90ecae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`d8ffb0fa`](https://github.com/matthewmackes/map2-audio/commit/d8ffb0face5d3bc14902abb0ad9d62f7de6beee2) | test: cover cluster inventory and remediation routes | Map2 Audio | 2026-03-26 |
 | [`5548ad43`](https://github.com/matthewmackes/map2-audio/commit/5548ad43342189ea04d9c4a324f3aed97865f361) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`5fc9a12e`](https://github.com/matthewmackes/map2-audio/commit/5fc9a12ee3cd8e764b8804ef75ac61926c96cbb4) | test: cover monitoring network ssh system routes | Map2 Audio | 2026-03-26 |
 | [`dc97ba93`](https://github.com/matthewmackes/map2-audio/commit/dc97ba93642cd54c5e687e5a2046501717ba074c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`6d00af53`](https://github.com/matthewmackes/map2-audio/commit/6d00af53f1537327acc1a8a77eed0cd7ca1fcc5f) | test: cover audio diagnostics path upload scanner routes | Map2 Audio | 2026-03-26 |
-| [`9a1ef24f`](https://github.com/matthewmackes/map2-audio/commit/9a1ef24fa614f0a5425b6e70b9c14ec710059ea5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`7b6c275f`](https://github.com/matthewmackes/map2-audio/commit/7b6c275f483bb6558f3cb06344a2fa95a332b586) | test: cover dashboard and cpu metrics routes | Map2 Audio | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
