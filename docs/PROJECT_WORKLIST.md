@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 - Cycle 2 route coverage complete for T447-subH
+Last updated: 2026-03-26 - Cycle 3 route coverage complete for T447
 
 ID: T449
 Status: [✓] Done
@@ -7007,7 +7007,7 @@ Last updated: 2026-03-26 18:05 EDT - Codex
   - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T447
-Status: [>] In Progress
+Status: [✓] Done
 Title: Add test coverage for 58 untested route modules
 Description:
 - Goal / acceptance criteria: 58 of 108 route modules have no corresponding test file. Prioritize adding tests for: cluster_update, cluster_update_hybrid, deployment_health, midi_v2, midi_cluster_proxy, nam_models, preset_exchange, preset_migration, plugin_presets, soundfonts, and other high-traffic routes.
@@ -7146,7 +7146,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_monitoring_routes.py tests/test_network_routes.py tests/test_ssh_trust_routes.py tests/test_system_tests_routes.py tests/test_websocket_rt_routes.py` -> PASS (`13 passed, 1 warning`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS (`AST_OK 5`).
     - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subI
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for node and cluster inventory surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `cluster_nodes.py`, `cluster_plugin_inventory.py`, `nodes.py`, `packages.py`, and `platform_remediation.py`, covering representative list/status/update contracts.
@@ -7155,9 +7155,20 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 19:16 EDT - Codex
+  Last updated: 2026-03-26 21:43 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_cluster_nodes_routes.py`, `tests/test_cluster_plugin_inventory_routes.py`, `tests/test_nodes_routes.py`, `tests/test_packages_routes.py`, and `tests/test_platform_remediation_routes.py` to cover the previously untested `cluster_nodes.py`, `cluster_plugin_inventory.py`, `nodes.py`, `packages.py`, and `platform_remediation.py` route modules with representative diagnostics, inventory, proxy, package lifecycle, and remediation workflow assertions.
+    - The new coverage pins the cluster-node lifecycle/reporting contracts, cluster plugin catalog/common/unique surfaces, node proxy normalization/rate-limit/error behavior, package scan/install/upload/realtime dependency flows, and the manifest-backed remediation summary/sync/clone workflows.
+    - Validation: `pytest -q tests/test_cluster_nodes_routes.py tests/test_cluster_plugin_inventory_routes.py tests/test_nodes_routes.py tests/test_packages_routes.py tests/test_platform_remediation_routes.py` -> PASS (`13 passed, 1 warning`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS (`AST_OK 5`).
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-03-26 21:30 EDT - Codex
+Last updated: 2026-03-26 21:43 EDT - Codex
+- Completion notes:
+  - Completed the remaining phased route-coverage program across `T447-subA` through `T447-subI`, adding direct route-level regression files for the prioritized high-traffic, observability, inventory, and remediation surfaces that were still missing focused tests.
+  - The final three batches (`subG`, `subH`, `subI`) added 14 new route-test files covering `audio_diagnostics.py`, `audio_path.py`, `upload.py`, `plugin_scanner.py`, `monitoring.py`, `network.py`, `ssh_trust.py`, `system_tests.py`, `websocket_rt.py`, `cluster_nodes.py`, `cluster_plugin_inventory.py`, `nodes.py`, `packages.py`, and `platform_remediation.py`.
+  - The route-test expansion also locked in three reproduced route fixes during the wider `T447` program: `app/routes/midi_cluster_proxy.py` now forwards upstream bodies/statuses correctly, `app/routes/plugin_tags.py` refreshes ORM rows after async commits, and `app/routes/audio_diagnostics.py` preserves validation `HTTPException`s while importing `asyncio` for measurement execution.
+  - Validation: the focused pytest slices recorded under `T447-subA` through `T447-subI` all passed; the final three completion slices passed with `11`, `13`, and `13` tests respectively.
+  - Licensing review: all touched backend/test/worklist files across the completed `T447` slices remain MAP2-owned AGPL-covered repository artifacts with no new third-party override gaps; reused the latest scans `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`.
 
 ID: T448
 Status: [✓] Done
