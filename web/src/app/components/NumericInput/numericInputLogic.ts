@@ -37,11 +37,23 @@ export function clampNumericValue(value: number, descriptor: ParameterDescriptor
 }
 
 export function getFineStep(descriptor: ParameterDescriptor): number {
+  if (Number.isFinite(descriptor.fineStep) && (descriptor.fineStep as number) > 0) {
+    return descriptor.fineStep as number
+  }
+
   const divisor = sensitivityProfiles[descriptor.profile]?.fineDivisor ?? 10
   if (divisor <= 1) {
     return descriptor.step
   }
   return descriptor.step / divisor
+}
+
+export function getLargeStep(descriptor: ParameterDescriptor): number {
+  if (Number.isFinite(descriptor.largeStep) && (descriptor.largeStep as number) > 0) {
+    return descriptor.largeStep as number
+  }
+
+  return descriptor.step * 10
 }
 
 export function getEffectiveStep(descriptor: ParameterDescriptor, modifiers?: NumericInputModifiers): number {

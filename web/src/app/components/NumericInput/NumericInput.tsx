@@ -13,8 +13,18 @@ import {
   type WheelEvent,
 } from 'react'
 
-import { sensitivityProfiles, type ParameterDescriptor } from '../../data/parameterSchema'
-import { applyNumericDelta, clampNumericValue, quantizeToStep } from './numericInputLogic'
+import {
+  sensitivityProfiles,
+  type ParameterCommitStrategy,
+  type ParameterDescriptor,
+} from '../../data/parameterSchema'
+import {
+  applyNumericDelta,
+  clampNumericValue,
+  getFineStep,
+  getLargeStep,
+  quantizeToStep,
+} from './numericInputLogic'
 import './NumericInput.css'
 
 export interface NumericInputProps {
@@ -22,6 +32,7 @@ export interface NumericInputProps {
   value: number
   onChange: (value: number) => void
   onChangeEnd?: (value: number) => void
+  commitStrategy?: ParameterCommitStrategy | 'legacy'
   label?: string
   ariaLabel?: string
   accentColor?: string
@@ -82,6 +93,7 @@ export function NumericInput({
   value,
   onChange,
   onChangeEnd,
+  commitStrategy = 'legacy',
   label,
   ariaLabel,
   accentColor = '#0f62fe',
@@ -98,7 +110,9 @@ export function NumericInput({
   const labelId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const lastCommittedValueRef = useRef(value)
+  const liveValueRef = useRef(value)
   const lastWheelTsRef = useRef<number>(0)
+  const wheelCommitTimeoutRef = useRef<number | null>(null)
   const touchDragRef = useRef<TouchDragState | null>(null)
   const activeTouchIdsRef = useRef<Set<number>>(new Set())
 
@@ -114,6 +128,7 @@ export function NumericInput({
     () => quantizeToStep(clampNumericValue(value, descriptor), descriptor),
     [descriptor, value],
   )
+  const usesDeferredCommit = commitStrategy !== 'legacy'
 
   const formatDisplayValue = useCallback((nextValue: number) => {
     return valueFormatter ? valueFormatter(nextValue) : formatRawValue(nextValue, descriptor)
@@ -123,12 +138,31 @@ export function NumericInput({
     setInputText(focused ? formatRawValue(nextValue, descriptor) : formatDisplayValue(nextValue))
   }, [descriptor, formatDisplayValue, isFocused])
 
-  useEffect(() => {
-    lastCommittedValueRef.current = currentValue
-    if (!isFocused && !isTouchDragging) {
-      syncDisplayedValue(currentValue, false)
+  const clearPendingWheelCommit = useCallback(() => {
+    if (wheelCommitTimeoutRef.current != null) {
+      window.clearTimeout(wheelCommitTimeoutRef.current)
+      wheelCommitTimeoutRef.current = null
     }
-  }, [currentValue, isFocused, isTouchDragging, syncDisplayedValue])
+  }, [])
+
+  useEffect(() => {
+    if (!usesDeferredCommit || (!isFocused && !isTouchDragging)) {
+      lastCommittedValueRef.current = currentValue
+      liveValueRef.current = currentValue
+      if (!isFocused && !isTouchDragging) {
+        syncDisplayedValue(currentValue, false)
+      }
+      return
+    }
+
+    liveValueRef.current = currentValue
+  }, [currentValue, isFocused, isTouchDragging, syncDisplayedValue, usesDeferredCommit])
+
+  useEffect(() => {
+    return () => {
+      clearPendingWheelCommit()
+    }
+  }, [clearPendingWheelCommit])
 
   const emitCommittedValue = useCallback((nextValue: number, notifyEnd = false) => {
     const normalized = quantizeToStep(clampNumericValue(nextValue, descriptor), descriptor)
@@ -136,6 +170,7 @@ export function NumericInput({
     const changed = Math.abs(normalized - previous) > 1e-9
 
     lastCommittedValueRef.current = normalized
+    liveValueRef.current = normalized
 
     if (changed) {
       onChange(normalized)
@@ -150,23 +185,79 @@ export function NumericInput({
     return normalized
   }, [descriptor, onChange, onChangeEnd, syncDisplayedValue])
 
+  const emitLiveValue = useCallback((nextValue: number) => {
+    const normalized = quantizeToStep(clampNumericValue(nextValue, descriptor), descriptor)
+    const previous = liveValueRef.current
+    const changed = Math.abs(normalized - previous) > 1e-9
+
+    liveValueRef.current = normalized
+
+    if (changed) {
+      onChange(normalized)
+    }
+
+    syncDisplayedValue(normalized)
+    return normalized
+  }, [descriptor, onChange, syncDisplayedValue])
+
+  const commitLiveValue = useCallback((nextValue = liveValueRef.current) => {
+    const normalized = quantizeToStep(clampNumericValue(nextValue, descriptor), descriptor)
+    const previous = lastCommittedValueRef.current
+    const changed = Math.abs(normalized - previous) > 1e-9
+
+    liveValueRef.current = normalized
+    lastCommittedValueRef.current = normalized
+    syncDisplayedValue(normalized)
+
+    if (changed) {
+      onChangeEnd?.(normalized)
+    }
+
+    return normalized
+  }, [descriptor, onChangeEnd, syncDisplayedValue])
+
+  const revertToCommittedValue = useCallback(() => {
+    liveValueRef.current = lastCommittedValueRef.current
+    syncDisplayedValue(lastCommittedValueRef.current, false)
+    setIsFocused(false)
+    clearPendingWheelCommit()
+  }, [clearPendingWheelCommit, syncDisplayedValue])
+
   const commitInputText = useCallback((notifyEnd = true) => {
     const parsed = parseInputValue(inputText.trim())
     const nextValue = parsed == null ? lastCommittedValueRef.current : parsed
-    const committed = emitCommittedValue(nextValue, notifyEnd)
+    const committed = usesDeferredCommit
+      ? (() => {
+          const live = emitLiveValue(nextValue)
+          return notifyEnd ? commitLiveValue(live) : live
+        })()
+      : emitCommittedValue(nextValue, notifyEnd)
     syncDisplayedValue(committed, false)
     setIsFocused(false)
+    clearPendingWheelCommit()
     return committed
-  }, [emitCommittedValue, inputText, syncDisplayedValue])
+  }, [
+    clearPendingWheelCommit,
+    commitLiveValue,
+    emitCommittedValue,
+    emitLiveValue,
+    inputText,
+    syncDisplayedValue,
+    usesDeferredCommit,
+  ])
 
   const handleFocus = useCallback(() => {
     setIsFocused(true)
-    setInputText(formatRawValue(lastCommittedValueRef.current, descriptor))
+    setInputText(formatRawValue(liveValueRef.current, descriptor))
   }, [descriptor])
 
   const handleBlur = useCallback(() => {
+    if (commitStrategy === 'explicit') {
+      revertToCommittedValue()
+      return
+    }
     commitInputText(true)
-  }, [commitInputText])
+  }, [commitInputText, commitStrategy, revertToCommittedValue])
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(event.target.value)
@@ -182,7 +273,7 @@ export function NumericInput({
     }
 
     const fine = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey
-    const baseValue = lastCommittedValueRef.current
+    const baseValue = usesDeferredCommit ? liveValueRef.current : lastCommittedValueRef.current
 
     if (event.key === 'Enter') {
       event.preventDefault()
@@ -193,36 +284,73 @@ export function NumericInput({
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      syncDisplayedValue(baseValue, false)
-      setIsFocused(false)
+      revertToCommittedValue()
       inputRef.current?.blur()
       return
     }
 
     if (event.key === 'Home') {
       event.preventDefault()
-      handleDiscreteValue(descriptor.min)
+      if (usesDeferredCommit) {
+        emitLiveValue(descriptor.min)
+      } else {
+        handleDiscreteValue(descriptor.min)
+      }
       return
     }
 
     if (event.key === 'End') {
       event.preventDefault()
-      handleDiscreteValue(descriptor.max)
+      if (usesDeferredCommit) {
+        emitLiveValue(descriptor.max)
+      } else {
+        handleDiscreteValue(descriptor.max)
+      }
       return
     }
 
-    if (event.key === 'ArrowUp' || event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'ArrowLeft') {
+    if (
+      event.key === 'ArrowUp'
+      || event.key === 'ArrowRight'
+      || event.key === 'ArrowDown'
+      || event.key === 'ArrowLeft'
+      || event.key === 'PageUp'
+      || event.key === 'PageDown'
+    ) {
       event.preventDefault()
-      const deltaSteps = event.key === 'ArrowUp' || event.key === 'ArrowRight' ? 1 : -1
-      const nextValue = applyNumericDelta({
-        value: baseValue,
-        deltaSteps,
-        descriptor,
-        modifiers: { fine },
-      })
-      handleDiscreteValue(nextValue)
+      const isIncrement = event.key === 'ArrowUp' || event.key === 'ArrowRight' || event.key === 'PageUp'
+      const direction = isIncrement ? 1 : -1
+      const nextValue = event.key === 'PageUp' || event.key === 'PageDown'
+        ? quantizeToStep(
+            clampNumericValue(
+              baseValue + direction * (fine ? getFineStep(descriptor) : getLargeStep(descriptor)),
+              descriptor,
+            ),
+            descriptor,
+            fine ? getFineStep(descriptor) : getLargeStep(descriptor),
+          )
+        : applyNumericDelta({
+            value: baseValue,
+            deltaSteps: direction,
+            descriptor,
+            modifiers: { fine },
+          })
+
+      if (usesDeferredCommit) {
+        emitLiveValue(nextValue)
+      } else {
+        handleDiscreteValue(nextValue)
+      }
     }
-  }, [commitInputText, descriptor, disabled, handleDiscreteValue, syncDisplayedValue])
+  }, [
+    commitInputText,
+    descriptor,
+    disabled,
+    emitLiveValue,
+    handleDiscreteValue,
+    revertToCommittedValue,
+    usesDeferredCommit,
+  ])
 
   const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
     if (disabled) {
@@ -247,8 +375,30 @@ export function NumericInput({
       velocity,
     })
 
+    if (usesDeferredCommit) {
+      emitLiveValue(nextValue)
+      clearPendingWheelCommit()
+      if (commitStrategy !== 'explicit') {
+        wheelCommitTimeoutRef.current = window.setTimeout(() => {
+          commitLiveValue(nextValue)
+          wheelCommitTimeoutRef.current = null
+        }, 180)
+      }
+      return
+    }
+
     emitCommittedValue(nextValue, true)
-  }, [descriptor, disabled, emitCommittedValue, profileConfig.wheelStep])
+  }, [
+    clearPendingWheelCommit,
+    commitLiveValue,
+    commitStrategy,
+    descriptor,
+    disabled,
+    emitCommittedValue,
+    emitLiveValue,
+    profileConfig.wheelStep,
+    usesDeferredCommit,
+  ])
 
   const clearTouchPointer = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     activeTouchIdsRef.current.delete(event.pointerId)
@@ -256,13 +406,19 @@ export function NumericInput({
     if (touchDragRef.current?.pointerId === event.pointerId) {
       touchDragRef.current = null
       setIsTouchDragging(false)
-      onChangeEnd?.(lastCommittedValueRef.current)
+      if (usesDeferredCommit) {
+        if (commitStrategy !== 'explicit') {
+          commitLiveValue()
+        }
+      } else {
+        onChangeEnd?.(lastCommittedValueRef.current)
+      }
     }
 
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
-  }, [onChangeEnd])
+  }, [commitLiveValue, commitStrategy, onChangeEnd, usesDeferredCommit])
 
   const beginTouchDrag = useCallback((pointerId: number, clientY: number) => {
     activeTouchIdsRef.current.add(pointerId)
@@ -291,8 +447,12 @@ export function NumericInput({
       descriptor,
       modifiers: { fine },
     })
+    if (usesDeferredCommit) {
+      emitLiveValue(nextValue)
+      return
+    }
     emitCommittedValue(nextValue, false)
-  }, [descriptor, disabled, emitCommittedValue, profileConfig.pixelsPerStep])
+  }, [descriptor, disabled, emitCommittedValue, emitLiveValue, profileConfig.pixelsPerStep, usesDeferredCommit])
 
   const finishTouchDrag = useCallback((pointerId: number) => {
     activeTouchIdsRef.current.delete(pointerId)
@@ -300,9 +460,15 @@ export function NumericInput({
     if (touchDragRef.current?.pointerId === pointerId) {
       touchDragRef.current = null
       setIsTouchDragging(false)
-      onChangeEnd?.(lastCommittedValueRef.current)
+      if (usesDeferredCommit) {
+        if (commitStrategy !== 'explicit') {
+          commitLiveValue()
+        }
+      } else {
+        onChangeEnd?.(lastCommittedValueRef.current)
+      }
     }
-  }, [onChangeEnd])
+  }, [commitLiveValue, commitStrategy, onChangeEnd, usesDeferredCommit])
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const pointerType = event.pointerType || 'touch'
@@ -366,14 +532,29 @@ export function NumericInput({
     if (disabled) {
       return
     }
+    clearPendingWheelCommit()
+    if (usesDeferredCommit) {
+      emitLiveValue(descriptor.defaultValue)
+      commitLiveValue(descriptor.defaultValue)
+      return
+    }
     emitCommittedValue(descriptor.defaultValue, true)
-  }, [descriptor.defaultValue, disabled, emitCommittedValue])
+  }, [
+    clearPendingWheelCommit,
+    commitLiveValue,
+    descriptor.defaultValue,
+    disabled,
+    emitCommittedValue,
+    emitLiveValue,
+    usesDeferredCommit,
+  ])
 
-  const progress = clamp01((lastCommittedValueRef.current - descriptor.min) / (descriptor.max - descriptor.min))
+  const renderedValue = usesDeferredCommit ? liveValueRef.current : lastCommittedValueRef.current
+  const progress = clamp01((renderedValue - descriptor.min) / (descriptor.max - descriptor.min))
   const metaMin = formatRawValue(descriptor.min, descriptor)
   const metaDefault = formatRawValue(descriptor.defaultValue, descriptor)
   const metaMax = formatRawValue(descriptor.max, descriptor)
-  const describedValue = formatDisplayValue(lastCommittedValueRef.current)
+  const describedValue = formatDisplayValue(renderedValue)
 
   return (
     <div
@@ -438,7 +619,7 @@ export function NumericInput({
           aria-labelledby={showLabel && label ? labelId : undefined}
           aria-valuemin={descriptor.min}
           aria-valuemax={descriptor.max}
-          aria-valuenow={lastCommittedValueRef.current}
+          aria-valuenow={renderedValue}
           aria-valuetext={descriptor.unit ? `${describedValue} ${descriptor.unit}` : describedValue}
         />
         {descriptor.unit && <span className="numeric-input__unit" aria-hidden="true">{descriptor.unit}</span>}

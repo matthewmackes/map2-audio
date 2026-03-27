@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 
 import { createParameterDescriptor, type SensitivityProfile } from '../../app/data/parameterSchema'
-import { NumericInput } from '../../app/components/NumericInput/NumericInput'
+import { ParameterNumericInput } from '../../app/components/ParameterControl'
 
 interface NumberInputProps {
   label?: string
@@ -64,13 +64,14 @@ export function NumberInput({
 
   return (
     <div style={{ width: fullWidth ? '100%' : undefined, ...(sx as CSSProperties) }}>
-      <NumericInput
+      <ParameterNumericInput
         label={label}
         ariaLabel={label}
         descriptor={descriptor}
         value={value}
-        onChange={(nextValue) => onChange?.(nextValue)}
-        onChangeEnd={(nextValue) => onChangeCommitted?.(nextValue)}
+        onLiveChange={(nextValue) => onChange?.(nextValue)}
+        onCommit={(nextValue) => onChangeCommitted?.(nextValue)}
+        commitStrategy="legacy"
         disabled={disabled}
         size={size}
         showLabel={showLabel}

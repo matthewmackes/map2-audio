@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 import { createParameterDescriptor } from '../../data/parameterSchema'
 import { NumericInput } from './NumericInput'
@@ -193,5 +193,68 @@ describe('NumericInput', () => {
     expect(onChange.mock.calls[1][0]).toBeLessThan(0.51)
     expect(onChangeEnd).toHaveBeenCalledTimes(1)
     expect(onChangeEnd.mock.calls[0][0]).toBe(onChange.mock.calls[1][0])
+  })
+
+  it('defers commit notifications until blur when using blur commit strategy', () => {
+    const onChange = jest.fn()
+    const onChangeEnd = jest.fn()
+
+    render(
+      <NumericInput
+        label="Calibration"
+        descriptor={createParameterDescriptor({ min: 0, max: 127, step: 1, defaultValue: 2, profile: 'integer' })}
+        value={2}
+        onChange={onChange}
+        onChangeEnd={onChangeEnd}
+        commitStrategy="blur"
+      />,
+    )
+
+    const input = screen.getByRole('slider', { name: 'Calibration' })
+    fireEvent.focus(input)
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+
+    expect(onChange).toHaveBeenLastCalledWith(3)
+    expect(onChangeEnd).not.toHaveBeenCalled()
+
+    fireEvent.blur(input)
+
+    expect(onChangeEnd).toHaveBeenCalledTimes(1)
+    expect(onChangeEnd).toHaveBeenLastCalledWith(3)
+  })
+
+  it('commits wheel changes after idle timeout when using idle commit strategy', () => {
+    jest.useFakeTimers()
+
+    const onChange = jest.fn()
+    const onChangeEnd = jest.fn()
+
+    const { container } = render(
+      <NumericInput
+        label="Wheel"
+        descriptor={createParameterDescriptor({ min: 0, max: 100, step: 5, defaultValue: 50, unit: '%' })}
+        value={50}
+        onChange={onChange}
+        onChangeEnd={onChangeEnd}
+        commitStrategy="idle"
+      />,
+    )
+
+    const control = container.querySelector('.numeric-input__control')
+    expect(control).not.toBeNull()
+
+    fireEvent.wheel(control!, { deltaY: -100 })
+
+    expect(onChange).toHaveBeenLastCalledWith(55)
+    expect(onChangeEnd).not.toHaveBeenCalled()
+
+    act(() => {
+      jest.advanceTimersByTime(200)
+    })
+
+    expect(onChangeEnd).toHaveBeenCalledTimes(1)
+    expect(onChangeEnd).toHaveBeenLastCalledWith(55)
+
+    jest.useRealTimers()
   })
 })

@@ -3,7 +3,10 @@ import {
   getParameterDescriptor,
   hydrateParameterSchema,
   hasParameterDescriptor,
+  inferParameterClassification,
+  inferParameterScale,
   inferSensitivityProfile,
+  normalizeParameterDescriptor,
   requireParameterDescriptor,
   resetParameterSchema,
   sensitivityProfiles,
@@ -69,13 +72,16 @@ describe('parameterSchema', () => {
       },
     })
 
-    expect(getParameterDescriptor('lv2://plate', 'mix')).toEqual({
+    expect(getParameterDescriptor('lv2://plate', 'mix')).toMatchObject({
       min: 0,
       max: 100,
       step: 1,
       unit: '%',
       defaultValue: 50,
       profile: 'default',
+      scale: 'linear',
+      classification: 'STEPPED_NUMERIC',
+      commitStrategy: 'pointer-up',
     })
     expect(getParameterDescriptor('juce-grid', 'dryWet')).toEqual(parameterSchema['juce-grid:dryWet'])
   })
@@ -84,6 +90,30 @@ describe('parameterSchema', () => {
     expect(inferSensitivityProfile({ min: 0, max: 1, unit: '', name: 'Mix', symbol: 'mix' })).toBe('normalized_0_1')
     expect(inferSensitivityProfile({ min: 20, max: 20_000, unit: 'Hz', name: 'Cutoff', symbol: 'cutoff' })).toBe('frequency')
     expect(inferSensitivityProfile({ min: -24, max: 12, unit: 'dB', name: 'Output Gain', symbol: 'gain' })).toBe('gain-db')
+  })
+
+  it('infers scale and classification hints for log and calibration controls', () => {
+    expect(inferParameterScale({ profile: 'frequency', name: 'Frequency', symbol: 'freq', unit: 'Hz' })).toBe('log')
+    expect(inferParameterClassification({
+      min: 20,
+      max: 20_000,
+      step: 1,
+      profile: 'frequency',
+      scale: 'log',
+      name: 'Frequency',
+      symbol: 'freq',
+      unit: 'Hz',
+    })).toBe('CONTINUOUS_LOG')
+    expect(inferParameterClassification({
+      min: 0,
+      max: 127,
+      step: 1,
+      profile: 'integer',
+      scale: 'linear',
+      name: 'Deadzone Low',
+      symbol: 'deadzone_low',
+      unit: '',
+    })).toBe('CALIBRATION')
   })
 
   it('creates parameter descriptors with inferred profile config defaults', () => {
@@ -98,6 +128,27 @@ describe('parameterSchema', () => {
     expect(descriptor.profile).toBe('normalized_0_1')
     expect(descriptor.step).toBe(0.01)
     expect(descriptor.defaultValue).toBe(0.5)
+    expect(descriptor.scale).toBe('linear')
+    expect(descriptor.precision).toBe(2)
+    expect(descriptor.fineStep).toBe(0.0005)
+    expect(descriptor.largeStep).toBe(0.1)
+    expect(descriptor.commitStrategy).toBe('pointer-up')
     expect(sensitivityProfiles[descriptor.profile].fineDivisor).toBe(20)
+  })
+
+  it('normalizes calibration descriptors with blur commit semantics', () => {
+    const descriptor = normalizeParameterDescriptor({
+      min: 0,
+      max: 127,
+      step: 1,
+      defaultValue: 2,
+      name: 'Deadzone Low',
+      symbol: 'deadzone_low',
+    })
+
+    expect(descriptor.classification).toBe('CALIBRATION')
+    expect(descriptor.commitStrategy).toBe('blur')
+    expect(descriptor.fineStep).toBe(1)
+    expect(descriptor.largeStep).toBe(10)
   })
 })

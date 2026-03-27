@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 runtime-identity closeout)
+> **Last Updated**: March 27, 2026 (parameter-control runtime pilot)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1263,6 +1263,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py tests/test_plugin_parameter_route_identity.py tests/test_filters_route_identity.py tests/test_dynamics_route_identity.py tests/test_pitch_modulation_route_identity.py tests/test_multi_effect_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedModulationCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedAmbientCards.test.tsx`; `npm --prefix web run typecheck`
 - **Lesson**: In MAP2, a selected-block JUCE surface is only correct when backend route resolution, frontend query keys, and mutation URLs all carry the same runtime identity contract. URI-only access is legacy compatibility, not a safe default for duplicate-capable processors.
 
+**29. Shared Parameter-Control Migrations Must Preserve Legacy Wrapper Semantics Until A Surface Opts In (HIGH - Mar 27, 2026)**
+- **Files**: `web/src/app/components/NumericInput/NumericInput.tsx`, `web/src/app/components/ParameterControl/*`, `web/src/app/components/Controls/NumberInput.tsx`, `web/src/app/components/Controls/ParameterKnob.tsx`, `web/src/app/components/Controls/ParameterSlider.tsx`, `web/src/map2/components/NumberInput.tsx`, `web/src/app/components/MIDICommanderSetup.tsx`
+- **Problem**: The shared parameter-control runtime needs deferred `blur`/`idle` commits for calibration and future pilot controls, but most existing wrappers still assume the old eager callback contract.
+- **Root Cause**: The app’s original `NumericInput` primitive collapsed live and committed values into one path, so wrappers like `NumberInput` and `ParameterKnob` fire their current side effects on every accepted change.
+- **Fix**: Keep `NumericInput` in `legacy` mode by default, add explicit non-legacy commit strategies (`blur`, `idle`, `explicit`) for the new shared `ParameterControl` family, and route the old wrappers through the shared runtime with `legacy` semantics until each surface is migrated intentionally.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/ParameterControl/scale.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/components/LV2PluginParameterEditor.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In MAP2, shared control refactors must separate runtime capability from migration timing. Do not globally flip wrapper semantics when introducing the new control stack; opt individual surfaces into non-legacy commit behavior only when their side effects are ready for it.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1533,6 +1541,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Shared Parameter-Control Runtime + Calibration Pilot
+- **Section**: Gotchas & Learned Fixes (#29), User Preferences
+- **Change**: Documented the migration rule that old numeric wrappers must stay in `legacy` commit mode while the new `ParameterControl` family opts selected surfaces into `blur`/`idle` commit behavior, and captured the first calibration pilot on `MIDICommanderSetup`.
+- **Reason**: The parameter-control runtime work introduced deferred commit semantics needed by calibration fields, but changing the legacy wrappers globally would have pushed incompatible behavior into dozens of existing surfaces that still expect eager updates.
+- **Impact**: Future parameter-control migrations can reuse the shared runtime immediately without risking broad behavior drift; new surfaces opt in deliberately, and legacy wrappers stay stable until their own pilot task closes.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/NumericInput/NumericInput.tsx`, `web/src/app/components/ParameterControl/*`, `web/src/app/components/Controls/NumberInput.tsx`, `web/src/app/components/Controls/ParameterKnob.tsx`, `web/src/app/components/Controls/ParameterSlider.tsx`, `web/src/map2/components/NumberInput.tsx`, `web/src/app/components/MIDICommanderSetup.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Complete T453 Runtime-Identity Closeout
 - **Section**: Gotchas & Learned Fixes (#28), User Preferences, Python Backend Gotchas, React/TypeScript Gotchas

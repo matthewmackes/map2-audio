@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T454 stable integration coverage refreshed
+Last updated: 2026-03-27 - parameter-control runtime and calibration pilot advanced
 
 ID: T453
 Status: [✓] Done
@@ -8189,7 +8189,7 @@ Last updated: 2026-03-27 14:13 EDT - Codex
 ## Epic: Parameter Control Runtime
 
 ID: T456
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Normalize missing parameter metadata for the shared parameter-control runtime
 Description:
 - Goal / acceptance criteria: Add or backfill missing defaults, explicit scale declarations, display precision, fine-step and large-step values, and commit-policy hints for runtime-driven parameter surfaces such as JUCE Grid, MPX1, IntelFX, LV2, and dynamic Tesira editors.
@@ -8197,12 +8197,18 @@ Description:
 - Dependencies: T455; existing planning artifacts in `docs/audits/numeric-controls-audit.md`, `docs/specs/parameter-control-standard.md`, and `docs/architecture/parameter-controls.md`
 - Estimated effort: Medium
 - Required outputs: Updated runtime parameter metadata contracts and follow-up implementation notes.
-Subtasks: None
+Subtasks:
+- T456-subA: [✓] Done - extend `ParameterDescriptor` / seed normalization for scale, classification, precision, fine-step, large-step, and commit-policy defaults
+- T456-subB: [ ] Todo - seed canonical metadata for the first pilot controls and runtime-derived parameter editors
 Assigned to: Unassigned
-Last updated: 2026-03-27 14:11 EDT - Codex
+Last updated: 2026-03-27 15:52 EDT - Codex
+- Progress notes:
+  - Extended `web/src/app/data/parameterSchema.ts` so runtime descriptors can now normalize missing `scale`, `precision`, `fineStep`, `largeStep`, `classification`, and `commitStrategy` metadata instead of leaving those semantics implicit in individual surfaces.
+  - Added focused regression coverage in `web/src/app/data/parameterSchema.test.ts` and `web/src/app/hooks/useParameterSchema.test.tsx` for normalized runtime hydration, log/calibration classification hints, and commit-policy defaults.
+  - The first shared runtime slice now consumes the normalized metadata directly: `web/src/app/components/NumericInput/NumericInput.tsx` respects non-legacy `commitStrategy`, `fineStep`, and `largeStep`, which keeps the remaining metadata-seeding work (`T456-subB`) focused on surface-specific canonical overrides instead of core control behavior.
 
 ID: T457
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement the shared live/commit parameter-control runtime
 Description:
 - Goal / acceptance criteria: Build the shared interaction hook, scale utilities, formatter/parser utilities, dispatch layer, and the new `ParameterControl` family without regressing keyboard or accessibility behavior.
@@ -8210,12 +8216,21 @@ Description:
 - Dependencies: T456; `docs/specs/parameter-control-standard.md`; `docs/architecture/parameter-controls.md`
 - Estimated effort: High
 - Required outputs: Shared component/runtime implementation, focused tests, and backwards-compatible wrappers for staged migration.
-Subtasks: None
+Subtasks:
+- T457-subA: [✓] Done - add shared scale/format/dispatch utilities plus the `ParameterControl` family scaffold
+- T457-subB: [✓] Done - add the interaction runtime with live/commit sequencing tests and compatibility wrappers
 Assigned to: Unassigned
-Last updated: 2026-03-27 14:11 EDT - Codex
+Last updated: 2026-03-27 15:52 EDT - Codex
+- Completion notes:
+  - Added the shared runtime under `web/src/app/components/ParameterControl/*`, including scale normalization (`scale.ts`), formatter/parser helpers (`format.ts`), live/commit dispatch helpers (`dispatch.ts`), the shared state hook (`useParameterControlState.ts`), and the first `ParameterControl` / `ParameterKnob` / `ParameterSlider` / `ParameterNumericInput` / `ParameterValueDisplay` family scaffold.
+  - Extended `web/src/app/components/NumericInput/NumericInput.tsx` so the existing primitive now supports non-breaking commit strategies (`legacy`, `blur`, `idle`, `explicit`), large-step keyboard movement, and deferred commit behavior without regressing the current wrapper surfaces that still need legacy semantics.
+  - Rewired `web/src/app/components/Controls/NumberInput.tsx`, `web/src/app/components/Controls/ParameterKnob.tsx`, `web/src/app/components/Controls/ParameterSlider.tsx`, and `web/src/map2/components/NumberInput.tsx` onto the shared runtime in `legacy` mode so staged migrations can opt into the new live/commit contract without forcing a hard cut-over across the app.
+  - Added focused regression coverage in `web/src/app/components/ParameterControl/scale.test.ts`, `web/src/app/components/ParameterControl/ParameterControl.test.tsx`, and `web/src/app/components/NumericInput/NumericInput.test.tsx` for scale round-tripping, blur-driven commit sequencing, idle wheel commit behavior, and compatibility-safe keyboard semantics.
+  - Licensing review: touched frontend/worklist/instructions/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/ParameterControl/scale.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/hooks/useParameterSchema.test.tsx` -> PASS (`25 passed`); `npm --prefix web test -- --runInBand web/src/app/components/LV2PluginParameterEditor.test.tsx` -> PASS (`3 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T458
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Migrate the first four pilot parameter-control surfaces to the shared system
 Description:
 - Goal / acceptance criteria: Replace the four selected pilot surfaces with the new control system, preserving correct engine behavior while adding explicit live/commit semantics. Initial pilot targets are `DrumsPage` swing, `EQCard` frequency, `PassionFXCard` stages, and `MIDICommanderSetup` deadzone fields as documented in `docs/migration/parameter-controls-phase1.md`.
@@ -8223,9 +8238,16 @@ Description:
 - Dependencies: T457; `docs/migration/parameter-controls-phase1.md`
 - Estimated effort: Medium
 - Required outputs: Pilot control migrations, focused tests, and migration notes for the next wave.
-Subtasks: None
+Subtasks:
+- T458-subA: [ ] Todo - migrate `DrumsPage` swing to the shared slider control
+- T458-subB: [ ] Todo - migrate `EQCard` frequency and `PassionFXCard` stages to the shared knob control
+- T458-subC: [✓] Done - migrate `MIDICommanderSetup` deadzone fields to the shared numeric control
 Assigned to: Unassigned
-Last updated: 2026-03-27 14:11 EDT - Codex
+Last updated: 2026-03-27 15:52 EDT - Codex
+- Progress notes:
+  - Migrated the `MIDICommanderSetup` calibration deadzone fields in `web/src/app/components/MIDICommanderSetup.tsx` from the legacy numeric wrapper to the shared `ParameterControl` numeric variant, using blur commit semantics plus local draft state so the backend calibration mutation only fires once per finalized edit.
+  - Added pair-safe deadzone normalization in `web/src/app/components/MIDICommanderSetup.tsx` so `deadzone_low` can never exceed `deadzone_high` and vice versa, with the clamp happening inside the local draft before the committed mutation payload is emitted.
+  - Added focused regression coverage in `web/src/app/components/MIDICommanderSetup.test.tsx` for blur-only commit behavior and high/low deadzone clamping.
 
 ID: T459
 Status: [ ] Todo

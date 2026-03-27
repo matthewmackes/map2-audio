@@ -5,7 +5,7 @@
  * and firmware update capabilities for the MeloAudio MIDI Commander.
  */
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -25,7 +25,6 @@ import {
   StepLabel,
   StepContent,
 } from '@mui/material'
-import { NumberInput } from '../../map2/components/NumberInput'
 import {
   ChevronDown,
   ChevronRight,
@@ -43,6 +42,8 @@ import type {
   FootswitchConfig,
   ExpressionPedalConfig,
 } from '../../map2/types'
+import { createParameterDescriptor } from '../data/parameterSchema'
+import { ParameterControl } from './ParameterControl'
 import { useToasts } from './Toasts'
 
 // ============================================================================
@@ -268,7 +269,87 @@ interface ExpressionCalibrationPanelProps {
   onUpdate: (updates: Partial<ExpressionCalibration>) => void
 }
 
-function ExpressionCalibrationPanel({
+const DEFAULT_EXPRESSION_CALIBRATION: ExpressionCalibration = {
+  min_raw: 0,
+  max_raw: 127,
+  deadzone_low: 2,
+  deadzone_high: 125,
+  curve: 'linear',
+  invert: false,
+}
+
+const DEADZONE_LOW_DESCRIPTOR = createParameterDescriptor({
+  min: 0,
+  max: 127,
+  step: 1,
+  defaultValue: 2,
+  name: 'Low',
+  symbol: 'deadzone_low',
+  profile: 'integer',
+  classification: 'CALIBRATION',
+  fineStep: 1,
+  largeStep: 8,
+  commitStrategy: 'blur',
+})
+
+const DEADZONE_HIGH_DESCRIPTOR = createParameterDescriptor({
+  min: 0,
+  max: 127,
+  step: 1,
+  defaultValue: 125,
+  name: 'High',
+  symbol: 'deadzone_high',
+  profile: 'integer',
+  classification: 'CALIBRATION',
+  fineStep: 1,
+  largeStep: 8,
+  commitStrategy: 'blur',
+})
+
+function normalizeCalibrationPair(calibration: ExpressionCalibration): ExpressionCalibration {
+  const deadzoneLow = Math.max(0, Math.min(127, Math.round(calibration.deadzone_low)))
+  const deadzoneHigh = Math.max(deadzoneLow, Math.min(127, Math.round(calibration.deadzone_high)))
+
+  return {
+    ...calibration,
+    deadzone_low: deadzoneLow,
+    deadzone_high: deadzoneHigh,
+  }
+}
+
+function applyCalibrationUpdates(
+  calibration: ExpressionCalibration,
+  updates: Partial<ExpressionCalibration>,
+): ExpressionCalibration {
+  return normalizeCalibrationPair({
+    ...calibration,
+    ...updates,
+  })
+}
+
+function getCalibrationUpdates(
+  previous: ExpressionCalibration,
+  next: ExpressionCalibration,
+): Partial<ExpressionCalibration> {
+  const updates: Partial<ExpressionCalibration> = {}
+
+  if (previous.deadzone_low !== next.deadzone_low) {
+    updates.deadzone_low = next.deadzone_low
+  }
+  if (previous.deadzone_high !== next.deadzone_high) {
+    updates.deadzone_high = next.deadzone_high
+  }
+  if (previous.curve !== next.curve) {
+    updates.curve = next.curve
+  }
+  if (previous.invert !== next.invert) {
+    updates.invert = next.invert
+  }
+
+  return updates
+}
+
+export function ExpressionCalibrationPanel({
   pedalId,
   label,
   calibration,
@@ -277,36 +358,57 @@ function ExpressionCalibrationPanel({
 }: ExpressionCalibrationPanelProps) {
   const [expanded, setExpanded] = useState(false)
 
-  const cal = calibration || {
-    min_raw: 0,
-    max_raw: 127,
-    deadzone_low: 2,
-    deadzone_high: 125,
-    curve: 'linear' as MIDIExpressionCurve,
-    invert: false,
-  }
+  const resolvedCalibration = normalizeCalibrationPair({
+    ...DEFAULT_EXPRESSION_CALIBRATION,
+    ...calibration,
+  })
+  const [draftCalibration, setDraftCalibration] = useState<ExpressionCalibration>(resolvedCalibration)
+
+  useEffect(() => {
+    setDraftCalibration(resolvedCalibration)
+  }, [
+    resolvedCalibration.curve,
+    resolvedCalibration.deadzone_high,
+    resolvedCalibration.deadzone_low,
+    resolvedCalibration.invert,
+    resolvedCalibration.max_raw,
+    resolvedCalibration.min_raw,
+  ])
+
+  const setDraftValue = useCallback((updates: Partial<ExpressionCalibration>) => {
+    setDraftCalibration((previous) => applyCalibrationUpdates(previous, updates))
+  }, [])
+
+  const commitCalibration = useCallback((updates: Partial<ExpressionCalibration>) => {
+    const nextCalibration = applyCalibrationUpdates(draftCalibration, updates)
+    setDraftCalibration(nextCalibration)
+    const changedFields = getCalibrationUpdates(resolvedCalibration, nextCalibration)
+    if (Object.keys(changedFields).length > 0) {
+      onUpdate(changedFields)
+    }
+  }, [draftCalibration, onUpdate, resolvedCalibration])
 
   // Calculate processed value for preview
   const processValue = (raw: number): number => {
     let val = raw
-    if (val < cal.deadzone_low) val = cal.deadzone_low
-    if (val > cal.deadzone_high) val = cal.deadzone_high
+    if (val < draftCalibration.deadzone_low) val = draftCalibration.deadzone_low
+    if (val > draftCalibration.deadzone_high) val = draftCalibration.deadzone_high
 
-    const range = cal.deadzone_high - cal.deadzone_low
+    const range = draftCalibration.deadzone_high - draftCalibration.deadzone_low
     if (range <= 0) return 0
 
-    let normalized = (val - cal.deadzone_low) / range
+    let normalized = (val - draftCalibration.deadzone_low) / range
 
     // Apply curve
-    if (cal.curve === 'logarithmic') {
+    if (draftCalibration.curve === 'logarithmic') {
       normalized = normalized > 0 ? Math.log10(1 + 9 * normalized) : 0
-    } else if (cal.curve === 'exponential') {
+    } else if (draftCalibration.curve === 'exponential') {
       normalized = (Math.pow(10, normalized) - 1) / 9
-    } else if (cal.curve === 's_curve') {
+    } else if (draftCalibration.curve === 's_curve') {
       normalized = 0.5 * (1 + Math.tanh(4 * (normalized - 0.5)))
     }
 
-    if (cal.invert) normalized = 1 - normalized
+    if (draftCalibration.invert) normalized = 1 - normalized
 
     return normalized
   }
@@ -365,23 +467,27 @@ function ExpressionCalibrationPanel({
               Deadzone Range
             </div>
             <div style={{ display: 'flex', gap: 16 }}>
-              <NumberInput
+              <ParameterControl
+                variant="numeric"
                 label="Low"
-                value={cal.deadzone_low}
-                onChange={(v) => onUpdate({ deadzone_low: v })}
-                min={0}
-                max={127}
-                step={1}
+                descriptor={DEADZONE_LOW_DESCRIPTOR}
+                value={draftCalibration.deadzone_low}
+                onLiveChange={(value) => setDraftValue({ deadzone_low: value })}
+                onCommit={(value) => commitCalibration({ deadzone_low: value })}
+                commitStrategy="blur"
                 size="small"
+                showBounds={false}
               />
-              <NumberInput
+              <ParameterControl
+                variant="numeric"
                 label="High"
-                value={cal.deadzone_high}
-                onChange={(v) => onUpdate({ deadzone_high: v })}
-                min={0}
-                max={127}
-                step={1}
+                descriptor={DEADZONE_HIGH_DESCRIPTOR}
+                value={draftCalibration.deadzone_high}
+                onLiveChange={(value) => setDraftValue({ deadzone_high: value })}
+                onCommit={(value) => commitCalibration({ deadzone_high: value })}
+                commitStrategy="blur"
                 size="small"
+                showBounds={false}
               />
             </div>
           </div>
@@ -391,9 +497,9 @@ function ExpressionCalibrationPanel({
             <FormControl fullWidth size="small">
               <InputLabel>Response Curve</InputLabel>
               <Select
-                value={cal.curve}
+                value={draftCalibration.curve}
                 label="Response Curve"
-                onChange={(e) => onUpdate({ curve: e.target.value as MIDIExpressionCurve })}
+                onChange={(e) => commitCalibration({ curve: e.target.value as MIDIExpressionCurve })}
               >
                 <MenuItem value="linear">Linear</MenuItem>
                 <MenuItem value="logarithmic">Logarithmic (Smooth start)</MenuItem>
@@ -407,8 +513,8 @@ function ExpressionCalibrationPanel({
           <FormControlLabel
             control={
               <Switch
-                checked={cal.invert}
-                onChange={(e) => onUpdate({ invert: e.target.checked })}
+                checked={draftCalibration.invert}
+                onChange={(e) => commitCalibration({ invert: e.target.checked })}
               />
             }
             label="Invert Direction"

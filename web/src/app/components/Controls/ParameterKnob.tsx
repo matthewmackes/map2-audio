@@ -1,5 +1,5 @@
 import { createParameterDescriptor } from '../../data/parameterSchema'
-import { NumericInput } from '../NumericInput/NumericInput'
+import { ParameterKnob as SharedParameterKnob } from '../ParameterControl'
 
 interface ParameterKnobProps {
   label: string
@@ -54,13 +54,14 @@ export function ParameterKnob({
   void isLogarithmic
 
   return (
-    <NumericInput
+    <SharedParameterKnob
       label={label}
       ariaLabel={label}
       descriptor={descriptor}
       value={value}
-      onChange={onChange}
-      onChangeEnd={() => onChangeEnd?.()}
+      onLiveChange={onChange}
+      onCommit={() => onChangeEnd?.()}
+      commitStrategy="legacy"
       accentColor={accentColor}
       disabled={disabled}
       size={size}
