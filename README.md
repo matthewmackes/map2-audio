@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**861** Python | **1159** TypeScript | **300** C++/H | **125** Docs | **961** total commits | **3** stars | **0** forks | **0** open issues
+**861** Python | **1161** TypeScript | **300** C++/H | **125** Docs | **966** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`92ad700a`](https://github.com/matthewmackes/map2-audio/commit/92ad700aef2669d3c9ed78ef2bab91c49f24353c) | Fix audio table page build blockers | Map2 Audio | 2026-03-27 |
+| [`f6e1c327`](https://github.com/matthewmackes/map2-audio/commit/f6e1c327c5e688641577a3f6720f341487e9f509) | Add audio table page scaffold | Map2 Audio | 2026-03-27 |
+| [`dc957bec`](https://github.com/matthewmackes/map2-audio/commit/dc957becd9674780c841b9c67a11333d4ad09b86) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-27 |
+| [`ea53ed5a`](https://github.com/matthewmackes/map2-audio/commit/ea53ed5a9a91f91439cec3ead3867f8070d14721) | Sync audio table keyboard scaffold and build version | Map2 Audio | 2026-03-27 |
+| [`3ecd1913`](https://github.com/matthewmackes/map2-audio/commit/3ecd19137fc10355e352bd2fcd5e5d576168b3a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`1c5b6bcf`](https://github.com/matthewmackes/map2-audio/commit/1c5b6bcfce83ac4bc6d09a1e0bcdfe660a2e06f9) | Complete T453 runtime identity routing | Map2 Audio | 2026-03-27 |
 | [`47e265cc`](https://github.com/matthewmackes/map2-audio/commit/47e265cc3dc980a5225868e415420ecd41c8e976) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`f56cd5fc`](https://github.com/matthewmackes/map2-audio/commit/f56cd5fc45f93cba1c31d1f120c23abbd4daca1d) | Scope EQ routes by runtime identity | Map2 Audio | 2026-03-27 |
-| [`5bdea1a0`](https://github.com/matthewmackes/map2-audio/commit/5bdea1a02d8f9eee7e098591a1f497eb8b8c59b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`d39ad720`](https://github.com/matthewmackes/map2-audio/commit/d39ad720955f378fe91cc97b79a10c5220e6a7b5) | Add instance scoped NAM status helpers | Map2 Audio | 2026-03-27 |
-| [`81da9039`](https://github.com/matthewmackes/map2-audio/commit/81da9039d8f1d9014b80995a6d688468cf3b7da9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`5ac374bf`](https://github.com/matthewmackes/map2-audio/commit/5ac374bf1f9185098dc42a7c53b4c8e329a0e891) | Fail closed scoped IR routes | Map2 Audio | 2026-03-27 |
-| [`5043c229`](https://github.com/matthewmackes/map2-audio/commit/5043c229fd6e8182a4a428de798c57a95287f58a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
