@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T453 complete
+Last updated: 2026-03-27 - T454 audio-table scaffold in progress
 
 ID: T453
 Status: [✓] Done
@@ -8126,7 +8126,7 @@ Last updated: 2026-03-25 15:03 EDT - Codex
 ## Epic: AUDIO-TABLE Surface
 
 ID: T454
-Status: [ ] Todo
+Status: [>] In Progress
 Title: AUDIO-TABLE — Carbon DataTable-driven signal flow editor with full JUCE-GRID parity
 Description:
 - Goal / acceptance criteria: Build a new /audio-table page providing a table-driven alternative to /juce-grid, using Carbon DataTables with inline-editable cells (dropdowns, number inputs), configurable dynamic parameter columns, per-flow tables with header rows, full toolbar (routing, presets, undo/redo, automation, search, column picker), MIDI columns, real-time numeric levels, and table-optimized keyboard navigation. Fully shared state with JUCE-GRID (same localStorage keys, same React Query cache). Zero custom CSS files — all styling via Carbon inline overrides.
@@ -8134,7 +8134,7 @@ Description:
 - Estimated effort: X-Large
 
 Subtasks:
-- T454-subA: [ ] Page scaffold — AudioTablePage.tsx with lazy route, nav entry, responsive layout, mobile/tablet handling
+- T454-subA: [✓] Done - Page scaffold — AudioTablePage.tsx with lazy route, nav entry, responsive layout, mobile/tablet handling
 - T454-subB: [ ] Flow table sections — one Carbon DataTable per flow slot with static columns (Position, Name, Bypass, Actions, Input dB, Output dB)
 - T454-subC: [ ] Flow header rows — color label, chain dropdown (CRUD), mute/solo, dry/wet, port dropdowns, remove flow
 - T454-subD: [ ] Shared state integration — read/write same localStorage keys and React Query cache as JUCE-GRID
@@ -8149,4 +8149,9 @@ Subtasks:
 - T454-subM: [ ] Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
 - T454-subN: [ ] Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
 Assigned to: Unassigned
-Last updated: 2026-03-27
+Last updated: 2026-03-27 13:26 EDT - Codex
+- Progress notes:
+  - `/audio-table` route wiring, the advanced-menu entry, the main page scaffold, and the supporting `audioTableColumns.ts` / `audioTableKeyboard.ts` helpers are now present in `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/*`.
+  - The first release-loop deploy for this scaffold failed on real API/type-contract drift in `web/src/app/pages/AudioTablePage.tsx`: it imported `AudioPort` from the wrong module, treated `ChainsResponse`, `PluginDiscoverResponse`, and `AudioPortsResponse` as flat arrays, and called `pluginsApi.setParameterBatched()` with the wrong argument order.
+  - Repaired the current build blockers by sourcing `AudioPort` from `web/src/map2/api.ts`, reading `chainsQuery.data?.chains` / `pluginsQuery.data?.plugins`, flattening audio ports from `portsQuery.data.inputs` and `portsQuery.data.outputs`, and fixing the batched parameter mutation signature while keeping the newer runtime peak-map plumbing intact.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run deploy` -> PASS (bundle `index-Bnwf4JYy.js`, `map2-web-prod.service` active, `http://127.0.0.1:3000/` -> `200`). Additional `T454` subtasks remain open because the page is now deployable but not yet feature-complete.

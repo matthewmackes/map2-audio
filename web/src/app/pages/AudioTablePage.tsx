@@ -67,6 +67,7 @@ import {
   midiApiV2,
   flowSnapshotsApi,
 } from '../../map2/api'
+import type { AudioPort } from '../../map2/api'
 import type {
   Chain,
   Plugin,
@@ -75,7 +76,6 @@ import type {
   HistoryStatus,
   MIDIMappingV2,
   MIDIStatus,
-  AudioPort,
   PeakData,
 } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
@@ -404,7 +404,8 @@ export function AudioTablePage() {
   )
 
   // Plugin outputs for real-time levels
-  const { peaks } = usePluginOutputs()
+  const pluginOutputState = usePluginOutputs()
+  const peaksMap = pluginOutputState.peaks
 
   // Favorites
   const [favorites, setFavorites] = useState<Set<string>>(() => {
@@ -508,8 +509,8 @@ export function AudioTablePage() {
   })
 
   const setParameterMutation = useMutation({
-    mutationFn: async ({ chainId, uri, paramIndex, value }: { chainId: number; uri: string; paramIndex: number; value: number }) => {
-      pluginsApi.setParameterBatched(chainId, uri, paramIndex, value)
+    mutationFn: async ({ uri, paramIndex, value }: { chainId: number; uri: string; paramIndex: number; value: number }) => {
+      pluginsApi.setParameterBatched(uri, paramIndex, value)
       await pluginsApi.flushParameterBatch()
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['chains'] }),
@@ -517,15 +518,9 @@ export function AudioTablePage() {
 
   // ── Derived data ────────────────────────────────────────────────────────
 
-  const chains: Chain[] = useMemo(
-    () => (chainsQuery.data as Chain[] | undefined) ?? [],
-    [chainsQuery.data],
-  )
+  const chains: Chain[] = useMemo(() => chainsQuery.data?.chains ?? [], [chainsQuery.data])
 
-  const allPlugins: Plugin[] = useMemo(
-    () => (pluginsQuery.data as Plugin[] | undefined) ?? [],
-    [pluginsQuery.data],
-  )
+  const allPlugins: Plugin[] = useMemo(() => pluginsQuery.data?.plugins ?? [], [pluginsQuery.data])
 
   const pluginGroups = useMemo(
     () => categorizePlugins(allPlugins, favorites),
@@ -533,7 +528,10 @@ export function AudioTablePage() {
   )
 
   const historyStatus = historyQuery.data as HistoryStatus | undefined
-  const ports = (portsQuery.data as AudioPort[] | undefined) ?? []
+  const ports = useMemo<AudioPort[]>(
+    () => (portsQuery.data ? [...portsQuery.data.inputs, ...portsQuery.data.outputs] : []),
+    [portsQuery.data],
+  )
 
   // Map chain IDs to chains
   const chainMap = useMemo(() => {
@@ -884,7 +882,7 @@ export function AudioTablePage() {
           visibleColumns={visibleColumns}
           dataTableHeaders={dataTableHeaders}
           search={search}
-          peaks={peaks}
+          peaksMap={peaksMap}
           onSearchChange={setSearch}
           onChainAssign={handleChainAssign}
           onMuteToggle={handleMuteToggle}
@@ -935,7 +933,7 @@ interface FlowTableSectionProps {
   visibleColumns: ColumnDef[]
   dataTableHeaders: Array<{ key: string; header: string }>
   search: string
-  peaks: Record<string, { left: number; right: number }> | null
+  peaksMap: Record<string, Record<string, PeakData>>
   onSearchChange: (v: string) => void
   onChainAssign: (flowIndex: number, chainId: number | null) => void
   onMuteToggle: (flowIndex: number) => void
@@ -964,7 +962,7 @@ function FlowTableSection({
   visibleColumns,
   dataTableHeaders,
   search,
-  peaks,
+  peaksMap,
   onSearchChange,
   onChainAssign,
   onMuteToggle,
@@ -987,9 +985,16 @@ function FlowTableSection({
   const rows = useMemo(() => {
     return plugins.map((plugin, rowIdx) => {
       const displayName = getDisplayPluginName(plugin.uri, plugin.name)
-      const peakData = peaks?.[plugin.uri]
-      const inputDb = peakData ? (20 * Math.log10(Math.max(peakData.left, 0.0001))).toFixed(1) : '—'
-      const outputDb = peakData ? (20 * Math.log10(Math.max(peakData.right, 0.0001))).toFixed(1) : '—'
+      const pluginPeaks = peaksMap[plugin.uri] ?? peaksMap[`${plugin.uri}::${plugin.position}`]
+      let inputDb = '—'
+      let outputDb = '—'
+      if (pluginPeaks) {
+        const ports = Object.values(pluginPeaks)
+        const inPort = ports.find(p => p.port_symbol?.includes('in')) ?? ports[0]
+        const outPort = ports.find(p => p.port_symbol?.includes('out')) ?? ports[ports.length > 1 ? 1 : 0]
+        if (inPort) inputDb = (20 * Math.log10(Math.max(inPort.peak, 0.0001))).toFixed(1)
+        if (outPort) outputDb = (20 * Math.log10(Math.max(outPort.peak, 0.0001))).toFixed(1)
+      }
 
       const cells: Record<string, React.ReactNode> = {
         position: (
@@ -1052,7 +1057,7 @@ function FlowTableSection({
         ...cells,
       }
     })
-  }, [plugins, slot.id, chain, peaks, onBypassToggle, onRemovePlugin, onPositionChange])
+  }, [plugins, slot.id, chain, peaksMap, onBypassToggle, onRemovePlugin, onPositionChange])
 
   // Chain selector items
   const chainItems = useMemo(() => {
