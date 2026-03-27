@@ -1093,12 +1093,12 @@ function FlowTableSection({
           checked={paramValue >= 0.5}
           labelText=""
           hideLabel
-          onChange={(_checked: boolean, evt: ChangeEvent<HTMLInputElement>) => {
+          onChange={(_evt: ChangeEvent<HTMLInputElement>, data: { checked: boolean; id: string }) => {
             onParameterChange(
               chain.id,
               plugin.uri,
               column.paramIndex ?? 0,
-              evt.target.checked ? 1 : 0,
+              data.checked ? 1 : 0,
               plugin.instance_id,
               plugin.position,
             )
