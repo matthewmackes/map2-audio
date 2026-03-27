@@ -288,10 +288,24 @@ function renderPage() {
   )
 }
 
+function getColumnsMenuButton() {
+  const trigger = screen.getByText('Columns').closest('button')
+  expect(trigger).not.toBeNull()
+  return trigger as HTMLButtonElement
+}
+
 // Import after mocks
 import { AudioTablePage } from './AudioTablePage'
 
 // ── Pre-test state ────────────────────────────────────────────────────────
+
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: jest.fn(),
+    writable: true,
+  })
+})
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -655,6 +669,26 @@ describe('AudioTablePage — Column Visibility', () => {
     expect(within(reverbRow).getByDisplayValue('0.1')).toBeInTheDocument()
     expect(within(reverbRow).getByDisplayValue('0.9')).toBeInTheDocument()
   })
+
+  it('toggles column groups and parameter columns from the column picker', async () => {
+    renderPage()
+    expect(screen.queryByText('Armed')).not.toBeInTheDocument()
+    expect(screen.getByText('Mix')).toBeInTheDocument()
+
+    fireEvent.click(getColumnsMenuButton())
+    fireEvent.click(await screen.findByText(/Automation Columns/))
+
+    await waitFor(() => {
+      expect(screen.getByText('Armed')).toBeInTheDocument()
+    })
+
+    fireEvent.click(getColumnsMenuButton())
+    fireEvent.click(await screen.findByText(/Reverb: Mix/))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Mix')).not.toBeInTheDocument()
+    })
+  })
 })
 
 // ============================================================================
@@ -716,5 +750,47 @@ describe('AudioTablePage — Toolbar', () => {
       expect(screen.getByText('Remove Visible')).toBeInTheDocument()
       expect(screen.getByText('2 nodes')).toBeInTheDocument()
     })
+  })
+
+  it('opens the node manager modal and updates cluster focus from the cluster table', async () => {
+    const setActiveNode = jest.fn()
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      localNodeId: 'local-node',
+      isClusterMode: true,
+      setActiveNode,
+      getNodeApiPrefix: jest.fn(() => ''),
+      getNodeWsPrefix: jest.fn(() => ''),
+      nodes: [
+        {
+          nodeId: 'local-node',
+          hostname: 'studio-local',
+          role: 'LOCAL',
+          isLocal: true,
+          isOnline: true,
+          latencyMs: 0,
+          lastSeen: '',
+        },
+        {
+          nodeId: 'rack-a',
+          hostname: 'rack-a',
+          role: 'AUDIO-NODE',
+          isLocal: false,
+          isOnline: true,
+          latencyMs: 1.5,
+          lastSeen: '',
+        },
+      ],
+    })
+
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Node Manager' }))
+    expect(await screen.findByTestId('audio-nodes-modal')).toBeInTheDocument()
+
+    const rackRow = (await screen.findByText('rack-a')).closest('tr') as HTMLTableRowElement
+    fireEvent.click(within(rackRow).getByRole('button', { name: 'Focus' }))
+
+    expect(setActiveNode).toHaveBeenCalledWith('rack-a')
   })
 })
