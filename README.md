@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**856** Python | **1153** TypeScript | **300** C++/H | **125** Docs | **955** total commits | **3** stars | **0** forks | **0** open issues
+**856** Python | **1153** TypeScript | **300** C++/H | **125** Docs | **957** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d39ad720`](https://github.com/matthewmackes/map2-audio/commit/d39ad720955f378fe91cc97b79a10c5220e6a7b5) | Add instance scoped NAM status helpers | Map2 Audio | 2026-03-27 |
+| [`81da9039`](https://github.com/matthewmackes/map2-audio/commit/81da9039d8f1d9014b80995a6d688468cf3b7da9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`5ac374bf`](https://github.com/matthewmackes/map2-audio/commit/5ac374bf1f9185098dc42a7c53b4c8e329a0e891) | Fail closed scoped IR routes | Map2 Audio | 2026-03-27 |
 | [`5043c229`](https://github.com/matthewmackes/map2-audio/commit/5043c229fd6e8182a4a428de798c57a95287f58a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`62be2449`](https://github.com/matthewmackes/map2-audio/commit/62be24496f9128f0394d5aafd434688881d38e3b) | Fix duplicate plugin parameter reads by runtime scope | Map2 Audio | 2026-03-27 |
 | [`8a881181`](https://github.com/matthewmackes/map2-audio/commit/8a8811815242396ea2f94e2aba3a7f2346624da0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`97b0057b`](https://github.com/matthewmackes/map2-audio/commit/97b0057be7ff04da130751e29f11b8f203981aad) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-27 |
 | [`715e5bcc`](https://github.com/matthewmackes/map2-audio/commit/715e5bcc3e1e89480e6b110ad71b7e8356269729) | fix: scope duplicate-instance frontend runtime updates | Map2 Audio | 2026-03-27 |
-| [`5c04925d`](https://github.com/matthewmackes/map2-audio/commit/5c04925d2ab660c01c6a9c1159404f740419276d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`54bb74cd`](https://github.com/matthewmackes/map2-audio/commit/54bb74cdf76cffacabb7536f08638a846ab25cb2) | fix: recover NAM chooser from stale scoped instance ids | Map2 Audio | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
