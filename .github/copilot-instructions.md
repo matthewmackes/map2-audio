@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T209 qualification recording-session gate + chain route timeout calibration)
+> **Last Updated**: March 27, 2026 (T450 signal-safe shutdown + Tesira retry backoff)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1057,6 +1057,22 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_load_test_gate.py tests/test_t209_api_load_qualification.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile tests/load_test.py tests/test_load_test_gate.py`; `sudo systemd-run --wait -G -P -p LimitNOFILE=65536 ... scripts/run_t209_api_load_qualification.py ...`
 - **Lesson**: Qualification evidence must come from a bounded recording whose lifetime matches the run. Live observability buffers are fine for diagnosis, but not for final pass/fail math on long-running load tests.
 
+**16. Runtime Shutdown Signal Handlers Must Stay Signal-Safe**
+- **Files**: `app/main.py`, `tests/test_main_shutdown.py`
+- **Problem**: The first backend restart after the T209 full soak still burned the full `TimeoutStopUSec=30s` window and ended in `SIGABRT` even though a `5s` forced-exit watchdog had already been added.
+- **Root Cause**: The runtime `SIGTERM` handler still did lock/logging work in the signal path, so the watchdog never became the reliable escape hatch when the process was already unhealthy under shutdown pressure.
+- **Fix**: Emit shutdown notices with `os.write(2, ...)`, avoid lock acquisition in the signal handler, and keep the watchdog fallback minimal (`sleep` then `os._exit(0)`).
+- **Verification**: `pytest -q tests/test_main_shutdown.py`; `sudo systemctl restart map2-backend.service`; `sudo journalctl -u map2-backend.service --since '<restart time>' --no-pager | rg "SIGTERM received|State 'stop-sigterm' timed out|Application shutdown complete"`
+- **Lesson**: If a signal handler exists specifically to rescue a stuck process, it cannot depend on logging locks or other heavyweight runtime state in that same failure path.
+
+**17. Tesira Offline Retries Need Backoff And Capability-Aware Fallbacks**
+- **Files**: `app/services/tesira/tesira_device.py`, `app/services/tesira/tesira_fleet.py`, `tests/tesira/test_tesira_device_transport.py`, `tests/tesira/test_tesira_fleet.py`
+- **Problem**: During qualification, five unreachable Tesira hosts were generating recurring backend latency bursts and journal spam while the service kept retrying them in the background.
+- **Root Cause**: `transport="auto"` still attempted SSH fallback even when `asyncssh` was unavailable, and the offline retry loop walked every unreachable host in a serialized sweep with no per-device backoff.
+- **Fix**: Skip SSH fallback when `asyncssh` is unavailable, retry due offline devices concurrently, and back off per device (`30s -> 60s -> 120s -> 300s`) instead of probing the full unreachable fleet on every cycle.
+- **Verification**: `pytest -q tests/test_tesira_fleet_stop.py tests/tesira/test_tesira_device_transport.py tests/tesira/test_tesira_fleet.py`; `sudo journalctl -u map2-backend.service --since '<run start>' --until '<run end>' --no-pager | rg "TesiraDevice\\[|ssh connect failed"`
+- **Lesson**: Offline hardware recovery must be bounded and capability-aware. If the fallback transport cannot work on the live host, remove it from the hot path instead of retrying it forever.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1453,6 +1469,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-03-27] - Signal-Safe Shutdown + Tesira Retry Backoff
+- **Section**: Gotchas & Learned Fixes (#16, #17), Server Management Gotchas
+- **Change**: Documented the signal-safe `SIGTERM` watchdog pattern for backend shutdown plus the Tesira offline retry backoff/SSH-availability rules.
+- **Reason**: T450 traced the remaining `68s` post-soak restart to a signal-handler deadlock and the recurring load-window latency bursts to serialized retries against five unreachable Tesira hosts.
+- **Impact**: Future backend restarts stay on the ~29-30 second path, and offline Tesira recovery no longer spams pointless SSH fallback errors or churns the retry loop at near-constant cadence during load qualification.
+- **Files**: `.github/copilot-instructions.md`, `app/main.py`, `app/services/tesira/tesira_device.py`, `app/services/tesira/tesira_fleet.py`, `tests/test_main_shutdown.py`, `tests/tesira/test_tesira_device_transport.py`, `tests/tesira/test_tesira_fleet.py`, `docs/PROJECT_WORKLIST.md`
+
 ### [2026-03-27] - T209 Qualification Recording-Session Gate
 - **Section**: Gotchas & Learned Fixes (#15), Build & Test Commands
 - **Change**: Documented that API load qualification must use full-run observability recording sessions and the calibrated mixed-workload server-side gate rather than the bounded live ring buffer.
@@ -1774,5 +1797,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 25, 2026
+**Last Updated**: March 27, 2026
 **Maintained by**: GitHub Copilot AI Assistants

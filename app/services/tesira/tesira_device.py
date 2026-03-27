@@ -26,6 +26,14 @@ from app.services.tesira.ttp_client import TTPClient
 logger = logging.getLogger(__name__)
 
 
+def _ssh_transport_available() -> bool:
+    try:
+        import asyncssh  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Data classes
 # ──────────────────────────────────────────────────────────────────────────────
@@ -201,13 +209,16 @@ class TesiraDevice:
 
     def _resolve_transport_candidates(self) -> List[str]:
         pref = self._transport_preference
+        ssh_available = self._ssh_enabled and _ssh_transport_available()
         if pref == "telnet":
             return ["telnet"]
         if pref == "ssh":
             if not self._ssh_enabled:
                 raise RuntimeError("SSH transport requested but tesira.ssh_enabled is false")
+            if not ssh_available:
+                raise RuntimeError("asyncssh is not installed; cannot use SSH TTP transport")
             return ["ssh"]
-        if self._ssh_enabled:
+        if ssh_available:
             return ["telnet", "ssh"]
         return ["telnet"]
 

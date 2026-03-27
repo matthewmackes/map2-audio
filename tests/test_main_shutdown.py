@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import signal
 
 import pytest
@@ -50,12 +51,13 @@ async def test_safe_stop_service_logs_success(caplog):
 def test_runtime_shutdown_signal_handler_starts_watchdog_and_calls_previous(monkeypatch, caplog):
     called = []
     started = []
+    notices = []
 
     def _previous_handler(signum, frame):
         called.append((signum, frame))
 
     monkeypatch.setattr(app_main, "_start_forced_shutdown_watchdog", lambda signal_name: started.append(signal_name))
-    caplog.set_level(logging.WARNING)
+    monkeypatch.setattr(app_main, "_emit_shutdown_notice", lambda message: notices.append(message))
 
     app_main._runtime_shutdown_signal_handler(
         signal.SIGTERM,
@@ -65,7 +67,7 @@ def test_runtime_shutdown_signal_handler_starts_watchdog_and_calls_previous(monk
 
     assert started == ["SIGTERM"]
     assert called == [(signal.SIGTERM, None)]
-    assert "SIGTERM received; starting forced-exit watchdog" in caplog.text
+    assert notices == ["SIGTERM received; starting forced-exit watchdog"]
 
 
 def test_runtime_shutdown_signal_handler_respects_default(monkeypatch):
@@ -80,3 +82,13 @@ def test_runtime_shutdown_signal_handler_respects_default(monkeypatch):
         )
 
     assert started == ["SIGTERM"]
+
+
+def test_emit_shutdown_notice_writes_stderr(monkeypatch):
+    writes = []
+
+    monkeypatch.setattr(os, "write", lambda fd, data: writes.append((fd, data)) or len(data))
+
+    app_main._emit_shutdown_notice("shutdown notice")
+
+    assert writes == [(2, b"shutdown notice\n")]

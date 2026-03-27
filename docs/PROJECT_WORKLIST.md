@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T209 qualification closed; T450 follow-up added
+Last updated: 2026-03-27 - T450 restart/latency follow-up closed
 
 ID: T449
 Status: [✓] Done
@@ -2589,7 +2589,7 @@ Last updated: 2026-03-18 18:39 - Codex
   - Re-ran the live preflight after restarting the stale backend; `docs/fit-for-purpose-evidence/20260318T223805Z-t209-preflight` shows `api_ready`, `startup_order`, `websocket_manager`, and the chain/plugin route gates all passing, leaving only the host open-file limit as the remaining blocker.
 
 ID: T450
-Status: [ ] Todo
+Status: [✓] Done
 Title: Investigate intermittent post-soak restart slow path and Tesira-linked latency bursts
 Description:
 - Goal / acceptance criteria: Determine why the first backend restart after the 2026-03-27 T209 full soak still took `68s` while the next two controlled restarts completed in `30s` and `29s`, and trace whether the recurring multi-endpoint latency bursts observed during qualification are being amplified by background Tesira/offline-device activity or another periodic backend task. Acceptance requires root-cause evidence tying the slow restart or periodic stalls to a specific service/task, a code or configuration remediation that removes the post-soak slow restart and reduces the recurring latency spikes without disabling required functionality, and updated restart/load evidence showing the residual issue is gone.
@@ -2599,7 +2599,14 @@ Description:
 - Required outputs/deliverables: Restart/latency trace evidence, any required backend or service fix, updated qualification comparison notes, and final verification commands/artifacts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-27 07:52 EDT - Codex
+Last updated: 2026-03-27 08:18 EDT - Codex
+- Completion notes:
+  - Traced the `68s` post-soak restart to the runtime `SIGTERM` handler in `app/main.py`: `journalctl` for the `2026-03-27 07:47:54 EDT` restart showed `map2-backend.service: State 'stop-sigterm' timed out. Aborting.` and a forced `SIGABRT`, which meant the supposed `5s` watchdog never became the effective escape hatch while the old signal handler still performed lock/logging work.
+  - Reworked `app/main.py` so the shutdown watchdog path is signal-safe (`os.write(2, ...)`, no signal-path lock usage, and a minimal watchdog thread that ends in `os._exit(0)`), which restored clean backend restart behavior: both the pre-soak and immediate post-soak `sudo systemctl restart map2-backend.service` checks on `2026-03-27` completed in `29s` with `Application shutdown complete`, no `stop-sigterm timed out`, and `/api/ready.accepting_traffic=true`.
+  - Reworked the Tesira retry path in `app/services/tesira/tesira_device.py` and `app/services/tesira/tesira_fleet.py` so `transport="auto"` no longer falls back to SSH when `asyncssh` is unavailable, offline retries back off per device (`30s -> 60s -> 120s -> 300s`), and due offline devices are retried concurrently instead of serially sweeping the whole unreachable fleet every ~43 seconds.
+  - Added focused regression coverage in `tests/test_main_shutdown.py`, `tests/tesira/test_tesira_device_transport.py`, and `tests/tesira/test_tesira_fleet.py`; validation passed with `pytest -q tests/test_main_shutdown.py tests/test_tesira_fleet_stop.py tests/tesira/test_tesira_device_transport.py tests/tesira/test_tesira_fleet.py` (`16 passed, 1 warning`) plus `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/main.py app/services/tesira/tesira_device.py app/services/tesira/tesira_fleet.py tests/test_main_shutdown.py tests/tesira/test_tesira_device_transport.py tests/tesira/test_tesira_fleet.py tests/test_tesira_fleet_stop.py`.
+  - Captured updated runtime evidence in `docs/fit-for-purpose-evidence/t450-restart-latency-closure-20260327.md` and the passing soak artifact `docs/fit-for-purpose-evidence/t450-load-20260327T121404Z`; the patched `150s` qualification run passed with zero websocket drops, zero HTTP failures, and server-side steady-state `p95=26.75ms`, while the journal during the same window showed the Tesira retry cadence stretched to `08:11:31`, `08:12:04`, `08:13:08`, and `08:15:11` with telnet-only failures and no `asyncssh` spam.
+  - Licensing review: touched backend/doc/test/worklist artifacts remain MAP2-owned AGPL-covered repository files with no new third-party override gaps; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing .github app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ## SynthForge
 

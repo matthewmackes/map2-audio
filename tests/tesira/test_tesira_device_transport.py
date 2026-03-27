@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 import pytest
 
+from app.services.tesira import tesira_device as tesira_device_module
 from app.services.tesira.ttp_client import TTPResponse
 from app.services.tesira.tesira_device import TesiraDevice
 
@@ -55,6 +56,7 @@ async def test_tesira_device_auto_falls_back_to_ssh(monkeypatch):
         }
     )
 
+    monkeypatch.setattr(tesira_device_module, "_ssh_transport_available", lambda: True)
     monkeypatch.setattr(TesiraDevice, "_build_telnet_client", lambda self: telnet)
     monkeypatch.setattr(TesiraDevice, "_build_ssh_client", lambda self: ssh)
 
@@ -88,6 +90,7 @@ async def test_tesira_device_prefers_telnet_when_available(monkeypatch):
     )
     ssh = FakeClient({}, connect_error=RuntimeError("should not be used"))
 
+    monkeypatch.setattr(tesira_device_module, "_ssh_transport_available", lambda: True)
     monkeypatch.setattr(TesiraDevice, "_build_telnet_client", lambda self: telnet)
     monkeypatch.setattr(TesiraDevice, "_build_ssh_client", lambda self: ssh)
 
@@ -97,6 +100,27 @@ async def test_tesira_device_prefers_telnet_when_available(monkeypatch):
     assert device.connected is True
     assert device.transport == "telnet"
     assert device.transport_port == 23
+
+
+@pytest.mark.asyncio
+async def test_tesira_device_auto_skips_ssh_when_asyncssh_missing(monkeypatch):
+    telnet = FakeClient({}, connect_error=RuntimeError("telnet down"))
+    ssh_builds = []
+
+    monkeypatch.setattr(tesira_device_module, "_ssh_transport_available", lambda: False)
+    monkeypatch.setattr(TesiraDevice, "_build_telnet_client", lambda self: telnet)
+    monkeypatch.setattr(
+        TesiraDevice,
+        "_build_ssh_client",
+        lambda self: ssh_builds.append(self.host) or FakeClient({}),
+    )
+
+    device = TesiraDevice(host="172.20.1.12", transport="auto", ssh_enabled=True)
+
+    with pytest.raises(RuntimeError, match="telnet down"):
+        await device.connect()
+
+    assert ssh_builds == []
 
 
 @pytest.mark.asyncio

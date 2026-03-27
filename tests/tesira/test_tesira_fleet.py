@@ -10,6 +10,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
+from app.services.tesira import tesira_fleet as tesira_fleet_module
 from app.services.tesira.tesira_fleet import TesiraFleet, TesiraDeviceConfig
 
 
@@ -117,3 +118,23 @@ async def test_ptp_coordinator_does_not_apply_slave_when_no_master():
 
     # Slave mode should NOT be active since Tesira is SLAVE, not MASTER
     assert coord._slave_mode_active is False
+
+
+def test_offline_retry_backoff_grows_and_resets(monkeypatch):
+    fleet = TesiraFleet()
+    now = {"value": 100.0}
+
+    monkeypatch.setattr(tesira_fleet_module.time, "monotonic", lambda: now["value"])
+
+    first_delay = fleet._record_offline_retry_failure("tesira_offline")
+    assert first_delay == pytest.approx(30.0)
+    assert fleet._offline_retry_due_in("tesira_offline", now=100.0) == pytest.approx(30.0)
+
+    now["value"] = 130.0
+    second_delay = fleet._record_offline_retry_failure("tesira_offline")
+    assert second_delay == pytest.approx(60.0)
+    assert fleet._offline_retry_due_in("tesira_offline", now=130.0) == pytest.approx(60.0)
+
+    now["value"] = 190.0
+    fleet._clear_offline_retry_backoff("tesira_offline")
+    assert fleet._offline_retry_due_in("tesira_offline", now=190.0) == pytest.approx(0.0)

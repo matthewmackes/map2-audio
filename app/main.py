@@ -27,7 +27,6 @@ _SERVICE_STOP_TIMEOUT_SECONDS = 2.0
 _FORCED_EXIT_WATCHDOG_SECONDS = 5.0
 _shutdown_signal_handlers_installed = False
 _shutdown_watchdog_started = False
-_shutdown_watchdog_lock = threading.Lock()
 
 def log_and_raise_critical(logger, message, exc: Exception = None):
     """Log a critical error and raise."""
@@ -65,20 +64,25 @@ async def safe_stop_service(
         logger.warning(f"Failed to stop {name}: {e}")
 
 
+def _emit_shutdown_notice(message: str) -> None:
+    try:
+        os.write(2, (message.rstrip() + "\n").encode("utf-8", "replace"))
+    except OSError:
+        pass
+
+
 def _start_forced_shutdown_watchdog(signal_name: str) -> None:
     global _shutdown_watchdog_started
 
-    with _shutdown_watchdog_lock:
-        if _shutdown_watchdog_started or _FORCED_EXIT_WATCHDOG_SECONDS <= 0:
-            return
-        _shutdown_watchdog_started = True
+    if _shutdown_watchdog_started or _FORCED_EXIT_WATCHDOG_SECONDS <= 0:
+        return
+    _shutdown_watchdog_started = True
 
     def _watchdog() -> None:
         time.sleep(_FORCED_EXIT_WATCHDOG_SECONDS)
-        logger.error(
-            "%s shutdown watchdog forcing process exit after %.1fs",
-            signal_name,
-            _FORCED_EXIT_WATCHDOG_SECONDS,
+        _emit_shutdown_notice(
+            f"{signal_name} shutdown watchdog forcing process exit after "
+            f"{_FORCED_EXIT_WATCHDOG_SECONDS:.1f}s"
         )
         os._exit(0)
 
@@ -96,7 +100,7 @@ def _runtime_shutdown_signal_handler(
     previous_handler,
 ) -> None:
     signal_name = signal.Signals(signum).name
-    logger.warning("%s received; starting forced-exit watchdog", signal_name)
+    _emit_shutdown_notice(f"{signal_name} received; starting forced-exit watchdog")
     _start_forced_shutdown_watchdog(signal_name)
 
     if callable(previous_handler):
