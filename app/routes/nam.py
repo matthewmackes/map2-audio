@@ -115,14 +115,37 @@ try:
         instance_id: Optional[int],
         plugin_position: Optional[int],
     ) -> Optional[int]:
-        if isinstance(instance_id, int) and instance_id > 0:
-            return instance_id
-        if not _has_plugin_position(plugin_position):
-            return None
-
+        explicit_instance_id = instance_id if isinstance(instance_id, int) and instance_id > 0 else None
         resolver = getattr(engine, "resolve_instance_id", None)
         if callable(resolver):
-            return await resolver(NAM_PLUGIN_URI, plugin_position)
+            try:
+                resolved_instance_id = await resolver(
+                    NAM_PLUGIN_URI,
+                    plugin_position,
+                    fallback_instance_id=explicit_instance_id,
+                )
+            except TypeError:
+                resolved_instance_id = await resolver(NAM_PLUGIN_URI, plugin_position)
+                if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+                    resolved_instance_id = explicit_instance_id
+            if (
+                explicit_instance_id is not None
+                and isinstance(resolved_instance_id, int)
+                and resolved_instance_id > 0
+                and resolved_instance_id != explicit_instance_id
+            ):
+                logger.info(
+                    "NAM instance remapped from stale instance_id=%s to instance_id=%s using plugin_position=%s",
+                    explicit_instance_id,
+                    resolved_instance_id,
+                    plugin_position,
+                )
+            return resolved_instance_id
+
+        if explicit_instance_id is not None:
+            return explicit_instance_id
+        if not _has_plugin_position(plugin_position):
+            return None
 
         legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
         if callable(legacy_resolver):
@@ -434,6 +457,13 @@ try:
             success = await engine.load_nam_model(model_path)
 
         if not success:
+            logger.warning(
+                "NAM scoped load failed for model=%s requested_instance_id=%s plugin_position=%s resolved_instance_id=%s",
+                model_name,
+                instance_id,
+                plugin_position,
+                scoped_instance_id,
+            )
             raise HTTPException(status_code=500, detail="Failed to start model loading")
 
         logger.info(f"NAM model loading started: {model_name} ({model_path})")

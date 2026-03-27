@@ -25,11 +25,16 @@ class _FakeNamEngine:
 
 class _FakePositionScopedNamEngine:
     def __init__(self):
-        self.resolve_calls: list[tuple[str, int | None]] = []
+        self.resolve_calls: list[tuple[str, int | None, int | None]] = []
         self.load_calls: list[tuple[int, str]] = []
 
-    async def resolve_instance_id(self, plugin_uri: str, plugin_position: int | None = None):
-        self.resolve_calls.append((plugin_uri, plugin_position))
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: int | None = None,
+        fallback_instance_id: int | None = None,
+    ):
+        self.resolve_calls.append((plugin_uri, plugin_position, fallback_instance_id))
         return 84 if plugin_uri == "map2://juce/nam" and plugin_position == 5 else None
 
     async def load_nam_model_instance(self, instance_id: int, model_path: str) -> bool:
@@ -130,8 +135,8 @@ def test_nam_routes_resolve_position_scoped_instances_when_instance_id_is_absent
     status_payload = asyncio.run(nam_routes.get_nam_status(plugin_position=5))
 
     assert engine.resolve_calls == [
-        ("map2://juce/nam", 5),
-        ("map2://juce/nam", 5),
+        ("map2://juce/nam", 5, None),
+        ("map2://juce/nam", 5, None),
     ]
     assert engine.load_calls == [(84, "/tmp/scoped-crunch.nam")]
     assert load_payload["status"] == "loading"
@@ -139,6 +144,22 @@ def test_nam_routes_resolve_position_scoped_instances_when_instance_id_is_absent
     assert status_payload["availableModels"] == ["Scoped Crunch", "Clean Glass"]
     assert status_payload["input_gain"] == 2.0
     assert status_payload["output_gain"] == -1.0
+
+
+def test_nam_routes_recover_from_stale_explicit_instance_ids_using_plugin_position(monkeypatch):
+    engine = _FakePositionScopedNamEngine()
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [{"name": "Scoped Crunch", "path": "/tmp/scoped-crunch.nam"}],
+    )
+
+    load_payload = asyncio.run(nam_routes.load_nam_model("Scoped Crunch", instance_id=999, plugin_position=5))
+
+    assert engine.resolve_calls == [("map2://juce/nam", 5, 999)]
+    assert engine.load_calls == [(84, "/tmp/scoped-crunch.nam")]
+    assert load_payload["status"] == "loading"
 
 
 def test_ir_routes_load_and_report_status_per_instance(monkeypatch):

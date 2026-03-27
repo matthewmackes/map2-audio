@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T451 web production shutdown hardening)
+> **Last Updated**: March 27, 2026 (T452 scoped NAM chooser recovery)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1207,6 +1207,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest tests/midi_hub/test_consumer_migration.py tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py`; in-process probe: `avg_ms=0.002149`, `p95_ms=0.003773`, `max_ms=0.018339` over 200 bridged CC injections.
 - **Lesson**: If a MIDI source needs routing/automation in MAP2, it must enter MidiHub as a real `MidiMessage`, not just as a side-channel websocket event.
 
+**22. Scoped JUCE Actions Must Carry `plugin_position` Even When `instance_id` Exists (HIGH - Mar 27, 2026)**
+- **Files**: `app/routes/nam.py`, `app/services/juce_engine_service.py`, `web/src/map2/api.ts`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `tests/test_nam_ir_instance_routes.py`, `tests/test_juce_engine_service_instance_resolution.py`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`
+- **Problem**: The NAM chooser dialog could fail with `Failed to load NAM model` even when a valid NAM block was selected in the JUCE Grid.
+- **Root Cause**: Selected-block UI state can retain a stale `instance_id` across runtime refreshes or backend restarts. The old dialog/API path preferred `instance_id` alone, so the backend targeted an invalid processor and never recovered through the still-valid chain `plugin_position`.
+- **Fix**: When a JUCE action has both runtime identifiers, send both `instance_id` and `plugin_position`; in backend resolution, prefer an exact live position match, then keep the explicit instance only if it still maps to the same plugin URI, otherwise fall back to the live position-scoped instance.
+- **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx`; `npm --prefix web run typecheck`
+- **Lesson**: In MAP2, `instance_id` is not durable across all runtime transitions. For selected-block JUCE actions, `plugin_position` is the stable recovery key and should travel alongside the cached instance id.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1477,6 +1485,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Scoped NAM Chooser Recovery From Stale Instance IDs
+- **Section**: Gotchas & Learned Fixes (#22), User Preferences
+- **Change**: Documented the rule that selected-block JUCE actions must send both `instance_id` and `plugin_position`, and that backend scoped resolution must validate cached instance ids against the live pedalboard before using them.
+- **Reason**: T452 exposed a real failure mode where the NAM chooser dialog trusted a stale instance id and surfaced a false `Failed to load NAM model` error instead of recovering through the stable chain position.
+- **Impact**: Future selected-block JUCE load/control flows can survive backend/runtime identity churn without regressing to stale-instance failures.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/nam.py`, `app/services/juce_engine_service.py`, `web/src/map2/api.ts`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `tests/test_nam_ir_instance_routes.py`, `tests/test_juce_engine_service_instance_resolution.py`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Signal-Safe Shutdown + Tesira Retry Backoff
 - **Section**: Gotchas & Learned Fixes (#16, #17), Server Management Gotchas

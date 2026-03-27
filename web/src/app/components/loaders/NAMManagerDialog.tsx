@@ -49,8 +49,9 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
+  const resolvedInstanceId = typeof instanceId === 'number' && instanceId > 0 ? instanceId : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
-  const statusScopeKey = getPluginIdentityKeyFromParts(NAM_PLUGIN_URI, resolvedPluginPosition, instanceId)
+  const statusScopeKey = getPluginIdentityKeyFromParts(NAM_PLUGIN_URI, resolvedPluginPosition, resolvedInstanceId)
 
   const modelsQuery = useQuery<NAMModelsResponse>({
     queryKey: ['nam', 'models'],
@@ -73,10 +74,11 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   const statusQuery = useQuery<NAMStatus>({
     queryKey: ['nam', 'status', statusScopeKey],
     queryFn: () => (
-      typeof instanceId === 'number' && instanceId > 0
-        ? namApi.getInstanceStatus(instanceId)
-        : resolvedPluginPosition !== undefined
-          ? namApi.getStatusAtPosition(resolvedPluginPosition)
+      resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
+        ? namApi.getScopedStatus({
+          instanceId: resolvedInstanceId,
+          pluginPosition: resolvedPluginPosition,
+        })
           : namApi.getStatus()
     ),
     enabled: open,
@@ -84,10 +86,11 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
 
   const loadMutation = useMutation({
     mutationFn: (name: string) => (
-      typeof instanceId === 'number' && instanceId > 0
-        ? namApi.loadModelToInstance(name, instanceId)
-        : resolvedPluginPosition !== undefined
-          ? namApi.loadModelAtPosition(name, resolvedPluginPosition)
+      resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
+        ? namApi.loadModelScoped(name, {
+          instanceId: resolvedInstanceId,
+          pluginPosition: resolvedPluginPosition,
+        })
           : namApi.loadModel(name)
     ),
     onSuccess: (_, name) => {

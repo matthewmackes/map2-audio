@@ -7,9 +7,11 @@ const mockListModels = jest.fn()
 const mockGetStatus = jest.fn()
 const mockGetInstanceStatus = jest.fn()
 const mockGetStatusAtPosition = jest.fn()
+const mockGetScopedStatus = jest.fn()
 const mockLoadModel = jest.fn()
 const mockLoadModelToInstance = jest.fn()
 const mockLoadModelAtPosition = jest.fn()
+const mockLoadModelScoped = jest.fn()
 const mockUpload = jest.fn()
 const mockPushToast = jest.fn()
 const mockFetch = jest.fn()
@@ -20,9 +22,11 @@ jest.mock('../../../map2/api', () => ({
     getStatus: (...args: unknown[]) => mockGetStatus(...args),
     getInstanceStatus: (...args: unknown[]) => mockGetInstanceStatus(...args),
     getStatusAtPosition: (...args: unknown[]) => mockGetStatusAtPosition(...args),
+    getScopedStatus: (...args: unknown[]) => mockGetScopedStatus(...args),
     loadModel: (...args: unknown[]) => mockLoadModel(...args),
     loadModelToInstance: (...args: unknown[]) => mockLoadModelToInstance(...args),
     loadModelAtPosition: (...args: unknown[]) => mockLoadModelAtPosition(...args),
+    loadModelScoped: (...args: unknown[]) => mockLoadModelScoped(...args),
     upload: (...args: unknown[]) => mockUpload(...args),
   },
 }))
@@ -56,9 +60,11 @@ describe('NAMManagerDialog', () => {
     mockGetStatus.mockReset()
     mockGetInstanceStatus.mockReset()
     mockGetStatusAtPosition.mockReset()
+    mockGetScopedStatus.mockReset()
     mockLoadModel.mockReset()
     mockLoadModelToInstance.mockReset()
     mockLoadModelAtPosition.mockReset()
+    mockLoadModelScoped.mockReset()
     mockUpload.mockReset()
     mockPushToast.mockReset()
     mockFetch.mockReset()
@@ -142,6 +148,18 @@ describe('NAMManagerDialog', () => {
       latency: 0,
       availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
     })
+    mockGetScopedStatus.mockResolvedValue({
+      available: true,
+      activeModel: 'Mesa Mark V',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -160,6 +178,7 @@ describe('NAMManagerDialog', () => {
     mockLoadModel.mockResolvedValue({})
     mockLoadModelToInstance.mockResolvedValue({})
     mockLoadModelAtPosition.mockResolvedValue({})
+    mockLoadModelScoped.mockResolvedValue({})
     mockUpload.mockResolvedValue({ model: { name: 'uploaded.nam' } })
   })
 
@@ -218,12 +237,15 @@ describe('NAMManagerDialog', () => {
 
     await screen.findByText('Mesa Mark V')
 
-    expect(mockGetInstanceStatus).toHaveBeenCalledWith(17)
+    expect(mockGetScopedStatus).toHaveBeenCalledWith({ instanceId: 17, pluginPosition: undefined })
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
 
     await waitFor(() => {
-      expect(mockLoadModelToInstance).toHaveBeenCalledWith('Tube Screamer OD', 17)
+      expect(mockLoadModelScoped).toHaveBeenCalledWith('Tube Screamer OD', {
+        instanceId: 17,
+        pluginPosition: undefined,
+      })
     })
     expect(mockLoadModel).not.toHaveBeenCalled()
   })
@@ -233,13 +255,33 @@ describe('NAMManagerDialog', () => {
 
     await screen.findByText('Mesa Mark V')
 
-    expect(mockGetStatusAtPosition).toHaveBeenCalledWith(9)
+    expect(mockGetScopedStatus).toHaveBeenCalledWith({ instanceId: undefined, pluginPosition: 9 })
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
 
     await waitFor(() => {
-      expect(mockLoadModelAtPosition).toHaveBeenCalledWith('Tube Screamer OD', 9)
+      expect(mockLoadModelScoped).toHaveBeenCalledWith('Tube Screamer OD', {
+        instanceId: undefined,
+        pluginPosition: 9,
+      })
     })
     expect(mockLoadModel).not.toHaveBeenCalled()
+  })
+
+  it('sends both instanceId and pluginPosition when both are available', async () => {
+    renderDialog(17, 9)
+
+    await screen.findByText('Mesa Mark V')
+
+    expect(mockGetScopedStatus).toHaveBeenCalledWith({ instanceId: 17, pluginPosition: 9 })
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(mockLoadModelScoped).toHaveBeenCalledWith('Tube Screamer OD', {
+        instanceId: 17,
+        pluginPosition: 9,
+      })
+    })
   })
 })

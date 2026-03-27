@@ -6,7 +6,77 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T451 web production stop-path follow-up closed
+Last updated: 2026-03-27 - T452 NAM chooser load fix closed
+
+ID: T453
+Status: [ ] Todo
+Title: Multi-instance effect parameter independence — full-stack hardening
+Description:
+- Goal / acceptance criteria: When multiple instances of the same plugin type exist in the signal chain (e.g., 2× NAM, 2× Compressor, 2× Cabinet IR), each instance must maintain fully independent parameters, status, metering, and control. No parameter read, write, or UI state from one instance may leak to another. All endpoints, service methods, WebSocket messages, and React Query cache keys must be instance-scoped.
+- Why it matters: The multi-instance GUI work (T324, T449) added instance_id/plugin_position plumbing to NAM and IR routes, but the rest of the stack still operates on global singletons. Duplicate plugins in a chain will silently share state, causing operator-visible parameter bleed, wrong status displays, and incorrect control targeting.
+- Dependencies: T449, T324, T452
+- Estimated effort: Large
+- Audit findings (2026-03-27):
+
+  **C++ Engine — Architecturally Sound**
+  - JucePluginHost uses per-instance `std::map<InstanceId, std::unique_ptr<PluginEntry>>` — each loaded plugin instance has isolated AudioProcessor, APVTS, and parameter state. No static/global parameter variables found.
+  - NativeNAMPluginProcessor and NativeConvolutionPluginProcessor each own their own processor/APVTS members — no cross-instance contamination.
+  - ParameterBridge maintains per-instance `paramNameToIndex` maps.
+  - **Singleton risk (by design):** Map2AudioEngine has hardcoded single-instance member processors (`namProcessor_`, `cabinetProcessor_`, `reverbProcessor_`, `compressor_`, `limiter_`, `gate_`, `eq_`, `chorus_`). These are the "main signal chain" processors and are not the same as plugin-host instances, but Python bindings expose both global and instance methods — the global path must not be called when an instance_id is available.
+
+  **Python Backend — Multiple Critical Gaps**
+  1. `GET /api/plugins/{uri}/parameters` (plugins.py:1512) — NO instance_id support; calls `engine.get_parameter(uri, symbol)` which resolves to first matching instance when duplicates exist
+  2. ALL dynamics routes (dynamics.py) — compressor, limiter, gate endpoints have ZERO instance_id/plugin_position support; reads and writes always target the global singleton
+  3. ALL EQ/filter routes (filters.py) — same: no instance disambiguation
+  4. ALL pitch shifter routes (pitch.py) — same
+  5. ALL modulation routes (modulation.py) — same
+  6. ALL H3000, lexi-love, shoegaze routes — same
+  7. NAM status queries (`is_nam_bypassed()`, `is_nam_loading()`, `is_nam_model_loaded()`, `get_nam_input_level()`, `get_nam_output_level()`, `get_nam_input_gain()`, `get_nam_output_gain()`, `is_nam_normalized()`) — no instance-specific variants in juce_engine_service.py
+  8. IR routes fall back to global `_ir_processor` singleton (ir.py:25,185) when instance resolution fails — should raise HTTPException instead
+
+  **Frontend — Cache Invalidation and WebSocket Gaps**
+  1. **Global query cache invalidation on mutation success** — NAMCard.tsx:191, CabinetIRCard.tsx:145, ReverbIRCard.tsx:137, NAMManagerDialog.tsx:94, IRManagerDialog.tsx:139 all call `queryClient.invalidateQueries({ queryKey: ['nam'] })` or `['ir']` globally. Loading a model in Instance A causes Instance B to refetch and briefly flash wrong data. Fix: scope invalidation to `['nam', 'status', statusScopeKey]`.
+  2. **WebSocket parameter handler missing instance filter** — `useBatchedParameter` (useWebSocket.ts:274-289) accepts `instanceId`/`pluginPosition` params but does NOT use them when filtering incoming messages. Matches only on `plugin_uri + param_index`, so a parameter change on Instance 1 updates Instance 2's UI. Fix: add instance_id/pluginPosition checks to the filter.
+  3. **LV2 fallback editor missing instance props** — PluginCardRouter.tsx:187-192 does not pass `pluginPosition`/`instanceId` to the generic LV2PluginParameterEditor fallback.
+
+- Required outputs: Instance-scoped parameter endpoints for all processor types, scoped React Query invalidation, WebSocket instance filtering, removal of silent global fallbacks, and regression test coverage.
+
+Subtasks:
+- T453-subA: [ ] Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
+- T453-subB: [ ] Add instance_id/plugin_position to EQ/filter routes
+- T453-subC: [ ] Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
+- T453-subD: [ ] Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
+- T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
+- T453-subF: [ ] Remove silent global fallback in IR routes — raise HTTPException when instance resolution fails instead of falling through to _ir_processor singleton
+- T453-subG: [ ] Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
+- T453-subH: [ ] Fix useBatchedParameter WebSocket handler to filter by instance_id/pluginPosition, not just uri+paramIndex
+- T453-subI: [ ] Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
+- T453-subJ: [ ] Add regression tests — backend: multi-instance parameter isolation tests; frontend: scoped query key tests, WebSocket instance filtering tests
+Assigned to: Unassigned
+Last updated: 2026-03-27 10:30 EDT
+
+ID: T452
+Status: [✓] Done
+Title: Fix "Failed to load NAM model" error when selecting a model from the NAM chooser dialog
+Description:
+- Goal / acceptance criteria: Clicking "Load" on any model in the NAM Manager Dialog must successfully load the model into the correct NAM processor instance. The frontend toast "Failed to load NAM model" must not appear for valid models when a NAM plugin is present in the chain.
+- Why it matters: Core workflow is broken — operators cannot load NAM amp models from the chooser, which is the primary way to audition and select tone models.
+- Likely root cause: The T449 position-scoped instance resolution work introduced `plugin_position` and `instance_id` fallback routing. The load path in `app/routes/nam.py:410-440` calls `_resolve_scoped_instance_id()` which queries the live pedalboard via `engine.resolve_instance_id()` → `_get_instance_id_for_uri()`. Failure occurs when either: (a) position-to-instance resolution returns `None` because the pedalboard item position field doesn't match the frontend's `pluginPosition` value, causing a 404 "NAM instance not found at position"; or (b) the resolved `instance_id` doesn't map to a valid `NativeNAMPluginProcessor` in C++ (`PythonBindings.cpp:4492-4495`), causing `loadModel()` to return `false` and a 500 "Failed to start model loading". Both errors surface as the same generic "Failed to load NAM model" toast in `NAMManagerDialog.tsx:98`.
+- Investigation steps: (1) Add backend logging in `_resolve_scoped_instance_id()` and `load_nam_model()` to capture the actual `instance_id`, `plugin_position`, and resolution result; (2) Check what `get_current_pedalboard()` returns for NAM items and verify the position/instance_id fields match what the frontend sends; (3) Reproduce by loading a NAM model from the JUCE Grid selected-block NAM card and inspect the HTTP request query params; (4) Check if the fallback to global `engine.load_nam_model()` (no instance/position) still works — if so, the regression is specifically in the instance-scoped path.
+- Dependencies: T449 (position-scoped NAM/IR asset workflows), T324 (multi-instance NAM support)
+- Estimated effort: Low–Medium
+- Key files: `app/routes/nam.py` (load endpoint + `_resolve_scoped_instance_id`), `app/services/juce_engine_service.py` (`resolve_instance_id` + `_get_instance_id_for_uri`), `web/src/app/components/loaders/NAMManagerDialog.tsx` (load mutation + error toast), `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx` (instanceId/pluginPosition prop sourcing), `juce-engine/Source/PythonBindings.cpp` (C++ `load_nam_model_instance` binding)
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-27 11:08 EDT - Codex
+- Completion notes:
+  - Hardened scoped NAM instance recovery in `app/services/juce_engine_service.py` so `resolve_instance_id()` now prefers an exact live `plugin_position` match, only trusts a cached `instance_id` when it still maps to the requested plugin URI, and otherwise falls back to the live position-scoped instance instead of blindly reusing stale runtime identity.
+  - Updated `app/routes/nam.py` so the NAM routes pass both `instance_id` and `plugin_position` into scoped resolution, normalize FastAPI `Query(None)` sentinels during direct calls/tests, log stale-id remaps, and emit a more useful warning when a scoped load still fails.
+  - Added `namApi.getScopedStatus()` and `namApi.loadModelScoped()` in `web/src/map2/api.ts`, then rewired `web/src/app/components/loaders/NAMManagerDialog.tsx` to send both runtime identifiers when available so the backend can recover from stale selected-block `instance_id` values instead of failing the chooser action.
+  - Added focused regression coverage in `tests/test_juce_engine_service_instance_resolution.py`, `tests/test_nam_ir_instance_routes.py`, and `web/src/app/components/loaders/NAMManagerDialog.test.tsx` for stale-instance recovery and dual-identity request wiring.
+  - Updated `.github/copilot-instructions.md` with the new duplicate-safe runtime-identity rule: selected-block JUCE actions must carry `plugin_position` even when a cached `instance_id` exists.
+  - Licensing review: touched backend/frontend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py` -> PASS (`11 passed`); `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx` -> PASS (`6 passed`); `npm --prefix web run typecheck` -> PASS.
 
 ID: T449
 Status: [✓] Done

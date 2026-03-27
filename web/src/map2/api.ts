@@ -3827,15 +3827,14 @@ export interface NAMCategoriesResponse {
 export const namApi = {
   getStatus: (nodeId?: string | null) => fetchJson<NAMStatus>(appendNodeQuery(`${API_BASE}/nam/status`, nodeId)),
 
+  getScopedStatus: (options?: PluginRuntimeScopeOptions) =>
+    fetchJson<NAMStatus>(appendPluginRuntimeQuery(`${API_BASE}/nam/status`, options)),
+
   getInstanceStatus: (instanceId: number, nodeId?: string | null) =>
-    fetchJson<NAMStatus>(
-      appendPluginRuntimeQuery(`${API_BASE}/nam/status`, { instanceId, nodeId })
-    ),
+    namApi.getScopedStatus({ instanceId, nodeId }),
 
   getStatusAtPosition: (pluginPosition: number, nodeId?: string | null) =>
-    fetchJson<NAMStatus>(
-      appendPluginRuntimeQuery(`${API_BASE}/nam/status`, { pluginPosition, nodeId })
-    ),
+    namApi.getScopedStatus({ pluginPosition, nodeId }),
 
   getCategories: () => fetchJson<NAMCategoriesResponse>(`${API_BASE}/nam/categories`),
 
@@ -3864,21 +3863,19 @@ export const namApi = {
       method: 'POST',
     }),
 
-  loadModelToInstance: (modelName: string, instanceId: number, nodeId?: string | null) =>
+  loadModelScoped: (modelName: string, options?: PluginRuntimeScopeOptions) =>
     fetchJson<{ status: string; model: string }>(
-      appendPluginRuntimeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { instanceId, nodeId }),
+      appendPluginRuntimeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, options),
       {
         method: 'POST',
       }
     ),
 
+  loadModelToInstance: (modelName: string, instanceId: number, nodeId?: string | null) =>
+    namApi.loadModelScoped(modelName, { instanceId, nodeId }),
+
   loadModelAtPosition: (modelName: string, pluginPosition: number, nodeId?: string | null) =>
-    fetchJson<{ status: string; model: string }>(
-      appendPluginRuntimeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { pluginPosition, nodeId }),
-      {
-        method: 'POST',
-      }
-    ),
+    namApi.loadModelScoped(modelName, { pluginPosition, nodeId }),
 
   activateModel: (modelName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; model: string }>(

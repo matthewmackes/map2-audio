@@ -44,6 +44,17 @@ def test_get_instance_id_for_uri_falls_back_to_first_match_without_position():
     assert service._get_instance_id_for_uri("urn:test:duplicate") == 101  # noqa: SLF001
 
 
+def test_resolve_instance_id_prefers_live_position_over_stale_fallback_instance():
+    service = JuceEngineService()
+    service._engine = _FakePedalboardEngine([  # noqa: SLF001 - explicit unit isolation
+        {"uri": "urn:test:duplicate", "instance_id": 202, "position": 3},
+    ])
+
+    resolved = asyncio.run(service.resolve_instance_id("urn:test:duplicate", 3, 999))
+
+    assert resolved == 202
+
+
 def test_get_plugin_vu_levels_attaches_runtime_identity_to_duplicate_uris():
     service = JuceEngineService()
     service._engine = _FakeTelemetryEngine(  # noqa: SLF001 - explicit unit isolation

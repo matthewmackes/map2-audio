@@ -368,6 +368,62 @@ class JuceEngineService(Singleton):
                 return position
         return fallback_index if fallback_index >= 0 else None
 
+    def _get_pedalboard_matches_for_uri(self, plugin_uri: str) -> List[tuple[int, Dict[str, Any]]]:
+        if not self._engine:
+            return []
+        pedalboard = self._engine.get_current_pedalboard()
+        items = pedalboard.get("items", [])
+        if not isinstance(items, list):
+            return []
+        return [
+            (index, item)
+            for index, item in enumerate(items)
+            if isinstance(item, dict) and item.get("uri") == plugin_uri
+        ]
+
+    def _get_instance_id_for_uri_exact_position(
+        self,
+        plugin_uri: str,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[int]:
+        if not isinstance(plugin_position, int) or plugin_position < 0:
+            return None
+        try:
+            for index, item in self._get_pedalboard_matches_for_uri(plugin_uri):
+                item_position = self._pedalboard_item_position(item, index)
+                if item_position == plugin_position:
+                    instance_id = item.get("instance_id")
+                    if isinstance(instance_id, int) and instance_id > 0:
+                        return instance_id
+        except Exception as e:
+            logger.error(
+                "Error looking up exact instance_id for %s (position=%s): %s",
+                plugin_uri,
+                plugin_position,
+                e,
+            )
+        return None
+
+    def _instance_id_matches_uri(
+        self,
+        plugin_uri: str,
+        instance_id: Optional[int],
+    ) -> bool:
+        if not isinstance(instance_id, int) or instance_id <= 0:
+            return False
+        try:
+            for _index, item in self._get_pedalboard_matches_for_uri(plugin_uri):
+                if item.get("instance_id") == instance_id:
+                    return True
+        except Exception as e:
+            logger.error(
+                "Error validating instance_id for %s (instance_id=%s): %s",
+                plugin_uri,
+                instance_id,
+                e,
+            )
+        return False
+
     def _get_instance_id_for_uri(
         self,
         plugin_uri: str,
@@ -377,26 +433,14 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return None
         try:
-            pedalboard = self._engine.get_current_pedalboard()
-            items = pedalboard.get("items", [])
-            if not isinstance(items, list):
-                return None
-
-            matches: List[tuple[int, Dict[str, Any]]] = [
-                (index, item)
-                for index, item in enumerate(items)
-                if isinstance(item, dict) and item.get("uri") == plugin_uri
-            ]
+            matches = self._get_pedalboard_matches_for_uri(plugin_uri)
             if not matches:
                 return None
 
             if isinstance(plugin_position, int) and plugin_position >= 0:
-                for index, item in matches:
-                    item_position = self._pedalboard_item_position(item, index)
-                    if item_position == plugin_position:
-                        instance_id = item.get("instance_id")
-                        if isinstance(instance_id, int) and instance_id > 0:
-                            return instance_id
+                exact_match = self._get_instance_id_for_uri_exact_position(plugin_uri, plugin_position)
+                if isinstance(exact_match, int) and exact_match > 0:
+                    return exact_match
 
             for _index, item in matches:
                 instance_id = item.get("instance_id")
@@ -418,11 +462,40 @@ class JuceEngineService(Singleton):
         fallback_instance_id: Optional[int] = None,
     ) -> Optional[int]:
         """Resolve a live engine instance by explicit id or URI + chain position."""
-        if isinstance(fallback_instance_id, int) and fallback_instance_id > 0:
-            return fallback_instance_id
+        normalized_fallback = (
+            fallback_instance_id
+            if isinstance(fallback_instance_id, int) and fallback_instance_id > 0
+            else None
+        )
         if not self._engine:
-            return None
-        return await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+            return normalized_fallback
+
+        exact_position_instance = await asyncio.to_thread(
+            self._get_instance_id_for_uri_exact_position,
+            plugin_uri,
+            plugin_position,
+        )
+        if isinstance(exact_position_instance, int) and exact_position_instance > 0:
+            return exact_position_instance
+
+        if normalized_fallback is not None:
+            fallback_matches_uri = await asyncio.to_thread(
+                self._instance_id_matches_uri,
+                plugin_uri,
+                normalized_fallback,
+            )
+            if fallback_matches_uri:
+                return normalized_fallback
+
+        position_scoped_instance = await asyncio.to_thread(
+            self._get_instance_id_for_uri,
+            plugin_uri,
+            plugin_position,
+        )
+        if isinstance(position_scoped_instance, int) and position_scoped_instance > 0:
+            return position_scoped_instance
+
+        return normalized_fallback
 
     @staticmethod
     def _runtime_item_latency_samples(item: Dict[str, Any]) -> Optional[int]:
