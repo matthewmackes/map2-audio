@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**861** Python | **1161** TypeScript | **300** C++/H | **125** Docs | **966** total commits | **3** stars | **0** forks | **0** open issues
+**861** Python | **1163** TypeScript | **300** C++/H | **125** Docs | **968** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -174,9 +174,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |:---------|:------------|
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-27 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-27 |
+| [Global Work List](https://github.com/matthewmackes/map2-audio/blob/master/docs/global-work-list.md) | 2026-03-27 |
 | [Health Monitoring Hierarchy](https://github.com/matthewmackes/map2-audio/blob/master/docs/HEALTH_MONITORING_HIERARCHY.md) | 2026-03-26 |
 | [MAP2 Audio Platform — Complete Transplantation / Reinstallation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/TRANSPLANTATION_GUIDE.md) | 2026-03-26 |
-| [Parameter Control Standard](https://github.com/matthewmackes/map2-audio/blob/master/docs/specs/parameter-control-standard.md) | 2026-03-26 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-25 |
 <!-- RECENT-DOCS:END -->
 
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3a161b8`](https://github.com/matthewmackes/map2-audio/commit/e3a161b82f9fe5ab28e5bb2044dfe335b0468077) | Advance audio-table parameter coverage and backlog tracking | Map2 Audio | 2026-03-27 |
+| [`7bce2858`](https://github.com/matthewmackes/map2-audio/commit/7bce2858716e68c7e51a79fcca5fb42d00bf2728) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`92ad700a`](https://github.com/matthewmackes/map2-audio/commit/92ad700aef2669d3c9ed78ef2bab91c49f24353c) | Fix audio table page build blockers | Map2 Audio | 2026-03-27 |
 | [`f6e1c327`](https://github.com/matthewmackes/map2-audio/commit/f6e1c327c5e688641577a3f6720f341487e9f509) | Add audio table page scaffold | Map2 Audio | 2026-03-27 |
 | [`dc957bec`](https://github.com/matthewmackes/map2-audio/commit/dc957becd9674780c841b9c67a11333d4ad09b86) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-27 |
 | [`ea53ed5a`](https://github.com/matthewmackes/map2-audio/commit/ea53ed5a9a91f91439cec3ead3867f8070d14721) | Sync audio table keyboard scaffold and build version | Map2 Audio | 2026-03-27 |
 | [`3ecd1913`](https://github.com/matthewmackes/map2-audio/commit/3ecd19137fc10355e352bd2fcd5e5d576168b3a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`1c5b6bcf`](https://github.com/matthewmackes/map2-audio/commit/1c5b6bcfce83ac4bc6d09a1e0bcdfe660a2e06f9) | Complete T453 runtime identity routing | Map2 Audio | 2026-03-27 |
-| [`47e265cc`](https://github.com/matthewmackes/map2-audio/commit/47e265cc3dc980a5225868e415420ecd41c8e976) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`f56cd5fc`](https://github.com/matthewmackes/map2-audio/commit/f56cd5fc45f93cba1c31d1f120c23abbd4daca1d) | Scope EQ routes by runtime identity | Map2 Audio | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
