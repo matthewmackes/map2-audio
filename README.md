@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**837** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **931** total commits | **3** stars | **0** forks | **0** open issues
+**841** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **933** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6d00af53`](https://github.com/matthewmackes/map2-audio/commit/6d00af53f1537327acc1a8a77eed0cd7ca1fcc5f) | test: cover audio diagnostics path upload scanner routes | Map2 Audio | 2026-03-26 |
+| [`9a1ef24f`](https://github.com/matthewmackes/map2-audio/commit/9a1ef24fa614f0a5425b6e70b9c14ec710059ea5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`7b6c275f`](https://github.com/matthewmackes/map2-audio/commit/7b6c275f483bb6558f3cb06344a2fa95a332b586) | test: cover dashboard and cpu metrics routes | Map2 Audio | 2026-03-26 |
 | [`a449792b`](https://github.com/matthewmackes/map2-audio/commit/a449792bd3f06406b2912b99adf96012c6f14cee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`8fb9c179`](https://github.com/matthewmackes/map2-audio/commit/8fb9c179d7f95c548c9ed7bc42bfc2b2f060f582) | test: cover folder and plugin tag routes | Map2 Audio | 2026-03-26 |
 | [`e37f765c`](https://github.com/matthewmackes/map2-audio/commit/e37f765ce225ff6de0706901fe36de412e0bc841) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 | [`5d0b003a`](https://github.com/matthewmackes/map2-audio/commit/5d0b003a7339be65279c7888ea1e53bf24a238d5) | test: cover preset exchange and plugin preset routes | Map2 Audio | 2026-03-26 |
 | [`8ca6e81d`](https://github.com/matthewmackes/map2-audio/commit/8ca6e81d33f57a443b9b6abd90d1e80058d27751) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
-| [`da523ffe`](https://github.com/matthewmackes/map2-audio/commit/da523ffeb2f3e23410a9d184f492aabaf63d1b1e) | Add route tests for NAM, SoundFont, and preset migration ... | Map2 Audio | 2026-03-26 |
-| [`92e05692`](https://github.com/matthewmackes/map2-audio/commit/92e05692e5252d1c06883e40d46eb5a1dcd0dbe8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
