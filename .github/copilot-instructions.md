@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T451 direct-node web service stop-path fix)
+> **Last Updated**: March 27, 2026 (T451 web production shutdown hardening)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1077,10 +1077,10 @@ These files represent best practices and architectural patterns to follow:
 **18. Production Web Systemd Units Must Exec Node Directly**
 - **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`
 - **Problem**: The port-`3000` deploy loop could still time out on `systemctl stop map2-web-prod` and fall back to `SIGKILL`, even though the underlying `serve_web_dist.mjs` server itself was healthy.
-- **Root Cause**: The live unit was still launching the frontend through `npm run preview`, so systemd was managing the npm wrapper instead of the node server directly and the stop path stayed vulnerable to wrapper/process-group drift.
-- **Fix**: Point the production unit and manual fallback at `/usr/bin/node .../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`, then sync the live unit with `systemctl daemon-reload`.
-- **Verification**: `systemctl show map2-web-prod.service -p ExecStart`; `bash -n scripts/build/deploy`; `pytest -q tests/test_serve_web_dist.py`; `npm --prefix web run deploy -- --skip-build`; `journalctl -u map2-web-prod.service --since '<restart time>' --no-pager`
-- **Lesson**: `npm run ...` is fine for interactive launches, but long-lived system services should exec the real runtime directly so stop signals and restart semantics are deterministic.
+- **Root Cause**: The current host was still running a stale `npm run preview` unit, and even after switching to direct node `ExecStart`, `serve_web_dist.mjs` only called `server.close()` on `SIGTERM`, which left keep-alive / upgraded sockets alive long enough for systemd to time out.
+- **Fix**: Point the production unit and manual fallback at `/usr/bin/node .../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`, then track/destroy live client and proxy sockets inside `serve_web_dist.mjs` during shutdown so the service drains promptly under `SIGTERM`.
+- **Verification**: `systemctl show map2-web-prod.service -p ExecStart`; `bash -n scripts/build/deploy`; `node --check scripts/serve_web_dist.mjs`; `pytest -q tests/test_serve_web_dist.py`; `./scripts/build/deploy --skip-build`; `journalctl -u map2-web-prod.service --since '<restart time>' --no-pager`
+- **Lesson**: `npm run ...` is fine for interactive launches, but long-lived system services should exec the real runtime directly and own their socket teardown path explicitly; `server.close()` alone is not enough when persistent clients are attached.
 
 ### Python Backend Gotchas
 
@@ -1611,12 +1611,12 @@ Target: < 5 ms total
 - **Impact**: All push operations must target both `origin` (GitHub) and `gitlab` (GitLab) remotes
 - **Command**: `git push origin master && git push gitlab master`
 
-### [2026-03-27] - Direct Node Web Service Contract (COMPLETE)
+### [2026-03-27] - Web Production Shutdown Hardening (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#18), Build & Test Commands, Server Management Patterns
-- **Change**: Updated the production web service contract so systemd and the deploy wrapper launch `serve_web_dist.mjs` through `/usr/bin/node` directly instead of `npm run preview` / `npm run serve`.
-- **Reason**: The live port-`3000` restart still hit the `SIGKILL` fallback because the npm wrapper remained in the `ExecStart` chain on the current host.
-- **Impact**: `map2-web-prod` stop/start now targets the real node server process directly, making repeated production restarts deterministic.
-- **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`
+- **Change**: Updated the production web service contract so systemd and the deploy wrapper launch `serve_web_dist.mjs` through `/usr/bin/node` directly, and hardened `serve_web_dist.mjs` to destroy tracked client/proxy sockets during `SIGTERM` shutdown.
+- **Reason**: The live port-`3000` restart still hit the `SIGKILL` fallback first because the host was on a stale npm-wrapper unit, and then again because `server.close()` alone did not drain persistent browser sockets fast enough.
+- **Impact**: `map2-web-prod` stop/start now targets the real node server process directly and repeated production restarts no longer depend on systemd’s forced-kill escape hatch.
+- **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`, `scripts/serve_web_dist.mjs`, `tests/test_serve_web_dist.py`
 
 ### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#15)

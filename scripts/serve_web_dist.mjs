@@ -200,7 +200,21 @@ function proxyHttpRequest(request, response, backendHost, backendPort) {
   request.pipe(proxyRequest);
 }
 
-function proxyUpgrade(request, socket, head, backendHost, backendPort) {
+function trackSocket(registry, socket) {
+  registry.add(socket);
+  socket.on('close', () => {
+    registry.delete(socket);
+  });
+  return socket;
+}
+
+function destroyTrackedSockets(registry) {
+  for (const socket of registry) {
+    socket.destroy();
+  }
+}
+
+function proxyUpgrade(request, socket, head, backendHost, backendPort, auxiliarySockets) {
   const backendSocket = net.connect(backendPort, backendHost, () => {
     let headerBlock = `${request.method} ${request.url} HTTP/${request.httpVersion}\r\n`;
     for (const [name, value] of Object.entries(request.headers)) {
@@ -219,6 +233,7 @@ function proxyUpgrade(request, socket, head, backendHost, backendPort) {
     }
     socket.pipe(backendSocket).pipe(socket);
   });
+  trackSocket(auxiliarySockets, backendSocket);
 
   backendSocket.on('error', () => {
     socket.destroy();
@@ -232,6 +247,8 @@ function proxyUpgrade(request, socket, head, backendHost, backendPort) {
 function createServer(options) {
   const distDir = path.resolve(options.distDir);
   const indexPath = path.join(distDir, 'index.html');
+  const clientSockets = new Set();
+  const auxiliarySockets = new Set();
 
   const server = http.createServer(async (request, response) => {
     const method = request.method || 'GET';
@@ -278,7 +295,7 @@ function createServer(options) {
       socket.destroy();
       return;
     }
-    proxyUpgrade(request, socket, head, options.backendHost, options.backendPort);
+    proxyUpgrade(request, socket, head, options.backendHost, options.backendPort, auxiliarySockets);
   });
 
   server.on('clientError', (error, socket) => {
@@ -288,6 +305,21 @@ function createServer(options) {
       socket.destroy();
     }
   });
+
+  server.on('connection', (socket) => {
+    trackSocket(clientSockets, socket);
+  });
+
+  server.destroyTrackedConnections = () => {
+    if (typeof server.closeIdleConnections === 'function') {
+      server.closeIdleConnections();
+    }
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+    destroyTrackedSockets(clientSockets);
+    destroyTrackedSockets(auxiliarySockets);
+  };
 
   return server;
 }
@@ -310,14 +342,26 @@ async function main() {
     );
   });
 
-  const shutdown = () => {
+  let shuttingDown = false;
+  const shutdown = (signal) => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    console.log(`Received ${signal}; shutting down MAP2 production web server`);
     server.close(() => {
       process.exit(0);
     });
+    server.destroyTrackedConnections?.();
+    const forcedExitTimer = setTimeout(() => {
+      server.destroyTrackedConnections?.();
+      process.exit(0);
+    }, 2000);
+    forcedExitTimer.unref();
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

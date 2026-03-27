@@ -58,6 +58,17 @@ def _wait_for_http(url: str, timeout: float = 10.0) -> None:
     raise AssertionError(f"Timed out waiting for {url}")
 
 
+def _read_until(sock: socket.socket, marker: bytes, timeout: float = 2.0) -> bytes:
+    sock.settimeout(timeout)
+    payload = b""
+    while marker not in payload:
+        chunk = sock.recv(4096)
+        if not chunk:
+            break
+        payload += chunk
+    return payload
+
+
 def _write_minimal_dist(dist_dir: Path) -> None:
     assets_dir = dist_dir / "assets"
     css_dir = dist_dir / "css"
@@ -188,6 +199,58 @@ def test_production_server_exits_promptly_on_sigterm(tmp_path: Path) -> None:
         proc.wait(timeout=5)
         assert proc.returncode is not None
     finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
+        backend_server.shutdown()
+        backend_thread.join(timeout=5)
+
+
+def test_production_server_sigterm_closes_keepalive_connections(tmp_path: Path) -> None:
+    dist_dir = tmp_path / "dist"
+    _write_minimal_dist(dist_dir)
+
+    backend_server, backend_thread, backend_port = _start_backend()
+    frontend_port = _free_port()
+    proc = subprocess.Popen(
+        [
+            "node",
+            str(SCRIPT_PATH),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(frontend_port),
+            "--backend-host",
+            "127.0.0.1",
+            "--backend-port",
+            str(backend_port),
+            "--dist",
+            str(dist_dir),
+        ],
+        cwd=ROOT_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    keepalive_socket: socket.socket | None = None
+    try:
+        _wait_for_http(f"http://127.0.0.1:{frontend_port}/")
+        keepalive_socket = socket.create_connection(("127.0.0.1", frontend_port), timeout=2)
+        keepalive_socket.sendall(
+            b"GET / HTTP/1.1\r\n"
+            b"Host: 127.0.0.1\r\n"
+            b"Connection: keep-alive\r\n\r\n"
+        )
+        payload = _read_until(keepalive_socket, b"</html>")
+        assert b"200 OK" in payload
+
+        proc.terminate()
+        proc.wait(timeout=2)
+        assert proc.returncode is not None
+    finally:
+        if keepalive_socket is not None:
+            keepalive_socket.close()
         if proc.poll() is None:
             proc.kill()
             proc.wait(timeout=5)
