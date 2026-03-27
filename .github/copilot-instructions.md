@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T450 signal-safe shutdown + Tesira retry backoff)
+> **Last Updated**: March 27, 2026 (T451 direct-node web service stop-path fix)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -204,7 +204,7 @@ When adding significant updates, append to this log:
 - Audio interface with ALSA support
 
 **Port Assignments:**
-- `3000`: Frontend production server (`scripts/serve_web_dist.mjs` via `npm run serve` / `npm run preview`)
+- `3000`: Frontend production server (`/usr/bin/node scripts/serve_web_dist.mjs` via `map2-web-prod.service`)
 - `8080`: Backend API server (uvicorn)
 - `3001`: ❌ NOT USED (reserved but unused)
 
@@ -231,7 +231,7 @@ cd web && npm test -- --runInBand \
   src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx \
   src/app/pages/midi-hub/MidiHubLabPage.test.tsx
 
-# Preview production build (port 3000)
+# Preview production build (one-off local use on port 3000)
 cd web && npm run preview
 
 # Build + preview in one command
@@ -340,7 +340,7 @@ ls -lh web/dist/assets/*.js | wc -l
 - **File**: `WEB_SERVER_PORTS.md`
 - **Why**: Defines production-only server setup (no dev server, only port 3000)
 - **Key Rules**:
-  - Only use the dedicated production web server on port `3000` (`npm run serve` / `scripts/serve_web_dist.mjs`), never `vite dev`
+  - Only use the dedicated production web server on port `3000` (`map2-web-prod.service` or direct `node scripts/serve_web_dist.mjs`), never `vite dev`
   - NO port 3001 (no dev server)
   - NO HMR (hot module replacement)
 
@@ -372,8 +372,8 @@ sleep 5 && curl http://localhost:3000/
 # NEVER use vite dev server
 npx vite --port 3001
 
-# NEVER run server without nohup/background
-npm run serve
+# NEVER run the production web server through the npm wrapper in a long-lived session
+/usr/bin/node scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000
 ```
 
 ### ✅ CORRECT Pattern
@@ -385,7 +385,6 @@ kill -9 $(pgrep -f "uvicorn app.main") 2>/dev/null
 
 # Kill old frontend
 pkill -f "serve_web_dist.mjs" 2>/dev/null
-pkill -9 npm 2>/dev/null
 ```
 
 #### 2. Start Servers with nohup + Background
@@ -395,7 +394,8 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
   --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
 
 # Frontend Web (port 3000)
-cd /home/mm/map2-audio/web && nohup npm run serve > /tmp/preview.log 2>&1 &
+cd /home/mm/map2-audio && nohup /usr/bin/node scripts/serve_web_dist.mjs \
+  --host 0.0.0.0 --port 3000 > /tmp/preview.log 2>&1 &
 ```
 
 #### 3. Check Status (NOT sleep)
@@ -416,6 +416,7 @@ curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js' | head -1
 - Use `isBackground: true` in `run_in_terminal` when starting servers
 - Poll with `grep`/`tail`/`curl` on the next tool call — each call is independent
 - Use `kill -9` for uvicorn (graceful kill sometimes doesn't release the port fast enough)
+- Prefer the direct node runtime for the production web server; avoid `npm` as a long-lived service wrapper
 - Always check for port conflicts: `ERROR: [Errno 98] address already in use`
 
 ---
@@ -460,7 +461,7 @@ grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
 
 | Port | Purpose | Server | Command |
 |------|---------|--------|---------|
-| 3000 | Frontend (production) | MAP2 production web server | `cd /home/mm/map2-audio/web && npm run serve` |
+| 3000 | Frontend (production) | MAP2 production web server | `cd /home/mm/map2-audio && /usr/bin/node scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000` |
 | 8080 | Backend API | Uvicorn | `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080` |
 | 3001 | ❌ NOT USED | None | Never use this port |
 
@@ -1073,6 +1074,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_tesira_fleet_stop.py tests/tesira/test_tesira_device_transport.py tests/tesira/test_tesira_fleet.py`; `sudo journalctl -u map2-backend.service --since '<run start>' --until '<run end>' --no-pager | rg "TesiraDevice\\[|ssh connect failed"`
 - **Lesson**: Offline hardware recovery must be bounded and capability-aware. If the fallback transport cannot work on the live host, remove it from the hot path instead of retrying it forever.
 
+**18. Production Web Systemd Units Must Exec Node Directly**
+- **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`
+- **Problem**: The port-`3000` deploy loop could still time out on `systemctl stop map2-web-prod` and fall back to `SIGKILL`, even though the underlying `serve_web_dist.mjs` server itself was healthy.
+- **Root Cause**: The live unit was still launching the frontend through `npm run preview`, so systemd was managing the npm wrapper instead of the node server directly and the stop path stayed vulnerable to wrapper/process-group drift.
+- **Fix**: Point the production unit and manual fallback at `/usr/bin/node .../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`, then sync the live unit with `systemctl daemon-reload`.
+- **Verification**: `systemctl show map2-web-prod.service -p ExecStart`; `bash -n scripts/build/deploy`; `pytest -q tests/test_serve_web_dist.py`; `npm --prefix web run deploy -- --skip-build`; `journalctl -u map2-web-prod.service --since '<restart time>' --no-pager`
+- **Lesson**: `npm run ...` is fine for interactive launches, but long-lived system services should exec the real runtime directly so stop signals and restart semantics are deterministic.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1602,6 +1611,13 @@ Target: < 5 ms total
 - **Impact**: All push operations must target both `origin` (GitHub) and `gitlab` (GitLab) remotes
 - **Command**: `git push origin master && git push gitlab master`
 
+### [2026-03-27] - Direct Node Web Service Contract (COMPLETE)
+- **Section**: Gotchas & Learned Fixes (#18), Build & Test Commands, Server Management Patterns
+- **Change**: Updated the production web service contract so systemd and the deploy wrapper launch `serve_web_dist.mjs` through `/usr/bin/node` directly instead of `npm run preview` / `npm run serve`.
+- **Reason**: The live port-`3000` restart still hit the `SIGKILL` fallback because the npm wrapper remained in the `ExecStart` chain on the current host.
+- **Impact**: `map2-web-prod` stop/start now targets the real node server process directly, making repeated production restarts deterministic.
+- **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`
+
 ### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#15)
 - **Change**: Documented complete MIDI device selection implementation
@@ -1644,7 +1660,8 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
   --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
 
 # Start frontend
-cd /home/mm/map2-audio/web && nohup npm run serve > /tmp/preview.log 2>&1 &
+cd /home/mm/map2-audio && nohup /usr/bin/node scripts/serve_web_dist.mjs \
+  --host 0.0.0.0 --port 3000 > /tmp/preview.log 2>&1 &
 
 # Check status
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health
@@ -1698,7 +1715,7 @@ systemctl --user status pipewire
 
 ### 2. Dev Server
 ❌ `npx vite --port 3001`  
-✅ `cd /home/mm/map2-audio/web && npm run serve`
+✅ `cd /home/mm/map2-audio && /usr/bin/node scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`
 
 ### 3. Manual Server Restarts
 ❌ Restarting server after every build  

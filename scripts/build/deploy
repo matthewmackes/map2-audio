@@ -23,6 +23,7 @@ WEB_DIR="$ROOT_DIR/web"
 LOG_DIR="$ROOT_DIR/logs"
 PROD_PORT=3000
 SERVICE_NAME="map2-web-prod"
+SERVER_SCRIPT="$ROOT_DIR/scripts/serve_web_dist.mjs"
 
 # Colors
 RED='\033[0;31m'
@@ -185,12 +186,12 @@ start_prod() {
         fi
     fi
 
-    # Fall back to manual start
-    cd "$WEB_DIR"
-    nohup npm run serve > "$LOG_DIR/web-prod.log" 2>&1 &
+    # Fall back to the same direct node runtime the production unit uses.
+    nohup /usr/bin/node "$SERVER_SCRIPT" --host 0.0.0.0 --port "$PROD_PORT" \
+        > "$LOG_DIR/web-prod.log" 2>&1 &
     local pid=$!
     disown $pid
-    log "Started npm run serve manually (PID: $pid)"
+    log "Started direct production server manually (PID: $pid)"
 }
 
 # ── Verify deployment ───────────────────────────────────────

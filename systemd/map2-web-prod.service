@@ -12,8 +12,8 @@ WorkingDirectory=/home/mm/map2-audio/web
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
 Environment="NODE_ENV=production"
 
-# Serve pre-built dist/ via the dedicated production web server on port 3000.
-ExecStart=/usr/bin/npm run serve
+# Serve pre-built dist/ directly so systemd signals reach the node runtime.
+ExecStart=/usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000
 
 Restart=always
 RestartSec=5

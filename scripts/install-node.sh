@@ -1146,7 +1146,7 @@ Type=simple
 User=map2
 Group=map2
 WorkingDirectory=/opt/map2-audio/web
-ExecStart=/usr/bin/npm run serve
+ExecStart=/usr/bin/node /opt/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000
 Restart=always
 RestartSec=10
 

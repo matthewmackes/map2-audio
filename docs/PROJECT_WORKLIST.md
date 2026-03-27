@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T450 restart/latency follow-up closed
+Last updated: 2026-03-27 - T451 web production stop-path follow-up closed
 
 ID: T449
 Status: [✓] Done
@@ -5612,8 +5612,28 @@ Last updated: 2026-03-21 19:06 EDT - Codex
   - Updated `docs/VITE_TROUBLESHOOTING_GUIDE.md` so the troubleshooting flow, health checks, restart commands, and log references now target the production `serve_web_dist.mjs` runtime / `npm run serve`, and the guide now recommends `npm run build` / `npm run deploy` rather than raw `vite preview` plus fixed sleeps.
   - Updated `docs/CLAUDE.md` so the secondary operator guidance now treats `serve_web_dist.mjs` as the supported port-`3000` server, replaces the old `vite preview` kill/start examples, and marks the prior localhost `vite preview` proxy issue as retired legacy context.
   - Corrected stale historical notes in `docs/PROJECT_WORKLIST.md`: `T251` no longer names `vite preview` as the production target, and `T262` now records that the JUCE Grid `Move left` regression run passes rather than preserving the obsolete failure warning.
-  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `rg -n "vite preview|Move left|vite-preview|sleep 3|sleep 2|serve_web_dist" docs/CLAUDE.md docs/VITE_TROUBLESHOOTING_GUIDE.md docs/PROJECT_WORKLIST.md` -> only expected current references remained.
-  - Licensing: Classified `docs/CLAUDE.md`, `docs/VITE_TROUBLESHOOTING_GUIDE.md`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered documentation, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `rg -n "vite preview|Move left|vite-preview|sleep 3|sleep 2|serve_web_dist" docs/CLAUDE.md docs/VITE_TROUBLESHOOTING_GUIDE.md docs/PROJECT_WORKLIST.md` -> only expected current references remained.
+- Licensing: Classified `docs/CLAUDE.md`, `docs/VITE_TROUBLESHOOTING_GUIDE.md`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered documentation, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T451
+Status: [✓] Done
+Title: Eliminate the remaining `map2-web-prod` forced-kill stop path on port 3000
+Description:
+- Goal / acceptance criteria: Remove the remaining production web stop-timeout path where `npm --prefix web run deploy` still has to `SIGKILL` `map2-web-prod` during restart. Acceptance requires tracing the live/runtime mismatch to a specific `ExecStart` path, updating the repo-controlled service/deploy/install artifacts so the production server stops cleanly without the extra wrapper layer, syncing the current host if needed, and validating repeated `3000` restarts with no forced kill and a healthy bundle response.
+- Why it matters: The current cycle-2 deploy on `2026-03-27` rebuilt successfully but still logged `map2-web-prod stop timed out; sending SIGKILL to the unit`, which means the production restart path is still carrying a stale process-model problem even after the earlier `T263`/`T264` wrapper hardening work.
+- Dependencies: T263, T264, `systemd/map2-web-prod.service`, `/etc/systemd/system/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`, `.github/copilot-instructions.md`
+- Estimated effort: Low-Medium
+- Required outputs: Updated production service/runtime contract, any necessary host sync command(s), validation evidence from repeated clean restarts on port `3000`, and worklist/licensing completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-27 08:39 EDT - Codex
+- Completion notes:
+  - Traced the forced-kill stop path to live unit drift on the current host: `systemctl show map2-web-prod.service -p ExecStart` revealed `/etc/systemd/system/map2-web-prod.service` was still launching `npm run preview`, while the tracked repo template had already diverged and the running process from the prior cycle was still the old npm-wrapper service (`3800199`).
+  - Updated the repo-controlled production runtime contract so the tracked unit `systemd/map2-web-prod.service`, the installer-generated frontend unit in `scripts/install-node.sh`, and the manual fallback in `scripts/build/deploy` all exec `/usr/bin/node .../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000` directly instead of using `npm` as the long-lived service wrapper.
+  - Added focused regression coverage in `tests/test_serve_web_dist.py` proving the production server exits promptly on `SIGTERM`, and refreshed `.github/copilot-instructions.md` with the direct-node service contract plus the new shutdown gotcha for future AI/operator work.
+  - Synced the live host with `sudo install -m 0644 systemd/map2-web-prod.service /etc/systemd/system/map2-web-prod.service` followed by `sudo systemctl daemon-reload`; the first post-sync restart necessarily killed the still-running legacy `npm run preview` process, while the next `./scripts/build/deploy --skip-build` restart at `2026-03-27 08:37:20 EDT` stopped cleanly with `map2-web-prod.service: Deactivated successfully.` and relaunched the direct node process (`3808710`) with no `SIGKILL` path.
+  - Validation: `bash -n scripts/build/deploy` -> pass; `pytest -q tests/test_serve_web_dist.py` -> pass (`2 passed`); `systemd-analyze verify systemd/map2-web-prod.service` -> pass; `curl -I --max-time 10 http://127.0.0.1:3000/` -> `HTTP/1.1 200 OK`; `sudo journalctl -u map2-web-prod.service --since '2026-03-27 08:36:30' --no-pager` recorded the legacy forced kill only on the old pre-sync process and the clean direct-node restart immediately after.
+  - Licensing review: touched systemd/script/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing .github systemd scripts tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T266
 Status: [✓] Done

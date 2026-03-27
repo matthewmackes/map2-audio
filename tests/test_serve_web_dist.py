@@ -58,8 +58,7 @@ def _wait_for_http(url: str, timeout: float = 10.0) -> None:
     raise AssertionError(f"Timed out waiting for {url}")
 
 
-def test_production_server_distinguishes_spa_routes_from_static_assets(tmp_path: Path) -> None:
-    dist_dir = tmp_path / "dist"
+def _write_minimal_dist(dist_dir: Path) -> None:
     assets_dir = dist_dir / "assets"
     css_dir = dist_dir / "css"
     assets_dir.mkdir(parents=True)
@@ -79,6 +78,11 @@ def test_production_server_distinguishes_spa_routes_from_static_assets(tmp_path:
     )
     (assets_dir / "index-abcdefgh.js").write_text("console.log('ok');\n", encoding="utf-8")
     (css_dir / "modGui.css").write_text("body { color: white; }\n", encoding="utf-8")
+
+
+def test_production_server_distinguishes_spa_routes_from_static_assets(tmp_path: Path) -> None:
+    dist_dir = tmp_path / "dist"
+    _write_minimal_dist(dist_dir)
 
     backend_server, backend_thread, backend_port = _start_backend()
     frontend_port = _free_port()
@@ -147,5 +151,45 @@ def test_production_server_distinguishes_spa_routes_from_static_assets(tmp_path:
             proc.kill()
             proc.wait(timeout=5)
 
+        backend_server.shutdown()
+        backend_thread.join(timeout=5)
+
+
+def test_production_server_exits_promptly_on_sigterm(tmp_path: Path) -> None:
+    dist_dir = tmp_path / "dist"
+    _write_minimal_dist(dist_dir)
+
+    backend_server, backend_thread, backend_port = _start_backend()
+    frontend_port = _free_port()
+    proc = subprocess.Popen(
+        [
+            "node",
+            str(SCRIPT_PATH),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(frontend_port),
+            "--backend-host",
+            "127.0.0.1",
+            "--backend-port",
+            str(backend_port),
+            "--dist",
+            str(dist_dir),
+        ],
+        cwd=ROOT_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    try:
+        _wait_for_http(f"http://127.0.0.1:{frontend_port}/")
+        proc.terminate()
+        proc.wait(timeout=5)
+        assert proc.returncode is not None
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
         backend_server.shutdown()
         backend_thread.join(timeout=5)
