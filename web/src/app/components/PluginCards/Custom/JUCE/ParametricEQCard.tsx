@@ -73,10 +73,14 @@ interface ParametricEQCardProps extends PluginCardProps {
 
 function ParametricEQCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#4ecdc4',
   compact = false,
   onOpenMidiMappings,
 }: ParametricEQCardProps) {
+  const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
+
   const {
     bands,
     outputGain,
@@ -88,7 +92,10 @@ function ParametricEQCardBase({
     setBandEnabled,
     setOutputGain,
     setBypass,
-  } = useFilters()
+  } = useFilters({
+    instanceId,
+    pluginPosition: resolvedPluginPosition,
+  })
 
   const visualization = (
     <EQCurveDisplay

@@ -4,9 +4,10 @@
  * Provides control and frequency response visualization for the EQ processor.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clusterScopeKey, withNodeQuery } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
 
 // ========================================
 // Types
@@ -93,21 +94,49 @@ function parseEQParams(data: Record<string, unknown>): EQParams {
 
 interface UseFiltersOptions {
   nodeId?: string | null
+  instanceId?: number | null
+  pluginPosition?: number | null
+}
+
+const EQ_URI = 'map2://juce/eq/parametric'
+
+function withRuntimeQuery(
+  path: string,
+  options: { instanceId?: number | null; pluginPosition?: number | null; nodeId?: string | null },
+): string {
+  const params = new URLSearchParams()
+
+  if (typeof options.instanceId === 'number' && Number.isFinite(options.instanceId) && options.instanceId > 0) {
+    params.set('instance_id', String(Math.trunc(options.instanceId)))
+  }
+  if (typeof options.pluginPosition === 'number' && Number.isFinite(options.pluginPosition) && options.pluginPosition >= 0) {
+    params.set('plugin_position', String(Math.trunc(options.pluginPosition)))
+  }
+
+  const scopedPath = params.size > 0 ? `${path}?${params.toString()}` : path
+  return withNodeQuery(scopedPath, options.nodeId)
 }
 
 export function useFilters(options: UseFiltersOptions = {}) {
-  const { nodeId } = options
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(EQ_URI, pluginPosition, instanceId)
+  const queryScopeKey = ['eq', scopeKey, pluginScopeKey] as const
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   // ========================================
   // Query for EQ parameters
   // ========================================
 
   const eqQuery = useQuery({
-    queryKey: ['eq', scopeKey, 'parameters'],
+    queryKey: [...queryScopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch(withNodeQuery('/api/engine/eq/parameters', nodeId))
+      const res = await fetch(buildScopedUrl('/api/engine/eq/parameters'))
       if (!res.ok) throw new Error('Failed to fetch EQ parameters')
       return parseEQParams(await res.json())
     },
@@ -127,7 +156,7 @@ export function useFilters(options: UseFiltersOptions = {}) {
       if (params.q !== undefined) body.q = params.q
       if (params.enabled !== undefined) body.enabled = params.enabled
 
-      const res = await fetch(withNodeQuery(`/api/engine/eq/bands/${index}`, nodeId), {
+      const res = await fetch(buildScopedUrl(`/api/engine/eq/bands/${index}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -136,7 +165,7 @@ export function useFilters(options: UseFiltersOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
+      queryClient.invalidateQueries({ queryKey: queryScopeKey })
     }
   })
 
@@ -150,7 +179,7 @@ export function useFilters(options: UseFiltersOptions = {}) {
       if (params.outputGain !== undefined) body.output_gain = params.outputGain
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch(withNodeQuery('/api/engine/eq', nodeId), {
+      const res = await fetch(buildScopedUrl('/api/engine/eq'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -159,7 +188,7 @@ export function useFilters(options: UseFiltersOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
+      queryClient.invalidateQueries({ queryKey: queryScopeKey })
     }
   })
 
@@ -168,9 +197,9 @@ export function useFilters(options: UseFiltersOptions = {}) {
   // ========================================
 
   const frequencyResponseQuery = useQuery({
-    queryKey: ['eq', scopeKey, 'frequency-response'],
+    queryKey: [...queryScopeKey, 'frequency-response'],
     queryFn: async (): Promise<FrequencyResponseData> => {
-      const res = await fetch(withNodeQuery('/api/engine/eq/frequency-response/default', nodeId))
+      const res = await fetch(buildScopedUrl('/api/engine/eq/frequency-response/default'))
       if (!res.ok) throw new Error('Failed to fetch frequency response')
       return res.json()
     },
@@ -248,7 +277,7 @@ export function useFilters(options: UseFiltersOptions = {}) {
     updateEQ: updateEQ.mutate,
 
     // Invalidate to refresh
-    refresh: () => queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
+    refresh: () => queryClient.invalidateQueries({ queryKey: queryScopeKey })
   }
 }
 

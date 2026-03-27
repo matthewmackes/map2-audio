@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T453 NAM scoped status methods completed
+Last updated: 2026-03-27 - T453 EQ scoped routing completed
 
 ID: T453
 Status: [>] In Progress
@@ -43,7 +43,7 @@ Description:
 
 Subtasks:
 - T453-subA: [ ] Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
-- T453-subB: [ ] Add instance_id/plugin_position to EQ/filter routes
+- T453-subB: [✓] Done - Add instance_id/plugin_position to EQ/filter routes
 - T453-subC: [✓] Done - Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
 - T453-subD: [✓] Done - Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
 - T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
@@ -53,8 +53,15 @@ Subtasks:
 - T453-subI: [✓] Done - Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
 - T453-subJ: [✓] Done - Add regression tests — backend multi-instance parameter isolation tests plus frontend scoped query key/WebSocket instance filtering coverage
 Assigned to: Codex
-Last updated: 2026-03-27 11:41 EDT - Codex
+Last updated: 2026-03-27 11:55 EDT - Codex
 - Progress notes:
+  - Hardened `app/routes/filters.py` so the full EQ route family now accepts `instance_id` and `plugin_position`, resolves the live EQ instance through `engine.resolve_instance_id()` when available, translates the JUCE FilterPlugin parameter IDs (`bandN_freq`, `bandN_gain`, `bandN_q`, `bandN_type`, `bandN_enabled`, `outputGain`, `bypass`) into the existing REST contract, and fails closed on missing scoped positions instead of reading or mutating the global singleton.
+  - Added Python-side scoped frequency-response generation in `app/routes/filters.py` using the current duplicate-safe EQ band state so `/api/engine/eq/frequency-response` and `/api/engine/eq/frequency-response/default` no longer fall through to the global EQ processor when runtime identity is supplied.
+  - Updated `web/src/app/hooks/useFilters.ts` to scope React Query cache keys and fetch URLs by runtime identity, then rewired `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.tsx` to pass `plugin.instance_id` plus `pluginPosition` into the hook so the selected-block EQ card now targets the correct duplicate instance for reads and writes.
+  - Added focused regression coverage in `tests/test_filters_route_identity.py` for position-scoped EQ reads, stale `instance_id` recovery through `plugin_position`, scoped frequency-response isolation, and fail-closed missing-position behavior, plus `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx` for scoped frontend query/mutation wiring.
+  - Updated `.github/copilot-instructions.md` with the scoped EQ routing rule so future filter-route work preserves the engine symbol translation and fail-closed runtime-identity contract.
+  - Licensing review: touched backend/frontend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_filters_route_identity.py` -> PASS (`4 passed`); `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx` -> PASS (`2 passed`); `npm --prefix web run typecheck` -> PASS.
   - Unified the NAM and IR selected-block status query keys around scope-specific identity, then updated `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` so successful loads/uploads only invalidate the active status query (plus the relevant asset-list query on uploads) instead of globally invalidating every `['nam']` or `['ir']` query.
   - Added `matchesScopedParameterUpdate()` in `web/src/map2/hooks/useWebSocket.ts` and rewired `useBatchedParameter()` to require matching `instance_id` and/or `plugin_position` before accepting single or batched websocket parameter updates, preventing duplicate-instance UI cross-talk on shared URI/parameter pairs.
   - Updated `web/src/app/components/PluginCards/PluginCardRouter.tsx` and `web/src/app/components/LV2PluginParameterEditor.tsx` so the generic LV2 fallback editor now receives and uses `pluginPosition` plus `instanceId` for duplicate-safe realtime output and parameter writes.

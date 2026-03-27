@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 NAM instance status helpers)
+> **Last Updated**: March 27, 2026 (T453 EQ scoped routing)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1247,6 +1247,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py`
 - **Lesson**: When instance-scoped route logic depends on a global-only service API, fix the service surface instead of duplicating per-route unpacking logic.
 
+**27. Scoped EQ Routes Must Translate REST-Friendly Parameters To JUCE Runtime Symbols (HIGH - Mar 27, 2026)**
+- **Files**: `app/routes/filters.py`, `web/src/app/hooks/useFilters.ts`, `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.tsx`, `tests/test_filters_route_identity.py`, `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx`
+- **Problem**: Duplicate parametric EQ instances still shared the global singleton route family because the selected-block card and `/api/engine/eq/*` endpoints never accepted runtime identity, and the backend REST schema (`output_gain`, filter-type strings) did not match the actual JUCE parameter IDs (`outputGain`, numeric choice values).
+- **Root Cause**: The EQ route layer was still built entirely around global `engine.get_eq_*` / `set_eq_*` helpers, while the frontend hook keyed all requests under one global `['eq']` scope and never sent `instance_id` or `plugin_position`.
+- **Fix**: Accept runtime identity across the EQ routes, resolve the live instance before any read/write, translate between REST-facing EQ fields and the JUCE FilterPlugin symbols (`bandN_freq`, `bandN_gain`, `bandN_q`, `bandN_type`, `bandN_enabled`, `outputGain`, `bypass`), and scope the `useFilters` hook plus `ParametricEQCard` query/mutation traffic by runtime identity.
+- **Verification**: `pytest -q tests/test_filters_route_identity.py`; `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx`; `npm --prefix web run typecheck`
+- **Lesson**: When a route contract uses human-friendly parameter names but the engine exposes different symbols or enum encodings, the route must own that translation explicitly before duplicate-safe runtime scoping can be trusted.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1517,6 +1525,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Scoped EQ Runtime Identity Routing
+- **Section**: Gotchas & Learned Fixes (#27), Python Backend Gotchas, React/TypeScript Gotchas
+- **Change**: Documented that the EQ route family and `useFilters`/`ParametricEQCard` must carry runtime identity, resolve the live scoped instance before any engine call, and translate REST-facing EQ field names to the JUCE FilterPlugin parameter symbols.
+- **Reason**: The remaining T453 EQ audit found that duplicate parametric EQ blocks still read and wrote through the global singleton path even after other selected-block JUCE cards had become runtime-identity aware.
+- **Impact**: Future EQ/filter work should preserve both halves of the contract: fail-closed scoped instance resolution and explicit symbol/enum translation between the REST API and the JUCE engine.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/filters.py`, `web/src/app/hooks/useFilters.ts`, `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.tsx`, `tests/test_filters_route_identity.py`, `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - NAM Instance-Scoped Service Status Helpers
 - **Section**: Gotchas & Learned Fixes (#26), Python Backend Gotchas
