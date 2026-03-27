@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**855** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **944** total commits | **3** stars | **0** forks | **0** open issues
+**855** Python | **1151** TypeScript | **300** C++/H | **125** Docs | **946** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`24fc2cea`](https://github.com/matthewmackes/map2-audio/commit/24fc2cea1ba1b874c6a968d04d4708ef4e63b988) | Cycle 3 follow-up: harden serve_web_dist shutdown | Map2 Audio | 2026-03-27 |
+| [`847d6fea`](https://github.com/matthewmackes/map2-audio/commit/847d6feaf91b957da48ca955686805ac2fa177b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`d6fdc37f`](https://github.com/matthewmackes/map2-audio/commit/d6fdc37f19785e630e09dab85428ab322fe667cf) | Cycle 3: close T451 web production stop path | Map2 Audio | 2026-03-27 |
 | [`097b2e5c`](https://github.com/matthewmackes/map2-audio/commit/097b2e5c7879ffcd927acf2d780649eeec9ae6b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`76476913`](https://github.com/matthewmackes/map2-audio/commit/764769132dbcf327d12db476eafbdf13fb370154) | Cycle 2: close T450 restart and Tesira retry follow-up | Map2 Audio | 2026-03-27 |
 | [`e8aa5f21`](https://github.com/matthewmackes/map2-audio/commit/e8aa5f2123b1d0be0f392a9e9a9a91ee97581be4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`d722564f`](https://github.com/matthewmackes/map2-audio/commit/d722564fb194d08f6d37e278866a88d572ab2cfc) | Cycle 1: close T209 API reliability qualification | Map2 Audio | 2026-03-27 |
 | [`100c21bc`](https://github.com/matthewmackes/map2-audio/commit/100c21bce7741a06212fd9ec92511bc67108ce41) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`ef182815`](https://github.com/matthewmackes/map2-audio/commit/ef18281529f5372bc0671990393eec404b90ecae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`d8ffb0fa`](https://github.com/matthewmackes/map2-audio/commit/d8ffb0face5d3bc14902abb0ad9d62f7de6beee2) | test: cover cluster inventory and remediation routes | Map2 Audio | 2026-03-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
