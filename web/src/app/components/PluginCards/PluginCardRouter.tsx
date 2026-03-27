@@ -187,6 +187,8 @@ export function PluginCardRouter({
     <LV2PluginParameterEditor
       key={pluginRuntimeKey}
       plugin={plugin}
+      instanceId={plugin.instance_id}
+      pluginPosition={pluginPosition}
       onAddToChain={onAddToChain}
       showAddToChain={showAddToChain}
     />

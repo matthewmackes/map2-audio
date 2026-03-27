@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T452 scoped NAM chooser recovery)
+> **Last Updated**: March 27, 2026 (T453 frontend identity scoping)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1215,6 +1215,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx`; `npm --prefix web run typecheck`
 - **Lesson**: In MAP2, `instance_id` is not durable across all runtime transitions. For selected-block JUCE actions, `plugin_position` is the stable recovery key and should travel alongside the cached instance id.
 
+**23. Duplicate-Instance Frontend State Must Invalidate And Listen By Runtime Scope (HIGH - Mar 27, 2026)**
+- **Files**: `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, `web/src/map2/hooks/useWebSocket.ts`, `web/src/app/components/PluginCards/PluginCardRouter.tsx`, `web/src/app/components/LV2PluginParameterEditor.tsx`
+- **Problem**: Duplicate effect instances could briefly cross-pollute frontend state: loading/uploading assets in one block refetched unrelated blocks, websocket parameter updates could move the wrong UI control, and the generic LV2 fallback editor missed duplicate-safe runtime identity.
+- **Root Cause**: Successful mutations invalidated global `['nam']` / `['ir']` query families, the parameter websocket hook matched only `plugin_uri + param_index`, and the fallback LV2 editor never received `pluginPosition`.
+- **Fix**: Scope asset/status invalidations to the active runtime identity key, require matching `instance_id` / `plugin_position` when consuming websocket parameter updates, and pass runtime identity through the generic LV2 fallback editor for both realtime output and parameter writes.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts`; `npm --prefix web run typecheck`
+- **Lesson**: Once duplicate plugin instances exist, every frontend cache key, websocket filter, and fallback editor path must carry runtime identity all the way through; URI-only matching is no longer safe.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1485,6 +1493,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Frontend Runtime-Identity Scoping For Duplicate Instances
+- **Section**: Gotchas & Learned Fixes (#23), React/TypeScript Gotchas
+- **Change**: Documented the need to scope asset/status query invalidation, websocket parameter matching, and fallback LV2 editor props by runtime identity instead of URI-only matching.
+- **Reason**: The T453 frontend audit found three different duplicate-instance leaks in the selected-block path even after backend/plugin-host identity plumbing existed.
+- **Impact**: Future frontend work on duplicate-safe effects should treat scoped query keys and websocket filters as part of the runtime contract, not just a UI optimization detail.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, `web/src/map2/hooks/useWebSocket.ts`, `web/src/app/components/PluginCards/PluginCardRouter.tsx`, `web/src/app/components/LV2PluginParameterEditor.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Scoped NAM Chooser Recovery From Stale Instance IDs
 - **Section**: Gotchas & Learned Fixes (#22), User Preferences

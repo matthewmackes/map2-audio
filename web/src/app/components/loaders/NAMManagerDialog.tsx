@@ -52,6 +52,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   const resolvedInstanceId = typeof instanceId === 'number' && instanceId > 0 ? instanceId : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
   const statusScopeKey = getPluginIdentityKeyFromParts(NAM_PLUGIN_URI, resolvedPluginPosition, resolvedInstanceId)
+  const statusQueryKey = ['nam', 'status', statusScopeKey] as const
 
   const modelsQuery = useQuery<NAMModelsResponse>({
     queryKey: ['nam', 'models'],
@@ -72,7 +73,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   })
 
   const statusQuery = useQuery<NAMStatus>({
-    queryKey: ['nam', 'status', statusScopeKey],
+    queryKey: statusQueryKey,
     queryFn: () => (
       resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
         ? namApi.getScopedStatus({
@@ -94,7 +95,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
           : namApi.loadModel(name)
     ),
     onSuccess: (_, name) => {
-      queryClient.invalidateQueries({ queryKey: ['nam'] })
+      void queryClient.invalidateQueries({ queryKey: statusQueryKey })
       pushToast(`Loaded NAM model: ${name}`, 'success')
       onLoadNAM?.(name)
     },
@@ -107,7 +108,8 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
       return namApi.upload(file)
     },
     onSuccess: async (data: { model?: { name?: string } }) => {
-      queryClient.invalidateQueries({ queryKey: ['nam'] })
+      await queryClient.invalidateQueries({ queryKey: ['nam', 'models'] })
+      await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       const uploadedName = data.model?.name
       pushToast(`Uploaded: ${uploadedName || 'NAM model'}`, 'success')
       if (uploadedName) {

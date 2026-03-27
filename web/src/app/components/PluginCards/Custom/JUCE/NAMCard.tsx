@@ -82,9 +82,10 @@ function NAMCardBase({
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
   const statusScopeKey = getPluginIdentityKeyFromParts(NAM_URI, resolvedPluginPosition, instanceId)
+  const statusQueryKey = ['nam', 'status', statusScopeKey] as const
 
   const statusQuery = useQuery({
-    queryKey: ['nam', 'status', statusScopeKey],
+    queryKey: statusQueryKey,
     queryFn: async () => normalizeNAMStatus(
       instanceId
         ? await namApi.getInstanceStatus(instanceId)
@@ -107,8 +108,8 @@ function NAMCardBase({
         body: JSON.stringify({ gain_db: value }),
       })
     }
-    queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const setOutputGain = useCallback(async (value: number) => {
     if (instanceId) {
@@ -122,8 +123,8 @@ function NAMCardBase({
         body: JSON.stringify({ gain_db: value }),
       })
     }
-    queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const setNormalize = useCallback(async (normalize: boolean) => {
     if (instanceId) {
@@ -137,8 +138,8 @@ function NAMCardBase({
         body: JSON.stringify({ normalize }),
       })
     }
-    queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
@@ -152,8 +153,8 @@ function NAMCardBase({
         body: JSON.stringify({ bypass }),
       })
     }
-    queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
@@ -187,8 +188,9 @@ function NAMCardBase({
       }
       return data
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['nam'] })
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ['nam', 'models'] })
+      await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       pushToast(`Loaded NAM model: ${data.model?.name || 'uploaded model'}`, 'success')
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),

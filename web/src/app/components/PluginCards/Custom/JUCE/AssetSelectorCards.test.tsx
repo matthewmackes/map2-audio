@@ -38,6 +38,7 @@ jest.mock('../../../../../map2/api', () => ({
 import { NAMCard } from './NAMCard'
 import { CabinetIRCard } from './CabinetIRCard'
 import { ReverbIRCard } from './ReverbIRCard'
+import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
 
 jest.mock('../../withMidiDialog', () => ({
   withMidiDialog: (Component: React.ComponentType<any>) => Component,
@@ -129,11 +130,15 @@ function makeInstancePlugin(name: string, category: string, instanceId: number) 
 }
 
 function renderCard(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={makeClient()}>
-      {ui}
-    </QueryClientProvider>,
-  )
+  const queryClient = makeClient()
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        {ui}
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 describe('JUCE asset selector cards', () => {
@@ -543,5 +548,64 @@ describe('JUCE asset selector cards', () => {
       expect(mockIRLoadCabinetAtPosition).toHaveBeenCalledWith('Uploaded Cabinet.wav', 5)
       expect(mockIRLoadReverbAtPosition).toHaveBeenCalledWith('Uploaded Reverb.wav', 6)
     })
+  })
+
+  it('invalidates only the scoped status and list queries after selected-block asset uploads', async () => {
+    const { queryClient } = renderCard(
+      <>
+        <NAMCard
+          plugin={makePlugin('NAM', 'Amplifier')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#ff6b6b"
+        />
+        <CabinetIRCard
+          plugin={makePlugin('Cabinet IR', 'Convolution')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#f97316"
+        />
+        <ReverbIRCard
+          plugin={makePlugin('Reverb IR', 'Convolution')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#a855f7"
+        />
+      </>,
+    )
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    const namStatusScopeKey = getPluginIdentityKeyFromParts('map2://juce/nam')
+    const cabinetStatusScopeKey = getPluginIdentityKeyFromParts('map2://juce/convolution/cabinet')
+    const reverbStatusScopeKey = getPluginIdentityKeyFromParts('map2://juce/convolution/reverb')
+
+    await waitFor(() => expect(screen.getByLabelText('Upload NAM model to selected block')).toBeInTheDocument())
+    invalidateSpy.mockClear()
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model to selected block'), {
+      target: {
+        files: [new File(['nam-data'], 'scoped-upload.nam', { type: 'application/octet-stream' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'scoped-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload reverb IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'scoped-reverb.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['nam', 'models'] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['nam', 'status', namStatusScopeKey] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'cabinet', 'list'] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'status', 'cabinet', cabinetStatusScopeKey] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'reverb', 'list'] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'status', 'reverb', reverbStatusScopeKey] })
+    })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['nam'] })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['ir'] })
   })
 })

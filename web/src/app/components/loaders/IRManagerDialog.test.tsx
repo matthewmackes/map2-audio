@@ -39,6 +39,7 @@ jest.mock('../Toasts', () => ({
 }))
 
 import { IRManagerDialog } from './IRManagerDialog'
+import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 
 function renderDialog(instanceId?: number, pluginPosition?: number) {
   const queryClient = new QueryClient({
@@ -48,11 +49,14 @@ function renderDialog(instanceId?: number, pluginPosition?: number) {
     },
   })
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <IRManagerDialog type="cabinet" open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
-    </QueryClientProvider>,
-  )
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <IRManagerDialog type="cabinet" open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 describe('IRManagerDialog', () => {
@@ -196,5 +200,20 @@ describe('IRManagerDialog', () => {
       expect(mockLoadCabinetAtPosition).toHaveBeenCalledWith('Cab A', 7)
     })
     expect(mockLoadCabinet).not.toHaveBeenCalled()
+  })
+
+  it('invalidates only the scoped cabinet status query after a successful load', async () => {
+    const { queryClient } = renderDialog(21, 7)
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    const statusScopeKey = getPluginIdentityKeyFromParts('map2://juce/convolution/cabinet', 7, 21)
+
+    await screen.findByText('Cab A')
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'status', 'cabinet', statusScopeKey] })
+    })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['ir'] })
   })
 })

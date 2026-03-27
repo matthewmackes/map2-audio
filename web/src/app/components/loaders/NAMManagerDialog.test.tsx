@@ -38,6 +38,7 @@ jest.mock('../Toasts', () => ({
 }))
 
 import { NAMManagerDialog } from './NAMManagerDialog'
+import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 
 function renderDialog(instanceId?: number, pluginPosition?: number) {
   const queryClient = new QueryClient({
@@ -47,11 +48,14 @@ function renderDialog(instanceId?: number, pluginPosition?: number) {
     },
   })
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
-    </QueryClientProvider>,
-  )
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 describe('NAMManagerDialog', () => {
@@ -283,5 +287,20 @@ describe('NAMManagerDialog', () => {
         pluginPosition: 9,
       })
     })
+  })
+
+  it('invalidates only the scoped NAM status query after a successful load', async () => {
+    const { queryClient } = renderDialog(17, 9)
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    const statusScopeKey = getPluginIdentityKeyFromParts('map2://juce/nam', 9, 17)
+
+    await screen.findByText('Mesa Mark V')
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['nam', 'status', statusScopeKey] })
+    })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['nam'] })
   })
 })

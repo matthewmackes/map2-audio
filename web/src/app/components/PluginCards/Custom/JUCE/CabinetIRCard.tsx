@@ -48,9 +48,11 @@ function CabinetIRCardBase({
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
   const statusScopeKey = getPluginIdentityKeyFromParts(CABINET_IR_URI, resolvedPluginPosition, instanceId)
+  const statusQueryKey = ['ir', 'status', 'cabinet', statusScopeKey] as const
+  const listQueryKey = ['ir', 'cabinet', 'list'] as const
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'cabinet', 'status', statusScopeKey],
+    queryKey: statusQueryKey,
     queryFn: async () => {
       const status = await irApi.getTypeStatus('cabinet', {
         instanceId,
@@ -67,7 +69,7 @@ function CabinetIRCardBase({
   })
 
   const listQuery = useQuery({
-    queryKey: ['ir', 'cabinet', 'list'],
+    queryKey: listQueryKey,
     queryFn: async () => {
       const data = await irApi.listCabinets()
       return (data.irs ?? []).map((ir) => ({
@@ -85,8 +87,8 @@ function CabinetIRCardBase({
     } else {
       await fetch(`/api/ir/set-cabinet-mix/${value}`, { method: 'POST' })
     }
-    queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
@@ -96,8 +98,8 @@ function CabinetIRCardBase({
     } else {
       await fetch(`/api/ir/set-cabinet-bypass/${bypass}`, { method: 'POST' })
     }
-    queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const navigate = useCallback(async (direction: 'prev' | 'next') => {
     if (instanceId) {
@@ -107,8 +109,8 @@ function CabinetIRCardBase({
     } else {
       await fetch(`/api/ir/navigate-cabinet/${direction}`, { method: 'POST' })
     }
-    queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const status = statusQuery.data
   const cabinets = listQuery.data || []
@@ -141,8 +143,9 @@ function CabinetIRCardBase({
       }
       return data
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['ir'] })
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: listQueryKey })
+      await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       pushToast(`Loaded cabinet IR: ${data.filename || 'uploaded file'}`, 'success')
     },
     onError: () => pushToast('Failed to upload cabinet IR', 'error'),

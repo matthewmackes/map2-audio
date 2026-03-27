@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T452 NAM chooser load fix closed
+Last updated: 2026-03-27 - T453 frontend identity slice closed
 
 ID: T453
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Multi-instance effect parameter independence — full-stack hardening
 Description:
 - Goal / acceptance criteria: When multiple instances of the same plugin type exist in the signal chain (e.g., 2× NAM, 2× Compressor, 2× Cabinet IR), each instance must maintain fully independent parameters, status, metering, and control. No parameter read, write, or UI state from one instance may leak to another. All endpoints, service methods, WebSocket messages, and React Query cache keys must be instance-scoped.
@@ -48,12 +48,19 @@ Subtasks:
 - T453-subD: [ ] Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
 - T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
 - T453-subF: [ ] Remove silent global fallback in IR routes — raise HTTPException when instance resolution fails instead of falling through to _ir_processor singleton
-- T453-subG: [ ] Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
-- T453-subH: [ ] Fix useBatchedParameter WebSocket handler to filter by instance_id/pluginPosition, not just uri+paramIndex
-- T453-subI: [ ] Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
+- T453-subG: [✓] Done - Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
+- T453-subH: [✓] Done - Fix useBatchedParameter WebSocket handler to filter by instance_id/pluginPosition, not just uri+paramIndex
+- T453-subI: [✓] Done - Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
 - T453-subJ: [ ] Add regression tests — backend: multi-instance parameter isolation tests; frontend: scoped query key tests, WebSocket instance filtering tests
-Assigned to: Unassigned
-Last updated: 2026-03-27 10:30 EDT
+Assigned to: Codex
+Last updated: 2026-03-27 11:07 EDT - Codex
+- Progress notes:
+  - Unified the NAM and IR selected-block status query keys around scope-specific identity, then updated `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` so successful loads/uploads only invalidate the active status query (plus the relevant asset-list query on uploads) instead of globally invalidating every `['nam']` or `['ir']` query.
+  - Added `matchesScopedParameterUpdate()` in `web/src/map2/hooks/useWebSocket.ts` and rewired `useBatchedParameter()` to require matching `instance_id` and/or `plugin_position` before accepting single or batched websocket parameter updates, preventing duplicate-instance UI cross-talk on shared URI/parameter pairs.
+  - Updated `web/src/app/components/PluginCards/PluginCardRouter.tsx` and `web/src/app/components/LV2PluginParameterEditor.tsx` so the generic LV2 fallback editor now receives and uses `pluginPosition` plus `instanceId` for duplicate-safe realtime output and parameter writes.
+  - Added focused frontend regression coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, `web/src/app/components/loaders/IRManagerDialog.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/PluginCards/PluginCardRouter.test.tsx`, and `web/src/map2/hooks/useWebSocket.test.ts` for scoped invalidation, websocket identity filtering, and LV2 fallback prop pass-through.
+  - Licensing review: touched frontend/worklist/test/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts` -> PASS (`28 passed`); `npm --prefix web run typecheck` -> PASS.
 
 ID: T452
 Status: [✓] Done

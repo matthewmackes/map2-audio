@@ -50,9 +50,11 @@ function ReverbIRCardBase({
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
   const statusScopeKey = getPluginIdentityKeyFromParts(REVERB_IR_URI, resolvedPluginPosition, instanceId)
+  const statusQueryKey = ['ir', 'status', 'reverb', statusScopeKey] as const
+  const listQueryKey = ['ir', 'reverb', 'list'] as const
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'reverb', 'status', statusScopeKey],
+    queryKey: statusQueryKey,
     queryFn: async () => {
       const status = await irApi.getTypeStatus('reverb', {
         instanceId,
@@ -70,7 +72,7 @@ function ReverbIRCardBase({
   })
 
   const listQuery = useQuery({
-    queryKey: ['ir', 'reverb', 'list'],
+    queryKey: listQueryKey,
     queryFn: async () => {
       const data = await irApi.listReverbs()
       return (data.irs ?? []).map((ir) => ({
@@ -88,8 +90,8 @@ function ReverbIRCardBase({
     } else {
       await fetch(`/api/ir/set-reverb-mix/${value}`, { method: 'POST' })
     }
-    queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const setBypass = useCallback(async (bypass: boolean) => {
     if (instanceId) {
@@ -99,8 +101,8 @@ function ReverbIRCardBase({
     } else {
       await fetch(`/api/ir/set-reverb-bypass/${bypass}`, { method: 'POST' })
     }
-    queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [instanceId, queryClient, resolvedPluginPosition])
+    void queryClient.invalidateQueries({ queryKey: statusQueryKey })
+  }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const status = statusQuery.data
   const reverbs = listQuery.data || []
@@ -133,8 +135,9 @@ function ReverbIRCardBase({
       }
       return data
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['ir'] })
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: listQueryKey })
+      await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       pushToast(`Loaded reverb IR: ${data.filename || 'uploaded file'}`, 'success')
     },
     onError: () => pushToast('Failed to upload reverb IR', 'error'),

@@ -12,6 +12,53 @@ import {
 } from '../websocket';
 import { sanitizeDisplayPayload } from '../displayNames';
 
+function normalizeInstanceId(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.trunc(value)
+    : undefined;
+}
+
+function normalizePluginPosition(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.trunc(value)
+    : undefined;
+}
+
+export function matchesScopedParameterUpdate(
+  update: any,
+  pluginUri: string,
+  paramIndex: number,
+  instanceId?: number,
+  pluginPosition?: number,
+): boolean {
+  if (update?.plugin_uri !== pluginUri || update?.param_index !== paramIndex) {
+    return false;
+  }
+
+  const scopedInstanceId = normalizeInstanceId(instanceId);
+  const scopedPluginPosition = normalizePluginPosition(pluginPosition);
+  const updateInstanceId = normalizeInstanceId(update?.instance_id);
+  const updatePluginPosition = normalizePluginPosition(update?.plugin_position);
+
+  if (scopedInstanceId !== undefined) {
+    if (updateInstanceId === undefined || updateInstanceId !== scopedInstanceId) {
+      return false;
+    }
+  }
+
+  if (scopedPluginPosition !== undefined) {
+    if (updatePluginPosition !== undefined) {
+      if (updatePluginPosition !== scopedPluginPosition) {
+        return false;
+      }
+    } else if (scopedInstanceId === undefined) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Hook to manage WebSocket connection
  *
@@ -274,14 +321,14 @@ export function useBatchedParameter(
   // Listen for parameter updates from WebSocket
   useWebSocketTopic('plugin_params', (data, message) => {
     if (message.type === 'parameter_change') {
-      if (data?.plugin_uri === pluginUri && data?.param_index === paramIndex) {
+      if (matchesScopedParameterUpdate(data, pluginUri, paramIndex, instanceId, pluginPosition)) {
         setValue(data.value);
       }
     }
     // Handle batch updates
     if (message.type === 'batch_parameter_change' && data?.updates) {
       const update = data.updates.find(
-        (u: any) => u.plugin_uri === pluginUri && u.param_index === paramIndex
+        (u: any) => matchesScopedParameterUpdate(u, pluginUri, paramIndex, instanceId, pluginPosition)
       );
       if (update) {
         setValue(update.value);

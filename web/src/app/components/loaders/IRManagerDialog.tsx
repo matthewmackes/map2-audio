@@ -117,15 +117,17 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
   const [uploading, setUploading] = useState(false)
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
   const statusScopeKey = getPluginIdentityKeyFromParts(IR_PLUGIN_URIS[type], resolvedPluginPosition, instanceId)
+  const statusQueryKey = ['ir', 'status', type, statusScopeKey] as const
+  const listQueryKey = ['ir', config.queryKey] as const
 
   const irsQuery = useQuery<IRsResponse>({
-    queryKey: ['ir', config.queryKey],
+    queryKey: listQueryKey,
     queryFn: config.listQueryFn,
     enabled: open,
   })
 
   const statusQuery = useQuery<IRStatus>({
-    queryKey: ['ir', 'status', type, statusScopeKey],
+    queryKey: statusQueryKey,
     queryFn: () => irApi.getTypeStatus(type, {
       instanceId,
       pluginPosition: resolvedPluginPosition,
@@ -136,7 +138,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
   const loadMutation = useMutation({
     mutationFn: (name: string) => config.loadFn(name, instanceId, resolvedPluginPosition),
     onSuccess: (_, name) => {
-      queryClient.invalidateQueries({ queryKey: ['ir'] })
+      void queryClient.invalidateQueries({ queryKey: statusQueryKey })
       pushToast(`Loaded ${type} IR: ${name}`, 'success')
       onLoad?.(name)
     },
@@ -149,7 +151,8 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
       return config.uploadFn(file)
     },
     onSuccess: async (data: { filename?: string }) => {
-      queryClient.invalidateQueries({ queryKey: ['ir'] })
+      await queryClient.invalidateQueries({ queryKey: listQueryKey })
+      await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       const uploadedName = data.filename
       pushToast(`Uploaded: ${uploadedName || 'IR file'}`, 'success')
       if (uploadedName) {

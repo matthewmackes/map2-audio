@@ -34,6 +34,8 @@ interface LV2PluginParameterEditorProps {
   plugin: Plugin
   onAddToChain?: (chainId: number) => void
   showAddToChain?: boolean
+  instanceId?: number
+  pluginPosition?: number
 }
 
 // Parameter Control Component - Smart control based on parameter type
@@ -406,15 +408,20 @@ export function LV2PluginParameterEditor({
   plugin,
   onAddToChain,
   showAddToChain = true,
+  instanceId,
+  pluginPosition,
 }: LV2PluginParameterEditorProps) {
   const queryClient = useQueryClient()
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = catConfig.color
+  const resolvedInstanceId = typeof instanceId === 'number' && instanceId > 0 ? instanceId : plugin.instance_id
+  const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
 
   // Real-time output data from WebSocket
   const { outputPorts: pluginOutputValues } = usePluginOutput({
     uri: plugin.uri,
-    instanceId: plugin.instance_id,
+    instanceId: resolvedInstanceId,
+    pluginPosition: resolvedPluginPosition,
   })
 
   // State
@@ -462,7 +469,8 @@ export function LV2PluginParameterEditor({
         plugin.uri,
         paramIndex,
         value,
-        plugin.instance_id,
+        resolvedInstanceId,
+        resolvedPluginPosition,
       )
     },
   })
