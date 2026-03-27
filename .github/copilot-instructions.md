@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 frontend identity scoping)
+> **Last Updated**: March 27, 2026 (T453 backend parameter read scoping)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1223,6 +1223,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts`; `npm --prefix web run typecheck`
 - **Lesson**: Once duplicate plugin instances exist, every frontend cache key, websocket filter, and fallback editor path must carry runtime identity all the way through; URI-only matching is no longer safe.
 
+**24. Duplicate-Instance Parameter Reads Must Resolve Live Runtime Identity Before Engine Access (HIGH - Mar 27, 2026)**
+- **Files**: `app/routes/plugins.py`, `tests/test_plugin_parameter_route_identity.py`
+- **Problem**: `GET /api/plugins/{uri}/parameters` could read the wrong duplicate plugin instance because it ignored `instance_id` / `plugin_position` even after the rest of the duplicate-safe runtime plumbing existed.
+- **Root Cause**: The route still called `engine.get_parameter(uri, symbol)` without first resolving the live scoped instance, so duplicate URIs fell back to whichever instance the engine returned first; stale cached `instance_id` values also had no route-level recovery path.
+- **Fix**: Accept `instance_id` and `plugin_position` on the route, resolve the live target instance through `engine.resolve_instance_id()` when available, pass the resolved scope into `engine.get_parameter()`, and fail closed with `404` when a requested scoped position no longer exists.
+- **Verification**: `pytest -q tests/test_plugin_parameter_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py`
+- **Lesson**: For duplicate plugin URIs, read paths need the same runtime-identity resolution as write paths. Never call a plugin-parameter engine API from a route until the live `instance_id` has been resolved or validated.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1493,6 +1501,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Backend Runtime-Identity Scoping For Plugin Parameter Reads
+- **Section**: Gotchas & Learned Fixes (#24), Python Backend Gotchas
+- **Change**: Documented that `/api/plugins/{uri}/parameters` must resolve a live scoped instance from `instance_id` / `plugin_position` before reading parameter values, and that missing scoped positions should fail closed instead of falling through to an arbitrary duplicate instance.
+- **Reason**: The remaining backend audit for T453 found that duplicate-plugin parameter reads were still URI-only even after the engine and frontend had mostly become runtime-identity aware.
+- **Impact**: Future backend parameter-read work should treat duplicate-safe instance resolution as part of the route contract, preventing stale-instance leakage and wrong-value reads in multi-instance chains.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/plugins.py`, `tests/test_plugin_parameter_route_identity.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Frontend Runtime-Identity Scoping For Duplicate Instances
 - **Section**: Gotchas & Learned Fixes (#23), React/TypeScript Gotchas

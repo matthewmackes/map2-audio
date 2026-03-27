@@ -512,6 +512,27 @@ try:
         plugin_position: Optional[int] = None,
     ) -> Optional[int]:
         explicit_instance_id = _normalize_positive_int(fallback_instance_id)
+        resolver = getattr(engine, "resolve_instance_id", None)
+        if callable(resolver):
+            try:
+                resolved_instance_id = await resolver(
+                    plugin_uri,
+                    plugin_position,
+                    fallback_instance_id=explicit_instance_id,
+                )
+            except TypeError:
+                try:
+                    resolved_instance_id = resolver(plugin_uri, plugin_position)
+                except TypeError:
+                    resolved_instance_id = resolver(plugin_uri)
+                if inspect.isawaitable(resolved_instance_id):
+                    resolved_instance_id = await resolved_instance_id
+                if explicit_instance_id is not None and not (
+                    isinstance(resolved_instance_id, int) and resolved_instance_id > 0
+                ):
+                    resolved_instance_id = explicit_instance_id
+            return resolved_instance_id if isinstance(resolved_instance_id, int) and resolved_instance_id > 0 else None
+
         if explicit_instance_id is not None:
             return explicit_instance_id
 
@@ -1510,36 +1531,82 @@ try:
         }
 
     @router.get("/{uri:path}/parameters")
-    async def get_parameters(uri: str):
+    async def get_parameters(
+        uri: str,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Get plugin parameters."""
+        normalized_instance_id = _normalize_positive_int(instance_id)
+        normalized_plugin_position = _normalize_non_negative_int(plugin_position)
         with _plugin_cache_lock:
-            loaded_exists = bool(_get_plugin_bucket(_loaded_plugins, uri))
+            loaded_bucket = list(_get_plugin_bucket(_loaded_plugins, uri))
+            selected_loaded_entry = _select_plugin_bucket_entry(
+                _loaded_plugins,
+                uri,
+                instance_id=normalized_instance_id,
+            )
             discovered_snapshot = list(_discovered_plugins)
-        if not loaded_exists:
+        if not loaded_bucket:
             raise HTTPException(status_code=404, detail="Plugin not loaded")
+        if (
+            normalized_instance_id is not None
+            and selected_loaded_entry is None
+            and normalized_plugin_position is None
+        ):
+            raise HTTPException(status_code=404, detail=f"Plugin instance not loaded: {normalized_instance_id}")
 
         # Find full plugin info from discovered list
-        plugin_info = next((p for p in discovered_snapshot if p["uri"] == uri), None)
+        plugin_info = _find_plugin_info_in_snapshot(uri, discovered_snapshot)
+        if not plugin_info:
+            plugin_info = dict(selected_loaded_entry or loaded_bucket[-1])
         if not plugin_info:
             return {"uri": uri, "parameters": []}
 
         # Get actual parameter values from running instance
-        parameters = plugin_info.get("parameters", []).copy()
+        parameters = [
+            dict(parameter)
+            for parameter in plugin_info.get("parameters", [])
+            if isinstance(parameter, dict)
+        ]
 
         try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
             if engine.is_available and engine.is_running:
+                scoped_instance_id = await _resolve_instance_id_for_uri(
+                    engine,
+                    uri,
+                    fallback_instance_id=normalized_instance_id,
+                    plugin_position=normalized_plugin_position,
+                )
+                if normalized_plugin_position is not None and scoped_instance_id is None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Plugin instance not found at position: {normalized_plugin_position}",
+                    )
+                if normalized_instance_id is not None and scoped_instance_id is None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Plugin instance not found: {normalized_instance_id}",
+                    )
                 for param in parameters:
                     symbol = param.get("symbol", "")
                     if symbol:
-                        value = await engine.get_parameter(uri, symbol)
+                        value = await engine.get_parameter(
+                            uri,
+                            symbol,
+                            instance_id=scoped_instance_id,
+                            plugin_position=normalized_plugin_position,
+                        )
                         if value is not None:
                             param["value"] = value
                         else:
                             param["value"] = param.get("default", 0.0)
                     else:
                         param["value"] = param.get("default", 0.0)
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Error getting parameter values: {e}")
             for param in parameters:

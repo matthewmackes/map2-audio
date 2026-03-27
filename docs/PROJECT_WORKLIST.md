@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T453 frontend identity slice closed
+Last updated: 2026-03-27 - T453 duplicate-safe parameter reads completed
 
 ID: T453
 Status: [>] In Progress
@@ -44,21 +44,26 @@ Description:
 Subtasks:
 - T453-subA: [ ] Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
 - T453-subB: [ ] Add instance_id/plugin_position to EQ/filter routes
-- T453-subC: [ ] Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
+- T453-subC: [✓] Done - Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
 - T453-subD: [ ] Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
 - T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
 - T453-subF: [ ] Remove silent global fallback in IR routes — raise HTTPException when instance resolution fails instead of falling through to _ir_processor singleton
 - T453-subG: [✓] Done - Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
 - T453-subH: [✓] Done - Fix useBatchedParameter WebSocket handler to filter by instance_id/pluginPosition, not just uri+paramIndex
 - T453-subI: [✓] Done - Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
-- T453-subJ: [ ] Add regression tests — backend: multi-instance parameter isolation tests; frontend: scoped query key tests, WebSocket instance filtering tests
+- T453-subJ: [✓] Done - Add regression tests — backend multi-instance parameter isolation tests plus frontend scoped query key/WebSocket instance filtering coverage
 Assigned to: Codex
-Last updated: 2026-03-27 11:07 EDT - Codex
+Last updated: 2026-03-27 11:13 EDT - Codex
 - Progress notes:
   - Unified the NAM and IR selected-block status query keys around scope-specific identity, then updated `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` so successful loads/uploads only invalidate the active status query (plus the relevant asset-list query on uploads) instead of globally invalidating every `['nam']` or `['ir']` query.
   - Added `matchesScopedParameterUpdate()` in `web/src/map2/hooks/useWebSocket.ts` and rewired `useBatchedParameter()` to require matching `instance_id` and/or `plugin_position` before accepting single or batched websocket parameter updates, preventing duplicate-instance UI cross-talk on shared URI/parameter pairs.
   - Updated `web/src/app/components/PluginCards/PluginCardRouter.tsx` and `web/src/app/components/LV2PluginParameterEditor.tsx` so the generic LV2 fallback editor now receives and uses `pluginPosition` plus `instanceId` for duplicate-safe realtime output and parameter writes.
   - Added focused frontend regression coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, `web/src/app/components/loaders/IRManagerDialog.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/PluginCards/PluginCardRouter.test.tsx`, and `web/src/map2/hooks/useWebSocket.test.ts` for scoped invalidation, websocket identity filtering, and LV2 fallback prop pass-through.
+  - Hardened `app/routes/plugins.py` so `GET /api/plugins/{uri}/parameters` now accepts `instance_id` and `plugin_position`, resolves the live target instance through `engine.resolve_instance_id()` when available, and rejects unknown scoped positions instead of silently reading the wrong duplicate instance.
+  - Added backend regression coverage in `tests/test_plugin_parameter_route_identity.py` for position-scoped reads, stale `instance_id` recovery through `plugin_position`, and 404 handling when a requested duplicate-plugin position no longer exists. This completes the remaining backend half of `T453-subJ`.
+  - Updated `.github/copilot-instructions.md` with the duplicate-safe backend parameter-read rule so future route work keeps runtime identity resolution ahead of engine parameter access.
+  - Licensing review: touched backend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_plugin_parameter_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py` -> PASS (`14 passed`).
   - Licensing review: touched frontend/worklist/test/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts` -> PASS (`28 passed`); `npm --prefix web run typecheck` -> PASS.
 
