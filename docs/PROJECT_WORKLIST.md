@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T454 integration-tail validation in progress
+Last updated: 2026-03-27 - T454 integration-tail validation advanced
 
 ID: T453
 Status: [✓] Done
@@ -8149,15 +8149,15 @@ Subtasks:
 - T454-subM: [✓] Done - Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
 - T454-subN: [>] In Progress - Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
 Assigned to: Codex
-Last updated: 2026-03-27 15:26 EDT - Codex
+Last updated: 2026-03-27 16:07 EDT - Codex
 - Progress notes:
   - `/audio-table` route wiring, the advanced-menu entry, the main page scaffold, and the supporting `audioTableColumns.ts` / `audioTableKeyboard.ts` helpers are now present in `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/*`.
   - The first release-loop deploy for this scaffold failed on real API/type-contract drift in `web/src/app/pages/AudioTablePage.tsx`: it imported `AudioPort` from the wrong module, treated `ChainsResponse`, `PluginDiscoverResponse`, and `AudioPortsResponse` as flat arrays, and called `pluginsApi.setParameterBatched()` with the wrong argument order.
   - Repaired the current build blockers by sourcing `AudioPort` from `web/src/map2/api.ts`, reading `chainsQuery.data?.chains` / `pluginsQuery.data?.plugins`, flattening audio ports from `portsQuery.data.inputs` and `portsQuery.data.outputs`, and fixing the batched parameter mutation signature while keeping the newer runtime peak-map plumbing intact.
   - Extended `web/src/app/pages/AudioTablePage.tsx` so each flow now assembles parameter metadata from plugin discovery, renders unioned parameter columns per flow, exposes inline numeric and discrete parameter cells, surfaces runtime dB values from `usePluginOutputs`, and keeps the add-plugin row, shared-state flow controls, and column picker on the same JUCE-grid storage contract.
   - Completed the remaining surface work in `web/src/app/pages/AudioTablePage.tsx`: the shared toolbar now tracks the active flow, real presets, global search, visible-row batch actions, snapshot/MIDI status tags, and cluster scope context; inline MIDI CC/channel/curve/min/max cells now bind per plugin row through the v2 mapping API; and a cluster node-management section below the flow tables reuses the shared node-focus contract while linking back to `AudioNodesModal`.
-  - Expanded focused frontend validation in `web/src/app/pages/AudioTablePage.test.tsx` and `web/src/app/pages/audioTableKeyboard.test.ts` to cover the cluster section, toolbar search/batch actions, preset affordances, and MIDI column rendering with seeded mapping data; the remaining end-to-end mutation-focused tail stays tracked under `T454-subN`.
-  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`31 passed`); `npm --prefix web run typecheck` -> PASS. `T454` remains open only because the mutation-heavy integration tail under `subN` is still being carried separately.
+  - Expanded focused frontend validation in `web/src/app/pages/AudioTablePage.test.tsx` and `web/src/app/pages/audioTableKeyboard.test.ts` to cover the cluster section, toolbar search/batch actions, preset affordances, MIDI column rendering with seeded mapping data, column-picker toggles, and the cluster node-manager open/focus flow; the remaining end-to-end mutation-focused tail stays tracked under `T454-subN`.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS (`30 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`3 passed`); earlier `npm --prefix web run typecheck` -> PASS. `T454` remains open only because the mutation-heavy integration tail under `subN` is still being carried separately.
 
 ---
 
