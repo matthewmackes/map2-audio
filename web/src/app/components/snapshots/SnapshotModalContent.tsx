@@ -14,7 +14,7 @@ import {
   Tile,
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import { flowSnapshotsApi } from '../../../map2/api'
 import type { ChainSnapshot, FlowSnapshot, FlowSnapshotDetail, FlowSnapshotData } from '../../../map2/types'
 import {

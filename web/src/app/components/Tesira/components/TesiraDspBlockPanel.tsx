@@ -10,6 +10,22 @@ interface TesiraDspBlockPanelProps {
 
 type ParamValues = Record<string, unknown>
 
+function buildDraftValues(values: ParamValues): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, String(value ?? '')]),
+  )
+}
+
+function draftsMatch(left: Record<string, string>, right: Record<string, string>) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+
+  return leftKeys.every((key) => left[key] === right[key])
+}
+
 function coerceDraftValue(raw: string): unknown {
   const text = raw.trim()
   if (text === '') return ''
@@ -95,11 +111,8 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
   )
 
   useEffect(() => {
-    setDrafts(
-      Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [key, String(value ?? '')]),
-      ),
-    )
+    const nextDrafts = buildDraftValues(values)
+    setDrafts((prev) => (draftsMatch(prev, nextDrafts) ? prev : nextDrafts))
   }, [values])
 
   const applyOne = async (attribute: string, value: unknown, args: unknown[] = []) => {

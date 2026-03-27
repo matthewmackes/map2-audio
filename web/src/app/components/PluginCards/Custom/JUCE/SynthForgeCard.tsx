@@ -21,7 +21,7 @@ import { InlineLoading, Tab, TabList, Tabs, Tag } from '@carbon/react'
 
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/InstrumentCategoryLayout'
-import { NumberInput } from '../../../Controls/NumberInput'
+import { NumberInput } from '../../../ParameterControl'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import {

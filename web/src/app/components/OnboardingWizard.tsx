@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, ArrowRight, BareMetalServer, Certificate, ChartNetwork, Checkmark, CheckmarkFilled, Close, Document, Link, Locked, Renew, Search, Security, WarningAlt } from '@carbon/icons-react'
-import { NumberInput } from './Controls/NumberInput'
+import { NumberInput } from './ParameterControl'
 
 interface WizardStep {
   id: number

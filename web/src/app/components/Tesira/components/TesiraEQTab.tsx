@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Tag, TextInput, Tile } from '@carbon/react'
 import { tesiraApi } from '../../../../map2/api'
+import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
 interface TesiraEQTabProps {
@@ -105,53 +106,63 @@ export function TesiraEQTab({ deviceId }: TesiraEQTabProps) {
             </div>
 
             <div className="tesira-eq-tab__control">
-              <label htmlFor={`tesira-eq-freq-${band.band}`} className="tesira-eq-tab__label">
+              <span className="tesira-eq-tab__label">
                 Frequency
-              </label>
-              <input
-                id={`tesira-eq-freq-${band.band}`}
+              </span>
+              <NumberInput
+                label={`Frequency for ${band.label}`}
                 className="tesira-eq-tab__range"
-                type="range"
                 min={20}
                 max={20000}
                 step={10}
                 value={bandState[index].freq}
-                aria-label={`Frequency for ${band.label}`}
-                onChange={(event) => handleFreq(index, Number(event.currentTarget.value))}
+                unit="Hz"
+                profile="frequency"
+                precision={0}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                onChange={(value) => handleFreq(index, value)}
               />
             </div>
 
             <div className="tesira-eq-tab__control">
-              <label htmlFor={`tesira-eq-gain-${band.band}`} className="tesira-eq-tab__label">
+              <span className="tesira-eq-tab__label">
                 Gain
-              </label>
-              <input
-                id={`tesira-eq-gain-${band.band}`}
+              </span>
+              <NumberInput
+                label={`Gain for ${band.label}`}
                 className="tesira-eq-tab__range"
-                type="range"
                 min={-15}
                 max={15}
                 step={0.5}
                 value={bandState[index].gain}
-                aria-label={`Gain for ${band.label}`}
-                onChange={(event) => handleGain(index, Number(event.currentTarget.value))}
+                unit="dB"
+                profile="gain-db"
+                precision={1}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                onChange={(value) => handleGain(index, value)}
               />
             </div>
 
             <div className="tesira-eq-tab__control">
-              <label htmlFor={`tesira-eq-q-${band.band}`} className="tesira-eq-tab__label">
+              <span className="tesira-eq-tab__label">
                 Q
-              </label>
-              <input
-                id={`tesira-eq-q-${band.band}`}
+              </span>
+              <NumberInput
+                label={`Q for ${band.label}`}
                 className="tesira-eq-tab__range"
-                type="range"
                 min={0.1}
                 max={10}
                 step={0.05}
                 value={bandState[index].q}
-                aria-label={`Q for ${band.label}`}
-                onChange={(event) => handleQ(index, Number(event.currentTarget.value))}
+                precision={2}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                onChange={(value) => handleQ(index, value)}
               />
             </div>
           </Tile>

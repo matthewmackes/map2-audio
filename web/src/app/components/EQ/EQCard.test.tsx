@@ -49,9 +49,6 @@ jest.mock('../ParameterControl', () => ({
       {label}
     </button>
   ),
-}))
-
-jest.mock('../Controls/ParameterKnob', () => ({
   ParameterKnob: ({ label }: { label: string }) => <div>{label}</div>,
 }))
 

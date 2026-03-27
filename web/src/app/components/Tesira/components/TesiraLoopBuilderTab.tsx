@@ -14,7 +14,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { chainsApi, effectsLoopsApi } from '../../../../map2/api'
 import type { EffectsLoop, LoopInsertion } from '../../../../map2/types'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../map2/hooks/useWebSocket'
-import { NumberInput } from '../../Controls/NumberInput'
+import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
 const LOOP_TOPOLOGIES = [

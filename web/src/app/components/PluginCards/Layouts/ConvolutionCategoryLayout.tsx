@@ -10,7 +10,7 @@ import type { Plugin } from '../../../../map2/types'
 import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
-import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../ParameterControl'
 import { FolderOpen, ChevronLeft, ChevronRight } from '@carbon/icons-react'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 

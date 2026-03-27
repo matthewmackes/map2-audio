@@ -8280,7 +8280,7 @@ Last updated: 2026-03-27 16:44 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/format.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS (`63 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`36 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T460
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Remove legacy wrappers and raw numeric inputs after migration coverage is broad enough
 Description:
 - Goal / acceptance criteria: Retire raw `input[type=range|number]` parameter controls, the `ParameterSlider` alias, and any remaining one-off knob widgets after the shared system covers all required surfaces.
@@ -8288,6 +8288,20 @@ Description:
 - Dependencies: T457; T458; T459
 - Estimated effort: Medium
 - Required outputs: Cleanup plan, removals, and compatibility notes for downstream contributors.
-Subtasks: None
+Subtasks:
+- T460-subA: [✓] Done - Extend the shared `ParameterControl` exports to absorb the current legacy wrapper prop shapes without changing live/commit behavior
+- T460-subB: [✓] Done - Migrate app card/layout/template consumers off `web/src/app/components/Controls/ParameterKnob.tsx`
+- T460-subC: [✓] Done - Migrate app numeric-input consumers off `web/src/app/components/Controls/NumberInput.tsx`
+- T460-subD: [✓] Done - Migrate `web/src/map2/components/NumberInput.tsx` consumers onto the shared parameter-control entry points
+- T460-subE: [✓] Done - Remove `web/src/app/components/Controls/ParameterKnob.tsx`, `ParameterSlider.tsx`, `NumberInput.tsx`, and `web/src/map2/components/NumberInput.tsx` once import count reaches zero
+- T460-subF: [>] In Progress - Audit remaining raw `input[type=range|number]` parameter surfaces and either migrate the safe subset or record explicit blocked follow-up notes
 Assigned to: Unassigned
-Last updated: 2026-03-27 14:11 EDT - Codex
+Last updated: 2026-03-27 17:39 EDT - Codex
+- Progress notes:
+  - Extended the shared runtime entry points in `web/src/app/components/ParameterControl/legacyProps.ts`, `ParameterNumericInput.tsx`, `ParameterKnob.tsx`, `ParameterSlider.tsx`, and `index.ts` so `ParameterControl` now absorbs the legacy wrapper prop shapes directly and exports a `NumberInput` alias without changing the old eager live/commit behavior.
+  - Migrated the app and `map2` consumers from `web/src/app/components/Controls/{ParameterKnob,ParameterSlider,NumberInput}.tsx` and `web/src/map2/components/NumberInput.tsx` onto `web/src/app/components/ParameterControl`, then removed the four wrapper files after import-count reached zero across `web/src` and the affected frontend tests.
+  - Updated focused regression tests (`web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/components/EQ/EQCard.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx`) to mock `ParameterControl` directly, and merged duplicate `jest.mock()` blocks that would otherwise shadow the new `NumberInput` alias export.
+  - Advanced `T460-subF` by migrating the safe direct-apply subset onto the shared runtime: `web/src/app/components/Tesira/components/TesiraEQTab.tsx` now uses shared numeric controls for band frequency/gain/Q, `web/src/app/components/PluginCards/Custom/JUCE/TweedBassmanCard.tsx` moved the bright-volume control off the native range input, and `web/src/app/components/MPX1/MPX1Knob.tsx` now wraps the shared `ParameterKnob` instead of the bespoke canvas implementation.
+  - While validating the Tesira slice, I fixed a real state-sync loop in `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx` by guarding draft hydration against equivalent value maps before calling `setDrafts`, then refreshed the stale casing assertions in `web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx`.
+  - Raw-input audit tail still open under `T460-subF`: `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/JuceGridSelectedBlockMidiPanel.tsx`, and the Tesira mixer / levels / DSP apply-button surfaces (`web/src/app/components/Tesira/components/TesiraMixerTab.tsx`, `TesiraLevelsTab.tsx`, `TesiraDspBlockPanel.tsx`) still bypass the shared runtime or depend on draft/apply semantics that need a deliberate migration path instead of a blind control swap.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS (`76 passed`); `timeout 60s npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraEQTab.test.tsx web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/components/MPX1/MPX1Knob.test.tsx web/src/app/components/ParameterControl/ParameterControl.test.tsx` -> PASS (`9 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.

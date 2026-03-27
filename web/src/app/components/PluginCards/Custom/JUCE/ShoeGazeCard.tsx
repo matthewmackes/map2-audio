@@ -10,7 +10,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
 import { formatSemitones } from '../../utils/formatters'
 

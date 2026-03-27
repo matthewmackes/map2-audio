@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react'
 import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
-import { NumberInput } from '../../../Controls/NumberInput'
+import { NumberInput } from '../../../ParameterControl'
 import { ArrowDown, ArrowUp, Link, Unlink } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 

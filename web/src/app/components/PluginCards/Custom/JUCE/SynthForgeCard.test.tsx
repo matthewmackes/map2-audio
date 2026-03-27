@@ -25,7 +25,7 @@ jest.mock('../../Layouts/InstrumentCategoryLayout', () => ({
   ),
 }))
 
-jest.mock('../../../Controls/NumberInput', () => ({
+jest.mock('../../../ParameterControl', () => ({
   NumberInput: ({ label, value, onChange }: any) => (
     <label>
       {label}

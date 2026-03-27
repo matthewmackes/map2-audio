@@ -57,15 +57,26 @@ describe('TesiraEQTab', () => {
     fireEvent.change(screen.getByLabelText('EQ instance tag'), {
       target: { value: 'MainEQ' },
     })
-    fireEvent.change(screen.getByLabelText('Frequency for Low'), {
+    const freq = screen.getByRole('slider', { name: 'Frequency for Low' })
+    fireEvent.focus(freq)
+    fireEvent.change(freq, {
       target: { value: '120' },
     })
-    fireEvent.change(screen.getByLabelText('Gain for Low'), {
+    fireEvent.blur(freq)
+
+    const gain = screen.getByRole('slider', { name: 'Gain for Low' })
+    fireEvent.focus(gain)
+    fireEvent.change(gain, {
       target: { value: '4.5' },
     })
-    fireEvent.change(screen.getByLabelText('Q for Low'), {
+    fireEvent.blur(gain)
+
+    const q = screen.getByRole('slider', { name: 'Q for Low' })
+    fireEvent.focus(q)
+    fireEvent.change(q, {
       target: { value: '1.25' },
     })
+    fireEvent.blur(q)
 
     expect(mockSetEQBandFreq).toHaveBeenCalledWith('tesira-1', 'MainEQ', 0, 120)
     expect(mockSetEQBandGain).toHaveBeenCalledWith('tesira-1', 'MainEQ', 0, 4.5)

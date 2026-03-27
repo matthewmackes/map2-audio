@@ -21,6 +21,7 @@ import {
   RECTIFIER_TYPES,
   CABINET_IRS,
 } from '../../../../hooks/useTweedBassman'
+import { NumberInput } from '../../../ParameterControl'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
@@ -436,14 +437,19 @@ function TweedBassmanCardBase({
         <div className="carbon-param-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
             <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '80px' }}>Bright Vol</label>
-            <input
-              type="range"
+            <NumberInput
+              label="Bright Vol"
+              value={brightVolumeSlot.value}
               min={0}
               max={10}
+              defaultValue={5}
               step={0.1}
-              value={brightVolumeSlot.value}
-              onChange={(e) => brightVolumeSlot.onChange(parseFloat(e.target.value))}
+              precision={1}
+              showLabel={false}
+              showBounds={false}
+              size="small"
               style={{ flex: 1 }}
+              onChange={brightVolumeSlot.onChange}
             />
             <span style={{ fontSize: '11px', color: '#888', minWidth: '30px' }}>{brightVolumeSlot.value.toFixed(1)}</span>
           </div>

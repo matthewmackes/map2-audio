@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react'
 import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import { TunerDisplay } from '../../Visualizations/TunerDisplay'
 import { Flash, Music } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'

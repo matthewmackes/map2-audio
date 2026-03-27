@@ -640,14 +640,15 @@
   gap: 2px;
 }
 
-.mpx1-flow-sidebar .mpx1-knob__value {
-  font-size: var(--type-caption);
-}
-
-.mpx1-flow-sidebar .mpx1-knob__label {
+.mpx1-flow-sidebar .mpx1-knob .numeric-input__label {
   font-size: var(--type-caption);
   letter-spacing: 0.03em;
   max-width: 88px;
+}
+
+.mpx1-flow-sidebar .mpx1-knob .numeric-input__control {
+  min-height: 2.7rem;
+  padding: 0.45rem 0.65rem;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */

@@ -4,7 +4,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import { formatDecay, formatFreq } from '../../utils/formatters'
 import { LCDDisplay } from '../../components/Visualizations/LCDDisplay'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { Activity, SettingsAdjust } from '@carbon/icons-react'
 

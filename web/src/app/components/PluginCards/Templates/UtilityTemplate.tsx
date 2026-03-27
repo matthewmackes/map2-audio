@@ -9,7 +9,7 @@ import type { PluginCardProps } from '../types'
 import { getCategoryConfig, generateParameterGroups } from '../types'
 import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
 
 export function UtilityTemplate({

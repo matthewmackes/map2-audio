@@ -13,7 +13,7 @@ import { Close } from '@carbon/icons-react'
 import type { MPX1RegistryParam, UseMPX1StateResult } from '../../../map2/mpx1Api'
 import { MPX1Knob } from './MPX1Knob'
 import type { BlockRoutingState } from './mpx1FlowRouting'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 

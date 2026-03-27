@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (parameter-control validation hardening)
+> **Last Updated**: March 27, 2026 (parameter-control audit safe-subset + Tesira draft-sync guard)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1279,6 +1279,22 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/format.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: For shared parameter-control work, surface migration tests are necessary but not sufficient. Always pin the formatter/parser contract and blur-commit deduplication in explicit runtime tests before closing the validation slice.
 
+**31. Retire Numeric Wrapper Files Only After The Shared ParameterControl Namespace Absorbs The Legacy Contract (HIGH - Mar 27, 2026)**
+- **Files**: `web/src/app/components/ParameterControl/legacyProps.ts`, `web/src/app/components/ParameterControl/ParameterNumericInput.tsx`, `web/src/app/components/ParameterControl/ParameterKnob.tsx`, `web/src/app/components/ParameterControl/ParameterSlider.tsx`, `web/src/app/components/ParameterControl/index.ts`, `web/src/app/components/Controls/*`, `web/src/map2/components/NumberInput.tsx`
+- **Problem**: `T460` needed to delete the old numeric wrapper files, but dozens of app and `map2` consumers still depended on the wrapper prop shapes and import paths.
+- **Root Cause**: The shared `ParameterControl` family originally accepted only descriptor-backed props, so a direct import migration would have forced per-callsite rewrites and several focused tests were shadowing the same module twice, which broke the new `NumberInput` alias export.
+- **Fix**: Teach the shared `ParameterControl` namespace to absorb the legacy wrapper props directly, export `NumberInput` from that namespace, migrate the call sites/tests to the shared module path, merge duplicate `jest.mock()` blocks, and only then delete the dead wrapper files once import-count reaches zero.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In MAP2, remove compatibility wrapper files only after the shared namespace can absorb the old prop contract and the tests mock that new namespace in a single consolidated factory.
+
+**32. Guard Query-Backed Draft Hydration Effects Against Equivalent Value Maps (MEDIUM - Mar 27, 2026)**
+- **Files**: `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx`
+- **Problem**: The Tesira DSP block panel could spin into a maximum-update-depth loop under test or unstable query mocks when the fetched parameter map recreated an identical object on every render.
+- **Root Cause**: The draft hydration effect always called `setDrafts(Object.fromEntries(...values))` whenever `values` changed by reference, even when the derived string map was semantically identical to the current draft state.
+- **Fix**: Build the next draft map once, compare it to the existing draft state, and return the previous state when nothing actually changed; update stale test assertions to match the current UI copy after the loop is fixed.
+- **Verification**: `timeout 60s npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraEQTab.test.tsx web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/components/MPX1/MPX1Knob.test.tsx web/src/app/components/ParameterControl/ParameterControl.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In MAP2, any effect that mirrors fetched objects into draft UI state must short-circuit on semantic equality. Query layers and tests routinely recreate value objects, and reference-only dependencies are not enough to prevent render loops.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1549,6 +1565,20 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Parameter-Control Wrapper Retirement
+- **Section**: Gotchas & Learned Fixes (#31), Update Log
+- **Change**: Documented the rule that wrapper deletion comes after the shared `ParameterControl` namespace absorbs the legacy prop contract, exports the `NumberInput` alias directly, and the focused tests stop shadowing the module with duplicate mocks.
+- **Reason**: `T460` moved the app and `map2` surfaces off `Controls/*` and `map2/components/NumberInput`, but that cleanup only stayed safe once the shared entry points preserved the old call-site contract and the test mocks were consolidated.
+- **Impact**: Future cleanup passes can delete dead compatibility files cleanly instead of leaving hidden import-path debt or breaking suites that only mocked the retired wrapper path.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/ParameterControl/legacyProps.ts`, `web/src/app/components/ParameterControl/ParameterNumericInput.tsx`, `web/src/app/components/ParameterControl/ParameterKnob.tsx`, `web/src/app/components/ParameterControl/ParameterSlider.tsx`, `web/src/app/components/ParameterControl/index.ts`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-03-27] - Parameter-Control Audit Safe Subset + Tesira Draft Sync Guard
+- **Section**: Gotchas & Learned Fixes (#32), Update Log
+- **Change**: Recorded the safe-subset `T460-subF` migrations (Tesira EQ, Tweed Bassman bright volume, MPX1 knob) and the Tesira DSP draft-hydration equality guard that prevents maximum-update-depth loops under recreated query payloads.
+- **Reason**: The wrapper-retirement follow-up surfaced a real state-sync bug while validating the next shared-control slice, and the remaining apply-button draft surfaces need an explicit reminder that they are not blind drop-in migrations.
+- **Impact**: Future assistants can keep pushing `T460-subF` without reintroducing the Tesira render loop or swapping shared controls into draft/apply workflows that still need a dedicated commit strategy.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/Tesira/components/TesiraEQTab.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx`, `web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/TweedBassmanCard.tsx`, `web/src/app/components/MPX1/MPX1Knob.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Parameter-Control Validation Hardening
 - **Section**: Gotchas & Learned Fixes (#30), Update Log

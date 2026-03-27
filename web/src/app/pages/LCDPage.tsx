@@ -75,7 +75,7 @@ import {
 } from '@carbon/icons-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
-import { NumberInput } from '../components/Controls/NumberInput'
+import { NumberInput } from '../components/ParameterControl'
 import { useToasts } from '../components/Toasts'
 import { lcdApi } from '../../map2/lcd'
 import { useLCDEvents, useLCDStatistics, useLCDEventHistory } from '../hooks/useLCDEvents'

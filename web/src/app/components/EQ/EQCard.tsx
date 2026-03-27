@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useFilters, FilterType, EQBandParams } from '../../hooks/useFilters'
-import { ParameterKnob } from '../Controls/ParameterKnob'
+import { ParameterKnob } from '../ParameterControl'
 import { ParameterControl } from '../ParameterControl'
 import { requireParameterDescriptor } from '../../data/parameterSchema'
 

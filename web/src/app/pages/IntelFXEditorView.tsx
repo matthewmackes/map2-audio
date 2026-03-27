@@ -14,7 +14,7 @@ import {
 } from '@carbon/react'
 import { useMemo, useState, type CSSProperties } from 'react'
 
-import { ParameterKnob } from '../components/Controls/ParameterKnob'
+import { ParameterKnob } from '../components/ParameterControl'
 import type { IntelFXRegistryParam } from '../../map2/intelfxApi'
 import { useIntelFXPageContext } from './IntelFXPage'
 import './IntelFXEditorView.css'

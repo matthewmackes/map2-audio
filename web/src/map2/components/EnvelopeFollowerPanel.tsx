@@ -23,7 +23,7 @@ import {
   Grid,
   LinearProgress,
 } from '@mui/material';
-import { NumberInput } from './NumberInput';
+import { NumberInput } from '../../app/components/ParameterControl';
 import {
   ChartLine,
   ChevronDown,

@@ -46,7 +46,7 @@ import {
   Checkbox,
   LinearProgress,
 } from '@mui/material';
-import { NumberInput } from './NumberInput';
+import { NumberInput } from '../../app/components/ParameterControl';
 import {
   Add,
   ChartLine,

@@ -13,7 +13,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { ModulationCategoryLayout, type ParamSlot } from '../../Layouts/ModulationCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
 
 // Plugin URI for MIDI mappings

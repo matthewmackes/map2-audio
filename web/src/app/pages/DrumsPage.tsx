@@ -27,7 +27,7 @@ import {
 } from '@carbon/icons-react'
 
 import { PageHeader } from '@/app/components/PageHeader'
-import { NumberInput } from '@/app/components/Controls/NumberInput'
+import { NumberInput } from '@/app/components/ParameterControl'
 import { ParameterControl } from '@/app/components/ParameterControl'
 import { requireParameterDescriptor } from '@/app/data/parameterSchema'
 import { useLocation } from 'react-router-dom'

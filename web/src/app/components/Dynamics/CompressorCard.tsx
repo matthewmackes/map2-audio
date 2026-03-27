@@ -6,7 +6,7 @@
  */
 
 import { useDynamics } from '../../hooks/useDynamics'
-import { ParameterKnob } from '../Controls/ParameterKnob'
+import { ParameterKnob } from '../ParameterControl'
 import { GainReductionMeter } from './GainReductionMeter'
 
 interface CompressorCardProps {

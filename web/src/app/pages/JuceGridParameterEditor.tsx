@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Dropdown, Button, InlineLoading, Tag, Tile } from '@carbon/react'
 import { Launch, Renew, SettingsAdjust, WarningAlt } from '@carbon/icons-react'
-import { NumberInput } from '../components/Controls/NumberInput'
+import { NumberInput } from '../components/ParameterControl'
 import {
   generateParameterGroups,
   getCategoryConfig,

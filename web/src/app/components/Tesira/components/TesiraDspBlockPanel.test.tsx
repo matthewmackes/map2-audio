@@ -35,7 +35,7 @@ jest.mock('../hooks/useTesiraApi', () => ({
 describe('TesiraDspBlockPanel', () => {
   it('shows crosspoint helper for matrix-style families', () => {
     render(<TesiraDspBlockPanel deviceId="tesira_1" instanceTag="MatrixMixer1" />)
-    expect(screen.getByText('Crosspoint Helper')).toBeTruthy()
-    expect(screen.getByText('Apply Gain')).toBeTruthy()
+    expect(screen.getByText('Crosspoint helper')).toBeTruthy()
+    expect(screen.getByText('Apply gain')).toBeTruthy()
   })
 })

@@ -10,7 +10,7 @@ import { getCategoryConfig } from '../types'
 import { ReverbCategoryLayout, type ParamSlot } from '../Layouts/ReverbCategoryLayout'
 import type { AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
 
 const DECAY_PATTERNS = ['decay', 'time', 'rt60', 'reverb_time', 'tail', 'length']

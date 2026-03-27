@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { mpx1Api, type MPX1Scene, type MPX1MorphRequest } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { formatMpx1ProgramLabel } from './programNumber'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './MPX1ScenePanel.css'
 
 const MORPH_CURVES = ['linear', 'ease_in', 'ease_out', 's_curve'] as const

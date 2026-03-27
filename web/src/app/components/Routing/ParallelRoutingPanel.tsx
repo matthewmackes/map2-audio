@@ -1,7 +1,7 @@
 import { Add as Plus, Branch as GitBranch, Renew as ArrowsClockwise, Renew as SpinnerGap, TrashCan as Trash, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useParallel } from '../../hooks/useParallel'
 import { useToasts } from '../Toasts'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 interface ParallelRoutingPanelProps {
   nodeId?: string | null

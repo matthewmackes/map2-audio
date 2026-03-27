@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import type { MPX1RegistryParam } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { MPX1Knob } from './MPX1Knob'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './MPX1BlockEditor.css'
 
 type EditorBlockId = 'reverb' | 'pitch' | 'delay' | 'chorus' | 'eq' | 'mod'

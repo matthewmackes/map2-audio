@@ -25,7 +25,7 @@ import {
 } from '@carbon/icons-react'
 import { pluginsApi, pluginPresetsApi, chainsApi } from '../../map2/api'
 import { usePluginOutput } from '../hooks/usePluginOutputs'
-import { NumberInput } from './Controls/NumberInput'
+import { NumberInput } from './ParameterControl'
 import type { Plugin, PluginParameter, OutputPort } from '../../map2/types'
 import { getCategoryConfig } from './PluginCards/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'

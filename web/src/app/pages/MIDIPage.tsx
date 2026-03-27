@@ -24,7 +24,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material'
-import { NumberInput } from '../../map2/components/NumberInput'
+import { NumberInput } from '../components/ParameterControl'
 import {
   Activity,
   Add,

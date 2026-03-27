@@ -8,7 +8,7 @@
 import { Hashtag } from '@carbon/icons-react'
 import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { LFOWaveform } from '../../Visualizations/LFOWaveform'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 

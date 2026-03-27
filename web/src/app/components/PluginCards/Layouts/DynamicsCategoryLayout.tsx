@@ -10,7 +10,7 @@ import type { Plugin } from '../../../../map2/types'
 import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
-import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../ParameterControl'
 import { GainReductionMeter } from '../../Dynamics/GainReductionMeter'
 import { TransferCurve } from '../Visualizations/TransferCurve'
 

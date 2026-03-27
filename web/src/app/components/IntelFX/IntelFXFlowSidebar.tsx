@@ -4,7 +4,7 @@ import { Button } from '@carbon/react'
 
 import type { IntelFXRegistryParam, UseIntelFXStateResult } from '../../../map2/intelfxApi'
 import type { IntelFXBlockState } from './intelfxFlowRouting'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 function getParamValue(param: IntelFXRegistryParam, shadow: Record<string, number>): number {
   const raw = shadow[param.id]

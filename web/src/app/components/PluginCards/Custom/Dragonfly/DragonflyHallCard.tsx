@@ -9,7 +9,7 @@
 
 import { ReverbCategoryLayout } from '../../Layouts/ReverbCategoryLayout'
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { Activity } from '@carbon/icons-react'

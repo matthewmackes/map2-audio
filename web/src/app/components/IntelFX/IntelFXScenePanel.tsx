@@ -19,7 +19,7 @@ import {
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
 import { formatIntelFXProgramNumber } from './programNumber'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './IntelFXScenePanel.css'
 
 const MORPH_CURVES: IntelFXMorphRequest['curve'][] = ['linear', 'ease_in', 'ease_out', 's_curve']

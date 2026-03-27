@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Renew } from '@carbon/icons-react'
 
 import { useMPX1PageContext } from '../../pages/MPX1Page'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './MPX1ModMatrix.css'
 
 type CurveType = 'linear' | 'log' | 'exp' | 's_curve'

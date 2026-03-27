@@ -3,7 +3,7 @@ import { Button, Layer, Tag } from '@carbon/react'
 import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 
 import type { IntelFXRegistryParam, UseIntelFXStateResult } from '../../../map2/intelfxApi'
-import { ParameterKnob } from '../Controls/ParameterKnob'
+import { ParameterKnob } from '../ParameterControl'
 import './IntelFXPanel.css'
 
 interface EffectBlockDef {

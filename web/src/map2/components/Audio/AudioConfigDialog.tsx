@@ -26,7 +26,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import { NumberInput } from '../NumberInput';
+import { NumberInput } from '../../../app/components/ParameterControl';
 import {
   AudioConsole,
   Headphones,

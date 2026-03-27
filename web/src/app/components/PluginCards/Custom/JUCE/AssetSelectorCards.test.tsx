@@ -67,7 +67,7 @@ jest.mock('../../Base/CarbonMeteringFooter', () => ({
   CarbonMeteringFooter: () => <div>Metering footer</div>,
 }))
 
-jest.mock('../../../Controls/ParameterKnob', () => ({
+jest.mock('../../../ParameterControl', () => ({
   ParameterKnob: ({ label }: any) => <div>{label}</div>,
 }))
 

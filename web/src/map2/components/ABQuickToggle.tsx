@@ -22,7 +22,7 @@ import {
   FormControl,
   Divider,
 } from '@mui/material';
-import { NumberInput } from './NumberInput';
+import { NumberInput } from '../../app/components/ParameterControl';
 import {
   ArrowsHorizontal,
   Copy,

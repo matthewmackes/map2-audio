@@ -268,29 +268,26 @@
   gap: 4px;
 }
 
-.mpx1-knob__canvas {
-  cursor: ns-resize;
+.mpx1-knob.numeric-input {
+  min-width: 0;
 }
 
-.mpx1-knob-dragging {
-  cursor: ns-resize !important;
-  user-select: none;
-}
-
-.mpx1-knob__value {
-  font-size: var(--type-label);
-  color: var(--text-primary);
-  font-weight: 700;
-  text-align: center;
-}
-
-.mpx1-knob__label {
+.mpx1-knob .numeric-input__label {
   text-align: center;
   font-size: var(--type-caption);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--interactive);
   max-width: 110px;
+}
+
+.mpx1-knob .numeric-input__control {
+  width: 100%;
+  min-height: 3.5rem;
+}
+
+.mpx1-knob .numeric-input__field {
+  text-align: center;
 }
 
 .mpx1-knob.is-disabled {

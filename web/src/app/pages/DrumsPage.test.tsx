@@ -115,16 +115,13 @@ jest.mock('@/app/components/PageHeader', () => ({
   ),
 }))
 
-jest.mock('@/app/components/Controls/NumberInput', () => ({
+jest.mock('@/app/components/ParameterControl', () => ({
   NumberInput: ({ label, value }: { label: string; value: number }) => (
     <label>
       <span>{label}</span>
       <input aria-label={label} value={value} readOnly />
     </label>
   ),
-}))
-
-jest.mock('@/app/components/ParameterControl', () => ({
   ParameterControl: ({
     ariaLabel,
     label,

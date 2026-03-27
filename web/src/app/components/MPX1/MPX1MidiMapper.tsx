@@ -14,7 +14,7 @@ import {
   type MPX1MidiMapping,
 } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './MPX1MidiMapper.css'
 
 interface ObservedCc {

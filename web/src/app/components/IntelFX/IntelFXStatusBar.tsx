@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from '@carbon/icons-react'
 
 import { formatIntelFXProgramNumber } from './programNumber'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 export type IntelFXBypassState = Record<string, boolean>
 

@@ -79,7 +79,7 @@ import LatencyDisplay, { LatencyBadge } from './LatencyDisplay';
 import LFOQuickButton from './LFOQuickButton';
 import EnvelopeFollowerPanel from './EnvelopeFollowerPanel';
 import ABQuickToggle from './ABQuickToggle';
-import { NumberInput } from './NumberInput';
+import { NumberInput } from '../../app/components/ParameterControl';
 
 // Import JUCE integration components
 import { LatencyOverlay, SnapshotBar as EnhancedSnapshotBar } from './ChainBuilder';

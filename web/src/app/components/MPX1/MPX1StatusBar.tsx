@@ -2,7 +2,7 @@ import React from 'react'
 import { ChevronLeft, ChevronRight, Flash } from '@carbon/icons-react'
 
 import { formatMpx1ProgramNumber } from './programNumber'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 type BypassBlock = 'REV' | 'PIT' | 'DLY' | 'CHO' | 'EQ' | 'MOD'
 

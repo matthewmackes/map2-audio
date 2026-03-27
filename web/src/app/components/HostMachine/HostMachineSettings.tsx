@@ -8,7 +8,7 @@ import { useCallback } from 'react'
 import { Notification, Reset, Save, WarningAlt, WarningAltFilled } from '@carbon/icons-react'
 import { Box, Paper, Typography, Button, Grid, Switch, FormControlLabel, Divider, Alert } from '@mui/material'
 import { useHealthSettings, useWebSocketPreference } from '@/app/hooks/useLocalStorage'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 export default function HostMachineSettings() {
   const { settings, updateSettings, resetToDefaults } = useHealthSettings()

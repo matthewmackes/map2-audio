@@ -10,7 +10,7 @@ import { ArrowsHorizontal, Close, Save, SettingsAdjust, TrashCan, WarningAltFill
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
 import { getDisplayPluginName } from '../../../../map2/displayNames'
-import { NumberInput } from '../../Controls/NumberInput'
+import { NumberInput } from '../../ParameterControl'
 import { ExpressionOverlay } from './ExpressionOverlay'
 
 interface MidiMappingDialogProps {

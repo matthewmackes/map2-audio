@@ -22,7 +22,7 @@ import {
 } from '@mui/material'
 import { Add as Plus, Renew as ArrowsClockwise, TrashCan as Trash, WarningAlt as Warning } from '@carbon/icons-react'
 import type { HealthAlert } from '@/app/hooks/useHealthMonitoring'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 
 interface SystemHost {
   id: string

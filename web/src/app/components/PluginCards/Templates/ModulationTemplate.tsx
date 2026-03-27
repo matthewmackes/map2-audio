@@ -10,7 +10,7 @@ import { getCategoryConfig } from '../types'
 import { ModulationCategoryLayout, type ParamSlot } from '../Layouts/ModulationCategoryLayout'
 import type { AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
 
 const RATE_PATTERNS = ['rate', 'speed', 'frequency', 'lfo', 'freq']

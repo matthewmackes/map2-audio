@@ -240,7 +240,7 @@ jest.mock('../components/PluginDetailsModal', () => ({
   PluginDetailsModal: () => null,
 }))
 
-jest.mock('../components/Controls/NumberInput', () => ({
+jest.mock('../components/ParameterControl', () => ({
   NumberInput: ({
     value,
     label,

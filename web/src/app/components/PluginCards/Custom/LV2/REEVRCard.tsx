@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react'
 import { ReverbCategoryLayout, type ParamSlot } from '../../Layouts/ReverbCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ParameterKnob } from '../../../ParameterControl'
 import { Activity, MagicWand } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 

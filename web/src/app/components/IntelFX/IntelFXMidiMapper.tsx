@@ -20,7 +20,7 @@ import {
   type IntelFXRegistryParam,
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
-import { NumberInput } from '../Controls/NumberInput'
+import { NumberInput } from '../ParameterControl'
 import './IntelFXMidiMapper.css'
 
 const CURVES: IntelFXMidiCurve[] = ['linear', 'log', 'exp', 's_curve', 'reverse']
