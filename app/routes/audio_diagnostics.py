@@ -17,6 +17,7 @@ Endpoints:
 try:
     from fastapi import APIRouter, HTTPException
     from pydantic import BaseModel
+    import asyncio
     import time
     import subprocess
     import json
@@ -273,6 +274,8 @@ try:
                     "stdout": proc.stdout,
                     "stderr": proc.stderr
                 }
+        except HTTPException:
+            raise
         except subprocess.TimeoutExpired:
             raise HTTPException(504, "Measurement timed out")
         except Exception as e:

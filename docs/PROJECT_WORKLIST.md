@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 - Cycle 3 route-helper and CI cleanup complete for T436/T448
+Last updated: 2026-03-26 - Cycle 1 route coverage complete for T447-subG
 
 ID: T449
 Status: [✓] Done
@@ -7114,7 +7114,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_dashboard_routes.py tests/test_cpu_metrics_routes.py` -> PASS (`4 passed`).
     - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subG
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for audio diagnostics, audio path, upload, and plugin scanner surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `audio_diagnostics.py`, `audio_path.py`, `upload.py`, and `plugin_scanner.py`, covering diagnostics summaries plus representative upload/scan success and failure cases.
@@ -7123,7 +7123,12 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 19:16 EDT - Codex
+  Last updated: 2026-03-26 21:17 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_audio_diagnostics_routes.py`, `tests/test_audio_path_routes.py`, `tests/test_upload_routes.py`, and `tests/test_plugin_scanner_routes.py` to cover the previously untested `audio_diagnostics.py`, `audio_path.py`, `upload.py`, and `plugin_scanner.py` route modules with focused `TestClient` coverage around diagnostic snapshots, cluster audio-path aggregation, upload success/failure handling, and plugin scan/cache/search behavior.
+    - Fixed `app/routes/audio_diagnostics.py` so `run_latency_measurement()` now imports `asyncio` and re-raises `HTTPException` validation failures instead of wrapping invalid `mode` and `duration` requests into generic `500` responses.
+    - Validation: `pytest -q tests/test_audio_diagnostics_routes.py tests/test_audio_path_routes.py tests/test_upload_routes.py tests/test_plugin_scanner_routes.py` -> PASS (`11 passed, 3 warnings`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS (`AST_OK 5`).
+    - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subH
   Status: [ ] Todo
   Title: Add route tests for monitoring, network, SSH trust, system test, and websocket observability surfaces
@@ -7147,7 +7152,7 @@ Subtasks:
   Assigned to: Codex
   Last updated: 2026-03-26 19:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 19:16 EDT - Codex
+Last updated: 2026-03-26 21:17 EDT - Codex
 
 ID: T448
 Status: [✓] Done
