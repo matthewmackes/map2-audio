@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-26 - Cycle 1 route coverage complete for T447-subG
+Last updated: 2026-03-26 - Cycle 2 route coverage complete for T447-subH
 
 ID: T449
 Status: [✓] Done
@@ -7130,7 +7130,7 @@ Subtasks:
     - Validation: `pytest -q tests/test_audio_diagnostics_routes.py tests/test_audio_path_routes.py tests/test_upload_routes.py tests/test_plugin_scanner_routes.py` -> PASS (`11 passed, 3 warnings`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS (`AST_OK 5`).
     - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subH
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Add route tests for monitoring, network, SSH trust, system test, and websocket observability surfaces
   Description:
   - Goal / acceptance criteria: Add focused route coverage for `monitoring.py`, `network.py`, `ssh_trust.py`, `system_tests.py`, and `websocket_rt.py`, covering representative status, control, and error paths.
@@ -7139,7 +7139,12 @@ Subtasks:
   - Estimated effort: Medium
   - Required outputs: New tests covering the route modules and validation evidence.
   Assigned to: Codex
-  Last updated: 2026-03-26 19:16 EDT - Codex
+  Last updated: 2026-03-26 21:30 EDT - Codex
+  - Completion notes:
+    - Added `tests/test_monitoring_routes.py`, `tests/test_network_routes.py`, `tests/test_ssh_trust_routes.py`, `tests/test_system_tests_routes.py`, and `tests/test_websocket_rt_routes.py` to cover the previously untested `monitoring.py`, `network.py`, `ssh_trust.py`, `system_tests.py`, and `websocket_rt.py` route modules with focused status, control, and error-path assertions.
+    - The new coverage locks down monitoring summaries and hot-reload mutations, network status/WiFi scans plus request validation, SSH trust registry/file mutations, system-test result orchestration/status surfaces, and the realtime websocket bridge's connect/message/disconnect plus stats/cache endpoints.
+    - Validation: `pytest -q tests/test_monitoring_routes.py tests/test_network_routes.py tests/test_ssh_trust_routes.py tests/test_system_tests_routes.py tests/test_websocket_rt_routes.py` -> PASS (`13 passed, 1 warning`); `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS (`AST_OK 5`).
+    - Licensing review: touched test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - ID: T447-subI
   Status: [ ] Todo
   Title: Add route tests for node and cluster inventory surfaces
@@ -7152,7 +7157,7 @@ Subtasks:
   Assigned to: Codex
   Last updated: 2026-03-26 19:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-26 21:17 EDT - Codex
+Last updated: 2026-03-26 21:30 EDT - Codex
 
 ID: T448
 Status: [✓] Done
