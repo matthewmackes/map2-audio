@@ -7,6 +7,35 @@ import { MemoryRouter } from 'react-router-dom'
 // ── Mock APIs ─────────────────────────────────────────────────────────────
 
 const mockUseIsMobile = jest.fn(() => false)
+let currentMidiMappingsResponse: { mappings: Array<Record<string, unknown>>; count: number } = { mappings: [], count: 0 }
+const mockUseCluster = jest.fn(() => ({
+  activeNodeId: null,
+  localNodeId: 'local-node',
+  isClusterMode: true,
+  setActiveNode: jest.fn(),
+  getNodeApiPrefix: jest.fn(() => ''),
+  getNodeWsPrefix: jest.fn(() => ''),
+  nodes: [
+    {
+      nodeId: 'local-node',
+      hostname: 'studio-local',
+      role: 'LOCAL',
+      isLocal: true,
+      isOnline: true,
+      latencyMs: 0,
+      lastSeen: '',
+    },
+    {
+      nodeId: 'rack-a',
+      hostname: 'rack-a',
+      role: 'AUDIO-NODE',
+      isLocal: false,
+      isOnline: true,
+      latencyMs: 1.5,
+      lastSeen: '',
+    },
+  ],
+}))
 
 const buildMockChainsResponse = () => ({
   chains: [
@@ -71,6 +100,23 @@ const buildMockPluginsResponse = () => ({
 
 const buildMockHistoryStatus = () => ({ can_undo: true, can_redo: false })
 
+const buildMockPresetsResponse = () => ({
+  presets: [
+    {
+      id: 101,
+      name: 'Default',
+      chain_id: 1,
+      tags: [],
+      category: 'General',
+      description: '',
+      is_favorite: false,
+      created_at: '',
+      updated_at: '',
+    },
+  ],
+  count: 1,
+})
+
 const buildMockPortsResponse = () => ({
   available: true,
   device: 'PipeWire',
@@ -114,7 +160,7 @@ const mockChainsApi = {
   addPlugin: jest.fn(async () => ({})),
   create: jest.fn(async () => ({})),
   delete: jest.fn(async () => ({})),
-  listPresets: jest.fn(async () => ({ presets: [] })),
+  listPresets: jest.fn(async () => buildMockPresetsResponse()),
   loadPreset: jest.fn(async () => ({})),
   removePlugin: jest.fn(async () => ({})),
   rename: jest.fn(async () => ({})),
@@ -142,12 +188,13 @@ const mockAudioApi = {
 
 const mockMidiApiV2 = {
   getStatus: jest.fn(async () => buildMockMidiStatus()),
-  getMappings: jest.fn(async () => ({ mappings: [], count: 0 })),
+  getMappings: jest.fn(async () => currentMidiMappingsResponse),
+  createMapping: jest.fn(async () => ({})),
   updateMapping: jest.fn(async () => ({})),
 }
 
 const mockFlowSnapshotsApi = {
-  list: jest.fn(async () => ({ snapshots: [], count: 0, active_id: null })),
+  list: jest.fn(async () => ({ snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })),
 }
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
@@ -200,6 +247,14 @@ jest.mock('../components/shared/LandscapePrompt', () => ({
   LandscapePrompt: ({ title }: { title?: string }) => <div data-testid="landscape-prompt">{title}</div>,
 }))
 
+jest.mock('../contexts/ClusterContext', () => ({
+  useCluster: () => mockUseCluster(),
+}))
+
+jest.mock('./AudioNodesModal', () => ({
+  AudioNodesModal: ({ open }: { open: boolean }) => (open ? <div data-testid="audio-nodes-modal">Audio Nodes Modal</div> : null),
+}))
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function createQueryClient() {
@@ -214,6 +269,9 @@ function createQueryClient() {
   client.setQueryData(['history', 'status'], buildMockHistoryStatus())
   client.setQueryData(['audio', 'ports'], buildMockPortsResponse())
   client.setQueryData(['midi', 'status'], buildMockMidiStatus())
+  client.setQueryData(['chains', 'presets'], buildMockPresetsResponse())
+  client.setQueryData(['flow-snapshots'], { snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })
+  client.setQueryData(['midi', 'mappings', 'audio-table'], currentMidiMappingsResponse)
   return client
 }
 
@@ -237,8 +295,37 @@ import { AudioTablePage } from './AudioTablePage'
 
 beforeEach(() => {
   jest.clearAllMocks()
+  currentMidiMappingsResponse = { mappings: [], count: 0 }
   mockUseIsMobile.mockReturnValue(false)
   mockUsePluginOutputs.mockReturnValue(createMockPluginOutputState())
+  mockUseCluster.mockReturnValue({
+    activeNodeId: null,
+    localNodeId: 'local-node',
+    isClusterMode: true,
+    setActiveNode: jest.fn(),
+    getNodeApiPrefix: jest.fn(() => ''),
+    getNodeWsPrefix: jest.fn(() => ''),
+    nodes: [
+      {
+        nodeId: 'local-node',
+        hostname: 'studio-local',
+        role: 'LOCAL',
+        isLocal: true,
+        isOnline: true,
+        latencyMs: 0,
+        lastSeen: '',
+      },
+      {
+        nodeId: 'rack-a',
+        hostname: 'rack-a',
+        role: 'AUDIO-NODE',
+        isLocal: false,
+        isOnline: true,
+        latencyMs: 1.5,
+        lastSeen: '',
+      },
+    ],
+  })
   localStorage.clear()
   // Pre-populate shared state so we have 3 flows with chain 1 assigned to flow A
   localStorage.setItem(
@@ -296,6 +383,14 @@ describe('AudioTablePage — Render', () => {
     renderPage()
     await waitFor(() => {
       expect(screen.getByTestId('audio-table-add-flow')).toBeInTheDocument()
+    })
+  })
+
+  it('renders the cluster node section', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByTestId('audio-table-cluster-section')).toBeInTheDocument()
+      expect(screen.getByText('Cluster Nodes')).toBeInTheDocument()
     })
   })
 })
@@ -510,6 +605,56 @@ describe('AudioTablePage — Column Visibility', () => {
     expect(delayModeSelect).toHaveValue('1')
     expect(within(delayModeSelect).getAllByRole('option')).toHaveLength(3)
   })
+
+  it('renders MIDI headers and inline controls when the MIDI column group is enabled', async () => {
+    localStorage.setItem(
+      'map2_audio_table_column_visibility',
+      JSON.stringify({
+        midiGroup: true,
+        automationGroup: false,
+        inputLevel: true,
+        outputLevel: true,
+        parameters: {},
+      }),
+    )
+    currentMidiMappingsResponse = {
+      mappings: [
+        {
+          id: 55,
+          channel: 2,
+          cc: 21,
+          chain_id: 1,
+          target_plugin_uri: 'urn:test:reverb',
+          target_param_index: 0,
+          target_param_symbol: 'mix',
+          min_val: 0.1,
+          max_val: 0.9,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: false,
+          feedback_cc: null,
+          name: 'Reverb mix',
+          group_id: null,
+          is_learned: false,
+          is_enabled: true,
+        },
+      ],
+      count: 1,
+    }
+
+    renderPage()
+
+    expect(await screen.findByText('MIDI CC')).toBeInTheDocument()
+    expect(screen.getByText('MIDI Ch')).toBeInTheDocument()
+    expect(screen.getByText('Curve')).toBeInTheDocument()
+    expect(screen.getByText('Min')).toBeInTheDocument()
+    expect(screen.getByText('Max')).toBeInTheDocument()
+
+    const reverbRow = screen.getByText('Reverb').closest('tr') as HTMLTableRowElement
+    expect(within(reverbRow).getByDisplayValue('21')).toBeInTheDocument()
+    expect(within(reverbRow).getByDisplayValue('0.1')).toBeInTheDocument()
+    expect(within(reverbRow).getByDisplayValue('0.9')).toBeInTheDocument()
+  })
 })
 
 // ============================================================================
@@ -542,7 +687,7 @@ describe('AudioTablePage — Toolbar', () => {
   it('renders preset dropdown', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: /^default$/i })).toBeInTheDocument()
+      expect(screen.getByRole('combobox', { name: /presets/i })).toBeInTheDocument()
     })
   })
 
@@ -560,6 +705,16 @@ describe('AudioTablePage — Toolbar', () => {
       expect(screen.getByLabelText('Play')).toBeInTheDocument()
       expect(screen.getByLabelText('Record')).toBeInTheDocument()
       expect(screen.getByLabelText('Loop')).toBeInTheDocument()
+    })
+  })
+
+  it('renders the global search and visible-row batch actions', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Search visible plugins')).toBeInTheDocument()
+      expect(screen.getByText('Bypass Visible')).toBeInTheDocument()
+      expect(screen.getByText('Remove Visible')).toBeInTheDocument()
+      expect(screen.getByText('2 nodes')).toBeInTheDocument()
     })
   })
 })

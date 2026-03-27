@@ -76,8 +76,10 @@ import type {
   PluginOrderRef,
   HistoryStatus,
   MIDIMappingV2,
+  MIDICurveType,
   MIDIStatus,
   PeakData,
+  Snapshot,
 } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
@@ -87,6 +89,8 @@ import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
+import { useCluster } from '../contexts/ClusterContext'
+import { AudioNodesModal } from './AudioNodesModal'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
@@ -143,11 +147,11 @@ const ROUTING_MODE_OPTIONS: Array<{ id: JuceGridRoutingMode; label: string }> = 
   { id: 'sidechain', label: 'Sidechain' },
 ]
 
-const MIDI_CURVE_OPTIONS = [
+const MIDI_CURVE_OPTIONS: Array<{ id: MIDICurveType; label: string }> = [
   { id: 'linear', label: 'Linear' },
-  { id: 'log', label: 'Log' },
-  { id: 'exp', label: 'Exp' },
-  { id: 's-curve', label: 'S-Curve' },
+  { id: 'logarithmic', label: 'Log' },
+  { id: 'exponential', label: 'Exp' },
+  { id: 's_curve', label: 'S-Curve' },
 ]
 
 const LS_FLOWS_KEY = 'map2_juce_grid_flows_v2'
@@ -291,6 +295,23 @@ const addFlowBarStyle: CSSProperties = {
   padding: '0.75rem',
 }
 
+const clusterSectionStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.75rem',
+  padding: '1rem',
+  background: 'var(--cds-layer-01)',
+  borderRadius: '4px',
+}
+
+const clusterHeaderStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '0.75rem',
+  flexWrap: 'wrap',
+}
+
 const mobileBlockStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -312,6 +333,7 @@ export function AudioTablePage() {
   const isMobile = useIsMobile()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout('/audio-table')
   const containerRef = useRef<HTMLDivElement>(null)
+  const { nodes: clusterNodes, localNodeId, activeNodeId, setActiveNode, isClusterMode } = useCluster()
 
   // ── Shared state (same localStorage keys as JuceGridPage) ───────────────
   const [{ flowSlots, routing, activeFlowIndex }, setGridState] = useState(loadInitialState)
@@ -320,7 +342,7 @@ export function AudioTablePage() {
   // UI state
   const [search, setSearch] = useState('')
   const [tabletTab, setTabletTab] = useState(0)
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
 
   // Automation state (local — synced via shared queries)
   const [automationPlaying, setAutomationPlaying] = useState(false)
@@ -396,6 +418,28 @@ export function AudioTablePage() {
     queryKey: ['midi', 'status'],
     queryFn: () => midiApiV2.getStatus(),
     refetchInterval: 2000,
+  })
+
+  const midiMappingsQuery = useQuery({
+    queryKey: ['midi', 'mappings', 'audio-table'],
+    queryFn: () => midiApiV2.getMappings(),
+    refetchInterval: 5000,
+  })
+
+  const presetsQuery = useQuery<{ presets: Snapshot[]; count: number }>({
+    queryKey: ['chains', 'presets'],
+    queryFn: () => chainsApi.listPresets(),
+    refetchInterval: 5000,
+  })
+
+  const flowSnapshotsQuery = useQuery<{
+    snapshots: Array<{ id: number; name: string }>
+    count: number
+    active_id: number | null
+  }>({
+    queryKey: ['flow-snapshots'],
+    queryFn: () => flowSnapshotsApi.list(),
+    refetchInterval: 5000,
   })
 
   // Per-chain preset queries
@@ -485,15 +529,19 @@ export function AudioTablePage() {
   const savePresetMutation = useMutation({
     mutationFn: async ({ chainId, name }: { chainId: number; name: string }) =>
       chainsApi.savePreset(chainId, name),
-    onSuccess: () => pushToast('Preset saved', 'success'),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
+      pushToast(`Preset "${variables.name}" saved`, 'success')
+    },
     onError: () => pushToast('Failed to save preset', 'error'),
   })
 
   const loadPresetMutation = useMutation({
-    mutationFn: async ({ chainId, presetId }: { chainId: number; presetId: string }) =>
-      chainsApi.loadPreset(chainId, presetId),
+    mutationFn: async ({ presetId }: { presetId: number }) =>
+      chainsApi.loadPreset(presetId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
+      void queryClient.invalidateQueries({ queryKey: ['history'] })
       pushToast('Preset loaded', 'success')
     },
     onError: () => pushToast('Failed to load preset', 'error'),
@@ -528,6 +576,65 @@ export function AudioTablePage() {
       await pluginsApi.flushParameterBatch()
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['chains'] }),
+  })
+
+  const createMidiMappingMutation = useMutation({
+    mutationFn: (payload: Partial<MIDIMappingV2>) => midiApiV2.createMapping(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings'] })
+      pushToast('MIDI mapping created', 'success')
+    },
+    onError: () => pushToast('Failed to create MIDI mapping', 'error'),
+  })
+
+  const updateMidiMappingMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) =>
+      midiApiV2.updateMapping(id, updates),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings'] })
+      pushToast('MIDI mapping updated', 'success')
+    },
+    onError: () => pushToast('Failed to update MIDI mapping', 'error'),
+  })
+
+  const batchVisibleMutation = useMutation({
+    mutationFn: async ({
+      action,
+      chainId,
+      plugins,
+    }: {
+      action: 'toggle-bypass' | 'remove'
+      chainId: number
+      plugins: Chain['plugins']
+    }) => {
+      if (action === 'toggle-bypass') {
+        await Promise.all(
+          plugins.map(plugin =>
+            chainsApi.togglePluginBypass(chainId, plugin.uri, !plugin.bypassed, plugin.position),
+          ),
+        )
+        return
+      }
+
+      await Promise.all(
+        plugins.map(plugin => chainsApi.removePlugin(chainId, plugin.uri, plugin.position)),
+      )
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['chains'] })
+      pushToast(
+        variables.action === 'toggle-bypass'
+          ? `Updated bypass for ${variables.plugins.length} plugin${variables.plugins.length === 1 ? '' : 's'}`
+          : `Removed ${variables.plugins.length} plugin${variables.plugins.length === 1 ? '' : 's'}`,
+        variables.action === 'toggle-bypass' ? 'success' : 'info',
+      )
+    },
+    onError: (_error, variables) => {
+      pushToast(
+        variables.action === 'toggle-bypass' ? 'Failed to update bypass state' : 'Failed to remove visible plugins',
+        'error',
+      )
+    },
   })
 
   // ── Derived data ────────────────────────────────────────────────────────
@@ -572,6 +679,26 @@ export function AudioTablePage() {
       }
     })
   }, [flowSlots, chainMap])
+
+  const activeFlowData = flowData[activeFlowIndex] ?? flowData[0] ?? null
+  const activeFlowOptions = useMemo(
+    () => flowData.map((fd, index) => ({
+      id: String(index),
+      label: `Flow ${fd.slot.label}${fd.chain ? ` · ${fd.chain.name}` : ' · Unassigned'}`,
+    })),
+    [flowData],
+  )
+  const selectedActiveFlowOption = activeFlowOptions[activeFlowIndex] ?? activeFlowOptions[0] ?? null
+  const activeChainPresets = useMemo(
+    () => (activeFlowData?.chain ? (presetsQuery.data?.presets ?? []).filter(preset => preset.chain_id === activeFlowData.chain?.id) : []),
+    [activeFlowData?.chain, presetsQuery.data?.presets],
+  )
+  const presetItems = useMemo(
+    () => activeChainPresets.map(preset => ({ id: String(preset.id), label: preset.name })),
+    [activeChainPresets],
+  )
+  const midiMappings = useMemo(() => midiMappingsQuery.data?.mappings ?? [], [midiMappingsQuery.data?.mappings])
+  const snapshotCount = flowSnapshotsQuery.data?.count ?? flowSnapshotsQuery.data?.snapshots.length ?? 0
 
   // Dynamic parameter columns per flow
   const parameterColumnsPerFlow = useMemo(() => {
@@ -766,6 +893,94 @@ export function AudioTablePage() {
     setParameterMutation.mutate({ chainId, uri, paramIndex, value, instanceId, pluginPosition })
   }, [setParameterMutation])
 
+  const resolveDefaultMidiTarget = useCallback((plugin: Chain['plugins'][number]) => {
+    const catalogParams = pluginInventoryByUri.get(plugin.uri)?.parameters ?? []
+    const symbolValues = plugin.parameters ?? {}
+    const preferred = catalogParams.find(param => param.symbol in symbolValues)
+    if (preferred) {
+      return { index: preferred.index, symbol: preferred.symbol }
+    }
+
+    const [firstSymbol] = Object.keys(symbolValues)
+    if (!firstSymbol) {
+      return null
+    }
+
+    return { index: 0, symbol: firstSymbol }
+  }, [pluginInventoryByUri])
+
+  const resolveMidiMappingForPlugin = useCallback((chainId: number, plugin: Chain['plugins'][number]) => {
+    return [...midiMappings]
+      .filter(mapping => (
+        mapping.target_plugin_uri === plugin.uri
+        && (mapping.chain_id === chainId || mapping.chain_id === null)
+      ))
+      .sort((left, right) => {
+        const leftScope = left.chain_id === chainId ? 0 : 1
+        const rightScope = right.chain_id === chainId ? 0 : 1
+        if (leftScope !== rightScope) {
+          return leftScope - rightScope
+        }
+        return (left.target_param_index ?? Number.MAX_SAFE_INTEGER) - (right.target_param_index ?? Number.MAX_SAFE_INTEGER)
+      })[0] ?? null
+  }, [midiMappings])
+
+  const handleMidiMappingChange = useCallback((
+    chainId: number,
+    plugin: Chain['plugins'][number],
+    updates: Partial<MIDIMappingV2>,
+  ) => {
+    const existing = resolveMidiMappingForPlugin(chainId, plugin)
+    if (existing) {
+      updateMidiMappingMutation.mutate({ id: existing.id, updates })
+      return
+    }
+
+    const target = resolveDefaultMidiTarget(plugin)
+    if (!target) {
+      pushToast('No parameter available for MIDI mapping on this plugin', 'info')
+      return
+    }
+
+    createMidiMappingMutation.mutate({
+      channel: 0,
+      cc: 0,
+      chain_id: chainId,
+      target_plugin_uri: plugin.uri,
+      target_param_index: target.index,
+      target_param_symbol: target.symbol,
+      min_val: 0,
+      max_val: 1,
+      curve_type: 'linear',
+      invert: false,
+      feedback_enabled: false,
+      feedback_cc: null,
+      name: `${getDisplayPluginName(plugin.uri, plugin.name)} ${target.symbol}`,
+      group_id: null,
+      is_learned: false,
+      is_enabled: true,
+      ...updates,
+    })
+  }, [
+    createMidiMappingMutation,
+    pushToast,
+    resolveDefaultMidiTarget,
+    resolveMidiMappingForPlugin,
+    updateMidiMappingMutation,
+  ])
+
+  const handleSavePreset = useCallback(() => {
+    if (!activeFlowData?.chain) {
+      pushToast('Assign a chain to the active flow before saving presets', 'info')
+      return
+    }
+    const presetName = window.prompt('Preset name:', `${activeFlowData.chain.name} Preset`)
+    if (!presetName?.trim()) {
+      return
+    }
+    savePresetMutation.mutate({ chainId: activeFlowData.chain.id, name: presetName.trim() })
+  }, [activeFlowData?.chain, pushToast, savePresetMutation])
+
   // ── Column picker ───────────────────────────────────────────────────────
 
   const toggleColumnGroup = useCallback((group: 'midiGroup' | 'automationGroup' | 'inputLevel' | 'outputLevel') => {
@@ -782,6 +997,25 @@ export function AudioTablePage() {
       return name.toLowerCase().includes(q)
     })
   }, [search])
+
+  const activeVisiblePlugins = useMemo(
+    () => (activeFlowData?.plugins ? filterPlugins(activeFlowData.plugins) : []),
+    [activeFlowData?.plugins, filterPlugins],
+  )
+
+  const handleBatchVisibleAction = useCallback((action: 'toggle-bypass' | 'remove') => {
+    if (!activeFlowData?.chain || activeVisiblePlugins.length === 0) {
+      return
+    }
+    if (action === 'remove' && !window.confirm(`Remove ${activeVisiblePlugins.length} visible plugin(s) from ${activeFlowData.chain.name}?`)) {
+      return
+    }
+    batchVisibleMutation.mutate({
+      action,
+      chainId: activeFlowData.chain.id,
+      plugins: activeVisiblePlugins,
+    })
+  }, [activeFlowData?.chain, activeVisiblePlugins, batchVisibleMutation])
 
   // ── Mobile/Tablet handling ──────────────────────────────────────────────
 
@@ -804,6 +1038,22 @@ export function AudioTablePage() {
 
       {/* ── Shared Toolbar ────────────────────────────────────────────── */}
       <div style={toolbarWrapStyle} data-testid="audio-table-toolbar">
+
+        <Dropdown
+          id="audio-table-active-flow"
+          titleText=""
+          label="Active Flow"
+          size="sm"
+          items={activeFlowOptions}
+          itemToString={(item: { id: string; label: string } | null) => item?.label ?? ''}
+          selectedItem={selectedActiveFlowOption}
+          onChange={({ selectedItem }: { selectedItem: { id: string; label: string } | null }) => {
+            if (selectedItem) {
+              updateActiveFlow(Number(selectedItem.id))
+            }
+          }}
+          style={{ minWidth: 210 }}
+        />
 
         {/* Routing mode */}
         <Dropdown
@@ -837,6 +1087,14 @@ export function AudioTablePage() {
           </div>
         )}
 
+        <Tag type={isClusterMode ? 'blue' : 'cool-gray'} size="sm">
+          {isClusterMode ? `${clusterNodes.length} nodes` : 'Local only'}
+        </Tag>
+        <Tag type="purple" size="sm">Snapshots {snapshotCount}</Tag>
+        <Tag type={midiStatusQuery.data?.enabled ? 'green' : 'cool-gray'} size="sm">
+          MIDI {midiStatusQuery.data?.enabled ? 'Ready' : 'Off'}
+        </Tag>
+
         <div style={{ width: 1, height: 24, background: 'var(--cds-border-subtle)' }} />
 
         {/* Preset dropdown */}
@@ -845,12 +1103,25 @@ export function AudioTablePage() {
           titleText=""
           label="Presets"
           size="sm"
-          items={[{ id: 'default', label: 'Default' }]}
+          items={presetItems}
           itemToString={(item: { id: string; label: string } | null) => item?.label ?? ''}
-          selectedItem={{ id: 'default', label: 'Default' }}
-          onChange={() => {}}
+          selectedItem={null}
+          onChange={({ selectedItem }: { selectedItem: { id: string; label: string } | null }) => {
+            if (selectedItem?.id) {
+              loadPresetMutation.mutate({ presetId: Number(selectedItem.id) })
+            }
+          }}
           style={{ minWidth: 140 }}
+          disabled={!activeFlowData?.chain || presetItems.length === 0}
         />
+        <Button
+          kind="ghost"
+          size="sm"
+          onClick={handleSavePreset}
+          disabled={!activeFlowData?.chain || savePresetMutation.isPending}
+        >
+          Save Preset
+        </Button>
 
         <div style={{ width: 1, height: 24, background: 'var(--cds-border-subtle)' }} />
 
@@ -901,6 +1172,37 @@ export function AudioTablePage() {
         >
           <Renew />
         </IconButton>
+
+        <div style={{ width: 1, height: 24, background: 'var(--cds-border-subtle)' }} />
+
+        <TableToolbarSearch
+          persistent
+          size="sm"
+          labelText="Search plugins"
+          placeholder="Search visible plugins"
+          value={search}
+          onChange={(_e: unknown, value: string | undefined) => setSearch(value ?? '')}
+        />
+
+        <Button
+          kind="ghost"
+          size="sm"
+          onClick={() => handleBatchVisibleAction('toggle-bypass')}
+          disabled={!activeFlowData?.chain || activeVisiblePlugins.length === 0 || batchVisibleMutation.isPending}
+        >
+          Bypass Visible
+        </Button>
+        <Button
+          kind="danger--ghost"
+          size="sm"
+          onClick={() => handleBatchVisibleAction('remove')}
+          disabled={!activeFlowData?.chain || activeVisiblePlugins.length === 0 || batchVisibleMutation.isPending}
+        >
+          Remove Visible
+        </Button>
+        <Tag type="cool-gray" size="sm">
+          {activeVisiblePlugins.length} visible
+        </Tag>
 
         <div style={{ flex: 1 }} />
 
@@ -962,11 +1264,12 @@ export function AudioTablePage() {
           chains={chains}
           ports={ports}
           pluginGroups={pluginGroups}
+          pluginInventoryByUri={pluginInventoryByUri}
           visibleColumns={visibleColumnsPerFlow[flowIndex] ?? assembleVisibleColumns(columnVisibility, [])}
           dataTableHeaders={dataTableHeadersPerFlow[flowIndex] ?? toDataTableHeaders(assembleVisibleColumns(columnVisibility, []))}
           search={search}
           peaksMap={peaksMap}
-          onSearchChange={setSearch}
+          midiMappings={midiMappings}
           onChainAssign={handleChainAssign}
           onMuteToggle={handleMuteToggle}
           onSoloToggle={handleSoloToggle}
@@ -976,6 +1279,7 @@ export function AudioTablePage() {
           onAddPlugin={handleAddPlugin}
           onPositionChange={handlePositionChange}
           onParameterChange={handleParameterChange}
+          onMidiMappingChange={handleMidiMappingChange}
           onRemoveFlow={handleRemoveFlow}
           canRemoveFlow={flowSlots.length > MIN_FLOWS}
           onCreateChain={name => createChainMutation.mutate(name)}
@@ -997,6 +1301,92 @@ export function AudioTablePage() {
           Add Flow ({flowSlots.length}/{MAX_FLOWS})
         </Button>
       </div>
+
+      <Layer>
+        <div style={clusterSectionStyle} data-testid="audio-table-cluster-section">
+          <div style={clusterHeaderStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Cluster Nodes</h3>
+              <Tag type={isClusterMode ? 'blue' : 'cool-gray'} size="sm">
+                {isClusterMode ? 'Cluster mode' : 'Single node'}
+              </Tag>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <Tag type="cool-gray" size="sm">Focused {activeNodeId ?? localNodeId}</Tag>
+              <Button kind="ghost" size="sm" onClick={() => setShowAudioNodesModal(true)}>
+                Open Node Manager
+              </Button>
+            </div>
+          </div>
+
+          <DataTable
+            rows={clusterNodes.map(node => ({
+              id: node.nodeId,
+              hostname: node.hostname,
+              role: node.role,
+              status: (
+                <Tag type={node.isOnline ? 'green' : 'red'} size="sm">
+                  {node.isOnline ? 'Online' : 'Offline'}
+                </Tag>
+              ),
+              latency: node.latencyMs === null ? '—' : `${node.latencyMs.toFixed(1)} ms`,
+              scope: (
+                <Button
+                  kind={((activeNodeId ?? localNodeId) === node.nodeId) ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)}
+                >
+                  {(activeNodeId ?? localNodeId) === node.nodeId ? 'Focused' : 'Focus'}
+                </Button>
+              ),
+            }))}
+            headers={[
+              { key: 'hostname', header: 'Hostname' },
+              { key: 'role', header: 'Role' },
+              { key: 'status', header: 'Status' },
+              { key: 'latency', header: 'Latency' },
+              { key: 'scope', header: 'Scope' },
+            ]}
+            size="sm"
+            useZebraStyles
+          >
+            {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+              <TableContainer {...getTableContainerProps()} title="Node Management" description="Audio Table keeps cluster focus aligned with the shared platform node scope.">
+                <Table {...getTableProps()} size="sm">
+                  <TableHead>
+                    <TableRow>
+                      {headers.map(header => {
+                        const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
+                        return (
+                          <TableHeader key={header.key} {...headerProps}>
+                            {header.header}
+                          </TableHeader>
+                        )
+                      })}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {rows.map(row => {
+                      const { key: _rowKey, ...rowProps } = getRowProps({ row })
+                      return (
+                        <TableRow key={row.id} {...rowProps}>
+                          {row.cells.map(cell => (
+                            <TableCell key={cell.id}>{cell.value as React.ReactNode}</TableCell>
+                          ))}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </DataTable>
+        </div>
+      </Layer>
+
+      {showAudioNodesModal ? (
+        <AudioNodesModal open={showAudioNodesModal} onClose={() => setShowAudioNodesModal(false)} />
+      ) : null}
     </div>
   )
 }
@@ -1013,11 +1403,12 @@ interface FlowTableSectionProps {
   chains: Chain[]
   ports: AudioPort[]
   pluginGroups: PluginGroup[]
+  pluginInventoryByUri: Map<string, Plugin>
   visibleColumns: ColumnDef[]
   dataTableHeaders: Array<{ key: string; header: string }>
   search: string
   peaksMap: Record<string, Record<string, PeakData>>
-  onSearchChange: (v: string) => void
+  midiMappings: MIDIMappingV2[]
   onChainAssign: (flowIndex: number, chainId: number | null) => void
   onMuteToggle: (flowIndex: number) => void
   onSoloToggle: (flowIndex: number) => void
@@ -1034,6 +1425,11 @@ interface FlowTableSectionProps {
     instanceId?: number,
     pluginPosition?: number,
   ) => void
+  onMidiMappingChange: (
+    chainId: number,
+    plugin: Chain['plugins'][number],
+    updates: Partial<MIDIMappingV2>,
+  ) => void
   onRemoveFlow: (index: number) => void
   canRemoveFlow: boolean
   onCreateChain: (name: string) => void
@@ -1049,11 +1445,12 @@ function FlowTableSection({
   chains,
   ports,
   pluginGroups,
+  pluginInventoryByUri,
   visibleColumns,
   dataTableHeaders,
   search,
   peaksMap,
-  onSearchChange,
+  midiMappings,
   onChainAssign,
   onMuteToggle,
   onSoloToggle,
@@ -1063,6 +1460,7 @@ function FlowTableSection({
   onAddPlugin,
   onPositionChange,
   onParameterChange,
+  onMidiMappingChange,
   onRemoveFlow,
   canRemoveFlow,
   onCreateChain,
@@ -1178,6 +1576,135 @@ function FlowTableSection({
     )
   }, [chain, onParameterChange, slot.id])
 
+  const renderMidiCell = useCallback((
+    plugin: Chain['plugins'][number],
+    rowIdx: number,
+    column: ColumnDef,
+  ): React.ReactNode => {
+    if (!chain || column.group !== 'midi') {
+      return ''
+    }
+
+    const mapping = [...midiMappings]
+      .filter(candidate => (
+        candidate.target_plugin_uri === plugin.uri
+        && (candidate.chain_id === chain.id || candidate.chain_id === null)
+      ))
+      .sort((left, right) => {
+        const leftScope = left.chain_id === chain.id ? 0 : 1
+        const rightScope = right.chain_id === chain.id ? 0 : 1
+        if (leftScope !== rightScope) {
+          return leftScope - rightScope
+        }
+        return (left.target_param_index ?? Number.MAX_SAFE_INTEGER) - (right.target_param_index ?? Number.MAX_SAFE_INTEGER)
+      })[0] ?? null
+
+    const catalogParams = pluginInventoryByUri.get(plugin.uri)?.parameters ?? []
+    const targetParam = mapping
+      ? catalogParams.find(param => param.index === mapping.target_param_index)
+      : catalogParams.find(param => param.symbol in (plugin.parameters ?? {})) ?? catalogParams[0] ?? null
+
+    if (!mapping && !targetParam) {
+      return '—'
+    }
+
+    const inputId = `${slot.id}-${rowIdx}-${column.key}`
+
+    switch (column.key) {
+      case 'midiCc':
+        return (
+          <CarbonNumberInput
+            id={inputId}
+            size="sm"
+            min={0}
+            max={127}
+            step={1}
+            value={mapping?.cc ?? 0}
+            label=""
+            hideLabel
+            hideSteppers
+            onChange={(_evt: unknown, { value }: { value: string | number }) => {
+              onMidiMappingChange(chain.id, plugin, { cc: Math.max(0, Math.min(127, Math.round(Number(value)))) })
+            }}
+            style={{ width: 76 }}
+          />
+        )
+      case 'midiChannel':
+        return (
+          <Select
+            id={inputId}
+            size="sm"
+            hideLabel
+            labelText=""
+            value={String(mapping?.channel ?? 0)}
+            onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
+              onMidiMappingChange(chain.id, plugin, { channel: Number(evt.target.value) })
+            }}
+          >
+            <SelectItem value="0" text="Omni" />
+            {Array.from({ length: 16 }, (_, index) => (
+              <SelectItem key={index + 1} value={String(index + 1)} text={`Ch ${index + 1}`} />
+            ))}
+          </Select>
+        )
+      case 'midiCurve':
+        return (
+          <Select
+            id={inputId}
+            size="sm"
+            hideLabel
+            labelText=""
+            value={mapping?.curve_type ?? 'linear'}
+            onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
+              onMidiMappingChange(chain.id, plugin, { curve_type: evt.target.value as MIDICurveType })
+            }}
+          >
+            {MIDI_CURVE_OPTIONS.map(option => (
+              <SelectItem key={option.id} value={option.id} text={option.label} />
+            ))}
+          </Select>
+        )
+      case 'midiMin':
+        return (
+          <CarbonNumberInput
+            id={inputId}
+            size="sm"
+            min={0}
+            max={1}
+            step={0.01}
+            value={mapping?.min_val ?? 0}
+            label=""
+            hideLabel
+            hideSteppers
+            onChange={(_evt: unknown, { value }: { value: string | number }) => {
+              onMidiMappingChange(chain.id, plugin, { min_val: Number(value) })
+            }}
+            style={{ width: 76 }}
+          />
+        )
+      case 'midiMax':
+        return (
+          <CarbonNumberInput
+            id={inputId}
+            size="sm"
+            min={0}
+            max={1}
+            step={0.01}
+            value={mapping?.max_val ?? 1}
+            label=""
+            hideLabel
+            hideSteppers
+            onChange={(_evt: unknown, { value }: { value: string | number }) => {
+              onMidiMappingChange(chain.id, plugin, { max_val: Number(value) })
+            }}
+            style={{ width: 76 }}
+          />
+        )
+      default:
+        return ''
+    }
+  }, [chain, midiMappings, onMidiMappingChange, pluginInventoryByUri, slot.id])
+
   // Build DataTable rows
   const rows = useMemo(() => {
     return plugins.map((plugin, rowIdx) => {
@@ -1238,22 +1765,19 @@ function FlowTableSection({
         ),
         inputLevel: inputDb,
         outputLevel: outputDb,
-        // MIDI columns (placeholder — populated from MIDI mappings)
-        midiCc: '—',
-        midiChannel: '—',
-        midiCurve: '—',
-        midiMin: '—',
-        midiMax: '—',
         // Automation columns
         autoArmed: <Tag type="cool-gray" size="sm">Off</Tag>,
         autoRecorded: <Tag type="cool-gray" size="sm">—</Tag>,
       }
 
       for (const column of visibleColumns) {
-        if (column.group !== 'parameter') {
+        if (column.group === 'parameter') {
+          cells[column.key] = renderParameterCell(plugin, rowIdx, column)
           continue
         }
-        cells[column.key] = renderParameterCell(plugin, rowIdx, column)
+        if (column.group === 'midi') {
+          cells[column.key] = renderMidiCell(plugin, rowIdx, column)
+        }
       }
 
       return {
@@ -1261,7 +1785,7 @@ function FlowTableSection({
         ...cells,
       }
     })
-  }, [plugins, slot.id, chain, peaksMap, onBypassToggle, onRemovePlugin, onPositionChange, renderParameterCell, visibleColumns])
+  }, [plugins, slot.id, chain, peaksMap, onBypassToggle, onRemovePlugin, onPositionChange, renderMidiCell, renderParameterCell, visibleColumns])
 
   // Chain selector items
   const chainItems = useMemo(() => {
@@ -1436,13 +1960,8 @@ function FlowTableSection({
               <TableContainer {...getTableContainerProps()}>
                 <TableToolbar {...getToolbarProps()} size="sm">
                   <TableToolbarContent>
-                    <TableToolbarSearch
-                      persistent
-                      size="sm"
-                      value={search}
-                      onChange={(_e: unknown, v: string | undefined) => onSearchChange(v ?? '')}
-                    />
                     <Tag type="cool-gray" size="sm">{plugins.length} plugins</Tag>
+                    {search.trim() ? <Tag type="blue" size="sm">Filtered</Tag> : null}
                   </TableToolbarContent>
                 </TableToolbar>
                 <Table {...getTableProps()} size="sm">
