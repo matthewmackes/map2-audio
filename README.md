@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**861** Python | **1177** TypeScript | **300** C++/H | **125** Docs | **983** total commits | **3** stars | **0** forks | **0** open issues
+**861** Python | **1177** TypeScript | **300** C++/H | **125** Docs | **986** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`48c91e32`](https://github.com/matthewmackes/map2-audio/commit/48c91e32a72b815a38f286d228f09459037b64e5) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-27 |
+| [`7ec6cf51`](https://github.com/matthewmackes/map2-audio/commit/7ec6cf51684a96514a204cd235193f4d885bb903) | Migrate Tesira apply-button controls and narrow T460 audi... | Map2 Audio | 2026-03-27 |
+| [`a28d1379`](https://github.com/matthewmackes/map2-audio/commit/a28d1379c705afee198dd130757bfbf5e72118a0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`5adbd5bc`](https://github.com/matthewmackes/map2-audio/commit/5adbd5bcddaf7f33632bed1b19e94ed87f075013) | Retire numeric wrappers and harden parameter controls | Map2 Audio | 2026-03-27 |
 | [`9b026465`](https://github.com/matthewmackes/map2-audio/commit/9b02646583296680b530f7ef89fff6306111c561) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`fa24daea`](https://github.com/matthewmackes/map2-audio/commit/fa24daea7be33d91f80b2efd18ecfffd4c0a5657) | Finish parameter-control validation hardening | Map2 Audio | 2026-03-27 |
 | [`1b284f8c`](https://github.com/matthewmackes/map2-audio/commit/1b284f8cadb51d5cf5ca01f2fdaa783ce601ed6b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`41521bfe`](https://github.com/matthewmackes/map2-audio/commit/41521bfe6e99b330bbd1cb54b965101a7234f89f) | feat(web): add shared parameter control runtime | Map2 Audio | 2026-03-27 |
-| [`8f7d1fe0`](https://github.com/matthewmackes/map2-audio/commit/8f7d1fe0599aaac39b871f1c8fb02cf77665c4c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`988d79bd`](https://github.com/matthewmackes/map2-audio/commit/988d79bd25ce821a279ffcc9c41f7630434d7e48) | test: expand audio table integration coverage | Map2 Audio | 2026-03-27 |
-| [`5f707c3a`](https://github.com/matthewmackes/map2-audio/commit/5f707c3a9deb64572ae2168d8e0454e538e66083) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
