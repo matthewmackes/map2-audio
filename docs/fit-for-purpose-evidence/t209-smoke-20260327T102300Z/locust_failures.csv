@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences
+POST,/api/chains/{id}/activate,HTTPError('503 Server Error: Service Unavailable for url: /api/chains/{id}/activate'),3

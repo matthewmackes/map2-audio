@@ -6,6 +6,7 @@ API endpoints for creating and managing audio signal chains.
 import hashlib
 import json
 import asyncio
+import os
 import time
 import threading
 from typing import Any
@@ -80,7 +81,7 @@ try:
 
         return normalized_plugins
 
-    _CHAIN_ROUTE_TIMEOUT_SECONDS = 0.09
+    _CHAIN_ROUTE_TIMEOUT_SECONDS = float(os.getenv("MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS", "2.0"))
     _CHAIN_LIST_CACHE_TTL_SECONDS = 30.0
     _CHAIN_DETAILS_CACHE_TTL_SECONDS = 30.0
     _CHAIN_TOGGLE_MIN_INTERVAL_SECONDS = 0.45

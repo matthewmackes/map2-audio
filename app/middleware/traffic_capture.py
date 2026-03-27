@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 import uuid
 from typing import Callable
@@ -15,7 +16,15 @@ from app.services.api_observatory import get_api_observatory_service
 from app.services.websocket_manager import ws_manager
 
 _BODY_SNIPPET_BYTES = 400  # enough for ~100 visible chars of JSON
+_REQUEST_BODY_CAPTURE_LIMIT_BYTES = 4096
+_DEPENDENCY_SNAPSHOT_TTL_SECONDS = 0.25
+_DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS = 5.0
 _RUN_ID_HEADERS = ("x-map2-run-id", "x-load-run-id", "x-request-run-id")
+_dependency_snapshot_cache: dict[str, object] | None = None
+_dependency_snapshot_cache_at = 0.0
+_dependency_snapshot_lock = threading.Lock()
+_dependency_snapshot_run_cache: dict[str, float] = {}
+_dependency_snapshot_run_lock = threading.Lock()
 
 
 def _extract_run_id(request: Request) -> str:
@@ -28,6 +37,16 @@ def _extract_run_id(request: Request) -> str:
 
 
 def _dependency_snapshot() -> dict[str, object]:
+    global _dependency_snapshot_cache, _dependency_snapshot_cache_at
+
+    now = time.monotonic()
+    with _dependency_snapshot_lock:
+        if (
+            _dependency_snapshot_cache is not None
+            and (now - _dependency_snapshot_cache_at) <= _DEPENDENCY_SNAPSHOT_TTL_SECONDS
+        ):
+            return dict(_dependency_snapshot_cache)
+
     try:
         from app.services.service_orchestrator import get_orchestrator
 
@@ -36,7 +55,7 @@ def _dependency_snapshot() -> dict[str, object]:
         services = status.get("services", {}) if isinstance(status, dict) else {}
         startup_progress = status.get("startup_progress", {}) if isinstance(status, dict) else {}
         traffic_gates = status.get("traffic_gate_services", []) if isinstance(status, dict) else []
-        return {
+        snapshot = {
             "orchestrator_running": bool(orchestrator.get("running")),
             "startup_progress": startup_progress,
             "traffic_gate_services": list(traffic_gates) if isinstance(traffic_gates, list) else [],
@@ -53,8 +72,42 @@ def _dependency_snapshot() -> dict[str, object]:
                 if isinstance(service, dict)
             },
         }
+        with _dependency_snapshot_lock:
+            _dependency_snapshot_cache = snapshot
+            _dependency_snapshot_cache_at = now
+        return dict(snapshot)
     except Exception:
         return {"orchestrator_running": False, "capture_error": True}
+
+
+def _should_capture_dependency_snapshot(
+    *,
+    observatory_recording: bool,
+    run_id: str,
+    status_code: int,
+) -> bool:
+    if observatory_recording or status_code >= 500:
+        return True
+    if not run_id:
+        return False
+
+    now = time.monotonic()
+    cutoff = now - (_DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS * 2.0)
+    with _dependency_snapshot_run_lock:
+        stale_run_ids = [
+            cached_run_id
+            for cached_run_id, captured_at in _dependency_snapshot_run_cache.items()
+            if captured_at < cutoff
+        ]
+        for stale_run_id in stale_run_ids:
+            _dependency_snapshot_run_cache.pop(stale_run_id, None)
+
+        last_captured_at = _dependency_snapshot_run_cache.get(run_id)
+        if last_captured_at is not None and (now - last_captured_at) <= _DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS:
+            return False
+
+        _dependency_snapshot_run_cache[run_id] = now
+        return True
 
 
 def _utc_now_iso() -> str:
@@ -102,13 +155,19 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
         request_size = int(request.headers.get("content-length") or 0)
         request_id = getattr(request.state, "request_id", None) or str(uuid.uuid4())
         run_id = _extract_run_id(request)
+        observatory = get_api_observatory_service()
+        observatory_recording = observatory.is_recording()
         request.state.request_id = request_id
         if run_id:
             request.state.run_id = run_id
 
         # Capture request body for mutations
         req_body_snippet: str | None = None
-        if request.method in ("POST", "PUT", "PATCH", "DELETE") and request_size > 0:
+        if (
+            request.method in ("POST", "PUT", "PATCH", "DELETE")
+            and request_size > 0
+            and (observatory_recording or request_size <= _REQUEST_BODY_CAPTURE_LIMIT_BYTES)
+        ):
             try:
                 raw_body = await request.body()
                 req_body_snippet = _snippet(raw_body)
@@ -119,7 +178,16 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
         except Exception:
             duration_ms = (time.perf_counter() - started) * 1000.0
-            event = get_api_observatory_service().record_traffic_event(
+            dependency_snapshot = (
+                _dependency_snapshot()
+                if _should_capture_dependency_snapshot(
+                    observatory_recording=observatory_recording,
+                    run_id=run_id,
+                    status_code=500,
+                )
+                else None
+            )
+            event = observatory.record_traffic_event(
                 {
                     "timestamp": _utc_now_iso(),
                     "method": request.method,
@@ -135,45 +203,60 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                         "error": "unhandled_exception",
                         "req_body": req_body_snippet,
                         "res_body": None,
-                        "dependency_snapshot": _dependency_snapshot() if run_id else None,
+                        "dependency_snapshot": dependency_snapshot,
                     },
                 }
             )
-            await ws_manager.broadcast_json(
-                {
-                    "type": "traffic_event",
-                    "topic": "traffic_event",
-                    "data": event,
-                },
-                topic="traffic_event",
-            )
+            if ws_manager.get_subscribers("traffic_event"):
+                await ws_manager.broadcast_json(
+                    {
+                        "type": "traffic_event",
+                        "topic": "traffic_event",
+                        "data": event,
+                    },
+                    topic="traffic_event",
+                )
             raise
 
         duration_ms = (time.perf_counter() - started) * 1000.0
         response_size = int(response.headers.get("content-length") or 0)
 
-        # Capture response body snippet by consuming the streaming body
+        # Mirroring every successful body back through middleware is expensive under load.
+        # Keep the hot path cheap unless an operator explicitly enabled recording or the
+        # response is already an error we need to inspect.
         res_body_snippet: str | None = None
-        try:
-            body_chunks: list[bytes] = []
-            async for chunk in response.body_iterator:  # type: ignore[attr-defined]
-                body_chunks.append(chunk if isinstance(chunk, bytes) else chunk.encode())
-            raw_response_body = b"".join(body_chunks)
-            if not response_size:
-                response_size = len(raw_response_body)
-            res_body_snippet = _snippet(raw_response_body[:_BODY_SNIPPET_BYTES])
-            # Reconstruct a new response with the consumed body
-            from starlette.responses import Response as StarletteResponse
-            response = StarletteResponse(
-                content=raw_response_body,
-                status_code=response.status_code,
-                headers=dict(response.headers),
-                media_type=response.media_type,
-            )
-        except Exception:
-            pass
+        capture_response_body = observatory_recording or response.status_code >= 400
+        if capture_response_body:
+            try:
+                body_chunks: list[bytes] = []
+                async for chunk in response.body_iterator:  # type: ignore[attr-defined]
+                    body_chunks.append(chunk if isinstance(chunk, bytes) else chunk.encode())
+                raw_response_body = b"".join(body_chunks)
+                if not response_size:
+                    response_size = len(raw_response_body)
+                res_body_snippet = _snippet(raw_response_body[:_BODY_SNIPPET_BYTES])
+                # Reconstruct a new response with the consumed body
+                from starlette.responses import Response as StarletteResponse
+                response = StarletteResponse(
+                    content=raw_response_body,
+                    status_code=response.status_code,
+                    headers=dict(response.headers),
+                    media_type=response.media_type,
+                )
+            except Exception:
+                pass
 
-        event = get_api_observatory_service().record_traffic_event(
+        dependency_snapshot = (
+            _dependency_snapshot()
+            if _should_capture_dependency_snapshot(
+                observatory_recording=observatory_recording,
+                run_id=run_id,
+                status_code=response.status_code,
+            )
+            else None
+        )
+
+        event = observatory.record_traffic_event(
             {
                 "timestamp": _utc_now_iso(),
                 "method": request.method,
@@ -189,19 +272,20 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     "query": dict(request.query_params),
                     "req_body": req_body_snippet,
                     "res_body": res_body_snippet,
-                    "dependency_snapshot": _dependency_snapshot() if (run_id or response.status_code >= 500) else None,
+                    "dependency_snapshot": dependency_snapshot,
                 },
             }
         )
 
-        await ws_manager.broadcast_json(
-            {
-                "type": "traffic_event",
-                "topic": "traffic_event",
-                "data": event,
-            },
-            topic="traffic_event",
-        )
+        if ws_manager.get_subscribers("traffic_event"):
+            await ws_manager.broadcast_json(
+                {
+                    "type": "traffic_event",
+                    "topic": "traffic_event",
+                    "data": event,
+                },
+                topic="traffic_event",
+            )
 
         response.headers["X-Request-ID"] = request_id
         return response

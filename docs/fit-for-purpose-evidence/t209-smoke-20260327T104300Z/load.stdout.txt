@@ -1,0 +1,10 @@
+[load_test] started WS soak with target=100 clients run_id=t209-smoke-20260327T104300Z
+[load_test] WS summary: {
+  "connected": 100.0,
+  "drops": 0.0,
+  "samples": 5000.0,
+  "spread_mean_ms": 0.15250343075022102,
+  "spread_p95_ms": 0.2201520837843418
+}
+[load_test] FAIL:
+ - REST steady-state p95 141.72ms exceeds 50.00ms

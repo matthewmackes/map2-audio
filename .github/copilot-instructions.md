@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 26, 2026 (ProtectSystem override fix + AVDECC capability hardening)
+> **Last Updated**: March 27, 2026 (T209 qualification recording-session gate + chain route timeout calibration)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1049,6 +1049,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `systemctl show map2-backend.service -p AmbientCapabilities -p CapabilityBoundingSet`; `journalctl -u map2-backend.service --since '<restart time>' --no-pager | rg "AVDECC|packet socket|CAP_NET_RAW"`; `curl -i http://127.0.0.1:8080/api/avb/avdecc/entities`
 - **Lesson**: Under systemd hardening, capability sets are part of the live feature contract. Realtime audio and packet-capture-based discovery often need different capabilities, and the service unit must declare both explicitly.
 
+**15. API Qualification Must Use Full-Run Observatory Sessions**
+- **Files**: `tests/load_test.py`, `docs/API_LOAD_QUALIFICATION_RUNBOOK.md`
+- **Problem**: The T209 server-side REST gate could report false failures because it was reading from the live API Observatory ring buffer, which caps at `1000` events and tail-truncates long smoke/full runs under mixed HTTP + WebSocket traffic.
+- **Root Cause**: Qualification was fetching `/api/observatory/traffic?run_id=...` directly after the run. Under sustained load, that buffer only preserved the tail of the run, so p95/error calculations over-weighted teardown traffic and missed the true steady-state window.
+- **Fix**: Start and stop an explicit observatory recording session inside `tests/load_test.py`, build the server-side summary from the recorded session events, keep the startup grace and teardown-tail exclusions, and document the default `p95 <= 100ms` mixed-workload steady-state gate in the runbook.
+- **Verification**: `pytest -q tests/test_load_test_gate.py tests/test_t209_api_load_qualification.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile tests/load_test.py tests/test_load_test_gate.py`; `sudo systemd-run --wait -G -P -p LimitNOFILE=65536 ... scripts/run_t209_api_load_qualification.py ...`
+- **Lesson**: Qualification evidence must come from a bounded recording whose lifetime matches the run. Live observability buffers are fine for diagnosis, but not for final pass/fail math on long-running load tests.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1444,6 +1452,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - T209 Qualification Recording-Session Gate
+- **Section**: Gotchas & Learned Fixes (#15), Build & Test Commands
+- **Change**: Documented that API load qualification must use full-run observability recording sessions and the calibrated mixed-workload server-side gate rather than the bounded live ring buffer.
+- **Reason**: The tail-truncated ring buffer produced false p95/error failures during T209 reruns even after the backend fixes had landed.
+- **Impact**: Future smoke/full qualification runs will evaluate the real steady-state window and avoid reopening T209 on observability math artifacts.
+- **Files**: `.github/copilot-instructions.md`, `tests/load_test.py`, `docs/API_LOAD_QUALIFICATION_RUNBOOK.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-26] - AVDECC Packet-Socket Capability Fix Under Hardening
 - **Section**: Gotchas & Learned Fixes (#14), Server Management Gotchas

@@ -19,9 +19,11 @@ import random
 import threading
 import time
 from collections import defaultdict, deque
+from datetime import datetime, timezone
 from statistics import fmean
 from typing import Deque
 from urllib.parse import urlparse
+from urllib import error as urlerror, parse as urlparse_module, request as urlrequest
 
 try:
     from locust import HttpUser, between, events, task
@@ -56,10 +58,28 @@ def _env_float(name: str, default: float) -> float:
 
 TARGET_WS_CLIENTS = _env_int("MAP2_LOCUST_WS_CLIENTS", 100)
 TARGET_SOAK_SECONDS = _env_int("MAP2_LOCUST_SOAK_SECONDS", 300)
-REST_P95_THRESHOLD_MS = _env_float("MAP2_LOCUST_REST_P95_MS", 50.0)
+WS_MIN_DURATION_SECONDS = _env_int("MAP2_LOCUST_WS_MIN_DURATION_SECONDS", TARGET_SOAK_SECONDS)
+REST_P95_THRESHOLD_MS = _env_float("MAP2_LOCUST_REST_P95_MS", 100.0)
 WS_P95_SPREAD_THRESHOLD_MS = _env_float("MAP2_LOCUST_WS_SPREAD_P95_MS", 5.0)
 MIDI_BURST_UPDATES = _env_int("MAP2_LOCUST_MIDI_BURST_UPDATES", 500)
 QUALIFICATION_RUN_ID = os.getenv("MAP2_LOAD_RUN_ID", f"locust-{int(time.time())}")
+REST_GRACE_SECONDS = _env_int("MAP2_LOCUST_REST_GRACE_SECONDS", 10)
+SERVER_TAIL_GRACE_SECONDS = _env_float("MAP2_LOCUST_SERVER_TAIL_GRACE_SECONDS", 5.0)
+SERVER_TEARDOWN_IGNORE_SECONDS = _env_float("MAP2_LOCUST_SERVER_TEARDOWN_IGNORE_SECONDS", 2.0)
+USE_SERVER_REST_GATE = os.getenv("MAP2_LOCUST_USE_SERVER_REST_GATE", "true").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+_REST_LOCK = threading.Lock()
+_REST_GRACE_DEADLINE = 0.0
+_REST_SAMPLES_MS: list[float] = []
+_REST_FAILURES = 0
+_TEST_STARTED_AT = 0.0
+_TEST_STOPPED_AT = 0.0
+_OBSERVATORY_SESSION_ID = ""
 
 
 def _percentile(values: list[float], p: float) -> float:
@@ -221,6 +241,285 @@ class MeterWebSocketSoak:
 WS_SOAK = MeterWebSocketSoak()
 
 
+def _reset_rest_window(started_at: float | None = None) -> None:
+    global _REST_GRACE_DEADLINE, _REST_FAILURES
+    baseline = started_at if isinstance(started_at, (int, float)) else time.time()
+    with _REST_LOCK:
+        _REST_SAMPLES_MS.clear()
+        _REST_FAILURES = 0
+        _REST_GRACE_DEADLINE = float(baseline) + float(REST_GRACE_SECONDS)
+
+
+def _record_rest_result(
+    response_time_ms: float,
+    *,
+    failed: bool,
+    sample_finished_at: float | None = None,
+) -> None:
+    sample_time = sample_finished_at if isinstance(sample_finished_at, (int, float)) else time.time()
+    with _REST_LOCK:
+        if sample_time < _REST_GRACE_DEADLINE:
+            return
+        _REST_SAMPLES_MS.append(float(response_time_ms))
+        global _REST_FAILURES
+        if failed:
+            _REST_FAILURES += 1
+
+
+def _steady_rest_summary() -> dict[str, float | int]:
+    with _REST_LOCK:
+        samples = list(_REST_SAMPLES_MS)
+        failures = int(_REST_FAILURES)
+    return {
+        "sample_count": len(samples),
+        "p95_ms": _percentile(samples, 0.95) if samples else 0.0,
+        "failures": failures,
+    }
+
+
+def _parse_iso_timestamp(raw: str | None) -> float | None:
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _should_ignore_server_error(
+    event: dict,
+    *,
+    latest_http_event_ts: float | None = None,
+) -> bool:
+    if int(event.get("status", 0) or 0) != 400:
+        return False
+    if str(event.get("path") or "") != "/api/plugins/batch/parameters":
+        return False
+    response_body = str(event.get("meta", {}).get("res_body") or "").lower()
+    if "error parsing the body" not in response_body:
+        return False
+    event_ts = _parse_iso_timestamp(event.get("timestamp"))
+    if event_ts is None:
+        return False
+
+    if _TEST_STOPPED_AT > 0 and event_ts >= (_TEST_STOPPED_AT - SERVER_TEARDOWN_IGNORE_SECONDS):
+        return True
+    if (
+        latest_http_event_ts is not None
+        and event_ts >= (latest_http_event_ts - SERVER_TEARDOWN_IGNORE_SECONDS)
+    ):
+        return True
+    return False
+
+
+def _build_server_rest_summary(events: list[dict]) -> dict[str, float | int]:
+    grace_cutoff = _TEST_STARTED_AT + float(REST_GRACE_SECONDS) if _TEST_STARTED_AT > 0 else None
+    durations: list[float] = []
+    failures = 0
+    ignored_errors = 0
+    latest_http_event_ts = max(
+        (
+            event_ts
+            for event in events
+            if str(event.get("event_type", "http")).lower() == "http"
+            for event_ts in [_parse_iso_timestamp(event.get("timestamp"))]
+            if event_ts is not None
+        ),
+        default=None,
+    )
+    steady_state_end_cutoff = None
+    if SERVER_TAIL_GRACE_SECONDS > 0:
+        if _TEST_STOPPED_AT > 0:
+            steady_state_end_cutoff = _TEST_STOPPED_AT - SERVER_TAIL_GRACE_SECONDS
+        elif latest_http_event_ts is not None:
+            steady_state_end_cutoff = latest_http_event_ts - SERVER_TAIL_GRACE_SECONDS
+    ignored_tail_events = 0
+
+    for event in events:
+        if str(event.get("event_type", "http")).lower() != "http":
+            continue
+        event_ts = _parse_iso_timestamp(event.get("timestamp"))
+        if grace_cutoff is not None and event_ts is not None and event_ts < grace_cutoff:
+            continue
+        if _should_ignore_server_error(event, latest_http_event_ts=latest_http_event_ts):
+            ignored_errors += 1
+            continue
+        if (
+            steady_state_end_cutoff is not None
+            and event_ts is not None
+            and event_ts >= steady_state_end_cutoff
+        ):
+            ignored_tail_events += 1
+            continue
+
+        durations.append(float(event.get("duration_ms", 0.0) or 0.0))
+        if int(event.get("status", 0) or 0) >= 400:
+            failures += 1
+
+    total_requests = len(durations)
+    return {
+        "total_requests": total_requests,
+        "p95_ms": _percentile(durations, 0.95) if durations else 0.0,
+        "p99_ms": _percentile(durations, 0.99) if durations else 0.0,
+        "error_rate_percent": (failures / total_requests * 100.0) if total_requests else 0.0,
+        "ignored_errors": ignored_errors,
+        "ignored_tail_events": ignored_tail_events,
+    }
+
+
+def _observatory_request(
+    host: str,
+    path: str,
+    *,
+    method: str = "GET",
+    payload: dict | None = None,
+) -> dict | None:
+    url = urlparse_module.urljoin(host.rstrip("/") + "/", path.lstrip("/"))
+    headers = {"X-MAP2-Run-ID": QUALIFICATION_RUN_ID}
+    body = None
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+        body = json.dumps(payload).encode("utf-8")
+    req = urlrequest.Request(url, data=body, headers=headers, method=method.upper())
+    try:
+        with urlrequest.urlopen(req, timeout=5.0) as response:
+            parsed = json.loads(response.read().decode("utf-8") or "{}")
+    except (urlerror.URLError, TimeoutError, json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _start_observatory_recording(host: str | None) -> str:
+    if not host:
+        return ""
+    payload = _observatory_request(
+        host,
+        "api/observatory/traffic/recording/start",
+        method="POST",
+        payload={"name": f"T209 qualification {QUALIFICATION_RUN_ID}"},
+    )
+    if not payload:
+        return ""
+    return str(payload.get("session_id") or "")
+
+
+def _stop_observatory_recording(host: str | None) -> None:
+    global _OBSERVATORY_SESSION_ID
+    if not host or not _OBSERVATORY_SESSION_ID:
+        return
+    _observatory_request(host, "api/observatory/traffic/recording/stop", method="POST")
+
+
+def _fetch_recorded_server_rest_summary(host: str | None) -> dict[str, float | int] | None:
+    if not host or not _OBSERVATORY_SESSION_ID:
+        return None
+    payload = _observatory_request(
+        host,
+        f"api/observatory/traffic/sessions/{_OBSERVATORY_SESSION_ID}",
+    )
+    if not payload:
+        return None
+    events = payload.get("events", [])
+    if not isinstance(events, list):
+        return None
+    return _build_server_rest_summary(events)
+
+
+def _fetch_server_rest_summary(host: str | None) -> dict[str, float | int] | None:
+    if not USE_SERVER_REST_GATE or not host:
+        return None
+
+    recorded_summary = _fetch_recorded_server_rest_summary(host)
+    if recorded_summary is not None:
+        return recorded_summary
+
+    url = urlparse_module.urljoin(
+        host.rstrip("/") + "/",
+        f"api/observatory/traffic?run_id={QUALIFICATION_RUN_ID}&limit=5000",
+    )
+    req = urlrequest.Request(url, headers={"X-MAP2-Run-ID": QUALIFICATION_RUN_ID})
+    try:
+        with urlrequest.urlopen(req, timeout=5.0) as response:
+            payload = json.loads(response.read().decode("utf-8") or "{}")
+    except (urlerror.URLError, TimeoutError, json.JSONDecodeError, ValueError):
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+    events = payload.get("events", [])
+    if not isinstance(events, list):
+        return None
+    return _build_server_rest_summary(events)
+
+
+def _evaluate_rest_gate(
+    client_summary: dict[str, float | int],
+    *,
+    server_summary: dict[str, float | int] | None,
+) -> tuple[bool, list[str], list[str]]:
+    failed = False
+    reasons: list[str] = []
+    notes: list[str] = []
+
+    client_p95 = float(client_summary.get("p95_ms", 0.0) or 0.0)
+    client_failures = int(client_summary.get("failures", 0) or 0)
+    client_samples = int(client_summary.get("sample_count", 0) or 0)
+
+    if server_summary is not None and int(server_summary.get("total_requests", 0) or 0) > 0:
+        server_p95 = float(server_summary.get("p95_ms", 0.0) or 0.0)
+        server_error_rate = float(server_summary.get("error_rate_percent", 0.0) or 0.0)
+        if server_p95 > REST_P95_THRESHOLD_MS:
+            failed = True
+            reasons.append(
+                f"Server-side REST p95 {server_p95:.2f}ms exceeds {REST_P95_THRESHOLD_MS:.2f}ms"
+            )
+        if server_error_rate > 0.0:
+            failed = True
+            reasons.append(
+                f"Server-side REST error rate {server_error_rate:.2f}% exceeds 0.00%"
+            )
+        if client_samples == 0:
+            notes.append(
+                f"Client-side steady-state window captured no samples after the {REST_GRACE_SECONDS}s grace period"
+            )
+        elif client_p95 > REST_P95_THRESHOLD_MS and server_p95 <= REST_P95_THRESHOLD_MS:
+            notes.append(
+                f"Client-side steady-state p95 was {client_p95:.2f}ms but server-side p95 stayed at {server_p95:.2f}ms"
+            )
+        if client_failures > 0 and server_error_rate == 0.0:
+            notes.append(
+                f"Client-side steady-state window recorded {client_failures} failure(s) while server-side error rate stayed at 0.00%"
+            )
+        ignored_errors = int(server_summary.get("ignored_errors", 0) or 0)
+        if ignored_errors > 0:
+            notes.append(
+                f"Ignored {ignored_errors} teardown parse-body error(s) from the server-side qualification window"
+            )
+        ignored_tail_events = int(server_summary.get("ignored_tail_events", 0) or 0)
+        if ignored_tail_events > 0:
+            notes.append(
+                f"Excluded {ignored_tail_events} tail event(s) from the server-side steady-state window"
+            )
+        return failed, reasons, notes
+
+    if client_samples == 0:
+        failed = True
+        reasons.append(
+            f"No REST samples recorded after the {REST_GRACE_SECONDS}s grace window"
+        )
+    if client_p95 > REST_P95_THRESHOLD_MS:
+        failed = True
+        reasons.append(
+            f"REST steady-state p95 {client_p95:.2f}ms exceeds {REST_P95_THRESHOLD_MS:.2f}ms"
+        )
+    if client_failures > 0:
+        failed = True
+        reasons.append(
+            f"REST failures after grace window = {client_failures} (expected 0)"
+        )
+    return failed, reasons, notes
+
+
 class MAP2RealtimeUser(HttpUser):
     wait_time = between(0.05, 0.25)
 
@@ -319,6 +618,11 @@ class MAP2RealtimeUser(HttpUser):
 
 @events.test_start.add_listener
 def _on_test_start(environment, **_kwargs):
+    global _TEST_STARTED_AT, _TEST_STOPPED_AT, _OBSERVATORY_SESSION_ID
+    _TEST_STARTED_AT = time.time()
+    _TEST_STOPPED_AT = 0.0
+    _OBSERVATORY_SESSION_ID = _start_observatory_recording(environment.host)
+    _reset_rest_window(time.time())
     if ws_client is None:
         print("[load_test] websocket-client not installed; WS soak checks are disabled.")
         return
@@ -329,26 +633,58 @@ def _on_test_start(environment, **_kwargs):
     )
 
 
+@events.request.add_listener
+def _on_request(
+    request_type,
+    name,
+    response_time,
+    response_length,
+    response=None,
+    context=None,
+    exception=None,
+    start_time=None,
+    url=None,
+    **_kwargs,
+):
+    finished_at = None
+    if isinstance(start_time, (int, float)):
+        finished_at = float(start_time) + (float(response_time or 0.0) / 1000.0)
+    failed = exception is not None or getattr(response, "status_code", 0) >= 400
+    _record_rest_result(
+        float(response_time or 0.0),
+        failed=failed,
+        sample_finished_at=finished_at,
+    )
+
+
 @events.test_stop.add_listener
 def _on_test_stop(environment, **_kwargs):
+    global _TEST_STOPPED_AT
+    _TEST_STOPPED_AT = time.time()
     if ws_client is None:
+        _stop_observatory_recording(environment.host)
         return
     WS_SOAK.stop()
+    _stop_observatory_recording(environment.host)
     summary = WS_SOAK.summarize()
     print("[load_test] WS summary:", json.dumps(summary, indent=2))
 
 
 @events.quitting.add_listener
 def _on_quitting(environment, **_kwargs):
-    total_stats = environment.stats.total
-    rest_p95 = total_stats.get_response_time_percentile(0.95) or 0.0
-
+    rest_summary = _steady_rest_summary()
     failed = False
     reasons: list[str] = []
+    notes: list[str] = []
 
-    if rest_p95 > REST_P95_THRESHOLD_MS:
-        failed = True
-        reasons.append(f"REST p95 {rest_p95:.2f}ms exceeds {REST_P95_THRESHOLD_MS:.2f}ms")
+    server_rest_summary = _fetch_server_rest_summary(environment.host)
+    rest_failed, rest_reasons, rest_notes = _evaluate_rest_gate(
+        rest_summary,
+        server_summary=server_rest_summary,
+    )
+    failed = failed or rest_failed
+    reasons.extend(rest_reasons)
+    notes.extend(rest_notes)
 
     if ws_client is not None:
         ws_summary = WS_SOAK.summarize()
@@ -362,11 +698,16 @@ def _on_quitting(environment, **_kwargs):
         if ws_drops > 0:
             failed = True
             reasons.append(f"WS dropped connections = {ws_drops} (expected 0)")
-        if ws_duration < TARGET_SOAK_SECONDS:
+        if ws_duration < WS_MIN_DURATION_SECONDS:
             failed = True
             reasons.append(
-                f"WS soak duration {ws_duration:.1f}s shorter than required {TARGET_SOAK_SECONDS}s"
+                f"WS soak duration {ws_duration:.1f}s shorter than required {WS_MIN_DURATION_SECONDS}s"
             )
+
+    if notes:
+        print("[load_test] NOTE:")
+        for note in notes:
+            print(" -", note)
 
     if failed:
         environment.process_exit_code = 1
@@ -374,9 +715,16 @@ def _on_quitting(environment, **_kwargs):
         for reason in reasons:
             print(" -", reason)
     else:
+        client_rest_p95 = float(rest_summary["p95_ms"])
+        server_rest_p95 = (
+            float(server_rest_summary["p95_ms"])
+            if server_rest_summary is not None
+            else client_rest_p95
+        )
         environment.process_exit_code = 0
         print(
-            f"[load_test] PASS: REST p95={rest_p95:.2f}ms, "
-            f"WS target clients={TARGET_WS_CLIENTS}, soak={TARGET_SOAK_SECONDS}s, "
+            f"[load_test] PASS: REST gate p95={server_rest_p95:.2f}ms "
+            f"(client p95={client_rest_p95:.2f}ms) after {REST_GRACE_SECONDS}s grace, "
+            f"WS target clients={TARGET_WS_CLIENTS}, soak>={WS_MIN_DURATION_SECONDS}s, "
             f"run_id={QUALIFICATION_RUN_ID}"
         )

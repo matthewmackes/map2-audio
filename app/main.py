@@ -17,6 +17,18 @@ Main entry point with router registration and lifecycle management.
 Utility functions for error handling and service startup/shutdown.
 """
 
+import asyncio
+import os
+import signal
+import threading
+import time
+
+_SERVICE_STOP_TIMEOUT_SECONDS = 2.0
+_FORCED_EXIT_WATCHDOG_SECONDS = 5.0
+_shutdown_signal_handlers_installed = False
+_shutdown_watchdog_started = False
+_shutdown_watchdog_lock = threading.Lock()
+
 def log_and_raise_critical(logger, message, exc: Exception = None):
     """Log a critical error and raise."""
     import traceback
@@ -34,12 +46,91 @@ async def safe_start_service(logger, name, start_coro):
     except Exception as e:
         log_and_raise_critical(logger, f"Failed to start {name}", e)
 
-async def safe_stop_service(logger, name, stop_coro):
+async def safe_stop_service(
+    logger,
+    name,
+    stop_coro,
+    *,
+    timeout_seconds: float = _SERVICE_STOP_TIMEOUT_SECONDS,
+):
     try:
-        await stop_coro()
+        if timeout_seconds > 0:
+            await asyncio.wait_for(stop_coro(), timeout=timeout_seconds)
+        else:
+            await stop_coro()
         logger.info(f"{name} stopped successfully")
+    except asyncio.TimeoutError:
+        logger.warning(f"Timed out stopping {name} after {timeout_seconds:.1f}s")
     except Exception as e:
         logger.warning(f"Failed to stop {name}: {e}")
+
+
+def _start_forced_shutdown_watchdog(signal_name: str) -> None:
+    global _shutdown_watchdog_started
+
+    with _shutdown_watchdog_lock:
+        if _shutdown_watchdog_started or _FORCED_EXIT_WATCHDOG_SECONDS <= 0:
+            return
+        _shutdown_watchdog_started = True
+
+    def _watchdog() -> None:
+        time.sleep(_FORCED_EXIT_WATCHDOG_SECONDS)
+        logger.error(
+            "%s shutdown watchdog forcing process exit after %.1fs",
+            signal_name,
+            _FORCED_EXIT_WATCHDOG_SECONDS,
+        )
+        os._exit(0)
+
+    threading.Thread(
+        target=_watchdog,
+        name="map2-shutdown-watchdog",
+        daemon=True,
+    ).start()
+
+
+def _runtime_shutdown_signal_handler(
+    signum: int,
+    frame,
+    *,
+    previous_handler,
+) -> None:
+    signal_name = signal.Signals(signum).name
+    logger.warning("%s received; starting forced-exit watchdog", signal_name)
+    _start_forced_shutdown_watchdog(signal_name)
+
+    if callable(previous_handler):
+        previous_handler(signum, frame)
+        return
+
+    if previous_handler == signal.SIG_DFL:
+        raise SystemExit(0)
+
+
+def _install_runtime_shutdown_signal_handlers() -> None:
+    global _shutdown_signal_handlers_installed
+
+    if _shutdown_signal_handlers_installed:
+        return
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        previous_handler = signal.getsignal(sig)
+
+        def _wrapped(signum, frame, previous_handler=previous_handler):
+            _runtime_shutdown_signal_handler(
+                signum,
+                frame,
+                previous_handler=previous_handler,
+            )
+
+        signal.signal(sig, _wrapped)
+
+    logger.info(
+        "Installed runtime shutdown watchdog handlers: SIGTERM=%r SIGINT=%r",
+        signal.getsignal(signal.SIGTERM),
+        signal.getsignal(signal.SIGINT),
+    )
+    _shutdown_signal_handlers_installed = True
 
 import logging
 from contextlib import asynccontextmanager
@@ -150,8 +241,6 @@ async def lifespan(app):
         
         # Initialize database connection pool
         logger.info("Initializing database connection pool...")
-        import os
-        
         pool_manager = get_pool_manager()
         from app.database import get_default_database_url
         database_url = get_default_database_url(async_mode=True)
@@ -163,7 +252,6 @@ async def lifespan(app):
         await safe_start_service(logger, "Database tables", pool_manager.ensure_tables_created)
         
         # Validate audio engine configuration BEFORE starting services
-        import os
         if os.getenv("MAP2_TEST_MODE", "false").lower() in ("1", "true", "yes"):
             logger.info("Skipping audio engine validation in test mode")
         else:
@@ -211,8 +299,6 @@ async def lifespan(app):
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
         from app.deployment.deployment import initialize_deployment_config, get_deployment_config
-        import os
-        
         # Set initial mode from environment
         deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
         
@@ -449,6 +535,7 @@ async def lifespan(app):
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info(f"✅ Startup complete: {running}/{total} services running")
+        _install_runtime_shutdown_signal_handlers()
 
         yield  # Server runs here
 

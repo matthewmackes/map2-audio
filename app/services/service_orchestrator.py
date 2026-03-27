@@ -98,6 +98,7 @@ class ServiceOrchestrator:
 
     _instance: Optional['ServiceOrchestrator'] = None
     _TRAFFIC_GATE_SERVICES = ("database", "command_queue", "websocket_manager")
+    _JUCE_HEALTH_TIMEOUT_SECONDS = 0.05
 
     def __init__(self):
         self._services: Dict[str, ServiceStatus] = {}
@@ -1234,8 +1235,42 @@ class ServiceOrchestrator:
                     message="❌ JUCE engine not installed - REQUIRED for production audio!"
                 )
             service = get_audio_engine()
-            info = service.get_system_info()
-            
+            cached_health = self._services.get("juce_engine").health if self._services.get("juce_engine") else None
+            cached_metrics = (
+                dict(cached_health.metrics)
+                if cached_health and isinstance(cached_health.metrics, dict)
+                else {}
+            )
+            try:
+                info = await asyncio.wait_for(
+                    asyncio.to_thread(service.get_system_info),
+                    timeout=self._JUCE_HEALTH_TIMEOUT_SECONDS,
+                )
+            except (asyncio.TimeoutError, Exception) as exc:
+                fallback_metrics = dict(cached_metrics)
+                if not fallback_metrics:
+                    fallback_metrics = {
+                        "version": "unknown",
+                        "running": bool(getattr(service, "is_running", False)),
+                        "audio_running": bool(getattr(service, "is_running", False)),
+                        "available": bool(getattr(service, "is_available", JUCE_AVAILABLE)),
+                        "initialized": bool(getattr(service, "is_running", False)),
+                    }
+
+                fallback_metrics["stale"] = True
+                fallback_metrics["health_probe_error"] = str(exc)
+                is_running = bool(fallback_metrics.get("running"))
+                version = fallback_metrics.get("version", "unknown")
+                return ServiceHealth(
+                    healthy=is_running,
+                    message=(
+                        f"✅ JUCE Audio Engine v{version} (cached health snapshot)"
+                        if is_running
+                        else f"⚠️ JUCE Engine v{version} fallback status only"
+                    ),
+                    metrics=fallback_metrics,
+                )
+
             is_running = info.get('running', False)
             version = info.get('version', 'unknown')
             

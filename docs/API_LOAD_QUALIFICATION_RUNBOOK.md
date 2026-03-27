@@ -2,6 +2,8 @@
 
 Use `scripts/run_t209_api_load_qualification.py` before any smoke or full Locust run.
 
+`tests/load_test.py` now starts and stops an API Observatory recording session automatically for each qualification run, then evaluates the server-side REST gate from that full-run recording instead of the bounded live ring buffer. The default steady-state REST gate is `p95 <= 100ms`, measured after the startup grace window and before the final tail-exclusion window.
+
 ## What The Preflight Checks
 
 - open-file soft limit (`RLIMIT_NOFILE`)

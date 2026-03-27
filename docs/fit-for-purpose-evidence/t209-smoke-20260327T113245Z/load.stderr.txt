@@ -1,0 +1,739 @@
+[2026-03-27 07:32:47,028] MAP2-TESTBED/INFO/locust.main: Starting Locust 2.43.3
+[2026-03-27 07:32:47,029] MAP2-TESTBED/INFO/locust.main: Run time limit set to 70 seconds
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                         0     0(0.00%) |      0       0       0      0 |    0.00        0.00
+
+[2026-03-27 07:32:47,064] MAP2-TESTBED/INFO/locust.runners: Ramping to 10 users at a rate of 2.00 per second
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                                 8     0(0.00%) |     30       1     170     16 |    0.00        0.00
+GET      /api/audio/levels                                                                  8     0(0.00%) |     34       2     182      7 |    0.00        0.00
+GET      /api/audio/levels (during plugin swap)                                             1     0(0.00%) |      7       7       7      7 |    0.00        0.00
+GET      /api/audio/levels/plugins                                                          1     0(0.00%) |      1       1       1      1 |    0.00        0.00
+GET      /api/audio/status                                                                 10     0(0.00%) |      4       1      11      4 |    0.00        0.00
+GET      /api/chains/                                                                       7     0(0.00%) |     64       2     146     16 |    0.00        0.00
+GET      /api/chains/{id}                                                                  10     0(0.00%) |     46       2     200     14 |    0.00        0.00
+POST     /api/chains/{id}/activate                                                         10     0(0.00%) |     13       1      35     11 |    0.00        0.00
+POST     /api/chains/{id}/deactivate                                                       10     0(0.00%) |      6       1      20      2 |    0.00        0.00
+GET      /api/plugins/discover                                                              7     0(0.00%) |     67      15     157     48 |    0.00        0.00
+GET      /api/plugins/list                                                                  7     0(0.00%) |     71       2     228     13 |    0.00        0.00
+POST     /api/plugins/load?uri                                                              1     0(0.00%) |      2       2       2      2 |    0.00        0.00
+POST     /api/plugins/unload?uri                                                            1     0(0.00%) |      1       1       1      1 |    0.00        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                        81     0(0.00%) |     32       1     228     11 |    0.00        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                                30     0(0.00%) |     38       1     179     18 |    3.50        0.00
+GET      /api/audio/levels                                                                 30     0(0.00%) |     63       1     221     18 |    4.00        0.00
+GET      /api/audio/levels (during plugin swap)                                             5     0(0.00%) |     38       7      67     38 |    0.50        0.00
+GET      /api/audio/levels/plugins                                                          5     0(0.00%) |      9       1      28      6 |    0.50        0.00
+GET      /api/audio/status                                                                 27     0(0.00%) |      6       1      26      3 |    5.00        0.00
+GET      /api/chains/                                                                      23     0(0.00%) |     37       2     146     16 |    3.50        0.00
+GET      /api/chains/{id}                                                                  28     0(0.00%) |     35       1     200     13 |    5.00        0.00
+POST     /api/chains/{id}/activate                                                         28     0(0.00%) |     17       1     159      5 |    5.00        0.00
+POST     /api/chains/{id}/deactivate                                                       27     0(0.00%) |      6       1      28      3 |    5.00        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                        2     0(0.00%) |     51      21      81     21 |    0.00        0.00
+GET      /api/plugins/discover                                                             23     0(0.00%) |     57      14     158     36 |    3.00        0.00
+GET      /api/plugins/list                                                                 23     0(0.00%) |     45       1     228      9 |    3.50        0.00
+POST     /api/plugins/load?uri                                                              5     0(0.00%) |     12       2      22     18 |    0.50        0.00
+POST     /api/plugins/unload?uri                                                            5     0(0.00%) |     15       1      54      4 |    0.50        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                       261     0(0.00%) |     33       1     228     13 |   39.50        0.00
+
+[2026-03-27 07:32:51,076] MAP2-TESTBED/INFO/locust.runners: All users spawned: {"MAP2RealtimeUser": 10} (10 total users)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                                49     0(0.00%) |     28       1     179     13 |    3.50        0.00
+GET      /api/audio/levels                                                                 49     0(0.00%) |     42       1     221     11 |    4.00        0.00
+GET      /api/audio/levels (during plugin swap)                                             7     0(0.00%) |     30       1      67     20 |    0.50        0.00
+GET      /api/audio/levels/plugins                                                          7     0(0.00%) |      8       1      28      6 |    0.50        0.00
+GET      /api/audio/status                                                                 43     0(0.00%) |      9       1      34      4 |    5.00        0.00
+GET      /api/chains/                                                                      29     0(0.00%) |     32       2     146     16 |    3.50        0.00
+GET      /api/chains/{id}                                                                  44     0(0.00%) |     26       1     200     11 |    5.00        0.00
+POST     /api/chains/{id}/activate                                                         44     0(0.00%) |     15       1     159      5 |    5.00        0.00
+POST     /api/chains/{id}/deactivate                                                       43     0(0.00%) |      7       1      28      4 |    5.00        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                        4     0(0.00%) |     28       5      81      7 |    0.00        0.00
+GET      /api/plugins/discover                                                             29     0(0.00%) |     53      14     158     33 |    3.00        0.00
+GET      /api/plugins/list                                                                 29     0(0.00%) |     39       1     228      9 |    3.50        0.00
+POST     /api/plugins/load?uri                                                              7     0(0.00%) |     12       2      24     18 |    0.50        0.00
+POST     /api/plugins/unload?uri                                                            7     0(0.00%) |     13       1      54      4 |    0.50        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                       391     0(0.00%) |     26       1     228     11 |   39.50        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                                81     0(0.00%) |     26       1     179     16 |    8.17        0.00
+GET      /api/audio/levels                                                                 81     0(0.00%) |     97       1    1281     11 |    8.17        0.00
+GET      /api/audio/levels (during plugin swap)                                            15     0(0.00%) |     50       1     149     20 |    1.17        0.00
+GET      /api/audio/levels/plugins                                                         15     0(0.00%) |     18       1      68      9 |    1.17        0.00
+GET      /api/audio/status                                                                 68     0(0.00%) |     28       1    1262      5 |    7.17        0.00
+GET      /api/chains/                                                                      46     0(0.00%) |     40       2     178     17 |    4.83        0.00
+GET      /api/chains/{id}                                                                  69     0(0.00%) |     83       1    1329     12 |    7.33        0.00
+POST     /api/chains/{id}/activate                                                         69     0(0.00%) |     16       1     159     10 |    7.33        0.00
+POST     /api/chains/{id}/deactivate                                                       67     0(0.00%) |     11       1     129      5 |    7.17        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       10     0(0.00%) |    285       5    1300     27 |    0.67        0.00
+GET      /api/plugins/discover                                                             45     0(0.00%) |     51      14     164     36 |    4.83        0.00
+GET      /api/plugins/list                                                                 46     0(0.00%) |     42       1     228     12 |    4.83        0.00
+POST     /api/plugins/load?uri                                                             15     0(0.00%) |     26       2     143      6 |    1.17        0.00
+POST     /api/plugins/unload?uri                                                           13     0(0.00%) |     28       1     135      4 |    1.17        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                       640     0(0.00%) |     47       1    1329     11 |   65.17        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               114     0(0.00%) |     27       1     182     15 |    9.14        0.00
+GET      /api/audio/levels                                                                114     0(0.00%) |     83       1    1281     11 |    9.14        0.00
+GET      /api/audio/levels (during plugin swap)                                            20     0(0.00%) |     44       1     149     12 |    1.43        0.00
+GET      /api/audio/levels/plugins                                                         20     0(0.00%) |     18       1      73      6 |    1.43        0.00
+GET      /api/audio/status                                                                 87     0(0.00%) |     26       1    1262      5 |    7.43        0.00
+GET      /api/chains/                                                                      58     0(0.00%) |     39       2     178     16 |    5.00        0.00
+GET      /api/chains/{id}                                                                  87     0(0.00%) |     71       1    1329      9 |    7.43        0.00
+POST     /api/chains/{id}/activate                                                         87     0(0.00%) |     16       1     162      8 |    7.43        0.00
+POST     /api/chains/{id}/deactivate                                                       87     0(0.00%) |     13       1     166      5 |    7.43        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       16     0(0.00%) |    188       5    1300     27 |    0.86        0.00
+GET      /api/plugins/discover                                                             58     0(0.00%) |     50      13     164     34 |    5.00        0.00
+GET      /api/plugins/list                                                                 58     0(0.00%) |     35       1     228     10 |    5.00        0.00
+POST     /api/plugins/load?uri                                                             20     0(0.00%) |     22       2     143      5 |    1.43        0.00
+POST     /api/plugins/unload?uri                                                           20     0(0.00%) |     36       1     166      4 |    1.43        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                       846     0(0.00%) |     43       1    1329     11 |   69.57        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               148     0(0.00%) |     28       1     182      9 |   10.44        0.00
+GET      /api/audio/levels                                                                148     0(0.00%) |     73       1    1281     10 |   10.56        0.00
+GET      /api/audio/levels (during plugin swap)                                            27     0(0.00%) |     35       1     149     11 |    1.78        0.00
+GET      /api/audio/levels/plugins                                                         27     0(0.00%) |     19       1     122      6 |    1.78        0.00
+GET      /api/audio/status                                                                114     0(0.00%) |     24       1    1262      5 |    8.11        0.00
+GET      /api/chains/                                                                      61     0(0.00%) |     41       2     178     17 |    5.78        0.00
+GET      /api/chains/{id}                                                                 118     0(0.00%) |     64       1    1329      9 |    8.11        0.00
+POST     /api/chains/{id}/activate                                                        116     0(0.00%) |     20       1     189      8 |    8.11        0.00
+POST     /api/chains/{id}/deactivate                                                      114     0(0.00%) |     11       1     166      5 |    8.11        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       27     0(0.00%) |    119       5    1300     21 |    1.22        0.00
+GET      /api/plugins/discover                                                             61     0(0.00%) |     51      13     164     36 |    5.78        0.00
+GET      /api/plugins/list                                                                 61     0(0.00%) |     35       1     228     12 |    5.78        0.00
+POST     /api/plugins/load?uri                                                             27     0(0.00%) |     20       2     143      6 |    1.78        0.00
+POST     /api/plugins/unload?uri                                                           27     0(0.00%) |     29       1     166      6 |    1.78        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1076     0(0.00%) |     40       1    1329     10 |   79.11        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               183     0(0.00%) |     27       1     231     11 |   12.60        0.00
+GET      /api/audio/levels                                                                183     0(0.00%) |     68       1    1281     10 |   12.60        0.00
+GET      /api/audio/levels (during plugin swap)                                            37     0(0.00%) |     35       1     171      8 |    2.20        0.00
+GET      /api/audio/levels/plugins                                                         37     0(0.00%) |     20       1     156      5 |    2.20        0.00
+GET      /api/audio/status                                                                143     0(0.00%) |     23       1    1262      6 |    9.70        0.00
+GET      /api/chains/                                                                      63     0(0.00%) |     41       2     178     17 |    5.80        0.00
+GET      /api/chains/{id}                                                                 143     0(0.00%) |     58       1    1329     10 |    9.70        0.00
+POST     /api/chains/{id}/activate                                                        143     0(0.00%) |     20       1     189      8 |    9.70        0.00
+POST     /api/chains/{id}/deactivate                                                      143     0(0.00%) |     13       1     166      6 |    9.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       38     0(0.00%) |    105       5    1300     21 |    1.70        0.00
+GET      /api/plugins/discover                                                             63     0(0.00%) |     52      13     164     36 |    5.80        0.00
+GET      /api/plugins/list                                                                 63     0(0.00%) |     35       1     228     12 |    5.80        0.00
+POST     /api/plugins/load?uri                                                             37     0(0.00%) |     22       2     187      6 |    2.20        0.00
+POST     /api/plugins/unload?uri                                                           37     0(0.00%) |     24       1     166      6 |    2.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1313     0(0.00%) |     38       1    1329     10 |   91.90        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               222     0(0.00%) |     27       1     231     10 |   14.60        0.00
+GET      /api/audio/levels                                                                222     0(0.00%) |     70       1    1281     10 |   14.60        0.00
+GET      /api/audio/levels (during plugin swap)                                            43     0(0.00%) |     32       1     171      8 |    2.80        0.00
+GET      /api/audio/levels/plugins                                                         43     0(0.00%) |     18       1     156      4 |    2.80        0.00
+GET      /api/audio/status                                                                163     0(0.00%) |     21       1    1262      6 |   10.70        0.00
+GET      /api/chains/                                                                      64     0(0.00%) |     40       2     178     16 |    4.50        0.00
+GET      /api/chains/{id}                                                                 163     0(0.00%) |     62       1    1329     11 |   10.70        0.00
+POST     /api/chains/{id}/activate                                                        163     0(0.00%) |     21       1     189      9 |   10.70        0.00
+POST     /api/chains/{id}/deactivate                                                      163     0(0.00%) |     12       1     166      6 |   10.60        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       52     0(0.00%) |     93       5    1300     21 |    3.10        0.00
+GET      /api/plugins/discover                                                             64     0(0.00%) |     51      13     164     36 |    4.50        0.00
+GET      /api/plugins/list                                                                 64     0(0.00%) |     34       1     228     10 |    4.50        0.00
+POST     /api/plugins/load?uri                                                             43     0(0.00%) |     20       1     187      6 |    2.80        0.00
+POST     /api/plugins/unload?uri                                                           43     0(0.00%) |     21       1     166      4 |    2.80        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1512     0(0.00%) |     38       1    1329      9 |   99.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               237     0(0.00%) |     27       1     231     12 |   17.30        0.00
+GET      /api/audio/levels                                                                237     0(0.00%) |     95       1    1281     11 |   17.30        0.00
+GET      /api/audio/levels (during plugin swap)                                            50     0(0.00%) |     59       1    1212      8 |    3.60        0.00
+GET      /api/audio/levels/plugins                                                         50     0(0.00%) |     17       1     156      4 |    3.60        0.00
+GET      /api/audio/status                                                                170     0(0.00%) |     20       1    1262      6 |   12.00        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    3.50        0.00
+GET      /api/chains/{id}                                                                 170     0(0.00%) |     69       1    1329     13 |   11.90        0.00
+POST     /api/chains/{id}/activate                                                        170     0(0.00%) |     23       1     189     10 |   11.90        0.00
+POST     /api/chains/{id}/deactivate                                                      170     0(0.00%) |     12       1     166      5 |   12.00        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       58     0(0.00%) |    145       5    1300     22 |    4.80        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    3.50        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    3.50        0.00
+POST     /api/plugins/load?uri                                                             50     0(0.00%) |     21       1     187      6 |    3.60        0.00
+POST     /api/plugins/unload?uri                                                           50     0(0.00%) |     19       1     166      4 |    3.60        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1607     0(0.00%) |     45       1    1329     10 |  112.10        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               270     0(0.00%) |     28       1     277     12 |   15.80        0.00
+GET      /api/audio/levels                                                                270     0(0.00%) |     88       1    1281     10 |   15.80        0.00
+GET      /api/audio/levels (during plugin swap)                                            54     0(0.00%) |     63       1    1212      8 |    3.30        0.00
+GET      /api/audio/levels/plugins                                                         54     0(0.00%) |     16       1     156      5 |    3.30        0.00
+GET      /api/audio/status                                                                204     0(0.00%) |     18       1    1262      6 |   11.10        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    2.90        0.00
+GET      /api/chains/{id}                                                                 205     0(0.00%) |     63       1    1329     10 |   11.10        0.00
+POST     /api/chains/{id}/activate                                                        204     0(0.00%) |     26       1     302     10 |   11.10        0.00
+POST     /api/chains/{id}/deactivate                                                      204     0(0.00%) |     13       1     166      5 |   11.10        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       72     0(0.00%) |    130       5    1300     22 |    4.60        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    2.90        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    2.90        0.00
+POST     /api/plugins/load?uri                                                             54     0(0.00%) |     21       1     187      7 |    3.30        0.00
+POST     /api/plugins/unload?uri                                                           54     0(0.00%) |     20       1     166      5 |    3.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1840     0(0.00%) |     43       1    1329      9 |  102.50        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               308     0(0.00%) |     27       1     277     10 |   16.60        0.00
+GET      /api/audio/levels                                                                308     0(0.00%) |     81       1    1281     10 |   16.50        0.00
+GET      /api/audio/levels (during plugin swap)                                            62     0(0.00%) |     61       1    1212      8 |    3.60        0.00
+GET      /api/audio/levels/plugins                                                         62     0(0.00%) |     15       1     156      5 |    3.60        0.00
+GET      /api/audio/status                                                                230     0(0.00%) |     18       1    1262      6 |   12.10        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    1.30        0.00
+GET      /api/chains/{id}                                                                 230     0(0.00%) |     61       1    1329     10 |   12.10        0.00
+POST     /api/chains/{id}/activate                                                        230     0(0.00%) |     26       1     302     10 |   12.10        0.00
+POST     /api/chains/{id}/deactivate                                                      230     0(0.00%) |     13       1     166      5 |   12.10        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                       91     0(0.00%) |    117       5    1300     22 |    5.80        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    1.30        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    1.30        0.00
+POST     /api/plugins/load?uri                                                             62     0(0.00%) |     20       1     187      7 |    3.60        0.00
+POST     /api/plugins/unload?uri                                                           62     0(0.00%) |     18       1     166      5 |    3.60        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      2070     0(0.00%) |     42       1    1329      9 |  105.60        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               348     0(0.00%) |     26       1     277     10 |   16.00        0.00
+GET      /api/audio/levels                                                                348     0(0.00%) |     77       1    1281     11 |   16.00        0.00
+GET      /api/audio/levels (during plugin swap)                                            71     0(0.00%) |     59       1    1212      8 |    3.50        0.00
+GET      /api/audio/levels/plugins                                                         71     0(0.00%) |     14       1     156      5 |    3.50        0.00
+GET      /api/audio/status                                                                250     0(0.00%) |     18       1    1262      6 |   11.60        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.40        0.00
+GET      /api/chains/{id}                                                                 250     0(0.00%) |     59       1    1329     10 |   11.20        0.00
+POST     /api/chains/{id}/activate                                                        250     0(0.00%) |     27       1     302     10 |   11.40        0.00
+POST     /api/chains/{id}/deactivate                                                      249     0(0.00%) |     12       1     166      5 |   11.60        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      110     0(0.00%) |    106       5    1300     20 |    6.40        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.40        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.40        0.00
+POST     /api/plugins/load?uri                                                             71     0(0.00%) |     20       1     187      7 |    3.50        0.00
+POST     /api/plugins/unload?uri                                                           69     0(0.00%) |     16       1     166      4 |    3.50        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      2282     0(0.00%) |     41       1    1329      9 |   99.40        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               389     0(0.00%) |     26       1     277      9 |   16.20        0.00
+GET      /api/audio/levels                                                                389     0(0.00%) |     73       1    1281     11 |   16.50        0.00
+GET      /api/audio/levels (during plugin swap)                                            83     0(0.00%) |     53       1    1212      9 |    3.20        0.00
+GET      /api/audio/levels/plugins                                                         82     0(0.00%) |     13       1     156      4 |    3.20        0.00
+GET      /api/audio/status                                                                269     0(0.00%) |     17       1    1262      5 |   10.50        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.20        0.00
+GET      /api/chains/{id}                                                                 269     0(0.00%) |     57       1    1329     10 |   10.70        0.00
+POST     /api/chains/{id}/activate                                                        269     0(0.00%) |     26       1     302     10 |   10.60        0.00
+POST     /api/chains/{id}/deactivate                                                      268     0(0.00%) |     12       1     166      5 |   10.50        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      130     0(0.00%) |     98       5    1300     19 |    7.00        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.20        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.20        0.00
+POST     /api/plugins/load?uri                                                             82     0(0.00%) |     20       1     187      6 |    3.20        0.00
+POST     /api/plugins/unload?uri                                                           82     0(0.00%) |     15       1     166      4 |    3.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      2507     0(0.00%) |     39       1    1329      9 |   95.40        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               406     0(0.00%) |     25       1     277      8 |   16.20        0.00
+GET      /api/audio/levels                                                                406     0(0.00%) |     70       1    1281     10 |   16.50        0.00
+GET      /api/audio/levels (during plugin swap)                                            87     0(0.00%) |     51       1    1212      9 |    3.20        0.00
+GET      /api/audio/levels/plugins                                                         87     0(0.00%) |     12       1     156      4 |    3.20        0.00
+GET      /api/audio/status                                                                280     0(0.00%) |     17       1    1262      5 |   10.50        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.20        0.00
+GET      /api/chains/{id}                                                                 280     0(0.00%) |     55       1    1329     10 |   10.70        0.00
+POST     /api/chains/{id}/activate                                                        280     0(0.00%) |     26       1     302      9 |   10.60        0.00
+POST     /api/chains/{id}/deactivate                                                      279     0(0.00%) |     11       1     166      5 |   10.50        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      144     0(0.00%) |     90       5    1300     19 |    7.00        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.20        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.20        0.00
+POST     /api/plugins/load?uri                                                             87     0(0.00%) |     19       1     187      6 |    3.20        0.00
+POST     /api/plugins/unload?uri                                                           86     0(0.00%) |     14       1     166      4 |    3.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      2617     0(0.00%) |     38       1    1329      9 |   95.40        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               440     0(0.00%) |     25       1     277      8 |   17.10        0.00
+GET      /api/audio/levels                                                                440     0(0.00%) |     75       1    1281     10 |   17.00        0.00
+GET      /api/audio/levels (during plugin swap)                                            94     0(0.00%) |     61       1    1226     10 |    3.90        0.00
+GET      /api/audio/levels/plugins                                                         94     0(0.00%) |     12       1     156      4 |    4.00        0.00
+GET      /api/audio/status                                                                309     0(0.00%) |     17       1    1262      6 |   11.10        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 310     0(0.00%) |     60       1    1329     10 |   11.00        0.00
+POST     /api/chains/{id}/activate                                                        309     0(0.00%) |     26       1     302     10 |   11.00        0.00
+POST     /api/chains/{id}/deactivate                                                      309     0(0.00%) |     16       1    1274      5 |   11.10        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      163     0(0.00%) |     97       5    1300     19 |    8.60        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                             94     0(0.00%) |     18       1     187      6 |    4.00        0.00
+POST     /api/plugins/unload?uri                                                           94     0(0.00%) |     28       1    1265      4 |    3.90        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      2851     0(0.00%) |     41       1    1329      9 |  102.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               473     0(0.00%) |     25       1     277      8 |   16.90        0.00
+GET      /api/audio/levels                                                                473     0(0.00%) |     72       1    1281     10 |   16.90        0.00
+GET      /api/audio/levels (during plugin swap)                                           105     0(0.00%) |     63       1    1226     10 |    4.00        0.00
+GET      /api/audio/levels/plugins                                                        105     0(0.00%) |     12       1     156      4 |    4.00        0.00
+GET      /api/audio/status                                                                337     0(0.00%) |     17       1    1262      6 |   10.50        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 337     0(0.00%) |     58       1    1329     11 |   10.40        0.00
+POST     /api/chains/{id}/activate                                                        337     0(0.00%) |     27       1     302     10 |   10.50        0.00
+POST     /api/chains/{id}/deactivate                                                      337     0(0.00%) |     15       1    1274      5 |   10.50        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      184     0(0.00%) |     90       5    1300     17 |    9.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            105     0(0.00%) |     20       1     187      6 |    4.00        0.00
+POST     /api/plugins/unload?uri                                                          105     0(0.00%) |     26       1    1265      4 |    4.00        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      3093     0(0.00%) |     40       1    1329      9 |  100.80        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               520     0(0.00%) |     24       1     277      8 |   16.40        0.00
+GET      /api/audio/levels                                                                520     0(0.00%) |     68       1    1281     10 |   16.40        0.00
+GET      /api/audio/levels (during plugin swap)                                           110     0(0.00%) |     61       1    1226     10 |    4.30        0.00
+GET      /api/audio/levels/plugins                                                        110     0(0.00%) |     11       1     156      4 |    4.30        0.00
+GET      /api/audio/status                                                                362     0(0.00%) |     17       1    1262      6 |   10.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 362     0(0.00%) |     57       1    1329     11 |   10.70        0.00
+POST     /api/chains/{id}/activate                                                        362     0(0.00%) |     27       1     302     10 |   10.70        0.00
+POST     /api/chains/{id}/deactivate                                                      362     0(0.00%) |     15       1    1274      5 |   10.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      204     0(0.00%) |     88       5    1300     19 |    9.30        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            110     0(0.00%) |     20       1     187      6 |    4.30        0.00
+POST     /api/plugins/unload?uri                                                          110     0(0.00%) |     25       1    1265      4 |    4.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      3327     0(0.00%) |     39       1    1329      9 |  102.10        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               561     0(0.00%) |     24       1     277      7 |   17.10        0.00
+GET      /api/audio/levels                                                                561     0(0.00%) |     65       1    1281     10 |   16.80        0.00
+GET      /api/audio/levels (during plugin swap)                                           120     0(0.00%) |     60       1    1226     11 |    4.00        0.00
+GET      /api/audio/levels/plugins                                                        120     0(0.00%) |     13       1     156      4 |    4.00        0.00
+GET      /api/audio/status                                                                386     0(0.00%) |     16       1    1262      5 |   11.40        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 386     0(0.00%) |     57       1    1329     11 |   11.20        0.00
+POST     /api/chains/{id}/activate                                                        386     0(0.00%) |     26       1     302     10 |   11.30        0.00
+POST     /api/chains/{id}/deactivate                                                      386     0(0.00%) |     15       1    1274      5 |   11.40        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      213     0(0.00%) |     88       5    1300     19 |    9.50        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            120     0(0.00%) |     21       1     187      6 |    4.00        0.00
+POST     /api/plugins/unload?uri                                                          119     0(0.00%) |     24       1    1265      4 |    4.00        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      3553     0(0.00%) |     38       1    1329      9 |  104.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               587     0(0.00%) |     24       1     277      7 |   16.50        0.00
+GET      /api/audio/levels                                                                588     0(0.00%) |     64       1    1281      9 |   16.60        0.00
+GET      /api/audio/levels (during plugin swap)                                           126     0(0.00%) |     60       1    1226     11 |    3.40        0.00
+GET      /api/audio/levels/plugins                                                        126     0(0.00%) |     12       1     156      4 |    3.40        0.00
+GET      /api/audio/status                                                                418     0(0.00%) |     16       1    1262      5 |   10.40        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 418     0(0.00%) |     55       1    1329     11 |   10.40        0.00
+POST     /api/chains/{id}/activate                                                        418     0(0.00%) |     28       1     302     10 |   10.40        0.00
+POST     /api/chains/{id}/deactivate                                                      418     0(0.00%) |     14       1    1274      5 |   10.50        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      230     0(0.00%) |     86       5    1300     19 |    8.70        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            126     0(0.00%) |     20       1     187      6 |    3.40        0.00
+POST     /api/plugins/unload?uri                                                          126     0(0.00%) |     23       1    1265      4 |    3.40        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      3776     0(0.00%) |     37       1    1329      9 |   97.10        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               601     0(0.00%) |     27       1    1260      8 |   18.10        0.00
+GET      /api/audio/levels                                                                601     0(0.00%) |     70       1    1281     10 |   18.20        0.00
+GET      /api/audio/levels (during plugin swap)                                           130     0(0.00%) |     61       1    1226     11 |    3.90        0.00
+GET      /api/audio/levels/plugins                                                        130     0(0.00%) |     12       1     156      4 |    3.90        0.00
+GET      /api/audio/status                                                                429     0(0.00%) |     16       1    1262      6 |   13.80        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 429     0(0.00%) |     63       1    1329     11 |   13.80        0.00
+POST     /api/chains/{id}/activate                                                        429     0(0.00%) |     28       1     302     10 |   13.80        0.00
+POST     /api/chains/{id}/deactivate                                                      429     0(0.00%) |     14       1    1274      5 |   13.90        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      236     0(0.00%) |    100       5    1300     19 |    8.60        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            130     0(0.00%) |     20       1     187      6 |    3.90        0.00
+POST     /api/plugins/unload?uri                                                          130     0(0.00%) |     22       1    1265      4 |    4.00        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      3869     0(0.00%) |     41       1    1329      9 |  115.90        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               634     0(0.00%) |     26       1    1260      8 |   15.90        0.00
+GET      /api/audio/levels                                                                634     0(0.00%) |     67       1    1281      9 |   16.10        0.00
+GET      /api/audio/levels (during plugin swap)                                           140     0(0.00%) |     60       1    1226     11 |    3.60        0.00
+GET      /api/audio/levels/plugins                                                        140     0(0.00%) |     12       1     156      4 |    3.60        0.00
+GET      /api/audio/status                                                                457     0(0.00%) |     16       1    1262      6 |   11.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 457     0(0.00%) |     63       1    1329     12 |   11.90        0.00
+POST     /api/chains/{id}/activate                                                        457     0(0.00%) |     29       1     302     10 |   11.80        0.00
+POST     /api/chains/{id}/deactivate                                                      457     0(0.00%) |     15       1    1274      5 |   11.60        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      255     0(0.00%) |     95       5    1300     19 |    7.20        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            140     0(0.00%) |     22       1     187      7 |    3.60        0.00
+POST     /api/plugins/unload?uri                                                          140     0(0.00%) |     22       1    1265      4 |    3.60        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4106     0(0.00%) |     40       1    1329      9 |  100.60        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               671     0(0.00%) |     26       1    1260      7 |   17.40        0.00
+GET      /api/audio/levels                                                                671     0(0.00%) |     65       1    1281      9 |   17.40        0.00
+GET      /api/audio/levels (during plugin swap)                                           152     0(0.00%) |     61       1    1226     11 |    3.70        0.00
+GET      /api/audio/levels/plugins                                                        152     0(0.00%) |     12       1     156      4 |    3.80        0.00
+GET      /api/audio/status                                                                477     0(0.00%) |     16       1    1262      5 |   12.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 477     0(0.00%) |     62       1    1329     11 |   12.40        0.00
+POST     /api/chains/{id}/activate                                                        477     0(0.00%) |     30       1     302     11 |   12.60        0.00
+POST     /api/chains/{id}/deactivate                                                      477     0(0.00%) |     14       1    1274      5 |   12.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      268     0(0.00%) |     92       5    1300     19 |    7.90        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            152     0(0.00%) |     23       1     187      7 |    3.70        0.00
+POST     /api/plugins/unload?uri                                                          152     0(0.00%) |     21       1    1265      4 |    3.80        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4321     0(0.00%) |     39       1    1329      9 |  108.10        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               706     0(0.00%) |     26       1    1260      7 |   15.50        0.00
+GET      /api/audio/levels                                                                706     0(0.00%) |     64       1    1281      9 |   15.50        0.00
+GET      /api/audio/levels (during plugin swap)                                           161     0(0.00%) |     64       1    1226     12 |    4.30        0.00
+GET      /api/audio/levels/plugins                                                        161     0(0.00%) |     13       1     156      5 |    4.30        0.00
+GET      /api/audio/status                                                                505     0(0.00%) |     16       1    1262      6 |   11.50        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 505     0(0.00%) |     62       1    1329     12 |   11.50        0.00
+POST     /api/chains/{id}/activate                                                        505     0(0.00%) |     31       1     302     11 |   11.50        0.00
+POST     /api/chains/{id}/deactivate                                                      505     0(0.00%) |     14       1    1274      6 |   11.50        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      285     0(0.00%) |     89       5    1300     19 |    6.50        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            161     0(0.00%) |     25       1     187      9 |    4.30        0.00
+POST     /api/plugins/unload?uri                                                          161     0(0.00%) |     20       1    1265      5 |    4.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4556     0(0.00%) |     39       1    1329      9 |  100.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               733     0(0.00%) |     25       1    1260      7 |   16.40        0.00
+GET      /api/audio/levels                                                                733     0(0.00%) |     63       1    1281      9 |   16.30        0.00
+GET      /api/audio/levels (during plugin swap)                                           178     0(0.00%) |     63       1    1226     11 |    4.20        0.00
+GET      /api/audio/levels/plugins                                                        178     0(0.00%) |     14       1     233      5 |    4.20        0.00
+GET      /api/audio/status                                                                528     0(0.00%) |     16       1    1262      6 |   12.60        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 528     0(0.00%) |     61       1    1329     12 |   12.60        0.00
+POST     /api/chains/{id}/activate                                                        528     0(0.00%) |     31       1     302     11 |   12.60        0.00
+POST     /api/chains/{id}/deactivate                                                      528     0(0.00%) |     14       1    1274      6 |   12.60        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      300     0(0.00%) |     87       5    1300     19 |    7.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            178     0(0.00%) |     26       1     187      9 |    4.20        0.00
+POST     /api/plugins/unload?uri                                                          178     0(0.00%) |     19       1    1265      5 |    4.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4785     0(0.00%) |     39       1    1329      9 |  107.00        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               752     0(0.00%) |     25       1    1260      7 |   14.70        0.00
+GET      /api/audio/levels                                                                752     0(0.00%) |     62       1    1281      9 |   14.70        0.00
+GET      /api/audio/levels (during plugin swap)                                           182     0(0.00%) |     62       1    1226     11 |    4.20        0.00
+GET      /api/audio/levels/plugins                                                        182     0(0.00%) |     13       1     233      5 |    4.20        0.00
+GET      /api/audio/status                                                                544     0(0.00%) |     16       1    1262      5 |   11.80        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 544     0(0.00%) |     60       1    1329     11 |   11.80        0.00
+POST     /api/chains/{id}/activate                                                        544     0(0.00%) |     30       1     302     11 |   11.80        0.00
+POST     /api/chains/{id}/deactivate                                                      542     0(0.00%) |     14       1    1274      6 |   11.80        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      316     0(0.00%) |     83       5    1300     19 |    7.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            182     0(0.00%) |     25       1     187      9 |    4.20        0.00
+POST     /api/plugins/unload?uri                                                          181     0(0.00%) |     19       1    1265      5 |    4.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4916     0(0.00%) |     38       1    1329      9 |  100.50        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               785     0(0.00%) |     25       1    1260      7 |   15.40        0.00
+GET      /api/audio/levels                                                                785     0(0.00%) |     62       1    1281      9 |   15.20        0.00
+GET      /api/audio/levels (during plugin swap)                                           191     0(0.00%) |     66       1    1226     12 |    5.20        0.00
+GET      /api/audio/levels/plugins                                                        191     0(0.00%) |     13       1     233      5 |    5.20        0.00
+GET      /api/audio/status                                                                580     0(0.00%) |     16       1    1262      6 |   11.80        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 580     0(0.00%) |     66       1    1329     11 |   11.60        0.00
+POST     /api/chains/{id}/activate                                                        580     0(0.00%) |     29       1     302     10 |   11.70        0.00
+POST     /api/chains/{id}/deactivate                                                      580     0(0.00%) |     18       1    1274      6 |   11.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      325     0(0.00%) |     85       5    1300     18 |    8.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            191     0(0.00%) |     25       1     187     10 |    5.20        0.00
+POST     /api/plugins/unload?uri                                                          191     0(0.00%) |     25       1    1265      5 |    5.10        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      5174     0(0.00%) |     39       1    1329      9 |  106.20        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               823     0(0.00%) |     24       1    1260      6 |   15.60        0.00
+GET      /api/audio/levels                                                                823     0(0.00%) |     60       1    1281      9 |   15.20        0.00
+GET      /api/audio/levels (during plugin swap)                                           203     0(0.00%) |     67       1    1226     12 |    5.20        0.00
+GET      /api/audio/levels/plugins                                                        203     0(0.00%) |     13       1     233      5 |    5.20        0.00
+GET      /api/audio/status                                                                609     0(0.00%) |     16       1    1262      6 |   12.30        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 609     0(0.00%) |     65       1    1329     11 |   12.30        0.00
+POST     /api/chains/{id}/activate                                                        609     0(0.00%) |     29       1     302     11 |   12.30        0.00
+POST     /api/chains/{id}/deactivate                                                      609     0(0.00%) |     18       1    1274      6 |   12.20        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      339     0(0.00%) |     84       5    1300     18 |    7.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            203     0(0.00%) |     26       1     187     10 |    5.20        0.00
+POST     /api/plugins/unload?uri                                                          203     0(0.00%) |     24       1    1265      5 |    5.20        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      5428     0(0.00%) |     39       1    1329      9 |  107.80        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               857     0(0.00%) |     24       1    1260      6 |   14.70        0.00
+GET      /api/audio/levels                                                                857     0(0.00%) |     60       1    1281      9 |   14.80        0.00
+GET      /api/audio/levels (during plugin swap)                                           212     0(0.00%) |     65       1    1226     12 |    5.00        0.00
+GET      /api/audio/levels/plugins                                                        212     0(0.00%) |     13       1     233      5 |    5.00        0.00
+GET      /api/audio/status                                                                632     0(0.00%) |     16       1    1262      5 |   13.20        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 632     0(0.00%) |     64       1    1329     11 |   13.20        0.00
+POST     /api/chains/{id}/activate                                                        632     0(0.00%) |     29       1     302     11 |   13.20        0.00
+POST     /api/chains/{id}/deactivate                                                      632     0(0.00%) |     17       1    1274      6 |   13.20        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      357     0(0.00%) |     82       5    1300     19 |    7.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            212     0(0.00%) |     26       1     187     10 |    5.00        0.00
+POST     /api/plugins/unload?uri                                                          212     0(0.00%) |     23       1    1265      4 |    5.00        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      5642     0(0.00%) |     38       1    1329      9 |  109.40        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               891     0(0.00%) |     24       1    1260      6 |   15.00        0.00
+GET      /api/audio/levels                                                                891     0(0.00%) |     59       1    1281      9 |   15.00        0.00
+GET      /api/audio/levels (during plugin swap)                                           220     0(0.00%) |     64       1    1226     12 |    5.10        0.00
+GET      /api/audio/levels/plugins                                                        220     0(0.00%) |     13       1     233      5 |    5.10        0.00
+GET      /api/audio/status                                                                655     0(0.00%) |     16       1    1262      5 |   12.80        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 655     0(0.00%) |     63       1    1329     11 |   12.80        0.00
+POST     /api/chains/{id}/activate                                                        655     0(0.00%) |     30       1     302     11 |   12.80        0.00
+POST     /api/chains/{id}/deactivate                                                      655     0(0.00%) |     17       1    1274      5 |   12.80        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      378     0(0.00%) |     82       5    1300     19 |    7.10        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            220     0(0.00%) |     26       1     187     10 |    5.10        0.00
+POST     /api/plugins/unload?uri                                                          220     0(0.00%) |     23       1    1265      4 |    5.10        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      5855     0(0.00%) |     38       1    1329      9 |  108.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               926     0(0.00%) |     24       1    1260      6 |   13.80        0.00
+GET      /api/audio/levels                                                                928     0(0.00%) |     58       1    1281      9 |   13.80        0.00
+GET      /api/audio/levels (during plugin swap)                                           224     0(0.00%) |     63       1    1226     12 |    4.10        0.00
+GET      /api/audio/levels/plugins                                                        224     0(0.00%) |     12       1     233      5 |    4.10        0.00
+GET      /api/audio/status                                                                674     0(0.00%) |     16       1    1262      6 |   12.30        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 675     0(0.00%) |     63       1    1329     11 |   12.30        0.00
+POST     /api/chains/{id}/activate                                                        674     0(0.00%) |     30       1     302     11 |   12.30        0.00
+POST     /api/chains/{id}/deactivate                                                      674     0(0.00%) |     16       1    1274      5 |   12.30        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      401     0(0.00%) |     80       5    1300     19 |    7.00        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            224     0(0.00%) |     26       1     187     10 |    4.10        0.00
+POST     /api/plugins/unload?uri                                                          224     0(0.00%) |     22       1    1265      4 |    4.10        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      6043     0(0.00%) |     38       1    1329      9 |  100.20        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               939     0(0.00%) |     26       1    1260      7 |   17.40        0.00
+GET      /api/audio/levels                                                                939     0(0.00%) |     62       1    1281      9 |   17.60        0.00
+GET      /api/audio/levels (during plugin swap)                                           224     0(0.00%) |     63       1    1226     12 |    4.20        0.00
+GET      /api/audio/levels/plugins                                                        224     0(0.00%) |     12       1     233      5 |    4.20        0.00
+GET      /api/audio/status                                                                689     0(0.00%) |     17       1    1262      6 |   13.00        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 689     0(0.00%) |     70       1    1329     12 |   13.10        0.00
+POST     /api/chains/{id}/activate                                                        689     1(0.15%) |     33       1    1292     12 |   13.00        0.00
+POST     /api/chains/{id}/deactivate                                                      689     0(0.00%) |     17       1    1274      6 |   13.20        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      406     0(0.00%) |     80       5    1300     19 |    8.50        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            224     0(0.00%) |     26       1     187     10 |    4.20        0.00
+POST     /api/plugins/unload?uri                                                          224     0(0.00%) |     22       1    1265      4 |    4.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      6131     1(0.02%) |     40       1    1329      9 |  112.70        0.00
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                               979     0(0.00%) |     26       1    1260      7 |   15.30        0.00
+GET      /api/audio/levels                                                                979     0(0.00%) |     61       1    1281      9 |   15.30        0.00
+GET      /api/audio/levels (during plugin swap)                                           236     0(0.00%) |     60       1    1226     11 |    3.30        0.00
+GET      /api/audio/levels/plugins                                                        236     0(0.00%) |     12       1     233      5 |    3.30        0.00
+GET      /api/audio/status                                                                713     0(0.00%) |     17       1    1262      6 |   10.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 713     0(0.00%) |     69       1    1329     12 |   10.90        0.00
+POST     /api/chains/{id}/activate                                                        713     1(0.14%) |     33       1    1292     11 |   10.70        0.10
+POST     /api/chains/{id}/deactivate                                                      713     0(0.00%) |     16       1    1274      6 |   10.80        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      424     0(0.00%) |     79       5    1300     19 |    8.00        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            236     0(0.00%) |     25       1     187      9 |    3.30        0.00
+POST     /api/plugins/unload?uri                                                          236     0(0.00%) |     21       1    1265      4 |    3.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      6373     1(0.02%) |     39       1    1329      9 |   94.90        0.10
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                              1005     0(0.00%) |     27       1    1260      7 |   15.50        0.00
+GET      /api/audio/levels                                                               1007     0(0.00%) |     61       1    1281      9 |   15.80        0.00
+GET      /api/audio/levels (during plugin swap)                                           245     0(0.00%) |     60       1    1226     11 |    3.30        0.00
+GET      /api/audio/levels/plugins                                                        245     0(0.00%) |     12       1     233      5 |    3.30        0.00
+GET      /api/audio/status                                                                739     0(0.00%) |     17       1    1262      6 |   10.20        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 740     0(0.00%) |     68       1    1329     12 |   10.20        0.00
+POST     /api/chains/{id}/activate                                                        739     1(0.14%) |     32       1    1292     11 |   10.20        0.10
+POST     /api/chains/{id}/deactivate                                                      739     0(0.00%) |     16       1    1274      6 |   10.20        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      443     0(0.00%) |     77       5    1300     19 |    8.40        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            245     0(0.00%) |     25       1     187      9 |    3.30        0.00
+POST     /api/plugins/unload?uri                                                          245     0(0.00%) |     21       1    1265      4 |    3.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      6587     1(0.02%) |     39       1    1329      9 |   93.70        0.10
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                              1040     0(0.00%) |     27       1    1260      7 |   15.20        0.00
+GET      /api/audio/levels                                                               1041     0(0.00%) |     60       1    1281      9 |   15.20        0.00
+GET      /api/audio/levels (during plugin swap)                                           255     0(0.00%) |     60       1    1226     12 |    3.30        0.00
+GET      /api/audio/levels/plugins                                                        255     0(0.00%) |     12       1     233      5 |    3.30        0.00
+GET      /api/audio/status                                                                767     0(0.00%) |     17       1    1262      6 |   10.80        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 767     0(0.00%) |     66       1    1329     12 |   10.80        0.00
+POST     /api/chains/{id}/activate                                                        767     1(0.13%) |     33       1    1292     11 |   10.80        0.10
+POST     /api/chains/{id}/deactivate                                                      767     0(0.00%) |     16       1    1274      5 |   10.80        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      463     0(0.00%) |     76       5    1300     20 |    8.40        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            255     0(0.00%) |     26       1     187     10 |    3.30        0.00
+POST     /api/plugins/unload?uri                                                          255     0(0.00%) |     20       1    1265      4 |    3.30        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      6827     1(0.01%) |     39       1    1329      9 |   95.20        0.10
+
+[2026-03-27 07:33:56,847] MAP2-TESTBED/INFO/locust.main: --run-time limit reached, shutting down
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                              1073     0(0.00%) |     26       1    1260      7 |   16.60        0.00
+GET      /api/audio/levels                                                               1073     0(0.00%) |     59       1    1281      9 |   16.60        0.00
+GET      /api/audio/levels (during plugin swap)                                           261     0(0.00%) |     59       1    1226     11 |    3.70        0.00
+GET      /api/audio/levels/plugins                                                        261     0(0.00%) |     12       1     233      5 |    3.70        0.00
+GET      /api/audio/status                                                                789     0(0.00%) |     17       1    1262      6 |   11.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 792     0(0.00%) |     65       1    1329     12 |   11.70        0.00
+POST     /api/chains/{id}/activate                                                        789     1(0.13%) |     32       1    1292     11 |   11.70        0.10
+POST     /api/chains/{id}/deactivate                                                      789     0(0.00%) |     16       1    1274      5 |   11.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      474     0(0.00%) |     75       5    1300     20 |    8.60        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            261     0(0.00%) |     26       1     187     10 |    3.70        0.00
+POST     /api/plugins/unload?uri                                                          261     0(0.00%) |     20       1    1265      4 |    3.70        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      7018     1(0.01%) |     38       1    1329      9 |  103.40        0.10
+
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                              1073     0(0.00%) |     26       1    1260      7 |   16.60        0.00
+GET      /api/audio/levels                                                               1073     0(0.00%) |     59       1    1281      9 |   16.60        0.00
+GET      /api/audio/levels (during plugin swap)                                           261     0(0.00%) |     59       1    1226     11 |    3.70        0.00
+GET      /api/audio/levels/plugins                                                        261     0(0.00%) |     12       1     233      5 |    3.70        0.00
+GET      /api/audio/status                                                                789     0(0.00%) |     17       1    1262      6 |   11.70        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.00        0.00
+GET      /api/chains/{id}                                                                 792     0(0.00%) |     65       1    1329     12 |   11.70        0.00
+POST     /api/chains/{id}/activate                                                        789     1(0.13%) |     32       1    1292     11 |   11.70        0.10
+POST     /api/chains/{id}/deactivate                                                      789     0(0.00%) |     16       1    1274      5 |   11.70        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      474     0(0.00%) |     75       5    1300     20 |    8.60        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.00        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.00        0.00
+POST     /api/plugins/load?uri                                                            261     0(0.00%) |     26       1     187     10 |    3.70        0.00
+POST     /api/plugins/unload?uri                                                          261     0(0.00%) |     20       1    1265      4 |    3.70        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      7018     1(0.01%) |     38       1    1329      9 |  103.40        0.10
+
+[2026-03-27 07:33:59,406] MAP2-TESTBED/INFO/locust.main: Shutting down (exit code 1)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/audio/latency                                                              1073     0(0.00%) |     26       1    1260      7 |   15.38        0.00
+GET      /api/audio/levels                                                               1073     0(0.00%) |     59       1    1281      9 |   15.38        0.00
+GET      /api/audio/levels (during plugin swap)                                           261     0(0.00%) |     59       1    1226     11 |    3.74        0.00
+GET      /api/audio/levels/plugins                                                        261     0(0.00%) |     12       1     233      5 |    3.74        0.00
+GET      /api/audio/status                                                                789     0(0.00%) |     17       1    1262      6 |   11.31        0.00
+GET      /api/chains/                                                                      65     0(0.00%) |     42       2     178     17 |    0.93        0.00
+GET      /api/chains/{id}                                                                 792     0(0.00%) |     65       1    1329     12 |   11.36        0.00
+POST     /api/chains/{id}/activate                                                        789     1(0.13%) |     32       1    1292     11 |   11.31        0.01
+POST     /api/chains/{id}/deactivate                                                      789     0(0.00%) |     16       1    1274      5 |   11.31        0.00
+POST     /api/plugins/batch/parameters (500 updates)                                      474     0(0.00%) |     75       5    1300     20 |    6.80        0.00
+GET      /api/plugins/discover                                                             65     0(0.00%) |     51      13     164     36 |    0.93        0.00
+GET      /api/plugins/list                                                                 65     0(0.00%) |     36       1     228     12 |    0.93        0.00
+POST     /api/plugins/load?uri                                                            261     0(0.00%) |     26       1     187     10 |    3.74        0.00
+POST     /api/plugins/unload?uri                                                          261     0(0.00%) |     20       1    1265      4 |    3.74        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      7018     1(0.01%) |     38       1    1329      9 |  100.62        0.01
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      /api/audio/latency                                                                      7     16     20     23     70    160    170    190   1200   1300   1300   1073
+GET      /api/audio/levels                                                                       9     18     45     81    160    200    370   1200   1300   1300   1300   1073
+GET      /api/audio/levels (during plugin swap)                                                 11     23     77    110    170    200    220   1100   1200   1200   1200    261
+GET      /api/audio/levels/plugins                                                               5     10     14     17     22     39     99    120    230    230    230    261
+GET      /api/audio/status                                                                       6     11     16     18     25    100    140    160   1300   1300   1300    789
+GET      /api/chains/                                                                           17     30     73     83    140    150    160    180    180    180    180     65
+GET      /api/chains/{id}                                                                       12     23     62    100    150    190   1100   1200   1300   1300   1300    792
+POST     /api/chains/{id}/activate                                                              11     19     24     30    140    170    180    200   1300   1300   1300    789
+POST     /api/chains/{id}/deactivate                                                             5     10     12     15     20     37    110    150   1300   1300   1300    789
+POST     /api/plugins/batch/parameters (500 updates)                                            20     29     65     98    180    230   1100   1200   1300   1300   1300    474
+GET      /api/plugins/discover                                                                  36     48     55     61    160    160    160    160    160    160    160     65
+GET      /api/plugins/list                                                                      12     20     22     35    160    220    230    230    230    230    230     65
+POST     /api/plugins/load?uri                                                                  10     18     22     24     86    160    170    180    190    190    190    261
+POST     /api/plugins/unload?uri                                                                 4      9     12     14     18     25    120    170   1300   1300   1300    261
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                              9     16     22     28    120    160    210    340   1300   1300   1300   7018
+
+Error report
+# occurrences      Error                                                                                               
+------------------|---------------------------------------------------------------------------------------------------------------------------------------------
+1                  POST /api/chains/{id}/activate: HTTPError('503 Server Error: Service Unavailable for url: /api/chains/{id}/activate')
+------------------|---------------------------------------------------------------------------------------------------------------------------------------------
+

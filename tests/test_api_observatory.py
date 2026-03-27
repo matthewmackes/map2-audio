@@ -118,6 +118,7 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
 
     # Reset singleton state for deterministic assertions.
     monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_run_cache", {})
     monkeypatch.setattr(
         "app.services.service_orchestrator.get_orchestrator",
         lambda: type(
@@ -151,15 +152,18 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
     client = TestClient(app)
     ping = client.get("/api/ping", headers={"X-MAP2-Run-ID": "qual-123"})
     assert ping.status_code == 200
+    ping_repeat = client.get("/api/ping", headers={"X-MAP2-Run-ID": "qual-123"})
+    assert ping_repeat.status_code == 200
 
     traffic = client.get("/api/observatory/traffic", params={"run_id": "qual-123"})
     assert traffic.status_code == 200
     traffic_payload = traffic.json()
-    assert traffic_payload["count"] >= 1
+    assert traffic_payload["count"] >= 2
     matching_events = [event for event in traffic_payload["events"] if event["path"] == "/api/ping"]
-    assert matching_events
+    assert len(matching_events) == 2
     assert matching_events[-1]["run_id"] == "qual-123"
-    assert matching_events[-1]["meta"]["dependency_snapshot"]["orchestrator_running"] is True
+    assert matching_events[0]["meta"]["dependency_snapshot"]["orchestrator_running"] is True
+    assert matching_events[1]["meta"]["dependency_snapshot"] is None
 
     stats = client.get("/api/observatory/traffic/stats", params={"run_id": "qual-123"})
     assert stats.status_code == 200

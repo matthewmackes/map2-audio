@@ -8,6 +8,7 @@ import json
 import resource
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -45,9 +46,21 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def fetch_json(api_base: str, path: str, *, run_id: str) -> tuple[int, dict[str, Any] | None, str | None]:
+def request_json(
+    api_base: str,
+    path: str,
+    *,
+    run_id: str,
+    method: str = "GET",
+    payload: dict[str, Any] | None = None,
+) -> tuple[int, dict[str, Any] | None, str | None]:
     url = parse.urljoin(api_base.rstrip("/") + "/", path.lstrip("/"))
-    req = request.Request(url, headers={"X-MAP2-Run-ID": run_id})
+    headers = {"X-MAP2-Run-ID": run_id}
+    body = None
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    req = request.Request(url, data=body, headers=headers, method=method.upper())
     try:
         with request.urlopen(req, timeout=5.0) as response:
             body = response.read().decode("utf-8")
@@ -62,6 +75,10 @@ def fetch_json(api_base: str, path: str, *, run_id: str) -> tuple[int, dict[str,
         return exc.code, payload, body or str(exc)
     except Exception as exc:
         return 0, None, str(exc)
+
+
+def fetch_json(api_base: str, path: str, *, run_id: str) -> tuple[int, dict[str, Any] | None, str | None]:
+    return request_json(api_base, path, run_id=run_id, method="GET")
 
 
 def check_open_file_limit(min_open_files: int) -> dict[str, Any]:
@@ -177,6 +194,200 @@ def check_route(api_base: str, run_id: str, path: str, *, expected_field: str | 
     }
 
 
+def warm_runtime_routes(
+    api_base: str,
+    run_id: str,
+    *,
+    chain_inventory_payload: dict[str, Any] | None,
+    plugin_discovery_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    attempts: list[dict[str, Any]] = []
+    warmup_ok = True
+
+    def _record_attempt(
+        *,
+        name: str,
+        method: str,
+        path: str,
+        status_code: int,
+        ok: bool,
+        error_text: str | None = None,
+        detail: str | None = None,
+    ) -> None:
+        attempts.append(
+            {
+                "name": name,
+                "method": method,
+                "path": path,
+                "http_status": status_code,
+                "ok": ok,
+                "error": error_text,
+                "detail": detail,
+            }
+        )
+
+    def _record_skip(*, name: str, detail: str) -> None:
+        attempts.append(
+            {
+                "name": name,
+                "method": "SKIP",
+                "path": "",
+                "http_status": 0,
+                "ok": True,
+                "error": None,
+                "detail": detail,
+            }
+        )
+
+    def _warm_get(name: str, path: str, *, expected_field: str | None = None) -> None:
+        nonlocal warmup_ok
+        status_code, payload, error_text = fetch_json(api_base, path, run_id=run_id)
+        ok = status_code == 200 and (expected_field is None or expected_field in (payload or {}))
+        _record_attempt(
+            name=name,
+            method="GET",
+            path=path,
+            status_code=status_code,
+            ok=ok,
+            error_text=error_text,
+        )
+        warmup_ok = warmup_ok and ok
+
+    def _warm_post(
+        name: str,
+        path: str,
+        *,
+        payload: dict[str, Any] | None = None,
+        success_statuses: set[str] | None = None,
+    ) -> dict[str, Any] | None:
+        nonlocal warmup_ok
+        status_code, response_payload, error_text = request_json(
+            api_base,
+            path,
+            run_id=run_id,
+            method="POST",
+            payload=payload,
+        )
+        ok = status_code == 200
+        if ok and success_statuses is not None:
+            ok = isinstance(response_payload, dict) and str(response_payload.get("status")) in success_statuses
+        _record_attempt(
+            name=name,
+            method="POST",
+            path=path,
+            status_code=status_code,
+            ok=ok,
+            error_text=error_text,
+        )
+        warmup_ok = warmup_ok and ok
+        return response_payload
+
+    _warm_get("audio_status_route", "/api/audio/status", expected_field="running")
+    _warm_get("audio_latency_route", "/api/audio/latency", expected_field="latency_ms")
+    _warm_get("audio_levels_route", "/api/audio/levels", expected_field="input_left")
+    _warm_get("plugin_list_route", "/api/plugins/list", expected_field="loaded")
+
+    chains = (chain_inventory_payload or {}).get("chains", [])
+    chain_id = None
+    if isinstance(chains, list):
+        for chain in chains:
+            if isinstance(chain, dict) and chain.get("id") is not None:
+                chain_id = int(chain["id"])
+                break
+
+    if chain_id is None:
+        _record_skip(name="chain_runtime_routes", detail="No chain inventory entries available for detail/toggle warmup.")
+    else:
+        _warm_get("chain_detail_route", f"/api/chains/{chain_id}", expected_field="id")
+        _warm_post(
+            "chain_activate_route",
+            f"/api/chains/{chain_id}/activate",
+            success_statuses={"activated", "activate_throttled"},
+        )
+        time.sleep(0.5)
+        _warm_post(
+            "chain_deactivate_route",
+            f"/api/chains/{chain_id}/deactivate",
+            success_statuses={"deactivated", "deactivate_throttled"},
+        )
+
+    plugin_list_status, plugin_list_payload, plugin_list_error = fetch_json(api_base, "/api/plugins/list", run_id=run_id)
+    if plugin_list_status != 200 or not isinstance(plugin_list_payload, dict):
+        _record_attempt(
+            name="plugin_batch_route",
+            method="GET",
+            path="/api/plugins/list",
+            status_code=plugin_list_status,
+            ok=False,
+            error_text=plugin_list_error,
+            detail="Failed to fetch loaded-plugin inventory for batch-parameter warmup.",
+        )
+        warmup_ok = False
+    else:
+        loaded_entries = plugin_list_payload.get("loaded", [])
+        discovery_lookup = {
+            str(plugin.get("uri")): plugin
+            for plugin in (plugin_discovery_payload or {}).get("plugins", [])
+            if isinstance(plugin, dict) and plugin.get("uri")
+        }
+        warmup_payload = None
+        if isinstance(loaded_entries, list):
+            for entry in loaded_entries:
+                if not isinstance(entry, dict):
+                    continue
+                plugin_uri = entry.get("uri")
+                plugin_info = discovery_lookup.get(str(plugin_uri))
+                parameters = plugin_info.get("parameters", []) if isinstance(plugin_info, dict) else []
+                if not plugin_uri or not isinstance(parameters, list) or not parameters:
+                    continue
+                first_param = parameters[0] if isinstance(parameters[0], dict) else {}
+                try:
+                    param_index = int(first_param.get("index", 0))
+                except Exception:
+                    param_index = 0
+                try:
+                    value = float(first_param.get("default", first_param.get("min", 0.0)))
+                except Exception:
+                    value = 0.0
+                warmup_payload = {
+                    "updates": [
+                        {
+                            "plugin_uri": str(plugin_uri),
+                            "param_index": param_index,
+                            "value": value,
+                        }
+                    ]
+                }
+                break
+
+        if warmup_payload is None:
+            _record_skip(
+                name="plugin_batch_route",
+                detail="No loaded plugin with discoverable parameters was available for batch warmup.",
+            )
+        else:
+            response_payload = _warm_post(
+                "plugin_batch_route",
+                "/api/plugins/batch/parameters",
+                payload=warmup_payload,
+                success_statuses={"batch_complete"},
+            )
+            if isinstance(response_payload, dict) and int(response_payload.get("errors", 0)) > 0:
+                warmup_ok = False
+                attempts[-1]["ok"] = False
+                attempts[-1]["detail"] = f"Batch warmup returned {response_payload.get('errors')} error(s)."
+
+    return {
+        "status": "PASS" if warmup_ok else "BLOCKED",
+        "reason": (
+            "Runtime hot paths warmed successfully before timed qualification."
+            if warmup_ok
+            else "One or more runtime warmup probes failed; timed load was not started."
+        ),
+        "attempts": attempts,
+    }
+
+
 def run_load_command(command: str, output_dir: Path) -> dict[str, Any]:
     stdout_path = output_dir / "load.stdout.txt"
     stderr_path = output_dir / "load.stderr.txt"
@@ -251,6 +462,14 @@ def main() -> int:
             expected_field="plugins",
         ),
     }
+
+    if args.run_load_command and args.load_command.strip() and all(gate["status"] == "PASS" for gate in checks.values()):
+        checks["runtime_route_warmup"] = warm_runtime_routes(
+            args.api_base,
+            args.run_id,
+            chain_inventory_payload=checks["chain_inventory_route"].get("payload"),
+            plugin_discovery_payload=checks["plugin_discovery_route"].get("payload"),
+        )
 
     overall_status = "PASS" if all(gate["status"] == "PASS" for gate in checks.values()) else "BLOCKED"
     load_result = {

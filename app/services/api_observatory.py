@@ -80,6 +80,9 @@ class ApiObservatoryService:
 
         return normalized
 
+    def is_recording(self) -> bool:
+        return self._recording_session_id is not None
+
     def list_traffic_events(
         self,
         *,

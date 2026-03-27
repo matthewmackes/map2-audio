@@ -62,6 +62,8 @@ class TesiraFleet:
     # Seconds between reconnect attempts for offline devices
     OFFLINE_RETRY_INTERVAL = 30
     PRESET_POLL_INTERVAL = 2
+    TASK_CANCEL_TIMEOUT_SECONDS = 2.0
+    DEVICE_DISCONNECT_TIMEOUT_SECONDS = 1.0
 
     # ──────────────────────────────────────────────────────────────────────────
     # Lifecycle
@@ -104,13 +106,28 @@ class TesiraFleet:
             if task and not task.done():
                 task.cancel()
                 try:
-                    await task
+                    await asyncio.wait_for(task, timeout=self.TASK_CANCEL_TIMEOUT_SECONDS)
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        "TesiraFleet task %s did not stop within %.1fs",
+                        task.get_name(),
+                        self.TASK_CANCEL_TIMEOUT_SECONDS,
+                    )
                 except (asyncio.CancelledError, Exception):
                     pass
 
         for device in list(self._devices.values()):
             try:
-                await device.disconnect()
+                await asyncio.wait_for(
+                    device.disconnect(),
+                    timeout=self.DEVICE_DISCONNECT_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "TesiraFleet disconnect timed out for %s after %.1fs",
+                    device.device_id,
+                    self.DEVICE_DISCONNECT_TIMEOUT_SECONDS,
+                )
             except Exception as exc:
                 logger.warning("Disconnect error for %s: %s", device.device_id, exc)
 
