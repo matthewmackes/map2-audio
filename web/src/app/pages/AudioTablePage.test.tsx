@@ -294,6 +294,12 @@ function getColumnsMenuButton() {
   return trigger as HTMLButtonElement
 }
 
+function getToolbarButton(label: string) {
+  const trigger = screen.getByText(label).closest('button')
+  expect(trigger).not.toBeNull()
+  return trigger as HTMLButtonElement
+}
+
 // Import after mocks
 import { AudioTablePage } from './AudioTablePage'
 
@@ -471,6 +477,7 @@ describe('AudioTablePage — Row Controls', () => {
     })
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
   })
+
 })
 
 // ============================================================================
@@ -524,6 +531,7 @@ describe('AudioTablePage — Flow CRUD', () => {
       expect(addBtn).toBeDisabled()
     })
   })
+
 })
 
 // ============================================================================
@@ -548,6 +556,25 @@ describe('AudioTablePage — Shared State', () => {
     await waitFor(() => {
       const stored = JSON.parse(localStorage.getItem('map2_juce_grid_flows_v2') ?? '[]')
       expect(stored.length).toBe(4)
+    })
+  })
+
+  it('persists mute, solo, and dry/wet changes to the shared flow state', async () => {
+    renderPage()
+    const flowSection = await screen.findByTestId('audio-table-flow-flow-0')
+
+    fireEvent.click(within(flowSection).getByRole('switch', { name: 'M' }))
+    fireEvent.click(within(flowSection).getByRole('switch', { name: 'S' }))
+    fireEvent.change(flowSection.querySelector('#drywet-flow-0') as HTMLInputElement, { target: { value: '73' } })
+
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem('map2_juce_grid_flows_v2') ?? '[]')
+      expect(stored[0]).toMatchObject({
+        chainId: 1,
+        muted: true,
+        solo: true,
+        dryWetMix: 73,
+      })
     })
   })
 })
@@ -750,6 +777,32 @@ describe('AudioTablePage — Toolbar', () => {
       expect(screen.getByText('Remove Visible')).toBeInTheDocument()
       expect(screen.getByText('2 nodes')).toBeInTheDocument()
     })
+  })
+
+  it('filters visible plugins for the active flow table', async () => {
+    renderPage()
+    const searchInput = await screen.findByPlaceholderText('Search visible plugins')
+
+    fireEvent.change(searchInput, { target: { value: 'rev' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Filtered')).toBeInTheDocument()
+      expect(screen.getByText('1 visible')).toBeInTheDocument()
+      expect(screen.getByText('Reverb')).toBeInTheDocument()
+      expect(screen.queryByText('Delay')).not.toBeInTheDocument()
+    })
+  })
+
+  it('opens the preset save prompt for the active flow chain', async () => {
+    const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('Main Save')
+    renderPage()
+    fireEvent.click(getToolbarButton('Save Preset'))
+
+    await waitFor(() => {
+      expect(promptSpy).toHaveBeenCalledWith('Preset name:', 'Main Preset')
+    })
+
+    promptSpy.mockRestore()
   })
 
   it('opens the node manager modal and updates cluster focus from the cluster table', async () => {

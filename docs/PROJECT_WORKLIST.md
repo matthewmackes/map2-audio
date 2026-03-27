@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T454 integration-tail validation advanced
+Last updated: 2026-03-27 - T454 stable integration coverage refreshed
 
 ID: T453
 Status: [✓] Done
@@ -8149,7 +8149,7 @@ Subtasks:
 - T454-subM: [✓] Done - Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
 - T454-subN: [>] In Progress - Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
 Assigned to: Codex
-Last updated: 2026-03-27 16:07 EDT - Codex
+Last updated: 2026-03-27 15:17 EDT - Codex
 - Progress notes:
   - `/audio-table` route wiring, the advanced-menu entry, the main page scaffold, and the supporting `audioTableColumns.ts` / `audioTableKeyboard.ts` helpers are now present in `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/*`.
   - The first release-loop deploy for this scaffold failed on real API/type-contract drift in `web/src/app/pages/AudioTablePage.tsx`: it imported `AudioPort` from the wrong module, treated `ChainsResponse`, `PluginDiscoverResponse`, and `AudioPortsResponse` as flat arrays, and called `pluginsApi.setParameterBatched()` with the wrong argument order.
@@ -8158,6 +8158,9 @@ Last updated: 2026-03-27 16:07 EDT - Codex
   - Completed the remaining surface work in `web/src/app/pages/AudioTablePage.tsx`: the shared toolbar now tracks the active flow, real presets, global search, visible-row batch actions, snapshot/MIDI status tags, and cluster scope context; inline MIDI CC/channel/curve/min/max cells now bind per plugin row through the v2 mapping API; and a cluster node-management section below the flow tables reuses the shared node-focus contract while linking back to `AudioNodesModal`.
   - Expanded focused frontend validation in `web/src/app/pages/AudioTablePage.test.tsx` and `web/src/app/pages/audioTableKeyboard.test.ts` to cover the cluster section, toolbar search/batch actions, preset affordances, MIDI column rendering with seeded mapping data, column-picker toggles, and the cluster node-manager open/focus flow; the remaining end-to-end mutation-focused tail stays tracked under `T454-subN`.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS (`30 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`3 passed`); earlier `npm --prefix web run typecheck` -> PASS. `T454` remains open only because the mutation-heavy integration tail under `subN` is still being carried separately.
+  - Added another stable validation slice in `web/src/app/pages/AudioTablePage.test.tsx`: shared-state flow-header persistence now asserts mute/solo/dry-wet writes to the shared JUCE-grid localStorage key, the active-flow search path asserts filtered visible-row state, and the preset affordance now asserts the save prompt contract without relying on brittle queued mutation timing in jsdom.
+  - Licensing review: touched frontend/worklist/version-artifact files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`36 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS. `T454-subN` remains open because the direct row-level/query-mutation assertion tail still needs a non-brittle harness path before the integration suite can be called complete.
 
 ---
 
