@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWsUrl } from '../../map2/api'
 import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
 
 // ========================================
 // Types
@@ -127,7 +128,19 @@ interface UseDynamicsOptions {
   pollingInterval?: number
   /** Cluster node to target. Omit for local node. */
   nodeId?: string | null
+  /** Runtime instance ID for selected-block duplicate-safe routing. */
+  instanceId?: number | null
+  /** Chain position for duplicate-safe routing and stale instance recovery. */
+  pluginPosition?: number | null
+  /** Limit the hook to a single processor when a card is scoped to one plugin instance. */
+  processor?: 'compressor' | 'limiter' | 'gate' | null
 }
+
+type DynamicsProcessor = 'compressor' | 'limiter' | 'gate'
+
+const COMPRESSOR_URI = 'map2://juce/dynamics/compressor'
+const LIMITER_URI = 'map2://juce/dynamics/limiter'
+const GATE_URI = 'map2://juce/dynamics/gate'
 
 // ========================================
 // Helper to convert snake_case to camelCase
@@ -174,6 +187,55 @@ function parseGateParams(data: Record<string, unknown>): GateParams {
   }
 }
 
+function parseProcessorState<T>(
+  data: Record<string, unknown>,
+  parseParameters: (params: Record<string, unknown>) => T,
+): { parameters: T; metering: DynamicsMetering } {
+  const rawParameters = (data.parameters as Record<string, unknown>) ?? {}
+  const rawMetering = (data.metering as Record<string, number>) ?? {}
+  return {
+    parameters: parseParameters(rawParameters),
+    metering: parseMetering(rawMetering),
+  }
+}
+
+function hasScopedInstanceId(instanceId?: number | null): instanceId is number {
+  return typeof instanceId === 'number' && Number.isFinite(instanceId) && instanceId > 0
+}
+
+function hasScopedPosition(pluginPosition?: number | null): pluginPosition is number {
+  return typeof pluginPosition === 'number' && Number.isFinite(pluginPosition) && pluginPosition >= 0
+}
+
+function withRuntimeQuery(
+  path: string,
+  options: { instanceId?: number | null; pluginPosition?: number | null; nodeId?: string | null },
+): string {
+  const params = new URLSearchParams()
+
+  if (hasScopedInstanceId(options.instanceId)) {
+    params.set('instance_id', String(Math.trunc(options.instanceId)))
+  }
+  if (hasScopedPosition(options.pluginPosition)) {
+    params.set('plugin_position', String(Math.trunc(options.pluginPosition)))
+  }
+
+  const scopedPath = params.size > 0 ? `${path}?${params.toString()}` : path
+  return withNodeQuery(scopedPath, options.nodeId)
+}
+
+function getProcessorUri(processor: DynamicsProcessor): string {
+  switch (processor) {
+    case 'limiter':
+      return LIMITER_URI
+    case 'gate':
+      return GATE_URI
+    case 'compressor':
+    default:
+      return COMPRESSOR_URI
+  }
+}
+
 // ========================================
 // Hook
 // ========================================
@@ -183,9 +245,27 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
     useWebSocket = true,
     pollingInterval = 100,  // 10fps for metering
     nodeId,
+    instanceId,
+    pluginPosition,
+    processor = null,
   } = options
 
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
+  const hasRuntimeIdentity = hasScopedInstanceId(instanceId) || hasScopedPosition(pluginPosition)
+  const useRealtimeWebSocket = useWebSocket && !hasRuntimeIdentity
+  const usePolledState = hasRuntimeIdentity || !useRealtimeWebSocket
+  const shouldUseProcessor = useCallback((name: DynamicsProcessor) => (
+    processor === null || processor === name
+  ), [processor])
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
+  const compressorScopeKey = getPluginIdentityKeyFromParts(COMPRESSOR_URI, pluginPosition, instanceId)
+  const limiterScopeKey = getPluginIdentityKeyFromParts(LIMITER_URI, pluginPosition, instanceId)
+  const gateScopeKey = getPluginIdentityKeyFromParts(GATE_URI, pluginPosition, instanceId)
   const [metering, setMetering] = useState({
     compressor: DEFAULT_METERING,
     limiter: DEFAULT_METERING,
@@ -194,14 +274,16 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
   })
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const scopeKey = clusterScopeKey(nodeId)
 
   // ========================================
   // WebSocket for real-time metering
   // ========================================
 
   useEffect(() => {
-    if (!useWebSocket) return
+    if (!useRealtimeWebSocket) {
+      setIsConnected(false)
+      return
+    }
 
     const ws = new WebSocket(getWsUrl())
     const topic = withNodeTopic('dynamics', nodeId)
@@ -244,40 +326,79 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       ws.close()
       wsRef.current = null
     }
-  }, [nodeId, useWebSocket])
+  }, [nodeId, useRealtimeWebSocket])
 
   // ========================================
-  // Queries for parameters
+  // Queries for parameters and polled metering
   // ========================================
+
+  const compressorStateQuery = useQuery({
+    queryKey: ['dynamics', scopeKey, 'compressor', compressorScopeKey, 'state'],
+    queryFn: async () => {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/compressor'))
+      if (!res.ok) throw new Error('Failed to fetch compressor state')
+      return parseProcessorState(await res.json(), parseCompressorParams)
+    },
+    staleTime: 1000,
+    refetchInterval: usePolledState ? pollingInterval : false,
+    enabled: usePolledState && shouldUseProcessor('compressor'),
+  })
 
   const compressorQuery = useQuery({
-    queryKey: ['dynamics', scopeKey, 'compressor'],
+    queryKey: ['dynamics', scopeKey, 'compressor', compressorScopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/compressor/parameters', nodeId))
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/compressor/parameters'))
       if (!res.ok) throw new Error('Failed to fetch compressor parameters')
       return parseCompressorParams(await res.json())
     },
-    staleTime: 5000
+    staleTime: 5000,
+    enabled: !usePolledState && shouldUseProcessor('compressor'),
+  })
+
+  const limiterStateQuery = useQuery({
+    queryKey: ['dynamics', scopeKey, 'limiter', limiterScopeKey, 'state'],
+    queryFn: async () => {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/limiter'))
+      if (!res.ok) throw new Error('Failed to fetch limiter state')
+      return parseProcessorState(await res.json(), parseLimiterParams)
+    },
+    staleTime: 1000,
+    refetchInterval: usePolledState ? pollingInterval : false,
+    enabled: usePolledState && shouldUseProcessor('limiter'),
   })
 
   const limiterQuery = useQuery({
-    queryKey: ['dynamics', scopeKey, 'limiter'],
+    queryKey: ['dynamics', scopeKey, 'limiter', limiterScopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/limiter/parameters', nodeId))
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/limiter/parameters'))
       if (!res.ok) throw new Error('Failed to fetch limiter parameters')
       return parseLimiterParams(await res.json())
     },
-    staleTime: 5000
+    staleTime: 5000,
+    enabled: !usePolledState && shouldUseProcessor('limiter'),
+  })
+
+  const gateStateQuery = useQuery({
+    queryKey: ['dynamics', scopeKey, 'gate', gateScopeKey, 'state'],
+    queryFn: async () => {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/gate'))
+      if (!res.ok) throw new Error('Failed to fetch gate state')
+      return parseProcessorState(await res.json(), parseGateParams)
+    },
+    staleTime: 1000,
+    refetchInterval: usePolledState ? pollingInterval : false,
+    enabled: usePolledState && shouldUseProcessor('gate'),
   })
 
   const gateQuery = useQuery({
-    queryKey: ['dynamics', scopeKey, 'gate'],
+    queryKey: ['dynamics', scopeKey, 'gate', gateScopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/gate/parameters', nodeId))
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/gate/parameters'))
       if (!res.ok) throw new Error('Failed to fetch gate parameters')
       return parseGateParams(await res.json())
     },
-    staleTime: 5000
+    staleTime: 5000,
+    enabled: !usePolledState && shouldUseProcessor('gate'),
   })
 
   // ========================================
@@ -296,7 +417,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.autoMakeup !== undefined) body.auto_makeup = params.autoMakeup
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/compressor', nodeId), {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/compressor'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -305,7 +426,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'compressor'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'compressor', compressorScopeKey] })
     }
   })
 
@@ -316,7 +437,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.release !== undefined) body.release = params.release
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/limiter', nodeId), {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/limiter'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -325,7 +446,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'limiter'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'limiter', limiterScopeKey] })
     }
   })
 
@@ -338,7 +459,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.release !== undefined) body.release = params.release
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch(withNodeQuery('/api/engine/dynamics/gate', nodeId), {
+      const res = await fetch(buildScopedUrl('/api/engine/dynamics/gate'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -347,7 +468,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'gate'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'gate', gateScopeKey] })
     }
   })
 
@@ -426,27 +547,39 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
   return {
     // State
     compressor: {
-      parameters: compressorQuery.data ?? DEFAULT_COMPRESSOR,
-      metering: metering.compressor,
-      isLoading: compressorQuery.isLoading,
+      parameters: usePolledState
+        ? (compressorStateQuery.data?.parameters ?? DEFAULT_COMPRESSOR)
+        : (compressorQuery.data ?? DEFAULT_COMPRESSOR),
+      metering: useRealtimeWebSocket
+        ? metering.compressor
+        : (compressorStateQuery.data?.metering ?? DEFAULT_METERING),
+      isLoading: usePolledState ? compressorStateQuery.isLoading : compressorQuery.isLoading,
       isUpdating: updateCompressor.isPending
     },
     limiter: {
-      parameters: limiterQuery.data ?? DEFAULT_LIMITER,
-      metering: metering.limiter,
-      isLoading: limiterQuery.isLoading,
+      parameters: usePolledState
+        ? (limiterStateQuery.data?.parameters ?? DEFAULT_LIMITER)
+        : (limiterQuery.data ?? DEFAULT_LIMITER),
+      metering: useRealtimeWebSocket
+        ? metering.limiter
+        : (limiterStateQuery.data?.metering ?? DEFAULT_METERING),
+      isLoading: usePolledState ? limiterStateQuery.isLoading : limiterQuery.isLoading,
       isUpdating: updateLimiter.isPending
     },
     gate: {
-      parameters: gateQuery.data ?? DEFAULT_GATE,
-      metering: metering.gate,
-      isLoading: gateQuery.isLoading,
+      parameters: usePolledState
+        ? (gateStateQuery.data?.parameters ?? DEFAULT_GATE)
+        : (gateQuery.data ?? DEFAULT_GATE),
+      metering: useRealtimeWebSocket
+        ? metering.gate
+        : (gateStateQuery.data?.metering ?? DEFAULT_METERING),
+      isLoading: usePolledState ? gateStateQuery.isLoading : gateQuery.isLoading,
       isUpdating: updateGate.isPending
     },
 
     // Connection status
     isConnected,
-    isRunning: metering.running,
+    isRunning: useRealtimeWebSocket ? metering.running : true,
 
     // Compressor setters
     setCompressorThreshold,

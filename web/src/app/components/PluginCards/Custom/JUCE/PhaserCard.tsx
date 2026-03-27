@@ -31,6 +31,7 @@ interface PhaserCardProps extends PluginCardProps {
 
 function PhaserCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#e74c3c',
   compact = false,
   onOpenMidiMappings,
@@ -44,7 +45,10 @@ function PhaserCardBase({
     setFeedback,
     setMix,
     setBypass,
-  } = usePhaser()
+  } = usePhaser({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   // Phaser notch visualization
   const phaserVisualization = (

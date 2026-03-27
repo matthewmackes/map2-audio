@@ -37,6 +37,7 @@ interface IntervalShifterCardProps extends PluginCardProps {
 
 function IntervalShifterCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#8b5cf6',
   compact = false,
   onOpenMidiMappings,
@@ -54,7 +55,11 @@ function IntervalShifterCardBase({
     applyPreset,
     getIntervalName,
     isConnected,
-  } = useIntervalShifter()
+  } = useIntervalShifter({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+    pluginUri: plugin.uri,
+  })
 
   const [linkLR, setLinkLR] = useState(true)
   const [showPresets, setShowPresets] = useState(false)

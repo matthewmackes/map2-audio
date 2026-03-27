@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (T453 EQ scoped routing)
+> **Last Updated**: March 27, 2026 (T453 runtime-identity closeout)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1255,6 +1255,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_filters_route_identity.py`; `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx`; `npm --prefix web run typecheck`
 - **Lesson**: When a route contract uses human-friendly parameter names but the engine exposes different symbols or enum encodings, the route must own that translation explicitly before duplicate-safe runtime scoping can be trusted.
 
+**28. Selected-Block JUCE Effect Families Must Preserve Runtime Identity End To End (HIGH - Mar 27, 2026)**
+- **Files**: `app/routes/scoped_plugin_utils.py`, `app/routes/dynamics.py`, `app/routes/pitch.py`, `app/routes/modulation.py`, `app/routes/h3000.py`, `app/routes/lexi_love.py`, `app/routes/shoegaze.py`, `web/src/app/hooks/runtimeScopedQuery.ts`, `web/src/app/hooks/useDynamics.ts`, `web/src/app/hooks/useModulation.ts`, `web/src/app/hooks/useH3000.ts`, `web/src/app/hooks/useLexiLove.ts`, `web/src/app/hooks/useShoeGaze.ts`
+- **Problem**: The remaining selected-block JUCE processors still defaulted to legacy global singleton routes and cache keys, so duplicate compressors, modulation blocks, pitch processors, H3000, Lexi Love, and ShoeGaze instances could read, meter, or mutate the wrong runtime processor.
+- **Root Cause**: Those route families were written around singleton service helpers, while the matching frontend hooks either omitted `instance_id` / `plugin_position` entirely or cached every selected-block request under one global query scope.
+- **Fix**: Introduce shared scoped-route helpers for live instance resolution and parameter translation, require the selected-block hooks/cards to send runtime identity on every request, preserve `plugin_position` as the fallback recovery key for stale `instance_id` values, and fail closed whenever a scoped runtime target no longer exists.
+- **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py tests/test_plugin_parameter_route_identity.py tests/test_filters_route_identity.py tests/test_dynamics_route_identity.py tests/test_pitch_modulation_route_identity.py tests/test_multi_effect_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedModulationCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedAmbientCards.test.tsx`; `npm --prefix web run typecheck`
+- **Lesson**: In MAP2, a selected-block JUCE surface is only correct when backend route resolution, frontend query keys, and mutation URLs all carry the same runtime identity contract. URI-only access is legacy compatibility, not a safe default for duplicate-capable processors.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1525,6 +1533,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-27] - Complete T453 Runtime-Identity Closeout
+- **Section**: Gotchas & Learned Fixes (#28), User Preferences, Python Backend Gotchas, React/TypeScript Gotchas
+- **Change**: Documented the final rule that all selected-block JUCE effect families must preserve runtime identity end to end, using shared scoped helpers, `plugin_position` stale-instance recovery, and fail-closed routing instead of singleton fallbacks.
+- **Reason**: The last T453 audit slice found that dynamics, pitch/modulation, H3000, Lexi Love, and ShoeGaze were still mixing selected-block UI state with global route/service paths after NAM, IR, EQ, and plugin-parameter routing had already been hardened.
+- **Impact**: Future effect-route work has one explicit contract to preserve: once a processor is duplicate-capable in the selected-block UI, every read/write/meter/query path must stay runtime-scoped from card hook to backend resolver.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/scoped_plugin_utils.py`, `app/routes/dynamics.py`, `app/routes/pitch.py`, `app/routes/modulation.py`, `app/routes/h3000.py`, `app/routes/lexi_love.py`, `app/routes/shoegaze.py`, `web/src/app/hooks/runtimeScopedQuery.ts`, `web/src/app/hooks/useDynamics.ts`, `web/src/app/hooks/useModulation.ts`, `web/src/app/hooks/useH3000.ts`, `web/src/app/hooks/useLexiLove.ts`, `web/src/app/hooks/useShoeGaze.ts`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Scoped EQ Runtime Identity Routing
 - **Section**: Gotchas & Learned Fixes (#27), Python Backend Gotchas, React/TypeScript Gotchas

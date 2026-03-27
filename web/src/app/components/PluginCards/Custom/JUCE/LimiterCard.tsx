@@ -23,6 +23,7 @@ interface LimiterCardProps extends PluginCardProps {
 
 function LimiterCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#22c55e',
   compact = false,
   onOpenMidiMappings,
@@ -32,7 +33,11 @@ function LimiterCardBase({
     setLimiterThreshold,
     setLimiterRelease,
     setLimiterBypass,
-  } = useDynamics()
+  } = useDynamics({
+    processor: 'limiter',
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const { parameters, metering } = limiter
 

@@ -40,6 +40,7 @@ interface H3000CardProps extends PluginCardProps {
 
 function H3000CardBase({
   plugin,
+  pluginPosition,
   accentColor = '#00aaff',
   compact = false,
   onOpenMidiMappings,
@@ -66,7 +67,10 @@ function H3000CardBase({
     setGlide,
     setBypass,
     isConnected,
-  } = useH3000()
+  } = useH3000({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const vfdVisualization = (
     <VFDPitchDisplay

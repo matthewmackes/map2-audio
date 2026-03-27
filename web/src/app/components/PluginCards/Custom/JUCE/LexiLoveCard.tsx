@@ -42,6 +42,7 @@ interface LexiLoveCardProps extends PluginCardProps {
 
 function LexiLoveCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#00cc00',
   compact = false,
   onOpenMidiMappings,
@@ -69,7 +70,10 @@ function LexiLoveCardBase({
     setSpillover,
     setBypass,
     isConnected,
-  } = useLexiLove()
+  } = useLexiLove({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const lcdVisualization = (
     <div style={{ width: '100%' }}>

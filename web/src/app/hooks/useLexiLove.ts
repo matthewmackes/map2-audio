@@ -4,7 +4,11 @@
  * Captures the legendary "depth and sparkle" sound
  */
 
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { clusterScopeKey } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
+import { withRuntimeQuery } from './runtimeScopedQuery'
 
 // ========================================
 // Types
@@ -72,13 +76,29 @@ export const LEXI_ALGORITHMS: LexiLoveAlgorithm[] = [
 // useLexiLove Hook
 // ========================================
 
-export function useLexiLove() {
+interface UseLexiLoveOptions {
+  nodeId?: string | null
+  instanceId?: number | null
+  pluginPosition?: number | null
+}
+
+const LEXI_LOVE_URI = 'map2://juce/reverb/pcm70'
+
+export function useLexiLove(options: UseLexiLoveOptions = {}) {
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(LEXI_LOVE_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: lexiData, isLoading, error } = useQuery({
-    queryKey: ['lexilove'],
+    queryKey: ['lexilove', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/lexilove')
+      const response = await fetch(buildScopedUrl('/api/engine/lexilove'))
       if (!response.ok) throw new Error('Failed to fetch Lexi Love data')
       return response.json()
     },
@@ -107,7 +127,7 @@ export function useLexiLove() {
       if (params.spillover !== undefined) apiParams.spillover = params.spillover
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/lexilove/parameters', {
+      const response = await fetch(buildScopedUrl('/api/engine/lexilove/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -115,29 +135,29 @@ export function useLexiLove() {
       if (!response.ok) throw new Error('Failed to update Lexi Love')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove', scopeKey, pluginScopeKey] }),
   })
 
   const setAlgorithmMutation = useMutation({
     mutationFn: async (algorithmIndex: number) => {
-      const response = await fetch(`/api/engine/lexilove/algorithm/${algorithmIndex}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/lexilove/algorithm/${algorithmIndex}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set algorithm')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove', scopeKey, pluginScopeKey] }),
   })
 
   const setBypassMutation = useMutation({
     mutationFn: async (bypass: boolean) => {
-      const response = await fetch(`/api/engine/lexilove/bypass/${bypass}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/lexilove/bypass/${bypass}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set bypass')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lexilove', scopeKey, pluginScopeKey] }),
   })
 
   // Convert from API format (snake_case) to UI format (camelCase)

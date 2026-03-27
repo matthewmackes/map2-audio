@@ -36,6 +36,7 @@ interface CompressorCardProps extends PluginCardProps {
 
 function CompressorCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#22c55e',
   compact = false,
   onOpenMidiMappings,
@@ -50,7 +51,11 @@ function CompressorCardBase({
     setCompressorMakeupGain,
     setCompressorAutoMakeup,
     setCompressorBypass,
-  } = useDynamics()
+  } = useDynamics({
+    processor: 'compressor',
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const { parameters, metering } = compressor
 

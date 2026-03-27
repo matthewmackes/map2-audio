@@ -31,6 +31,7 @@ interface ChorusCardProps extends PluginCardProps {
 
 function ChorusCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#9b59b6',
   compact = false,
   onOpenMidiMappings,
@@ -38,7 +39,10 @@ function ChorusCardBase({
   const {
     parameters, metering,
     setRate, setDepth, setCentreDelay, setFeedback, setMix, setSpread, setBypass,
-  } = useChorus()
+  } = useChorus({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const lfoVisualization = (
     <div style={{ width: '100%', textAlign: 'center' }}>

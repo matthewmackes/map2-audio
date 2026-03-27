@@ -4,7 +4,11 @@
  * Captures the aesthetic of My Bloody Valentine, Slowdive, and Cocteau Twins
  */
 
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { clusterScopeKey } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
+import { withRuntimeQuery } from './runtimeScopedQuery'
 
 // ========================================
 // Types
@@ -86,13 +90,29 @@ export const PRESET_NAME_TO_INDEX: Record<string, number> = {
 // useShoeGaze Hook
 // ========================================
 
-export function useShoeGaze() {
+interface UseShoeGazeOptions {
+  nodeId?: string | null
+  instanceId?: number | null
+  pluginPosition?: number | null
+}
+
+const SHOEGAZE_URI = 'map2://juce/multieffect/shoegaze'
+
+export function useShoeGaze(options: UseShoeGazeOptions = {}) {
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(SHOEGAZE_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: shoegazeData, isLoading, error } = useQuery({
-    queryKey: ['shoegaze'],
+    queryKey: ['shoegaze', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/shoegaze')
+      const response = await fetch(buildScopedUrl('/api/engine/shoegaze'))
       if (!response.ok) throw new Error('Failed to fetch shoegaze data')
       return response.json()
     },
@@ -125,7 +145,7 @@ export function useShoeGaze() {
       if (params.spillover !== undefined) apiParams.spillover = params.spillover
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/shoegaze/parameters', {
+      const response = await fetch(buildScopedUrl('/api/engine/shoegaze/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -133,29 +153,29 @@ export function useShoeGaze() {
       if (!response.ok) throw new Error('Failed to update shoegaze')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze', scopeKey, pluginScopeKey] }),
   })
 
   const setPreset = useMutation({
     mutationFn: async (presetName: string) => {
-      const response = await fetch(`/api/engine/shoegaze/preset/${presetName}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/shoegaze/preset/${presetName}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze', scopeKey, pluginScopeKey] }),
   })
 
   const setBypassMutation = useMutation({
     mutationFn: async (bypass: boolean) => {
-      const response = await fetch(`/api/engine/shoegaze/bypass/${bypass}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/shoegaze/bypass/${bypass}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set bypass')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shoegaze', scopeKey, pluginScopeKey] }),
   })
 
   // Convert from API format (snake_case) to UI format (camelCase)

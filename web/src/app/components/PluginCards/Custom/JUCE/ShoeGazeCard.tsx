@@ -73,6 +73,7 @@ interface ShoeGazeCardProps extends PluginCardProps {
 
 function ShoeGazeCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#8e44ad', // Dreamy purple
   compact = false,
   onOpenMidiMappings,
@@ -106,7 +107,10 @@ function ShoeGazeCardBase({
     setBypass,
     setPreset,
     isConnected,
-  } = useShoeGaze()
+  } = useShoeGaze({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   // Primary controls as ParamSlot objects
   const atmosphereSlot: ParamSlot = {

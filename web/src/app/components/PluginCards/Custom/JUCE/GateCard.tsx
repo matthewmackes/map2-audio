@@ -27,6 +27,7 @@ interface GateCardProps extends PluginCardProps {
 
 function GateCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#22c55e',
   compact = false,
   onOpenMidiMappings,
@@ -38,7 +39,11 @@ function GateCardBase({
     setGateAttack,
     setGateRelease,
     setGateBypass,
-  } = useDynamics()
+  } = useDynamics({
+    processor: 'gate',
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const { parameters, metering } = gate
   const isOpen = metering.gainReduction < 1

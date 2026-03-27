@@ -37,6 +37,7 @@ interface EVHPitchShifterCardProps extends PluginCardProps {
 
 function EVHPitchShifterCardBase({
   plugin,
+  pluginPosition,
   accentColor = '#ff6b35',
   compact = false,
   onOpenMidiMappings,
@@ -56,7 +57,11 @@ function EVHPitchShifterCardBase({
     setPreset,
     setBypass,
     isConnected,
-  } = usePitchShifter()
+  } = usePitchShifter({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+    pluginUri: plugin.uri,
+  })
 
   const [linkLR, setLinkLR] = useState(true)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)

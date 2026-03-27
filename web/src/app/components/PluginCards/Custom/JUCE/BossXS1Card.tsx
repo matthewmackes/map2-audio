@@ -47,6 +47,7 @@ interface BossXS1CardProps extends PluginCardProps {
 
 function BossXS1CardBase({
   plugin,
+  pluginPosition,
   accentColor = '#ff6600', // Boss orange
   compact = false,
   onOpenMidiMappings,
@@ -67,7 +68,10 @@ function BossXS1CardBase({
     setPreset,
     setBypass,
     isConnected,
-  } = useBossXS1()
+  } = useBossXS1({
+    instanceId: plugin.instance_id ?? null,
+    pluginPosition,
+  })
 
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
 

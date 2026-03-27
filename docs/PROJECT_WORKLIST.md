@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - T453 EQ scoped routing completed
+Last updated: 2026-03-27 - T453 complete
 
 ID: T453
-Status: [>] In Progress
+Status: [✓] Done
 Title: Multi-instance effect parameter independence — full-stack hardening
 Description:
 - Goal / acceptance criteria: When multiple instances of the same plugin type exist in the signal chain (e.g., 2× NAM, 2× Compressor, 2× Cabinet IR), each instance must maintain fully independent parameters, status, metering, and control. No parameter read, write, or UI state from one instance may leak to another. All endpoints, service methods, WebSocket messages, and React Query cache keys must be instance-scoped.
@@ -42,19 +42,25 @@ Description:
 - Required outputs: Instance-scoped parameter endpoints for all processor types, scoped React Query invalidation, WebSocket instance filtering, removal of silent global fallbacks, and regression test coverage.
 
 Subtasks:
-- T453-subA: [ ] Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
+- T453-subA: [✓] Done - Add instance_id/plugin_position to dynamics routes (compressor, limiter, gate) with _resolve_scoped_instance_id pattern
 - T453-subB: [✓] Done - Add instance_id/plugin_position to EQ/filter routes
 - T453-subC: [✓] Done - Add instance_id/plugin_position to GET /api/plugins/{uri}/parameters endpoint
 - T453-subD: [✓] Done - Add instance-specific NAM status query methods to juce_engine_service.py (bypassed, loading, model_loaded, input/output levels, gains, normalize)
-- T453-subE: [ ] Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
+- T453-subE: [✓] Done - Add instance_id/plugin_position to pitch, modulation, H3000, lexi-love, shoegaze routes
 - T453-subF: [✓] Done - Remove silent global fallback in IR routes — raise HTTPException when instance resolution fails instead of falling through to _ir_processor singleton
 - T453-subG: [✓] Done - Scope React Query cache invalidation in NAMCard, CabinetIRCard, ReverbIRCard, NAMManagerDialog, IRManagerDialog to use statusScopeKey instead of global ['nam']/['ir']
 - T453-subH: [✓] Done - Fix useBatchedParameter WebSocket handler to filter by instance_id/pluginPosition, not just uri+paramIndex
 - T453-subI: [✓] Done - Pass pluginPosition/instanceId to LV2PluginParameterEditor fallback in PluginCardRouter
 - T453-subJ: [✓] Done - Add regression tests — backend multi-instance parameter isolation tests plus frontend scoped query key/WebSocket instance filtering coverage
 Assigned to: Codex
-Last updated: 2026-03-27 11:55 EDT - Codex
-- Progress notes:
+Last updated: 2026-03-27 13:13 EDT - Codex
+- Completion notes:
+  - Added shared scoped duplicate-safe helpers in `app/routes/scoped_plugin_utils.py` and `web/src/app/hooks/runtimeScopedQuery.ts`, then used them to finish the remaining singleton-style route families without reintroducing URI-only reads/writes or global selected-block cache keys.
+  - Hardened `app/routes/dynamics.py`, `app/routes/pitch.py`, `app/routes/modulation.py`, `app/routes/h3000.py`, `app/routes/lexi_love.py`, and `app/routes/shoegaze.py` so compressor/limiter/gate, Boss XS-1, chorus/phaser/pitch-shifter variants, H3000, Lexi Love, and ShoeGaze now all accept `instance_id` and `plugin_position`, resolve or recover the live duplicate-safe instance before any engine access, and fail closed on missing scoped positions instead of drifting into global singleton behavior.
+  - Updated `web/src/app/hooks/useDynamics.ts`, `web/src/app/hooks/useModulation.ts`, `web/src/app/hooks/useH3000.ts`, `web/src/app/hooks/useLexiLove.ts`, `web/src/app/hooks/useShoeGaze.ts`, plus the selected-block JUCE cards for compressor, limiter, gate, chorus, phaser, EVH pitch shifter, interval shifter, Boss XS-1, H3000, Lexi Love, and ShoeGaze so their React Query keys and request URLs are runtime-scoped and retain `plugin_position` as the stable recovery key when cached `instance_id` values go stale.
+  - Added focused regression coverage in `tests/test_dynamics_route_identity.py`, `tests/test_pitch_modulation_route_identity.py`, `tests/test_multi_effect_route_identity.py`, `web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ScopedModulationCards.test.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ScopedAmbientCards.test.tsx` for position-scoped reads, stale-instance recovery, shared route translation, preset/algorithm scoping, and selected-block mutation wiring.
+  - Licensing review: touched backend/frontend/test/worklist/instructions files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_juce_engine_service_instance_resolution.py tests/test_nam_ir_instance_routes.py tests/test_plugin_parameter_route_identity.py tests/test_filters_route_identity.py tests/test_dynamics_route_identity.py tests/test_pitch_modulation_route_identity.py tests/test_multi_effect_route_identity.py tests/test_plugins_engine_op_pipeline.py tests/test_flow_snapshots_routes.py` -> PASS (`44 passed`, `6 warnings`); `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/map2/hooks/useWebSocket.test.ts web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedModulationCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedAmbientCards.test.tsx` -> PASS (`38 passed`); `npm --prefix web run typecheck` -> PASS.
   - Hardened `app/routes/filters.py` so the full EQ route family now accepts `instance_id` and `plugin_position`, resolves the live EQ instance through `engine.resolve_instance_id()` when available, translates the JUCE FilterPlugin parameter IDs (`bandN_freq`, `bandN_gain`, `bandN_q`, `bandN_type`, `bandN_enabled`, `outputGain`, `bypass`) into the existing REST contract, and fails closed on missing scoped positions instead of reading or mutating the global singleton.
   - Added Python-side scoped frequency-response generation in `app/routes/filters.py` using the current duplicate-safe EQ band state so `/api/engine/eq/frequency-response` and `/api/engine/eq/frequency-response/default` no longer fall through to the global EQ processor when runtime identity is supplied.
   - Updated `web/src/app/hooks/useFilters.ts` to scope React Query cache keys and fetch URLs by runtime identity, then rewired `web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.tsx` to pass `plugin.instance_id` plus `pluginPosition` into the hook so the selected-block EQ card now targets the correct duplicate instance for reads and writes.
@@ -8114,3 +8120,33 @@ Last updated: 2026-03-25 15:03 EDT - Codex
 - Completion notes:
   - Delivered the standalone Ink TUI scaffold, shared runtime adapters, shell/navigation, primitive component set, and all planned first-pass screens.
   - The canonical worklist now has no remaining unblocked `T412` subtasks.
+
+---
+
+## Epic: AUDIO-TABLE Surface
+
+ID: T454
+Status: [ ] Todo
+Title: AUDIO-TABLE — Carbon DataTable-driven signal flow editor with full JUCE-GRID parity
+Description:
+- Goal / acceptance criteria: Build a new /audio-table page providing a table-driven alternative to /juce-grid, using Carbon DataTables with inline-editable cells (dropdowns, number inputs), configurable dynamic parameter columns, per-flow tables with header rows, full toolbar (routing, presets, undo/redo, automation, search, column picker), MIDI columns, real-time numeric levels, and table-optimized keyboard navigation. Fully shared state with JUCE-GRID (same localStorage keys, same React Query cache). Zero custom CSS files — all styling via Carbon inline overrides.
+- Dependencies: None (new page, existing APIs)
+- Estimated effort: X-Large
+
+Subtasks:
+- T454-subA: [ ] Page scaffold — AudioTablePage.tsx with lazy route, nav entry, responsive layout, mobile/tablet handling
+- T454-subB: [ ] Flow table sections — one Carbon DataTable per flow slot with static columns (Position, Name, Bypass, Actions, Input dB, Output dB)
+- T454-subC: [ ] Flow header rows — color label, chain dropdown (CRUD), mute/solo, dry/wet, port dropdowns, remove flow
+- T454-subD: [ ] Shared state integration — read/write same localStorage keys and React Query cache as JUCE-GRID
+- T454-subE: [ ] Inline editing — number inputs for continuous params, dropdowns for discrete, bypass checkbox, position reorder, batched parameter writes
+- T454-subF: [ ] Dynamic parameter columns — column picker, per-plugin parameter scanning, union columns, empty cells for non-matching plugins
+- T454-subG: [ ] Add plugin row — empty last row with categorized grouped dropdown (Favorites/Effects/Instruments/Native)
+- T454-subH: [ ] Toolbar — routing dropdown + inline mode controls, preset dropdown, undo/redo, automation transport, search, column picker, batch actions
+- T454-subI: [ ] MIDI columns — CC#, Channel, Curve, Min, Max editable inline per plugin row
+- T454-subJ: [ ] Real-time data — numeric dB levels from usePluginOutputs, automation state indicators
+- T454-subK: [ ] Keyboard navigation — Tab/Enter/Escape/Arrow cell navigation, Delete for remove, Ctrl+Z/Y for undo/redo
+- T454-subL: [ ] Flow slot management — Add Flow button, Remove Flow per header, 2-6 flow range enforcement
+- T454-subM: [ ] Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
+- T454-subN: [ ] Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
+Assigned to: Unassigned
+Last updated: 2026-03-27

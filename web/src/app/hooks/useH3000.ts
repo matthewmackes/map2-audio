@@ -4,7 +4,11 @@
  * Defined the sound of studio pitch shifting in the late 80s and 90s
  */
 
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { clusterScopeKey } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
+import { withRuntimeQuery } from './runtimeScopedQuery'
 
 // ========================================
 // Types
@@ -71,13 +75,29 @@ export const H3000_ALGORITHMS: H3000Algorithm[] = [
 // useH3000 Hook
 // ========================================
 
-export function useH3000() {
+interface UseH3000Options {
+  nodeId?: string | null
+  instanceId?: number | null
+  pluginPosition?: number | null
+}
+
+const H3000_URI = 'map2://juce/pitch/h3000'
+
+export function useH3000(options: UseH3000Options = {}) {
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(H3000_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: h3000Data, isLoading, error } = useQuery({
-    queryKey: ['h3000'],
+    queryKey: ['h3000', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/h3000')
+      const response = await fetch(buildScopedUrl('/api/engine/h3000'))
       if (!response.ok) throw new Error('Failed to fetch pitch harmonizer data')
       return response.json()
     },
@@ -105,7 +125,7 @@ export function useH3000() {
       if (params.glide !== undefined) apiParams.glide = params.glide
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/h3000/parameters', {
+      const response = await fetch(buildScopedUrl('/api/engine/h3000/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -113,29 +133,29 @@ export function useH3000() {
       if (!response.ok) throw new Error('Failed to update pitch harmonizer')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000', scopeKey, pluginScopeKey] }),
   })
 
   const setAlgorithmMutation = useMutation({
     mutationFn: async (algorithmIndex: number) => {
-      const response = await fetch(`/api/engine/h3000/algorithm/${algorithmIndex}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/h3000/algorithm/${algorithmIndex}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set algorithm')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000', scopeKey, pluginScopeKey] }),
   })
 
   const setBypassMutation = useMutation({
     mutationFn: async (bypass: boolean) => {
-      const response = await fetch(`/api/engine/h3000/bypass/${bypass}`, {
+      const response = await fetch(buildScopedUrl(`/api/engine/h3000/bypass/${bypass}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set bypass')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000', scopeKey, pluginScopeKey] }),
   })
 
   // Convert from API format (snake_case) to UI format (camelCase)

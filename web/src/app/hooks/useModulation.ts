@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../map2/api'
 import { clusterScopeKey, withNodeQuery } from '../utils/clusterTransport'
+import { getPluginIdentityKeyFromParts } from '../../map2/utils/pluginIdentity'
 
 // ========================================
 // Types
@@ -104,6 +105,43 @@ export const VAN_HALEN_PRESETS: VanHalenPreset[] = [
 
 interface UseProcessorOptions {
   nodeId?: string | null
+  instanceId?: number | null
+  pluginPosition?: number | null
+  pluginUri?: string | null
+}
+
+const CHORUS_URI = 'map2://juce/modulation/chorus'
+const PHASER_URI = 'map2://juce/modulation/phaser'
+const PITCH_SHIFTER_URI = 'map2://juce/pitch/shifter'
+const INTERVAL_SHIFTER_URI = 'map2://juce/pitch/interval'
+const BOSS_XS1_URI = 'map2://juce/pitch/boss-xs1'
+
+function hasScopedInstanceId(instanceId?: number | null): instanceId is number {
+  return typeof instanceId === 'number' && Number.isFinite(instanceId) && instanceId > 0
+}
+
+function hasScopedPosition(pluginPosition?: number | null): pluginPosition is number {
+  return typeof pluginPosition === 'number' && Number.isFinite(pluginPosition) && pluginPosition >= 0
+}
+
+function withRuntimeQuery(
+  path: string,
+  options: { instanceId?: number | null; pluginPosition?: number | null; nodeId?: string | null; pluginUri?: string | null },
+): string {
+  const params = new URLSearchParams()
+
+  if (hasScopedInstanceId(options.instanceId)) {
+    params.set('instance_id', String(Math.trunc(options.instanceId)))
+  }
+  if (hasScopedPosition(options.pluginPosition)) {
+    params.set('plugin_position', String(Math.trunc(options.pluginPosition)))
+  }
+  if (typeof options.pluginUri === 'string' && options.pluginUri.length > 0) {
+    params.set('plugin_uri', options.pluginUri)
+  }
+
+  const scopedPath = params.size > 0 ? `${path}?${params.toString()}` : path
+  return withNodeQuery(scopedPath, options.nodeId)
 }
 
 // ========================================
@@ -111,14 +149,20 @@ interface UseProcessorOptions {
 // ========================================
 
 export function useChorus(options: UseProcessorOptions = {}) {
-  const { nodeId } = options
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(CHORUS_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: chorusData } = useQuery({
-    queryKey: ['chorus', scopeKey],
+    queryKey: ['chorus', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch(withNodeQuery('/api/engine/modulation/chorus', nodeId))
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/chorus'))
       if (!response.ok) throw new Error('Failed to fetch chorus data')
       return response.json()
     },
@@ -137,7 +181,7 @@ export function useChorus(options: UseProcessorOptions = {}) {
       if (params.spread !== undefined) apiParams.spread = params.spread * 100
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch(withNodeQuery('/api/engine/modulation/chorus/parameters', nodeId), {
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/chorus/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -145,7 +189,7 @@ export function useChorus(options: UseProcessorOptions = {}) {
       if (!response.ok) throw new Error('Failed to update chorus')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chorus', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chorus', scopeKey, pluginScopeKey] }),
   })
 
   const parameters: ChorusParameters = {
@@ -183,14 +227,20 @@ export function useChorus(options: UseProcessorOptions = {}) {
 // ========================================
 
 export function usePhaser(options: UseProcessorOptions = {}) {
-  const { nodeId } = options
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(PHASER_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: phaserData } = useQuery({
-    queryKey: ['phaser', scopeKey],
+    queryKey: ['phaser', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch(withNodeQuery('/api/engine/modulation/phaser', nodeId))
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/phaser'))
       if (!response.ok) throw new Error('Failed to fetch phaser data')
       return response.json()
     },
@@ -207,7 +257,7 @@ export function usePhaser(options: UseProcessorOptions = {}) {
       if (params.mix !== undefined) apiParams.mix = params.mix * 100
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch(withNodeQuery('/api/engine/modulation/phaser/parameters', nodeId), {
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/phaser/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -215,7 +265,7 @@ export function usePhaser(options: UseProcessorOptions = {}) {
       if (!response.ok) throw new Error('Failed to update phaser')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['phaser', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['phaser', scopeKey, pluginScopeKey] }),
   })
 
   const parameters: PhaserParameters = {
@@ -321,14 +371,26 @@ export interface IntervalShifterParameters {
 // ========================================
 
 export function useIntervalShifter(options: UseProcessorOptions = {}) {
-  const { nodeId } = options
+  const {
+    nodeId,
+    instanceId,
+    pluginPosition,
+    pluginUri = INTERVAL_SHIFTER_URI,
+  } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(pluginUri, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+    pluginUri,
+  }), [instanceId, nodeId, pluginPosition, pluginUri])
 
   const { data: pitchData } = useQuery({
-    queryKey: ['pitchShifter', scopeKey],
+    queryKey: ['pitchShifter', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter', nodeId))
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/pitch-shifter'))
       if (!response.ok) throw new Error('Failed to fetch pitch shifter data')
       return response.json()
     },
@@ -348,7 +410,7 @@ export function useIntervalShifter(options: UseProcessorOptions = {}) {
       apiParams.delay_r = 0
       apiParams.feedback = 0
 
-      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter/parameters', nodeId), {
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/pitch-shifter/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -356,7 +418,7 @@ export function useIntervalShifter(options: UseProcessorOptions = {}) {
       if (!response.ok) throw new Error('Failed to update interval shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey, pluginScopeKey] }),
   })
 
   // Convert cents from API to semitones
@@ -414,14 +476,26 @@ export function useIntervalShifter(options: UseProcessorOptions = {}) {
 // ========================================
 
 export function usePitchShifter(options: UseProcessorOptions = {}) {
-  const { nodeId } = options
+  const {
+    nodeId,
+    instanceId,
+    pluginPosition,
+    pluginUri = PITCH_SHIFTER_URI,
+  } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(pluginUri, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+    pluginUri,
+  }), [instanceId, nodeId, pluginPosition, pluginUri])
 
   const { data: pitchData } = useQuery({
-    queryKey: ['pitchShifter', scopeKey],
+    queryKey: ['pitchShifter', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter', nodeId))
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/pitch-shifter'))
       if (!response.ok) throw new Error('Failed to fetch pitch shifter data')
       return response.json()
     },
@@ -441,7 +515,7 @@ export function usePitchShifter(options: UseProcessorOptions = {}) {
       if (params.preset !== undefined) apiParams.preset = params.preset
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter/parameters', nodeId), {
+      const response = await fetch(buildScopedUrl('/api/engine/modulation/pitch-shifter/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -449,18 +523,18 @@ export function usePitchShifter(options: UseProcessorOptions = {}) {
       if (!response.ok) throw new Error('Failed to update pitch shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey, pluginScopeKey] }),
   })
 
   const setPreset = useMutation({
     mutationFn: async (presetIndex: number) => {
-      const response = await fetch(withNodeQuery(`/api/engine/modulation/pitch-shifter/preset/${presetIndex}`, nodeId), {
+      const response = await fetch(buildScopedUrl(`/api/engine/modulation/pitch-shifter/preset/${presetIndex}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey, pluginScopeKey] }),
   })
 
   const parameters: PitchShifterParameters = {
@@ -569,14 +643,20 @@ export const BOSS_XS1_PRESETS: BossXS1Preset[] = [
 // ========================================
 
 export function useBossXS1(options: UseProcessorOptions = {}) {
-  const { nodeId } = options
+  const { nodeId, instanceId, pluginPosition } = options
   const queryClient = useQueryClient()
   const scopeKey = clusterScopeKey(nodeId)
+  const pluginScopeKey = getPluginIdentityKeyFromParts(BOSS_XS1_URI, pluginPosition, instanceId)
+  const buildScopedUrl = useCallback((path: string) => withRuntimeQuery(path, {
+    instanceId,
+    pluginPosition,
+    nodeId,
+  }), [instanceId, nodeId, pluginPosition])
 
   const { data: bossData } = useQuery({
-    queryKey: ['bossXS1', scopeKey],
+    queryKey: ['bossXS1', scopeKey, pluginScopeKey],
     queryFn: async () => {
-      const response = await fetch(withNodeQuery('/api/engine/pitch/boss-xs1', nodeId))
+      const response = await fetch(buildScopedUrl('/api/engine/pitch/boss-xs1'))
       if (!response.ok) throw new Error('Failed to fetch poly shifter data')
       return response.json()
     },
@@ -598,7 +678,7 @@ export function useBossXS1(options: UseProcessorOptions = {}) {
       if (params.pedalMax !== undefined) apiParams.pedal_max = params.pedalMax
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch(withNodeQuery('/api/engine/pitch/boss-xs1/parameters', nodeId), {
+      const response = await fetch(buildScopedUrl('/api/engine/pitch/boss-xs1/parameters'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -606,18 +686,18 @@ export function useBossXS1(options: UseProcessorOptions = {}) {
       if (!response.ok) throw new Error('Failed to update poly shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey, pluginScopeKey] }),
   })
 
   const setPreset = useMutation({
     mutationFn: async (presetIndex: number) => {
-      const response = await fetch(withNodeQuery(`/api/engine/pitch/boss-xs1/preset/${presetIndex}`, nodeId), {
+      const response = await fetch(buildScopedUrl(`/api/engine/pitch/boss-xs1/preset/${presetIndex}`), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey, pluginScopeKey] }),
   })
 
   const parameters: BossXS1Parameters = {
