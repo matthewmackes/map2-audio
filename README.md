@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**857** Python | **1154** TypeScript | **300** C++/H | **125** Docs | **959** total commits | **3** stars | **0** forks | **0** open issues
+**861** Python | **1159** TypeScript | **300** C++/H | **125** Docs | **961** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -190,7 +190,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1c5b6bcf`](https://github.com/matthewmackes/map2-audio/commit/1c5b6bcfce83ac4bc6d09a1e0bcdfe660a2e06f9) | Complete T453 runtime identity routing | Map2 Audio | 2026-03-27 |
+| [`47e265cc`](https://github.com/matthewmackes/map2-audio/commit/47e265cc3dc980a5225868e415420ecd41c8e976) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`f56cd5fc`](https://github.com/matthewmackes/map2-audio/commit/f56cd5fc45f93cba1c31d1f120c23abbd4daca1d) | Scope EQ routes by runtime identity | Map2 Audio | 2026-03-27 |
 | [`5bdea1a0`](https://github.com/matthewmackes/map2-audio/commit/5bdea1a02d8f9eee7e098591a1f497eb8b8c59b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`d39ad720`](https://github.com/matthewmackes/map2-audio/commit/d39ad720955f378fe91cc97b79a10c5220e6a7b5) | Add instance scoped NAM status helpers | Map2 Audio | 2026-03-27 |
 | [`81da9039`](https://github.com/matthewmackes/map2-audio/commit/81da9039d8f1d9014b80995a6d688468cf3b7da9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 | [`5ac374bf`](https://github.com/matthewmackes/map2-audio/commit/5ac374bf1f9185098dc42a7c53b4c8e329a0e891) | Fail closed scoped IR routes | Map2 Audio | 2026-03-27 |
 | [`5043c229`](https://github.com/matthewmackes/map2-audio/commit/5043c229fd6e8182a4a428de798c57a95287f58a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
-| [`62be2449`](https://github.com/matthewmackes/map2-audio/commit/62be24496f9128f0394d5aafd434688881d38e3b) | Fix duplicate plugin parameter reads by runtime scope | Map2 Audio | 2026-03-27 |
-| [`8a881181`](https://github.com/matthewmackes/map2-audio/commit/8a8811815242396ea2f94e2aba3a7f2346624da0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
