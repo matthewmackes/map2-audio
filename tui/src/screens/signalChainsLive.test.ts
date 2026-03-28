@@ -1,5 +1,5 @@
 import type { Chain } from '../../../web/src/map2/types'
-import { buildLivePluginSlots, formatBypassEvent, getActiveChain, getPluginIdentity } from './signalChainsLive'
+import { buildLivePluginSlots, formatBypassEvent, formatChainActivationEvent, getActiveChain, getAdjacentChain, getPluginIdentity } from './signalChainsLive'
 
 function buildChain(overrides?: Partial<Chain>): Chain {
   return {
@@ -73,5 +73,22 @@ describe('signalChainsLive helpers', () => {
 
     const event = formatBypassEvent('Sunday Live', slots[0], true, new Date('2026-03-26T15:15:16'))
     expect(event).toBe('15:15:16 Sunday Live · 1 Delay -> BYPASSED')
+  })
+
+  it('cycles to adjacent chains in both directions with wraparound', () => {
+    const chains = [
+      buildChain({ id: 10, name: 'Clean', is_active: false }),
+      buildChain({ id: 11, name: 'Crunch', is_active: true }),
+      buildChain({ id: 12, name: 'Lead', is_active: false }),
+    ]
+
+    expect(getAdjacentChain(chains, 11, -1)?.id).toBe(10)
+    expect(getAdjacentChain(chains, 11, 1)?.id).toBe(12)
+    expect(getAdjacentChain(chains, 10, -1)?.id).toBe(12)
+  })
+
+  it('formats chain activation events for the live event strip', () => {
+    const event = formatChainActivationEvent('Lead', new Date('2026-03-28T11:22:23'))
+    expect(event).toBe('11:22:23 Active chain -> Lead')
   })
 })

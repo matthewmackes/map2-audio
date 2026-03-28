@@ -37,7 +37,7 @@ export default function TestApp() {
           <li style={{ marginBottom: '0.5rem' }}>✅ PiPedal Removed</li>
         </ul>
         <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: '#888' }}>
-          If you see this, React is working. The MAP2Dashboard component needs debugging.
+          If you see this, React and the shared frontend runtime are loading correctly.
         </p>
       </div>
     </div>

@@ -601,7 +601,6 @@ Full SynthForge subtree:
 - `systemd/map2-irq-affinity.service`
 - `systemd/map2-lcd-boot.service`
 - `systemd/map2-lcd.service`
-- `systemd/map2-pipedal-test.service`
 - `systemd/map2-port80-proxy.service`
 - `systemd/map2-selinux-disable.service`
 - `systemd/map2-system-check.service`

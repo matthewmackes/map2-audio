@@ -24,6 +24,21 @@ export function getActiveChain(chains: Chain[]): Chain | null {
   return chains.find((chain) => chain.is_active) ?? chains[0] ?? null
 }
 
+export function getAdjacentChain(chains: Chain[], activeChainId: number | null | undefined, offset: -1 | 1): Chain | null {
+  if (chains.length < 2) {
+    return null
+  }
+
+  const explicitIndex = typeof activeChainId === 'number'
+    ? chains.findIndex((chain) => chain.id === activeChainId)
+    : -1
+  const activeIndex = explicitIndex >= 0
+    ? explicitIndex
+    : Math.max(chains.findIndex((chain) => chain.is_active), 0)
+
+  return chains[(activeIndex + offset + chains.length) % chains.length] ?? null
+}
+
 export function getPluginIdentity(plugin: ChainPlugin): { primaryLabel: string; secondaryLabel: string } {
   const primaryLabel = truncateLabel(plugin.name || plugin.uri, 30)
   const secondaryParts = [
@@ -59,4 +74,11 @@ export function formatBypassEvent(chainName: string, slot: LivePluginSlot, bypas
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
   return `${hours}:${minutes}:${seconds} ${chainName} · ${slot.hotkey} ${slot.primaryLabel} -> ${bypassed ? 'BYPASSED' : 'LIVE'}`
+}
+
+export function formatChainActivationEvent(chainName: string, now = new Date()): string {
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${hours}:${minutes}:${seconds} Active chain -> ${chainName}`
 }

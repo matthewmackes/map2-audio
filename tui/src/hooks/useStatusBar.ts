@@ -43,14 +43,14 @@ export function buildStatusBarState(status?: StatusBarOptions): StatusBarState {
   const right = currentScreenId === 'home'
     ? (
         terminalColumns >= 110
-          ? '1-8 bypass | q exit | Ctrl+L clear | ? help | Ctrl+P screens | [ ] cycle'
+          ? '1-8 bypass | ,/. chain | q exit | Ctrl+L clear | ? help | Ctrl+P commands | [ ] cycle'
           : terminalColumns >= 92
-            ? '1-8 bypass | q exit | ^L | ? | ^P | [ ]'
-            : '1-8 bypass | q exit | ?'
+            ? '1-8 bypass | ,/. chain | q exit | ^L | ? | ^P'
+            : '1-8 | ,/. chain | q'
       )
     : (
         terminalColumns >= 110
-          ? 'q exit | Ctrl+L clear | ? help | Ctrl+P screens | [ ] cycle | Esc back'
+          ? 'q exit | Ctrl+L clear | ? help | Ctrl+P commands | [ ] cycle | Esc back'
           : terminalColumns >= 92
             ? 'q exit | ^L | ? | ^P | [ ] | Esc'
             : 'q exit | ? | ^P | Esc'

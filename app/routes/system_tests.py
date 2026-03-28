@@ -271,16 +271,15 @@ async def run_pipedal_test() -> Dict[str, Any]:
 async def get_test_status() -> Dict[str, Any]:
     """Get the current testing system status."""
 
-    # Check if tests are available (try JUCE first, fall back to PiPedal)
-    juce_script = Path.cwd() / "test_juce_engine.py"
+    # Check if tests are available from the current JUCE-era layout.
+    juce_script = Path.cwd() / "tests" / "test_juce_engine.py"
     legacy_script = Path.cwd() / "test_pipedal_engine.py"
     juce_boot_script = Path.cwd() / "run_juce_engine_boot_test.sh"
-    legacy_boot_script = Path.cwd() / "run_pipedal_boot_test.sh"
 
     status = {
         "timestamp": datetime.now().isoformat(),
         "testing_available": juce_script.exists() or legacy_script.exists(),
-        "boot_testing_configured": juce_boot_script.exists() or legacy_boot_script.exists(),
+        "boot_testing_configured": juce_boot_script.exists(),
         "last_engine_test": None,
         "system_status": "unknown"
     }

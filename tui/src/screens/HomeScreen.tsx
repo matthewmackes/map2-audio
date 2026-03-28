@@ -6,7 +6,7 @@ import { BoxPanel } from '../components/BoxPanel'
 import { Spinner } from '../components/Spinner'
 import { VuMeter } from '../components/VuMeter'
 import { oledPalette } from '../palette'
-import { buildLivePluginSlots, formatBypassEvent, getActiveChain, type LivePluginSlot } from './signalChainsLive'
+import { buildLivePluginSlots, formatBypassEvent, formatChainActivationEvent, getActiveChain, getAdjacentChain, type LivePluginSlot } from './signalChainsLive'
 import { formatPercent, truncateLabel } from '../utils/formatters'
 
 interface LiveHomeSnapshot {
@@ -41,10 +41,27 @@ function updateBypassState(snapshot: LiveHomeSnapshot, chainId: number, pluginPo
   return next
 }
 
-function applyPendingBypassStates(snapshot: LiveHomeSnapshot, pendingBySlot: PendingLiveSlotMap): LiveHomeSnapshot {
+function updateActiveChain(snapshot: LiveHomeSnapshot, activeChainId: number): LiveHomeSnapshot {
+  const next = cloneChainSnapshot(snapshot)
+  let matched = false
+
+  next.chains = next.chains.map((chain) => {
+    const isActive = chain.id === activeChainId
+    matched = matched || isActive
+    return { ...chain, is_active: isActive }
+  })
+
+  return matched ? next : snapshot
+}
+
+function applyPendingSnapshotState(snapshot: LiveHomeSnapshot, pendingBySlot: PendingLiveSlotMap, pendingChainId: number | null): LiveHomeSnapshot {
+  const withActiveChain = typeof pendingChainId === 'number'
+    ? updateActiveChain(snapshot, pendingChainId)
+    : snapshot
+
   return Object.values(pendingBySlot).reduce(
     (current, pending) => updateBypassState(current, pending.chainId, pending.pluginPosition, pending.bypassed),
-    snapshot,
+    withActiveChain,
   )
 }
 
@@ -53,6 +70,7 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
   const [error, setError] = useState<string | null>(null)
   const [events, setEvents] = useState<string[]>([])
   const [pendingBySlot, setPendingBySlot] = useState<PendingLiveSlotMap>({})
+  const [pendingChainId, setPendingChainId] = useState<number | null>(null)
   const [flashSlot, setFlashSlot] = useState<number | null>(null)
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -83,7 +101,7 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
         if (!active) {
           return
         }
-        setSnapshot(applyPendingBypassStates(next, pendingBySlot))
+        setSnapshot(applyPendingSnapshotState(next, pendingBySlot, pendingChainId))
         setError(null)
       } catch (loadError) {
         if (active) {
@@ -101,7 +119,7 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
       active = false
       clearInterval(timer)
     }
-  }, [load, pendingBySlot])
+  }, [load, pendingBySlot, pendingChainId])
 
   useEffect(() => () => {
     if (flashTimeoutRef.current) {
@@ -110,13 +128,15 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
   }, [])
 
   const activeChain = useMemo(() => getActiveChain(snapshot?.chains ?? []), [snapshot])
+  const previousChain = useMemo(() => getAdjacentChain(snapshot?.chains ?? [], activeChain?.id, -1), [activeChain?.id, snapshot?.chains])
+  const nextChain = useMemo(() => getAdjacentChain(snapshot?.chains ?? [], activeChain?.id, 1), [activeChain?.id, snapshot?.chains])
   const liveSlots = useMemo(() => buildLivePluginSlots(activeChain), [activeChain])
   const hiddenPluginCount = Math.max((activeChain?.plugins.length ?? 0) - liveSlots.length, 0)
   const eventStrip = useMemo(
     () => (
       events.length
         ? truncateLabel(events.join('  |  '), 70)
-        : 'Ready. Press 1-8 to toggle bypass on the active chain.'
+        : 'Ready. Press 1-8 for bypass and ,/. to switch the active chain.'
     ),
     [events],
   )
@@ -172,7 +192,45 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
     }
   }, [activeChain, appendEvent, liveSlots, pendingBySlot, snapshot, triggerSlotFlash])
 
-  useInput((input) => {
+  const switchActiveChain = useCallback(async (offset: -1 | 1) => {
+    if (!snapshot || pendingChainId !== null) {
+      return
+    }
+
+    const currentChain = getActiveChain(snapshot.chains)
+    const targetChain = getAdjacentChain(snapshot.chains, currentChain?.id, offset)
+    if (!currentChain || !targetChain || targetChain.id === currentChain.id) {
+      appendEvent('No alternate chain is available.')
+      return
+    }
+
+    setPendingChainId(targetChain.id)
+    setSnapshot((current) => (current ? updateActiveChain(current, targetChain.id) : current))
+
+    try {
+      await chainsApi.activate(targetChain.id)
+      appendEvent(formatChainActivationEvent(targetChain.name))
+    } catch (activateError) {
+      setSnapshot((current) => (current ? updateActiveChain(current, currentChain.id) : current))
+      appendEvent(
+        `Chain switch failed for ${truncateLabel(targetChain.name, 18)}: ${activateError instanceof Error ? activateError.message : String(activateError)}`,
+      )
+    } finally {
+      setPendingChainId(null)
+    }
+  }, [appendEvent, pendingChainId, snapshot])
+
+  useInput((input, key) => {
+    if (key.leftArrow || input === ',') {
+      void switchActiveChain(-1)
+      return
+    }
+
+    if (key.rightArrow || input === '.') {
+      void switchActiveChain(1)
+      return
+    }
+
     const slotNumber = Number.parseInt(input, 10)
     if (!Number.isNaN(slotNumber) && slotNumber >= 1 && slotNumber <= 8) {
       void toggleLiveSlot(slotNumber)
@@ -215,9 +273,16 @@ export function HomeScreen({ enableLiveHotkeys = true }: { enableLiveHotkeys?: b
       <BoxPanel title="Signal Chains Live">
         <Text>
           Active: <Text color={oledPalette.accent}>{truncateLabel(activeChain?.name ?? 'No active chain', 24)}</Text>
-          <Text color={oledPalette.muted}>  |  {activeChain?.plugins.length ?? 0} plugins  |  Audio {snapshot.audioStatus.running ? 'up' : 'down'}  |  CPU {formatPercent(snapshot.audioStatus.cpu_load)}</Text>
+          <Text color={oledPalette.muted}>  |  {snapshot.chains.length} chains  |  {activeChain?.plugins.length ?? 0} plugins  |  Audio {snapshot.audioStatus.running ? 'up' : 'down'}  |  CPU {formatPercent(snapshot.audioStatus.cpu_load)}</Text>
         </Text>
-        <Text color={oledPalette.muted}>Live rack: keys 1-8 toggle bypass instantly in chain order.</Text>
+        <Text color={pendingChainId !== null ? oledPalette.warning : oledPalette.muted}>
+          Live rack: keys 1-8 toggle bypass instantly. Use , / . to switch chains.
+        </Text>
+        {snapshot.chains.length > 1 ? (
+          <Text color={pendingChainId !== null ? oledPalette.warning : oledPalette.muted}>
+            Chain switch: Prev {truncateLabel(previousChain?.name ?? 'n/a', 14)}  |  Next {truncateLabel(nextChain?.name ?? 'n/a', 14)}
+          </Text>
+        ) : null}
         {error ? <Text color={oledPalette.warning}>Live data is stale: {error}</Text> : null}
         {hiddenPluginCount > 0 ? (
           <Text color={oledPalette.warning}>

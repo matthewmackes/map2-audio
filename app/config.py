@@ -55,7 +55,6 @@ class ConfigSection(Enum):
     LCD = "lcd"
     BACKEND = "backend"
     DATABASE = "database"
-    AUTOMATION = "automation"
     PLUGINS = "plugins"
     WEBSOCKET = "websocket"
     MONITORING = "monitoring"

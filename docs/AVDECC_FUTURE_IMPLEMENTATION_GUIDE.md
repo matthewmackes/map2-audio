@@ -2,8 +2,13 @@
 
 **Document Version:** 1.0
 **Date:** 2026-02-14
-**Status:** Phase 10 Complete, Phase 11+ Planning
+**Status:** Phase 10 Complete, Phase 11+ Planning Only
 **Target Audience:** Future AI assistants continuing AVDECC development
+
+> [!WARNING]
+> **NOT YET IMPLEMENTED**
+>
+> Everything in Phase 11 and later is roadmap material only. MAP2 does not currently ship Milan Mode, dynamic format negotiation, or AVDECC controller-mode completion.
 
 ---
 

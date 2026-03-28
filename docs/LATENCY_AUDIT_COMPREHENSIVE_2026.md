@@ -41,7 +41,7 @@
 - ✅ **Service config:** `clock.force-quantum 64` (correct)
 - ✅ **Sample rate:** 48 kHz (correct)
 - ❌ **ALSA driver:** Still using 3 periods (should be 2)
-- ❌ **JUCE code:** Common.h shows `DEFAULT_BUFFER_SIZE = 128` (MISMATCH with service)
+- ✅ **JUCE code:** `Common.h` now defines `DEFAULT_BUFFER_SIZE = 64`, aligned with the service quantum
 
 ---
 
@@ -919,19 +919,15 @@ class ModeManager:
 
 ### **P0-001: Fix Buffer Size Mismatch**
 **Category:** Kernel/PipeWire Configuration  
-**Problem:** `Common.h` defines `DEFAULT_BUFFER_SIZE = 128`, but systemd forces `clock.force-quantum 64`. JUCE framework reads 128 and tries to allocate larger than quantum. → PipeWire graph resampling overhead + buffer mismatch causes 1–2 ms jitter.  
-**Why Critical:** Direct impact on achievable latency. 128 samples @ 48kHz = 2.67 ms already; mismatch forces software resampling.  
-**Fix:** Update [juce-engine/Source/Common.h](juce-engine/Source/Common.h#L30):
+**Problem:** Earlier revisions defined `DEFAULT_BUFFER_SIZE = 128` while systemd forced `clock.force-quantum 64`. That mismatch created PipeWire graph resampling overhead and 1-2 ms jitter. The source now uses `64`, which removes this specific documentation/code conflict.
+**Why Critical:** Direct impact on achievable latency. A 64-sample block at 48kHz yields a 1.33 ms one-way buffer floor; any mismatch above that raises the floor and can force software resampling.
+**Fix:** Keep [juce-engine/Source/Common.h](juce-engine/Source/Common.h#L29) aligned with the service quantum:
 ```cpp
-// BEFORE:
-#define DEFAULT_BUFFER_SIZE 128
-
-// AFTER:
-#define DEFAULT_BUFFER_SIZE 64   // Match systemd quantum (64 samples @ 48kHz = 1.33ms)
+constexpr int DEFAULT_BUFFER_SIZE = 64;  // Match systemd quantum (64 samples @ 48kHz = 1.33ms)
 ```
-**Implement:** Edit file, rebuild juce-engine, redeploy.  
-**Mode:** ALL (audio, management, all-in-one – but only audio will use 64; others can keep 128)  
-**Expected Impact:** **HIGH** – reduces latency floor from 4–5 ms to 2.5–3 ms  
+**Implement:** Preserve the 64-sample setting during future engine changes and rebuild/redeploy after any buffer-configuration edits.
+**Mode:** ALL
+**Expected Impact:** **HIGH** – keeps the latency floor aligned with the configured 64-sample quantum
 **Timeline:** Immediate  
 
 ---
@@ -1925,4 +1921,3 @@ if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param) != 0) {
 **Most critical single fix:** **P0-001 (buffer size mismatch)** – fixes 2–3 ms immediately
 
 ---
-

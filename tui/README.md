@@ -40,11 +40,12 @@ Runtime keys:
 ```text
 q / Ctrl+Q   Exit map2-tui
 Ctrl+L       Clear the terminal canvas
-Ctrl+P       Open the screen palette
+Ctrl+P       Open the command palette
+, / .        On Signal Chains Live, switch the active chain
 ?            Toggle help
 ```
 
-The Ink shell now uses a centralized OLED-friendly palette: bright cyan for navigation/focus, neon green for healthy/live state, amber for warnings, coral red for failures, and muted sage text for secondary detail on black backgrounds.
+The Ink shell now uses a centralized OLED-friendly palette: bright cyan for navigation/focus, neon green for healthy/live state, amber for warnings, coral red for failures, and muted sage text for secondary detail on black backgrounds. `Ctrl+P` opens a real command palette, not just a screen list, so operators can search screens and global actions from one surface.
 
 The Ink build and validation commands are:
 
@@ -53,7 +54,7 @@ npm --prefix tui run build
 npm --prefix tui test
 ```
 
-`map2-tui` now opens on `Signal Chains Live`: an operator-first 8-slot live rack that surfaces the active chain, I/O meters, plugin order, bypass state, and direct `1-8` bypass toggles for the first eight plugins in chain order. Chains with more than 8 plugins are flagged as out of live-screen support and should be trimmed before performance use.
+`map2-tui` now opens on `Signal Chains Live`: an operator-first 8-slot live rack that surfaces the active chain, adjacent chain context, I/O meters, plugin order, bypass state, and direct `1-8` bypass toggles for the first eight plugins in chain order. Active-chain switching is available directly from the rack with `,` and `.`. Chains with more than 8 plugins are flagged as out of live-screen support and should be trimmed before performance use.
 
 The implemented screens currently cover `Signal Chains Live`, `Metering`, `CPU`, `Audio Grid`, `PipeWire`, `MIDI Hub`, `Devices`, `MPX1`, `Cluster`, `AVB`, `Tesira`, `Artifacts`, `Settings`, and `Diagnostics`.
 

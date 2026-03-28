@@ -8,6 +8,7 @@ import { useTerminalSize } from './hooks/useTerminalSize'
 import { oledPalette } from './palette'
 import { AppShell } from './shell/AppShell'
 import { CommandPalette } from './shell/CommandPalette'
+import { buildCommandPaletteEntries, filterCommandPaletteEntries } from './shell/commandPaletteEntries'
 import { HelpOverlay } from './shell/HelpOverlay'
 import { AudioGridScreen } from './screens/AudioGridScreen'
 import { ArtifactsScreen } from './screens/ArtifactsScreen'
@@ -53,10 +54,16 @@ export function App({
     [router.current.id],
   )
 
-  const filteredScreens = useMemo(
-    () => screenRegistry.filter((screen) => `${screen.title} ${screen.description}`.toLowerCase().includes(paletteQuery.toLowerCase())),
+  const paletteEntries = useMemo(
+    () => filterCommandPaletteEntries(buildCommandPaletteEntries(screenRegistry), paletteQuery),
     [paletteQuery],
   )
+
+  const closePalette = (): void => {
+    setShowPalette(false)
+    setPaletteQuery('')
+    setPaletteIndex(0)
+  }
 
   useInput((input, key) => {
     if (key.ctrl && input === 'q') {
@@ -90,8 +97,7 @@ export function App({
 
     if (key.escape) {
       if (showPalette) {
-        setShowPalette(false)
-        setPaletteQuery('')
+        closePalette()
         return
       }
       if (showHelp) {
@@ -104,17 +110,24 @@ export function App({
 
     if (showPalette) {
       if (key.return) {
-        const nextScreen = filteredScreens[paletteIndex]
-        if (nextScreen) {
-          router.replace(nextScreen.id)
-          setShowPalette(false)
-          setPaletteQuery('')
-          setPaletteIndex(0)
+        const nextEntry = paletteEntries[paletteIndex]
+        if (nextEntry?.kind === 'screen') {
+          router.replace(nextEntry.screenId)
+          closePalette()
+        } else if (nextEntry?.kind === 'action') {
+          closePalette()
+          if (nextEntry.actionId === 'help') {
+            setShowHelp(true)
+          } else if (nextEntry.actionId === 'clear') {
+            clearTerminalCanvas()
+          } else if (nextEntry.actionId === 'exit') {
+            exit()
+          }
         }
         return
       }
       if (input === 'j' || key.downArrow) {
-        setPaletteIndex((current) => Math.min(current + 1, Math.max(filteredScreens.length - 1, 0)))
+        setPaletteIndex((current) => Math.min(current + 1, Math.max(paletteEntries.length - 1, 0)))
         return
       }
       if (input === 'k' || key.upArrow) {
@@ -223,7 +236,7 @@ export function App({
       terminalColumns={terminal.columns}
     >
       {showHelp ? <HelpOverlay /> : null}
-      {showPalette ? <CommandPalette query={paletteQuery} screens={filteredScreens} activeIndex={paletteIndex} /> : null}
+      {showPalette ? <CommandPalette query={paletteQuery} entries={paletteEntries} activeIndex={paletteIndex} /> : null}
       {body}
     </AppShell>
   )

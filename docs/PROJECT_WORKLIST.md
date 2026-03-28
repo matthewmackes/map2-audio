@@ -6,7 +6,48 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 - T460 raw-input audit closed; T454-subN remains open
+Last updated: 2026-03-28 12:21 EDT - Closed bundled forensic-audit remediation tasks and marked audit-mismatch items for follow-up
+
+ID: T482
+Status: [✓] Done
+Title: Add direct active-chain switching to the Signal Chains Live home screen
+Description:
+- Goal / acceptance criteria: Extend the `Signal Chains Live` home screen so operators can change the active chain without leaving the live rack. The interaction must be discoverable, fast, and safe for live use: direct keys should move to the previous/next chain, the UI should show adjacent chain context, activation should update optimistically while backend polling continues, and focused tests/docs/help text must cover the behavior.
+- Why it matters: The live rack now makes bypass fast, but operators still need to leave the home screen to switch the active chain. That breaks the “single highest-value task in 30 seconds” flow the interface is supposed to optimize.
+- Dependencies: T422; T426; T481
+- Estimated effort: Medium
+- Required outputs: live-screen chain-switch controls, optimistic activation handling, shell/help/docs updates, focused tests/validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 11:25 EDT - Codex
+- Completion notes:
+  - Added direct active-chain switching on `Signal Chains Live`: `tui/src/screens/HomeScreen.tsx` now accepts `,` and `.` plus left/right arrows to move to the previous or next chain without leaving the live rack, while preserving instant `1-8` bypass on the first eight plugins.
+  - Extended the live-screen helpers in `tui/src/screens/signalChainsLive.ts` with adjacent-chain lookup and activation event formatting so the screen can show neighboring chain context and render consistent operator-facing activation messages.
+  - Hardened the polling model in `tui/src/screens/HomeScreen.tsx` so active-chain changes apply optimistically over the polled snapshot, then settle cleanly after the backend `activate` call returns, including rollback and event-strip feedback on failure.
+  - Updated operator guidance across `tui/src/hooks/useStatusBar.ts`, `tui/src/shell/HelpOverlay.tsx`, and `tui/README.md` so the new chain-switch controls are discoverable from the status bar, help overlay, and docs.
+  - Added focused coverage in `tui/src/screens/signalChainsLive.test.ts` for adjacent-chain wraparound and chain-activation event formatting.
+  - Licensing review: touched TUI/doc/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing tui tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix tui run build` -> PASS; `npm --prefix tui test` -> PASS; `pytest -q tests/test_branding_shell.py` -> PASS.
+
+ID: T481
+Status: [✓] Done
+Title: Upgrade the Ink command palette into a searchable operator command surface
+Description:
+- Goal / acceptance criteria: Replace the current screen-only `Ctrl+P` palette in `map2-tui` with a true command palette that can search and execute both screen navigation entries and global operator actions such as help, clear, and exit. The palette should preserve safe default behavior, expose clear labels/key hints, and add focused tests plus docs for the upgraded interaction model.
+- Why it matters: The shell now has an operator-grade live home screen, quit controls, and OLED presentation, but `Ctrl+P` is still only a thin filtered screen list. A world-class TUI needs one searchable command surface for both navigation and shell actions.
+- Dependencies: T421; T422; T426
+- Estimated effort: Medium
+- Required outputs: palette entry model, palette execution wiring, updated shell/docs/help text, focused tests/validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 10:43 EDT - Codex
+- Completion notes:
+  - Replaced the thin screen-only `Ctrl+P` list with a real command palette: `tui/src/shell/commandPaletteEntries.ts` now builds searchable entries for both screen navigation and global actions (`help`, `clear`, `exit`), and `tui/src/App.tsx` executes those actions directly from the palette.
+  - Updated `tui/src/shell/CommandPalette.tsx` so the interactive overlay now renders explicit action/screen rows with type badges, key hints, and operator-facing descriptions instead of a bare filtered string list.
+  - Refreshed the surrounding shell copy in `tui/src/shell/HelpOverlay.tsx`, `tui/src/hooks/useStatusBar.ts`, and `tui/README.md` so `Ctrl+P` is documented as the command palette rather than a screen picker.
+  - Added focused coverage in `tui/src/shell/commandPaletteEntries.test.ts` for palette entry construction and search behavior, including action alias filtering such as `quit` -> `Exit map2-tui`.
+  - Licensing review: touched TUI/doc/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing tui tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix tui run build` -> PASS; `npm --prefix tui test` -> PASS; `pytest -q tests/test_branding_shell.py` -> PASS.
 
 ID: T453
 Status: [✓] Done
@@ -8314,3 +8355,344 @@ Last updated: 2026-03-28 08:19 EDT - Codex
   - Repo-wide audit: `rg -n 'type="range"|type="number"' web/src` now only reports CSS selectors, Recharts axis `type="number"` props, and test-only code; no live frontend parameter surfaces remain on raw HTML range/number controls.
   - Licensing review: touched frontend/worklist/version-artifact files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src/app/pages/DrumsPage.tsx web/src/app/pages/DrumsPage.test.tsx` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `timeout 120s npm --prefix web test -- --runInBand web/src/app/pages/DrumsPage.test.tsx` -> PASS (`34 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+
+---
+
+## Epic: Platform Forensic Audit Remediation (2026-03-28)
+
+Source: `docs/PLATFORM_AUDIT_2026-03-28.md` — full end-to-end forensic audit of dead code, unfinished work, architectural consistency, and production readiness across ~15,000 source files.
+
+### Critical (P0)
+
+ID: T461
+Status: [✓] Done
+Title: Fix CI/CD branch triggers — pipeline is completely non-functional
+Description:
+- Goal / acceptance criteria: `.github/workflows/ci-cd.yml` must trigger on `master` branch pushes and PRs. After fix, a push to master must run the test-backend, test-web, and lint jobs.
+- Why it matters: CI/CD pipeline currently triggers on `main` and `develop` branches that do not exist. No automated tests or lint run on push to `master`. This means all code lands without CI validation.
+- Evidence: `.github/workflows/ci-cd.yml:5,7` — `branches: [main, develop]`; repo active branch is `master`.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `.github/workflows/ci-cd.yml`
+- Validation: Push to master triggers CI workflow run visible in GitHub Actions.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Updated `.github/workflows/ci-cd.yml` so both `push` and `pull_request` now target `master` instead of the nonexistent `main` / `develop` branches.
+  - Validation: local workflow inspection now shows `master` as the only active branch filter; the required remote trigger verification will occur on the requested `master` push in the deployment step for this turn.
+
+ID: T462
+Status: [✓] Done
+Title: Fix README latency claim — "sub-3ms" is not measured reality
+Description:
+- Goal / acceptance criteria: README.md latency claim must be qualified with measured data. Replace "Sub-3ms round-trip latency" with accurate language referencing the theoretical buffer floor (2.67ms at 64 samples/48kHz) and measured range (4–7ms per latency audit).
+- Why it matters: External stakeholders, contributors, or users may rely on this claim. Measured data shows 4–7ms realistic latency with 38.4ms peak jitter and xrun issues.
+- Evidence: `README.md:52` claims "Sub-3ms round-trip latency"; `docs/LATENCY_AUDIT_COMPREHENSIVE_2026.md` reports 4–7ms measured, 2579 xruns in 30-min soak.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `README.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Replaced the README’s unqualified `Sub-3ms` marketing copy with explicit current language: a 64-sample theoretical floor of 2.67 ms at 48 kHz plus the measured 4-7 ms range on the current audit host.
+  - Updated the README operating-mode latency table to reflect the same qualified latency language instead of repeating the stale sub-3 ms claim.
+
+ID: T463
+Status: [✓] Done
+Title: Resolve missing systemd scripts — 2 services reference absent files
+Description:
+- Goal / acceptance criteria: Either create the missing scripts or remove/disable the service units. Services must not reference non-existent executables.
+- Why it matters: If either service is enabled, systemd startup will fail. `map2-system-check.service` is referenced by boot manager and validation scripts.
+- Evidence: `systemd/map2-system-check.service:13` → `scripts/map2-system-check.sh` (MISSING, verified); `systemd/map2-pipedal-test.service:13` → `run_pipedal_boot_test.sh` (MISSING, verified). Also referenced by `scripts/debug_setup.sh:65`, `scripts/verify_system.sh:116-119`, `scripts/validate-installation-scripts.sh:114`.
+- Dependencies: None
+- Estimated effort: Low
+- Key files: `systemd/map2-system-check.service`, `systemd/map2-pipedal-test.service`, `scripts/map2-system-check.sh` (to create or delete service), `run_pipedal_boot_test.sh` (to create or delete service)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Added a real `scripts/map2-system-check.sh` wrapper that delegates to `scripts/verify_system.sh`, satisfying `systemd/map2-system-check.service` without inventing new behavior.
+  - Deleted the stale `systemd/map2-pipedal-test.service` unit instead of reintroducing a fake PiPedal boot script, and removed the dead PiPedal boot-script reference from `app/routes/system_tests.py` plus the service inventory entry in `docs/evaluation/01-platform-inventory.md`.
+  - Updated `scripts/debug_setup.sh` so its file-existence check points at `scripts/map2-system-check.sh` instead of a nonexistent repo-root script.
+  - Validation: `bash -n scripts/map2-system-check.sh scripts/debug_setup.sh scripts/verify_system.sh` -> PASS; `python3 -c "from app.main import create_app; create_app(); print('app-import-ok')"` -> PASS (with the expected ALSA sequencer warning from this environment).
+
+### High (P1)
+
+ID: T464
+Status: [✓] Done
+Title: Correct Milan Mode AVDECC documentation — overstates progress
+Description:
+- Goal / acceptance criteria: `docs/AVB_STANDARDS_RATING_REPORT.md` must change "Milan Mode in progress" to "Phase 11+ roadmap — not started." `docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md` must add a clear "NOT YET IMPLEMENTED" banner.
+- Why it matters: Misleads stakeholders into believing Milan Mode is actively being developed. No ACMP, format negotiation, or controller mode code exists.
+- Evidence: `docs/AVB_STANDARDS_RATING_REPORT.md:52` — "Milan Mode in progress"; `docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md` — Phase 11+ classified as planning with 10.5h estimated work.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `docs/AVB_STANDARDS_RATING_REPORT.md`, `docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Updated `docs/AVB_STANDARDS_RATING_REPORT.md` so Milan Mode is described as a Phase 11+ roadmap item that has not started, rather than “in progress”.
+  - Added a clear `NOT YET IMPLEMENTED` warning banner to `docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md` to distinguish current shipped AVDECC scope from future planning work.
+
+ID: T465
+Status: [✓] Done
+Title: Fix CI reference to non-existent test:avb-routing npm script
+Description:
+- Goal / acceptance criteria: Either add `test:avb-routing` to `web/package.json` or remove the CI step that references it.
+- Why it matters: CI step will fail if triggered, producing a false-negative CI result.
+- Evidence: `.github/workflows/ci-cd.yml:123` — `npm run test:avb-routing`; no matching script in `web/package.json`.
+- Dependencies: T461 (CI must trigger first to matter)
+- Estimated effort: Trivial
+- Key files: `.github/workflows/ci-cd.yml`, `web/package.json`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Audit evidence was stale: the referenced `test:avb-routing` script already exists in the repository root `package.json`, which is exactly where `.github/workflows/ci-cd.yml` invokes it.
+  - No code change beyond the `master` branch-trigger fix in `T461` was required for this item; the workflow step itself is valid once the workflow actually runs on `master`.
+
+ID: T466
+Status: [✗] Blocked
+Title: Delete 4 orphaned Python services never imported anywhere
+Description:
+- Goal / acceptance criteria: Remove `app/services/port80_proxy.py`, `app/services/secrets_manager.py`, `app/services/connection_pool_integration.py`, `app/services/resilience_middleware.py` after verifying no dynamic imports or standalone execution.
+- Why it matters: Dead code creates confusion and maintenance burden. None of these are imported by any route, service, or main.py.
+- Evidence: `grep -rn` across all Python files confirms zero imports for each. `port80_proxy.py` may be run standalone via `python -m` — verify before deleting.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `app/services/port80_proxy.py`, `app/services/secrets_manager.py`, `app/services/connection_pool_integration.py`, `app/services/resilience_middleware.py`
+- Validation: `grep -rn 'port80_proxy\|secrets_manager\|connection_pool_integration\|resilience_middleware' app/` returns zero results after deletion; `pytest tests/` still passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Blocked notes:
+  - The audit bucket is not accurate enough to execute as written: `tests/test_resilience_middleware.py` still directly exercises `app/services/resilience_middleware.py`, and `app/services/secrets_manager.py` still exposes module-level helpers plus a real encryption/storage implementation.
+  - A narrower follow-up should split the truly orphaned candidates (`port80_proxy.py`, `connection_pool_integration.py`) from the files that still have live utility/test value instead of deleting all four blindly.
+
+ID: T467
+Status: [✓] Done
+Title: Delete legacy map2/ dashboard component chain — 12+ unused components
+Description:
+- Goal / acceptance criteria: Remove MAP2Dashboard, WorkFlow, HistoryPanel, SessionManager, MetricsDashboard, NetworkPanel, FeaturesPanel, FeatureToolbar, SessionStatusIndicator, BackupStatusWidget, SnapshotBar, and the top-level ChainBuilder.tsx from `web/src/map2/components/`. Update `web/src/map2/index.ts` barrel export to remove references.
+- Why it matters: These components are only imported by each other in a closed dependency chain. No `app/` code imports them. The `app/` layer has replacement implementations for all of this functionality.
+- Evidence: `grep -rn 'import.*MAP2Dashboard' web/src/app/` returns zero matches. `MAP2Dashboard` only imported by `map2/index.ts` (barrel) and its own test. Same pattern for all listed components.
+- Dependencies: None
+- Estimated effort: Low
+- Key files: `web/src/map2/components/MAP2Dashboard.tsx`, `WorkFlow.tsx`, `HistoryPanel.tsx`, `SessionManager.tsx`, `MetricsDashboard.tsx`, `NetworkPanel.tsx`, `FeaturesPanel.tsx`, `FeatureToolbar.tsx`, `SessionStatusIndicator.tsx`, `BackupStatusWidget.tsx`, `SnapshotBar.tsx`, `ChainBuilder.tsx` (top-level), `web/src/map2/index.ts`
+- Validation: `npm --prefix web run build` passes; `npm --prefix web run typecheck` passes; bundle size decreases.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Deleted the closed legacy `web/src/map2/components/` dashboard chain: `MAP2Dashboard`, `WorkFlow`, `HistoryPanel`, `SessionManager`, `MetricsDashboard`, `NetworkPanel`, `FeaturesPanel`, `FeatureToolbar`, `SessionStatusIndicator`, `BackupStatusWidget`, `SnapshotBar`, and the top-level `ChainBuilder.tsx`, plus the obsolete `MAP2Dashboard.test.tsx`.
+  - Updated `web/src/map2/index.ts` to remove the dead exports while preserving the still-live `components/ChainBuilder/index` module exports, and refreshed `web/src/TestApp.tsx` / `web/src/shared/README.md` so they no longer describe the deleted dashboard chain as active.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (with the existing `web/src/map2/api.ts` dynamic-import warning only).
+
+### Medium (P2)
+
+ID: T468
+Status: [✓] Done
+Title: Delete 4 dead C++ files — superseded PluginHost and PluginGraph
+Description:
+- Goal / acceptance criteria: Remove `juce-engine/Source/PluginHost.h`, `PluginHost.cpp`, `PluginGraph.h`, `PluginGraph.cpp`.
+- Why it matters: These files are not in CMakeLists.txt and have been superseded by JucePluginHost and JuceAudioGraph. They create confusion about which implementation is canonical.
+- Evidence: Not listed in `juce-engine/CMakeLists.txt` (lines 245-315). JucePluginHost.h/cpp and JuceAudioGraph.h/cpp are the compiled replacements.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `juce-engine/Source/PluginHost.h`, `juce-engine/Source/PluginHost.cpp`, `juce-engine/Source/PluginGraph.h`, `juce-engine/Source/PluginGraph.cpp`
+- Validation: `cd juce-engine && cmake -B build && cmake --build build` still succeeds.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Removed `juce-engine/Source/PluginHost.h`, `PluginHost.cpp`, `PluginGraph.h`, and `PluginGraph.cpp`, leaving the compiled `JucePluginHost` and `JuceAudioGraph` path as the only canonical implementation in-tree.
+  - Validation: `cmake -S juce-engine -B /tmp/map2-t468-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t468-cmake -j2` -> PASS.
+
+ID: T469
+Status: [✗] Blocked
+Title: Delete orphaned CSS files for stub/redirect pages
+Description:
+- Goal / acceptance criteria: Remove `web/src/app/pages/PlatformShellPage.css` (836 lines, null-returning page) and `web/src/app/pages/MidiHubPage.css` (727 lines, redirect-only page) after verifying no other component imports them.
+- Why it matters: ~1500 lines of dead CSS for pages that return null or redirect.
+- Evidence: PlatformShellPage.tsx returns `null`; MidiHubPage.tsx just redirects to `/midi-hub/connections`.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `web/src/app/pages/PlatformShellPage.css`, `web/src/app/pages/MidiHubPage.css`
+- Validation: `npm --prefix web run build` passes; `npm --prefix web run typecheck` passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Blocked notes:
+  - Audit evidence was incorrect: `web/src/app/pages/PlatformShellPage.css` is still imported by `web/src/app/components/Platform/PlatformModal.tsx`, and `web/src/app/pages/MidiHubPage.css` is still imported by `web/src/app/pages/midi-hub/MidiHubAreaLayout.tsx`.
+  - Deleting these stylesheets would currently break live surfaces; this task needs a rescope into “migrate remaining consumers off legacy page CSS” before removal is safe.
+
+ID: T470
+Status: [✓] Done
+Title: Delete JuceAudioGraphViz — confirmed never imported
+Description:
+- Goal / acceptance criteria: Remove `web/src/app/components/JuceAudioGraphViz.tsx`.
+- Why it matters: Component is never imported anywhere in the codebase. Already documented as dead code in CLAUDE.md.
+- Evidence: `grep -rn 'import.*JuceAudioGraphViz' web/src/` returns zero matches.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `web/src/app/components/JuceAudioGraphViz.tsx`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Audit evidence was already satisfied before this pass: `web/src/app/components/JuceAudioGraphViz.tsx` is no longer present in the worktree, and a repo search confirmed there are no remaining imports or references to it under `web/src`.
+
+ID: T471
+Status: [✓] Done
+Title: Remove unused AUTOMATION config schema section
+Description:
+- Goal / acceptance criteria: Remove `ConfigSection.AUTOMATION` and any associated keys from `app/config.py`.
+- Why it matters: No code in the app references this config section. Dead schema entries add confusion.
+- Evidence: `grep -rn 'AUTOMATION\|automation' app/` shows only the definition in config.py, no consumers.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `app/config.py`
+- Validation: `pytest tests/` passes.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Removed the unused `ConfigSection.AUTOMATION` enum member from `app/config.py`; no schema keys or consumers depended on it.
+  - Validation: `python3 -c "from app.main import create_app; create_app(); print('app-import-ok')"` -> PASS (same environment-level ALSA sequencer warning as above).
+
+ID: T472
+Status: [✓] Done
+Title: Reconcile buffer size documentation — conflicting values across docs
+Description:
+- Goal / acceptance criteria: All documentation must consistently reference DEFAULT_BUFFER_SIZE=64 (from `Common.h`). Fix README ("down to 128 samples") and any audit docs that say 128.
+- Why it matters: Conflicting documentation creates confusion about the actual buffer configuration.
+- Evidence: README says "down to 128 samples"; MEMORY.md says 64; `docs/LATENCY_AUDIT_COMPREHENSIVE_2026.md` says 128; `Common.h` has `DEFAULT_BUFFER_SIZE=64`.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `README.md`, `docs/LATENCY_AUDIT_COMPREHENSIVE_2026.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28 12:21 EDT - Codex
+- Completion notes:
+  - Updated `README.md` to say buffer sizes go down to 64 samples at 48 kHz rather than the stale 128-sample value.
+  - Rewrote the conflicting `docs/LATENCY_AUDIT_COMPREHENSIVE_2026.md` sections so they now describe `DEFAULT_BUFFER_SIZE = 64` as the current aligned setting and treat the earlier 128-sample mismatch as historical context rather than current state.
+  - Licensing review: touched workflow/doc/script/app/web/juce/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src juce-engine scripts systemd` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T473
+Status: [ ] Todo
+Title: Tighten phase test assertions — weak placeholders give false confidence
+Description:
+- Goal / acceptance criteria: Phase tests must have meaningful assertions. `test_phase1_integration.py` must not accept 400 as passing. `test_phase3_profiling.py` must validate actual profiling output, not `assert result is None`.
+- Why it matters: Overly permissive tests mask real failures and give false confidence in CI.
+- Evidence: `tests/test_phase1_integration.py:55-56` — `assert response.status_code in (200, 400)`; `tests/test_phase3_profiling.py:14` — `assert result is None`.
+- Dependencies: None
+- Estimated effort: Low
+- Key files: `tests/test_phase1_integration.py`, `tests/test_phase3_profiling.py`, `tests/test_phase5_smoke.py`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+### Low (P3)
+
+ID: T474
+Status: [ ] Todo
+Title: Implement or document 23 empty function bodies in Python routes
+Description:
+- Goal / acceptance criteria: Each `pass`/`...` stub handler in routes must either be implemented or documented with a comment explaining why it's intentionally empty. Exception class bodies with just `pass` are acceptable.
+- Why it matters: Empty handlers may represent incomplete API surface or abandoned endpoints.
+- Evidence: `app/routes/audio_diagnostics.py:286`, `cluster_admin.py:210,216,222,908,915`, `dashboard.py:55,77,400`, `dsp.py:124`, `impulse_response.py:289`, `profiling.py:155`, `soundfonts.py:159,184`, `latency_v2.py:103`, `sidechain.py:71`, `delay.py:115`.
+- Dependencies: None
+- Estimated effort: Medium
+- Key files: Multiple route files in `app/routes/`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T475
+Status: [ ] Todo
+Title: Reorganize misplaced files in web/src/app/pages/ directory
+Description:
+- Goal / acceptance criteria: Move modal components (AudioNodesModal, ChainAssignmentModal, JuceGridAudioPortModal, RoutingTopologyModal) to `components/modals/`. Move JuceGrid helper files (juceGridLivePath.ts, juceGridSnapshots.ts, juceGridState.ts, JuceGridParameterEditor, JuceGridRoutingVisualizer, JuceGridSignalCanvas, JuceGridClusterPanels, JuceGridChainManagementCard, JuceGridSelectedBlockMidiPanel) to `components/JuceGrid/`. Move audioTableColumns.ts, audioTableKeyboard.ts to `components/AudioTable/`. Move posterManifest.ts to `utils/` or `data/`. Move PlatformInfoGuideSection to `components/Platform/`.
+- Why it matters: `pages/` should only contain route-level page components. Misplaced modals, utilities, and sub-components make the codebase harder to navigate.
+- Evidence: 4 modal components, 6+ sub-component panels, 3 utility/state files, 2 helper functions, and 1 data file all live in `pages/` instead of appropriate directories.
+- Dependencies: None
+- Estimated effort: Medium (many import path updates)
+- Key files: ~17 files in `web/src/app/pages/`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T476
+Status: [ ] Todo
+Title: Decide on 22 standalone plugin stub directories in juce-engine/
+Description:
+- Goal / acceptance criteria: Determine whether standalone VST3/AU plugin builds are needed. If yes, document the build pipeline. If no, delete all 22 plugin directories.
+- Why it matters: 22 directories each with their own CMakeLists.txt exist as scaffolding for standalone plugin builds, but none are part of the main engine build.
+- Evidence: `juce-engine/BossXS1PolyShifterPlugin/`, `ChorusPlugin/`, `CircularDelayPlugin/`, `ConvolutionPlugin/`, `DelayPlugin/`, `DynamicsPlugin/`, `EventideH9Plugin/`, `FilterPlugin/`, `H3000Plugin/`, `IntelliFX8VoiceChorusPlugin/`, `LexiLovePlugin/`, `Marshall800Plugin/`, `MesaDualRectifierPlugin/`, `NAMPlugin/`, `ParallelMixerPlugin/`, `PassionFXPlugin/`, `Peavey5150Plugin/`, `PhaserPlugin/`, `PitchShifterPlugin/`, `ShoeGazePlugin/`, `TweedBassmanPlugin/`, `WDFAmpPlugin/`. Real processor implementations are in `Source/` and compiled via the main CMakeLists.txt.
+- Dependencies: None
+- Estimated effort: Trivial (decision) or Low (cleanup)
+- Key files: 22 directories under `juce-engine/`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T477
+Status: [ ] Todo
+Title: Consolidate MIDI route files — 3 overlapping modules
+Description:
+- Goal / acceptance criteria: Evaluate whether `app/routes/midi.py`, `app/routes/midi_v2.py`, and `app/routes/midi_hub.py` can be consolidated or whether v1 MIDI routes should be retired.
+- Why it matters: Three separate MIDI route modules may have overlapping endpoints or represent legacy→current migration that was never completed.
+- Evidence: Three files coexist in `app/routes/` with MIDI-related routing.
+- Dependencies: None
+- Estimated effort: Medium
+- Key files: `app/routes/midi.py`, `app/routes/midi_v2.py`, `app/routes/midi_hub.py`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+### Low (P4)
+
+ID: T478
+Status: [ ] Todo
+Title: Consolidate TUI completion documentation — 40+ redundant files
+Description:
+- Goal / acceptance criteria: Reduce 40+ "PROJECT_COMPLETE" / "PHASE_COMPLETE" markdown files in `tui/` to 1–2 canonical status files. Archive or delete the rest.
+- Why it matters: Documentation redundancy makes it hard to find the authoritative status.
+- Evidence: `tui/` contains 40+ intermediate snapshot docs with similar "PROJECT_COMPLETE" declarations.
+- Dependencies: None
+- Estimated effort: Low
+- Key files: `tui/*.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T479
+Status: [ ] Todo
+Title: Delete disabled build script — scripts/build-airwindows.sh.disabled
+Description:
+- Goal / acceptance criteria: Remove `scripts/build-airwindows.sh.disabled` or re-enable with documentation if Airwindows support is needed.
+- Why it matters: Stale disabled script with no documentation explaining why it was disabled.
+- Evidence: File exists with `.disabled` extension; no references from other scripts.
+- Dependencies: None
+- Estimated effort: Trivial
+- Key files: `scripts/build-airwindows.sh.disabled`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T480
+Status: [ ] Todo
+Title: Implement or remove C++ TODO for impulse-response calibration
+Description:
+- Goal / acceptance criteria: Either implement IR calibration in the audio engine or remove the TODO comment.
+- Why it matters: Stale TODO suggests unfinished work that may never be prioritized.
+- Evidence: `juce-engine/Source/Map2AudioEngine.cpp:2122` — `// TODO: Implement impulse-response calibration`.
+- Dependencies: None
+- Estimated effort: Unknown (depends on decision — trivial to remove, significant to implement)
+- Key files: `juce-engine/Source/Map2AudioEngine.cpp`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28

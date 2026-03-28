@@ -49,7 +49,7 @@
 <h3 align="center">Professional Real-Time Modular Audio Processing</h3>
 
 <p align="center">
-  Sub-3ms round-trip latency &bull; Neural Amp Modeling &bull; Multi-node clustering &bull; Full plugin chain
+  64-sample theoretical floor (2.67 ms @ 48 kHz) &bull; Measured 4-7 ms on the current audit host &bull; Neural Amp Modeling &bull; Multi-node clustering
 </p>
 
 <p align="center">
@@ -86,8 +86,8 @@
 
 | Mode | Latency | Description |
 |:-----|:--------|:------------|
-| **Audio** | <3ms round-trip | Dedicated processing on isolated CPU cores. No web UI. |
-| **All-in-One** | 4-5ms | Audio processing + web dashboard + management. |
+| **Audio** | 2.67 ms theoretical floor; 4-7 ms measured on current audit host | Dedicated processing on isolated CPU cores. No web UI. |
+| **All-in-One** | 4-7 ms realistic today | Audio processing + web dashboard + management. |
 | **Management** | N/A | Control-only node for cluster administration. |
 
 ### Signal Chain
@@ -97,7 +97,7 @@ Input -> NAM (Neural Amp) -> Modulation (11 types) -> Cabinet IR -> EQ ->
 Gate -> Compressor -> Limiter -> Reverb IR -> Output
 ```
 
-All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, PipeWire/JACK audio transport, and configurable buffer sizes down to 128 samples at 48kHz.
+All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, PipeWire/JACK audio transport, and configurable buffer sizes down to 64 samples at 48kHz.
 
 ---
 

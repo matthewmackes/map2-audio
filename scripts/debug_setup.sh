@@ -62,7 +62,7 @@ echo
 # Test Step 7: File existence
 echo "[TEST 7/8] Required files check..."
 missing_files=""
-for file in "systemd/map2-backend.service" "install_branding.sh" "map2-system-check.sh"; do
+for file in "systemd/map2-backend.service" "install_branding.sh" "scripts/map2-system-check.sh"; do
     if [ ! -f "$file" ]; then
         missing_files="$missing_files $file"
     fi

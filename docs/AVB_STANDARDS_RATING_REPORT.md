@@ -163,7 +163,7 @@ With gPTP hardware timestamping and failover interfaces, MAP2 is advancing towar
 
 ### Milan (AVDECC Profile)
 - MAP2 exercises the base AVDECC entity model and ACMP. Milan Mode adds mandatory AECP write commands, redundancy descriptors, and connection matrix responses.
-- **Rating**: Base AVDECC compatible; Milan Mode in progress
+- **Rating**: Base AVDECC compatible; Milan Mode is a Phase 11+ roadmap item and has not started
 
 ### OpenAvnu / AVnu Alliance
 - SRP daemon integration (`mrpd`) is directly from the OpenAvnu project
