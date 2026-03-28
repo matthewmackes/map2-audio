@@ -86,6 +86,7 @@ def init_db(database_url: str = None) -> None:
     Base.metadata.create_all(bind=_engine)
     _ensure_special_settings_schema_sync()
     _ensure_midi_automation_identity_schema_sync()
+    _ensure_chain_plugin_loader_state_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -224,6 +225,44 @@ def _ensure_midi_automation_identity_schema_sync() -> None:
         _add_sqlite_column_if_missing(conn, "automation_lanes", "plugin_position", "INTEGER")
 
 
+def _ensure_chain_plugin_loader_state_schema_sync() -> None:
+    """Apply additive schema upgrades for persisted NAM/IR loader state."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "selected_asset_name", "VARCHAR(512)")
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "selected_asset_path", "VARCHAR(1024)")
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "nam_input_gain", "FLOAT DEFAULT 0.0")
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "nam_output_gain", "FLOAT DEFAULT 0.0")
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "nam_normalize", "BOOLEAN DEFAULT 1")
+        _add_sqlite_column_if_missing(conn, "chain_plugins", "ir_mix", "FLOAT")
+
+        conn.execute(
+            text(
+                "UPDATE chain_plugins "
+                "SET nam_input_gain = COALESCE(nam_input_gain, 0.0), "
+                "    nam_output_gain = COALESCE(nam_output_gain, 0.0), "
+                "    nam_normalize = COALESCE(nam_normalize, 1) "
+                "WHERE plugin_uri IN ('map2://juce/nam', 'urn:map2:nam-player')"
+            )
+        )
+        conn.execute(
+            text(
+                "UPDATE chain_plugins "
+                "SET ir_mix = COALESCE(ir_mix, 100.0) "
+                "WHERE plugin_uri IN ('map2://juce/convolution/cabinet', 'urn:map2:ir-cabinet')"
+            )
+        )
+        conn.execute(
+            text(
+                "UPDATE chain_plugins "
+                "SET ir_mix = COALESCE(ir_mix, 30.0) "
+                "WHERE plugin_uri IN ('map2://juce/convolution/reverb', 'urn:map2:ir-reverb')"
+            )
+        )
+
+
 async def _ensure_special_settings_schema_async(conn) -> None:
     """Apply additive schema upgrades for special_settings in async SQLite sessions."""
     if conn.dialect.name != "sqlite":
@@ -283,6 +322,43 @@ async def _ensure_midi_automation_identity_schema_async(conn) -> None:
     await _add_sqlite_column_if_missing_async(conn, "automation_lanes", "plugin_position", "INTEGER")
 
 
+async def _ensure_chain_plugin_loader_state_schema_async(conn) -> None:
+    """Apply additive async schema upgrades for persisted NAM/IR loader state."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "selected_asset_name", "VARCHAR(512)")
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "selected_asset_path", "VARCHAR(1024)")
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "nam_input_gain", "FLOAT DEFAULT 0.0")
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "nam_output_gain", "FLOAT DEFAULT 0.0")
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "nam_normalize", "BOOLEAN DEFAULT 1")
+    await _add_sqlite_column_if_missing_async(conn, "chain_plugins", "ir_mix", "FLOAT")
+
+    await conn.execute(
+        text(
+            "UPDATE chain_plugins "
+            "SET nam_input_gain = COALESCE(nam_input_gain, 0.0), "
+            "    nam_output_gain = COALESCE(nam_output_gain, 0.0), "
+            "    nam_normalize = COALESCE(nam_normalize, 1) "
+            "WHERE plugin_uri IN ('map2://juce/nam', 'urn:map2:nam-player')"
+        )
+    )
+    await conn.execute(
+        text(
+            "UPDATE chain_plugins "
+            "SET ir_mix = COALESCE(ir_mix, 100.0) "
+            "WHERE plugin_uri IN ('map2://juce/convolution/cabinet', 'urn:map2:ir-cabinet')"
+        )
+    )
+    await conn.execute(
+        text(
+            "UPDATE chain_plugins "
+            "SET ir_mix = COALESCE(ir_mix, 30.0) "
+            "WHERE plugin_uri IN ('map2://juce/convolution/reverb', 'urn:map2:ir-reverb')"
+        )
+    )
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -302,6 +378,7 @@ async def _ensure_tables_created() -> None:
             await conn.run_sync(Base.metadata.create_all)
             await _ensure_special_settings_schema_async(conn)
             await _ensure_midi_automation_identity_schema_async(conn)
+            await _ensure_chain_plugin_loader_state_schema_async(conn)
         _tables_created = True
 
 
@@ -574,6 +651,12 @@ class ChainPlugin(Base):
     plugin_uri = Column(String(255), nullable=False)  # No FK - plugins are discovered at runtime from LV2
     position = Column(Integer, nullable=False)  # Order in chain
     bypass = Column(Boolean, default=False)
+    selected_asset_name = Column(String(512), nullable=True)
+    selected_asset_path = Column(String(1024), nullable=True)
+    nam_input_gain = Column(Float, default=0.0)
+    nam_output_gain = Column(Float, default=0.0)
+    nam_normalize = Column(Boolean, default=True)
+    ir_mix = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

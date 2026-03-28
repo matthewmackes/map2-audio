@@ -110,10 +110,12 @@ try:
             if not isinstance(uri, str) or not uri.strip():
                 continue
 
+            loader_state = plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else {}
             normalized.append({
                 "uri": uri.strip(),
                 "position": index,
                 "bypass": bool(plugin.get("bypassed", plugin.get("bypass", False))),
+                "loader_state": loader_state,
             })
 
         return normalized
@@ -1013,12 +1015,14 @@ try:
                 )
 
                 for plugin in normalized_plugins:
+                    loader_state = plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else None
                     session.add(
                         ChainPlugin(
                             chain_id=request.chain_id,
                             plugin_uri=plugin["uri"],
                             position=plugin["position"],
                             bypass=plugin["bypass"],
+                            **ChainService._chain_plugin_loader_columns(plugin["uri"], loader_state),
                         )
                     )
                 await session.flush()

@@ -54,6 +54,40 @@ def _load_default_chain_templates() -> List[Dict[str, Any]]:
     return list(config.get("default_chains", []))
 
 
+_NAM_PLUGIN_URIS = {"map2://juce/nam", "urn:map2:nam-player"}
+_CABINET_IR_PLUGIN_URIS = {"map2://juce/convolution/cabinet", "urn:map2:ir-cabinet"}
+_REVERB_IR_PLUGIN_URIS = {"map2://juce/convolution/reverb", "urn:map2:ir-reverb"}
+
+
+def _default_loader_state_for_plugin(plugin_uri: str) -> Dict[str, Any]:
+    if plugin_uri in _NAM_PLUGIN_URIS:
+        return {
+            "selected_asset_name": None,
+            "selected_asset_path": None,
+            "input_gain": 0.0,
+            "output_gain": 0.0,
+            "normalize": True,
+            "bypass": False,
+        }
+    if plugin_uri in _CABINET_IR_PLUGIN_URIS:
+        return {
+            "selected_asset_name": None,
+            "selected_asset_path": None,
+            "mix": 100.0,
+            "bypass": False,
+            "ir_type": "cabinet",
+        }
+    if plugin_uri in _REVERB_IR_PLUGIN_URIS:
+        return {
+            "selected_asset_name": None,
+            "selected_asset_path": None,
+            "mix": 30.0,
+            "bypass": False,
+            "ir_type": "reverb",
+        }
+    return {}
+
+
 class ChainService:
     """Service for managing signal chains with RT-safe database operations.
 
@@ -438,6 +472,75 @@ class ChainService:
             logger.debug(f"Unable to resolve runtime chain plugin identities: {e}")
             return {}
 
+    @staticmethod
+    def _chain_plugin_loader_state(plugin: Any) -> Optional[Dict[str, Any]]:
+        plugin_uri = getattr(plugin, "plugin_uri", None)
+        if not isinstance(plugin_uri, str):
+            return None
+
+        defaults = _default_loader_state_for_plugin(plugin_uri)
+        if not defaults:
+            return None
+
+        if plugin_uri in _NAM_PLUGIN_URIS:
+            return {
+                "selected_model": getattr(plugin, "selected_asset_name", None),
+                "selected_asset_name": getattr(plugin, "selected_asset_name", None),
+                "selected_asset_path": getattr(plugin, "selected_asset_path", None),
+                "input_gain": float(getattr(plugin, "nam_input_gain", defaults["input_gain"]) or 0.0),
+                "output_gain": float(getattr(plugin, "nam_output_gain", defaults["output_gain"]) or 0.0),
+                "normalize": bool(
+                    defaults["normalize"]
+                    if getattr(plugin, "nam_normalize", None) is None
+                    else getattr(plugin, "nam_normalize")
+                ),
+                "bypass": bool(getattr(plugin, "bypass", defaults["bypass"])),
+            }
+
+        return {
+            "selected_ir": getattr(plugin, "selected_asset_name", None),
+            "selected_asset_name": getattr(plugin, "selected_asset_name", None),
+            "selected_asset_path": getattr(plugin, "selected_asset_path", None),
+            "mix": float(
+                defaults["mix"]
+                if getattr(plugin, "ir_mix", None) is None
+                else getattr(plugin, "ir_mix")
+            ),
+            "bypass": bool(getattr(plugin, "bypass", defaults["bypass"])),
+            "ir_type": defaults["ir_type"],
+        }
+
+    @staticmethod
+    def _chain_plugin_loader_columns(plugin_uri: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        payload = payload or {}
+        defaults = _default_loader_state_for_plugin(plugin_uri)
+        if not defaults:
+            return {}
+
+        selected_asset_name = (
+            payload.get("selected_asset_name")
+            or payload.get("selected_model")
+            or payload.get("selected_ir")
+        )
+
+        columns: Dict[str, Any] = {
+            "selected_asset_name": selected_asset_name,
+            "selected_asset_path": payload.get("selected_asset_path"),
+        }
+
+        if plugin_uri in _NAM_PLUGIN_URIS:
+            columns.update(
+                {
+                    "nam_input_gain": float(payload.get("input_gain", defaults["input_gain"]) or 0.0),
+                    "nam_output_gain": float(payload.get("output_gain", defaults["output_gain"]) or 0.0),
+                    "nam_normalize": bool(payload.get("normalize", defaults["normalize"])),
+                }
+            )
+        else:
+            columns["ir_mix"] = float(payload.get("mix", defaults["mix"]) or defaults["mix"])
+
+        return columns
+
     def _serialize_chain_plugin_entry(
         self,
         plugin: Any,
@@ -464,6 +567,10 @@ class ChainService:
             latency_samples = self._runtime_item_latency_samples(runtime_item)
             if latency_samples is not None:
                 payload["latency_samples"] = latency_samples
+
+        loader_state = self._chain_plugin_loader_state(plugin)
+        if loader_state is not None:
+            payload["loader_state"] = loader_state
 
         return payload
 
@@ -887,7 +994,8 @@ class ChainService:
                 chain_id=chain_id,
                 plugin_uri=plugin_uri,
                 position=insert_position,
-                bypass=False
+                bypass=False,
+                **self._chain_plugin_loader_columns(plugin_uri),
             )
             self.session.add(chain_plugin)
             await self.session.flush()
@@ -937,7 +1045,8 @@ class ChainService:
                 chain_id=chain_id,
                 plugin_uri="urn:map2:nam-player",
                 position=next_position,
-                bypass=False
+                bypass=False,
+                **self._chain_plugin_loader_columns("urn:map2:nam-player"),
             )
             self.session.add(chain_plugin)
             await self.session.flush()
@@ -1009,7 +1118,8 @@ class ChainService:
                 chain_id=chain_id,
                 plugin_uri=plugin_uri,
                 position=next_position,
-                bypass=False
+                bypass=False,
+                **self._chain_plugin_loader_columns(plugin_uri),
             )
             self.session.add(chain_plugin)
             await self.session.flush()
@@ -1407,7 +1517,12 @@ class ChainService:
                     {
                         "uri": cp.plugin_uri,
                         "position": cp.position,
-                        "bypass": cp.bypass
+                        "bypass": cp.bypass,
+                        **(
+                            {"loader_state": self._chain_plugin_loader_state(cp)}
+                            if self._chain_plugin_loader_state(cp) is not None
+                            else {}
+                        ),
                     }
                     for cp in chain_plugins
                 ]
@@ -1472,11 +1587,13 @@ class ChainService:
             
             # Add plugins
             for plugin_data in preset_data["plugins"]:
+                loader_state = plugin_data.get("loader_state") if isinstance(plugin_data, dict) else None
                 cp = ChainPlugin(
                     chain_id=chain.id,
                     plugin_uri=plugin_data["uri"],
                     position=plugin_data["position"],
-                    bypass=plugin_data.get("bypass", False)
+                    bypass=plugin_data.get("bypass", False),
+                    **self._chain_plugin_loader_columns(plugin_data["uri"], loader_state),
                 )
                 self.session.add(cp)
             

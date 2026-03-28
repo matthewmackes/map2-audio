@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 17:11 EDT - Completed phase-two API-client split bundles and closed T501-T509 after barrel cleanup/validation
+Last updated: 2026-03-28 19:28 EDT - Completed T512 persisted per-loader asset state for NAM/cabinet/reverb chain plugins
 
 ID: T482
 Status: [✓] Done
@@ -9194,3 +9194,128 @@ Last updated: 2026-03-28 17:11 EDT - Codex
   - Removed the dead commented inline MIDI/MIDI Hub implementations from `web/src/map2/api.ts`, so the extracted client modules are now the only active implementation path.
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src scripts` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/map2/clientExports.test.ts src/map2/transport.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T510
+Status: [✓] Done
+Title: Restore selected-block NAM asset loading when runtime chain identity is unavailable
+Description:
+- Goal / acceptance criteria: Fix the selected-block NAM manager/card flow so loading, status, and core control requests still work when the UI only has `plugin_position` but the backend has no live pedalboard-hosted NAM instance to resolve. The route family must fall back to the legacy global NAM processor only when there are zero runtime NAM matches, while preserving fail-closed instance behavior for real hosted duplicate scopes. Add focused regression tests and record validation/licensing evidence.
+- Why it matters: The live `/juce-grid` selected-block NAM loader currently fails with `NAM instance not found at position: 0` even though the same model loads successfully through the global NAM path. Operators can see the library but cannot activate models from the selected block, which breaks a core amp workflow.
+- Dependencies: T453
+- Estimated effort: Medium
+- Required outputs: NAM route/runtime-scope fix, focused backend regression tests, live validation against the running node, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:33 EDT - Codex
+- Completion notes:
+  - Added `app/routes/nam.py` helper logic that distinguishes between real pedalboard-hosted NAM instances and the legacy global NAM processor by inspecting the current pedalboard for live `map2://juce/nam` runtime items.
+  - Updated the NAM status/load/control route family in `app/routes/nam.py` so `plugin_position` requests now fall back to the global NAM processor only when there are zero live runtime NAM matches; when hosted NAM instances do exist, the routes still fail closed on unresolved scoped positions instead of drifting into the wrong instance.
+  - Added focused regression coverage in `tests/test_nam_ir_instance_routes.py` for the exact failure mode: a position-scoped NAM request with no live pedalboard-hosted NAM instances but a working global NAM processor.
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_nam_ir_instance_routes.py` -> PASS (`9 passed`); `python3 -m py_compile app/routes/nam.py tests/test_nam_ir_instance_routes.py` -> PASS; live backend rollout via `kill -9 <map2-backend main pid>` systemd restart -> PASS; live `POST /api/nam/models/Fender_Twin_Reverb_Standard_[TONE3000-289461]/load?plugin_position=0` now returns `200`, and live `/api/nam/status?plugin_position=0` settles to `activeModel: Fender_Twin_Reverb_Standard_[TONE3000-289461]`.
+
+ID: T511
+Status: [✓] Done
+Title: Stop global NAM fallback from collapsing duplicate NAM loaders
+Description:
+- Goal / acceptance criteria: Harden the T510 fallback so selected-block NAM requests only fall back to the legacy global NAM processor when there is effectively one configured NAM block to target. When multiple active NAM loaders exist without live runtime identity, the backend must fail closed or return neutral scoped status instead of silently sharing one global model across blocks. Add focused regression tests and validation evidence.
+- Why it matters: The current T510 fallback fixed single-loader `/juce-grid` activation, but on nodes where chain deployment is disabled and the current pedalboard is empty, multiple configured NAM loaders now all read/write the same global NAM processor. That reintroduces parameter/model bleed between duplicate blocks.
+- Dependencies: T510; T453
+- Estimated effort: Medium
+- Required outputs: duplicate-safe NAM fallback guard, focused backend regression tests, live validation, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:45 EDT - Codex
+- Completion notes:
+  - Hardened `app/routes/nam.py` so `plugin_position` requests only fall back to the legacy global NAM processor when the runtime pedalboard has no live `map2://juce/nam` instances and the configured chain state shows exactly one effectively targetable NAM block.
+  - Added duplicate-loader safety checks in `app/routes/nam.py` that inspect configured active/inactive `ChainPlugin` rows for `map2://juce/nam` and `urn:map2:nam-player`; when multiple configured NAM loaders exist without live runtime identity, scoped status now returns a neutral unloaded payload and scoped load/unload/control calls fail closed with `409 Conflict` instead of mutating shared global NAM state.
+  - Extended `tests/test_nam_ir_instance_routes.py` with focused fallback coverage for both the single-loader compatibility path and the duplicate-loader fail-closed path, ensuring duplicate scoped loads never call the global NAM loader.
+  - Live validation on the current node showed `/api/chains/` exposing chain 2 with NAM plugins at positions `0` and `1` while `/api/engine/chain` still reported an empty pedalboard because `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` remains disabled by default in `app/services/chain_service.py`; under that condition, `/api/nam/status?plugin_position=0` and `/api/nam/status?plugin_position=1` now both return neutral unloaded status, and `POST /api/nam/models/Fender_Twin_Reverb_Standard_[TONE3000-289461]/load?plugin_position=0` now returns `409` with `Multiple active NAM loaders are configured without live runtime identity; refusing global fallback for position: 0`.
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_nam_ir_instance_routes.py` -> PASS (`10 passed`); `python3 -m py_compile app/routes/nam.py tests/test_nam_ir_instance_routes.py` -> PASS; live `curl http://127.0.0.1:8080/api/nam/status?plugin_position=0` -> neutral unloaded payload; live `curl http://127.0.0.1:8080/api/nam/status?plugin_position=1` -> neutral unloaded payload; live `curl -X POST 'http://127.0.0.1:8080/api/nam/models/Fender_Twin_Reverb_Standard_[TONE3000-289461]/load?plugin_position=0'` -> `409`.
+
+ID: T512
+Status: [✓] Done
+Title: Add persisted per-loader asset state for NAM, cabinet IR, and reverb IR blocks
+Description:
+- Goal / acceptance criteria: Extend chain plugin persistence so each `map2://juce/nam`, `map2://juce/convolution/cabinet`, and `map2://juce/convolution/reverb` block stores its own selected asset plus loader controls. NAM must persist selected model, input gain, output gain, normalize, and bypass. Cabinet/reverb IR must persist selected IR, mix, and bypass. Existing duplicate-loader chains must migrate safely by initializing all persisted loader assignments as unloaded/unassigned.
+- Why it matters: The current chain model stores duplicate plugin positions but not per-loader asset selection, so duplicate NAM/IR blocks cannot survive reloads, restarts, or snapshot capture as distinct configured processors.
+- Dependencies: T511
+- Estimated effort: High
+- Required outputs: additive schema upgrade for `chain_plugins`, backend serialization/deserialization support for loader state, safe legacy migration behavior, focused persistence tests, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 19:28 EDT - Codex
+- Completion notes:
+  - Added additive SQLite schema upgrades plus ORM columns for persisted loader state on `chain_plugins`: `selected_asset_name`, `selected_asset_path`, `nam_input_gain`, `nam_output_gain`, `nam_normalize`, and `ir_mix`.
+  - Backfilled legacy chain rows safely during schema upgrade so existing NAM blocks default to unloaded asset selection with neutral gain / normalize state, while cabinet and reverb IR blocks keep unloaded asset selection but receive their domain-default mixes (`100` cabinet, `30` reverb).
+  - Extended `ChainService` serialization so chain payloads now expose duplicate-safe persisted loader state under `loader_state` for NAM, cabinet IR, and reverb IR blocks, preserving the configured asset and per-loader controls independently of live runtime identity.
+  - Updated deploy/preset deserialization paths so staging a chain or saving/loading presets preserves loader-state payloads instead of dropping them on round-trip.
+  - Licensing review: touched backend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py` -> PASS (`14 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched files -> PASS.
+
+ID: T513
+Status: [ ] Todo
+Title: Make chain activation restore persisted asset-backed loader state into live JUCE instances
+Description:
+- Goal / acceptance criteria: Change chain activation so supported nodes deploy one live JUCE instance per chain plugin and then restore persisted loader state into the matching runtime instance for NAM, cabinet IR, and reverb IR blocks. True multi-instance support is only considered complete when duplicate loaders in one chain can sound different simultaneously. Nodes that cannot provide live deployment/runtime identity must report that capability gap explicitly instead of silently sharing a global processor.
+- Why it matters: The GUI already scopes requests by `instance_id` and `plugin_position`, but on this node the active pedalboard is empty because chain deployment is off, so duplicate asset-backed blocks have no live runtime identity.
+- Dependencies: T512
+- Estimated effort: High
+- Required outputs: chain activation/runtime deploy changes, default runtime behavior aligned with real per-instance deployment, capability/error reporting for unsupported nodes, focused backend/runtime tests, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 18:26 EDT - Codex
+
+ID: T514
+Status: [ ] Todo
+Title: Unify NAM and IR scoped routes around persisted state plus duplicate-safe runtime resolution
+Description:
+- Goal / acceptance criteria: Update `app/routes/nam.py` and `app/routes/ir.py` so scoped selected-block reads/writes for NAM, cabinet IR, and reverb IR resolve live runtime instances when available, synchronize persisted loader state when writes succeed, and return configured-vs-runtime warning state when a block is configured but not currently active. IR routes must receive the same duplicate-safe treatment already started for NAM so duplicate scoped IR loaders never drift into the wrong instance or fail ambiguously.
+- Why it matters: NAM now fails closed for unsafe duplicate fallback, but cabinet/reverb IR scoped routes still require live instances and do not persist block-specific assignments or surface configured state cleanly.
+- Dependencies: T512; T513
+- Estimated effort: High
+- Required outputs: route/status payload updates for NAM and IR, warning/error contract for partial activation and missing assets, regression coverage for duplicate scoped loaders across all three asset-backed plugin families, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 18:26 EDT - Codex
+
+ID: T515
+Status: [ ] Todo
+Title: Make snapshots and cluster deploy preserve multi-loader NAM and IR dependencies
+Description:
+- Goal / acceptance criteria: Snapshot save/load and cluster preset deploy must preserve per-loader NAM, cabinet IR, and reverb IR assignments for duplicate blocks in the same chain. Dependency resolution must operate on every configured asset-backed block, not a single inferred live asset. If a referenced asset is missing on the target node, activation must proceed partially, leave that block unloaded, and emit clear warnings.
+- Why it matters: Current snapshot/deploy logic infers a single active NAM or IR dependency from live status, which is insufficient once one chain can hold multiple distinct NAM or IR assets.
+- Dependencies: T512; T513; T514
+- Estimated effort: High
+- Required outputs: snapshot schema/runtime capture updates, multi-dependency deploy logic, partial-activation warning propagation, focused backend/frontend deploy tests, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 18:26 EDT - Codex
+
+ID: T516
+Status: [ ] Todo
+Title: Update selected-block GUI loaders to present configured state and partial-activation warnings
+Description:
+- Goal / acceptance criteria: Keep the existing selected-block NAM, cabinet IR, and reverb IR cards/dialogs, but update them to display per-block configured asset state, distinguish configured-vs-live runtime state, and surface partial-activation or missing-asset warnings without cross-contaminating duplicate blocks. Query invalidation and status rendering must remain scoped to the selected block by `instance_id` and `plugin_position`.
+- Why it matters: The frontend is already scope-aware, but once persistence/runtime warnings are added the cards and dialogs need to explain whether a block is configured, live, missing its asset, or unsupported on the current node.
+- Dependencies: T514; T515
+- Estimated effort: Medium
+- Required outputs: scoped GUI status/warning rendering for NAM and IR loader cards/dialogs, focused frontend tests for duplicate blocks and warning states, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 18:26 EDT - Codex
+
+ID: T517
+Status: [ ] Todo
+Title: Show richer loaded-file metadata on NAM, cabinet IR, and reverb IR selected-block GUIs
+Description:
+- Goal / acceptance criteria: Update the selected-block NAM, cabinet IR, and reverb IR cards and shared loader dialogs so operators can see materially useful metadata for the currently loaded asset without guessing from a bare filename alone. The final UI must present a compact but readable loaded-asset summary on the cards, use richer metadata rows/details in the dialogs where appropriate, and stay duplicate-safe under `instance_id` / `plugin_position` scoping. Metadata fields should be driven by the best available backend/library data per asset type, cabinet and reverb should use domain-specific metadata sets rather than one generic IR summary, and when library metadata is missing the system should calculate technical file facts directly from the underlying asset instead of leaving the UI blank. Cabinet IR presentation should also parse useful filename/path semantics when present (for example cabinet family, mic token, mix token, or variant labels) rather than treating the filename as opaque text only.
+- Why it matters: The current March 21 card simplification (`T261`) intentionally centered the shared `Select...` flow, but the resulting cards still expose only a thin active-name readout plus asset counts. That leaves the old user request unresolved because operators cannot quickly verify what file is actually loaded or inspect basic asset characteristics in place.
+- Clarified scope from the 2026-03-28 10-question discovery pass: show both hard file/audio facts and curated library metadata when available; prefer a dense always-visible metadata block on the cards; hide paths and dates on the cards themselves; allow full source paths in the library dialogs; choose default NAM fields based on what is most often populated in the live library, with richer author/amp/tag fields shown opportunistically when present; use domain-specific IR metadata sets; label filename-derived cabinet semantics as `Derived`; and render the cabinet schematic/graphic directly on the cabinet card.
+- Dependencies: T514; T516
+- Estimated effort: Medium
+- Required outputs: agreed metadata field set and presentation hierarchy, domain-specific cabinet/reverb metadata treatment, fallback technical-metadata extraction/calculation for missing asset facts, cabinet filename-semantic parsing where useful, a design graphic/prototype demonstrating the new cabinet/IR/NAM information hierarchy, reusable schematic/presentation objects if needed to render cabinet details dynamically, frontend card/dialog updates for NAM/cabinet/reverb, backend/API metadata additions if current status/list payloads are insufficient, focused frontend/backend tests, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 18:51 EDT - Codex

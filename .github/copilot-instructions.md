@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 28, 2026 (AudioTable mutation harness closeout)
+> **Last Updated**: March 28, 2026 (Chain plugin loader-state persistence)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1082,6 +1082,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `systemctl show map2-web-prod.service -p ExecStart`; `bash -n scripts/build/deploy`; `node --check scripts/serve_web_dist.mjs`; `pytest -q tests/test_serve_web_dist.py`; `./scripts/build/deploy --skip-build`; `journalctl -u map2-web-prod.service --since '<restart time>' --no-pager`
 - **Lesson**: `npm run ...` is fine for interactive launches, but long-lived system services should exec the real runtime directly and own their socket teardown path explicitly; `server.close()` alone is not enough when persistent clients are attached.
 
+**19. Duplicate Loader Chains Need Persisted Per-Plugin Asset State**
+- **Files**: `app/database.py`, `app/services/chain_service.py`, `app/routes/chains.py`, `tests/test_chain_plugin_loader_state_persistence.py`
+- **Problem**: Duplicate NAM, cabinet IR, and reverb IR blocks could preserve chain position but not their selected asset or per-loader controls, so chain/preset round-trips collapsed back to indistinguishable unloaded loaders.
+- **Root Cause**: `chain_plugins` only stored `plugin_uri`, `position`, and `bypass`, and the chain deploy/preset serializers dropped all loader-specific state on every round-trip.
+- **Fix**: Add additive `chain_plugins` columns for `selected_asset_name`, `selected_asset_path`, NAM gains/normalize, and IR mix; backfill legacy rows to unloaded defaults; and serialize/deserialize those values through chain payloads and preset save/load paths.
+- **Verification**: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py`; `python3 - <<'PY' ... ast.parse(...) ... PY`
+- **Lesson**: Once duplicate asset-backed plugins exist in one chain, `plugin_uri + position` is not enough. Persist the loader state on each chain row before trying to make runtime restore or UI warning logic duplicate-safe.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1581,6 +1589,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-28] - Chain Plugin Loader-State Persistence
+- **Section**: Gotchas & Learned Fixes (#19), Update Log
+- **Change**: Documented the additive `chain_plugins` loader-state schema and the rule that chain deploy/preset serializers must preserve NAM/cabinet/reverb per-loader asset state instead of reducing those rows to URI/position/bypass only.
+- **Reason**: `T512` required duplicate-safe persistence before runtime activation restore or scoped-loader UI work could proceed, and the old round-trip paths silently discarded the new loader data.
+- **Impact**: Future assistants can extend activation/runtime restore work on top of a stable persistence contract instead of rediscovering why duplicate loaders lose identity after any chain serialization boundary.
+- **Files**: `.github/copilot-instructions.md`, `app/database.py`, `app/services/chain_service.py`, `app/routes/chains.py`, `tests/test_chain_plugin_loader_state_persistence.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-28] - AudioTable Mutation Harness Closeout
 - **Section**: Gotchas & Learned Fixes (#34), Update Log

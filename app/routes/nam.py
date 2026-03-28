@@ -23,13 +23,14 @@ try:
     from fastapi import APIRouter, HTTPException, Query, UploadFile, File
     from pydantic import BaseModel
     from app.paths import StoragePaths
-    from app.database import get_db, get_db_session, NAMModel
+    from app.database import Chain, ChainPlugin, get_db, get_db_session, NAMModel
     from app.services.juce_engine_service import get_audio_engine
     from app.services.upload_service import AssetType, get_upload_service
     from sqlalchemy import or_
 
     router = APIRouter(prefix="/api/nam", tags=["nam"])
     NAM_PLUGIN_URI = "map2://juce/nam"
+    NAM_CONFIG_PLUGIN_URIS = (NAM_PLUGIN_URI, "urn:map2:nam-player")
 
     # ==================== Pydantic Models ====================
 
@@ -153,6 +154,78 @@ try:
 
         return None
 
+    async def _runtime_has_plugin_uri(engine, plugin_uri: str) -> bool:
+        getter = getattr(engine, "get_current_pedalboard", None)
+        if not callable(getter):
+            return False
+
+        try:
+            pedalboard = await getter()
+        except Exception:
+            return False
+
+        if not isinstance(pedalboard, dict):
+            return False
+
+        items = pedalboard.get("items")
+        if not isinstance(items, list):
+            items = pedalboard.get("plugins")
+        if not isinstance(items, list):
+            return False
+
+        return any(
+            isinstance(item, dict) and item.get("uri") == plugin_uri
+            for item in items
+        )
+
+    async def _requires_runtime_nam_scope(engine, plugin_position: Optional[int]) -> bool:
+        return _has_plugin_position(plugin_position) and await _runtime_has_plugin_uri(engine, NAM_PLUGIN_URI)
+
+    def _configured_nam_blocks_allow_global_fallback() -> bool:
+        session = get_db_session()
+        try:
+            active_count = int(
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                )
+                .count()
+            )
+            if active_count == 1:
+                return True
+            if active_count > 1:
+                return False
+
+            total_count = int(
+                session.query(ChainPlugin)
+                .filter(ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS))
+                .count()
+            )
+            return total_count == 1
+        except Exception as e:
+            logger.warning("Unable to evaluate configured NAM fallback safety: %s", e)
+            return False
+        finally:
+            session.close()
+
+    async def _allow_global_nam_fallback(
+        engine,
+        plugin_position: Optional[int],
+    ) -> bool:
+        if not _has_plugin_position(plugin_position):
+            return False
+        if await _runtime_has_plugin_uri(engine, NAM_PLUGIN_URI):
+            return False
+        return await asyncio.to_thread(_configured_nam_blocks_allow_global_fallback)
+
+    def _duplicate_loader_fallback_detail(plugin_position: Optional[int]) -> str:
+        return (
+            "Multiple active NAM loaders are configured without live runtime identity; "
+            f"refusing global fallback for position: {plugin_position}"
+        )
+
     # ==================== Status Endpoints ====================
 
     @router.get("/")
@@ -179,6 +252,8 @@ try:
         engine = get_audio_engine()
 
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
 
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             instance_info = await engine.get_nam_model_info_instance(scoped_instance_id)
@@ -202,6 +277,11 @@ try:
             }
 
         if _has_plugin_position(plugin_position):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
+
+        if _has_plugin_position(plugin_position) and (runtime_has_nam_instances or not allow_global_fallback):
             models = _scan_nam_models()
             model_names = [m['name'] for m in models]
             return {
@@ -449,10 +529,18 @@ try:
         # Load via JUCE engine (RT-safe)
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             success = await engine.load_nam_model_instance(scoped_instance_id, model_path)
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             success = await engine.load_nam_model(model_path)
 
@@ -486,12 +574,20 @@ try:
         """Unload the current NAM model."""
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             unloaded = await engine.unload_nam_model_instance(scoped_instance_id)
             if not unloaded:
                 raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.unload_nam_model()
         return {"status": "unloaded"}
@@ -507,12 +603,20 @@ try:
         """Set NAM bypass state."""
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             updated = await engine.set_nam_bypass_instance(scoped_instance_id, bypass)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_bypass(bypass)
         return {"status": "ok", "bypass": bypass}
@@ -526,12 +630,20 @@ try:
         """Set NAM input gain in dB."""
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             updated = await engine.set_nam_input_gain_instance(scoped_instance_id, request.gain_db)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_input_gain(request.gain_db)
         return {"status": "ok", "input_gain": request.gain_db}
@@ -545,12 +657,20 @@ try:
         """Set NAM output gain in dB."""
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             updated = await engine.set_nam_output_gain_instance(scoped_instance_id, request.gain_db)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_output_gain(request.gain_db)
         return {"status": "ok", "output_gain": request.gain_db}
@@ -564,12 +684,20 @@ try:
         """Enable/disable NAM output normalization."""
         engine = get_audio_engine()
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
+        runtime_has_nam_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
+            if not runtime_has_nam_instances:
+                allow_global_fallback = await _allow_global_nam_fallback(engine, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             updated = await engine.set_nam_normalize_instance(scoped_instance_id, normalize)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"NAM instance not found: {scoped_instance_id}")
-        elif _has_plugin_position(plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_nam_instances:
             raise HTTPException(status_code=404, detail=f"NAM instance not found at position: {plugin_position}")
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_normalize(normalize)
         return {"status": "ok", "normalize": normalize}

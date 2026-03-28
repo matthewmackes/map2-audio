@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
+import pytest
+
 from app.routes import ir as ir_routes
 from app.routes import nam as nam_routes
 from app.services.upload_service import AssetType, UnifiedUploadService
@@ -53,6 +55,58 @@ class _FakePositionScopedNamEngine:
             "output_gain": -1.0,
             "normalize": True,
         }
+
+
+class _FakeGlobalFallbackNamEngine:
+    def __init__(self):
+        self.resolve_calls: list[tuple[str, int | None, int | None]] = []
+        self.global_load_calls: list[str] = []
+
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: int | None = None,
+        fallback_instance_id: int | None = None,
+    ):
+        self.resolve_calls.append((plugin_uri, plugin_position, fallback_instance_id))
+        return None
+
+    async def get_current_pedalboard(self):
+        return {"name": "Current Chain", "items": []}
+
+    async def load_nam_model(self, model_path: str) -> bool:
+        self.global_load_calls.append(model_path)
+        return True
+
+    async def is_nam_available(self) -> bool:
+        return True
+
+    async def is_nam_model_loaded(self) -> bool:
+        return True
+
+    async def is_nam_loading(self) -> bool:
+        return False
+
+    async def is_nam_bypassed(self) -> bool:
+        return False
+
+    async def get_nam_model_info(self):
+        return {"name": "Global Crunch", "loaded": True}
+
+    async def get_nam_input_level(self) -> float:
+        return -13.0
+
+    async def get_nam_output_level(self) -> float:
+        return -7.0
+
+    async def get_nam_input_gain(self) -> float:
+        return 0.5
+
+    async def get_nam_output_gain(self) -> float:
+        return -1.5
+
+    async def is_nam_normalized(self) -> bool:
+        return True
 
 
 class _FakeIrEngine:
@@ -165,6 +219,63 @@ def test_nam_routes_recover_from_stale_explicit_instance_ids_using_plugin_positi
     assert engine.resolve_calls == [("map2://juce/nam", 5, 999)]
     assert engine.load_calls == [(84, "/tmp/scoped-crunch.nam")]
     assert load_payload["status"] == "loading"
+
+
+def test_nam_routes_fall_back_to_global_processor_when_position_scope_has_no_runtime_match(monkeypatch):
+    engine = _FakeGlobalFallbackNamEngine()
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(nam_routes, "_configured_nam_blocks_allow_global_fallback", lambda: True)
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [
+            {"name": "Global Crunch", "path": "/tmp/global-crunch.nam"},
+            {"name": "Clean Glass", "path": "/tmp/clean-glass.nam"},
+        ],
+    )
+
+    load_payload = asyncio.run(nam_routes.load_nam_model("Global Crunch", plugin_position=0))
+    status_payload = asyncio.run(nam_routes.get_nam_status(plugin_position=0))
+
+    assert engine.resolve_calls == [
+        ("map2://juce/nam", 0, None),
+        ("map2://juce/nam", 0, None),
+    ]
+    assert engine.global_load_calls == ["/tmp/global-crunch.nam"]
+    assert load_payload["status"] == "loading"
+    assert status_payload["activeModel"] == "Global Crunch"
+    assert status_payload["availableModels"] == ["Global Crunch", "Clean Glass"]
+    assert status_payload["input_gain"] == 0.5
+    assert status_payload["output_gain"] == -1.5
+    assert status_payload["normalize"] is True
+
+
+def test_nam_routes_refuse_global_fallback_when_multiple_configured_loaders_exist(monkeypatch):
+    engine = _FakeGlobalFallbackNamEngine()
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(nam_routes, "_configured_nam_blocks_allow_global_fallback", lambda: False)
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [
+            {"name": "Global Crunch", "path": "/tmp/global-crunch.nam"},
+            {"name": "Clean Glass", "path": "/tmp/clean-glass.nam"},
+        ],
+    )
+
+    status_payload = asyncio.run(nam_routes.get_nam_status(plugin_position=0))
+
+    assert status_payload["activeModel"] is None
+    assert status_payload["input_gain"] == 0.0
+    assert status_payload["output_gain"] == 0.0
+    assert status_payload["normalize"] is True
+
+    with pytest.raises(nam_routes.HTTPException) as exc_info:
+        asyncio.run(nam_routes.load_nam_model("Global Crunch", plugin_position=0))
+
+    assert exc_info.value.status_code == 409
+    assert "refusing global fallback" in str(exc_info.value.detail)
+    assert engine.global_load_calls == []
 
 
 def test_ir_routes_load_and_report_status_per_instance(monkeypatch):
