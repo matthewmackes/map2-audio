@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 27, 2026 (Tesira apply-button migration + nullable MIDI draft cleanup)
+> **Last Updated**: March 28, 2026 (DrumsPage raw-input audit closeout)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1573,6 +1573,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-28] - DrumsPage Raw-Input Audit Closeout
+- **Section**: Gotchas & Learned Fixes (#33), Update Log
+- **Change**: Documented the final `T460-subF` sweep: `web/src/app/pages/DrumsPage.tsx` no longer uses raw `input[type=range|number]` for live parameter surfaces, and the page test mock now treats shared numeric controls as interactive inputs instead of read-only placeholders.
+- **Reason**: The remaining wrapper-retirement tail was concentrated in `DrumsPage`, but the old page test harness still mocked `NumberInput` as inert markup, which would have hidden real regressions once the shared runtime took over those controls.
+- **Impact**: Future assistants can treat the frontend raw-input audit as complete once `rg -n 'type="range"|type="number"' web/src` only reports CSS selectors, Recharts axis props, and test-only code, and `DrumsPage` regressions now exercise the real shared-control mutation wiring.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-27] - Parameter-Control Wrapper Retirement
 - **Section**: Gotchas & Learned Fixes (#31), Update Log

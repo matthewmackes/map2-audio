@@ -115,34 +115,57 @@ jest.mock('@/app/components/PageHeader', () => ({
   ),
 }))
 
-jest.mock('@/app/components/ParameterControl', () => ({
-  NumberInput: ({ label, value }: { label: string; value: number }) => (
-    <label>
-      <span>{label}</span>
-      <input aria-label={label} value={value} readOnly />
-    </label>
-  ),
-  ParameterControl: ({
+jest.mock('@/app/components/ParameterControl', () => {
+  function MockNumericControl({
     ariaLabel,
     label,
     value,
+    onChange,
     onLiveChange,
+    onChangeEnd,
+    onChangeCommitted,
+    onCommit,
+    showLabel = true,
   }: {
     ariaLabel?: string
     label?: string
     value: number
+    onChange?: (value: number) => void
     onLiveChange?: (value: number) => void
-  }) => (
-    <label>
-      <span>{label ?? ariaLabel}</span>
-      <input
-        aria-label={ariaLabel ?? label}
-        value={value}
-        onChange={(event) => onLiveChange?.(Number(event.currentTarget.value))}
-      />
-    </label>
-  ),
-}))
+    onChangeEnd?: (value: number) => void
+    onChangeCommitted?: (value: number) => void
+    onCommit?: (value: number) => void
+    showLabel?: boolean
+  }) {
+    const resolvedLabel = ariaLabel ?? label ?? 'Numeric control'
+
+    return (
+      <label>
+        {showLabel ? <span>{label ?? ariaLabel}</span> : null}
+        <input
+          aria-label={resolvedLabel}
+          value={value}
+          onChange={(event) => {
+            const nextValue = Number(event.currentTarget.value)
+            onChange?.(nextValue)
+            onLiveChange?.(nextValue)
+          }}
+          onBlur={(event) => {
+            const nextValue = Number(event.currentTarget.value)
+            onChangeEnd?.(nextValue)
+            onChangeCommitted?.(nextValue)
+            onCommit?.(nextValue)
+          }}
+        />
+      </label>
+    )
+  }
+
+  return {
+    NumberInput: MockNumericControl,
+    ParameterControl: MockNumericControl,
+  }
+})
 
 jest.mock('@carbon/react', () => {
   const React = jest.requireActual('react')
@@ -843,6 +866,22 @@ describe('DrumsPage', () => {
     })
   })
 
+  it('updates per-row shared numeric controls for volume and swing', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Kick Vol'), { target: { value: '63' } })
+    fireEvent.change(screen.getByLabelText('Kick Swing'), { target: { value: '22' } })
+
+    expect(mockSetPadControlMutate).toHaveBeenCalledWith({
+      padId: 0,
+      params: { volume: 63 },
+    })
+    expect(mockSetTrackSwingMutate).toHaveBeenCalledWith({
+      instrument: 0,
+      swing: 22,
+    })
+  })
+
   it('publishes selected pad and step context for embedded workspace inspectors', () => {
     const onSelectionChange = jest.fn()
 
@@ -1073,6 +1112,17 @@ describe('DrumsPage', () => {
     expect(mockRemoveSongEntryMutate).toHaveBeenCalledWith(0)
   })
 
+  it('updates pattern length through the shared numeric control', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Pattern length'), { target: { value: '32' } })
+
+    expect(mockSetPatternMutate).toHaveBeenCalledWith({
+      patternId: 7,
+      pattern: expect.objectContaining({ length: 32 }),
+    })
+  })
+
   it('loads kits through the browser confirmation flow', () => {
     renderPage()
 
@@ -1162,6 +1212,17 @@ describe('DrumsPage', () => {
     expect(mockUpdateStateMutate).toHaveBeenCalledWith({ practice_auto_fill: true })
   })
 
+  it('updates practice quantize and variation through shared numeric controls', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Practice' }))
+    fireEvent.change(screen.getByLabelText('Practice quantize bars'), { target: { value: '4' } })
+    fireEvent.change(screen.getByLabelText('Practice variation'), { target: { value: '6' } })
+
+    expect(mockUpdateStateMutate).toHaveBeenCalledWith({ practice_change_quantization: 4 })
+    expect(mockUpdateStateMutate).toHaveBeenCalledWith({ practice_variation: 6 })
+  })
+
   it('announces transport and mode changes through the live region', () => {
     renderPage()
 
@@ -1194,6 +1255,17 @@ describe('DrumsPage', () => {
     fireEvent.change(screen.getByLabelText('Backing track search'), { target: { value: 'Copper' } })
     expect(table).toHaveTextContent('Copper Shuffle')
     expect(table).not.toHaveTextContent('Midnight Motor')
+  })
+
+  it('updates backing-track shift displays through shared numeric controls', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Backing Tracks' }))
+    fireEvent.change(screen.getByLabelText('Backing track tempo shift'), { target: { value: '12' } })
+    fireEvent.change(screen.getByLabelText('Backing track pitch shift'), { target: { value: '-3' } })
+
+    expect(screen.getAllByText('12%').length).toBeGreaterThan(0)
+    expect(screen.getByText('-3 st')).toBeInTheDocument()
   })
 
   it('updates midi mapping, learning, and preset flows from the advanced panel', () => {
@@ -1276,6 +1348,40 @@ describe('DrumsPage', () => {
     expect(mockStopCcLearnMutate).toHaveBeenCalled()
   })
 
+  it('updates selected-pad curve, zone, and CC target index through shared numeric controls', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Selected pad output ceiling'), { target: { value: '0.72' } })
+    fireEvent.change(screen.getByLabelText('Selected pad head zone note'), { target: { value: '57' } })
+    fireEvent.change(screen.getByLabelText('CC slot 1 target index'), { target: { value: '4' } })
+
+    expect(mockSetVelocityCurveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        curve: expect.objectContaining({ output_ceiling: 0.72 }),
+      }),
+    )
+    expect(mockSetMidiZonesMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pads: expect.arrayContaining([
+          expect.objectContaining({
+            pad: 0,
+            zones: expect.arrayContaining([expect.objectContaining({ trigger_note: 57 })]),
+          }),
+        ]),
+      }),
+    )
+    expect(mockSetCcMappingsMutate).toHaveBeenCalledWith({
+      mappings: expect.arrayContaining([
+        expect.objectContaining({
+          slot: 0,
+          target_index: 4,
+          active: true,
+        }),
+      ]),
+    })
+  })
+
   it('updates sequencer MIDI output controls from the transport panel', () => {
     renderPage()
 
@@ -1346,6 +1452,33 @@ describe('DrumsPage', () => {
     )
   })
 
+  it('updates shared numeric synth, filter, and CV/gate controls from the inspector', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Selected pad Pitch Start'), { target: { value: '440' } })
+    fireEvent.change(screen.getByLabelText('Selected pad filter Cutoff'), { target: { value: '6400' } })
+    fireEvent.change(screen.getByLabelText('Selected pad CV/Gate Note Min'), { target: { value: '42' } })
+
+    expect(mockSetPadSynthParamsMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        params: expect.objectContaining({ pitch_envelope_start_hz: 440 }),
+      }),
+    )
+    expect(mockSetPadFilterMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        filter: expect.objectContaining({ cutoff_hz: 6400 }),
+      }),
+    )
+    expect(mockSetPadCvGateConfigMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        config: expect.objectContaining({ note_min: 42 }),
+      }),
+    )
+  })
+
   it('updates sample editor controls from the inspector', async () => {
     renderPage()
 
@@ -1369,5 +1502,13 @@ describe('DrumsPage', () => {
       expect(mockFadePadSampleMutate).toHaveBeenCalledWith({ padId: 0, fadeInMs: 5, fadeOutMs: 5 })
       expect(mockTrimPadSampleMutate).toHaveBeenCalledWith({ padId: 0, startSample: 120, endSample: 720 })
     })
+  })
+
+  it('updates the transport master volume through the shared numeric control', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Master volume'), { target: { value: '91' } })
+
+    expect(mockUpdateStateMutate).toHaveBeenCalledWith({ volume: 91 })
   })
 })

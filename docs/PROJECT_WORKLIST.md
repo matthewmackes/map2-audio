@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-27 - parameter-control validation/doc hardening in progress
+Last updated: 2026-03-28 - T460 raw-input audit closed; T454-subN remains open
 
 ID: T453
 Status: [✓] Done
@@ -8281,7 +8281,7 @@ Last updated: 2026-03-27 16:44 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/ParameterControl/format.test.ts web/src/app/components/ParameterControl/ParameterControl.test.tsx web/src/app/components/NumericInput/NumericInput.test.tsx web/src/app/components/MIDICommanderSetup.test.tsx web/src/app/pages/DrumsPage.test.tsx web/src/app/components/EQ/EQCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/data/parameterSchema.test.ts web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS (`63 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`36 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T460
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove legacy wrappers and raw numeric inputs after migration coverage is broad enough
 Description:
 - Goal / acceptance criteria: Retire raw `input[type=range|number]` parameter controls, the `ParameterSlider` alias, and any remaining one-off knob widgets after the shared system covers all required surfaces.
@@ -8295,10 +8295,10 @@ Subtasks:
 - T460-subC: [✓] Done - Migrate app numeric-input consumers off `web/src/app/components/Controls/NumberInput.tsx`
 - T460-subD: [✓] Done - Migrate `web/src/map2/components/NumberInput.tsx` consumers onto the shared parameter-control entry points
 - T460-subE: [✓] Done - Remove `web/src/app/components/Controls/ParameterKnob.tsx`, `ParameterSlider.tsx`, `NumberInput.tsx`, and `web/src/map2/components/NumberInput.tsx` once import count reaches zero
-- T460-subF: [>] In Progress - Audit remaining raw `input[type=range|number]` parameter surfaces and either migrate the safe subset or record explicit blocked follow-up notes
+- T460-subF: [✓] Done - Audit remaining raw `input[type=range|number]` parameter surfaces and either migrate the safe subset or record explicit blocked follow-up notes
 Assigned to: Unassigned
-Last updated: 2026-03-27 18:38 EDT - Codex
-- Progress notes:
+Last updated: 2026-03-28 08:19 EDT - Codex
+- Completion notes:
   - Extended the shared runtime entry points in `web/src/app/components/ParameterControl/legacyProps.ts`, `ParameterNumericInput.tsx`, `ParameterKnob.tsx`, `ParameterSlider.tsx`, and `index.ts` so `ParameterControl` now absorbs the legacy wrapper prop shapes directly and exports a `NumberInput` alias without changing the old eager live/commit behavior.
   - Migrated the app and `map2` consumers from `web/src/app/components/Controls/{ParameterKnob,ParameterSlider,NumberInput}.tsx` and `web/src/map2/components/NumberInput.tsx` onto `web/src/app/components/ParameterControl`, then removed the four wrapper files after import-count reached zero across `web/src` and the affected frontend tests.
   - Updated focused regression tests (`web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/components/EQ/EQCard.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx`) to mock `ParameterControl` directly, and merged duplicate `jest.mock()` blocks that would otherwise shadow the new `NumberInput` alias export.
@@ -8306,5 +8306,8 @@ Last updated: 2026-03-27 18:38 EDT - Codex
   - While validating the Tesira slice, I fixed a real state-sync loop in `web/src/app/components/Tesira/components/TesiraDspBlockPanel.tsx` by guarding draft hydration against equivalent value maps before calling `setDrafts`, then refreshed the stale casing assertions in `web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx`.
   - Closed the remaining Tesira apply-button slice safely: `web/src/app/components/Tesira/components/TesiraMixerTab.tsx`, `TesiraLevelsTab.tsx`, and `TesiraDspBlockPanel.tsx` now stage local drafts through the shared `NumberInput` runtime while preserving explicit Apply/Set buttons, and focused tests in the matching `*.test.tsx` files now cover the staged-edit then apply path.
   - Removed the remaining raw `type="number"` controls from `web/src/app/pages/JuceGridSelectedBlockMidiPanel.tsx` without breaking its nullable CC/feedback draft semantics by switching those fields to sanitized text-mode numeric inputs instead of forcing a non-nullable shared control; `web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx` now locks the edited-draft save path.
-  - Raw-input audit tail is now isolated to `web/src/app/pages/DrumsPage.tsx`; the latest `rg -n "type=\"range\"|type=\"number\"" ...` run no longer finds raw range/number usage in the Tesira mixer/levels/DSP panels or `JuceGridSelectedBlockMidiPanel.tsx`.
-  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx` -> PASS (`43 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Closed the final raw-input audit tail in `web/src/app/pages/DrumsPage.tsx` by migrating the practice, sequencer row, pattern/song, mixer, sample editor, synth/filter/CV, step-lock, MIDI, backing-track, and transport master controls onto the shared `NumberInput` runtime while keeping the page’s existing external labels/value chrome and aria labels stable.
+  - Extended `web/src/app/pages/DrumsPage.test.tsx` so the shared numeric-control mock is interactive instead of read-only, then added regression coverage for the new row-volume/swing, pattern-length, practice quantize/variation, selected-pad curve/zone/CC index, synth/filter/CV, backing-track shift, and transport master-volume paths.
+  - Repo-wide audit: `rg -n 'type="range"|type="number"' web/src` now only reports CSS selectors, Recharts axis `type="number"` props, and test-only code; no live frontend parameter surfaces remain on raw HTML range/number controls.
+  - Licensing review: touched frontend/worklist/version-artifact files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src/app/pages/DrumsPage.tsx web/src/app/pages/DrumsPage.test.tsx` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `timeout 120s npm --prefix web test -- --runInBand web/src/app/pages/DrumsPage.test.tsx` -> PASS (`34 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.

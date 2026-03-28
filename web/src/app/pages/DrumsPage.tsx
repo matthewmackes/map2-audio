@@ -938,48 +938,65 @@ function practicePanel(
               <Tag type="cool-gray">Session</Tag>
             </div>
             <div style={shellStyle.fieldGrid}>
-              <label style={shellStyle.fieldStack}>
+              <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Count-In Bars</span>
-                <input
-                  aria-label="Practice count-in bars"
-                  type="number"
+                <NumberInput
+                  label="Practice count-in bars"
+                  value={state.practice_count_in_bars}
                   min={0}
                   max={4}
-                  value={state.practice_count_in_bars}
-                  onChange={(event) => onUpdateState({ practice_count_in_bars: Number(event.currentTarget.value) })}
+                  step={1}
+                  profile="integer"
+                  onChange={(value) => onUpdateState({ practice_count_in_bars: value })}
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
+                  fullWidth
                   style={shellStyle.input}
+                  accentColor={accent}
                 />
-              </label>
-              <label style={shellStyle.fieldStack}>
+              </div>
+              <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Quantize Bars</span>
-                <input
-                  aria-label="Practice quantize bars"
-                  type="number"
+                <NumberInput
+                  label="Practice quantize bars"
+                  value={state.practice_change_quantization}
                   min={1}
                   max={8}
-                  value={state.practice_change_quantization}
-                  onChange={(event) => onUpdateState({ practice_change_quantization: Number(event.currentTarget.value) })}
+                  step={1}
+                  profile="integer"
+                  onChange={(value) => onUpdateState({ practice_change_quantization: value })}
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
+                  fullWidth
                   style={shellStyle.input}
+                  accentColor={accent}
                 />
-              </label>
+              </div>
             </div>
-            <label style={shellStyle.fieldStack}>
+            <div style={shellStyle.fieldStack}>
               <span style={shellStyle.clusterLabel}>Variation</span>
               <div style={shellStyle.sliderValue}>
                 <span>Intensity</span>
                 <strong>{state.practice_variation}</strong>
               </div>
-              <input
-                aria-label="Practice variation"
-                type="range"
+              <NumberInput
+                label="Practice variation"
+                value={state.practice_variation}
                 min={0}
                 max={10}
                 step={1}
-                value={state.practice_variation}
-                onChange={(event) => onUpdateState({ practice_variation: Number(event.currentTarget.value) })}
+                profile="integer"
+                onChange={(value) => onUpdateState({ practice_variation: value })}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                fullWidth
                 style={shellStyle.range}
+                accentColor={accent}
               />
-            </label>
+            </div>
             <div style={shellStyle.toggleRow}>
               <Button
                 kind={state.practice_auto_fill ? 'primary' : 'secondary'}
@@ -1391,15 +1408,14 @@ function advancedPanel(
                               <span>{control.label}</span>
                               <strong>{control.key === 'track_length' && control.value === 0 ? 'Global' : control.value}</strong>
                             </div>
-                            <input
-                              type="range"
+                            <NumberInput
+                              label={`${instrument.name} ${control.label}`}
+                              value={control.value}
                               min={control.min}
                               max={control.max}
                               step={1}
-                              value={control.value}
-                              onClick={(event) => event.stopPropagation()}
-                              onChange={(event) => {
-                                const value = Number(event.currentTarget.value)
+                              profile="integer"
+                              onChange={(value) => {
                                 if (control.key === 'track_swing') {
                                   onUpdateTrackSwing(instrumentIndex, value)
                                   return
@@ -1412,8 +1428,12 @@ function advancedPanel(
                                   [control.key]: value,
                                 })
                               }}
+                              showLabel={false}
+                              showBounds={false}
+                              size="small"
+                              fullWidth
                               style={shellStyle.compactRange}
-                              aria-label={`${instrument.name} ${control.label}`}
+                              accentColor={instrument.color}
                             />
                           </div>
                         ))}
@@ -1563,14 +1583,20 @@ function advancedPanel(
                       <span>Loop</span>
                       <strong>{trackLength === 0 ? `Global ${clampPatternLength(pattern)}` : trackLength}</strong>
                     </div>
-                    <input
-                      type="range"
+                    <NumberInput
+                      label={`${instrument.name} loop length`}
+                      value={trackLength}
                       min={0}
                       max={64}
-                      value={trackLength}
-                      onChange={(event) => onUpdateTrackLength(instrumentIndex, Number(event.currentTarget.value))}
-                      aria-label={`${instrument.name} loop length`}
+                      step={1}
+                      profile="integer"
+                      onChange={(value) => onUpdateTrackLength(instrumentIndex, value)}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.rowSlider}
+                      accentColor={instrument.color}
                     />
                   </div>
                   </div>
@@ -1642,18 +1668,24 @@ function advancedPanel(
                 </Button>
               </div>
               <div style={shellStyle.fieldGrid}>
-                <label style={shellStyle.fieldStack}>
+                <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Pattern Length</span>
-                  <input
-                    aria-label="Pattern length"
-                    type="number"
+                  <NumberInput
+                    label="Pattern length"
+                    value={clampPatternLength(pattern)}
                     min={1}
                     max={64}
-                    value={clampPatternLength(pattern)}
-                    onChange={(event) => onSetPatternLength(Number(event.currentTarget.value))}
+                    step={1}
+                    profile="integer"
+                    onChange={(value) => onSetPatternLength(value)}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.input}
+                    accentColor={accent}
                   />
-                </label>
+                </div>
                 <label style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Variation</span>
                   <select
@@ -1713,30 +1745,42 @@ function advancedPanel(
                 </Button>
               </div>
               <div style={shellStyle.fieldGrid}>
-                <label style={shellStyle.fieldStack}>
+                <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Pattern</span>
-                  <input
-                    aria-label="Song entry pattern"
-                    type="number"
+                  <NumberInput
+                    label="Song entry pattern"
+                    value={songDraftPattern}
                     min={0}
                     max={127}
-                    value={songDraftPattern}
-                    onChange={(event) => onSongDraftPatternChange(Number(event.currentTarget.value))}
+                    step={1}
+                    profile="integer"
+                    onChange={(value) => onSongDraftPatternChange(value)}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.input}
+                    accentColor="#4589ff"
                   />
-                </label>
-                <label style={shellStyle.fieldStack}>
+                </div>
+                <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Repeats</span>
-                  <input
-                    aria-label="Song entry repeats"
-                    type="number"
+                  <NumberInput
+                    label="Song entry repeats"
+                    value={songDraftRepeats}
                     min={1}
                     max={99}
-                    value={songDraftRepeats}
-                    onChange={(event) => onSongDraftRepeatsChange(Number(event.currentTarget.value))}
+                    step={1}
+                    profile="integer"
+                    onChange={(value) => onSongDraftRepeatsChange(value)}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.input}
+                    accentColor="#4589ff"
                   />
-                </label>
+                </div>
               </div>
               <div style={shellStyle.songList}>
                 {songEntries.length === 0 ? (
@@ -1857,19 +1901,24 @@ function advancedPanel(
                 with master output control, direct physical-output routing, and stereo peak readout alongside them.
               </p>
               <div style={shellStyle.fieldGrid}>
-                <label style={shellStyle.fieldStack}>
+                <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Master Output</span>
-                  <input
-                    aria-label="Mixer master volume"
-                    type="range"
+                  <NumberInput
+                    label="Mixer master volume"
+                    value={masterVolume}
                     min={0}
                     max={100}
                     step={1}
-                    value={masterVolume}
-                    onChange={(event) => onUpdateMasterVolume(Number(event.currentTarget.value))}
+                    profile="integer"
+                    onChange={(value) => onUpdateMasterVolume(value)}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.compactRange}
+                    accentColor="#d2a106"
                   />
-                </label>
+                </div>
                 <div style={shellStyle.statGrid}>
                   <div style={shellStyle.statCard}>
                     <span style={shellStyle.statLabel}>Master L</span>
@@ -1920,22 +1969,27 @@ function advancedPanel(
                     patch: (value: number) => ({ limiter_threshold: value }),
                   },
                 ].map((control) => (
-                  <label key={control.aria} style={shellStyle.fieldStack}>
+                  <div key={control.aria} style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>{control.label}</span>
                       <strong>{control.value}</strong>
                     </div>
-                    <input
-                      aria-label={control.aria}
-                      type="range"
+                    <NumberInput
+                      label={control.aria}
+                      value={control.value}
                       min={control.min}
                       max={control.max}
                       step={control.step}
-                      value={control.value}
-                      onChange={(event) => onUpdateMasterFx(control.patch(Number(event.currentTarget.value)))}
+                      profile={control.step < 1 ? 'gain-db' : 'integer'}
+                      onChange={(value) => onUpdateMasterFx(control.patch(value))}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor="#d2a106"
                     />
-                  </label>
+                  </div>
                 ))}
               </div>
               <div style={shellStyle.busStripGrid}>
@@ -2002,22 +2056,27 @@ function advancedPanel(
                       { label: 'High', min: -24, max: 24, value: bus.eq.high_gain, update: (value: number) => ({ eq: { ...bus.eq, high_gain: value } }) },
                       { label: 'Ratio', min: 1, max: 20, value: bus.comp.ratio, update: (value: number) => ({ comp: { ...bus.comp, ratio: value } }) },
                     ].map((control) => (
-                      <label key={`${bus.bus_id}-${control.label}`} style={shellStyle.fieldStack}>
+                      <div key={`${bus.bus_id}-${control.label}`} style={shellStyle.fieldStack}>
                         <div style={shellStyle.sliderValue}>
                           <span>{control.label}</span>
                           <strong>{control.value}</strong>
                         </div>
-                        <input
-                          aria-label={`${bus.name} ${control.label}`}
-                          type="range"
+                        <NumberInput
+                          label={`${bus.name} ${control.label}`}
+                          value={control.value}
                           min={control.min}
                           max={control.max}
                           step={1}
-                          value={control.value}
-                          onChange={(event) => onUpdateBusMixer(bus.bus_id, control.update(Number(event.currentTarget.value)))}
+                          profile={control.label === 'Low' || control.label === 'Mid' || control.label === 'High' ? 'gain-db' : 'integer'}
+                          onChange={(value) => onUpdateBusMixer(bus.bus_id, control.update(value))}
+                          showLabel={false}
+                          showBounds={false}
+                          size="small"
+                          fullWidth
                           style={shellStyle.compactRange}
+                          accentColor="#d2a106"
                         />
-                      </label>
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -2153,70 +2212,90 @@ function advancedPanel(
                   </div>
                 </div>
                 <div style={shellStyle.fieldGrid}>
-                  <label style={shellStyle.fieldStack}>
+                  <div style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>Zoom</span>
                       <strong>{sampleZoom}%</strong>
                     </div>
-                    <input
-                      aria-label="Selected pad waveform zoom"
-                      type="range"
+                    <NumberInput
+                      label="Selected pad waveform zoom"
+                      value={sampleZoom}
                       min={10}
                       max={100}
                       step={5}
-                      value={sampleZoom}
-                      onChange={(event) => onChangeSampleZoom(Number(event.currentTarget.value))}
+                      profile="integer"
+                      onChange={(value) => onChangeSampleZoom(value)}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor={padAccent(selectedPad)}
                     />
-                  </label>
-                  <label style={shellStyle.fieldStack}>
+                  </div>
+                  <div style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>Scroll</span>
                       <strong>{sampleScroll}%</strong>
                     </div>
-                    <input
-                      aria-label="Selected pad waveform scroll"
-                      type="range"
+                    <NumberInput
+                      label="Selected pad waveform scroll"
+                      value={sampleScroll}
                       min={0}
                       max={100}
                       step={1}
-                      value={sampleScroll}
-                      onChange={(event) => onChangeSampleScroll(Number(event.currentTarget.value))}
+                      profile="integer"
+                      onChange={(value) => onChangeSampleScroll(value)}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor={padAccent(selectedPad)}
                     />
-                  </label>
-                  <label style={shellStyle.fieldStack}>
+                  </div>
+                  <div style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>Trim Start</span>
                       <strong>{sampleTrimStart}</strong>
                     </div>
-                    <input
-                      aria-label="Selected pad sample trim start"
-                      type="range"
+                    <NumberInput
+                      label="Selected pad sample trim start"
+                      value={Math.min(sampleTrimStart, Math.max(0, sampleTrimEnd - 1))}
                       min={0}
                       max={Math.max(1, selectedPadSample?.sample_count ?? 1)}
                       step={1}
-                      value={Math.min(sampleTrimStart, Math.max(0, sampleTrimEnd - 1))}
-                      onChange={(event) => onChangeSampleTrimStart(Number(event.currentTarget.value))}
+                      profile="integer"
+                      onChange={(value) => onChangeSampleTrimStart(value)}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor={padAccent(selectedPad)}
                     />
-                  </label>
-                  <label style={shellStyle.fieldStack}>
+                  </div>
+                  <div style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>Trim End</span>
                       <strong>{sampleTrimEnd}</strong>
                     </div>
-                    <input
-                      aria-label="Selected pad sample trim end"
-                      type="range"
+                    <NumberInput
+                      label="Selected pad sample trim end"
+                      value={Math.max(1, sampleTrimEnd)}
                       min={1}
                       max={Math.max(1, selectedPadSample?.sample_count ?? 1)}
                       step={1}
-                      value={Math.max(1, sampleTrimEnd)}
-                      onChange={(event) => onChangeSampleTrimEnd(Number(event.currentTarget.value))}
+                      profile="integer"
+                      onChange={(value) => onChangeSampleTrimEnd(value)}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor={padAccent(selectedPad)}
                     />
-                  </label>
+                  </div>
                 </div>
                 <div style={shellStyle.buttonRow}>
                   <Button
@@ -2264,25 +2343,37 @@ function advancedPanel(
                     { key: 'body_decay_ms', label: 'Body Decay', min: 1, max: 5000, step: 1 },
                     { key: 'tone_amount', label: 'Tone', min: 0, max: 1, step: 0.01 },
                   ].map((control) => (
-                    <label key={control.key} style={shellStyle.fieldStack}>
+                    <div key={control.key} style={shellStyle.fieldStack}>
                       <div style={shellStyle.sliderValue}>
                         <span>{control.label}</span>
                         <strong>{Number(selectedPadSynth[control.key as keyof DrumSynthParams]).toFixed(control.step < 1 ? 2 : 0)}</strong>
                       </div>
-                      <input
-                        aria-label={`Selected pad ${control.label}`}
-                        type="range"
+                      <NumberInput
+                        label={`Selected pad ${control.label}`}
+                        value={selectedPadSynth[control.key as keyof DrumSynthParams] as number}
                         min={control.min}
                         max={control.max}
                         step={control.step}
-                        value={selectedPadSynth[control.key as keyof DrumSynthParams] as number}
-                        onChange={(event) => onUpdatePadSynthParams(selectedPad, {
+                        profile={
+                          control.label === 'Pitch Start' || control.label === 'Pitch End'
+                            ? 'frequency'
+                            : control.step < 1
+                              ? 'normalized_0_1'
+                              : 'time-ms'
+                        }
+                        scale={control.label === 'Pitch Start' || control.label === 'Pitch End' ? 'log' : undefined}
+                        onChange={(value) => onUpdatePadSynthParams(selectedPad, {
                           ...selectedPadSynth,
-                          [control.key]: Number(event.currentTarget.value),
+                          [control.key]: value,
                         })}
+                        showLabel={false}
+                        showBounds={false}
+                        size="small"
+                        fullWidth
                         style={shellStyle.compactRange}
+                        accentColor={padAccent(selectedPad)}
                       />
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -2312,25 +2403,31 @@ function advancedPanel(
                     { key: 'env_amount', label: 'Env Amt', min: -1, max: 1, step: 0.01 },
                     { key: 'env_decay_ms', label: 'Env Decay', min: 1, max: 5000, step: 1 },
                   ].map((control) => (
-                    <label key={control.key} style={shellStyle.fieldStack}>
+                    <div key={control.key} style={shellStyle.fieldStack}>
                       <div style={shellStyle.sliderValue}>
                         <span>{control.label}</span>
                         <strong>{Number(selectedPadFilter[control.key as keyof DrumPadFilter]).toFixed(control.step < 1 ? 2 : 0)}</strong>
                       </div>
-                      <input
-                        aria-label={`Selected pad filter ${control.label}`}
-                        type="range"
+                      <NumberInput
+                        label={`Selected pad filter ${control.label}`}
+                        value={selectedPadFilter[control.key as keyof DrumPadFilter] as number}
                         min={control.min}
                         max={control.max}
                         step={control.step}
-                        value={selectedPadFilter[control.key as keyof DrumPadFilter] as number}
-                        onChange={(event) => onUpdatePadFilter(selectedPad, {
+                        profile={control.label === 'Cutoff' ? 'frequency' : control.step < 1 ? 'normalized_0_1' : 'time-ms'}
+                        scale={control.label === 'Cutoff' ? 'log' : undefined}
+                        onChange={(value) => onUpdatePadFilter(selectedPad, {
                           ...selectedPadFilter,
-                          [control.key]: Number(event.currentTarget.value),
+                          [control.key]: value,
                         })}
+                        showLabel={false}
+                        showBounds={false}
+                        size="small"
+                        fullWidth
                         style={shellStyle.compactRange}
+                        accentColor={padAccent(selectedPad)}
                       />
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -2377,25 +2474,36 @@ function advancedPanel(
                     { key: 'pitch_min_volts', label: 'Pitch Min V', min: -10, max: 10, step: 0.1 },
                     { key: 'pitch_max_volts', label: 'Pitch Max V', min: -10, max: 10, step: 0.1 },
                   ].map((control) => (
-                    <label key={control.key} style={shellStyle.fieldStack}>
+                    <div key={control.key} style={shellStyle.fieldStack}>
                       <div style={shellStyle.sliderValue}>
                         <span>{control.label}</span>
                         <strong>{Number(selectedPadCvGate[control.key as keyof DrumCvGateConfig]).toFixed(control.step < 1 ? 1 : 0)}</strong>
                       </div>
-                      <input
-                        aria-label={`Selected pad CV/Gate ${control.label}`}
-                        type="range"
+                      <NumberInput
+                        label={`Selected pad CV/Gate ${control.label}`}
+                        value={selectedPadCvGate[control.key as keyof DrumCvGateConfig] as number}
                         min={control.min}
                         max={control.max}
                         step={control.step}
-                        value={selectedPadCvGate[control.key as keyof DrumCvGateConfig] as number}
-                        onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                        profile={
+                          control.label === 'Gate Length'
+                            ? 'time-ms'
+                            : control.label === 'Note Min' || control.label === 'Note Max'
+                              ? 'integer'
+                              : 'default'
+                        }
+                        onChange={(value) => onUpdatePadCvGateConfig(selectedPad, {
                           ...selectedPadCvGate,
-                          [control.key]: Number(event.currentTarget.value),
+                          [control.key]: value,
                         })}
+                        showLabel={false}
+                        showBounds={false}
+                        size="small"
+                        fullWidth
                         style={shellStyle.compactRange}
+                        accentColor={padAccent(selectedPad)}
                       />
-                    </label>
+                    </div>
                   ))}
                 </div>
                 <div style={shellStyle.toggleRow}>
@@ -2449,23 +2557,28 @@ function advancedPanel(
                     </Button>
                   </div>
                 </div>
-                <label style={shellStyle.fieldStack}>
+                <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Probability</span>
                   <div style={shellStyle.sliderValue}>
                     <span>Chance</span>
                     <strong>{Math.round((selectedStepState?.probability ?? 1) * 100)}%</strong>
                   </div>
-                  <input
-                    aria-label="Step probability"
-                    type="range"
+                  <NumberInput
+                    label="Step probability"
+                    value={selectedStepState?.probability ?? 1}
                     min={0}
                     max={1}
                     step={0.01}
-                    value={selectedStepState?.probability ?? 1}
-                    onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
-                      probability: Number(event.currentTarget.value),
+                    profile="normalized_0_1"
+                    onChange={(value) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                      probability: value,
                     })}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.compactRange}
+                    accentColor="#ff832b"
                   />
                   <Button
                     size="sm"
@@ -2474,7 +2587,7 @@ function advancedPanel(
                   >
                     Reset Probability
                   </Button>
-                </label>
+                </div>
                 <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Ratchet</span>
                   <div style={shellStyle.sliderValue}>
@@ -2499,17 +2612,22 @@ function advancedPanel(
                     <span>Decay</span>
                     <strong>{selectedStepState?.ratchet_decay ?? 0}%</strong>
                   </div>
-                  <input
-                    aria-label="Step ratchet decay"
-                    type="range"
+                  <NumberInput
+                    label="Step ratchet decay"
+                    value={selectedStepState?.ratchet_decay ?? 0}
                     min={0}
                     max={100}
                     step={1}
-                    value={selectedStepState?.ratchet_decay ?? 0}
-                    onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
-                      ratchet_decay: Number(event.currentTarget.value),
+                    profile="integer"
+                    onChange={(value) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                      ratchet_decay: value,
                     })}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    fullWidth
                     style={shellStyle.compactRange}
+                    accentColor="#ff832b"
                   />
                 </div>
                 {[
@@ -2519,22 +2637,36 @@ function advancedPanel(
                   { key: 'lock_pan', label: 'Pan', min: -1, max: 1, step: 0.01, value: selectedStepState?.lock_pan ?? null },
                   { key: 'lock_volume', label: 'Volume', min: 0, max: 1, step: 0.01, value: selectedStepState?.lock_volume ?? null },
                 ].map((control) => (
-                  <label key={control.key} style={shellStyle.fieldStack}>
+                  <div key={control.key} style={shellStyle.fieldStack}>
                     <div style={shellStyle.sliderValue}>
                       <span>{control.label}</span>
                       <strong>{control.value === null ? 'Off' : control.value}</strong>
                     </div>
-                    <input
-                      aria-label={`Step lock ${control.label}`}
-                      type="range"
+                    <NumberInput
+                      label={`Step lock ${control.label}`}
+                      value={control.value ?? control.min}
                       min={control.min}
                       max={control.max}
                       step={control.step}
-                      value={control.value ?? control.min}
-                      onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
-                        [control.key]: Number(event.currentTarget.value),
+                      profile={
+                        control.label === 'Filter'
+                          ? 'frequency'
+                          : control.label === 'Decay'
+                            ? 'time-ms'
+                            : control.step < 1
+                              ? 'normalized_0_1'
+                              : 'integer'
+                      }
+                      scale={control.label === 'Filter' ? 'log' : undefined}
+                      onChange={(value) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                        [control.key]: value,
                       })}
+                      showLabel={false}
+                      showBounds={false}
+                      size="small"
+                      fullWidth
                       style={shellStyle.compactRange}
+                      accentColor="#ff832b"
                     />
                     <Button
                       size="sm"
@@ -2545,7 +2677,7 @@ function advancedPanel(
                     >
                       Clear {control.label}
                     </Button>
-                  </label>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -2626,14 +2758,21 @@ function advancedPanel(
                       <tr key={`midi-pad-${padId}`}>
                         <td style={shellStyle.trackCell}>{draftNames[padId] ?? `Pad ${padId + 1}`}</td>
                         <td style={shellStyle.trackCell}>
-                          <input
-                            aria-label={`Pad ${padId + 1} MIDI note`}
-                            type="number"
+                          <NumberInput
+                            label={`Pad ${padId + 1} MIDI note`}
+                            value={padMapping.notes[0] ?? 36 + padId}
                             min={0}
                             max={127}
-                            value={padMapping.notes[0] ?? 36 + padId}
-                            onChange={(event) => onUpdateMidiPad(padId, { notes: [Number(event.currentTarget.value)] })}
+                            step={1}
+                            profile="integer"
+                            onChange={(value) => onUpdateMidiPad(padId, { notes: [value] })}
+                            showLabel={false}
+                            showBounds={false}
+                            size="small"
+                            fullWidth
+                            inline
                             style={shellStyle.miniInput}
+                            accentColor="#be95ff"
                           />
                         </td>
                         <td style={shellStyle.trackCell}>
@@ -2661,17 +2800,18 @@ function advancedPanel(
                           </select>
                         </td>
                         <td style={shellStyle.trackCell}>
-                          <input
-                            aria-label={`Pad ${padId + 1} head zone note`}
-                            type="number"
+                          <NumberInput
+                            label={`Pad ${padId + 1} head zone note`}
+                            value={zoneConfig.zones[0]?.trigger_note ?? padMapping.notes[0] ?? 36 + padId}
                             min={0}
                             max={127}
-                            value={zoneConfig.zones[0]?.trigger_note ?? padMapping.notes[0] ?? 36 + padId}
-                            onChange={(event) =>
+                            step={1}
+                            profile="integer"
+                            onChange={(value) =>
                               onUpdateMidiZones(padId, [
                                 {
                                   kind: 0,
-                                  trigger_note: Number(event.currentTarget.value),
+                                  trigger_note: value,
                                   key_switch_note: zoneConfig.zones[0]?.key_switch_note ?? -1,
                                   velocity_scale: zoneConfig.zones[0]?.velocity_scale ?? 1,
                                   enabled: zoneConfig.zones[0]?.enabled ?? true,
@@ -2679,7 +2819,13 @@ function advancedPanel(
                                 ...(zoneConfig.zones.slice(1)),
                               ])
                             }
+                            showLabel={false}
+                            showBounds={false}
+                            size="small"
+                            fullWidth
+                            inline
                             style={shellStyle.miniInput}
+                            accentColor="#be95ff"
                           />
                         </td>
                       </tr>
@@ -2689,40 +2835,46 @@ function advancedPanel(
               </table>
             </div>
             <div style={shellStyle.fieldGrid}>
-              <label style={shellStyle.fieldStack}>
+              <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Selected Pad Curve</span>
                 <div style={shellStyle.sliderValue}>
                   <span>Output Ceiling</span>
                   <strong>{selectedVelocityCurve.output_ceiling.toFixed(2)}</strong>
                 </div>
-                <input
-                  aria-label="Selected pad output ceiling"
-                  type="range"
+                <NumberInput
+                  label="Selected pad output ceiling"
+                  value={selectedVelocityCurve.output_ceiling}
                   min={0}
                   max={1}
                   step={0.01}
-                  value={selectedVelocityCurve.output_ceiling}
-                  onChange={(event) => onUpdateVelocityCurve(selectedPad, { output_ceiling: Number(event.currentTarget.value) })}
+                  profile="normalized_0_1"
+                  onChange={(value) => onUpdateVelocityCurve(selectedPad, { output_ceiling: value })}
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
+                  fullWidth
                   style={shellStyle.range}
+                  accentColor="#be95ff"
                 />
-              </label>
-              <label style={shellStyle.fieldStack}>
+              </div>
+              <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Selected Pad Zone</span>
                 <div style={shellStyle.sliderValue}>
                   <span>Head Trigger</span>
                   <strong>{selectedZoneConfig.zones[0]?.trigger_note ?? selectedMidiPad.notes[0] ?? '--'}</strong>
                 </div>
-                <input
-                  aria-label="Selected pad head zone note"
-                  type="number"
+                <NumberInput
+                  label="Selected pad head zone note"
+                  value={selectedZoneConfig.zones[0]?.trigger_note ?? selectedMidiPad.notes[0] ?? 36 + selectedPad}
                   min={0}
                   max={127}
-                  value={selectedZoneConfig.zones[0]?.trigger_note ?? selectedMidiPad.notes[0] ?? 36 + selectedPad}
-                  onChange={(event) =>
+                  step={1}
+                  profile="integer"
+                  onChange={(value) =>
                     onUpdateMidiZones(selectedPad, [
                       {
                         kind: 0,
-                        trigger_note: Number(event.currentTarget.value),
+                        trigger_note: value,
                         key_switch_note: selectedZoneConfig.zones[0]?.key_switch_note ?? -1,
                         velocity_scale: selectedZoneConfig.zones[0]?.velocity_scale ?? 1,
                         enabled: selectedZoneConfig.zones[0]?.enabled ?? true,
@@ -2730,9 +2882,14 @@ function advancedPanel(
                       ...(selectedZoneConfig.zones.slice(1)),
                     ])
                   }
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
+                  fullWidth
                   style={shellStyle.input}
+                  accentColor="#be95ff"
                 />
-              </label>
+              </div>
             </div>
             <div style={shellStyle.tileHeader}>
               <h4 style={shellStyle.tileTitle}>CC Mapping</h4>
@@ -2766,14 +2923,21 @@ function advancedPanel(
                       <tr key={`cc-slot-${slot}`}>
                         <td style={shellStyle.trackCell}>Slot {slot + 1}</td>
                         <td style={shellStyle.trackCell}>
-                          <input
-                            aria-label={`CC slot ${slot + 1} number`}
-                            type="number"
+                          <NumberInput
+                            label={`CC slot ${slot + 1} number`}
+                            value={mapping.cc_number}
                             min={0}
                             max={127}
-                            value={mapping.cc_number}
-                            onChange={(event) => onUpdateCcMapping(slot, { cc_number: Number(event.currentTarget.value), active: true })}
+                            step={1}
+                            profile="integer"
+                            onChange={(value) => onUpdateCcMapping(slot, { cc_number: value, active: true })}
+                            showLabel={false}
+                            showBounds={false}
+                            size="small"
+                            fullWidth
+                            inline
                             style={shellStyle.miniInput}
+                            accentColor="#be95ff"
                           />
                         </td>
                         <td style={shellStyle.trackCell}>
@@ -2802,14 +2966,21 @@ function advancedPanel(
                           </select>
                         </td>
                         <td style={shellStyle.trackCell}>
-                          <input
-                            aria-label={`CC slot ${slot + 1} target index`}
-                            type="number"
+                          <NumberInput
+                            label={`CC slot ${slot + 1} target index`}
+                            value={mapping.target_index}
                             min={0}
                             max={15}
-                            value={mapping.target_index}
-                            onChange={(event) => onUpdateCcMapping(slot, { target_index: Number(event.currentTarget.value), active: true })}
+                            step={1}
+                            profile="integer"
+                            onChange={(value) => onUpdateCcMapping(slot, { target_index: value, active: true })}
+                            showLabel={false}
+                            showBounds={false}
+                            size="small"
+                            fullWidth
+                            inline
                             style={shellStyle.miniInput}
+                            accentColor="#be95ff"
                           />
                         </td>
                         <td style={shellStyle.trackCell}>
@@ -2956,40 +3127,50 @@ function backingTracksPanel(
                 Loop {loopEnabled ? 'On' : 'Off'}
               </Button>
             </div>
-            <label style={shellStyle.fieldStack}>
+            <div style={shellStyle.fieldStack}>
               <span style={shellStyle.clusterLabel}>Tempo Shift</span>
               <div style={shellStyle.sliderValue}>
                 <span>Stretch</span>
                 <strong>{tempoShift}%</strong>
               </div>
-              <input
-                aria-label="Backing track tempo shift"
-                type="range"
+              <NumberInput
+                label="Backing track tempo shift"
+                value={tempoShift}
                 min={-50}
                 max={50}
                 step={1}
-                value={tempoShift}
-                onChange={(event) => onTempoShiftChange(Number(event.currentTarget.value))}
+                profile="integer"
+                onChange={(value) => onTempoShiftChange(value)}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                fullWidth
                 style={shellStyle.range}
+                accentColor={accent}
               />
-            </label>
-            <label style={shellStyle.fieldStack}>
+            </div>
+            <div style={shellStyle.fieldStack}>
               <span style={shellStyle.clusterLabel}>Pitch Shift</span>
               <div style={shellStyle.sliderValue}>
                 <span>Transpose</span>
                 <strong>{pitchShift} st</strong>
               </div>
-              <input
-                aria-label="Backing track pitch shift"
-                type="range"
+              <NumberInput
+                label="Backing track pitch shift"
+                value={pitchShift}
                 min={-12}
                 max={12}
                 step={1}
-                value={pitchShift}
-                onChange={(event) => onPitchShiftChange(Number(event.currentTarget.value))}
+                profile="integer"
+                onChange={(value) => onPitchShiftChange(value)}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                fullWidth
                 style={shellStyle.range}
+                accentColor={accent}
               />
-            </label>
+            </div>
             <InlineNotification
               kind="warning"
               lowContrast
@@ -3834,15 +4015,20 @@ export function DrumsWorkspace({
                 {state.volume}% · L {meterPercent(metering?.master_peak_left)} / R {meterPercent(metering?.master_peak_right)}
               </strong>
             </div>
-            <input
-              aria-label="Master volume"
-              type="range"
+            <NumberInput
+              label="Master volume"
+              value={state.volume}
               min={0}
               max={100}
               step={1}
-              value={state.volume}
-              onChange={(event) => updateState.mutate({ volume: Number(event.currentTarget.value) })}
+              profile="integer"
+              onChange={(value) => updateState.mutate({ volume: value })}
+              showLabel={false}
+              showBounds={false}
+              size="small"
+              fullWidth
               style={{ ...shellStyle.range, accentColor: '#24a148' }}
+              accentColor="#24a148"
             />
           </div>
         </div>
