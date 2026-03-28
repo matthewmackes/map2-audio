@@ -3,7 +3,7 @@
  * Real-time event-driven communication with backend
  */
 
-import { getWsBaseUrl } from './api'
+import { getWsBaseUrl } from './transport'
 import { getRuntimeWebSocket, type RuntimeWebSocketLike } from './runtime'
 
 export type WebSocketMessage = {

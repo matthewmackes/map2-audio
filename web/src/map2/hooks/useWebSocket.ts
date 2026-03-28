@@ -10,6 +10,8 @@ import {
   WebSocketTopic,
   ConnectionStatus,
 } from '../websocket';
+import { chainsApi } from '../clients/chains';
+import { pluginsApi } from '../clients/plugins';
 import { sanitizeDisplayPayload } from '../displayNames';
 
 function normalizeInstanceId(value: unknown): number | undefined {
@@ -289,15 +291,12 @@ export function useBatchedParameter(
   const [value, setValue] = useState(initialValue);
   const [isPending, setIsPending] = useState(false);
 
-  // Import the API dynamically to avoid circular deps
   const updateParameter = useCallback(
     async (newValue: number) => {
       setValue(newValue);
       setIsPending(true);
 
       try {
-        // Use dynamic import to get the batched API
-        const { pluginsApi } = await import('../api');
         await pluginsApi.setParameterBatched(pluginUri, paramIndex, newValue, instanceId, pluginPosition);
       } catch (error) {
         console.error('Failed to update parameter:', error);
@@ -311,7 +310,6 @@ export function useBatchedParameter(
   // Flush pending updates (call on mouse up / touch end)
   const flush = useCallback(async () => {
     try {
-      const { pluginsApi } = await import('../api');
       await pluginsApi.flushParameterBatch();
     } catch (error) {
       console.error('Failed to flush parameter batch:', error);
@@ -359,7 +357,6 @@ export function useRealtimeChain(chainId: number) {
     const loadChain = async () => {
       try {
         setIsLoading(true);
-        const { chainsApi } = await import('../api');
         const data = await chainsApi.get(chainId);
         if (!cancelled) {
           setChain(data);
@@ -393,9 +390,7 @@ export function useRealtimeChain(chainId: number) {
         'plugin_reordered',
       ];
       if (relevantTypes.includes(message.type)) {
-        import('../api').then(({ chainsApi }) => {
-          chainsApi.get(chainId).then(setChain).catch(console.error);
-        });
+        chainsApi.get(chainId).then(setChain).catch(console.error);
       }
     }
   });

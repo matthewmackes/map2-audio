@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 13:52 EDT - Closed service-classification cleanup and current-tree JUCE bloat bundles
+Last updated: 2026-03-28 16:16 EDT - Closed the API-client split bundles and removed the remaining production build warning
 
 ID: T482
 Status: [✓] Done
@@ -8875,3 +8875,165 @@ Last updated: 2026-03-28 13:01 EDT - Codex
 - Completion notes:
   - Removed the stale `TODO: Implement impulse-response calibration` comment from `juce-engine/Source/Map2AudioEngine.cpp` and replaced it with an explicit explanation that the current Lexicon path intentionally uses a conservative fixed S/PDIF latency fallback until a real loopback-calibration flow exists.
   - Validation: included in `cmake -S juce-engine -B /tmp/map2-t476-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t476-cmake -j2` -> PASS.
+
+### Follow-up Slice: API Client Split and Production Build Warning Cleanup
+
+ID: T492
+Status: [✓] Done
+Title: Extract API transport/base-URL helpers from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `API_BASE`, WebSocket base/url helpers, and related runtime base-resolution logic out of `web/src/map2/api.ts` into a small transport-focused module. The new module must preserve current localhost/port-3000/port-80/port-8080 behavior and be reusable by the REST client, websocket client, and specialized API modules without importing the 7k-line monolith.
+- Why it matters: `web/src/map2/api.ts` currently owns both the full REST surface and the transport/base-url helpers needed by `websocket.ts`, which couples unrelated modules and makes the production build warning harder to remove cleanly.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: new transport helper module, import updates for existing websocket/specialized API modules, focused tests or validation covering base-url behavior, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/transport.ts` and moved the shared base-url/runtime-resolution helpers there, including `resolveRawApiBase`, `resolveApiBase`, `API_BASE`, `getWsBaseUrl`, and `getWsUrl`.
+  - Rewired the modules that only need transport state so they no longer depend on the 7k-line `web/src/map2/api.ts` barrel for URL derivation.
+  - Added focused coverage in `web/src/map2/transport.test.ts` for runtime override handling and localhost/non-standard-port base-url behavior.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T493
+Status: [✓] Done
+Title: Extract shared HTTP helpers and API error primitives from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move the generic `fetchJson`/request helpers, `ApiError`, and related node-query utility plumbing needed by split client modules into a shared HTTP helper module. The shared layer must keep current request semantics, no-store behavior, and error handling intact.
+- Why it matters: Splitting high-traffic client modules out of `web/src/map2/api.ts` is not maintainable if every extracted client still depends on the whole monolith for generic request primitives.
+- Dependencies: T492
+- Estimated effort: Medium
+- Required outputs: shared HTTP helper module, internal import rewiring, focused validation for request/error behavior, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/http.ts` and moved the shared request helpers there: `ApiError`, `fetchJson`, `fetchBlob`, node-query helpers, and plugin-runtime scoping helpers.
+  - Rewired `web/src/map2/api.ts` and the new split client modules onto the shared HTTP layer, including restoring `ApiError` as a compatibility export through the legacy barrel.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T494
+Status: [✓] Done
+Title: Rewire websocket and standalone API modules onto the split transport layer
+Description:
+- Goal / acceptance criteria: Update `web/src/map2/websocket.ts`, `web/src/map2/intelfxApi.ts`, and `web/src/map2/mpx1Api.ts` so they read transport/base-url state from the new shared transport module instead of importing `web/src/map2/api.ts`.
+- Why it matters: This is the dependency break that lets the websocket hook stop dynamically importing the monolithic API file just to avoid the current coupling.
+- Dependencies: T492; T493
+- Estimated effort: Low
+- Required outputs: updated websocket/specialized API imports, preserved behavior, focused validation, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Updated `web/src/map2/websocket.ts`, `web/src/map2/intelfxApi.ts`, and `web/src/map2/mpx1Api.ts` to import shared transport helpers from `web/src/map2/transport.ts` instead of `web/src/map2/api.ts`.
+  - This breaks the transport-layer dependency cycle that previously forced websocket consumers to touch the monolithic API barrel.
+  - Validation: `npm --prefix web run build` -> PASS.
+
+ID: T495
+Status: [✓] Done
+Title: Extract chainsApi into a standalone client module
+Description:
+- Goal / acceptance criteria: Move `chainsApi` into a dedicated client module under `web/src/map2/clients/` while preserving the current runtime contract, node-query behavior, reorder compatibility fallback, and compatibility re-export through `web/src/map2/api.ts`.
+- Why it matters: `chainsApi` is directly lazily imported by the websocket hook today and is one of the highest-value first extractions from the monolithic API client.
+- Dependencies: T492; T493
+- Estimated effort: Medium
+- Required outputs: standalone chains client module, compatibility barrel re-export, focused validation, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/chains.ts` and moved `chainsApi` there with the legacy reorder-compatibility fallback preserved.
+  - Kept `chainsApi` available from `web/src/map2/api.ts` so existing callers remain source-compatible while the websocket hook can statically import the split client.
+  - Added compatibility assertions in `web/src/map2/clientExports.test.ts`.
+  - Validation: `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T496
+Status: [✓] Done
+Title: Extract pluginsApi and plugin-appearance client logic into standalone modules
+Description:
+- Goal / acceptance criteria: Move `pluginsApi`, `pluginAppearancesApi`, the plugin-inventory changed event helper, and the parameter batching implementation into standalone client modules while preserving duplicate-safe parameter writes and the existing compatibility export surface.
+- Why it matters: `pluginsApi` is the other lazy-import dependency in `useWebSocket.ts`, and it is currently tied to a large amount of unrelated REST surface in `web/src/map2/api.ts`.
+- Dependencies: T492; T493
+- Estimated effort: High
+- Required outputs: standalone plugins/plugin-appearance clients, preserved batching behavior, compatibility barrel re-export, focused validation, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/plugins.ts` and moved `pluginsApi`, `pluginAppearancesApi`, the inventory-changed event constant, plugin schema types, and parameter batching into the split client module.
+  - Preserved duplicate-safe batched parameter writes and compatibility re-exports from `web/src/map2/api.ts`.
+  - Added barrel-compatibility assertions in `web/src/map2/clientExports.test.ts`.
+  - Validation: `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T497
+Status: [✓] Done
+Title: Remove useWebSocket.ts lazy imports of the monolithic API client
+Description:
+- Goal / acceptance criteria: Replace the `import('../api')` calls in `web/src/map2/hooks/useWebSocket.ts` with direct static imports from the split client modules. The production Vite build warning about `web/src/map2/api.ts` being both dynamically and statically imported must disappear after this change.
+- Why it matters: This is the concrete operator-visible build-quality improvement still left in the project after the last cleanup pass.
+- Dependencies: T494; T495; T496
+- Estimated effort: Medium
+- Required outputs: updated websocket hook imports, retained realtime behavior, focused test/build proof that the warning is gone, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Updated `web/src/map2/hooks/useWebSocket.ts` to use direct static imports from `web/src/map2/clients/chains.ts` and `web/src/map2/clients/plugins.ts` instead of `import('../api')`.
+  - The production `npm --prefix web run build` path now completes without the previous Vite warning about `web/src/map2/api.ts` being both dynamically and statically imported.
+  - Focused websocket-hook coverage remains green after the import rewrite.
+  - Validation: `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T498
+Status: [✓] Done
+Title: Extract drumsApi into a standalone high-traffic client module
+Description:
+- Goal / acceptance criteria: Move `drumsApi` into a dedicated client module under `web/src/map2/clients/` while preserving the current `@/map2/api` compatibility export and the behavior used by the Drum Machine route/hooks/cards.
+- Why it matters: `drumsApi` is a large, high-traffic leaf client that does not need to stay embedded in the monolithic API file once the shared transport/http layer exists.
+- Dependencies: T492; T493
+- Estimated effort: Medium
+- Required outputs: standalone drums client module, compatibility re-export, focused validation of the drum hooks/pages that consume it, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/drums.ts` and moved the full `drumsApi` surface there so the drum-machine hooks/pages/cards can continue using the compatibility barrel without keeping the client embedded inside `web/src/map2/api.ts`.
+  - Preserved the current `@/map2/api` export contract via a compatibility re-export in `web/src/map2/api.ts`.
+  - Added barrel-compatibility assertions in `web/src/map2/clientExports.test.ts`.
+  - Validation: `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T499
+Status: [✓] Done
+Title: Extract healthApi and wwwApi into standalone status client modules
+Description:
+- Goal / acceptance criteria: Move `healthApi` and `wwwApi` into dedicated client modules while preserving the `map2Api` compatibility surface and the consumers that currently read backend/frontend status from `@/map2/api`.
+- Why it matters: These status clients are widely read, simple, and good candidates for shrinking the monolith while exercising the new split-client pattern beyond chains/plugins.
+- Dependencies: T492; T493
+- Estimated effort: Low
+- Required outputs: standalone status client modules, compatibility re-export, focused validation for direct consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/status.ts` and moved `healthApi` and `wwwApi` into split status-client modules.
+  - Kept the `map2Api` compatibility surface intact by re-exporting both clients from `web/src/map2/api.ts`.
+  - Added compatibility assertions in `web/src/map2/clientExports.test.ts`.
+  - Validation: `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T500
+Status: [✓] Done
+Title: Preserve the map2 API compatibility barrel, tests, and docs after the split
+Description:
+- Goal / acceptance criteria: Keep `web/src/map2/api.ts` as a compatibility export surface while updating tests/docs as needed so future work knows the split-client architecture, and prove the final typecheck/test/build surface is green with the production build warning removed.
+- Why it matters: The refactor only pays off if existing imports keep working and the repository records the new client-architecture boundary clearly enough to prevent regressions.
+- Dependencies: T495; T496; T497; T498; T499
+- Estimated effort: Medium
+- Required outputs: compatibility barrel updates, any needed docs/tests, full focused validation, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 16:16 EDT - Codex
+- Completion notes:
+  - Kept `web/src/map2/api.ts` as the compatibility barrel while shrinking it to re-export the extracted transport/http/client modules instead of owning those implementations directly.
+  - Added `web/src/map2/clientExports.test.ts` so future refactors have explicit proof that key compatibility exports still alias the split modules.
+  - Licensing review: touched frontend/worklist/script files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src scripts` and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { API_BASE, getWsBaseUrl } from './api'
+import { API_BASE, getWsBaseUrl } from './transport'
 
 const MPX1_API_BASE = `${API_BASE}/mpx1`
 
