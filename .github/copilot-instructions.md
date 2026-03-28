@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 28, 2026 (DrumsPage raw-input audit closeout)
+> **Last Updated**: March 28, 2026 (AudioTable mutation harness closeout)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1303,6 +1303,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspBlockPanel.test.tsx web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: For `T460`, remove raw range/number controls in two lanes: use shared numeric controls for real numeric drafts, and use sanitized text inputs where `''` is a valid part of the draft contract.
 
+**34. AudioTable Mutation Tests Need Lazy API Mocks And Immediate Mutation Execution (MEDIUM - Mar 28, 2026)**
+- **Files**: `web/src/app/pages/AudioTablePage.test.tsx`
+- **Problem**: The Audio Table integration suite could cover rendering/search/column-picker flows, but newly added mutation assertions for row actions, parameter writes, MIDI updates, and preset/history flows either stayed inert or failed when the component finally dereferenced `chainsApi` / `pluginsApi`.
+- **Root Cause**: Jest hoisted the `../../map2/api` module mock before the concrete mock objects were initialized, so named API exports could resolve as `undefined` once a mutation path actually touched them; on top of that, React Query mutation scheduling and Carbon popup controls made the failing path look like a generic UI-event problem.
+- **Fix**: In `web/src/app/pages/AudioTablePage.test.tsx`, mock `../../map2/api` through lazy proxy objects that resolve the live jest fns at property-access time, stub `useMutation` so `mutationFn` executes immediately with `onSuccess` / `onError` callbacks, drive the preset dropdown through combobox keyboard events, and toggle the row bypass control through the semantic checkbox click path.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/pages/audioTableKeyboard.test.ts`
+- **Lesson**: For Carbon/React Query suites that preseed query data, passing render coverage does not prove the mutation harness is sound. If new mutation assertions never reach their payload mocks, verify the mocked module exports are lazily bound before blaming the UI event path.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1573,6 +1581,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-28] - AudioTable Mutation Harness Closeout
+- **Section**: Gotchas & Learned Fixes (#34), Update Log
+- **Change**: Documented the stable `AudioTablePage.test.tsx` mutation harness: lazy proxy API mocks, immediate `useMutation` execution, keyboard-driven preset selection, and semantic Carbon checkbox toggles for the row-action path.
+- **Reason**: `T454-subN` was blocked by a test-only failure mode where preseeded render coverage hid hoisted mock timing problems and queued mutation calls never reached the API payload assertions.
+- **Impact**: Future assistants can extend the Audio Table integration suite without reopening the same Carbon/jsdom dead end; the canonical stable path for mutation assertions is now explicit.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/AudioTablePage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-28] - DrumsPage Raw-Input Audit Closeout
 - **Section**: Gotchas & Learned Fixes (#33), Update Log

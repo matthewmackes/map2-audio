@@ -199,16 +199,51 @@ const mockFlowSnapshotsApi = {
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
 
-jest.mock('../../map2/api', () => ({
-  chainsApi: mockChainsApi,
-  pluginsApi: mockPluginsApi,
-  historyApi: mockHistoryApi,
-  audioApi: mockAudioApi,
-  midiApiV2: mockMidiApiV2,
-  flowSnapshotsApi: mockFlowSnapshotsApi,
-  getWsBaseUrl: () => 'ws://localhost:3000',
-  getWsUrl: () => 'ws://localhost:3000/ws',
-}))
+jest.mock('@tanstack/react-query', () => {
+  const actual = jest.requireActual('@tanstack/react-query')
+  return {
+    ...actual,
+    useMutation: (options: {
+      mutationFn: (variables?: unknown) => Promise<unknown> | unknown
+      onSuccess?: (data: unknown, variables: unknown, context: unknown) => unknown
+      onError?: (error: unknown, variables: unknown, context: unknown) => unknown
+    }) => ({
+      mutate: async (variables?: unknown) => {
+        try {
+          const data = await options.mutationFn(variables)
+          await options.onSuccess?.(data, variables, undefined)
+          return data
+        } catch (error) {
+          await options.onError?.(error, variables, undefined)
+          throw error
+        }
+      },
+      isPending: false,
+    }),
+  }
+})
+
+jest.mock('../../map2/api', () => {
+  const proxy = <T extends Record<string, unknown>>(getter: () => T) =>
+    new Proxy(
+      {},
+      {
+        get: (_target, prop) => getter()[prop as keyof T],
+      },
+    )
+
+  return {
+    __esModule: true,
+    chainsApi: proxy(() => mockChainsApi),
+    pluginsApi: proxy(() => mockPluginsApi),
+    historyApi: proxy(() => mockHistoryApi),
+    audioApi: proxy(() => mockAudioApi),
+    midiApiV2: proxy(() => mockMidiApiV2),
+    flowSnapshotsApi: proxy(() => mockFlowSnapshotsApi),
+    getWsBaseUrl: () => 'ws://localhost:3000',
+    getWsUrl: () => 'ws://localhost:3000/ws',
+  }
+})
 
 jest.mock('../hooks/useIsMobile', () => ({
   useIsMobile: () => mockUseIsMobile(),
@@ -261,7 +296,7 @@ function createQueryClient() {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, staleTime: Infinity },
-      mutations: { retry: false },
+      mutations: { retry: false, networkMode: 'always' },
     },
   })
   client.setQueryData(['chains'], buildMockChainsResponse())
@@ -476,6 +511,34 @@ describe('AudioTablePage — Row Controls', () => {
       expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled()
     })
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
+  })
+
+  it('dispatches bypass, remove, and reorder mutations from plugin rows', async () => {
+    renderPage()
+
+    const reverbRow = (await screen.findByText('Reverb')).closest('tr') as HTMLTableRowElement
+    const delayRow = screen.getByText('Delay').closest('tr') as HTMLTableRowElement
+
+    fireEvent.click(within(reverbRow).getByRole('checkbox'))
+    await waitFor(() => {
+      expect(mockChainsApi.togglePluginBypass).toHaveBeenCalledWith(1, 'urn:test:reverb', true, 0)
+    })
+
+    fireEvent.click(within(reverbRow).getByRole('button', { name: 'Remove' }))
+    await waitFor(() => {
+      expect(mockChainsApi.removePlugin).toHaveBeenCalledWith(1, 'urn:test:reverb', 0)
+    })
+
+    const delayPositionInput = delayRow.querySelector('#pos-flow-0-1') as HTMLInputElement | null
+    expect(delayPositionInput).not.toBeNull()
+    fireEvent.change(delayPositionInput as HTMLInputElement, { target: { value: '0' } })
+
+    await waitFor(() => {
+      expect(mockChainsApi.reorderPlugins).toHaveBeenCalledWith(1, [
+        { uri: 'urn:test:delay', position: 0 },
+        { uri: 'urn:test:reverb', position: 1 },
+      ])
+    })
   })
 })
 
@@ -715,6 +778,112 @@ describe('AudioTablePage — Column Visibility', () => {
       expect(screen.queryByText('Mix')).not.toBeInTheDocument()
     })
   })
+
+  it('commits inline parameter edits through the batched parameter API', async () => {
+    renderPage()
+
+    await screen.findByText('Reverb')
+    const reverbMixInput = document.querySelector('#flow-0-0-param--urn-test-reverb--mix') as HTMLInputElement | null
+    const delayModeSelect = document.querySelector('#flow-0-1-param--urn-test-delay--mode') as HTMLSelectElement | null
+
+    expect(reverbMixInput).not.toBeNull()
+    expect(delayModeSelect).not.toBeNull()
+
+    fireEvent.input(reverbMixInput as HTMLInputElement, { target: { value: '0.8' } })
+    fireEvent.change(reverbMixInput as HTMLInputElement, { target: { value: '0.8' } })
+    fireEvent.change(delayModeSelect as HTMLSelectElement, { target: { value: '2' } })
+
+    await waitFor(() => {
+      expect(mockPluginsApi.setParameterBatched).toHaveBeenNthCalledWith(
+        1,
+        'urn:test:reverb',
+        0,
+        0.8,
+        undefined,
+        0,
+      )
+      expect(mockPluginsApi.setParameterBatched).toHaveBeenNthCalledWith(
+        2,
+        'urn:test:delay',
+        1,
+        2,
+        undefined,
+        1,
+      )
+      expect(mockPluginsApi.flushParameterBatch).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  it('creates and updates MIDI mappings from inline MIDI cells', async () => {
+    localStorage.setItem(
+      'map2_audio_table_column_visibility',
+      JSON.stringify({
+        midiGroup: true,
+        automationGroup: false,
+        inputLevel: true,
+        outputLevel: true,
+        parameters: {},
+      }),
+    )
+    currentMidiMappingsResponse = {
+      mappings: [
+        {
+          id: 55,
+          channel: 2,
+          cc: 21,
+          chain_id: 1,
+          target_plugin_uri: 'urn:test:delay',
+          target_param_index: 0,
+          target_param_symbol: 'time',
+          min_val: 0.1,
+          max_val: 0.9,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: false,
+          feedback_cc: null,
+          name: 'Delay time',
+          group_id: null,
+          is_learned: false,
+          is_enabled: true,
+        },
+      ],
+      count: 1,
+    }
+
+    renderPage()
+
+    await screen.findByText('MIDI CC')
+
+    const reverbMidiCcInput = document.querySelector('#flow-0-0-midiCc') as HTMLInputElement | null
+    const delayMaxInput = document.querySelector('#flow-0-1-midiMax') as HTMLInputElement | null
+
+    expect(reverbMidiCcInput).not.toBeNull()
+    expect(delayMaxInput).not.toBeNull()
+
+    fireEvent.input(reverbMidiCcInput as HTMLInputElement, { target: { value: '74' } })
+    fireEvent.change(reverbMidiCcInput as HTMLInputElement, { target: { value: '74' } })
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.createMapping).toHaveBeenCalledWith(expect.objectContaining({
+        cc: 74,
+        channel: 0,
+        chain_id: 1,
+        target_plugin_uri: 'urn:test:reverb',
+        target_param_index: 0,
+        target_param_symbol: 'mix',
+        min_val: 0,
+        max_val: 1,
+        curve_type: 'linear',
+      }))
+    })
+
+    fireEvent.input(delayMaxInput as HTMLInputElement, { target: { value: '0.8' } })
+    fireEvent.change(delayMaxInput as HTMLInputElement, { target: { value: '0.8' } })
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.updateMapping).toHaveBeenCalledWith(55, { max_val: 0.8 })
+    })
+  })
 })
 
 // ============================================================================
@@ -802,6 +971,78 @@ describe('AudioTablePage — Toolbar', () => {
     })
 
     promptSpy.mockRestore()
+  })
+
+  it('dispatches preset save, preset load, and undo mutations from the toolbar', async () => {
+    const promptSpy = jest.spyOn(window, 'prompt').mockReturnValue('Main Save')
+
+    renderPage()
+
+    const savePresetButton = getToolbarButton('Save Preset')
+    await waitFor(() => {
+      expect(savePresetButton).toBeEnabled()
+    })
+
+    fireEvent.click(savePresetButton)
+    await waitFor(() => {
+      expect(promptSpy).toHaveBeenCalledWith('Preset name:', 'Main Preset')
+    })
+    await waitFor(() => {
+      expect(mockChainsApi.savePreset).toHaveBeenCalledWith(1, 'Main Save')
+    })
+
+    const presetCombobox = screen.getByRole('combobox', { name: /presets/i })
+    fireEvent.keyDown(presetCombobox, { key: 'ArrowDown' })
+    fireEvent.keyDown(presetCombobox, { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(mockChainsApi.loadPreset).toHaveBeenCalledWith(101)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    await waitFor(() => {
+      expect(mockHistoryApi.undo).toHaveBeenCalled()
+    })
+
+    promptSpy.mockRestore()
+  })
+
+  it('dispatches visible-row batch bypass and remove mutations from the toolbar', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
+
+    renderPage()
+
+    const bypassVisibleButton = getToolbarButton('Bypass Visible')
+    await waitFor(() => {
+      expect(bypassVisibleButton).toBeEnabled()
+    })
+
+    fireEvent.click(bypassVisibleButton)
+    await waitFor(() => {
+      expect(mockChainsApi.togglePluginBypass).toHaveBeenCalledWith(1, 'urn:test:reverb', true, 0)
+      expect(mockChainsApi.togglePluginBypass).toHaveBeenCalledWith(1, 'urn:test:delay', false, 1)
+    })
+
+    const searchInput = await screen.findByPlaceholderText('Search visible plugins')
+    fireEvent.change(searchInput, { target: { value: 'rev' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('1 visible')).toBeInTheDocument()
+    })
+
+    const removeVisibleButton = getToolbarButton('Remove Visible')
+    await waitFor(() => {
+      expect(removeVisibleButton).toBeEnabled()
+    })
+
+    fireEvent.click(removeVisibleButton)
+
+    await waitFor(() => {
+      expect(confirmSpy).toHaveBeenCalledWith('Remove 1 visible plugin(s) from Main?')
+      expect(mockChainsApi.removePlugin).toHaveBeenCalledWith(1, 'urn:test:reverb', 0)
+    })
+
+    confirmSpy.mockRestore()
   })
 
   it('opens the node manager modal and updates cluster focus from the cluster table', async () => {

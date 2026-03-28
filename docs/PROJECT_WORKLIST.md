@@ -8126,7 +8126,7 @@ Last updated: 2026-03-25 15:03 EDT - Codex
 ## Epic: AUDIO-TABLE Surface
 
 ID: T454
-Status: [>] In Progress
+Status: [✓] Done
 Title: AUDIO-TABLE — Carbon DataTable-driven signal flow editor with full JUCE-GRID parity
 Description:
 - Goal / acceptance criteria: Build a new /audio-table page providing a table-driven alternative to /juce-grid, using Carbon DataTables with inline-editable cells (dropdowns, number inputs), configurable dynamic parameter columns, per-flow tables with header rows, full toolbar (routing, presets, undo/redo, automation, search, column picker), MIDI columns, real-time numeric levels, and table-optimized keyboard navigation. Fully shared state with JUCE-GRID (same localStorage keys, same React Query cache). Zero custom CSS files — all styling via Carbon inline overrides.
@@ -8147,10 +8147,10 @@ Subtasks:
 - T454-subK: [✓] Done - Keyboard navigation — Tab/Enter/Escape/Arrow cell navigation, Delete for remove, Ctrl+Z/Y for undo/redo
 - T454-subL: [✓] Done - Flow slot management — Add Flow button, Remove Flow per header, 2-6 flow range enforcement
 - T454-subM: [✓] Done - Cluster section — node management table below flow tables (reuse AudioNodesModal patterns)
-- T454-subN: [>] In Progress - Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
+- T454-subN: [✓] Done - Full integration tests — render, data display, mutations, column picker, inline editing, flow CRUD, shared state, keyboard, responsive
 Assigned to: Codex
-Last updated: 2026-03-27 18:38 EDT - Codex
-- Progress notes:
+Last updated: 2026-03-28 09:02 EDT - Codex
+- Completion notes:
   - `/audio-table` route wiring, the advanced-menu entry, the main page scaffold, and the supporting `audioTableColumns.ts` / `audioTableKeyboard.ts` helpers are now present in `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/*`.
   - The first release-loop deploy for this scaffold failed on real API/type-contract drift in `web/src/app/pages/AudioTablePage.tsx`: it imported `AudioPort` from the wrong module, treated `ChainsResponse`, `PluginDiscoverResponse`, and `AudioPortsResponse` as flat arrays, and called `pluginsApi.setParameterBatched()` with the wrong argument order.
   - Repaired the current build blockers by sourcing `AudioPort` from `web/src/map2/api.ts`, reading `chainsQuery.data?.chains` / `pluginsQuery.data?.plugins`, flattening audio ports from `portsQuery.data.inputs` and `portsQuery.data.outputs`, and fixing the batched parameter mutation signature while keeping the newer runtime peak-map plumbing intact.
@@ -8162,6 +8162,9 @@ Last updated: 2026-03-27 18:38 EDT - Codex
   - Licensing review: touched frontend/worklist/version-artifact files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`36 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS. `T454-subN` remains open because the direct row-level/query-mutation assertion tail still needs a non-brittle harness path before the integration suite can be called complete.
   - Rechecked the row-level mutation harness path while advancing `T460`: new Audio Table assertions for bypass/remove/inline-parameter/MIDI batch mutations still proved too brittle under Carbon/DataTable jsdom event wiring, so I removed those unstable additions and kept `web/src/app/pages/AudioTablePage.test.tsx` on the last stable render/search/column-picker/preset/cluster path instead of preserving flaky mutation coverage.
+  - Closed the remaining mutation-focused tail in `web/src/app/pages/AudioTablePage.test.tsx` by rebuilding the test harness around lazy `../../map2/api` proxies and an immediate `useMutation` shim, which keeps Carbon/DataTable interactions on real page handlers while avoiding the previous hoisted-mock and queued-mutation dead paths under jest/jsdom.
+  - Added stable integration assertions for row-level bypass/remove/reorder mutations, inline parameter batched writes, MIDI mapping create/update flows, toolbar preset save/load/undo actions, and visible-row batch bypass/remove actions. With those in place, the Audio Table suite now covers the outstanding mutation surfaces that were previously called out as brittle under `T454-subN`.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS (`38 passed`); `npm --prefix web test -- --runInBand web/src/app/pages/audioTableKeyboard.test.ts` -> PASS (`3 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS. `T454` is now complete and there are no remaining open items in the canonical worklist.
 
 ---
 
