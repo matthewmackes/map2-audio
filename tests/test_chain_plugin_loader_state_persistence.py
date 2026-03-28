@@ -226,3 +226,188 @@ async def test_chain_preset_round_trip_preserves_loader_state(tmp_path):
     assert cloned_plugin_payloads[1]["bypass"] is True
 
     await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_activate_chain_records_runtime_sync_capability_gap_when_deploy_disabled(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-gap.db")
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", False)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(name="Runtime Gap", is_active=False)
+        session.add(chain)
+        await session.flush()
+        session.add(
+            database_module.ChainPlugin(
+                chain_id=chain.id,
+                plugin_uri="map2://juce/nam",
+                position=0,
+                bypass=False,
+            )
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.activate_chain(chain.id) is True
+        payload = await service.get_chain(chain.id)
+
+    assert payload["runtime_sync"] == {
+        "enabled": False,
+        "status": "capability_gap",
+        "reason": "engine_chain_deploy_disabled",
+        "runtime_items": 0,
+        "warnings": ["MAP2_ENABLE_ENGINE_CHAIN_DEPLOY is disabled"],
+        "restored_positions": [],
+        "missing_positions": [],
+    }
+
+    await _dispose_db()
+
+
+class _FakeRuntimeEngine:
+    def __init__(self) -> None:
+        self.items: list[dict] = []
+        self.add_calls: list[tuple[int, int]] = []
+
+    def clear_chain(self) -> None:
+        self.items = []
+
+    def add_to_chain(self, instance_id: int, position: int) -> None:
+        self.add_calls.append((instance_id, position))
+        for item in self.items:
+            if item["instance_id"] == instance_id:
+                item["position"] = position
+                return
+
+    def get_current_pedalboard(self):
+        return {"name": "Runtime Chain", "items": list(self.items)}
+
+
+class _FakeRuntimeEngineService:
+    def __init__(self) -> None:
+        self._engine = _FakeRuntimeEngine()
+        self.loaded_plugin_calls: list[str] = []
+        self.nam_load_calls: list[tuple[int, str]] = []
+        self.nam_input_gain_calls: list[tuple[int, float]] = []
+        self.nam_output_gain_calls: list[tuple[int, float]] = []
+        self.nam_normalize_calls: list[tuple[int, bool]] = []
+        self.nam_bypass_calls: list[tuple[int, bool]] = []
+        self.ir_load_calls: list[tuple[str, int, str]] = []
+        self.ir_mix_calls: list[tuple[int, float]] = []
+        self.ir_bypass_calls: list[tuple[int, bool]] = []
+        self._next_instance_id = 100
+
+    async def load_plugin(self, uri: str) -> int:
+        self.loaded_plugin_calls.append(uri)
+        self._next_instance_id += 1
+        instance_id = self._next_instance_id
+        self._engine.items.append({"uri": uri, "instance_id": instance_id})
+        return instance_id
+
+    async def load_nam_model_instance(self, instance_id: int, path: str) -> bool:
+        self.nam_load_calls.append((instance_id, path))
+        return True
+
+    async def set_nam_input_gain_instance(self, instance_id: int, value: float) -> bool:
+        self.nam_input_gain_calls.append((instance_id, value))
+        return True
+
+    async def set_nam_output_gain_instance(self, instance_id: int, value: float) -> bool:
+        self.nam_output_gain_calls.append((instance_id, value))
+        return True
+
+    async def set_nam_normalize_instance(self, instance_id: int, normalize: bool) -> bool:
+        self.nam_normalize_calls.append((instance_id, normalize))
+        return True
+
+    async def set_nam_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.nam_bypass_calls.append((instance_id, bypass))
+        return True
+
+    async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
+        self.ir_load_calls.append(("cabinet", instance_id, path))
+        return True
+
+    async def load_reverb_ir_instance(self, instance_id: int, path: str) -> bool:
+        self.ir_load_calls.append(("reverb", instance_id, path))
+        return True
+
+    async def set_ir_mix_instance(self, instance_id: int, mix: float) -> bool:
+        self.ir_mix_calls.append((instance_id, mix))
+        return True
+
+    async def set_ir_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.ir_bypass_calls.append((instance_id, bypass))
+        return True
+
+    async def get_current_pedalboard(self):
+        return self._engine.get_current_pedalboard()
+
+
+@pytest.mark.asyncio
+async def test_activate_chain_restores_persisted_loader_state_into_runtime_instances(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-restore.db")
+    fake_engine_service = _FakeRuntimeEngineService()
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(name="Runtime Restore", is_active=False)
+        session.add(chain)
+        await session.flush()
+        session.add_all(
+            [
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="map2://juce/nam",
+                    position=0,
+                    bypass=True,
+                    selected_asset_path="/tmp/runtime.nam",
+                    nam_input_gain=3.5,
+                    nam_output_gain=-2.5,
+                    nam_normalize=False,
+                ),
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="map2://juce/convolution/cabinet",
+                    position=1,
+                    bypass=False,
+                    selected_asset_path="/tmp/runtime-cab.wav",
+                    ir_mix=72.0,
+                ),
+            ]
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.activate_chain(chain.id) is True
+        payload = await service.get_chain(chain.id)
+
+    assert fake_engine_service.loaded_plugin_calls == [
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+    ]
+    assert fake_engine_service.nam_load_calls == [(101, "/tmp/runtime.nam")]
+    assert fake_engine_service.nam_input_gain_calls == [(101, 3.5)]
+    assert fake_engine_service.nam_output_gain_calls == [(101, -2.5)]
+    assert fake_engine_service.nam_normalize_calls == [(101, False)]
+    assert fake_engine_service.nam_bypass_calls == [(101, True)]
+    assert fake_engine_service.ir_load_calls == [("cabinet", 102, "/tmp/runtime-cab.wav")]
+    assert fake_engine_service.ir_mix_calls == [(102, 72.0)]
+    assert fake_engine_service.ir_bypass_calls == [(102, False)]
+    assert payload["runtime_sync"] == {
+        "enabled": True,
+        "status": "active",
+        "runtime_items": 2,
+        "warnings": [],
+        "restored_positions": [0, 1],
+        "missing_positions": [],
+    }
+
+    await _dispose_db()

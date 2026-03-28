@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 19:28 EDT - Completed T512 persisted per-loader asset state for NAM/cabinet/reverb chain plugins
+Last updated: 2026-03-28 19:36 EDT - Completed T513 chain activation runtime restore and capability-gap reporting for persisted NAM/IR loader state
 
 ID: T482
 Status: [✓] Done
@@ -9255,7 +9255,7 @@ Last updated: 2026-03-28 19:28 EDT - Codex
   - Validation: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py` -> PASS (`14 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched files -> PASS.
 
 ID: T513
-Status: [ ] Todo
+Status: [✓] Done
 Title: Make chain activation restore persisted asset-backed loader state into live JUCE instances
 Description:
 - Goal / acceptance criteria: Change chain activation so supported nodes deploy one live JUCE instance per chain plugin and then restore persisted loader state into the matching runtime instance for NAM, cabinet IR, and reverb IR blocks. True multi-instance support is only considered complete when duplicate loaders in one chain can sound different simultaneously. Nodes that cannot provide live deployment/runtime identity must report that capability gap explicitly instead of silently sharing a global processor.
@@ -9265,7 +9265,15 @@ Description:
 - Required outputs: chain activation/runtime deploy changes, default runtime behavior aligned with real per-instance deployment, capability/error reporting for unsupported nodes, focused backend/runtime tests, and worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-28 18:26 EDT - Codex
+Last updated: 2026-03-28 19:36 EDT - Codex
+- Completion notes:
+  - Updated `app/services/chain_service.py` so chain activation now defaults to attempting live JUCE chain deployment, clears/rebuilds the runtime chain one plugin row at a time, and restores persisted NAM/cabinet/reverb loader state into the matching live instance after each plugin is loaded.
+  - Added per-loader runtime restore for NAM model path, input gain, output gain, normalize, and bypass plus cabinet/reverb IR path, mix, and bypass, all keyed by persisted `ChainPlugin` row data rather than any shared global loader state.
+  - Introduced explicit `runtime_sync` reporting on chain payloads so nodes that cannot provide live runtime identity no longer fail silently: chain reads now expose whether deployment is active, partial, or blocked by a capability gap such as disabled deploy support or an uninitialized engine.
+  - Changed the default `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` behavior to opt into real chain deployment unless explicitly disabled, aligning the shipped backend behavior with the duplicate-safe multi-loader runtime model required by T513.
+  - Added focused activation-path coverage in `tests/test_chain_plugin_loader_state_persistence.py` for both the capability-gap path and the successful persisted-state runtime restore path, while keeping the existing duplicate runtime matching coverage in `tests/test_chain_service_runtime_mapping.py`.
+  - Licensing review: touched backend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py tests/test_chain_service_runtime_mapping.py` -> PASS (`19 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched files -> PASS.
 
 ID: T514
 Status: [ ] Todo

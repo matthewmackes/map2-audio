@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 28, 2026 (Chain plugin loader-state persistence)
+> **Last Updated**: March 28, 2026 (Chain activation runtime restore)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1090,6 +1090,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py`; `python3 - <<'PY' ... ast.parse(...) ... PY`
 - **Lesson**: Once duplicate asset-backed plugins exist in one chain, `plugin_uri + position` is not enough. Persist the loader state on each chain row before trying to make runtime restore or UI warning logic duplicate-safe.
 
+**20. Chain Activation Must Publish Runtime Capability State**
+- **Files**: `app/services/chain_service.py`, `tests/test_chain_plugin_loader_state_persistence.py`
+- **Problem**: Even after per-loader persistence existed, chain activation could still leave duplicate loaders with no live runtime identity and no explicit signal explaining whether deployment was active, partial, or impossible on the current node.
+- **Root Cause**: Activation only toggled `chains.is_active` and optionally tried a best-effort deploy behind a default-disabled flag, with no persisted runtime status contract for later route/UI consumers.
+- **Fix**: Default chain deployment on, rebuild the live JUCE chain from persisted rows during activation, restore NAM/IR loader state per instance, and persist a `runtime_sync` payload on the chain config that reports `active`, `partial`, or `capability_gap` plus warnings and missing positions.
+- **Verification**: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_chain_service_runtime_mapping.py`; `python3 - <<'PY' ... ast.parse(...) ... PY`
+- **Lesson**: For multi-loader chains, activation success is not binary. Persist and expose runtime capability state so scoped routes and UI can distinguish a healthy live chain from a configured-only chain with no runtime identity.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1589,6 +1597,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-28] - Chain Activation Runtime Restore
+- **Section**: Gotchas & Learned Fixes (#20), Update Log
+- **Change**: Documented the rule that chain activation must restore persisted NAM/IR loader state per runtime instance and must persist an explicit `runtime_sync` contract when deployment is active, partial, or unavailable.
+- **Reason**: `T513` closed the gap between stored duplicate-loader configuration and live JUCE runtime identity, and future route/UI work depends on that capability signal instead of guessing from an empty pedalboard.
+- **Impact**: Future assistants can build scoped loader warnings and metadata UX on top of a stable activation/runtime contract rather than rediscovering why duplicate loaders silently degrade when runtime deploy is missing.
+- **Files**: `.github/copilot-instructions.md`, `app/services/chain_service.py`, `tests/test_chain_plugin_loader_state_persistence.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-28] - Chain Plugin Loader-State Persistence
 - **Section**: Gotchas & Learned Fixes (#19), Update Log

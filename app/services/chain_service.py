@@ -27,7 +27,7 @@ from app.services.plugin_loader_unified import get_plugin_loader
 
 logger = logging.getLogger(__name__)
 
-_ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "false").lower() in {
+_ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "true").lower() in {
     "1",
     "true",
     "yes",
@@ -575,6 +575,175 @@ class ChainService:
         return payload
 
     @staticmethod
+    def _parse_chain_config(raw_config: Any) -> Dict[str, Any]:
+        if isinstance(raw_config, dict):
+            return dict(raw_config)
+        if isinstance(raw_config, str) and raw_config.strip():
+            try:
+                parsed = json.loads(raw_config)
+            except Exception:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+    @classmethod
+    def _build_runtime_sync_payload(
+        cls,
+        *,
+        enabled: bool,
+        status: str,
+        reason: Optional[str] = None,
+        warnings: Optional[List[str]] = None,
+        runtime_items: int = 0,
+        restored_positions: Optional[List[int]] = None,
+        missing_positions: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "enabled": bool(enabled),
+            "status": status,
+            "runtime_items": int(runtime_items),
+            "warnings": list(warnings or []),
+            "restored_positions": list(restored_positions or []),
+            "missing_positions": list(missing_positions or []),
+        }
+        if reason:
+            payload["reason"] = reason
+        return payload
+
+    async def _apply_persisted_loader_state(self, engine_service: Any, chain_plugin: Any, instance_id: int) -> List[str]:
+        warnings: List[str] = []
+        plugin_uri = getattr(chain_plugin, "plugin_uri", "")
+
+        if plugin_uri in _NAM_PLUGIN_URIS:
+            model_path = getattr(chain_plugin, "selected_asset_path", None)
+            if isinstance(model_path, str) and model_path.strip():
+                loaded = await engine_service.load_nam_model_instance(instance_id, model_path)
+                if not loaded:
+                    warnings.append(f"Failed to load NAM model for position {chain_plugin.position}")
+            await engine_service.set_nam_input_gain_instance(instance_id, float(chain_plugin.nam_input_gain or 0.0))
+            await engine_service.set_nam_output_gain_instance(instance_id, float(chain_plugin.nam_output_gain or 0.0))
+            await engine_service.set_nam_normalize_instance(
+                instance_id,
+                True if chain_plugin.nam_normalize is None else bool(chain_plugin.nam_normalize),
+            )
+            await engine_service.set_nam_bypass_instance(instance_id, bool(chain_plugin.bypass))
+            return warnings
+
+        if plugin_uri in _CABINET_IR_PLUGIN_URIS:
+            ir_path = getattr(chain_plugin, "selected_asset_path", None)
+            if isinstance(ir_path, str) and ir_path.strip():
+                loaded = await engine_service.load_cabinet_ir_instance(instance_id, ir_path)
+                if not loaded:
+                    warnings.append(f"Failed to load cabinet IR for position {chain_plugin.position}")
+            await engine_service.set_ir_mix_instance(
+                instance_id,
+                100.0 if chain_plugin.ir_mix is None else float(chain_plugin.ir_mix),
+            )
+            await engine_service.set_ir_bypass_instance(instance_id, bool(chain_plugin.bypass))
+            return warnings
+
+        if plugin_uri in _REVERB_IR_PLUGIN_URIS:
+            ir_path = getattr(chain_plugin, "selected_asset_path", None)
+            if isinstance(ir_path, str) and ir_path.strip():
+                loaded = await engine_service.load_reverb_ir_instance(instance_id, ir_path)
+                if not loaded:
+                    warnings.append(f"Failed to load reverb IR for position {chain_plugin.position}")
+            await engine_service.set_ir_mix_instance(
+                instance_id,
+                30.0 if chain_plugin.ir_mix is None else float(chain_plugin.ir_mix),
+            )
+            await engine_service.set_ir_bypass_instance(instance_id, bool(chain_plugin.bypass))
+            return warnings
+
+        return warnings
+
+    async def _deploy_chain_to_engine(self, chain_plugins: List[Any]) -> Dict[str, Any]:
+        if not _ENABLE_ENGINE_CHAIN_DEPLOY:
+            return self._build_runtime_sync_payload(
+                enabled=False,
+                status="capability_gap",
+                reason="engine_chain_deploy_disabled",
+                warnings=["MAP2_ENABLE_ENGINE_CHAIN_DEPLOY is disabled"],
+            )
+
+        try:
+            from app.services.juce_engine_service import JuceEngineService
+
+            engine_service = JuceEngineService.get_instance()
+        except Exception as e:
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_service_unavailable",
+                warnings=[f"JUCE engine service unavailable: {e}"],
+            )
+
+        engine = getattr(engine_service, "_engine", None) if engine_service else None
+        if engine is None:
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_not_initialized",
+                warnings=["JUCE engine is not initialized"],
+            )
+
+        missing_methods = [
+            method
+            for method in ("clear_chain", "add_to_chain", "get_current_pedalboard")
+            if not hasattr(engine, method)
+        ]
+        if missing_methods:
+            _warn_chain_deploy_api_once(missing_methods)
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_missing_chain_apis",
+                warnings=[f"Engine missing required APIs: {', '.join(missing_methods)}"],
+            )
+
+        await asyncio.to_thread(engine.clear_chain)
+
+        restored_positions: List[int] = []
+        warnings: List[str] = []
+        for chain_plugin in chain_plugins:
+            instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
+            if instance_id < 0:
+                warnings.append(f"Failed to load plugin {chain_plugin.plugin_uri} at position {chain_plugin.position}")
+                continue
+
+            await asyncio.to_thread(engine.add_to_chain, instance_id, chain_plugin.position)
+            restored_positions.append(int(chain_plugin.position))
+            warnings.extend(await self._apply_persisted_loader_state(engine_service, chain_plugin, instance_id))
+
+        pedalboard = await engine_service.get_current_pedalboard()
+        runtime_items = pedalboard.get("items", []) if isinstance(pedalboard, dict) else []
+        runtime_map = self._match_runtime_plugin_items(
+            chain_plugins,
+            runtime_items if isinstance(runtime_items, list) else [],
+        )
+        missing_positions = [
+            int(chain_plugin.position)
+            for chain_plugin in chain_plugins
+            if int(chain_plugin.position) not in runtime_map
+        ]
+
+        status = "active"
+        reason = None
+        if missing_positions:
+            status = "partial"
+            reason = "runtime_identity_incomplete"
+
+        return self._build_runtime_sync_payload(
+            enabled=True,
+            status=status,
+            reason=reason,
+            warnings=warnings,
+            runtime_items=len(runtime_items) if isinstance(runtime_items, list) else 0,
+            restored_positions=restored_positions,
+            missing_positions=missing_positions,
+        )
+
+    @staticmethod
     def _touchscreen_config_key(chain_id: int) -> str:
         return f"chain_touchscreen_{chain_id}"
 
@@ -764,6 +933,7 @@ class ChainService:
             
             if not chain:
                 return None
+            chain_config = self._parse_chain_config(chain.config)
             
             # Get plugins in chain
             plugins_result = await self.session.execute(
@@ -811,6 +981,7 @@ class ChainService:
                 "touchscreen": {
                     "stomp_assignments": await self._load_touchscreen_stomp_assignments(chain_id),
                 },
+                "runtime_sync": chain_config.get("runtime_sync"),
                 "created_at": chain.created_at.isoformat() if chain.created_at else None,
                 "updated_at": chain.updated_at.isoformat() if chain.updated_at else None
             }
@@ -836,6 +1007,7 @@ class ChainService:
 
             chains_list = []
             for chain in chains:
+                chain_config = self._parse_chain_config(chain.config)
                 # Get plugins for this chain
                 plugins_result = await self.session.execute(
                     select(ChainPlugin)
@@ -853,6 +1025,7 @@ class ChainService:
                     "loop_insertions": [],
                     "effects_loops": [],
                     "plugin_count": len(plugins),
+                    "runtime_sync": chain_config.get("runtime_sync"),
                     "created_at": chain.created_at.isoformat() if chain.created_at else None
                 }
 
@@ -1255,55 +1428,11 @@ class ChainService:
                 .order_by(ChainPlugin.position)
             )
             chain_plugins = plugins_result.scalars().all()
-            
-            # Deploy to JUCE only when explicitly enabled; default keeps route fast/stable.
-            if _ENABLE_ENGINE_CHAIN_DEPLOY:
-                try:
-                    from app.services.juce_engine_service import JuceEngineService
-
-                    engine_service = JuceEngineService.get_instance()
-                    engine = getattr(engine_service, "_engine", None) if engine_service else None
-
-                    if engine:
-                        missing_methods = [
-                            method
-                            for method in ("clear_chain", "add_to_chain")
-                            if not hasattr(engine, method)
-                        ]
-
-                        if missing_methods:
-                            _warn_chain_deploy_api_once(missing_methods)
-                        else:
-                            await asyncio.to_thread(engine.clear_chain)
-                            for chain_plugin in chain_plugins:
-                                try:
-                                    instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
-                                    if instance_id >= 0:
-                                        await asyncio.to_thread(
-                                            engine.add_to_chain, instance_id, chain_plugin.position
-                                        )
-                                        logger.info(
-                                            "Deployed plugin %s to chain position %s",
-                                            chain_plugin.plugin_uri,
-                                            chain_plugin.position,
-                                        )
-                                    else:
-                                        logger.warning("Failed to load plugin %s", chain_plugin.plugin_uri)
-                                except Exception as e:
-                                    logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
-
-                            logger.info(
-                                "Chain %s deployed to JUCE engine with %s plugins",
-                                chain_id,
-                                len(chain_plugins),
-                            )
-                    else:
-                        logger.debug("JUCE engine unavailable; skipping chain deployment")
-                except Exception as e:
-                    logger.error(f"Error deploying chain to JUCE engine: {e}")
-                    # Don't fail the database update if engine deployment fails
-            else:
-                logger.debug("Skipping JUCE chain deployment (MAP2_ENABLE_ENGINE_CHAIN_DEPLOY disabled)")
+            runtime_sync = await self._deploy_chain_to_engine(chain_plugins)
+            chain_config = self._parse_chain_config(chain.config)
+            chain_config["runtime_sync"] = runtime_sync
+            chain.config = json.dumps(chain_config)
+            await self.session.flush()
             
             logger.info(f"Activated chain {chain_id}")
             return True
