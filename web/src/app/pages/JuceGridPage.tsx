@@ -1241,6 +1241,7 @@ export function JuceGridPage() {
               position: i,
               bypass: p.bypassed || false,
               parameters: p.parameters || {},
+              loader_state: p.loader_state,
             })),
           }
         }

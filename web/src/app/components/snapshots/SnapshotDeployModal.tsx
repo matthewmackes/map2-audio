@@ -15,10 +15,10 @@ import {
   Tag,
 } from '@carbon/react'
 import { Information, MachineLearningModel, VolumeUp, WarningAlt } from '@carbon/icons-react'
-import { irApi, namApi } from '../../../map2/api'
+import { flowSnapshotsApi } from '../../../map2/api'
+import type { FlowSnapshotData, PluginLoaderState, PluginSnapshot } from '../../../map2/types'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/ClusterContext'
-import { canonicalizePluginUri } from '../../utils/pluginUris'
 import { useToasts } from '../Toasts'
 import './SnapshotDeployModal.css'
 
@@ -59,16 +59,8 @@ type ClusterLibraryFanoutResponse = {
   nodes?: Record<string, { body?: { items?: ClusterLibraryItem[] } }>
 }
 
-type IRStatus = {
-  loaded_cabinet?: string | null
-  loaded_reverb?: string | null
-}
-
-type NAMStatus = {
-  activeModel?: string | null
-}
-
 type DependencyDescriptor = {
+  key: string
   kind: 'plugin' | 'nam' | 'cabinet_ir' | 'reverb_ir'
   label: string
   availableOn: string[]
@@ -89,7 +81,18 @@ function stripExtension(value: string): string {
 }
 
 function normalizeCandidate(value?: string | null): string {
-  return stripExtension((value || '').trim())
+  const normalized = (value || '').trim().split(/[\\/]/).pop() ?? ''
+  return stripExtension(normalized)
+}
+
+function snapshotLoaderLabel(loaderState: PluginLoaderState): string | null {
+  return (
+    loaderState.selected_asset_name ||
+    loaderState.selected_model ||
+    loaderState.selected_ir ||
+    loaderState.selected_asset_path?.split(/[\\/]/).pop() ||
+    null
+  )
 }
 
 function findLibraryDependency(
@@ -140,11 +143,10 @@ export function SnapshotDeployModal({
 }: SnapshotDeployModalProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
-  const { nodes, localNodeId } = useCluster()
+  const { nodes } = useCluster()
   const [selectedTargetIds, setSelectedTargetIds] = useState<Set<string>>(new Set())
 
-  const sourceApiNodeId = sourceNodeId !== localNodeId ? sourceNodeId : null
-  const snapshotPluginUri = canonicalizePluginUri(snapshot?.plugin_uri)
+  const snapshotPluginUri = snapshot?.plugin_uri
   const targetNodes = useMemo(() => nodes.filter((node) => node.nodeId !== sourceNodeId), [nodes, sourceNodeId])
   const nodeLabelById = useMemo(
     () => new Map(nodes.map((node) => [node.nodeId, node.isLocal ? `${node.hostname} (Local)` : node.hostname])),
@@ -172,18 +174,11 @@ export function SnapshotDeployModal({
     staleTime: 10000,
   })
 
-  const namStatusQuery = useQuery<NAMStatus>({
-    queryKey: ['nam', 'status', sourceNodeId, 'snapshot-deploy'],
-    queryFn: () => namApi.getStatus(sourceApiNodeId),
-    enabled: open && snapshotPluginUri === 'map2://juce/nam',
-    staleTime: 5000,
-  })
-
-  const irStatusQuery = useQuery<IRStatus>({
-    queryKey: ['ir', 'status', sourceNodeId, 'snapshot-deploy'],
-    queryFn: () => irApi.getStatus(sourceApiNodeId),
-    enabled: open && (snapshotPluginUri === 'map2://juce/convolution/cabinet' || snapshotPluginUri === 'map2://juce/convolution/reverb'),
-    staleTime: 5000,
+  const snapshotDetailQuery = useQuery({
+    queryKey: ['flow-snapshots', snapshot?.id, 'detail'],
+    queryFn: () => flowSnapshotsApi.get(snapshot!.id),
+    enabled: open && Boolean(snapshot?.id),
+    staleTime: 10000,
   })
 
   const namLibraryQuery = useQuery<ClusterLibraryFanoutResponse>({
@@ -195,7 +190,7 @@ export function SnapshotDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && snapshotPluginUri === 'map2://juce/nam',
+    enabled: open && Boolean(snapshotDetailQuery.data),
     staleTime: 10000,
   })
 
@@ -208,7 +203,7 @@ export function SnapshotDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && (snapshotPluginUri === 'map2://juce/convolution/cabinet' || snapshotPluginUri === 'map2://juce/convolution/reverb'),
+    enabled: open && Boolean(snapshotDetailQuery.data),
     staleTime: 10000,
   })
 
@@ -221,6 +216,7 @@ export function SnapshotDeployModal({
     const installedOn = plugin?.installed_on ?? (snapshotPluginUri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
 
     return {
+      key: `plugin:${snapshotPluginUri ?? 'unknown'}`,
       kind: 'plugin',
       label: sanitizeRestrictedDisplayText(snapshot.plugin_name) || snapshotPluginUri,
       availableOn: installedOn,
@@ -228,70 +224,78 @@ export function SnapshotDeployModal({
     }
   }, [nodes, pluginCatalogQuery.data?.plugins, snapshot, snapshotPluginUri])
 
-  const assetDependency = useMemo<DependencyDescriptor | null>(() => {
-    if (!snapshot) {
-      return null
+  const assetDependencies = useMemo<DependencyDescriptor[]>(() => {
+    const snapshotData: FlowSnapshotData | undefined = snapshotDetailQuery.data?.snapshot_data
+    if (!snapshotData) {
+      return []
     }
 
-    if (snapshotPluginUri === 'map2://juce/nam') {
-      const activeModel = namStatusQuery.data?.activeModel
-      if (!activeModel) {
-        return null
+    const descriptors = new Map<string, DependencyDescriptor>()
+    const plugins = Object.values(snapshotData.chains).flatMap((chain) => chain.plugins ?? [])
+
+    for (const plugin of plugins as PluginSnapshot[]) {
+      const loaderState = (plugin.loader_state ?? {}) as PluginLoaderState
+      const label = snapshotLoaderLabel(loaderState)
+      if (!label) {
+        continue
       }
-      const { item, availableOn } = findLibraryDependency(namLibraryQuery.data, sourceNodeId, activeModel, 'nam')
-      return {
-        kind: 'nam',
-        label: activeModel,
-        availableOn,
-        canDeploy: Boolean(item?.path_token),
-        pathToken: item?.path_token ?? null,
+
+      if (plugin.uri === 'map2://juce/nam') {
+        const { item, availableOn } = findLibraryDependency(namLibraryQuery.data, sourceNodeId, label, 'nam')
+        const key = `nam:${item?.path_token ?? normalizeCandidate(label)}`
+        const current = descriptors.get(key)
+        descriptors.set(key, {
+          key,
+          kind: 'nam',
+          label,
+          availableOn: current ? Array.from(new Set([...current.availableOn, ...availableOn])) : availableOn,
+          canDeploy: current?.canDeploy || Boolean(item?.path_token),
+          pathToken: current?.pathToken ?? item?.path_token ?? null,
+        })
+        continue
+      }
+
+      if (plugin.uri === 'map2://juce/convolution/cabinet' || loaderState.ir_type === 'cabinet') {
+        const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, label, 'cabinet_ir')
+        const key = `cabinet_ir:${item?.path_token ?? normalizeCandidate(label)}`
+        const current = descriptors.get(key)
+        descriptors.set(key, {
+          key,
+          kind: 'cabinet_ir',
+          label,
+          availableOn: current ? Array.from(new Set([...current.availableOn, ...availableOn])) : availableOn,
+          canDeploy: current?.canDeploy || Boolean(item?.path_token),
+          pathToken: current?.pathToken ?? item?.path_token ?? null,
+        })
+        continue
+      }
+
+      if (plugin.uri === 'map2://juce/convolution/reverb' || loaderState.ir_type === 'reverb') {
+        const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, label, 'reverb_ir')
+        const key = `reverb_ir:${item?.path_token ?? normalizeCandidate(label)}`
+        const current = descriptors.get(key)
+        descriptors.set(key, {
+          key,
+          kind: 'reverb_ir',
+          label,
+          availableOn: current ? Array.from(new Set([...current.availableOn, ...availableOn])) : availableOn,
+          canDeploy: current?.canDeploy || Boolean(item?.path_token),
+          pathToken: current?.pathToken ?? item?.path_token ?? null,
+        })
       }
     }
 
-    if (snapshotPluginUri === 'map2://juce/convolution/cabinet') {
-      const loadedCabinet = irStatusQuery.data?.loaded_cabinet
-      if (!loadedCabinet) {
-        return null
-      }
-      const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, loadedCabinet, 'cabinet_ir')
-      return {
-        kind: 'cabinet_ir',
-        label: loadedCabinet,
-        availableOn,
-        canDeploy: Boolean(item?.path_token),
-        pathToken: item?.path_token ?? null,
-      }
-    }
-
-    if (snapshotPluginUri === 'map2://juce/convolution/reverb') {
-      const loadedReverb = irStatusQuery.data?.loaded_reverb
-      if (!loadedReverb) {
-        return null
-      }
-      const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, loadedReverb, 'reverb_ir')
-      return {
-        kind: 'reverb_ir',
-        label: loadedReverb,
-        availableOn,
-        canDeploy: Boolean(item?.path_token),
-        pathToken: item?.path_token ?? null,
-      }
-    }
-
-    return null
+    return Array.from(descriptors.values())
   }, [
-    irLibraryQuery.data,
-    irStatusQuery.data?.loaded_cabinet,
-    irStatusQuery.data?.loaded_reverb,
     namLibraryQuery.data,
-    namStatusQuery.data?.activeModel,
-    snapshot,
-    snapshotPluginUri,
+    irLibraryQuery.data,
+    snapshotDetailQuery.data?.snapshot_data,
     sourceNodeId,
   ])
 
-  const unresolvedAssetDependency =
-    assetDependency !== null && !assetDependency.canDeploy && assetDependency.availableOn.length === 0
+  const unresolvedAssetDependencies = assetDependencies.filter(
+    (dependency) => !dependency.canDeploy && dependency.availableOn.length === 0,
+  )
 
   const deployMutation = useMutation({
     mutationFn: async (targetNodeIds: string[]) => {
@@ -306,13 +310,20 @@ export function SnapshotDeployModal({
         )
       }
 
-      if (assetDependency && unresolvedAssetDependency) {
-        throw new Error(`Unable to resolve ${assetDependency.label} on the source node for deployment`)
+      if (unresolvedAssetDependencies.length > 0) {
+        throw new Error(
+          `Unable to resolve snapshot dependencies: ${unresolvedAssetDependencies.map((dependency) => dependency.label).join(', ')}`,
+        )
       }
 
-      if (assetDependency && assetDependency.pathToken) {
+      for (const assetDependency of assetDependencies) {
+        if (!assetDependency.pathToken) {
+          continue
+        }
         const missingAssetTargets = targetNodeIds.filter((nodeId) => !assetDependency.availableOn.includes(nodeId))
-        if (missingAssetTargets.length > 0) {
+        if (missingAssetTargets.length === 0) {
+          continue
+        }
           const assetResponse = await fetch('/api/preset-exchange/deploy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -327,7 +338,6 @@ export function SnapshotDeployModal({
             const body = await assetResponse.json().catch(() => ({}))
             throw new Error((body as { detail?: string }).detail || 'Failed to deploy snapshot dependencies')
           }
-        }
       }
 
       const snapshotResponse = await fetch('/api/preset-exchange/deploy', {
@@ -364,26 +374,36 @@ export function SnapshotDeployModal({
   const rows = useMemo(() => {
     return targetNodes.map((node) => {
       const pluginReady = pluginDependency ? pluginDependency.availableOn.includes(node.nodeId) : true
-      const assetReady = assetDependency ? assetDependency.availableOn.includes(node.nodeId) : true
-      const assetWillDeploy = Boolean(assetDependency && !assetReady && assetDependency.canDeploy && selectedTargetIds.has(node.nodeId))
+      const assetReady = assetDependencies.every((dependency) => dependency.availableOn.includes(node.nodeId))
+      const blockedAsset = assetDependencies.some(
+        (dependency) => !dependency.availableOn.includes(node.nodeId) && !dependency.canDeploy,
+      )
+      const assetWillDeploy = Boolean(
+        assetDependencies.length > 0 &&
+          selectedTargetIds.has(node.nodeId) &&
+          assetDependencies.some(
+            (dependency) => !dependency.availableOn.includes(node.nodeId) && dependency.canDeploy,
+          ),
+      )
       const snapshotReady = availability?.available_on.includes(node.nodeId) ?? false
-      const canTargetDeploy = node.isOnline && pluginReady && (!assetDependency || assetReady || assetDependency.canDeploy)
+      const canTargetDeploy = node.isOnline && pluginReady && !blockedAsset
 
       return {
         node,
         pluginReady,
         assetReady,
+        blockedAsset,
         assetWillDeploy,
         snapshotReady,
         canTargetDeploy,
       }
     })
-  }, [assetDependency, availability?.available_on, pluginDependency, selectedTargetIds, targetNodes])
+  }, [assetDependencies, availability?.available_on, pluginDependency, selectedTargetIds, targetNodes])
 
   const dependencyLoading =
-    pluginCatalogQuery.isLoading || namStatusQuery.isLoading || irStatusQuery.isLoading || namLibraryQuery.isLoading || irLibraryQuery.isLoading
+    pluginCatalogQuery.isLoading || snapshotDetailQuery.isLoading || namLibraryQuery.isLoading || irLibraryQuery.isLoading
   const dependencyError =
-    pluginCatalogQuery.isError || namStatusQuery.isError || irStatusQuery.isError || namLibraryQuery.isError || irLibraryQuery.isError
+    pluginCatalogQuery.isError || snapshotDetailQuery.isError || namLibraryQuery.isError || irLibraryQuery.isError
 
   const canSubmit =
     selectedTargetIds.size > 0 && !dependencyLoading && !dependencyError && !deployMutation.isPending
@@ -443,31 +463,35 @@ export function SnapshotDeployModal({
 
           <article className="snapshot-deploy-modal__summary-card">
             <h4>
-              {assetDependency?.kind === 'nam' ? (
+              {assetDependencies.some((dependency) => dependency.kind === 'nam') ? (
                 <MachineLearningModel size={16} aria-hidden="true" />
               ) : (
                 <VolumeUp size={16} aria-hidden="true" />
               )}
               Content dependency
             </h4>
-            <p>{assetDependency ? assetDependency.label : 'No IR or NAM dependency inferred for this snapshot.'}</p>
+            <p>
+              {assetDependencies.length > 0
+                ? assetDependencies.map((dependency) => dependency.label).join(', ')
+                : 'No IR or NAM dependency inferred for this snapshot.'}
+            </p>
             <span>
-              {assetDependency
-                ? assetDependency.canDeploy
-                  ? `Available on ${assetDependency.availableOn.length}/${nodes.length} nodes.`
-                  : 'Detected on source node, but not indexed for cluster deployment.'
+              {assetDependencies.length > 0
+                ? unresolvedAssetDependencies.length > 0
+                  ? 'One or more snapshot assets are missing from the source node library index.'
+                  : `${assetDependencies.length} persisted asset dependency${assetDependencies.length === 1 ? '' : 'ies'} detected.`
                 : 'Generic parameter snapshot.'}
             </span>
           </article>
         </div>
 
-        {unresolvedAssetDependency && (
+        {unresolvedAssetDependencies.length > 0 && (
           <InlineNotification
             kind="warning"
             lowContrast
             hideCloseButton
             title="Content dependency unresolved"
-            subtitle={`The source node reports ${assetDependency?.label}, but it is not indexed in the cluster library.`}
+            subtitle={`The source node snapshot references ${unresolvedAssetDependencies.map((dependency) => dependency.label).join(', ')}, but they are not indexed in the cluster library.`}
           />
         )}
 
@@ -483,7 +507,7 @@ export function SnapshotDeployModal({
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map(({ node, pluginReady, assetReady, assetWillDeploy, snapshotReady, canTargetDeploy }) => {
+              {rows.map(({ node, pluginReady, assetReady, blockedAsset, assetWillDeploy, snapshotReady, canTargetDeploy }) => {
                 const checked = selectedTargetIds.has(node.nodeId)
                 const nodeLabel = nodeLabelById.get(node.nodeId) ?? node.nodeId
 
@@ -497,13 +521,13 @@ export function SnapshotDeployModal({
                     </TableCell>
                     <TableCell>{pluginReady ? statusTag('green', 'Available') : statusTag('red', 'Missing plugin')}</TableCell>
                     <TableCell>
-                      {!assetDependency
+                      {assetDependencies.length === 0
                         ? statusTag('cool-gray', 'None')
                         : assetReady
                           ? statusTag('purple', 'Ready')
                           : assetWillDeploy
                             ? statusTag('blue', 'Will deploy')
-                            : assetDependency.canDeploy
+                            : !blockedAsset
                               ? statusTag('warm-gray', 'Missing asset')
                               : statusTag('red', 'Blocked')}
                     </TableCell>
@@ -555,10 +579,10 @@ export function SnapshotDeployModal({
 
         <div className="snapshot-deploy-modal__selection-status">
           {statusTag('blue', `${selectedTargetIds.size} target node${selectedTargetIds.size === 1 ? '' : 's'} selected`)}
-          {assetDependency && !assetDependency.canDeploy && (
+          {unresolvedAssetDependencies.length > 0 && (
             <span className="snapshot-deploy-modal__blocked-hint">
               <WarningAlt size={16} aria-hidden="true" />
-              Asset dependency cannot be deployed until indexed in library.
+              Asset dependencies cannot be deployed until indexed in the cluster library.
             </span>
           )}
         </div>

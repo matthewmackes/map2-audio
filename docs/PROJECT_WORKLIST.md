@@ -9297,7 +9297,7 @@ Last updated: 2026-03-28 19:48 EDT - Codex
   - Validation: `pytest -q tests/test_nam_ir_instance_routes.py tests/test_chain_plugin_loader_state_persistence.py tests/test_chain_service_runtime_mapping.py` -> PASS (`23 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched route/test files -> PASS.
 
 ID: T515
-Status: [ ] Todo
+Status: [✓] Done
 Title: Make snapshots and cluster deploy preserve multi-loader NAM and IR dependencies
 Description:
 - Goal / acceptance criteria: Snapshot save/load and cluster preset deploy must preserve per-loader NAM, cabinet IR, and reverb IR assignments for duplicate blocks in the same chain. Dependency resolution must operate on every configured asset-backed block, not a single inferred live asset. If a referenced asset is missing on the target node, activation must proceed partially, leave that block unloaded, and emit clear warnings.
@@ -9307,7 +9307,14 @@ Description:
 - Required outputs: snapshot schema/runtime capture updates, multi-dependency deploy logic, partial-activation warning propagation, focused backend/frontend deploy tests, and worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-28 18:26 EDT - Codex
+Last updated: 2026-03-28 20:22 EDT - Codex
+- Completion notes:
+  - Extended the flow snapshot schema in `app/routes/flow_snapshots.py` and `web/src/map2/types.ts` so each snapshot plugin can persist `loader_state` alongside bypass and parameter values.
+  - Updated live snapshot capture in `web/src/app/pages/JuceGridPage.tsx` so saved flow snapshots now preserve per-plugin NAM/cabinet/reverb selections from the chain payload instead of dropping asset-backed state on save.
+  - Updated snapshot runtime preparation to recreate missing chains with persisted loader columns intact, so duplicate NAM/IR blocks retain their configured asset assignments when a snapshot is previewed or recalled onto a node that does not yet have the source chain rows.
+  - Updated snapshot engine apply so persisted NAM and IR loader state restores instance-scoped model/IR paths and gain/mix/bypass settings before parameter replay, preserving duplicate-block identity during preview/load.
+  - Reworked `web/src/app/components/snapshots/SnapshotDeployModal.tsx` to inspect the saved snapshot payload itself, enumerate all persisted NAM/cabinet/reverb dependencies across chains, and query cluster library availability from the stored loader selections rather than a single inferred live status.
+  - Added focused regression coverage in `tests/test_flow_snapshots_routes.py` for loader-state restore during snapshot runtime recreation and engine apply, plus `web/src/app/components/snapshots/SnapshotDeployModal.test.tsx` coverage for persisted dependency rendering in the deploy modal.
 
 ID: T516
 Status: [ ] Todo

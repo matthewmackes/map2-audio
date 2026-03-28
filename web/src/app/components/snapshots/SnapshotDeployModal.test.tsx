@@ -1,19 +1,15 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-const mockGetNAMStatus = jest.fn()
-const mockGetIRStatus = jest.fn()
 const mockPushToast = jest.fn()
 const mockFetch = jest.fn()
+const mockGetFlowSnapshot = jest.fn()
 
 jest.mock('../../../map2/api', () => ({
-  namApi: {
-    getStatus: (...args: unknown[]) => mockGetNAMStatus(...args),
-  },
-  irApi: {
-    getStatus: (...args: unknown[]) => mockGetIRStatus(...args),
+  flowSnapshotsApi: {
+    get: (...args: unknown[]) => mockGetFlowSnapshot(...args),
   },
 }))
 
@@ -81,10 +77,53 @@ function renderDialog(onClose = jest.fn()) {
 
 describe('SnapshotDeployModal', () => {
   beforeEach(() => {
-    mockGetNAMStatus.mockReset()
-    mockGetIRStatus.mockReset()
+    mockGetFlowSnapshot.mockReset()
     mockPushToast.mockReset()
     mockFetch.mockReset()
+
+    mockGetFlowSnapshot.mockResolvedValue({
+      id: 101,
+      name: 'Studio Clean',
+      description: '',
+      tags: [],
+      program_number: null,
+      is_active: false,
+      is_favorite: false,
+      display_order: 1,
+      flow_slots: [],
+      created_at: '2026-03-28T00:00:00Z',
+      updated_at: '2026-03-28T00:00:00Z',
+      snapshot_data: {
+        flowSlots: [],
+        routing: {
+          mode: 'parallel_blend',
+          activeSlotId: null,
+          blendPositions: {},
+          morphProgress: 0,
+          morphSourceSlotId: null,
+          morphTargetSlotId: null,
+          seriesOrder: [],
+        },
+        activeFlowIndex: 0,
+        chains: {
+          '1': {
+            name: 'Amp Chain',
+            plugins: [
+              {
+                uri: 'map2://juce/nam',
+                position: 0,
+                bypass: false,
+                parameters: {},
+                loader_state: {
+                  selected_asset_name: 'Edge Clean',
+                  selected_asset_path: '/models/edge-clean.nam',
+                },
+              },
+            ],
+          },
+        },
+      },
+    })
 
     if (typeof window.matchMedia !== 'function') {
       Object.defineProperty(window, 'matchMedia', {
@@ -136,6 +175,46 @@ describe('SnapshotDeployModal', () => {
         })
       }
 
+      if (url.includes('/api/preset-exchange/cluster/library?content_type=nam')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'node-local': {
+                body: {
+                  items: [
+                    {
+                      path_token: 'nam_0:edge-clean.nam',
+                      relative_path: 'edge-clean.nam',
+                      filename: 'edge-clean.nam',
+                      checksum: 'nam-checksum',
+                      asset_type: 'nam',
+                    },
+                  ],
+                },
+              },
+              'node-2': {
+                body: {
+                  items: [],
+                },
+              },
+            },
+          }),
+        })
+      }
+
+      if (url.includes('/api/preset-exchange/cluster/library?content_type=ir')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'node-local': { body: { items: [] } },
+              'node-2': { body: { items: [] } },
+            },
+          }),
+        })
+      }
+
       if (url.includes('/api/preset-exchange/deploy')) {
         return Promise.resolve({
           ok: true,
@@ -150,28 +229,18 @@ describe('SnapshotDeployModal', () => {
     })
   })
 
-  it('deploys selected targets using Carbon modal primary action', async () => {
-    const onClose = jest.fn()
-    renderDialog(onClose)
+  it('renders persisted snapshot dependencies for deployment planning', async () => {
+    renderDialog()
 
     expect(await screen.findByText('node-b')).toBeInTheDocument()
+    expect(await screen.findByText('Edge Clean')).toBeInTheDocument()
 
-    const deployButton = screen.getByRole('button', { name: 'Deploy snapshot' })
-    await waitFor(() => {
-      expect(deployButton).toBeEnabled()
-    })
-
-    fireEvent.click(deployButton)
+    await waitFor(() => expect(mockGetFlowSnapshot).toHaveBeenCalledWith(101))
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/preset-exchange/deploy',
-        expect.objectContaining({ method: 'POST' }),
-      )
+      expect(mockFetch).toHaveBeenCalledWith('/api/preset-exchange/cluster/library?content_type=nam&node_id=all')
     })
 
-    await waitFor(() => {
-      expect(onClose).toHaveBeenCalled()
-    })
+    expect(screen.getAllByText('Will deploy').length).toBeGreaterThan(0)
   })
 })

@@ -46,6 +46,7 @@ class PluginSnapshotData(BaseModel):
     position: int
     bypass: bool = False
     parameters: Dict[str, float] = {}
+    loader_state: Optional[Dict[str, Any]] = None
 
 
 class ChainSnapshotData(BaseModel):
@@ -100,6 +101,11 @@ def _snapshot_plugin_position(plugin: Dict[str, Any]) -> Optional[int]:
     return position if position >= 0 else None
 
 
+def _snapshot_loader_state(plugin: Dict[str, Any]) -> Dict[str, Any]:
+    loader_state = plugin.get("loader_state")
+    return dict(loader_state) if isinstance(loader_state, dict) else {}
+
+
 async def _enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]:
     """Refresh plugin parameter snapshots from the running engine when available."""
     from app.services.juce_engine_service import get_audio_engine
@@ -148,6 +154,7 @@ async def _prepare_snapshot_runtime(
 ) -> tuple[Dict[str, Any], int]:
     """Normalize snapshot payload against the current chain runtime."""
     from app.services.chain_service import ChainService
+    from app.database import ChainPlugin
 
     flow_slots = snapshot_data.get("flowSlots", [])
 
@@ -181,10 +188,19 @@ async def _prepare_snapshot_runtime(
         remapped_chains[str(new_chain_id)] = chain_data
         chains_created += 1
 
-        for plugin in chain_data.get("plugins", []):
+        for position, plugin in enumerate(chain_data.get("plugins", [])):
             plugin_uri = plugin.get("uri")
             if plugin_uri:
-                await chain_service.add_plugin_to_chain(new_chain_id, plugin_uri)
+                chain_plugin = ChainPlugin(
+                    chain_id=new_chain_id,
+                    plugin_uri=plugin_uri,
+                    position=position,
+                    bypass=bool(plugin.get("bypass", False)),
+                    **ChainService._chain_plugin_loader_columns(plugin_uri, _snapshot_loader_state(plugin)),
+                )
+                session.add(chain_plugin)
+
+    await session.flush()
 
     for slot in flow_slots:
         old_id = slot.get("chainId")
@@ -199,6 +215,12 @@ async def _apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int,
     """Apply plugin parameter and bypass state to the engine."""
     from app.services.juce_engine_service import get_audio_engine
     from app.routes.plugins import _discovered_plugins
+    from app.services.chain_service import (
+        _CABINET_IR_PLUGIN_URIS,
+        _NAM_PLUGIN_URIS,
+        _REVERB_IR_PLUGIN_URIS,
+        _default_loader_state_for_plugin,
+    )
 
     engine = get_audio_engine()
     params_applied = 0
@@ -218,7 +240,46 @@ async def _apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int,
             try:
                 instance_id = engine._get_instance_id_for_uri(plugin_uri, plugin_position)
                 if instance_id is not None:
-                    await engine.set_bypass(instance_id, bypass)
+                    loader_state = _snapshot_loader_state(plugin)
+                    if plugin_uri in _NAM_PLUGIN_URIS:
+                        defaults = _default_loader_state_for_plugin(plugin_uri)
+                        model_path = loader_state.get("selected_asset_path")
+                        if isinstance(model_path, str) and model_path.strip():
+                            await engine.load_nam_model_instance(instance_id, model_path)
+                        await engine.set_nam_input_gain_instance(
+                            instance_id,
+                            float(loader_state.get("input_gain", defaults.get("input_gain", 0.0)) or 0.0),
+                        )
+                        await engine.set_nam_output_gain_instance(
+                            instance_id,
+                            float(loader_state.get("output_gain", defaults.get("output_gain", 0.0)) or 0.0),
+                        )
+                        await engine.set_nam_normalize_instance(
+                            instance_id,
+                            bool(loader_state.get("normalize", defaults.get("normalize", True))),
+                        )
+                        await engine.set_nam_bypass_instance(
+                            instance_id,
+                            bool(loader_state.get("bypass", bypass)),
+                        )
+                    elif plugin_uri in _CABINET_IR_PLUGIN_URIS or plugin_uri in _REVERB_IR_PLUGIN_URIS:
+                        defaults = _default_loader_state_for_plugin(plugin_uri)
+                        ir_path = loader_state.get("selected_asset_path")
+                        if isinstance(ir_path, str) and ir_path.strip():
+                            if plugin_uri in _CABINET_IR_PLUGIN_URIS:
+                                await engine.load_cabinet_ir_instance(instance_id, ir_path)
+                            else:
+                                await engine.load_reverb_ir_instance(instance_id, ir_path)
+                        await engine.set_ir_mix_instance(
+                            instance_id,
+                            float(loader_state.get("mix", defaults.get("mix", 100.0)) or defaults.get("mix", 100.0)),
+                        )
+                        await engine.set_ir_bypass_instance(
+                            instance_id,
+                            bool(loader_state.get("bypass", bypass)),
+                        )
+                    else:
+                        await engine.set_bypass(instance_id, bypass)
                     bypass_applied += 1
             except Exception as exc:
                 logger.debug("Could not set bypass for %s: %s", plugin_uri, exc)

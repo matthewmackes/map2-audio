@@ -4,6 +4,7 @@ import json
 from app import database as database_module
 from app.routes import flow_snapshots as routes
 from app.routes import plugins as plugins_routes
+from app.services.chain_service import ChainService
 from app.services import juce_engine_service
 
 
@@ -167,6 +168,15 @@ class _FakeSnapshotEngine:
         self.parameter_reads: list[tuple[str, str, int | None]] = []
         self.parameter_sets: list[tuple[str, str, float, int | None]] = []
         self.bypass_sets: list[tuple[int, bool]] = []
+        self.loaded_models: list[tuple[int, str]] = []
+        self.loaded_cabinet_irs: list[tuple[int, str]] = []
+        self.loaded_reverb_irs: list[tuple[int, str]] = []
+        self.nam_input_gains: list[tuple[int, float]] = []
+        self.nam_output_gains: list[tuple[int, float]] = []
+        self.nam_normalize: list[tuple[int, bool]] = []
+        self.nam_bypass: list[tuple[int, bool]] = []
+        self.ir_mix: list[tuple[int, float]] = []
+        self.ir_bypass: list[tuple[int, bool]] = []
 
     async def get_parameter(self, plugin_uri: str, symbol: str, *, plugin_position: int | None = None) -> float:
         self.parameter_reads.append((plugin_uri, symbol, plugin_position))
@@ -179,6 +189,42 @@ class _FakeSnapshotEngine:
 
     async def set_bypass(self, instance_id: int, bypass: bool) -> bool:
         self.bypass_sets.append((instance_id, bypass))
+        return True
+
+    async def load_nam_model_instance(self, instance_id: int, path: str) -> bool:
+        self.loaded_models.append((instance_id, path))
+        return True
+
+    async def set_nam_input_gain_instance(self, instance_id: int, db: float) -> bool:
+        self.nam_input_gains.append((instance_id, db))
+        return True
+
+    async def set_nam_output_gain_instance(self, instance_id: int, db: float) -> bool:
+        self.nam_output_gains.append((instance_id, db))
+        return True
+
+    async def set_nam_normalize_instance(self, instance_id: int, normalize: bool) -> bool:
+        self.nam_normalize.append((instance_id, normalize))
+        return True
+
+    async def set_nam_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.nam_bypass.append((instance_id, bypass))
+        return True
+
+    async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
+        self.loaded_cabinet_irs.append((instance_id, path))
+        return True
+
+    async def load_reverb_ir_instance(self, instance_id: int, path: str) -> bool:
+        self.loaded_reverb_irs.append((instance_id, path))
+        return True
+
+    async def set_ir_mix_instance(self, instance_id: int, mix: float) -> bool:
+        self.ir_mix.append((instance_id, mix))
+        return True
+
+    async def set_ir_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.ir_bypass.append((instance_id, bypass))
         return True
 
     async def set_parameter(
@@ -266,3 +312,139 @@ def test_apply_snapshot_to_engine_targets_duplicate_instances_by_position(monkey
         ("urn:test:duplicate", "gain", 0.11, 0),
         ("urn:test:duplicate", "gain", 0.82, 1),
     ]
+
+
+def test_apply_snapshot_to_engine_restores_loader_state(monkeypatch):
+    fake_engine = _FakeSnapshotEngine()
+    monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(
+        plugins_routes,
+        "_discovered_plugins",
+        [
+            {
+                "uri": "map2://juce/nam",
+                "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
+            },
+            {
+                "uri": "map2://juce/convolution/cabinet",
+                "parameters": [],
+            },
+        ],
+    )
+
+    original_get_instance = fake_engine._get_instance_id_for_uri
+
+    def _get_instance(plugin_uri: str, plugin_position: int | None = None):
+        if plugin_uri == "map2://juce/nam":
+            return 111
+        if plugin_uri == "map2://juce/convolution/cabinet":
+            return 222
+        return original_get_instance(plugin_uri, plugin_position)
+
+    fake_engine._get_instance_id_for_uri = _get_instance  # type: ignore[method-assign]
+
+    snapshot = {
+        "chains": {
+            "1": {
+                "name": "Chain 1",
+                "plugins": [
+                    {
+                        "uri": "map2://juce/nam",
+                        "position": 0,
+                        "bypass": False,
+                        "parameters": {"0": 0.42},
+                        "loader_state": {
+                            "selected_asset_name": "Crunch Deluxe",
+                            "selected_asset_path": "/tmp/crunch-deluxe.nam",
+                            "input_gain": 2.5,
+                            "output_gain": -1.0,
+                            "normalize": False,
+                            "bypass": True,
+                        },
+                    },
+                    {
+                        "uri": "map2://juce/convolution/cabinet",
+                        "position": 1,
+                        "bypass": False,
+                        "parameters": {},
+                        "loader_state": {
+                            "selected_asset_name": "Mesa 4x12",
+                            "selected_asset_path": "/tmp/mesa.wav",
+                            "mix": 64.0,
+                            "bypass": True,
+                        },
+                    },
+                ],
+            }
+        }
+    }
+
+    params_applied, bypass_applied = asyncio.run(routes._apply_snapshot_to_engine(snapshot))  # noqa: SLF001
+
+    assert (params_applied, bypass_applied) == (1, 2)
+    assert fake_engine.loaded_models == [(111, "/tmp/crunch-deluxe.nam")]
+    assert fake_engine.nam_input_gains == [(111, 2.5)]
+    assert fake_engine.nam_output_gains == [(111, -1.0)]
+    assert fake_engine.nam_normalize == [(111, False)]
+    assert fake_engine.nam_bypass == [(111, True)]
+    assert fake_engine.loaded_cabinet_irs == [(222, "/tmp/mesa.wav")]
+    assert fake_engine.ir_mix == [(222, 64.0)]
+    assert fake_engine.ir_bypass == [(222, True)]
+
+
+def test_prepare_snapshot_runtime_preserves_loader_state_for_missing_chains(tmp_path):
+    _init_temp_db(tmp_path)
+
+    snapshot = {
+        "flowSlots": [
+            {
+                "id": "flow-a",
+                "chainId": 77,
+                "label": "A",
+                "color": "#2563eb",
+                "muted": False,
+                "solo": False,
+                "dryWetMix": 100.0,
+            }
+        ],
+        "routing": {"mode": "series"},
+        "activeFlowIndex": 0,
+        "chains": {
+            "77": {
+                "name": "Recreated Chain",
+                "plugins": [
+                    {
+                        "uri": "map2://juce/nam",
+                        "position": 0,
+                        "bypass": False,
+                        "parameters": {},
+                        "loader_state": {
+                            "selected_asset_name": "Edge Clean",
+                            "selected_asset_path": "/tmp/edge-clean.nam",
+                            "input_gain": 1.25,
+                            "output_gain": -0.5,
+                            "normalize": True,
+                        },
+                    }
+                ],
+            }
+        },
+    }
+
+    async def _run():
+        async with database_module.get_session() as session:
+            prepared, chains_created = await routes._prepare_snapshot_runtime(session, snapshot)  # noqa: SLF001
+            assert chains_created == 1
+            new_chain_id = prepared["flowSlots"][0]["chainId"]
+            payload = await ChainService(session).get_chain(new_chain_id)
+            assert payload["plugins"][0]["loader_state"] == {
+                "selected_model": "Edge Clean",
+                "selected_asset_name": "Edge Clean",
+                "selected_asset_path": "/tmp/edge-clean.nam",
+                "input_gain": 1.25,
+                "output_gain": -0.5,
+                "normalize": True,
+                "bypass": False,
+            }
+
+    asyncio.run(_run())

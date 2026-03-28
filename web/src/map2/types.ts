@@ -178,6 +178,7 @@ export interface ChainPlugin {
   position: number;
   bypassed: boolean;
   parameters: Record<string, number>;
+  loader_state?: PluginLoaderState;
   in_ports?: number;
   out_ports?: number;
   // Multi-format plugin support (JUCE)
@@ -246,6 +247,20 @@ export interface Plugin {
   sidechain_buses?: number;
   sidechain_bus_names?: string[];
   is_hardware?: boolean;
+  loader_state?: PluginLoaderState;
+}
+
+export interface PluginLoaderState {
+  selected_model?: string | null;
+  selected_ir?: string | null;
+  selected_asset_name?: string | null;
+  selected_asset_path?: string | null;
+  input_gain?: number;
+  output_gain?: number;
+  normalize?: boolean;
+  mix?: number;
+  bypass?: boolean;
+  ir_type?: 'cabinet' | 'reverb';
 }
 
 export interface PluginAppearanceOverride {
@@ -1939,6 +1954,7 @@ export interface PluginSnapshot {
   position: number;
   bypass: boolean;
   parameters: Record<string, number>;
+  loader_state?: PluginLoaderState;
 }
 
 /** Chain state snapshot */
