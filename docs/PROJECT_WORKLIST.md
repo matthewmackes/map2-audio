@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 16:16 EDT - Closed the API-client split bundles and removed the remaining production build warning
+Last updated: 2026-03-28 17:11 EDT - Completed phase-two API-client split bundles and closed T501-T509 after barrel cleanup/validation
 
 ID: T482
 Status: [✓] Done
@@ -9037,3 +9037,160 @@ Last updated: 2026-03-28 16:16 EDT - Codex
   - Added `web/src/map2/clientExports.test.ts` so future refactors have explicit proof that key compatibility exports still alias the split modules.
   - Licensing review: touched frontend/worklist/script files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src scripts` and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/map2/transport.test.ts src/map2/clientExports.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
+
+### Follow-up Slice: API Client Split Phase 2
+
+ID: T501
+Status: [✓] Done
+Title: Extract audio, diagnostics, and USB clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `audioApi`, `diagnosticsApi`, and `usbApi` into a dedicated standalone client module under `web/src/map2/clients/` while preserving the current `@/map2/api` contract, websocket/url helper usage, and frontend consumers on the audio engine and hardware pages.
+- Why it matters: These foundational hardware-control clients are still embedded in the monolithic barrel, which keeps unrelated audio-page consumers tied to a large file for a small set of endpoints.
+- Dependencies: T500
+- Estimated effort: Medium
+- Required outputs: extracted client module, compatibility barrel exports, any needed consumer rewiring/tests, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/audio.ts` and moved `audioApi`, `diagnosticsApi`, and `usbApi` out of the monolithic barrel into the dedicated audio client surface.
+  - Rewired `web/src/map2/api.ts` to import and re-export those clients so existing `@/map2/api` consumers continue to work unchanged.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T502
+Status: [✓] Done
+Title: Extract workflow state clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `effectsLoopsApi`, `snapshotsApi`, `historyApi`, `sessionsApi`, and `flowSnapshotsApi` into standalone workflow-focused client modules while keeping the existing `map2Api` compatibility barrel stable for current consumers.
+- Why it matters: Workflow/state-management pages still import a large mixed-domain barrel when their needs are limited to snapshot/session/flow APIs, which slows continued de-monolith work and keeps boundaries blurry.
+- Dependencies: T500
+- Estimated effort: Medium
+- Required outputs: extracted workflow client module(s), compatibility exports, focused validation for existing workflow consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/workflows.ts` and moved `effectsLoopsApi`, `snapshotsApi`, `historyApi`, `sessionsApi`, and `flowSnapshotsApi` into a workflow-focused client module.
+  - Preserved the existing barrel contract by re-exporting the split workflow clients from `web/src/map2/api.ts`.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T503
+Status: [✓] Done
+Title: Extract platform runtime clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `metricsApi`, `systemApi`, node identity/health/topology helpers, `nodeApi`, `networkApi`, and `servicesApi` into standalone platform client modules while preserving the current React hook/page import contract.
+- Why it matters: These host/platform status endpoints are widely consumed, but they do not need to remain in the same file as plugin, MIDI, asset, and AVB logic.
+- Dependencies: T500
+- Estimated effort: Medium
+- Required outputs: extracted platform client module(s), compatibility exports, focused validation for node/platform consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/platform.ts` and moved `metricsApi`, `systemApi`, `getNodeIdentity`, `getNodeHealth`, `getNodeTopology`, `patchNodeLabel`, `nodeApi`, `networkApi`, and `servicesApi` into the standalone platform client surface.
+  - Kept the existing React/frontend import contract stable by re-exporting the platform clients and helpers from `web/src/map2/api.ts`.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T504
+Status: [✓] Done
+Title: Extract asset and library clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `irApi`, `irLibraryApi`, `namApi`, `soundfontApi`, `foldersApi`, and `uploadApi` into standalone asset/library client modules while preserving current loader/dialog/library imports and upload semantics.
+- Why it matters: Asset-management code remains one of the largest leaf domains in the monolithic barrel and is a good fit for a domain-focused client boundary.
+- Dependencies: T500
+- Estimated effort: High
+- Required outputs: extracted asset client module(s), compatibility exports, focused validation for loader/library consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/assets.ts` and moved `irApi`, `irLibraryApi`, `namApi`, `soundfontApi`, `foldersApi`, and `uploadApi` into a dedicated asset/library client module.
+  - Updated `web/src/map2/api.ts` to re-export the asset clients so existing loaders, dialogs, and library consumers keep the same compatibility entrypoint.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T505
+Status: [✓] Done
+Title: Extract engine-adjacent utility clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `latencyV2Api`, `pipewireApi`, `engineApi`, `synthforgeApi`, and `automationApi` into standalone utility client modules while keeping the compatibility barrel and affected hooks/pages working unchanged.
+- Why it matters: These engine-adjacent clients are coherent as a group and can be removed from the monolith without entangling the still-larger AVB/MIDI/Tesira domains.
+- Dependencies: T500
+- Estimated effort: Medium
+- Required outputs: extracted utility client module(s), preserved compatibility exports, focused validation for affected hooks/pages, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/utilities.ts` and moved `latencyV2Api`, `pipewireApi`, `engineApi`, `synthforgeApi`, and `automationApi` out of the barrel into a standalone engine-adjacent client module.
+  - Corrected the slice layout so `latencyV2Api` now lives with the utility clients instead of the asset module, matching the task contract.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T506
+Status: [✓] Done
+Title: Extract avbApi into a standalone routing client module
+Description:
+- Goal / acceptance criteria: Move `avbApi` into a dedicated AVB routing client module under `web/src/map2/clients/` while preserving its current helper usage, cluster fanout types, and all AVB consumer imports.
+- Why it matters: AVB routing is a distinct domain with many specialized types and consumers; extracting it will materially shrink the barrel and clarify ownership for future AVB work.
+- Dependencies: T500
+- Estimated effort: Medium
+- Required outputs: standalone AVB client module, compatibility exports, focused validation for AVB hooks/components, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/avb.ts` and moved `avbApi` into a dedicated AVB routing client module.
+  - Preserved all AVB consumer imports by routing the compatibility barrel through the extracted AVB client module.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T507
+Status: [✓] Done
+Title: Extract MIDI control clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `midiApi` and `midiApiV2` into standalone MIDI client modules while preserving the current frontend import contract and request/response typing.
+- Why it matters: The MIDI control surface is large and heavily used, and keeping it separate from non-MIDI domains will make the remaining barrel easier to reason about and continue splitting safely.
+- Dependencies: T500
+- Estimated effort: High
+- Required outputs: extracted MIDI client module(s), compatibility exports, focused validation for MIDI consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/midi.ts` and moved `midiApi` and `midiApiV2` into a standalone MIDI client module with direct type imports from `web/src/map2/types.ts`.
+  - Rebound `web/src/map2/api.ts` so the barrel default export and named exports still expose `midiApi` and `midiApiV2` through the split implementation.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T508
+Status: [✓] Done
+Title: Extract MIDI cluster and MIDI hub clients from web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Move `midiClusterApi` and `midiHubApi` into standalone cluster/hub client modules while preserving all current `@/map2/api` imports and type exports used across the MIDI Hub UI.
+- Why it matters: These are some of the largest remaining single-domain API surfaces inside the barrel; extracting them creates a major size reduction and a clean ownership boundary for MIDI Hub work.
+- Dependencies: T500; T507
+- Estimated effort: High
+- Required outputs: extracted cluster/hub client module(s), compatibility exports, focused validation for MIDI Hub consumers, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/clients/midiHub.ts` and moved `midiClusterApi` plus `midiHubApi` into standalone cluster/hub client modules while preserving the existing `@/map2/api` facade.
+  - Finished the cleanup by removing the dead commented legacy MIDI cluster/hub bodies from `web/src/map2/api.ts`, leaving the extracted modules as the only active implementation path.
+  - Validation for this extracted surface is captured in the phase-two suite recorded under T509.
+
+ID: T509
+Status: [✓] Done
+Title: Preserve full barrel compatibility after phase-two API extraction
+Description:
+- Goal / acceptance criteria: Keep `web/src/map2/api.ts` and its default export compatible after the phase-two extraction by re-exporting the new client modules, extending compatibility tests as needed, and proving the production build/test surface remains green.
+- Why it matters: The barrel must remain a stable facade for existing consumers while the internal domain clients move out; otherwise the split introduces churn instead of reducing risk.
+- Dependencies: T501; T502; T503; T504; T505; T506; T507; T508
+- Estimated effort: Medium
+- Required outputs: compatibility export updates, focused tests for new barrel aliases/default export behavior, licensing/worklist notes, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 17:11 EDT - Codex
+- Completion notes:
+  - Kept `web/src/map2/api.ts` as the compatibility barrel by importing/re-exporting the split client modules and preserving the default-export aliases used across the frontend.
+  - Extended `web/src/map2/clientExports.test.ts` so the barrel contract now explicitly covers the new extracted audio, workflow, platform, asset, utility, AVB, MIDI, and MIDI Hub surfaces.
+  - Removed the dead commented inline MIDI/MIDI Hub implementations from `web/src/map2/api.ts`, so the extracted client modules are now the only active implementation path.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src scripts` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/map2/clientExports.test.ts src/map2/transport.test.ts src/map2/hooks/useWebSocket.test.ts` -> PASS; `npm --prefix web run build` -> PASS.
