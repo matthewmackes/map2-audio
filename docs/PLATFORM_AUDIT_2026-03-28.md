@@ -91,15 +91,15 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 - **Confidence:** Confirmed
 - **Action:** Add the script or remove the CI step
 
-### H3: 4 orphaned Python services never imported
+### H3: Standalone-service and orphan-service audit bucket needs splitting
 - **Category:** Dead code
 - **Location:**
-  - `app/services/port80_proxy.py` — standalone TCP proxy, never imported
-  - `app/services/secrets_manager.py` — never imported by routes or other services
-  - `app/services/connection_pool_integration.py` — never imported
-  - `app/services/resilience_middleware.py` — never imported
-- **Confidence:** Highly likely dead (grep confirms no imports)
-- **Action:** Verify no standalone execution, then delete
+  - `app/services/port80_proxy.py` — standalone TCP proxy launched by `systemd/map2-port80-proxy.service`
+  - `app/services/secrets_manager.py` — standalone encrypted secret-store utility with CLI/module helpers
+  - `app/services/connection_pool_integration.py` — never imported and not referenced by runtime/service units
+  - `app/services/resilience_middleware.py` — utility module only kept alive by its own dedicated tests
+- **Confidence:** Mixed — only part of the bucket is truly dead
+- **Action:** Delete `connection_pool_integration.py`, decide the secrets/proxy utility ownership explicitly, and remove `resilience_middleware.py` if it remains test-only
 
 ### H4: Legacy map2/ dashboard components never used by app/
 - **Category:** Dead code
@@ -197,10 +197,10 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 |------|------|----------|----------|------------|--------|
 | PluginHost.h/cpp | C++ files | juce-engine/Source/ | Not in CMake, superseded by JucePluginHost | Confirmed | Delete now |
 | PluginGraph.h/cpp | C++ files | juce-engine/Source/ | Not in CMake, superseded by JuceAudioGraph | Confirmed | Delete now |
-| port80_proxy.py | Python service | app/services/ | Never imported | Highly likely | Verify, then delete |
-| secrets_manager.py | Python service | app/services/ | Never imported by routes/services | Highly likely | Verify, then delete |
-| connection_pool_integration.py | Python service | app/services/ | Never imported | Highly likely | Delete now |
-| resilience_middleware.py | Python service | app/services/ | Never imported | Highly likely | Delete now |
+| port80_proxy.py | Python standalone utility | app/services/ | Not imported, but launched by `map2-port80-proxy.service` | Confirmed live standalone | Retain and test |
+| secrets_manager.py | Python standalone utility | app/services/ | Not route-wired, but exposes real encrypted storage + CLI helpers | Confirmed standalone utility | Retain or delete explicitly, not by import scan alone |
+| connection_pool_integration.py | Python service | app/services/ | Never imported and no runtime owner | Confirmed dead | Delete now |
+| resilience_middleware.py | Python utility | app/services/ | No production imports; only dedicated self-tests | Likely dead | Delete if no retained owner emerges |
 | MAP2Dashboard.tsx | React component | web/src/map2/components/ | Only self-referenced, not used by app/ | Highly likely | Verify build, then delete |
 | WorkFlow.tsx | React component | web/src/map2/components/ | Only used by MAP2Dashboard | Highly likely | Delete with MAP2Dashboard |
 | HistoryPanel.tsx | React component | web/src/map2/components/ | Only used by WorkFlow | Highly likely | Delete with chain |
@@ -275,7 +275,7 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 - Standalone VST3 plugin builds (22 plugin directories)
 - Milan Mode AVDECC (not implemented, correctly untested)
 - Frontend CSS coverage (no visual regression tests)
-- `port80_proxy.py`, `secrets_manager.py`, `connection_pool_integration.py`, `resilience_middleware.py` (orphaned, no tests)
+- The earlier four-file orphan-service bucket was over-broad: `port80_proxy.py` and `secrets_manager.py` now have focused retained-contract coverage, while `connection_pool_integration.py` and `resilience_middleware.py` were deleted in the `T483`-`T491` follow-up cleanup.
 
 ## What is MISLEADINGLY tested
 - `test_phase1_integration.py`: Accepts both 200 and 400 as "passing" — masks real failures
@@ -298,15 +298,15 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 
 1. Delete `juce-engine/Source/PluginHost.h`, `PluginHost.cpp`, `PluginGraph.h`, `PluginGraph.cpp`
 2. Delete `web/src/app/components/JuceAudioGraphViz.tsx`
-3. Delete `app/services/connection_pool_integration.py`
-4. Delete `app/services/resilience_middleware.py`
+3. Delete `app/services/connection_pool_integration.py` [completed in T483]
+4. Delete `app/services/resilience_middleware.py` [completed in T486]
 5. Delete `scripts/build-airwindows.sh.disabled`
 6. Remove `ConfigSection.AUTOMATION` from `app/config.py` if grep confirms zero usage
 
 ## Phase B: Verified Deletions (verify no runtime/standalone usage first)
 
-1. Verify and delete `app/services/port80_proxy.py` (check if run standalone)
-2. Verify and delete `app/services/secrets_manager.py` (check if imported dynamically)
+1. Verify and retain `app/services/port80_proxy.py` as a systemd-backed standalone service [completed in T484]
+2. Verify and retain `app/services/secrets_manager.py` as a standalone secret-store utility with optional dependency guard [completed in T485]
 3. Verify tree-shaking and delete legacy `web/src/map2/components/` dashboard chain (MAP2Dashboard, WorkFlow, HistoryPanel, SessionManager, MetricsDashboard, NetworkPanel, FeaturesPanel, FeatureToolbar, SessionStatusIndicator, BackupStatusWidget, SnapshotBar)
 4. Verify and delete orphaned CSS files (PlatformShellPage.css, MidiHubPage.css)
 5. Decide on 22 plugin stub directories — delete if standalone builds not needed

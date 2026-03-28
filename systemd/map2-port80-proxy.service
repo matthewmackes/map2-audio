@@ -1,6 +1,6 @@
 [Unit]
-Description=MAP2 Audio Port 80 Proxy (PiPedal Android compatibility)
-Documentation=https://github.com/rerdavies/pipedal
+Description=MAP2 Audio Port 80 Proxy (legacy mobile/web compatibility)
+Documentation=https://github.com/matthewmackes/map2-audio
 After=network.target map2-backend.service
 Requires=map2-backend.service
 

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 13:01 EDT - Closed bundled cleanup, test-hardening, TUI-doc, MIDI-surface, and web-structure tasks
+Last updated: 2026-03-28 13:52 EDT - Closed service-classification cleanup and current-tree JUCE bloat bundles
 
 ID: T482
 Status: [✓] Done
@@ -8471,6 +8471,153 @@ Last updated: 2026-03-28 12:21 EDT - Codex
 - Blocked notes:
   - The audit bucket is not accurate enough to execute as written: `tests/test_resilience_middleware.py` still directly exercises `app/services/resilience_middleware.py`, and `app/services/secrets_manager.py` still exposes module-level helpers plus a real encryption/storage implementation.
   - A narrower follow-up should split the truly orphaned candidates (`port80_proxy.py`, `connection_pool_integration.py`) from the files that still have live utility/test value instead of deleting all four blindly.
+
+### Follow-up Slice: Service Classification and Current-Tree Bloat Cleanup
+
+ID: T483
+Status: [✓] Done
+Title: Delete the truly orphaned connection_pool_integration service module
+Description:
+- Goal / acceptance criteria: Remove `app/services/connection_pool_integration.py` after confirming there are still no live imports, no standalone runtime contract, and no docs that should continue advertising it as active. Clean up any stale references that only exist because the audit documented it.
+- Why it matters: This file is the only obviously dead member of the `T466` bucket and should not stay in-tree just because the broader audit item was over-scoped.
+- Dependencies: T466
+- Estimated effort: Low
+- Required outputs: Deleted module, stale doc/reference cleanup, focused validation proving the active connection-pool path still works.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Deleted `app/services/connection_pool_integration.py` after confirming it had no runtime imports, no systemd/unit owner, and no remaining non-audit documentation advertising it as active.
+  - Revalidated the still-live connection-pool surface with `pytest -q tests/test_connection_pool.py`, which stayed green after the deletion.
+
+ID: T484
+Status: [✓] Done
+Title: Formalize port80_proxy.py as a supported standalone service
+Description:
+- Goal / acceptance criteria: Keep `app/services/port80_proxy.py` only if it is clearly documented and tested as a standalone utility service rather than an imported application service. Add focused contract coverage around the live `systemd/map2-port80-proxy.service` binding and refresh any audit/doc text that incorrectly calls it orphaned.
+- Why it matters: The current audit misclassified a real systemd-backed runtime entrypoint as dead code, which creates the wrong cleanup pressure and makes future audits unreliable.
+- Dependencies: T466
+- Estimated effort: Low
+- Required outputs: Standalone-service documentation/contract cleanup, focused test coverage, and corrected audit/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Kept `app/services/port80_proxy.py` explicitly as a standalone service, not an imported application service, and refreshed `systemd/map2-port80-proxy.service` so the unit description/documentation identify it as MAP2’s legacy mobile/web compatibility proxy.
+  - Added `tests/test_port80_proxy_service.py` covering both the systemd contract (`ExecStart=/usr/bin/python3 -m app.services.port80_proxy`) and a live bidirectional proxy round-trip.
+
+ID: T485
+Status: [✓] Done
+Title: Formalize secrets_manager.py as a retained standalone utility or remove it
+Description:
+- Goal / acceptance criteria: Decide and implement the correct ownership for `app/services/secrets_manager.py`. If retained, add focused tests/docs proving it is an intentionally shipped encrypted secret-store utility with a CLI/module contract; if not, delete it and clean all references. Do not leave it in the current “unimported but maybe useful” limbo.
+- Why it matters: `secrets_manager.py` still exposes real encryption/storage behavior and runtime-contract documentation, so the orphan-service audit result is not trustworthy until this module is classified explicitly.
+- Dependencies: T466
+- Estimated effort: Medium
+- Required outputs: Clear keep/delete decision, matching code/docs/tests, and corrected audit/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Retained `app/services/secrets_manager.py` explicitly as a standalone encrypted secret-store utility and updated the module contract to say it is intentionally not auto-wired into the FastAPI route graph.
+  - Hardened the utility surface with an optional `cryptography` dependency guard, configurable `salt_path` handling, and focused coverage in `tests/test_secrets_manager.py` for dependency behavior, round-trip storage, rotation, delete, and helper-path support.
+
+ID: T486
+Status: [✓] Done
+Title: Delete or relocate the unused resilience_middleware utility surface
+Description:
+- Goal / acceptance criteria: Resolve `app/services/resilience_middleware.py` and `tests/test_resilience_middleware.py` cleanly. If the utilities are not used by production code and duplicate existing resilience helpers, delete both the module and its standalone tests; otherwise move/formalize them under the right ownership path and prove the retained contract is intentional.
+- Why it matters: The current module only survives because its own tests import it. That is not enough justification for a production-path `app/services/` module.
+- Dependencies: T466
+- Estimated effort: Medium
+- Required outputs: Clear keep/delete decision, corresponding test cleanup or relocation, and corrected audit/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Deleted `app/services/resilience_middleware.py` and `tests/test_resilience_middleware.py` after confirming the module had no production imports and was only being kept alive by its own dedicated test file.
+  - Repo-wide reference checks now leave the file name only in audit/worklist history, which is the intended ownership after removal.
+
+ID: T487
+Status: [✓] Done
+Title: Correct orphan-service audit artifacts and document standalone-service classification
+Description:
+- Goal / acceptance criteria: Update the affected audit/runtime docs so they distinguish imported application services from standalone utilities/systemd entrypoints. At minimum, correct the orphan-service claims in the current audit artifacts touched by `T466` follow-up work.
+- Why it matters: The repo now has evidence that the original audit bucket overreached, so the audit artifacts must be brought back in line with the actual code ownership model.
+- Dependencies: T483; T484; T485; T486
+- Estimated effort: Low
+- Required outputs: Corrected audit/runtime docs and completion notes tying the split follow-up back to blocked `T466`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Corrected `docs/PLATFORM_AUDIT_2026-03-28.md` so it now splits true orphaned modules from retained standalone utilities/systemd entrypoints and no longer claims the entire four-file bucket is uniformly dead and untested.
+  - Tied the split follow-up back to blocked `T466`: the blocked broad-delete task stays as historical evidence, while `T483` through `T486` now record the correct file-by-file outcome.
+
+ID: T488
+Status: [✓] Done
+Title: Remove tracked MAP2ThePlugins build-win artifacts from the current tree
+Description:
+- Goal / acceptance criteria: Delete the tracked `juce-engine/MAP2ThePlugins/build-win/` build output tree while preserving any real source files required to rebuild the standalone plugin host if it is still wanted. Keep `.gitignore` aligned so the build tree does not re-enter the repo.
+- Why it matters: The current repository still tracks Windows build products (`.obj`, `.a`, `.exe`, `.vst3`) under a build directory, which is pure current-tree bloat even before the historical rewrite problem in `T082-subD`.
+- Dependencies: T082-subD
+- Estimated effort: Medium
+- Required outputs: Deleted tracked build artifacts, ignore coverage, and focused validation that the canonical JUCE build path still works.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Removed the tracked `juce-engine/MAP2ThePlugins/build-win/` tree from git, deleting the committed Windows build outputs (`.obj`, `.a`, `.exe`, `.vst3`, CMake intermediates) without touching source files needed to regenerate the plugin build elsewhere.
+  - Existing root ignore rules `juce-engine/build*/` and `juce-engine/**/build*/` already cover recurrence for generated build directories, so no extra ignore pattern was needed.
+
+ID: T489
+Status: [✓] Done
+Title: Remove tracked juce-engine build-asan and build-asan-clang trees from the current tree
+Description:
+- Goal / acceptance criteria: Delete the tracked `juce-engine/build-asan/` and `juce-engine/build-asan-clang/` output trees from git while preserving the documented ability to run local sanitizer builds in temporary or ignored directories.
+- Why it matters: These sanitizer build trees account for a large share of the remaining tracked current-tree bloat and should not be versioned.
+- Dependencies: T082-subD
+- Estimated effort: Medium
+- Required outputs: Deleted tracked sanitizer build trees, ignore coverage, and focused validation that local sanitizer/test commands still have a documented ignored destination.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Removed the tracked `juce-engine/build-asan/` and `juce-engine/build-asan-clang/` output trees from git, including the stale `_deps/juce-src` gitlink/index entries that had to be cleared before the cleanup could complete cleanly.
+  - The cleanup keeps local sanitizer builds viable in scratch or ignored directories instead of versioning the generated artifacts.
+
+ID: T490
+Status: [✓] Done
+Title: Remove tracked juce-engine build-avdecc-test and build-check trees from the current tree
+Description:
+- Goal / acceptance criteria: Delete the tracked `juce-engine/build-avdecc-test/` and `juce-engine/build-check/` output trees from git while preserving the ability to recreate those builds in ignored scratch directories for validation.
+- Why it matters: These generated trees still carry large vendored `_deps/` and compiled outputs in git, which directly undermines repo hygiene and keeps `T082-subD` larger than necessary.
+- Dependencies: T082-subD
+- Estimated effort: Medium
+- Required outputs: Deleted tracked build trees, ignore coverage, and focused validation using scratch build directories.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Removed the tracked `juce-engine/build-avdecc-test/` and `juce-engine/build-check/` trees from git, including the stale vendored `_deps/` gitlink entries that were blocking a clean tree purge.
+  - Revalidated rebuildability outside the repo tree with `cmake -S juce-engine -B /tmp/map2-t491-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t491-cmake -j2`, which passed.
+
+ID: T491
+Status: [✓] Done
+Title: Add a guard against tracked JUCE build-artifact trees returning to the repo
+Description:
+- Goal / acceptance criteria: Add a focused repo-policy test or CI guard that fails if generated JUCE build trees or known compiled artifact patterns under `juce-engine/` are tracked again. The guard should cover the cleanup targets in `T488` through `T490` without flagging canonical source/dependency directories.
+- Why it matters: Current-tree cleanup is not enough if future commits can silently reintroduce multi-hundred-megabyte build outputs.
+- Dependencies: T488; T489; T490
+- Estimated effort: Low
+- Required outputs: New guard test/policy, documentation if needed, and validation showing it passes after cleanup.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 13:52 EDT - Codex
+- Completion notes:
+  - Added `tests/test_repo_hygiene_current_tree.py`, which fails if the cleaned JUCE build trees or common compiled artifact patterns under `juce-engine/` are ever tracked again.
+  - Validation: `pytest -q tests/test_port80_proxy_service.py tests/test_secrets_manager.py tests/test_connection_pool.py tests/test_backend_service_contract.py tests/test_prepare_repo_bloat_rewrite_window.py tests/test_repo_hygiene_current_tree.py` -> PASS (`34 passed, 3 skipped`); `python3 - <<'PY' ... git ls-files ... violations=0 ... PY` -> PASS; scratch JUCE rebuild in `/tmp/map2-t491-cmake` -> PASS.
+  - Licensing review: touched backend/systemd/doc/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app tests systemd scripts` and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T467
 Status: [✓] Done

@@ -1,1 +1,0 @@
- "MAP2ThePlugins_artefacts/Release/libMAP2-THEPLUGINS_SharedCode.a" -lwsock32 -lwininet -lversion -lws2_32 -limm32 -lrpcrt4 -ld3d11 -ld2d1 -ldwrite -ldxgi -ldcomp -lgdi32 -luser32 -lole32 -loleaut32 -luuid -lcomdlg32 -lshlwapi -lshell32 -lwinmm -static-libgcc -static-libstdc++ -static -lpthread -dynamic -lole32 -luuid 

@@ -1,8 +1,9 @@
 """
-MAP2 Audio Cluster - Secret Management System
+MAP2 Audio Cluster - Standalone secret management utility.
 
-Centralized secret storage with encryption, rotation, and access control.
-Stores API keys, database passwords, certificates, and other sensitive data.
+This module is intentionally not auto-wired into the FastAPI route graph.
+It provides an encrypted secret store plus optional module-level helpers for
+standalone service/CLI workflows that need to persist secrets on disk.
 """
 
 from typing import Dict, List, Optional, Any
@@ -13,12 +14,22 @@ import json
 import base64
 import os
 from enum import Enum
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
 import logging
 
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    Fernet = None  # type: ignore[assignment]
+    hashes = None  # type: ignore[assignment]
+    PBKDF2 = None  # type: ignore[assignment]
+
 logger = logging.getLogger(__name__)
+if not CRYPTOGRAPHY_AVAILABLE:
+    logger.info("cryptography module not installed — secrets manager disabled")
 
 
 class SecretType(Enum):
@@ -93,7 +104,11 @@ class SecretEncryption:
     from a password using PBKDF2.
     """
     
-    def __init__(self, master_password: Optional[str] = None):
+    def __init__(
+        self,
+        master_password: Optional[str] = None,
+        salt_path: Optional[str] = None,
+    ):
         """
         Initialize encryption.
         
@@ -108,14 +123,21 @@ class SecretEncryption:
                     "Master password required. Set MAP2_SECRETS_MASTER_PASSWORD "
                     "environment variable or provide master_password parameter."
                 )
+
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise RuntimeError(
+                "cryptography is required for secrets_manager.py. "
+                "Install the optional cryptography dependency to use the secret store."
+            )
         
         self.master_password = master_password
+        self.salt_path = Path(salt_path or "/var/lib/map2/secrets_salt")
         self.salt = self._get_or_create_salt()
         self.cipher = self._derive_cipher()
     
     def _get_or_create_salt(self) -> bytes:
         """Get or create encryption salt."""
-        salt_file = Path("/var/lib/map2/secrets_salt")
+        salt_file = self.salt_path
         salt_file.parent.mkdir(parents=True, exist_ok=True)
         
         if salt_file.exists():
@@ -170,7 +192,8 @@ class SecretsManager:
     def __init__(
         self, 
         storage_path: str = "/var/lib/map2/secrets.json",
-        master_password: Optional[str] = None
+        master_password: Optional[str] = None,
+        salt_path: Optional[str] = None,
     ):
         """
         Initialize secrets manager.
@@ -178,11 +201,12 @@ class SecretsManager:
         Args:
             storage_path: Path to encrypted secrets storage
             master_password: Master encryption password
+            salt_path: Path to the encryption salt file
         """
         self.storage_path = Path(storage_path)
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         
-        self.encryption = SecretEncryption(master_password)
+        self.encryption = SecretEncryption(master_password, salt_path=salt_path)
         self.secrets: Dict[str, Secret] = {}
         
         # Load existing secrets
@@ -471,7 +495,10 @@ class SecretsManager:
             password: Export encryption password
         """
         # Create new encryption with export password
-        export_encryption = SecretEncryption(password)
+        export_encryption = SecretEncryption(
+            password,
+            salt_path=str(self.encryption.salt_path),
+        )
         
         # Re-encrypt all secrets with export password
         export_data = {
@@ -508,7 +535,8 @@ secrets_manager: Optional[SecretsManager] = None
 
 def init_secrets_manager(
     storage_path: str = "/var/lib/map2/secrets.json",
-    master_password: Optional[str] = None
+    master_password: Optional[str] = None,
+    salt_path: Optional[str] = None,
 ) -> SecretsManager:
     """
     Initialize global secrets manager.
@@ -516,13 +544,14 @@ def init_secrets_manager(
     Args:
         storage_path: Path to secrets storage
         master_password: Master encryption password
+        salt_path: Path to the encryption salt file
     
     Returns:
         SecretsManager instance
     """
     global secrets_manager
     
-    secrets_manager = SecretsManager(storage_path, master_password)
+    secrets_manager = SecretsManager(storage_path, master_password, salt_path=salt_path)
     logger.info("Secrets manager initialized")
     
     return secrets_manager
