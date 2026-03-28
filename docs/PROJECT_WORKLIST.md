@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 19:36 EDT - Completed T513 chain activation runtime restore and capability-gap reporting for persisted NAM/IR loader state
+Last updated: 2026-03-28 19:48 EDT - Completed T514 scoped NAM/IR routes with persisted loader-state sync and configured-vs-runtime warnings
 
 ID: T482
 Status: [✓] Done
@@ -9276,7 +9276,7 @@ Last updated: 2026-03-28 19:36 EDT - Codex
   - Validation: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_nam_ir_instance_routes.py tests/test_chain_service_runtime_mapping.py` -> PASS (`19 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched files -> PASS.
 
 ID: T514
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unify NAM and IR scoped routes around persisted state plus duplicate-safe runtime resolution
 Description:
 - Goal / acceptance criteria: Update `app/routes/nam.py` and `app/routes/ir.py` so scoped selected-block reads/writes for NAM, cabinet IR, and reverb IR resolve live runtime instances when available, synchronize persisted loader state when writes succeed, and return configured-vs-runtime warning state when a block is configured but not currently active. IR routes must receive the same duplicate-safe treatment already started for NAM so duplicate scoped IR loaders never drift into the wrong instance or fail ambiguously.
@@ -9286,7 +9286,15 @@ Description:
 - Required outputs: route/status payload updates for NAM and IR, warning/error contract for partial activation and missing assets, regression coverage for duplicate scoped loaders across all three asset-backed plugin families, and worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-28 18:26 EDT - Codex
+Last updated: 2026-03-28 19:48 EDT - Codex
+- Completion notes:
+  - Extended `app/routes/nam.py` so position-scoped NAM status now surfaces persisted configured loader state when the block is configured but not active in the live runtime, and successful scoped load/unload/gain/normalize/bypass mutations now synchronize back into the matching `ChainPlugin` row.
+  - Extended `app/routes/ir.py` with the same persisted-state contract for cabinet and reverb IR loaders: scoped status now reports configured IR, mix, bypass, and a runtime warning when the configured block is not active, while scoped load/unload/mix/bypass writes update the persisted chain-plugin loader state on success.
+  - Added duplicate-safe global-fallback logic for cabinet and reverb IR routes so they now mirror NAM’s behavior: a single configured loader may still use the legacy global processor when no runtime identity exists, but duplicate configured IR loaders fail closed with `409` instead of mutating ambiguous shared state.
+  - Preserved explicit-instance error semantics while adding the new fallback path, so stale or invalid explicit `instance_id` requests still fail with `404` rather than silently dropping into global IR control.
+  - Added focused regression coverage in `tests/test_nam_ir_instance_routes.py` for configured-state warning payloads, scoped persistence callbacks, cabinet IR global fallback, duplicate IR fallback rejection, and the preserved explicit-instance fail-closed path.
+  - Licensing review: touched backend/worklist/test files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `pytest -q tests/test_nam_ir_instance_routes.py tests/test_chain_plugin_loader_state_persistence.py tests/test_chain_service_runtime_mapping.py` -> PASS (`23 passed`); `python3 - <<'PY' ... ast.parse(...) ... PY` over touched route/test files -> PASS.
 
 ID: T515
 Status: [ ] Todo

@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 try:
     from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
+    from app.database import Chain, ChainPlugin, get_db_session
     from app.services.ir_processor import IRProcessor
     from app.services.juce_engine_service import get_audio_engine
     from app.services.upload_service import AssetType, get_upload_service
@@ -19,6 +20,10 @@ try:
     IR_PLUGIN_URIS = {
         "cabinet": "map2://juce/convolution/cabinet",
         "reverb": "map2://juce/convolution/reverb",
+    }
+    IR_CONFIG_PLUGIN_URIS = {
+        "cabinet": (IR_PLUGIN_URIS["cabinet"], "urn:map2:ir-cabinet"),
+        "reverb": (IR_PLUGIN_URIS["reverb"], "urn:map2:ir-reverb"),
     }
 
     # Legacy global IR service remains available for non-instance routes.
@@ -188,6 +193,144 @@ try:
             ir_info=info,
         )
 
+    async def _runtime_has_ir_type(engine, ir_type: str) -> bool:
+        getter = getattr(engine, "get_current_pedalboard", None)
+        if not callable(getter):
+            return False
+        try:
+            pedalboard = await getter()
+        except Exception:
+            return False
+        if not isinstance(pedalboard, dict):
+            return False
+        items = pedalboard.get("items")
+        if not isinstance(items, list):
+            items = pedalboard.get("plugins")
+        if not isinstance(items, list):
+            return False
+        return any(
+            isinstance(item, dict) and item.get("uri") == IR_PLUGIN_URIS[ir_type]
+            for item in items
+        )
+
+    def _get_scoped_ir_chain_plugin(ir_type: str, plugin_position: Optional[int]) -> Optional[ChainPlugin]:
+        if not _has_plugin_position(plugin_position):
+            return None
+
+        session = get_db_session()
+        try:
+            active_plugin = (
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.position == plugin_position,
+                    ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                )
+                .first()
+            )
+            if active_plugin is not None:
+                return active_plugin
+
+            return (
+                session.query(ChainPlugin)
+                .filter(
+                    ChainPlugin.position == plugin_position,
+                    ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                )
+                .order_by(ChainPlugin.chain_id.asc())
+                .first()
+            )
+        finally:
+            session.close()
+
+    def _get_configured_ir_state(ir_type: str, plugin_position: Optional[int]) -> Optional[Dict[str, Any]]:
+        plugin = _get_scoped_ir_chain_plugin(ir_type, plugin_position)
+        if plugin is None:
+            return None
+        return {
+            "ir": plugin.selected_asset_name,
+            "asset_path": plugin.selected_asset_path,
+            "mix": 100.0 if plugin.ir_mix is None and ir_type == "cabinet" else 30.0 if plugin.ir_mix is None else float(plugin.ir_mix),
+            "bypass": bool(plugin.bypass),
+        }
+
+    def _persist_scoped_ir_state(
+        ir_type: str,
+        plugin_position: Optional[int],
+        *,
+        ir_name: Optional[str] = None,
+        ir_path: Optional[str] = None,
+        clear_ir: bool = False,
+        mix: Optional[float] = None,
+        bypass: Optional[bool] = None,
+    ) -> bool:
+        plugin = _get_scoped_ir_chain_plugin(ir_type, plugin_position)
+        if plugin is None:
+            return False
+
+        session = get_db_session()
+        try:
+            target = session.query(ChainPlugin).filter(ChainPlugin.id == plugin.id).first()
+            if target is None:
+                return False
+            if clear_ir:
+                target.selected_asset_name = None
+                target.selected_asset_path = None
+            if ir_name is not None:
+                target.selected_asset_name = ir_name
+            if ir_path is not None:
+                target.selected_asset_path = ir_path
+            if mix is not None:
+                target.ir_mix = float(mix)
+            if bypass is not None:
+                target.bypass = bool(bypass)
+            session.commit()
+            return True
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _configured_ir_blocks_allow_global_fallback(ir_type: str) -> bool:
+        session = get_db_session()
+        try:
+            active_count = int(
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                )
+                .count()
+            )
+            if active_count == 1:
+                return True
+            if active_count > 1:
+                return False
+            total_count = int(
+                session.query(ChainPlugin)
+                .filter(ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]))
+                .count()
+            )
+            return total_count == 1
+        finally:
+            session.close()
+
+    async def _allow_global_ir_fallback(engine, ir_type: str, plugin_position: Optional[int]) -> bool:
+        if not _has_plugin_position(plugin_position):
+            return False
+        if await _runtime_has_ir_type(engine, ir_type):
+            return False
+        return await asyncio.to_thread(_configured_ir_blocks_allow_global_fallback, ir_type)
+
+    def _duplicate_ir_fallback_detail(ir_type: str, plugin_position: Optional[int]) -> str:
+        return (
+            f"Multiple active {ir_type} IR loaders are configured without live runtime identity; "
+            f"refusing global fallback for position: {plugin_position}"
+        )
+
     async def _load_ir_to_target(
         ir_name: str,
         ir_type: str,
@@ -199,21 +342,35 @@ try:
             raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR not found: {ir_name}")
 
         scoped_instance_id = await _resolve_scoped_instance_id(ir_type, instance_id, plugin_position)
+        engine = get_audio_engine()
+        runtime_has_ir_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_ir_instances = await _runtime_has_ir_type(engine, ir_type)
+            if not runtime_has_ir_instances:
+                allow_global_fallback = await _allow_global_ir_fallback(engine, ir_type, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
-            engine = get_audio_engine()
             if ir_type == "cabinet":
                 success = await engine.load_cabinet_ir_instance(scoped_instance_id, ir_path)
             else:
                 success = await engine.load_reverb_ir_instance(scoped_instance_id, ir_path)
             if not success:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _is_scoped_ir_request(instance_id, plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_ir_instances:
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_ir_fallback_detail(ir_type, plugin_position))
+        elif _is_scoped_ir_request(instance_id, plugin_position) and not (
+            _has_plugin_position(plugin_position) and allow_global_fallback
+        ):
             _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         else:
             success = _ir_processor.load_ir(ir_name, ir_type)
             if not success:
                 raise HTTPException(status_code=404, detail=f"{ir_type.title()} IR not found or failed to load")
 
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_ir_state(ir_type, plugin_position, ir_name=ir_name, ir_path=ir_path)
         return {"status": "loaded", "ir": ir_name, "type": ir_type, "path": ir_path}
 
     async def _set_ir_mix(
@@ -226,18 +383,32 @@ try:
             raise HTTPException(status_code=400, detail="Mix must be between 0 and 100")
 
         scoped_instance_id = await _resolve_scoped_instance_id(ir_type, instance_id, plugin_position)
+        engine = get_audio_engine()
+        runtime_has_ir_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_ir_instances = await _runtime_has_ir_type(engine, ir_type)
+            if not runtime_has_ir_instances:
+                allow_global_fallback = await _allow_global_ir_fallback(engine, ir_type, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
-            engine = get_audio_engine()
             updated = await engine.set_ir_mix_instance(scoped_instance_id, mix)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _is_scoped_ir_request(instance_id, plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_ir_instances:
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_ir_fallback_detail(ir_type, plugin_position))
+        elif _is_scoped_ir_request(instance_id, plugin_position) and not (
+            _has_plugin_position(plugin_position) and allow_global_fallback
+        ):
             _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         elif ir_type == "cabinet":
             _ir_processor.set_cabinet_mix(mix)
         else:
             _ir_processor.set_reverb_mix(mix)
 
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_ir_state(ir_type, plugin_position, mix=mix)
         return {"status": "ok", "mix": mix, "type": ir_type}
 
     async def _set_ir_bypass(
@@ -247,18 +418,32 @@ try:
         plugin_position: Optional[int] = None,
     ) -> Dict[str, Any]:
         scoped_instance_id = await _resolve_scoped_instance_id(ir_type, instance_id, plugin_position)
+        engine = get_audio_engine()
+        runtime_has_ir_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_ir_instances = await _runtime_has_ir_type(engine, ir_type)
+            if not runtime_has_ir_instances:
+                allow_global_fallback = await _allow_global_ir_fallback(engine, ir_type, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
-            engine = get_audio_engine()
             updated = await engine.set_ir_bypass_instance(scoped_instance_id, bypass)
             if not updated:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _is_scoped_ir_request(instance_id, plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_ir_instances:
+            _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_ir_fallback_detail(ir_type, plugin_position))
+        elif _is_scoped_ir_request(instance_id, plugin_position) and not (
+            _has_plugin_position(plugin_position) and allow_global_fallback
+        ):
             _raise_scoped_ir_not_found(ir_type, instance_id, plugin_position)
         elif ir_type == "cabinet":
             _ir_processor.set_cabinet_bypass(bypass)
         else:
             _ir_processor.set_reverb_bypass(bypass)
 
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_ir_state(ir_type, plugin_position, bypass=bypass)
         return {"status": "ok", "bypass": bypass, "type": ir_type}
 
     async def _navigate_ir(
@@ -304,17 +489,66 @@ try:
             raise HTTPException(status_code=400, detail="type must be 'cabinet' or 'reverb'")
 
         scoped_instance_id = await _resolve_scoped_instance_id(type, instance_id, plugin_position)
+        configured_state = _get_configured_ir_state(type, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
-            return await _get_instance_ir_status(scoped_instance_id, type)
+            payload = await _get_instance_ir_status(scoped_instance_id, type)
+            if configured_state is not None:
+                payload.update(
+                    {
+                        "configuredIR": configured_state.get("ir"),
+                        "configuredAssetPath": configured_state.get("asset_path"),
+                        "configuredMix": configured_state.get("mix"),
+                        "configuredBypass": configured_state.get("bypass"),
+                    }
+                )
+            return payload
         if _is_scoped_ir_request(instance_id, plugin_position):
-            _raise_scoped_ir_not_found(type, instance_id, plugin_position)
+            if not _has_plugin_position(plugin_position):
+                _raise_scoped_ir_not_found(type, instance_id, plugin_position)
+            engine = get_audio_engine()
+            runtime_has_ir_instances = await _runtime_has_ir_type(engine, type)
+            allow_global_fallback = False
+            if not runtime_has_ir_instances:
+                allow_global_fallback = await _allow_global_ir_fallback(engine, type, plugin_position)
+            if runtime_has_ir_instances:
+                _raise_scoped_ir_not_found(type, instance_id, plugin_position)
+            if not allow_global_fallback:
+                irs = _scan_irs(type)
+                payload = _build_ir_status_payload(
+                    type,
+                    irs,
+                    loaded_name=None,
+                    mix=float(configured_state.get("mix", 100.0 if type == "cabinet" else 30.0)) if configured_state else (100.0 if type == "cabinet" else 30.0),
+                    bypass=bool(configured_state.get("bypass", False)) if configured_state else False,
+                )
+                if configured_state is not None:
+                    payload.update(
+                        {
+                            "configuredIR": configured_state.get("ir"),
+                            "configuredAssetPath": configured_state.get("asset_path"),
+                            "configuredMix": configured_state.get("mix"),
+                            "configuredBypass": configured_state.get("bypass"),
+                            "runtimeWarning": f"Configured {type} IR block is not active in the live runtime",
+                        }
+                    )
+                return payload
 
         irs = _scan_irs(type)
         active_ir = _ir_processor.active_cabinet_ir if type == "cabinet" else _ir_processor.active_reverb_ir
         loaded_name = active_ir.name if active_ir else None
         default_mix = getattr(active_ir, "wet_mix", 1.0) * 100 if active_ir else (100.0 if type == "cabinet" else 30.0)
         bypass = bool(getattr(active_ir, "bypass", False)) if active_ir else False
-        return _build_ir_status_payload(type, irs, loaded_name=loaded_name, mix=default_mix, bypass=bypass)
+        payload = _build_ir_status_payload(type, irs, loaded_name=loaded_name, mix=default_mix, bypass=bypass)
+        if configured_state is not None:
+            payload.update(
+                {
+                    "configuredIR": configured_state.get("ir"),
+                    "configuredAssetPath": configured_state.get("asset_path"),
+                    "configuredMix": configured_state.get("mix"),
+                    "configuredBypass": configured_state.get("bypass"),
+                }
+            )
+        return payload
 
     @router.get("/cabinets")
     async def list_cabinet_irs():
@@ -433,17 +667,32 @@ try:
             raise HTTPException(status_code=400, detail="type must be 'cabinet' or 'reverb'")
 
         scoped_instance_id = await _resolve_scoped_instance_id(type, instance_id, plugin_position)
+        engine = get_audio_engine()
+        runtime_has_ir_instances = False
+        allow_global_fallback = False
+        if _has_plugin_position(plugin_position) and not (isinstance(scoped_instance_id, int) and scoped_instance_id > 0):
+            runtime_has_ir_instances = await _runtime_has_ir_type(engine, type)
+            if not runtime_has_ir_instances:
+                allow_global_fallback = await _allow_global_ir_fallback(engine, type, plugin_position)
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
-            unloaded = await get_audio_engine().unload_ir_instance(scoped_instance_id)
+            unloaded = await engine.unload_ir_instance(scoped_instance_id)
             if not unloaded:
                 raise HTTPException(status_code=404, detail=f"IR instance not found: {scoped_instance_id}")
-        elif _is_scoped_ir_request(instance_id, plugin_position):
+        elif _has_plugin_position(plugin_position) and runtime_has_ir_instances:
+            _raise_scoped_ir_not_found(type, instance_id, plugin_position)
+        elif _has_plugin_position(plugin_position) and not allow_global_fallback:
+            raise HTTPException(status_code=409, detail=_duplicate_ir_fallback_detail(type, plugin_position))
+        elif _is_scoped_ir_request(instance_id, plugin_position) and not (
+            _has_plugin_position(plugin_position) and allow_global_fallback
+        ):
             _raise_scoped_ir_not_found(type, instance_id, plugin_position)
         elif type == "cabinet":
             _ir_processor.unload_ir("cabinet")
         else:
             _ir_processor.unload_ir("reverb")
 
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_ir_state(type, plugin_position, clear_ir=True)
         return {"status": "unloaded", "type": type}
 
     async def _upload_ir(file: UploadFile, asset_type: AssetType, ir_type: str) -> Dict[str, Any]:

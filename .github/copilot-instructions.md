@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 28, 2026 (Chain activation runtime restore)
+> **Last Updated**: March 28, 2026 (Scoped loader route persistence sync)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1098,6 +1098,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_chain_plugin_loader_state_persistence.py tests/test_chain_service_runtime_mapping.py`; `python3 - <<'PY' ... ast.parse(...) ... PY`
 - **Lesson**: For multi-loader chains, activation success is not binary. Persist and expose runtime capability state so scoped routes and UI can distinguish a healthy live chain from a configured-only chain with no runtime identity.
 
+**21. Scoped NAM/IR Routes Must Sync Persisted Loader State**
+- **Files**: `app/routes/nam.py`, `app/routes/ir.py`, `tests/test_nam_ir_instance_routes.py`
+- **Problem**: Once per-loader state lived on `chain_plugins`, scoped NAM and IR routes could still read or mutate the live runtime without updating the persisted chain row, and missing-runtime status payloads still hid the configured asset/operators’ saved settings.
+- **Root Cause**: The scoped route layer only resolved runtime instances and legacy global fallbacks; it had no persistence bridge back to `ChainPlugin` and no configured-vs-runtime warning payload contract.
+- **Fix**: Teach scoped NAM and IR routes to read configured loader state from the matching chain-plugin row, include configured asset/settings plus a `runtimeWarning` when the block is configured but not currently active, and persist successful scoped mutations back into `chain_plugins`. Mirror NAM’s duplicate-safe global-fallback behavior for cabinet and reverb IR routes.
+- **Verification**: `pytest -q tests/test_nam_ir_instance_routes.py tests/test_chain_plugin_loader_state_persistence.py tests/test_chain_service_runtime_mapping.py`; `python3 - <<'PY' ... ast.parse(...) ... PY`
+- **Lesson**: Duplicate-safe runtime routing is only half the contract. Scoped loader routes must keep persisted configuration and live control in sync so restarts, re-activation, and future UI warnings all describe the same block state.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1597,6 +1605,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-28] - Scoped Loader Route Persistence Sync
+- **Section**: Gotchas & Learned Fixes (#21), Update Log
+- **Change**: Documented the rule that scoped NAM/cabinet/reverb IR routes must round-trip persisted loader state, expose configured-vs-runtime warning payloads, and apply duplicate-safe global fallback to IR loaders the same way NAM already does.
+- **Reason**: `T514` closed the route-layer gap after persistence and activation restore were in place, preventing successful scoped writes from drifting away from the saved chain-plugin state.
+- **Impact**: Future assistants can build metadata UI and snapshot/deploy work on top of route payloads that already reconcile configured state with live runtime state instead of reverse-engineering that relationship again.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/nam.py`, `app/routes/ir.py`, `tests/test_nam_ir_instance_routes.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-28] - Chain Activation Runtime Restore
 - **Section**: Gotchas & Learned Fixes (#20), Update Log

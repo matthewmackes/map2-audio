@@ -29,6 +29,11 @@ class _FakePositionScopedNamEngine:
     def __init__(self):
         self.resolve_calls: list[tuple[str, int | None, int | None]] = []
         self.load_calls: list[tuple[int, str]] = []
+        self.input_gain_calls: list[tuple[int, float]] = []
+        self.output_gain_calls: list[tuple[int, float]] = []
+        self.normalize_calls: list[tuple[int, bool]] = []
+        self.bypass_calls: list[tuple[int, bool]] = []
+        self.unload_calls: list[int] = []
 
     async def resolve_instance_id(
         self,
@@ -41,6 +46,26 @@ class _FakePositionScopedNamEngine:
 
     async def load_nam_model_instance(self, instance_id: int, model_path: str) -> bool:
         self.load_calls.append((instance_id, model_path))
+        return True
+
+    async def unload_nam_model_instance(self, instance_id: int) -> bool:
+        self.unload_calls.append(instance_id)
+        return True
+
+    async def set_nam_input_gain_instance(self, instance_id: int, gain_db: float) -> bool:
+        self.input_gain_calls.append((instance_id, gain_db))
+        return True
+
+    async def set_nam_output_gain_instance(self, instance_id: int, gain_db: float) -> bool:
+        self.output_gain_calls.append((instance_id, gain_db))
+        return True
+
+    async def set_nam_normalize_instance(self, instance_id: int, normalize: bool) -> bool:
+        self.normalize_calls.append((instance_id, normalize))
+        return True
+
+    async def set_nam_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.bypass_calls.append((instance_id, bypass))
         return True
 
     async def get_nam_model_info_instance(self, instance_id: int):
@@ -161,6 +186,23 @@ class _FakePositionScopedIrEngine:
         }
 
 
+class _FakeGlobalFallbackIrEngine:
+    def __init__(self):
+        self.resolve_calls: list[tuple[str, int | None, int | None]] = []
+
+    async def resolve_instance_id(
+        self,
+        plugin_uri: str,
+        plugin_position: int | None = None,
+        fallback_instance_id: int | None = None,
+    ):
+        self.resolve_calls.append((plugin_uri, plugin_position, fallback_instance_id))
+        return None
+
+    async def get_current_pedalboard(self):
+        return {"name": "Current Chain", "items": []}
+
+
 def test_nam_status_uses_instance_engine_when_instance_id_present(monkeypatch):
     monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: _FakeNamEngine())
     monkeypatch.setattr(
@@ -278,6 +320,78 @@ def test_nam_routes_refuse_global_fallback_when_multiple_configured_loaders_exis
     assert engine.global_load_calls == []
 
 
+def test_nam_status_surfaces_configured_state_when_runtime_identity_is_missing(monkeypatch):
+    engine = _FakeGlobalFallbackNamEngine()
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(nam_routes, "_configured_nam_blocks_allow_global_fallback", lambda: False)
+    monkeypatch.setattr(
+        nam_routes,
+        "_get_configured_nam_state",
+        lambda plugin_position: {
+            "model": "Stored Crunch",
+            "asset_path": "/tmp/stored-crunch.nam",
+            "input_gain": 1.25,
+            "output_gain": -0.75,
+            "normalize": False,
+            "bypass": True,
+        },
+    )
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [{"name": "Stored Crunch", "path": "/tmp/stored-crunch.nam"}],
+    )
+
+    payload = asyncio.run(nam_routes.get_nam_status(plugin_position=0))
+
+    assert payload["configuredModel"] == "Stored Crunch"
+    assert payload["configuredAssetPath"] == "/tmp/stored-crunch.nam"
+    assert payload["configuredInputGain"] == 1.25
+    assert payload["configuredOutputGain"] == -0.75
+    assert payload["configuredNormalize"] is False
+    assert payload["configuredBypass"] is True
+    assert payload["runtimeWarning"] == "Configured NAM block is not active in the live runtime"
+
+
+def test_nam_routes_persist_scoped_loader_state_after_mutations(monkeypatch):
+    engine = _FakePositionScopedNamEngine()
+    persisted_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [{"name": "Scoped Crunch", "path": "/tmp/scoped-crunch.nam"}],
+    )
+    monkeypatch.setattr(
+        nam_routes,
+        "_persist_scoped_nam_state",
+        lambda plugin_position, **kwargs: persisted_calls.append(
+            {"plugin_position": plugin_position, **kwargs}
+        )
+        or True,
+    )
+
+    asyncio.run(nam_routes.load_nam_model("Scoped Crunch", plugin_position=5))
+    asyncio.run(nam_routes.set_nam_input_gain(nam_routes.NAMGainRequest(gain_db=2.5), plugin_position=5))
+    asyncio.run(nam_routes.set_nam_output_gain(nam_routes.NAMGainRequest(gain_db=-1.25), plugin_position=5))
+    asyncio.run(nam_routes.set_nam_normalize(False, plugin_position=5))
+    asyncio.run(nam_routes.set_nam_bypass(True, plugin_position=5))
+    asyncio.run(nam_routes.unload_nam_model(plugin_position=5))
+
+    assert persisted_calls == [
+        {
+            "plugin_position": 5,
+            "model_name": "Scoped Crunch",
+            "model_path": "/tmp/scoped-crunch.nam",
+        },
+        {"plugin_position": 5, "input_gain": 2.5},
+        {"plugin_position": 5, "output_gain": -1.25},
+        {"plugin_position": 5, "normalize": False},
+        {"plugin_position": 5, "bypass": True},
+        {"plugin_position": 5, "clear_model": True},
+    ]
+
+
 def test_ir_routes_load_and_report_status_per_instance(monkeypatch):
     engine = _FakeIrEngine()
     monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
@@ -364,6 +478,75 @@ def test_ir_status_rejects_invalid_explicit_instance_id_without_global_fallback(
         assert exc.detail == "IR instance not found: 999"
     else:
         raise AssertionError("Expected invalid scoped IR request to fail closed")
+
+
+def test_ir_routes_fall_back_to_global_processor_when_position_scope_has_no_runtime_match(monkeypatch):
+    engine = _FakeGlobalFallbackIrEngine()
+    persisted_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(ir_routes, "_configured_ir_blocks_allow_global_fallback", lambda ir_type: True)
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Scoped Mesa", "path": f"/tmp/{ir_type}-scoped.wav", "size_mb": 1.5}],
+    )
+    monkeypatch.setattr(ir_routes._ir_processor, "load_ir", lambda ir_name, ir_type: True)
+    monkeypatch.setattr(
+        ir_routes,
+        "_persist_scoped_ir_state",
+        lambda ir_type, plugin_position, **kwargs: persisted_calls.append(
+            {"ir_type": ir_type, "plugin_position": plugin_position, **kwargs}
+        )
+        or True,
+    )
+
+    payload = asyncio.run(ir_routes.load_cabinet_ir("Scoped Mesa", plugin_position=6))
+
+    assert engine.resolve_calls == [("map2://juce/convolution/cabinet", 6, None)]
+    assert payload["status"] == "loaded"
+    assert persisted_calls == [
+        {
+            "ir_type": "cabinet",
+            "plugin_position": 6,
+            "ir_name": "Scoped Mesa",
+            "ir_path": "/tmp/cabinet-scoped.wav",
+        }
+    ]
+
+
+def test_ir_routes_refuse_global_fallback_when_multiple_configured_loaders_exist(monkeypatch):
+    engine = _FakeGlobalFallbackIrEngine()
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(ir_routes, "_configured_ir_blocks_allow_global_fallback", lambda ir_type: False)
+    monkeypatch.setattr(
+        ir_routes,
+        "_get_configured_ir_state",
+        lambda ir_type, plugin_position: {
+            "ir": "Stored Mesa",
+            "asset_path": "/tmp/stored-mesa.wav",
+            "mix": 88.0,
+            "bypass": True,
+        },
+    )
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Stored Mesa", "path": f"/tmp/{ir_type}-stored.wav", "size_mb": 1.5}],
+    )
+
+    status_payload = asyncio.run(ir_routes.get_ir_status(type="cabinet", plugin_position=6))
+
+    assert status_payload["configuredIR"] == "Stored Mesa"
+    assert status_payload["configuredAssetPath"] == "/tmp/stored-mesa.wav"
+    assert status_payload["configuredMix"] == 88.0
+    assert status_payload["configuredBypass"] is True
+    assert status_payload["runtimeWarning"] == "Configured cabinet IR block is not active in the live runtime"
+
+    with pytest.raises(ir_routes.HTTPException) as exc_info:
+        asyncio.run(ir_routes.load_cabinet_ir("Stored Mesa", plugin_position=6))
+
+    assert exc_info.value.status_code == 409
+    assert "refusing global fallback" in str(exc_info.value.detail)
 
 
 def test_upload_service_rejects_traversal_and_saves_safe_name(monkeypatch, tmp_path: Path):

@@ -226,6 +226,93 @@ try:
             f"refusing global fallback for position: {plugin_position}"
         )
 
+    def _get_scoped_nam_chain_plugin(plugin_position: Optional[int]) -> Optional[ChainPlugin]:
+        if not _has_plugin_position(plugin_position):
+            return None
+
+        session = get_db_session()
+        try:
+            active_plugin = (
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.position == plugin_position,
+                    ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                )
+                .first()
+            )
+            if active_plugin is not None:
+                return active_plugin
+
+            return (
+                session.query(ChainPlugin)
+                .filter(
+                    ChainPlugin.position == plugin_position,
+                    ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                )
+                .order_by(ChainPlugin.chain_id.asc())
+                .first()
+            )
+        finally:
+            session.close()
+
+    def _get_configured_nam_state(plugin_position: Optional[int]) -> Optional[Dict[str, object]]:
+        plugin = _get_scoped_nam_chain_plugin(plugin_position)
+        if plugin is None:
+            return None
+        return {
+            "model": plugin.selected_asset_name,
+            "asset_path": plugin.selected_asset_path,
+            "input_gain": float(plugin.nam_input_gain or 0.0),
+            "output_gain": float(plugin.nam_output_gain or 0.0),
+            "normalize": True if plugin.nam_normalize is None else bool(plugin.nam_normalize),
+            "bypass": bool(plugin.bypass),
+        }
+
+    def _persist_scoped_nam_state(
+        plugin_position: Optional[int],
+        *,
+        model_name: Optional[str] = None,
+        model_path: Optional[str] = None,
+        clear_model: bool = False,
+        input_gain: Optional[float] = None,
+        output_gain: Optional[float] = None,
+        normalize: Optional[bool] = None,
+        bypass: Optional[bool] = None,
+    ) -> bool:
+        plugin = _get_scoped_nam_chain_plugin(plugin_position)
+        if plugin is None:
+            return False
+
+        session = get_db_session()
+        try:
+            target = session.query(ChainPlugin).filter(ChainPlugin.id == plugin.id).first()
+            if target is None:
+                return False
+            if clear_model:
+                target.selected_asset_name = None
+                target.selected_asset_path = None
+            if model_name is not None:
+                target.selected_asset_name = model_name
+            if model_path is not None:
+                target.selected_asset_path = model_path
+            if input_gain is not None:
+                target.nam_input_gain = float(input_gain)
+            if output_gain is not None:
+                target.nam_output_gain = float(output_gain)
+            if normalize is not None:
+                target.nam_normalize = bool(normalize)
+            if bypass is not None:
+                target.bypass = bool(bypass)
+            session.commit()
+            return True
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
     # ==================== Status Endpoints ====================
 
     @router.get("/")
@@ -254,12 +341,13 @@ try:
         scoped_instance_id = await _resolve_scoped_instance_id(engine, instance_id, plugin_position)
         runtime_has_nam_instances = False
         allow_global_fallback = False
+        configured_state = _get_configured_nam_state(plugin_position)
 
         if isinstance(scoped_instance_id, int) and scoped_instance_id > 0:
             instance_info = await engine.get_nam_model_info_instance(scoped_instance_id)
             models = _scan_nam_models()
             model_names = [m['name'] for m in models]
-            return {
+            payload = {
                 "available": True,
                 "activeModel": instance_info.get("name") if instance_info.get("loaded") else None,
                 "loading": False,
@@ -275,6 +363,18 @@ try:
                 "output_gain": float(instance_info.get("output_gain", 0.0)),
                 "normalize": bool(instance_info.get("normalize", True)),
             }
+            if configured_state is not None:
+                payload.update(
+                    {
+                        "configuredModel": configured_state.get("model"),
+                        "configuredAssetPath": configured_state.get("asset_path"),
+                        "configuredInputGain": configured_state.get("input_gain"),
+                        "configuredOutputGain": configured_state.get("output_gain"),
+                        "configuredNormalize": configured_state.get("normalize"),
+                        "configuredBypass": configured_state.get("bypass"),
+                    }
+                )
+            return payload
 
         if _has_plugin_position(plugin_position):
             runtime_has_nam_instances = await _requires_runtime_nam_scope(engine, plugin_position)
@@ -284,22 +384,35 @@ try:
         if _has_plugin_position(plugin_position) and (runtime_has_nam_instances or not allow_global_fallback):
             models = _scan_nam_models()
             model_names = [m['name'] for m in models]
-            return {
+            payload = {
                 "available": True,
                 "activeModel": None,
                 "loading": False,
                 "mix": 100,
-                "bypass": False,
+                "bypass": bool(configured_state.get("bypass", False)) if configured_state else False,
                 "inputLevel": -100.0,
                 "outputLevel": -100.0,
                 "peakInput": -100.0,
                 "peakOutput": -100.0,
                 "latency": 0,
                 "availableModels": model_names,
-                "input_gain": 0.0,
-                "output_gain": 0.0,
-                "normalize": True,
+                "input_gain": float(configured_state.get("input_gain", 0.0)) if configured_state else 0.0,
+                "output_gain": float(configured_state.get("output_gain", 0.0)) if configured_state else 0.0,
+                "normalize": bool(configured_state.get("normalize", True)) if configured_state else True,
             }
+            if configured_state is not None:
+                payload.update(
+                    {
+                        "configuredModel": configured_state.get("model"),
+                        "configuredAssetPath": configured_state.get("asset_path"),
+                        "configuredInputGain": configured_state.get("input_gain"),
+                        "configuredOutputGain": configured_state.get("output_gain"),
+                        "configuredNormalize": configured_state.get("normalize"),
+                        "configuredBypass": configured_state.get("bypass"),
+                        "runtimeWarning": "Configured NAM block is not active in the live runtime",
+                    }
+                )
+            return payload
 
         # Get status from JUCE engine
         available = await engine.is_nam_available()
@@ -555,6 +668,12 @@ try:
             raise HTTPException(status_code=500, detail="Failed to start model loading")
 
         logger.info(f"NAM model loading started: {model_name} ({model_path})")
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(
+                plugin_position,
+                model_name=model_name,
+                model_path=model_path,
+            )
         return {"status": "loading", "model": model_name, "path": model_path}
 
     @router.post("/models/{model_name}/activate")
@@ -590,6 +709,8 @@ try:
             raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.unload_nam_model()
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(plugin_position, clear_model=True)
         return {"status": "unloaded"}
 
     # ==================== Controls ====================
@@ -619,6 +740,8 @@ try:
             raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_bypass(bypass)
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(plugin_position, bypass=bypass)
         return {"status": "ok", "bypass": bypass}
 
     @router.post("/input-gain")
@@ -646,6 +769,8 @@ try:
             raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_input_gain(request.gain_db)
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(plugin_position, input_gain=request.gain_db)
         return {"status": "ok", "input_gain": request.gain_db}
 
     @router.post("/output-gain")
@@ -673,6 +798,8 @@ try:
             raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_output_gain(request.gain_db)
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(plugin_position, output_gain=request.gain_db)
         return {"status": "ok", "output_gain": request.gain_db}
 
     @router.post("/normalize")
@@ -700,6 +827,8 @@ try:
             raise HTTPException(status_code=409, detail=_duplicate_loader_fallback_detail(plugin_position))
         else:
             await engine.set_nam_normalize(normalize)
+        if _has_plugin_position(plugin_position):
+            _persist_scoped_nam_state(plugin_position, normalize=normalize)
         return {"status": "ok", "normalize": normalize}
 
     # ==================== Favorites and Ratings ====================
