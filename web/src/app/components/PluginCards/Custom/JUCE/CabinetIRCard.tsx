@@ -26,8 +26,12 @@ const CABINET_PARAMS: PluginParamDef[] = [
 
 interface IRStatus {
   loaded: string | null
+  configuredIR?: string | null
+  runtimeWarning?: string
   mix: number
   bypass: boolean
+  configuredMix?: number
+  configuredBypass?: boolean
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
 
@@ -60,8 +64,12 @@ function CabinetIRCardBase({
       })
       return {
         loaded: status.loaded ?? status.loaded_cabinet ?? status.active_cabinet ?? null,
+        configuredIR: status.configuredIR ?? null,
+        runtimeWarning: status.runtimeWarning,
         mix: status.mix ?? 100,
         bypass: status.bypass ?? false,
+        configuredMix: status.configuredMix ?? 100,
+        configuredBypass: status.configuredBypass ?? false,
         availableIRs: status.availableIRs ?? [],
       }
     },
@@ -114,6 +122,8 @@ function CabinetIRCardBase({
 
   const status = statusQuery.data
   const cabinets = listQuery.data || []
+  const displayIR = status?.loaded || status?.configuredIR || undefined
+  const usingConfiguredFallback = Boolean(!status?.loaded && status?.configuredIR)
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -168,7 +178,7 @@ function CabinetIRCardBase({
         bypassed={status?.bypass ?? false}
         onBypassToggle={() => setBypass(!status?.bypass)}
         onOpenMidiMappings={onOpenMidiMappings}
-        irName={status?.loaded || undefined}
+        irName={displayIR}
         onBrowseIR={() => setDialogOpen(true)}
         onPrevIR={() => navigate('prev')}
         onNextIR={() => navigate('next')}
@@ -181,7 +191,7 @@ function CabinetIRCardBase({
             disabled={uploadMutation.isPending}
           />
         )}
-        assetSupportText="Upload a local WAV cabinet IR or open the shared library."
+        assetSupportText={status?.runtimeWarning || 'Upload a local WAV cabinet IR or open the shared library.'}
         mix={{
           label: 'Dry/Wet',
           value: status?.mix ?? 100,
@@ -191,9 +201,18 @@ function CabinetIRCardBase({
           midi: { pluginUri: CABINET_IR_URI, paramIndex: PARAM.MIX },
         }}
         extraContent={
-          <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, color: '#666' }}>
-            {cabinets.length} cabinet IRs available
-          </div>
+          <>
+            {(status?.loaded || status?.configuredIR) && (
+              <div style={{ textAlign: 'center', padding: '8px 0 4px', fontSize: 10, color: '#666' }}>
+                {status?.loaded ? `Live: ${status.loaded}` : 'Live: not active'}
+                {status?.configuredIR ? ` • Configured: ${status.configuredIR}` : ''}
+                {usingConfiguredFallback ? ' • Stored configuration only' : ''}
+              </div>
+            )}
+            <div style={{ textAlign: 'center', padding: '4px 0 8px', fontSize: 10, color: '#666' }}>
+              {cabinets.length} cabinet IRs available
+            </div>
+          </>
         }
       />
       <CabinetIRManagerDialog

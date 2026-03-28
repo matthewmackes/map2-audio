@@ -550,6 +550,80 @@ describe('JUCE asset selector cards', () => {
     })
   })
 
+  it('shows configured asset state and runtime warnings for scoped loader cards', async () => {
+    mockNAMGetStatusAtPosition.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: 'Stored Crunch',
+      runtimeWarning: 'Configured NAM block is not active in the live runtime',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Stored Crunch'],
+    })
+    mockIRGetTypeStatus.mockImplementation(async (type: string) => {
+      if (type === 'cabinet') {
+        return {
+          available: true,
+          loaded: null,
+          configuredIR: 'Stored Cab',
+          runtimeWarning: 'Configured cabinet IR block is not active in the live runtime',
+          mix: 100,
+          bypass: false,
+          availableIRs: [{ name: 'Stored Cab', size: '512 KB', length: 1024 }],
+        }
+      }
+      return {
+        available: true,
+        loaded: null,
+        configuredIR: 'Stored Hall',
+        runtimeWarning: 'Configured reverb IR block is not active in the live runtime',
+        mix: 30,
+        bypass: false,
+        currentDecay: 2400,
+        availableIRs: [{ name: 'Stored Hall', size: '1.23 MB', length: 2048 }],
+      }
+    })
+
+    renderCard(
+      <>
+        <NAMCard
+          plugin={makePlugin('NAM', 'Amplifier')}
+          pluginPosition={4}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#ff6b6b"
+        />
+        <CabinetIRCard
+          plugin={makePlugin('Cabinet IR', 'Convolution')}
+          pluginPosition={5}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#f97316"
+        />
+        <ReverbIRCard
+          plugin={makePlugin('Reverb IR', 'Convolution')}
+          pluginPosition={6}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#a855f7"
+        />
+      </>,
+    )
+
+    expect((await screen.findAllByText('Stored Crunch')).length).toBeGreaterThan(0)
+    expect(screen.getByText('Live: not active • Configured: Stored Crunch • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getByText('Configured NAM block is not active in the live runtime')).toBeInTheDocument()
+    expect(screen.getByText('Live: not active • Configured: Stored Cab • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getByText('Configured cabinet IR block is not active in the live runtime')).toBeInTheDocument()
+    expect(screen.getByText('Live: not active • Configured: Stored Hall • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getByText('Configured reverb IR block is not active in the live runtime')).toBeInTheDocument()
+  })
+
   it('invalidates only the scoped status and list queries after selected-block asset uploads', async () => {
     const { queryClient } = renderCard(
       <>

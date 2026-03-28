@@ -40,28 +40,42 @@ const NAM_PARAMS: PluginParamDef[] = [
 interface NAMStatus {
   available: boolean
   activeModel: string | null
+  configuredModel?: string | null
+  configuredAssetPath?: string | null
   loading: boolean
   bypass: boolean
+  configuredBypass?: boolean
   inputLevel: number
   outputLevel: number
   inputGain: number
   outputGain: number
   normalize: boolean
+  configuredInputGain?: number
+  configuredOutputGain?: number
+  configuredNormalize?: boolean
   availableModels: string[]
+  runtimeWarning?: string
 }
 
 function normalizeNAMStatus(status: ApiNAMStatus): NAMStatus {
   return {
     available: status.available,
     activeModel: status.activeModel,
+    configuredModel: status.configuredModel,
+    configuredAssetPath: status.configuredAssetPath,
     loading: status.loading ?? false,
     bypass: status.bypass,
+    configuredBypass: status.configuredBypass,
     inputLevel: status.inputLevel,
     outputLevel: status.outputLevel,
     inputGain: status.input_gain ?? 0,
     outputGain: status.output_gain ?? 0,
     normalize: status.normalize ?? true,
+    configuredInputGain: status.configuredInputGain,
+    configuredOutputGain: status.configuredOutputGain,
+    configuredNormalize: status.configuredNormalize,
     availableModels: status.availableModels,
+    runtimeWarning: status.runtimeWarning,
   }
 }
 
@@ -158,6 +172,10 @@ function NAMCardBase({
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
+  const displayModel = status?.activeModel || status?.configuredModel || null
+  const hasConfiguredModel = Boolean(status?.configuredModel)
+  const usingConfiguredFallback = Boolean(!status?.activeModel && status?.configuredModel)
+  const usingLiveModel = Boolean(status?.activeModel)
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -261,7 +279,7 @@ function NAMCardBase({
               whiteSpace: 'nowrap',
             }}
           >
-            {status?.loading ? 'Loading...' : status?.activeModel || 'No Model'}
+            {status?.loading ? 'Loading...' : displayModel || 'No Model'}
           </div>
         </div>
       </div>
@@ -348,10 +366,10 @@ function NAMCardBase({
       <div className="carbon-asset-selector-stack">
         <div className="carbon-asset-selector">
           <div
-            className={`carbon-asset-selector-value ${status?.activeModel ? '' : 'empty'}`}
-            title={status?.activeModel || 'No model loaded'}
+            className={`carbon-asset-selector-value ${displayModel ? '' : 'empty'}`}
+            title={displayModel || 'No model loaded'}
           >
-            {status?.loading ? 'Loading...' : status?.activeModel || 'No model loaded'}
+            {status?.loading ? 'Loading...' : displayModel || 'No model loaded'}
           </div>
           <div className="carbon-asset-selector-actions">
             <button
@@ -371,7 +389,16 @@ function NAMCardBase({
             />
           </div>
         </div>
-        <p className="carbon-asset-selector-support">Upload a local `.nam` file or open the model library.</p>
+        <p className="carbon-asset-selector-support">
+          {status?.runtimeWarning || 'Upload a local `.nam` file or open the model library.'}
+        </p>
+        {(usingLiveModel || hasConfiguredModel) && (
+          <div className="carbon-asset-selector-meta">
+            {usingLiveModel ? `Live: ${status?.activeModel}` : 'Live: not active'}
+            {hasConfiguredModel ? ` • Configured: ${status?.configuredModel}` : ''}
+            {usingConfiguredFallback ? ' • Stored configuration only' : ''}
+          </div>
+        )}
         {availableModelCount > 0 && (
           <div className="carbon-asset-selector-meta">
             {availableModelCount} models available

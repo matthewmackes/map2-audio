@@ -137,6 +137,8 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   )
   const featured = featuredQuery.data?.models ?? []
   const activeModel = statusQuery.data?.activeModel
+  const configuredModel = statusQuery.data?.configuredModel
+  const runtimeWarning = statusQuery.data?.runtimeWarning
 
   const normalizedSearch = search.trim().toLowerCase()
 
@@ -232,8 +234,22 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
         </div>
         {activeModel && (
           <Tag type="green" title="Active NAM model" size="md">
-            Active: {activeModel}
+            Live: {activeModel}
           </Tag>
+        )}
+        {configuredModel && (
+          <Tag type={configuredModel === activeModel ? 'cool-gray' : 'warm-gray'} title="Configured NAM model" size="md">
+            Configured: {configuredModel}
+          </Tag>
+        )}
+        {runtimeWarning && (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Runtime warning"
+            subtitle={runtimeWarning}
+          />
         )}
 
         {!normalizedSearch && featured.length > 0 && (
@@ -245,6 +261,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
             <div className="model-manager-dialog__featured-grid">
               {featured.slice(0, 12).map((model) => {
                 const isActive = model.name === activeModel
+                const isConfigured = model.name === configuredModel
                 const isLoading = loadMutation.isPending && loadMutation.variables === model.name
 
                 return (
@@ -253,7 +270,11 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                     <p className="model-manager-dialog__featured-subtitle">{model.amp_type || 'NAM profile'}</p>
                     {isActive ? (
                       <Tag type="green" size="sm">
-                        Active
+                        Live
+                      </Tag>
+                    ) : isConfigured ? (
+                      <Tag type="warm-gray" size="sm">
+                        Configured
                       </Tag>
                     ) : (
                       <Button
@@ -307,6 +328,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                       <TableBody>
                         {typeModels.map((model) => {
                           const isActive = model.name === activeModel
+                          const isConfigured = model.name === configuredModel
                           const isLoading = loadMutation.isPending && loadMutation.variables === model.name
                           const sizeMb = model.size_mb ?? (model.size ? model.size / (1024 * 1024) : null)
 
@@ -317,7 +339,11 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                               <TableCell>
                                 {isActive ? (
                                   <Tag type="green" size="sm">
-                                    Active
+                                    Live
+                                  </Tag>
+                                ) : isConfigured ? (
+                                  <Tag type="warm-gray" size="sm">
+                                    Configured
                                   </Tag>
                                 ) : (
                                   <Tag type="cool-gray" size="sm">

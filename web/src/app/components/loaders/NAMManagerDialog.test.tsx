@@ -303,4 +303,27 @@ describe('NAMManagerDialog', () => {
     })
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['nam'] })
   })
+
+  it('surfaces configured scoped state and runtime warnings', async () => {
+    mockGetScopedStatus.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: 'Mesa Mark V',
+      runtimeWarning: 'Configured NAM block is not active in the live runtime',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
+
+    renderDialog(17, 9)
+
+    expect(await screen.findByText('Configured: Mesa Mark V')).toBeInTheDocument()
+    expect(screen.getByText('Configured NAM block is not active in the live runtime')).toBeInTheDocument()
+    expect(screen.getAllByText('Configured').length).toBeGreaterThan(0)
+  })
 })

@@ -9317,7 +9317,7 @@ Last updated: 2026-03-28 20:22 EDT - Codex
   - Added focused regression coverage in `tests/test_flow_snapshots_routes.py` for loader-state restore during snapshot runtime recreation and engine apply, plus `web/src/app/components/snapshots/SnapshotDeployModal.test.tsx` coverage for persisted dependency rendering in the deploy modal.
 
 ID: T516
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update selected-block GUI loaders to present configured state and partial-activation warnings
 Description:
 - Goal / acceptance criteria: Keep the existing selected-block NAM, cabinet IR, and reverb IR cards/dialogs, but update them to display per-block configured asset state, distinguish configured-vs-live runtime state, and surface partial-activation or missing-asset warnings without cross-contaminating duplicate blocks. Query invalidation and status rendering must remain scoped to the selected block by `instance_id` and `plugin_position`.
@@ -9327,7 +9327,12 @@ Description:
 - Required outputs: scoped GUI status/warning rendering for NAM and IR loader cards/dialogs, focused frontend tests for duplicate blocks and warning states, and worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-28 18:26 EDT - Codex
+Last updated: 2026-03-28 20:31 EDT - Codex
+- Completion notes:
+  - Extended the shared frontend loader status types in `web/src/map2/types.ts` so scoped NAM and IR status payloads can carry configured asset names, configured control values, and runtime warning text from the backend.
+  - Updated the selected-block JUCE NAM, cabinet IR, and reverb IR cards to show configured-vs-live asset state, preserve the configured asset name when the runtime instance is missing, and surface backend runtime warnings inline instead of silently falling back to `No model/IR loaded`.
+  - Updated `web/src/app/components/loaders/NAMManagerDialog.tsx` and `web/src/app/components/loaders/IRManagerDialog.tsx` so the shared scoped dialogs now distinguish `Live` and `Configured` state with separate tags and show low-contrast runtime warning notifications when a configured block is not active in the live runtime.
+  - Added focused frontend regression coverage in `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, and `web/src/app/components/loaders/IRManagerDialog.test.tsx` for configured-state rendering and scoped runtime warnings.
 
 ID: T517
 Status: [ ] Todo

@@ -604,6 +604,11 @@ export interface IRStatus {
   bypass?: boolean;
   currentDecay?: number;
   availableIRs?: Array<{ name: string; size?: string; length?: number; type?: string; decay?: number }>;
+  configuredIR?: string | null;
+  configuredAssetPath?: string | null;
+  configuredMix?: number;
+  configuredBypass?: boolean;
+  runtimeWarning?: string;
   error?: string;
 }
 
@@ -632,6 +637,13 @@ export interface NAMStatus {
   input_gain?: number;
   output_gain?: number;
   normalize?: boolean;
+  configuredModel?: string | null;
+  configuredAssetPath?: string | null;
+  configuredInputGain?: number;
+  configuredOutputGain?: number;
+  configuredNormalize?: boolean;
+  configuredBypass?: boolean;
+  runtimeWarning?: string;
   error?: string;
 }
 

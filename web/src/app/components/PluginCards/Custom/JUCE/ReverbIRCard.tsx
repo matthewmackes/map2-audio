@@ -27,8 +27,12 @@ const REVERB_PARAMS: PluginParamDef[] = [
 
 interface IRStatus {
   loaded: string | null
+  configuredIR?: string | null
+  runtimeWarning?: string
   mix: number
   bypass: boolean
+  configuredMix?: number
+  configuredBypass?: boolean
   decayTime?: number
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
@@ -62,8 +66,12 @@ function ReverbIRCardBase({
       })
       return {
         loaded: status.loaded ?? status.loaded_reverb ?? status.active_reverb ?? null,
+        configuredIR: status.configuredIR ?? null,
+        runtimeWarning: status.runtimeWarning,
         mix: status.mix ?? 30,
         bypass: status.bypass ?? false,
+        configuredMix: status.configuredMix ?? 30,
+        configuredBypass: status.configuredBypass ?? false,
         decayTime: typeof status.currentDecay === 'number' ? status.currentDecay / 1000 : undefined,
         availableIRs: status.availableIRs ?? [],
       }
@@ -106,6 +114,8 @@ function ReverbIRCardBase({
 
   const status = statusQuery.data
   const reverbs = listQuery.data || []
+  const displayIR = status?.loaded || status?.configuredIR || undefined
+  const usingConfiguredFallback = Boolean(!status?.loaded && status?.configuredIR)
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -170,7 +180,7 @@ function ReverbIRCardBase({
         onBypassToggle={() => setBypass(!status?.bypass)}
         onOpenMidiMappings={onOpenMidiMappings}
         visualization={visualization}
-        irName={status?.loaded || undefined}
+        irName={displayIR}
         onBrowseIR={() => setDialogOpen(true)}
         uploadControl={(
           <AssetUploadButton
@@ -181,7 +191,7 @@ function ReverbIRCardBase({
             disabled={uploadMutation.isPending}
           />
         )}
-        assetSupportText="Upload a local WAV reverb IR or open the shared library."
+        assetSupportText={status?.runtimeWarning || 'Upload a local WAV reverb IR or open the shared library.'}
         mix={{
           label: 'Dry/Wet',
           value: status?.mix ?? 30,
@@ -191,9 +201,18 @@ function ReverbIRCardBase({
           midi: { pluginUri: REVERB_IR_URI, paramIndex: PARAM.MIX },
         }}
         extraContent={
-          <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, color: '#666' }}>
-            {reverbs.length} reverb IRs available
-          </div>
+          <>
+            {(status?.loaded || status?.configuredIR) && (
+              <div style={{ textAlign: 'center', padding: '8px 0 4px', fontSize: 10, color: '#666' }}>
+                {status?.loaded ? `Live: ${status.loaded}` : 'Live: not active'}
+                {status?.configuredIR ? ` • Configured: ${status.configuredIR}` : ''}
+                {usingConfiguredFallback ? ' • Stored configuration only' : ''}
+              </div>
+            )}
+            <div style={{ textAlign: 'center', padding: '4px 0 8px', fontSize: 10, color: '#666' }}>
+              {reverbs.length} reverb IRs available
+            </div>
+          </>
         }
       />
       <ReverbIRManagerDialog

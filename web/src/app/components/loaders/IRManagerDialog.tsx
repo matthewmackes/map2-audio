@@ -183,6 +183,8 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
   }, [config.loadedKey, statusQuery.data])
   const normalizedSearch = search.trim().toLowerCase()
   const filteredIRs = irs.filter((ir) => ir.name.toLowerCase().includes(normalizedSearch))
+  const configuredIR = statusQuery.data?.configuredIR
+  const runtimeWarning = statusQuery.data?.runtimeWarning
 
   const handleRefresh = () => {
     void irsQuery.refetch()
@@ -247,8 +249,22 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
         </div>
         {loadedIR && (
           <Tag type="green" title="Active IR" size="md">
-            Active: {loadedIR}
+            Live: {loadedIR}
           </Tag>
+        )}
+        {configuredIR && (
+          <Tag type={configuredIR === loadedIR ? 'cool-gray' : 'warm-gray'} title="Configured IR" size="md">
+            Configured: {configuredIR}
+          </Tag>
+        )}
+        {runtimeWarning && (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Runtime warning"
+            subtitle={runtimeWarning}
+          />
         )}
 
         {irsQuery.isLoading ? (
@@ -277,6 +293,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
               <TableBody>
                 {filteredIRs.map((ir) => {
                   const isActive = ir.name === loadedIR
+                  const isConfigured = ir.name === configuredIR
                   const isLoading = loadMutation.isPending && loadMutation.variables === ir.name
 
                   return (
@@ -286,7 +303,11 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
                       <TableCell>
                         {isActive ? (
                           <Tag type="green" size="sm">
-                            Active
+                            Live
+                          </Tag>
+                        ) : isConfigured ? (
+                          <Tag type="warm-gray" size="sm">
+                            Configured
                           </Tag>
                         ) : (
                           <Tag type="cool-gray" size="sm">

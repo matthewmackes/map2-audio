@@ -166,7 +166,7 @@ describe('IRManagerDialog', () => {
 
     renderDialog()
 
-    expect(await screen.findByText('Active: Cab B')).toBeInTheDocument()
+    expect(await screen.findByText('Live: Cab B')).toBeInTheDocument()
   })
 
   it('uses instance-scoped cabinet load calls when instanceId is provided', async () => {
@@ -215,5 +215,20 @@ describe('IRManagerDialog', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ir', 'status', 'cabinet', statusScopeKey] })
     })
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['ir'] })
+  })
+
+  it('surfaces configured scoped IR state and runtime warnings', async () => {
+    mockGetTypeStatus.mockResolvedValue({
+      available: true,
+      loaded_cabinet: null,
+      configuredIR: 'Cab B',
+      runtimeWarning: 'Configured cabinet IR block is not active in the live runtime',
+    })
+
+    renderDialog(21, 7)
+
+    expect(await screen.findByText('Configured: Cab B')).toBeInTheDocument()
+    expect(screen.getByText('Configured cabinet IR block is not active in the live runtime')).toBeInTheDocument()
+    expect(screen.getAllByText('Configured').length).toBeGreaterThan(0)
   })
 })
