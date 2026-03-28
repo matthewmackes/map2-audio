@@ -4,6 +4,7 @@ Displays comprehensive system health and stability metrics from all 5 phases
 Plus audio-specific health monitoring (XRuns, watchdog, signal detection, plugins)
 """
 
+import logging
 from fastapi import APIRouter
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -13,6 +14,8 @@ from app.services.health_monitor import get_health_monitor
 from app.services.connection_pool import get_pool_manager
 from app.services.request_queue import get_request_queue
 from app.services.graceful_degradation import get_feature_manager
+
+logger = logging.getLogger(__name__)
 
 # Import new audio health monitoring services
 try:
@@ -51,8 +54,8 @@ def _get_breaker_status(cbm) -> Dict[str, Any]:
                 "last_error": getattr(breaker, 'last_error', None),
                 "healthy": breaker.state.name == "CLOSED" if hasattr(breaker, 'state') else True
             }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to extract circuit breaker status", exc_info=exc)
     return breaker_status
 
 
@@ -73,8 +76,8 @@ def _get_pool_status(pm) -> Dict[str, Any]:
                 "reuse_rate": f"{(getattr(metrics, 'total_reuses', 0) / max(getattr(metrics, 'total_requests', 1), 1) * 100):.1f}%" if metrics else "0%",
                 "health": "healthy" if total_conns > 0 else "initializing"
             }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to extract connection pool status", exc_info=exc)
     return pool_status
 
 
@@ -396,8 +399,8 @@ async def get_reliability_dashboard() -> Dict[str, Any]:
     try:
         breakers = getattr(cbm, '_breakers', {})
         recovery_count = sum(1 for b in breakers.values() if getattr(b, 'recovery_attempts', 0) > 0)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to count dashboard recovery attempts", exc_info=exc)
 
     return {
         "timestamp": datetime.now().isoformat(),

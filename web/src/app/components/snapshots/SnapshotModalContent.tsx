@@ -22,7 +22,7 @@ import {
   checkSnapshotMorphCompatibility,
   fingerprintSnapshotData,
   interpolateSnapshotData,
-} from '../../pages/juceGridSnapshots'
+} from '../JuceGrid/juceGridSnapshots'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 
 function delay(ms: number): Promise<void> {

@@ -90,18 +90,18 @@ import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { useCluster } from '../contexts/ClusterContext'
-import { AudioNodesModal } from './AudioNodesModal'
+import { AudioNodesModal } from '../components/modals/AudioNodesModal'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
   normalizeJuceGridStateSources,
-} from './juceGridState'
+} from '../components/JuceGrid/juceGridState'
 import type {
   JuceGridFlowSlotState,
   JuceGridRoutingState,
   JuceGridRoutingMode,
   JuceGridSlotPaletteEntry,
-} from './juceGridState'
+} from '../components/JuceGrid/juceGridState'
 import {
   STATIC_COLUMNS,
   LEVEL_COLUMNS,
@@ -113,8 +113,8 @@ import {
   toDataTableHeaders,
   type AudioTableColumnVisibility,
   type ColumnDef,
-} from './audioTableColumns'
-import { createAudioTableKeyHandler } from './audioTableKeyboard'
+} from '../components/AudioTable/audioTableColumns'
+import { createAudioTableKeyHandler } from '../components/AudioTable/audioTableKeyboard'
 
 // ============================================================================
 // Constants — shared with JuceGridPage

@@ -5,6 +5,8 @@ The repository now carries two terminal surfaces:
 - The legacy Textual console at [app.py](/home/mm/map2-audio/tui/app.py)
 - The new standalone Ink TUI at [main.tsx](/home/mm/map2-audio/tui/src/main.tsx)
 
+Canonical current-state summary: [STATUS.md](/home/mm/map2-audio/tui/STATUS.md)
+
 ## Ink TUI
 
 Start the Ink app for development:
@@ -145,4 +147,4 @@ pytest -q \
   tests/test_branding_shell.py
 ```
 
-See [DEPLOYMENT_GUIDE.md](/home/mm/map2-audio/tui/DEPLOYMENT_GUIDE.md) for rollout notes and [docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md](/home/mm/map2-audio/docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md) for the current architecture and cutover report.
+See [STATUS.md](/home/mm/map2-audio/tui/STATUS.md) for the current state, [DEPLOYMENT_GUIDE.md](/home/mm/map2-audio/tui/DEPLOYMENT_GUIDE.md) for rollout notes, and [docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md](/home/mm/map2-audio/docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md) for the current architecture and cutover report.

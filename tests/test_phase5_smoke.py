@@ -23,10 +23,15 @@ def create_test_client():
         yield
 
     app.router.lifespan_context = _no_lifespan
-    return TestClient(app)
+    return TestClient(app, raise_server_exceptions=False)
 
 
 def test_app_boots():
     client = create_test_client()
     response = client.get("/api/health")
-    assert response.status_code in (200, 404)
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload["status"], str)
+    assert isinstance(payload["overall_status"], str)
+    assert isinstance(payload["uptime_seconds"], (int, float))
+    assert isinstance(payload["audio_running"], bool)

@@ -1,4 +1,4 @@
-import { createAudioTableKeyHandler } from './audioTableKeyboard'
+import { createAudioTableKeyHandler } from '../components/AudioTable/audioTableKeyboard'
 
 function mountKeyboardGrid(): HTMLElement {
   const container = document.createElement('div')

@@ -26,20 +26,29 @@ def client():
         yield
 
     app.router.lifespan_context = _no_lifespan
-    return TestClient(app)
+    return TestClient(app, raise_server_exceptions=False)
 
 
-def test_phase1_cluster_routes_exist(client):
-    """Ensure cluster endpoints respond."""
+def test_phase1_cluster_routes_exist(client, monkeypatch):
+    """Ensure cluster endpoints respond with the expected payload contract."""
+    FlowOrchestrator.initialize()
+
+    async def _fake_get_assignments(self):
+        return []
+
+    monkeypatch.setattr(FlowOrchestrator, "get_assignments", _fake_get_assignments)
+
     res_nodes = client.get("/api/cluster/nodes")
     assert res_nodes.status_code == 200
+    assert res_nodes.json() == {"nodes": [], "count": 0}
 
     res_assignments = client.get("/api/cluster/flows/assignments")
     assert res_assignments.status_code == 200
+    assert res_assignments.json() == {"assignments": [], "total": 0}
 
 
 def test_phase1_flow_assignment_stub(client):
-    """Ensure flow assignment returns expected response structure."""
+    """Ensure missing-node flow assignment fails explicitly."""
     FlowOrchestrator.initialize()
 
     response = client.post(
@@ -52,5 +61,5 @@ def test_phase1_flow_assignment_stub(client):
         },
     )
 
-    # Node may not exist in registry; allow either success or 400
-    assert response.status_code in (200, 400)
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Assignment failed"}

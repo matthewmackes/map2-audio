@@ -6,7 +6,7 @@ import {
   getRegisteredPlugins,
   registerTemplateLazy,
 } from '../components/PluginCards/registry'
-import { JuceGridParameterEditor } from './JuceGridParameterEditor'
+import { JuceGridParameterEditor } from '../components/JuceGrid/JuceGridParameterEditor'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../map2/types'
 
 const juceProcessors = require('../../../../app/deployment/juce_processors.json') as {

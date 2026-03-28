@@ -282,5 +282,5 @@ try:
             raise HTTPException(500, f"Measurement failed: {e}")
 
 except ImportError:
-    # Graceful degradation if FastAPI not available
-    pass
+    # Graceful degradation if FastAPI is unavailable during stripped-down tooling.
+    router = None

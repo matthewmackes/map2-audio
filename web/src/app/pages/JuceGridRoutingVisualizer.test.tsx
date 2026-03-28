@@ -4,7 +4,7 @@ import {
   JuceGridRoutingVisualizer,
   getJuceGridRoutingInspectorItems,
   type JuceGridRoutingFlowInfo,
-} from './JuceGridRoutingVisualizer'
+} from '../components/JuceGrid/JuceGridRoutingVisualizer'
 
 function createFlow(
   id: string,

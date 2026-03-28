@@ -1,3 +1,0 @@
-/usr/bin/cmake -E rm -f CMakeFiles/NAMPlugin_VST3.dir/objects.a
-x86_64-w64-mingw32-ar qc CMakeFiles/NAMPlugin_VST3.dir/objects.a @CMakeFiles/NAMPlugin_VST3.dir/objects1.rsp
-/usr/lib64/ccache/x86_64-w64-mingw32-g++ -O3 -DNDEBUG -fno-lto -shared -o "NAMPlugin_artefacts/Release/VST3/MAP2 NAM.vst3/Contents/x86_64-win/MAP2 NAM.vst3" -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles/NAMPlugin_VST3.dir/objects.a -Wl,--no-whole-archive @CMakeFiles/NAMPlugin_VST3.dir/linkLibs.rsp

@@ -45,7 +45,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import '../../pages/PlatformShellPage.css'
+import './PlatformModal.css'
 import {
   MAX_PINNED_NAV_ITEMS,
   allPinnableNavigationItems,

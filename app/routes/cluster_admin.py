@@ -11,7 +11,7 @@ import logging
 import sqlite3
 import socket
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 
@@ -204,22 +204,16 @@ async def setup_cluster(request: dict):
 # ============================================================================
 
 
-class NodeResponse(dict):
-    """Node information response"""
-
-    pass
+class NodeResponse(TypedDict, total=False):
+    """Structured cluster node payload."""
 
 
-class NodeHealthResponse(dict):
-    """Node health information"""
-
-    pass
+class NodeHealthResponse(TypedDict, total=False):
+    """Structured cluster node health payload."""
 
 
-class ClusterHealthResponse(dict):
-    """Cluster aggregate health"""
-
-    pass
+class ClusterHealthResponse(TypedDict, total=False):
+    """Structured cluster health payload."""
 
 
 # ============================================================================
@@ -905,14 +899,14 @@ async def get_events(
             try:
                 event_type_enum = EventType(event_type)
             except ValueError:
-                pass
+                logger.debug("Ignoring unsupported event_type filter: %s", event_type)
         
         if severity:
             try:
                 from app.services.cluster.distributed_event_bus import EventSeverity
                 severity_enum = EventSeverity(severity)
             except ValueError:
-                pass
+                logger.debug("Ignoring unsupported severity filter: %s", severity)
         
         events = event_bus.get_events(
             event_type=event_type_enum,

@@ -6,6 +6,7 @@ Manage sidechain connections between plugins
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
+import logging
 import json
 import threading
 from pathlib import Path
@@ -13,6 +14,7 @@ from pathlib import Path
 from app.services.juce_engine_service import get_audio_engine
 
 router = APIRouter(prefix="/api/routing", tags=["sidechain"])
+logger = logging.getLogger(__name__)
 
 
 class SidechainConnection(BaseModel):
@@ -68,7 +70,7 @@ def _persist_sidechain_connections_to_disk() -> None:
         )
     except Exception:
         # Persistence failures should not break routing API behavior.
-        pass
+        logger.debug("Failed to persist sidechain connections", exc_info=True)
 
 
 def _load_sidechain_connections_from_disk() -> None:

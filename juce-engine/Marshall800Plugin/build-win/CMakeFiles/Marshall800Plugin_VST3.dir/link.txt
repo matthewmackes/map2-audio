@@ -1,3 +1,0 @@
-/usr/bin/cmake -E rm -f CMakeFiles/Marshall800Plugin_VST3.dir/objects.a
-x86_64-w64-mingw32-ar qc CMakeFiles/Marshall800Plugin_VST3.dir/objects.a @CMakeFiles/Marshall800Plugin_VST3.dir/objects1.rsp
-/usr/bin/x86_64-w64-mingw32-g++ -O3 -DNDEBUG -fno-lto -shared -o "Marshall800Plugin_artefacts/Release/VST3/Marshall JCM800.vst3/Contents/x86_64-win/Marshall JCM800.vst3" -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles/Marshall800Plugin_VST3.dir/objects.a -Wl,--no-whole-archive @CMakeFiles/Marshall800Plugin_VST3.dir/linkLibs.rsp

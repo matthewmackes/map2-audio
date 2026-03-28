@@ -286,7 +286,7 @@ jest.mock('../contexts/ClusterContext', () => ({
   useCluster: () => mockUseCluster(),
 }))
 
-jest.mock('./AudioNodesModal', () => ({
+jest.mock('../components/modals/AudioNodesModal', () => ({
   AudioNodesModal: ({ open }: { open: boolean }) => (open ? <div data-testid="audio-nodes-modal">Audio Nodes Modal</div> : null),
 }))
 

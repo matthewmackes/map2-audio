@@ -6,6 +6,7 @@ Professional multi-tap stereo delay with tempo sync, modulation, and ducking
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
+import logging
 import time
 import json
 import threading
@@ -14,6 +15,7 @@ from pathlib import Path
 from app.services.juce_engine_service import get_audio_engine
 
 router = APIRouter(prefix="/api/engine/delay", tags=["delay"])
+logger = logging.getLogger(__name__)
 
 
 # ========================================
@@ -111,8 +113,8 @@ def _persist_tap_tempo() -> None:
             payload = {"tap_times": _tap_times[-_MAX_TAPS:]}
         _tap_state_path.parent.mkdir(parents=True, exist_ok=True)
         _tap_state_path.write_text(json.dumps(payload), encoding="utf-8")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to persist tap-tempo state", exc_info=exc)
 
 
 def _load_tap_tempo() -> None:

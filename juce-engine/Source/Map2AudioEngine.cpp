@@ -2119,8 +2119,8 @@ InstanceId Map2AudioEngine::getLexiconInstanceId() const {
 bool Map2AudioEngine::calibrateLexiconLatency() {
     if (lexiconProcessor_ == nullptr) return false;
 
-    // TODO: Implement impulse-response calibration
-    // For now, set a conservative default based on typical S/PDIF round-trip
+    // Keep a conservative fixed fallback until a real loopback calibration path
+    // is added for the external Lexicon hardware round-trip.
     // (~3ms at 48kHz = 144 samples for DA + processing + AD)
     constexpr int DEFAULT_SPDIF_LATENCY_SAMPLES = 144;
     lexiconProcessor_->setMeasuredLatencySamples(DEFAULT_SPDIF_LATENCY_SAMPLES);

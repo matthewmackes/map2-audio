@@ -277,11 +277,11 @@ jest.mock('../components/shared/LandscapePrompt', () => ({
   LandscapePrompt: () => null,
 }))
 
-jest.mock('./JuceGridAudioPortModal', () => ({
+jest.mock('../components/modals/JuceGridAudioPortModal', () => ({
   JuceGridAudioPortModal: () => null,
 }))
 
-jest.mock('./JuceGridChainManagementCard', () => ({
+jest.mock('../components/JuceGrid/JuceGridChainManagementCard', () => ({
   JuceGridChainManagementCard: ({ onChainSelect }: { onChainSelect?: (chainId: number) => void }) => (
     <div data-testid="juce-grid-chain-card">
       <button type="button" onClick={() => onChainSelect?.(1)}>
@@ -291,13 +291,13 @@ jest.mock('./JuceGridChainManagementCard', () => ({
   ),
 }))
 
-jest.mock('./JuceGridClusterPanels', () => ({
+jest.mock('../components/JuceGrid/JuceGridClusterPanels', () => ({
   JuceGridClusterPanel: () => <div data-testid="juce-grid-cluster-panel">Cluster</div>,
   JuceGridFlowAssignmentPanel: () => <div data-testid="juce-grid-assignment-panel">Assignments</div>,
   JuceGridClusterSummaryBar: () => <div data-testid="juce-grid-cluster-summary-bar">Cluster summary</div>,
 }))
 
-jest.mock('./JuceGridParameterEditor', () => ({
+jest.mock('../components/JuceGrid/JuceGridParameterEditor', () => ({
   JuceGridParameterEditor: () => <div data-testid="juce-grid-parameter-editor">Editor</div>,
 }))
 
@@ -316,12 +316,12 @@ jest.mock('../components/PluginCards/liveEditorRouting', () => ({
   resolveLivePluginCardStrategy: (...args: unknown[]) => mockResolveLivePluginCardStrategy(...args),
 }))
 
-jest.mock('./JuceGridRoutingVisualizer', () => ({
+jest.mock('../components/JuceGrid/JuceGridRoutingVisualizer', () => ({
   JuceGridRoutingVisualizer: () => <div data-testid="juce-grid-routing-visualizer">Routing</div>,
   getJuceGridRoutingInspectorItems: () => [],
 }))
 
-jest.mock('./JuceGridSignalCanvas', () => ({
+jest.mock('../components/JuceGrid/JuceGridSignalCanvas', () => ({
   JuceGridSignalCanvas: ({
     chain,
     onAddPlugin,
@@ -353,7 +353,7 @@ jest.mock('./JuceGridSignalCanvas', () => ({
   },
 }))
 
-jest.mock('./juceGridLivePath', () => ({
+jest.mock('../components/JuceGrid/juceGridLivePath', () => ({
   buildJuceGridLivePath: () => mockLivePathLayout,
 }))
 

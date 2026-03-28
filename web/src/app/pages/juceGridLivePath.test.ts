@@ -1,4 +1,4 @@
-import { buildJuceGridLivePath, type JuceGridLivePathFlow } from './juceGridLivePath'
+import { buildJuceGridLivePath, type JuceGridLivePathFlow } from '../components/JuceGrid/juceGridLivePath'
 
 function createFlow(
   id: string,

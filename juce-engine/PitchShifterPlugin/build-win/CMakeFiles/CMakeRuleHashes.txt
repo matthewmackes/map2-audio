@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-e53f6e99e3d0975fa2e81f939e9aefdc PitchShifterPlugin_artefacts/JuceLibraryCode/PitchShifterPlugin_resources.rc

@@ -98,8 +98,8 @@ async def reset_xrun_counter():
             rtl_ms=sample["rtl_ms"],
             running=service.is_audio_running(),
         )
-    except Exception:
+    except Exception as exc:
         # Keep reset route success independent of sampling failures.
-        pass
+        logger.debug("Failed to record post-reset jitter sample", exc_info=exc)
 
     return {"status": "ok", "message": "Xrun counter reset"}

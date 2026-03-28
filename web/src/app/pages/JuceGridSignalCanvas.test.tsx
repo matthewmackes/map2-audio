@@ -1,6 +1,6 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from './JuceGridSignalCanvas'
+import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/JuceGrid/JuceGridSignalCanvas'
 import type { Chain, Plugin } from '../../map2/types'
 
 const pluginUri = 'plugin://compressor'

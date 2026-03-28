@@ -3,7 +3,7 @@ import '@testing-library/jest-dom'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
-import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
+import { PlatformInfoGuideSection } from '../components/Platform/PlatformInfoGuideSection'
 
 describe('PlatformInfoGuideSection', () => {
   let anchorClickSpy: jest.SpyInstance

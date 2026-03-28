@@ -46,7 +46,7 @@ import {
   MAP2_PLATFORM_BUILD_TIME,
   MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
-import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
+import { PlatformInfoGuideSection } from '../components/Platform/PlatformInfoGuideSection'
 import './AboutPage.css'
 
 interface VersionInfo {

@@ -1,4 +1,10 @@
-"""MIDI Hub API routes (traffic monitor + hub lifecycle baseline)."""
+"""
+MIDI Hub API routes.
+
+This surface is intentionally separate from `/api/v2/midi`: it owns the larger
+MIDI Hub workstation domain such as traffic monitoring, preset/event/script
+automation, network bridging, MIDI 2.0 tooling, Tesira, GPIO, and scheduling.
+"""
 
 from __future__ import annotations
 

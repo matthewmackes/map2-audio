@@ -4,7 +4,7 @@ import {
   checkSnapshotMorphCompatibility,
   fingerprintSnapshotData,
   interpolateSnapshotData,
-} from './juceGridSnapshots'
+} from '../components/JuceGrid/juceGridSnapshots'
 
 function createSnapshot(overrides: Partial<FlowSnapshotData> = {}): FlowSnapshotData {
   return {

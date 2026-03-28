@@ -3,7 +3,7 @@ import { Layer, Tag } from '@carbon/react'
 import { Map2BrandMark } from '../../components/branding/map2Branding'
 import { useMidiHubNavStore } from '../../stores/midiHubNavStore'
 import './MidiHubAreaPage.css'
-import '../MidiHubPage.css'
+import './MidiHubAreaLayout.css'
 
 type MidiHubAreaLayoutProps = {
   routeKey: string

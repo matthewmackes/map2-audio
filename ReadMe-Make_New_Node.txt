@@ -588,7 +588,8 @@
 
      # Or install individual plugin packs:
      bash scripts/build-toobamp.sh      # ToobAmp guitar amp sims
-     # bash scripts/build-airwindows.sh  # (disabled by default — see filename)
+     # Airwindows builds now come from packaged plugin sources; the legacy
+     # standalone helper script was removed as stale repo scaffolding.
 
   b) Verify LV2 plugins are found:
      lilv-utils    2>/dev/null || lv2ls | head -10

@@ -107,29 +107,29 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
-import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
-import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
-import { ChainAssignmentModal } from './ChainAssignmentModal'
-import { JuceGridSelectedBlockMidiPanel } from './JuceGridSelectedBlockMidiPanel'
-import { RoutingTopologyModal } from './RoutingTopologyModal'
-import { AudioNodesModal } from './AudioNodesModal'
-import { JuceGridParameterEditor } from './JuceGridParameterEditor'
+import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
+import { JuceGridChainManagementCard } from '../components/JuceGrid/JuceGridChainManagementCard'
+import { ChainAssignmentModal } from '../components/modals/ChainAssignmentModal'
+import { JuceGridSelectedBlockMidiPanel } from '../components/JuceGrid/JuceGridSelectedBlockMidiPanel'
+import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
+import { AudioNodesModal } from '../components/modals/AudioNodesModal'
+import { JuceGridParameterEditor } from '../components/JuceGrid/JuceGridParameterEditor'
 import {
   JuceGridRoutingVisualizer,
   getJuceGridRoutingInspectorItems,
   type JuceGridRoutingMarkerId,
-} from './JuceGridRoutingVisualizer'
-import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from './JuceGridSignalCanvas'
-import { buildJuceGridLivePath } from './juceGridLivePath'
+} from '../components/JuceGrid/JuceGridRoutingVisualizer'
+import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/JuceGrid/JuceGridSignalCanvas'
+import { buildJuceGridLivePath } from '../components/JuceGrid/juceGridLivePath'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
   normalizeJuceGridStateSources,
-} from './juceGridState'
-import type { JuceGridRoutingState } from './juceGridState'
+} from '../components/JuceGrid/juceGridState'
+import type { JuceGridRoutingState } from '../components/JuceGrid/juceGridState'
 import {
   fingerprintSnapshotData,
-} from './juceGridSnapshots'
+} from '../components/JuceGrid/juceGridSnapshots'
 import './JuceGridPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'

@@ -1,6 +1,9 @@
 """
-MIDI Route Handlers
-API endpoints for MIDI routing and device management.
+Legacy MIDI Route Handlers.
+
+This `/api/midi` surface is kept as a compatibility layer for older controller
+and engine clients. New mapping, device-profile, and automation work should use
+`/api/v2/midi`, while MIDI Hub workstation features live under `/api/midi/hub`.
 """
 
 import logging
@@ -15,7 +18,7 @@ try:
     from pydantic import BaseModel
     from app.services.midi_engine import MIDIEngineService
 
-    router = APIRouter(prefix="/api/midi", tags=["midi"])
+    router = APIRouter(prefix="/api/midi", tags=["midi-legacy"])
     midi_service = MIDIEngineService()
 
     # In-memory storage for additional MIDI state

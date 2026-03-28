@@ -1,6 +1,8 @@
 """
-MIDI API v2 - Comprehensive MIDI endpoints
-Consolidates and enhances all MIDI functionality with per-chain mapping scope.
+MIDI API v2 - authoritative controller and mapping surface.
+
+This module is the primary non-Hub MIDI API. It owns modern per-chain mapping,
+device-profile, feedback, learn, and command-trigger workflows.
 
 Features:
 - CC mappings with curves and feedback

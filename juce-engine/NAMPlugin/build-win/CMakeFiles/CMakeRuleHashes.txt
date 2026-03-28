@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-0ba730e8f794de5102af66fc6986db5c NAMPlugin_artefacts/JuceLibraryCode/NAMPlugin_resources.rc

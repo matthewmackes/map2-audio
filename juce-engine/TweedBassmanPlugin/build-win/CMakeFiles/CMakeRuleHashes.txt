@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-a2e2d4eb9a0f2a080c3c78648c3c3711 TweedBassmanPlugin_artefacts/JuceLibraryCode/TweedBassmanPlugin_resources.rc

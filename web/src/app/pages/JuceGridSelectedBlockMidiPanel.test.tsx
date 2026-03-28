@@ -23,7 +23,7 @@ jest.mock('../components/Toasts', () => ({
 }))
 
 const { JuceGridSelectedBlockMidiPanel } =
-  require('./JuceGridSelectedBlockMidiPanel') as typeof import('./JuceGridSelectedBlockMidiPanel')
+  require('../components/JuceGrid/JuceGridSelectedBlockMidiPanel') as typeof import('../components/JuceGrid/JuceGridSelectedBlockMidiPanel')
 
 function renderPanel(overrides: {
   plugin?: ChainPlugin

@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { JuceGridClusterSummaryBar } from './JuceGridClusterPanels'
+import { JuceGridClusterSummaryBar } from '../components/JuceGrid/JuceGridClusterPanels'
 
 function renderClusterSummaryBar() {
   const queryClient = new QueryClient({

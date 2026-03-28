@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 12:21 EDT - Closed bundled forensic-audit remediation tasks and marked audit-mismatch items for follow-up
+Last updated: 2026-03-28 13:01 EDT - Closed bundled cleanup, test-hardening, TUI-doc, MIDI-surface, and web-structure tasks
 
 ID: T482
 Status: [✓] Done
@@ -8512,7 +8512,7 @@ Last updated: 2026-03-28 12:21 EDT - Codex
   - Validation: `cmake -S juce-engine -B /tmp/map2-t468-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t468-cmake -j2` -> PASS.
 
 ID: T469
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Delete orphaned CSS files for stub/redirect pages
 Description:
 - Goal / acceptance criteria: Remove `web/src/app/pages/PlatformShellPage.css` (836 lines, null-returning page) and `web/src/app/pages/MidiHubPage.css` (727 lines, redirect-only page) after verifying no other component imports them.
@@ -8524,10 +8524,11 @@ Description:
 - Validation: `npm --prefix web run build` passes; `npm --prefix web run typecheck` passes.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28 12:21 EDT - Codex
-- Blocked notes:
-  - Audit evidence was incorrect: `web/src/app/pages/PlatformShellPage.css` is still imported by `web/src/app/components/Platform/PlatformModal.tsx`, and `web/src/app/pages/MidiHubPage.css` is still imported by `web/src/app/pages/midi-hub/MidiHubAreaLayout.tsx`.
-  - Deleting these stylesheets would currently break live surfaces; this task needs a rescope into “migrate remaining consumers off legacy page CSS” before removal is safe.
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Migrated the legacy page-scoped stylesheets onto the components that actually consume them: `web/src/app/pages/PlatformShellPage.css` became `web/src/app/components/Platform/PlatformModal.css`, and `web/src/app/pages/MidiHubPage.css` became `web/src/app/pages/midi-hub/MidiHubAreaLayout.css`.
+  - Updated the remaining live consumers (`PlatformModal.tsx` and `MidiHubAreaLayout.tsx`) to import the new component-local stylesheet paths, eliminating the stale page CSS files without breaking the routed Platform or MIDI Hub surfaces.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (with the existing `web/src/map2/api.ts` dynamic-import warning only).
 
 ID: T470
 Status: [✓] Done
@@ -8582,7 +8583,7 @@ Last updated: 2026-03-28 12:21 EDT - Codex
   - Licensing review: touched workflow/doc/script/app/web/juce/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src juce-engine scripts systemd` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T473
-Status: [ ] Todo
+Status: [✓] Done
 Title: Tighten phase test assertions — weak placeholders give false confidence
 Description:
 - Goal / acceptance criteria: Phase tests must have meaningful assertions. `test_phase1_integration.py` must not accept 400 as passing. `test_phase3_profiling.py` must validate actual profiling output, not `assert result is None`.
@@ -8593,12 +8594,17 @@ Description:
 - Key files: `tests/test_phase1_integration.py`, `tests/test_phase3_profiling.py`, `tests/test_phase5_smoke.py`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Tightened `tests/test_phase1_integration.py` so the cluster assignment path now asserts a deterministic `400 {"detail":"Assignment failed"}` for a missing node instead of accepting either success or failure, and the route-existence check now validates the actual empty payload shape for `nodes` and `assignments`.
+  - Reworked `tests/test_phase3_profiling.py` to validate real `ChainAnalyzer` output for a representative two-plugin chain, asserting chain name, plugin count, estimated CPU/memory, and GPU recommendation flags instead of only checking `None`.
+  - Tightened `tests/test_phase5_smoke.py` so `/api/health` must return `200` and expose the expected health payload keys rather than allowing `404`.
+  - Validation: `pytest -q tests/test_phase1_integration.py tests/test_phase3_profiling.py tests/test_phase5_smoke.py` -> PASS (`1 passed, 3 skipped` by default gate); `MAP2_RUN_INTEGRATION_TESTS=true pytest -q tests/test_phase1_integration.py tests/test_phase5_smoke.py` -> PASS.
 
 ### Low (P3)
 
 ID: T474
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement or document 23 empty function bodies in Python routes
 Description:
 - Goal / acceptance criteria: Each `pass`/`...` stub handler in routes must either be implemented or documented with a comment explaining why it's intentionally empty. Exception class bodies with just `pass` are acceptable.
@@ -8609,10 +8615,14 @@ Description:
 - Key files: Multiple route files in `app/routes/`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Replaced the cited ambiguous bare-pass patterns with explicit intent in the targeted route files: `audio_diagnostics.py` now exposes `router = None` on stripped-down imports, `cluster_admin.py` now uses typed response aliases instead of empty placeholder classes and logs invalid filter values explicitly, `dashboard.py` logs best-effort extraction failures instead of silently swallowing them, and the `delay`, `sidechain`, and `latency_v2` helpers now use debug logging for best-effort persistence/telemetry fallbacks.
+  - The audit’s `...` hits in `dsp.py`, `profiling.py`, `soundfonts.py`, and `impulse_response.py` were docstring examples rather than stub handlers; no runtime implementation gaps existed there.
+  - Validation: `python3 -m py_compile app/routes/audio_diagnostics.py app/routes/cluster_admin.py app/routes/dashboard.py app/routes/delay.py app/routes/sidechain.py app/routes/latency_v2.py` -> PASS; `rg -n "^\s*pass\s*$" app/routes/audio_diagnostics.py app/routes/cluster_admin.py app/routes/dashboard.py app/routes/delay.py app/routes/sidechain.py app/routes/latency_v2.py` -> no matches.
 
 ID: T475
-Status: [ ] Todo
+Status: [✓] Done
 Title: Reorganize misplaced files in web/src/app/pages/ directory
 Description:
 - Goal / acceptance criteria: Move modal components (AudioNodesModal, ChainAssignmentModal, JuceGridAudioPortModal, RoutingTopologyModal) to `components/modals/`. Move JuceGrid helper files (juceGridLivePath.ts, juceGridSnapshots.ts, juceGridState.ts, JuceGridParameterEditor, JuceGridRoutingVisualizer, JuceGridSignalCanvas, JuceGridClusterPanels, JuceGridChainManagementCard, JuceGridSelectedBlockMidiPanel) to `components/JuceGrid/`. Move audioTableColumns.ts, audioTableKeyboard.ts to `components/AudioTable/`. Move posterManifest.ts to `utils/` or `data/`. Move PlatformInfoGuideSection to `components/Platform/`.
@@ -8623,10 +8633,14 @@ Description:
 - Key files: ~17 files in `web/src/app/pages/`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Reorganized the misplaced non-route files out of `web/src/app/pages/`: modal surfaces moved to `web/src/app/components/modals/`, JUCE Grid helpers moved to `web/src/app/components/JuceGrid/`, Audio Table helpers moved to `web/src/app/components/AudioTable/`, `posterManifest.ts` moved to `web/src/app/data/`, and `PlatformInfoGuideSection` moved to `web/src/app/components/Platform/`.
+  - Updated all live importers and focused tests, including `JuceGridPage.tsx`, `AudioTablePage.tsx`, `AboutPage.tsx`, `SnapshotModalContent.tsx`, and the JUCE Grid / Audio Table test harnesses, so route-level pages now depend on the new component/helper locations rather than local page siblings.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridRoutingVisualizer.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx web/src/app/pages/JuceGridClusterPanels.test.tsx web/src/app/pages/PlatformInfoGuideSection.test.tsx web/src/app/pages/audioTableKeyboard.test.ts web/src/app/pages/juceGridSnapshots.test.ts web/src/app/pages/juceGridLivePath.test.ts` -> PASS; `npm --prefix web run build` -> PASS (with the existing `web/src/map2/api.ts` dynamic-import warning only).
 
 ID: T476
-Status: [ ] Todo
+Status: [✓] Done
 Title: Decide on 22 standalone plugin stub directories in juce-engine/
 Description:
 - Goal / acceptance criteria: Determine whether standalone VST3/AU plugin builds are needed. If yes, document the build pipeline. If no, delete all 22 plugin directories.
@@ -8637,10 +8651,14 @@ Description:
 - Key files: 22 directories under `juce-engine/`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Verified the 22 standalone plugin directories were not wired into `juce-engine/CMakeLists.txt` and that the canonical processors are built from `juce-engine/Source/`, not from per-plugin `juce_add_plugin()` scaffolding.
+  - Removed the 22 dead standalone plugin trees (`BossXS1PolyShifterPlugin`, `ChorusPlugin`, `CircularDelayPlugin`, `ConvolutionPlugin`, `DelayPlugin`, `DynamicsPlugin`, `EventideH9Plugin`, `FilterPlugin`, `H3000Plugin`, `IntelliFX8VoiceChorusPlugin`, `LexiLovePlugin`, `Marshall800Plugin`, `MesaDualRectifierPlugin`, `NAMPlugin`, `ParallelMixerPlugin`, `PassionFXPlugin`, `Peavey5150Plugin`, `PhaserPlugin`, `PitchShifterPlugin`, `ShoeGazePlugin`, `TweedBassmanPlugin`, `WDFAmpPlugin`), including their stale checked-in build artefacts.
+  - Validation: `cmake -S juce-engine -B /tmp/map2-t476-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t476-cmake -j2` -> PASS.
 
 ID: T477
-Status: [ ] Todo
+Status: [✓] Done
 Title: Consolidate MIDI route files — 3 overlapping modules
 Description:
 - Goal / acceptance criteria: Evaluate whether `app/routes/midi.py`, `app/routes/midi_v2.py`, and `app/routes/midi_hub.py` can be consolidated or whether v1 MIDI routes should be retired.
@@ -8651,12 +8669,16 @@ Description:
 - Key files: `app/routes/midi.py`, `app/routes/midi_v2.py`, `app/routes/midi_hub.py`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Evaluated the three MIDI route modules and documented the supported split in `docs/MIDI_ROUTE_SURFACES.md`: `/api/midi` is now explicitly treated as the legacy compatibility surface, `/api/v2/midi` as the authoritative modern controller/mapping API, and `/api/midi/hub` as the separate workstation/automation domain.
+  - Updated the route module docstrings to reflect that boundary, and retagged `app/routes/midi.py` as `midi-legacy` in OpenAPI so new work is less likely to land in the compatibility layer by accident.
+  - Validation: `python3 -m py_compile app/routes/midi.py app/routes/midi_v2.py app/routes/midi_hub.py` -> PASS.
 
 ### Low (P4)
 
 ID: T478
-Status: [ ] Todo
+Status: [✓] Done
 Title: Consolidate TUI completion documentation — 40+ redundant files
 Description:
 - Goal / acceptance criteria: Reduce 40+ "PROJECT_COMPLETE" / "PHASE_COMPLETE" markdown files in `tui/` to 1–2 canonical status files. Archive or delete the rest.
@@ -8667,10 +8689,14 @@ Description:
 - Key files: `tui/*.md`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Added `tui/STATUS.md` as the canonical current-state summary for the TUI workspace and updated `tui/README.md` to point at it.
+  - Archived 47 legacy completion/report/index markdown files under `tui/archive/legacy-docs/`, reducing the `tui/` root markdown set to the current operator docs plus the canonical status file.
+  - Validation: `find tui -maxdepth 1 -type f -name '*.md' | sort` -> `API_DOCUMENTATION.md`, `DEPLOYMENT_GUIDE.md`, `QUICK_START_GUIDE.md`, `README.md`, `STATUS.md`, `TROUBLESHOOTING_SYSTEMS.md`.
 
 ID: T479
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete disabled build script — scripts/build-airwindows.sh.disabled
 Description:
 - Goal / acceptance criteria: Remove `scripts/build-airwindows.sh.disabled` or re-enable with documentation if Airwindows support is needed.
@@ -8681,10 +8707,13 @@ Description:
 - Key files: `scripts/build-airwindows.sh.disabled`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Removed the stale `scripts/build-airwindows.sh.disabled` helper from the repository.
+  - Updated `ReadMe-Make_New_Node.txt` so the operator setup notes no longer point at the deleted disabled script and instead explain that Airwindows support now comes from the packaged plugin set.
 
 ID: T480
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement or remove C++ TODO for impulse-response calibration
 Description:
 - Goal / acceptance criteria: Either implement IR calibration in the audio engine or remove the TODO comment.
@@ -8695,4 +8724,7 @@ Description:
 - Key files: `juce-engine/Source/Map2AudioEngine.cpp`
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28
+Last updated: 2026-03-28 13:01 EDT - Codex
+- Completion notes:
+  - Removed the stale `TODO: Implement impulse-response calibration` comment from `juce-engine/Source/Map2AudioEngine.cpp` and replaced it with an explicit explanation that the current Lexicon path intentionally uses a conservative fixed S/PDIF latency fallback until a real loopback-calibration flow exists.
+  - Validation: included in `cmake -S juce-engine -B /tmp/map2-t476-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF && cmake --build /tmp/map2-t476-cmake -j2` -> PASS.
