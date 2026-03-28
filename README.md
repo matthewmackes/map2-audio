@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**861** Python | **948** TypeScript | **131** C++/H | **127** Docs | **996** total commits | **3** stars | **0** forks | **0** open issues
+**861** Python | **956** TypeScript | **131** C++/H | **127** Docs | **998** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`aa0002e9`](https://github.com/matthewmackes/map2-audio/commit/aa0002e97d10536d61ef94462ff88dd87ab2791a) | refactor: split map2 api clients and remove build warning | Map2 Audio | 2026-03-28 |
+| [`a752fc5a`](https://github.com/matthewmackes/map2-audio/commit/a752fc5a9e5f9851ec48036c3fbe8a77b1474c40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`dea16112`](https://github.com/matthewmackes/map2-audio/commit/dea16112e3b86034675010d8c973c1acfa98add3) | chore: close service cleanup bundles and purge juce build... | Map2 Audio | 2026-03-28 |
 | [`2d0dde0b`](https://github.com/matthewmackes/map2-audio/commit/2d0dde0b2e4760c396bd39e7392fefc9fc2cf194) | chore: close bundled cleanup and structure tasks | Map2 Audio | 2026-03-28 |
 | [`4d49c151`](https://github.com/matthewmackes/map2-audio/commit/4d49c1513933860417e7090912de9e33e886bb42) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`7917559d`](https://github.com/matthewmackes/map2-audio/commit/7917559d9c200c63b95c262be981ab1802db435f) | feat: upgrade map2-tui and close forensic audit cleanup | Map2 Audio | 2026-03-28 |
 | [`6cc23e31`](https://github.com/matthewmackes/map2-audio/commit/6cc23e31ded3f171fbe21641ee53b482b629aa51) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`d92eec42`](https://github.com/matthewmackes/map2-audio/commit/d92eec426bfc3272b78aee07a594f1d45ede9e61) | test: close audio table mutation harness | Map2 Audio | 2026-03-28 |
-| [`dff32654`](https://github.com/matthewmackes/map2-audio/commit/dff3265467a17a90ade455119c4bf369dd87313c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
-| [`e6084791`](https://github.com/matthewmackes/map2-audio/commit/e6084791ff0bcd235e1a98a0ef3dca514eb50401) | Close DrumsPage raw-input audit | Map2 Audio | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
