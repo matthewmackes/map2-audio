@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1009** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1011** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bb8d465a`](https://github.com/matthewmackes/map2-audio/commit/bb8d465adf42e26c2c16c78202e34f0f5d1ac8ce) | Show configured loader state in scoped UI | Map2 Audio | 2026-03-28 |
+| [`e1e08b74`](https://github.com/matthewmackes/map2-audio/commit/e1e08b7495b0d1781b3ad16d4b0b1aa88ad93c18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`c3eb44ce`](https://github.com/matthewmackes/map2-audio/commit/c3eb44cefaa7eef2f1cec09a7e9c0d4de1045552) | Refresh web version after snapshot loader updates | Map2 Audio | 2026-03-28 |
 | [`22e99ff7`](https://github.com/matthewmackes/map2-audio/commit/22e99ff7a4890de085986c3b6b57be73971cacb1) | Preserve loader state in flow snapshots | Map2 Audio | 2026-03-28 |
 | [`8d372fde`](https://github.com/matthewmackes/map2-audio/commit/8d372fde877d580637014ae3120452511cf76dfa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`ce3febc8`](https://github.com/matthewmackes/map2-audio/commit/ce3febc862ec1f7a3d36b4184061d1dd4296e2ff) | Sync scoped NAM and IR route state | Map2 Audio | 2026-03-28 |
 | [`e8a43953`](https://github.com/matthewmackes/map2-audio/commit/e8a439534fe0768a3fcebd58306c36639c9a1af7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`5851ab4a`](https://github.com/matthewmackes/map2-audio/commit/5851ab4aca83d3049ea362304ca4c242d45cd0cf) | Restore persisted loader state during chain activation | Map2 Audio | 2026-03-28 |
-| [`505d9bf5`](https://github.com/matthewmackes/map2-audio/commit/505d9bf50d2d915262e8906d95d58406a9de2858) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
-| [`f86e123b`](https://github.com/matthewmackes/map2-audio/commit/f86e123b0c2985c22777e0c1c79226adee4ffe09) | Persist duplicate loader state across chains | Map2 Audio | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
