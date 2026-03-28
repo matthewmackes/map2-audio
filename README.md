@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1002** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1004** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5851ab4a`](https://github.com/matthewmackes/map2-audio/commit/5851ab4aca83d3049ea362304ca4c242d45cd0cf) | Restore persisted loader state during chain activation | Map2 Audio | 2026-03-28 |
+| [`505d9bf5`](https://github.com/matthewmackes/map2-audio/commit/505d9bf50d2d915262e8906d95d58406a9de2858) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`f86e123b`](https://github.com/matthewmackes/map2-audio/commit/f86e123b0c2985c22777e0c1c79226adee4ffe09) | Persist duplicate loader state across chains | Map2 Audio | 2026-03-28 |
 | [`779c5e08`](https://github.com/matthewmackes/map2-audio/commit/779c5e08850d93510fffb4a03dff535fec64d515) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`2df34001`](https://github.com/matthewmackes/map2-audio/commit/2df34001e786c70c649e36794b327249bcef2304) | refactor: continue splitting map2 api clients | Map2 Audio | 2026-03-28 |
 | [`b7694d65`](https://github.com/matthewmackes/map2-audio/commit/b7694d65610c6ac190a5e11af4b977039cd47c78) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`aa0002e9`](https://github.com/matthewmackes/map2-audio/commit/aa0002e97d10536d61ef94462ff88dd87ab2791a) | refactor: split map2 api clients and remove build warning | Map2 Audio | 2026-03-28 |
 | [`a752fc5a`](https://github.com/matthewmackes/map2-audio/commit/a752fc5a9e5f9851ec48036c3fbe8a77b1474c40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
-| [`dea16112`](https://github.com/matthewmackes/map2-audio/commit/dea16112e3b86034675010d8c973c1acfa98add3) | chore: close service cleanup bundles and purge juce build... | Map2 Audio | 2026-03-28 |
-| [`2d0dde0b`](https://github.com/matthewmackes/map2-audio/commit/2d0dde0b2e4760c396bd39e7392fefc9fc2cf194) | chore: close bundled cleanup and structure tasks | Map2 Audio | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
