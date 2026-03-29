@@ -1,2 +1,2 @@
-export { JuceGridPage as SnapshotEditorPage } from './JuceGridPage'
-export { default } from './JuceGridPage'
+export { SnapshotEditorPage } from './SnapshotEditorPageContent'
+export { default } from './SnapshotEditorPageContent'

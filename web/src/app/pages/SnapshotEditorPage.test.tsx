@@ -1,8 +1,8 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 
-jest.mock('./JuceGridPage', () => ({
-  JuceGridPage: () => <div data-testid="snapshot-editor-page-core">Snapshot editor core</div>,
+jest.mock('./SnapshotEditorPageContent', () => ({
+  SnapshotEditorPage: () => <div data-testid="snapshot-editor-page-core">Snapshot editor core</div>,
   __esModule: true,
   default: () => <div data-testid="snapshot-editor-page-core">Snapshot editor core</div>,
 }))

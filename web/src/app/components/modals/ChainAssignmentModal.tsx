@@ -5,7 +5,7 @@
  * Opens automatically when a flow has no chain assigned, and can be opened
  * manually via the "Edit Assigned Chain" button on each flow card.
  *
- * Contains the full JuceGridChainManagementCard lifecycle (create, rename,
+ * Contains the full SnapshotChainManagementCard lifecycle (create, rename,
  * duplicate, activate/deactivate, delete) plus an Apply button that commits
  * the selection to the flow.
  */
@@ -13,7 +13,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '@carbon/react'
 import { Branch } from '@carbon/icons-react'
-import { JuceGridChainManagementCard } from '../JuceGrid/JuceGridChainManagementCard'
+import { SnapshotChainManagementCard } from '../SnapshotEditor/SnapshotChainManagementCard'
 import type { Plugin } from '../../../map2/types'
 
 export interface ChainAssignmentModalProps {
@@ -41,7 +41,7 @@ export interface ChainAssignmentModalProps {
   onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
   /**
    * Chain lifecycle handlers — receive the currently-pending chainId so
-   * JuceGridPage can operate on the right chain while the modal is open.
+   * SnapshotEditorPage can operate on the right chain while the modal is open.
    */
   onToggleActive?: (chainId: number) => void
   onDuplicate?: (chainId: number) => void
@@ -109,7 +109,7 @@ export function ChainAssignmentModal({
           </div>
         )}
 
-        <JuceGridChainManagementCard
+        <SnapshotChainManagementCard
           selectedChainId={pendingChainId}
           onChainSelect={(chainId) => setPendingChainId(chainId)}
           onSelectedChainRemoved={(chainId) => {

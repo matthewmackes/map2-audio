@@ -9786,7 +9786,7 @@ Last updated: 2026-03-29 11:25 EDT - Codex
   - The remaining legacy filename retirement work is now an explicit follow-up task rather than a blocker on committing/pushing this checkpoint.
 
 ID: T544
-Status: [ ] Todo
+Status: [>] In Progress
 Title: [E-SNAP] Retire legacy frontend shims after validated snapshot-editor checkpoint
 Description:
 - Goal / acceptance criteria: Move the remaining `JuceGrid*`, `ChainFlow*`, and `*Flow*` compatibility owners into canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files, then delete obsolete wrappers once imports, tests, and docs point at the canonical surfaces and the production build remains green.
@@ -9794,6 +9794,49 @@ Description:
 - Dependencies: T543
 - Estimated effort: Medium
 - Required outputs: updated canonical file ownership, deleted legacy wrappers where safe, import/test/doc cleanup, `npm --prefix web run typecheck`, focused snapshot-editor tests, and `npm --prefix web run build` evidence.
+Subtasks:
+ID: T544-subA
+Status: [✓] Done
+Title: Move snapshot-editor page and chain-management ownership into canonical SnapshotEditor files
+Description:
+- Goal / acceptance criteria: Move the current `JuceGridPage*` and `JuceGridChainManagementCard` ownership into `SnapshotEditorPage*` and `SnapshotChainManagementCard`, preserving compatibility wrappers only where they are still referenced externally.
+- Why it matters: The core E-SNAP route still lives in legacy JUCE Grid filenames even though `/snapshot-editor` is the canonical entrypoint.
+- Dependencies: T543
+- Estimated effort: Medium
+- Required outputs: canonical page/component owners, updated imports/tests, and focused frontend validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 11:25 EDT - Codex
+Last updated: 2026-03-29 12:05 EDT - Codex
+- Completion notes:
+  - Moved the snapshot-editor page owner into canonical `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/pages/SnapshotEditorPage.css`, while reintroducing `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css` as thin compatibility wrappers.
+  - Moved the chain-management owner into `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`, updated `ChainAssignmentModal` to import the canonical component directly, and restored `web/src/app/components/JuceGrid/JuceGridChainManagementCard.tsx` as a thin compatibility export.
+  - Updated `web/src/app/pages/SnapshotEditorPage.tsx` and `web/src/app/pages/SnapshotEditorPage.test.tsx` so the `/snapshot-editor` route now resolves through the canonical `SnapshotEditorPageContent` module instead of the legacy JUCE Grid filename.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS.
+ID: T544-subB
+Status: [>] In Progress
+Title: Move shared snapshot comparison and live-chain ownership into canonical SnapshotEditor modules
+Description:
+- Goal / acceptance criteria: Retire `JuceGrid` ownership for the shared snapshot comparison/live-chain helpers by moving the implementation into `SnapshotEditor` modules and updating the remaining callers to use the canonical surface.
+- Why it matters: Snapshot-editor support code still routes through JUCE Grid helper files, which keeps the vocabulary cutover incomplete even after the page shell moves.
+- Dependencies: T544-subA
+- Estimated effort: Medium
+- Required outputs: canonical helper owners, compatibility re-exports only where still needed, and focused frontend validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:05 EDT - Codex
+ID: T544-subC
+Status: [ ] Todo
+Title: Move remaining ChainGraph and SignalPath ownership, then close the epic documentation
+Description:
+- Goal / acceptance criteria: Move remaining `ChainFlow*`/`*Flow*` compatibility owners into `ChainGraph*` and `*SignalPath*` files where safe, then refresh the final E-SNAP documentation/worklist notes so `T541`, `T542`, and `T544` can close together.
+- Why it matters: The epic is not actually done until the compatibility-file ownership matches the new vocabulary and the docs reflect the final cutover.
+- Dependencies: T544-subB
+- Estimated effort: Medium
+- Required outputs: canonical graph/signal-path owners, final doc/worklist updates, and final build/test evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:05 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-03-29 12:01 EDT - Codex
+- Progress notes:
+  - Split the remaining legacy-filename retirement into three commit-sized release bundles (`T544-subA` through `T544-subC`) so the requested commit/push/rebuild/restart loop can happen after each bundle without losing worklist fidelity.
