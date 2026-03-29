@@ -4,6 +4,26 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  configurable: true,
+  value: ResizeObserverMock,
+  writable: true,
+})
+
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'ResizeObserver', {
+    configurable: true,
+    value: ResizeObserverMock,
+    writable: true,
+  })
+}
+
 // ── Mock APIs ─────────────────────────────────────────────────────────────
 
 const mockUseIsMobile = jest.fn(() => false)
@@ -156,9 +176,11 @@ const createMockPluginOutputState = () => ({
 const mockUsePluginOutputs = jest.fn(() => createMockPluginOutputState())
 
 const mockChainsApi = {
+  activate: jest.fn(async () => ({})),
   list: jest.fn(async () => buildMockChainsResponse()),
   addPlugin: jest.fn(async () => ({})),
   create: jest.fn(async () => ({})),
+  deactivate: jest.fn(async () => ({})),
   delete: jest.fn(async () => ({})),
   listPresets: jest.fn(async () => buildMockPresetsResponse()),
   loadPreset: jest.fn(async () => ({})),
@@ -341,7 +363,8 @@ function getToolbarButton(label: string) {
 }
 
 // Import after mocks
-import { AudioTablePage } from './AudioTablePage'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { AudioTablePage } = require('./AudioTablePage') as typeof import('./AudioTablePage')
 
 // ── Pre-test state ────────────────────────────────────────────────────────
 
@@ -471,14 +494,14 @@ describe('AudioTablePage — Data Display', () => {
   it('shows plugin count tag', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('2 plugins')).toBeInTheDocument()
+      expect(screen.getByText('2 blocks')).toBeInTheDocument()
     })
   })
 
-  it('shows "No chain assigned" for flows without chains', async () => {
+  it('shows the runtime-chain empty state for paths without assignments', async () => {
     renderPage()
     await waitFor(() => {
-      const noChainMessages = screen.getAllByText(/No chain assigned/)
+      const noChainMessages = screen.getAllByText(/No runtime chain assigned/)
       expect(noChainMessages.length).toBeGreaterThanOrEqual(2)
     })
   })
@@ -491,7 +514,7 @@ describe('AudioTablePage — Data Display', () => {
 describe('AudioTablePage — Row Controls', () => {
   it('renders the add-plugin row for assigned chains', async () => {
     renderPage()
-    expect(await screen.findByRole('combobox', { name: /add plugin/i })).toBeInTheDocument()
+    expect(await screen.findByRole('combobox', { name: /add block/i })).toBeInTheDocument()
   })
 
   it('renders bypass checkbox in plugin rows', async () => {
@@ -563,12 +586,12 @@ describe('AudioTablePage — Flow CRUD', () => {
     })
   })
 
-  it('removes a flow when Remove Flow button is clicked', async () => {
+  it('removes a flow when Remove Path button is clicked', async () => {
     renderPage()
     await waitFor(() => {
       expect(screen.getByTestId('audio-table-flow-flow-2')).toBeInTheDocument()
     })
-    const removeFlowButtons = screen.getAllByLabelText('Remove flow')
+    const removeFlowButtons = screen.getAllByLabelText('Remove path')
     // Click the last flow's remove button
     fireEvent.click(removeFlowButtons[removeFlowButtons.length - 1])
     await waitFor(() => {
@@ -945,16 +968,16 @@ describe('AudioTablePage — Toolbar', () => {
   it('renders the global search and visible-row batch actions', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search visible plugins')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search visible blocks')).toBeInTheDocument()
       expect(screen.getByText('Bypass Visible')).toBeInTheDocument()
       expect(screen.getByText('Remove Visible')).toBeInTheDocument()
       expect(screen.getByText('2 nodes')).toBeInTheDocument()
     })
   })
 
-  it('filters visible plugins for the active flow table', async () => {
+  it('filters visible blocks for the active path table', async () => {
     renderPage()
-    const searchInput = await screen.findByPlaceholderText('Search visible plugins')
+    const searchInput = await screen.findByPlaceholderText('Search visible blocks')
 
     fireEvent.change(searchInput, { target: { value: 'rev' } })
 
@@ -1028,7 +1051,7 @@ describe('AudioTablePage — Toolbar', () => {
       expect(mockChainsApi.togglePluginBypass).toHaveBeenCalledWith(1, 'urn:test:delay', false, 1)
     })
 
-    const searchInput = await screen.findByPlaceholderText('Search visible plugins')
+    const searchInput = await screen.findByPlaceholderText('Search visible blocks')
     fireEvent.change(searchInput, { target: { value: 'rev' } })
 
     await waitFor(() => {
@@ -1043,7 +1066,7 @@ describe('AudioTablePage — Toolbar', () => {
     fireEvent.click(removeVisibleButton)
 
     await waitFor(() => {
-      expect(confirmSpy).toHaveBeenCalledWith('Remove 1 visible plugin(s) from Main?')
+      expect(confirmSpy).toHaveBeenCalledWith('Remove 1 visible block(s) from Main?')
       expect(mockChainsApi.removePlugin).toHaveBeenCalledWith(1, 'urn:test:reverb', 0)
     })
 
@@ -1090,5 +1113,14 @@ describe('AudioTablePage — Toolbar', () => {
     fireEvent.click(within(rackRow).getByRole('button', { name: 'Focus' }))
 
     expect(setActiveNode).toHaveBeenCalledWith('rack-a')
+  })
+
+  it('opens the live-paths backend-truth modal from the toolbar', async () => {
+    renderPage()
+
+    fireEvent.click(getToolbarButton('Live paths'))
+
+    expect(await screen.findByTestId('live-runtime-paths-modal')).toBeInTheDocument()
+    expect(screen.getByText(/Read-only live path inventory sourced from backend runtime truth/i)).toBeInTheDocument()
   })
 })

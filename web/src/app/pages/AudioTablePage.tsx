@@ -1,8 +1,8 @@
 /**
- * AudioTablePage — Carbon DataTable-driven signal flow editor.
+ * AudioTablePage — Carbon DataTable-driven snapshot path editor.
  *
  * Full parity with JuceGridPage using a table interface:
- * - One DataTable per flow slot (A–F)
+ * - One DataTable per path slot (A–F)
  * - Inline editable cells (number inputs, dropdowns, checkboxes)
  * - Dynamic per-plugin parameter columns with column picker
  * - MIDI mapping columns, automation indicators, real-time levels
@@ -22,6 +22,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
+  Branch,
   Redo,
   Subtract,
   TrashCan,
@@ -71,6 +72,7 @@ import type { AudioPort } from '../../map2/api'
 import { snapshotsApi } from '../../map2/clients/snapshots'
 import type {
   Chain,
+  ChainsResponse,
   Plugin,
   PluginParameter,
   PluginOrderRef,
@@ -91,6 +93,7 @@ import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { useCluster } from '../contexts/ClusterContext'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
+import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
@@ -102,6 +105,13 @@ import type {
   JuceGridRoutingMode,
   JuceGridSlotPaletteEntry,
 } from '../components/JuceGrid/juceGridState'
+import {
+  applyOptimisticSnapshotEditorLiveChainSet,
+  buildSnapshotEditorLiveChainProjection,
+  buildSnapshotEditorRevertedStateFromLiveProjection,
+  getSnapshotEditorDesiredLiveChainIds,
+  hasSnapshotEditorLiveChainMismatch,
+} from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
   STATIC_COLUMNS,
   LEVEL_COLUMNS,
@@ -343,6 +353,7 @@ export function AudioTablePage() {
   const [search, setSearch] = useState('')
   const [tabletTab, setTabletTab] = useState(0)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
+  const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
 
   // Automation state (local — synced via shared queries)
   const [automationPlaying, setAutomationPlaying] = useState(false)
@@ -382,6 +393,15 @@ export function AudioTablePage() {
       persistFlowState(prev.flowSlots, prev.routing, clamped)
       return { ...prev, activeFlowIndex: clamped }
     })
+  }, [persistFlowState])
+
+  const replaceGridState = useCallback((next: {
+    flowSlots: JuceGridFlowSlotState[]
+    routing: JuceGridRoutingState
+    activeFlowIndex: number
+  }) => {
+    persistFlowState(next.flowSlots, next.routing, next.activeFlowIndex)
+    setGridState(next)
   }, [persistFlowState])
 
   // Persist column visibility
@@ -483,7 +503,7 @@ export function AudioTablePage() {
       chainsApi.removePlugin(chainId, uri, position),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Plugin removed', 'success')
+      pushToast('Block removed', 'success')
     },
     onError: () => pushToast('Remove failed', 'error'),
   })
@@ -493,27 +513,27 @@ export function AudioTablePage() {
       chainsApi.addPlugin(chainId, uri),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Plugin added', 'success')
+      pushToast('Block added', 'success')
     },
-    onError: () => pushToast('Failed to add plugin', 'error'),
+    onError: () => pushToast('Failed to add block', 'error'),
   })
 
   const createChainMutation = useMutation({
     mutationFn: async (name: string) => chainsApi.create(name),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain created', 'success')
+      pushToast('Runtime chain created', 'success')
     },
-    onError: () => pushToast('Failed to create chain', 'error'),
+    onError: () => pushToast('Failed to create runtime chain', 'error'),
   })
 
   const deleteChainMutation = useMutation({
     mutationFn: async (chainId: number) => chainsApi.delete(chainId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain deleted', 'success')
+      pushToast('Runtime chain deleted', 'success')
     },
-    onError: () => pushToast('Failed to delete chain', 'error'),
+    onError: () => pushToast('Failed to delete runtime chain', 'error'),
   })
 
   const renameChainMutation = useMutation({
@@ -521,9 +541,63 @@ export function AudioTablePage() {
       chainsApi.rename(chainId, name),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain renamed', 'success')
+      pushToast('Runtime chain renamed', 'success')
     },
-    onError: () => pushToast('Failed to rename chain', 'error'),
+    onError: () => pushToast('Failed to rename runtime chain', 'error'),
+  })
+
+  type LiveChainMutationContext = {
+    previousChains?: ChainsResponse
+  }
+
+  const updateLivePathsMutation = useMutation({
+    mutationFn: async (nextActiveChainIds: number[]) => {
+      const currentActiveChainIds = new Set(
+        chains
+          .filter((chain) => chain.is_active)
+          .map((chain) => chain.id),
+      )
+      const desiredChainIdSet = new Set(nextActiveChainIds)
+      const chainIdsToActivate = nextActiveChainIds.filter((chainId) => !currentActiveChainIds.has(chainId))
+      const chainIdsToDeactivate = chains
+        .filter((chain) => chain.is_active && !desiredChainIdSet.has(chain.id))
+        .map((chain) => chain.id)
+
+      for (const chainId of chainIdsToActivate) {
+        await chainsApi.activate(chainId)
+      }
+      for (const chainId of chainIdsToDeactivate) {
+        await chainsApi.deactivate(chainId)
+      }
+
+      return {
+        chainIdsToActivate,
+        chainIdsToDeactivate,
+      }
+    },
+    onMutate: async (nextActiveChainIds): Promise<LiveChainMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
+    onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
+      void queryClient.invalidateQueries({ queryKey: ['chains'] })
+      pushToast(
+        chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
+          ? 'Live paths already match this workspace'
+          : 'Live paths updated from this workspace',
+        'success',
+      )
+    },
+    onError: (error, _nextActiveChainIds, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast(`Failed to update live paths: ${error}`, 'error')
+    },
   })
 
   const savePresetMutation = useMutation({
@@ -624,14 +698,14 @@ export function AudioTablePage() {
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
       pushToast(
         variables.action === 'toggle-bypass'
-          ? `Updated bypass for ${variables.plugins.length} plugin${variables.plugins.length === 1 ? '' : 's'}`
-          : `Removed ${variables.plugins.length} plugin${variables.plugins.length === 1 ? '' : 's'}`,
+          ? `Updated bypass for ${variables.plugins.length} block${variables.plugins.length === 1 ? '' : 's'}`
+          : `Removed ${variables.plugins.length} block${variables.plugins.length === 1 ? '' : 's'}`,
         variables.action === 'toggle-bypass' ? 'success' : 'info',
       )
     },
     onError: (_error, variables) => {
       pushToast(
-        variables.action === 'toggle-bypass' ? 'Failed to update bypass state' : 'Failed to remove visible plugins',
+        variables.action === 'toggle-bypass' ? 'Failed to update bypass state' : 'Failed to remove visible blocks',
         'error',
       )
     },
@@ -684,11 +758,25 @@ export function AudioTablePage() {
   const activeFlowOptions = useMemo(
     () => flowData.map((fd, index) => ({
       id: String(index),
-      label: `Flow ${fd.slot.label}${fd.chain ? ` · ${fd.chain.name}` : ' · Unassigned'}`,
+      label: `Path ${fd.slot.label}${fd.chain ? ` · ${fd.chain.name}` : ' · Unassigned'}`,
     })),
     [flowData],
   )
   const selectedActiveFlowOption = activeFlowOptions[activeFlowIndex] ?? activeFlowOptions[0] ?? null
+  const liveRuntimeProjection = useMemo(
+    () => buildSnapshotEditorLiveChainProjection(chains, flowSlots),
+    [chains, flowSlots],
+  )
+  const desiredLiveChainIds = useMemo(
+    () => getSnapshotEditorDesiredLiveChainIds(flowSlots),
+    [flowSlots],
+  )
+  const liveRuntimeMismatch = useMemo(
+    () => hasSnapshotEditorLiveChainMismatch(liveRuntimeProjection, flowSlots),
+    [flowSlots, liveRuntimeProjection],
+  )
+  const liveRuntimeOverflow = liveRuntimeProjection.length > MAX_FLOWS
+  const showLiveRuntimeSummaryOnly = isTabletTouchRoute
   const activeChainPresets = useMemo(
     () => (activeFlowData?.chain ? (presetsQuery.data?.presets ?? []).filter(preset => preset.chain_id === activeFlowData.chain?.id) : []),
     [activeFlowData?.chain, presetsQuery.data?.presets],
@@ -938,7 +1026,7 @@ export function AudioTablePage() {
 
     const target = resolveDefaultMidiTarget(plugin)
     if (!target) {
-      pushToast('No parameter available for MIDI mapping on this plugin', 'info')
+      pushToast('No parameter available for MIDI mapping on this block', 'info')
       return
     }
 
@@ -971,7 +1059,7 @@ export function AudioTablePage() {
 
   const handleSavePreset = useCallback(() => {
     if (!activeFlowData?.chain) {
-      pushToast('Assign a chain to the active flow before saving presets', 'info')
+      pushToast('Assign a runtime chain to the focused path before saving presets', 'info')
       return
     }
     const presetName = window.prompt('Preset name:', `${activeFlowData.chain.name} Preset`)
@@ -980,6 +1068,44 @@ export function AudioTablePage() {
     }
     savePresetMutation.mutate({ chainId: activeFlowData.chain.id, name: presetName.trim() })
   }, [activeFlowData?.chain, pushToast, savePresetMutation])
+
+  const handleUpdateLivePaths = useCallback(() => {
+    if (!liveRuntimeMismatch) {
+      pushToast('Live paths already match this workspace', 'info')
+      return
+    }
+    updateLivePathsMutation.mutate(desiredLiveChainIds)
+  }, [desiredLiveChainIds, liveRuntimeMismatch, pushToast, updateLivePathsMutation])
+
+  const handleRevertWorkspaceToLive = useCallback(() => {
+    if (liveRuntimeOverflow) {
+      pushToast('Live path count exceeds the local path capacity', 'warn')
+      return
+    }
+
+    const revertedState = buildSnapshotEditorRevertedStateFromLiveProjection(
+      liveRuntimeProjection,
+      flowSlots,
+      routing,
+      activeFlowIndex,
+      SLOT_COLORS,
+      MAX_FLOWS,
+    )
+    replaceGridState({
+      flowSlots: revertedState.flowSlots,
+      routing: revertedState.routing,
+      activeFlowIndex: revertedState.activeFlowIndex,
+    })
+    pushToast('Workspace reverted to backend live truth', 'success')
+  }, [
+    activeFlowIndex,
+    flowSlots,
+    liveRuntimeOverflow,
+    liveRuntimeProjection,
+    pushToast,
+    replaceGridState,
+    routing,
+  ])
 
   // ── Column picker ───────────────────────────────────────────────────────
 
@@ -1007,7 +1133,7 @@ export function AudioTablePage() {
     if (!activeFlowData?.chain || activeVisiblePlugins.length === 0) {
       return
     }
-    if (action === 'remove' && !window.confirm(`Remove ${activeVisiblePlugins.length} visible plugin(s) from ${activeFlowData.chain.name}?`)) {
+    if (action === 'remove' && !window.confirm(`Remove ${activeVisiblePlugins.length} visible block(s) from ${activeFlowData.chain.name}?`)) {
       return
     }
     batchVisibleMutation.mutate({
@@ -1042,7 +1168,7 @@ export function AudioTablePage() {
         <Dropdown
           id="audio-table-active-flow"
           titleText=""
-          label="Active Flow"
+          label="Focused Path"
           size="sm"
           items={activeFlowOptions}
           itemToString={(item: { id: string; label: string } | null) => item?.label ?? ''}
@@ -1094,6 +1220,19 @@ export function AudioTablePage() {
         <Tag type={midiStatusQuery.data?.enabled ? 'green' : 'cool-gray'} size="sm">
           MIDI {midiStatusQuery.data?.enabled ? 'Ready' : 'Off'}
         </Tag>
+        <Button
+          kind={liveRuntimeMismatch ? 'primary' : showLiveRuntimeModal ? 'secondary' : 'ghost'}
+          size="sm"
+          renderIcon={Branch}
+          onClick={() => setShowLiveRuntimeModal(true)}
+        >
+          Live paths
+        </Button>
+        {liveRuntimeMismatch ? (
+          <Tag type={liveRuntimeOverflow ? 'red' : 'blue'} size="sm">
+            {liveRuntimeOverflow ? 'Overflow' : 'Mismatch'}
+          </Tag>
+        ) : null}
 
         <div style={{ width: 1, height: 24, background: 'var(--cds-border-subtle)' }} />
 
@@ -1178,8 +1317,8 @@ export function AudioTablePage() {
         <TableToolbarSearch
           persistent
           size="sm"
-          labelText="Search plugins"
-          placeholder="Search visible plugins"
+          labelText="Search blocks"
+          placeholder="Search visible blocks"
           value={search}
           onChange={(_e: unknown, value: string | undefined) => setSearch(value ?? '')}
         />
@@ -1288,7 +1427,7 @@ export function AudioTablePage() {
         />
       ))}
 
-      {/* ── Add Flow Button ───────────────────────────────────────────── */}
+      {/* ── Add Path Button ───────────────────────────────────────────── */}
       <div style={addFlowBarStyle}>
         <Button
           kind="ghost"
@@ -1298,7 +1437,7 @@ export function AudioTablePage() {
           disabled={flowSlots.length >= MAX_FLOWS}
           data-testid="audio-table-add-flow"
         >
-          Add Flow ({flowSlots.length}/{MAX_FLOWS})
+          Add Path ({flowSlots.length}/{MAX_FLOWS})
         </Button>
       </div>
 
@@ -1387,12 +1526,26 @@ export function AudioTablePage() {
       {showAudioNodesModal ? (
         <AudioNodesModal open={showAudioNodesModal} onClose={() => setShowAudioNodesModal(false)} />
       ) : null}
+
+      {showLiveRuntimeModal ? (
+        <LiveRuntimePathsModal
+          open={showLiveRuntimeModal}
+          onClose={() => setShowLiveRuntimeModal(false)}
+          projections={liveRuntimeProjection}
+          summaryOnly={showLiveRuntimeSummaryOnly}
+          mismatch={liveRuntimeMismatch}
+          overflow={liveRuntimeOverflow}
+          onUpdateLive={handleUpdateLivePaths}
+          onRevertToLive={handleRevertWorkspaceToLive}
+          updatePending={updateLivePathsMutation.isPending}
+        />
+      ) : null}
     </div>
   )
 }
 
 // ============================================================================
-// FlowTableSection — one DataTable per flow slot
+// FlowTableSection — one DataTable per path slot
 // ============================================================================
 
 interface FlowTableSectionProps {
@@ -1820,16 +1973,16 @@ function FlowTableSection({
   return (
     <div style={flowSectionStyle} data-flow-index={flowIndex} data-testid={`audio-table-flow-${slot.id}`}>
 
-      {/* ── Flow Header Row ──────────────────────────────────────── */}
+      {/* ── Path Header Row ──────────────────────────────────────── */}
       <div style={flowHeaderStyle}>
         <div style={flowDotStyle(slot.color)} />
-        <Tag type="blue" size="sm">Flow {slot.label}</Tag>
+        <Tag type="blue" size="sm">Path {slot.label}</Tag>
 
-        {/* Chain selector */}
+        {/* Runtime chain selector */}
         <Dropdown
           id={`chain-select-${slot.id}`}
           titleText=""
-          label="Chain"
+          label="Runtime chain"
           size="sm"
           items={chainItems}
           itemToString={(item: typeof chainItems[number] | null) => item?.label ?? ''}
@@ -1841,26 +1994,26 @@ function FlowTableSection({
           style={{ minWidth: 140 }}
         />
 
-        {/* Chain CRUD overflow */}
+        {/* Runtime chain CRUD overflow */}
         <OverflowMenu size="sm" flipped>
           <OverflowMenuItem
-            itemText="New chain"
-            onClick={() => onCreateChain(`Chain ${chains.length + 1}`)}
+            itemText="New runtime chain"
+            onClick={() => onCreateChain(`Runtime chain ${chains.length + 1}`)}
           />
           {chain && (
             <>
               <OverflowMenuItem
-                itemText="Rename chain"
+                itemText="Rename runtime chain"
                 onClick={() => {
-                  const name = window.prompt('New name:', chain.name)
+                  const name = window.prompt('New runtime chain name:', chain.name)
                   if (name?.trim()) onRenameChain(chain.id, name.trim())
                 }}
               />
               <OverflowMenuItem
-                itemText="Delete chain"
+                itemText="Delete runtime chain"
                 isDelete
                 onClick={() => {
-                  if (window.confirm(`Delete chain "${chain.name}"?`)) {
+                  if (window.confirm(`Delete runtime chain "${chain.name}"?`)) {
                     onDeleteChain(chain.id)
                     onChainAssign(flowIndex, null)
                   }
@@ -1934,11 +2087,11 @@ function FlowTableSection({
 
         <div style={{ flex: 1 }} />
 
-        {/* Remove flow */}
+        {/* Remove path */}
         <IconButton
           kind="ghost"
           size="sm"
-          label="Remove flow"
+          label="Remove path"
           disabled={!canRemoveFlow}
           onClick={() => onRemoveFlow(flowIndex)}
         >
@@ -1960,7 +2113,7 @@ function FlowTableSection({
               <TableContainer {...getTableContainerProps()}>
                 <TableToolbar {...getToolbarProps()} size="sm">
                   <TableToolbarContent>
-                    <Tag type="cool-gray" size="sm">{plugins.length} plugins</Tag>
+                    <Tag type="cool-gray" size="sm">{plugins.length} blocks</Tag>
                     {search.trim() ? <Tag type="blue" size="sm">Filtered</Tag> : null}
                   </TableToolbarContent>
                 </TableToolbar>
@@ -1997,7 +2150,7 @@ function FlowTableSection({
                         <Dropdown
                           id={`add-plugin-${slot.id}`}
                           titleText=""
-                          label="Add plugin..."
+                          label="Add block..."
                           size="sm"
                           items={addPluginItems}
                           itemToString={(item: typeof addPluginItems[number] | null) => {
@@ -2021,7 +2174,7 @@ function FlowTableSection({
         </>
       ) : (
         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--cds-text-secondary)', background: 'var(--cds-layer-01)' }}>
-          No chain assigned — select a chain from the dropdown above.
+          No runtime chain assigned. Select a runtime chain from the dropdown above.
         </div>
       )}
     </div>

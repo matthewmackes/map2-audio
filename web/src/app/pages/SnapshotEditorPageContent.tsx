@@ -97,7 +97,7 @@ import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
-import { getEffectIcon, getEffectIconSpec } from '../components/icons/effectIcons'
+import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/ParameterControl'
@@ -116,6 +116,7 @@ import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/Sna
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
+import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
 import {
   JuceGridRoutingVisualizer,
@@ -130,7 +131,6 @@ import {
   buildJuceGridRevertedStateFromLiveProjection,
   getJuceGridDesiredLiveChainIds,
   hasJuceGridLiveChainMismatch,
-  type JuceGridLiveChainProjection,
 } from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
   createDefaultJuceGridFlowSlots,
@@ -307,22 +307,6 @@ function getSelectedPluginHeroIcon(meta: Plugin | null, plugin: Chain['plugins']
   return getEffectIcon('plugin')
 }
 
-function getLiveChainRepresentativeAccessibleLabel(
-  item: JuceGridLiveChainProjection['representativeItems'][number],
-): string {
-  return item.caption ? `${item.label} · ${item.caption}` : item.label
-}
-
-function getLiveChainRepresentativeIcon(
-  item: JuceGridLiveChainProjection['representativeItems'][number],
-) {
-  const iconSpec = getEffectIconSpec(item.iconHint)
-  if (iconSpec.matched) {
-    return iconSpec
-  }
-  return getEffectIconSpec(item.kind === 'loop' ? 'rack' : 'plugin')
-}
-
 function getAudioRouteLabels(
   selectedPorts: number[] | undefined,
   ports: AudioPort[] | undefined,
@@ -400,27 +384,6 @@ function getLivePathBranchLabel(
   }
 
   return flowState.annotation
-}
-
-function formatLiveChainRuntimeLabel(runtimeStatus: JuceGridLiveChainProjection['runtimeStatus']): string {
-  switch (runtimeStatus) {
-    case 'active':
-      return 'Runtime active'
-    case 'partial':
-      return 'Runtime partial'
-    case 'capability_gap':
-      return 'Capability gap'
-    case 'missing':
-      return 'Runtime unavailable'
-    case 'inactive':
-      return 'Inactive'
-    default:
-      return runtimeStatus.replace(/_/g, ' ')
-  }
-}
-
-function getLiveChainStatusTagType(projection: JuceGridLiveChainProjection): 'green' | 'warm-gray' {
-  return projection.status === 'live' ? 'green' : 'warm-gray'
 }
 
 // ============================================================================
@@ -849,6 +812,7 @@ export function SnapshotEditorPage() {
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
+  const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
   const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
   const [branchPageByFlowId, setBranchPageByFlowId] = useState<Record<string, number>>({})
@@ -1319,16 +1283,6 @@ export function SnapshotEditorPage() {
   )
   const liveChainProjectionOverflow = liveChainProjection.length > MAX_FLOWS
   const showLiveChainSummaryOnly = isCompactLayout || isTabletTouchLayout
-  const liveChainCounts = useMemo(() => (
-    liveChainProjection.reduce((summary, projection) => {
-      if (projection.status === 'live') {
-        summary.live += 1
-      } else {
-        summary.degraded += 1
-      }
-      return summary
-    }, { live: 0, degraded: 0 })
-  ), [liveChainProjection])
   const armedAutomationLane = useMemo(
     () => automationLanes.find((lane) => lane.armed) ?? null,
     [automationLanes],
@@ -3935,6 +3889,7 @@ export function SnapshotEditorPage() {
             else if (presetPendingDelete) setPresetPendingDelete(null)
             else if (showClearFlowsModal) setShowClearFlowsModal(false)
             else if (snapshotsModalOpen) setSnapshotsModalOpen(false)
+            else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
           else if (midiModalOpen) setMidiModalOpen(false)
           else if (routingInspectorId) setRoutingInspectorId(null)
         }
@@ -4051,6 +4006,7 @@ export function SnapshotEditorPage() {
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
         else if (snapshotsModalOpen) setSnapshotsModalOpen(false)
+        else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
         else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
         else if (showPluginBrowser) setShowPluginBrowser(false)
@@ -4070,7 +4026,7 @@ export function SnapshotEditorPage() {
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, snapshotsModalOpen, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, snapshotsModalOpen, showLiveRuntimeModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, setSelectedPluginSelection,
   ])
@@ -4693,6 +4649,10 @@ export function SnapshotEditorPage() {
                     flipped
                   >
                     <OverflowMenuItem
+                      itemText="Live paths"
+                      onClick={() => setShowLiveRuntimeModal(true)}
+                    />
+                    <OverflowMenuItem
                       itemText="Reset paths"
                       onClick={() => setShowClearFlowsModal(true)}
                       disabled={flowSlots.length <= 1}
@@ -4746,6 +4706,9 @@ export function SnapshotEditorPage() {
               </div>
               {!isTabletTouchLayout && (
                 <div className="juce-grid-page__masthead-secondary-actions">
+                  <Button size="sm" kind="ghost" onClick={() => setShowLiveRuntimeModal(true)}>
+                    Live paths
+                  </Button>
                   {!isCompactLayout && (
                     <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
                       Shortcuts
@@ -4758,6 +4721,7 @@ export function SnapshotEditorPage() {
                       size="sm"
                       flipped
                     >
+                      <OverflowMenuItem itemText="Live paths" onClick={() => setShowLiveRuntimeModal(true)} />
                       <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
                     </OverflowMenu>
                   )}
@@ -4786,156 +4750,6 @@ export function SnapshotEditorPage() {
       )}
 
       <section className="juce-grid-page__signal-flow-shell" aria-label="Signal flow workspace">
-        <Layer className="juce-grid-page__live-chain-panel" data-testid="juce-grid-live-chain-panel">
-          <div className="juce-grid-page__live-chain-panel-header">
-            <div className="juce-grid-page__live-chain-panel-copy">
-              <p className="juce-grid-page__live-chain-panel-kicker">Backend truth</p>
-              <h2>Live chains</h2>
-              <p>
-                {liveChainProjection.length > 0
-                  ? 'Read-only live chain inventory sourced from backend runtime truth. The editor below can diverge until you update or revert it.'
-                  : 'No live or degraded chains are currently reported by the backend runtime.'}
-              </p>
-            </div>
-            <div className="juce-grid-page__live-chain-panel-tags">
-              <Tag type="green">{liveChainCounts.live} live</Tag>
-              {liveChainCounts.degraded > 0 && (
-                <Tag type="warm-gray">{liveChainCounts.degraded} degraded</Tag>
-              )}
-              <Tag type="cool-gray">{showLiveChainSummaryOnly ? 'Summary mode' : 'Miniature signal view'}</Tag>
-            </div>
-          </div>
-
-          {liveChainMismatch && (
-            <div className="juce-grid-page__live-chain-mismatch-banner">
-              <div className="juce-grid-page__live-chain-mismatch-copy">
-                <p className="juce-grid-page__live-chain-panel-kicker">Editor mismatch</p>
-                <h3>Local editor and backend live truth diverge</h3>
-                <p>
-                  {liveChainProjectionOverflow
-                    ? 'Backend live truth currently exceeds the editor flow capacity. Update Live remains available, but Revert Editor is disabled until the live chain count drops.'
-                    : 'Update Live pushes the editor chain set into the platform. Revert Editor rebuilds the local flow assignments from the current backend live truth.'}
-                </p>
-              </div>
-              <div className="juce-grid-page__live-chain-mismatch-actions">
-                <Button
-                  size="sm"
-                  kind="primary"
-                  renderIcon={Renew}
-                  onClick={handleUpdateLiveChains}
-                  disabled={updateLiveChainsMutation.isPending}
-                >
-                  Update Live
-                </Button>
-                <Button
-                  size="sm"
-                  kind="secondary"
-                  renderIcon={ArrowLeft}
-                  onClick={handleRevertEditorToLive}
-                  disabled={updateLiveChainsMutation.isPending || liveChainProjectionOverflow}
-                >
-                  Revert Editor
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {liveChainProjection.length === 0 ? (
-            <div className="juce-grid-page__live-chain-empty">
-              <p>No backend-live chains currently reported.</p>
-            </div>
-          ) : showLiveChainSummaryOnly ? (
-            <div className="juce-grid-page__live-chain-summary-list" aria-label="Live chains summary">
-              {liveChainProjection.map((projection) => (
-                <article
-                  key={`summary-${projection.chainId}`}
-                  className={`juce-grid-page__live-chain-summary-item is-${projection.status}`}
-                >
-                  <div className="juce-grid-page__live-chain-summary-main">
-                    <span className="juce-grid-page__live-chain-summary-flow">{projection.flowLabels.join('+')}</span>
-                    <strong>{projection.chainName}</strong>
-                  </div>
-                  <div className="juce-grid-page__live-chain-summary-tags">
-                    <Tag type={getLiveChainStatusTagType(projection)}>
-                      {projection.status === 'live' ? 'Live' : 'Degraded'}
-                    </Tag>
-                    {projection.syntheticFlow && <Tag type="cool-gray">Live-only</Tag>}
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="juce-grid-page__live-chain-rows" aria-label="Live chains truth rows">
-              {liveChainProjection.map((projection) => (
-                <article
-                  key={`live-chain-${projection.chainId}`}
-                  className={`juce-grid-page__live-chain-row is-${projection.status}`}
-                  data-testid={`juce-grid-live-chain-${projection.chainId}`}
-                >
-                  <div className="juce-grid-page__live-chain-row-header">
-                    <div className="juce-grid-page__live-chain-row-copy">
-                      <div className="juce-grid-page__live-chain-row-title">
-                        <span className="juce-grid-page__live-chain-row-flow">{projection.flowLabels.join('+')}</span>
-                        <strong>{projection.chainName}</strong>
-                      </div>
-                      <p>
-                        {projection.syntheticFlow ? 'Live-only lane' : 'Assigned flow'}
-                        {' · '}
-                        {formatLiveChainRuntimeLabel(projection.runtimeStatus)}
-                      </p>
-                    </div>
-                    <div className="juce-grid-page__live-chain-row-tags">
-                      <Tag type={getLiveChainStatusTagType(projection)}>
-                        {projection.status === 'live' ? 'Live' : 'Degraded'}
-                      </Tag>
-                      {projection.syntheticFlow && <Tag type="cool-gray">Live-only</Tag>}
-                    </div>
-                  </div>
-
-                  {projection.warningText && (
-                    <p className="juce-grid-page__live-chain-row-warning">{projection.warningText}</p>
-                  )}
-
-                  <div className="juce-grid-page__live-chain-miniature" aria-label={`${projection.chainName} signal chain`}>
-                    {projection.representativeItems.length > 0 ? projection.representativeItems.map((item, index) => (
-                      (() => {
-                        const iconSpec = getLiveChainRepresentativeIcon(item)
-                        const Icon = iconSpec.component
-                        const accessibleLabel = getLiveChainRepresentativeAccessibleLabel(item)
-
-                        return (
-                          <div
-                            key={`${projection.chainId}-${item.id}`}
-                            className={`juce-grid-page__live-chain-miniature-item is-${item.kind} ${item.dimmed ? 'is-dimmed' : ''}`}
-                          >
-                            <div
-                              className={`juce-grid-page__live-chain-miniature-chip is-${iconSpec.tone}`}
-                              title={accessibleLabel}
-                              aria-label={accessibleLabel}
-                            >
-                              <span
-                                className={`juce-grid-page__live-chain-miniature-icon is-${iconSpec.tone}`}
-                                aria-hidden="true"
-                              >
-                                <Icon />
-                              </span>
-                              <span className="juce-grid-page__live-chain-miniature-label">{item.label}</span>
-                            </div>
-                            {index < projection.representativeItems.length - 1 && (
-                              <ArrowRight size={12} className="juce-grid-page__live-chain-miniature-arrow" aria-hidden />
-                            )}
-                          </div>
-                        )
-                      })()
-                    )) : (
-                      <span className="juce-grid-page__live-chain-miniature-empty">No blocks</span>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </Layer>
 
         <div className="juce-grid-page__unified-block">
           <SnapshotChainManagementCard
@@ -6214,6 +6028,20 @@ export function SnapshotEditorPage() {
           onClose={() => setShowAudioNodesModal(false)}
         />
       )}
+
+      {showLiveRuntimeModal ? (
+        <LiveRuntimePathsModal
+          open={showLiveRuntimeModal}
+          onClose={() => setShowLiveRuntimeModal(false)}
+          projections={liveChainProjection}
+          summaryOnly={showLiveChainSummaryOnly}
+          mismatch={liveChainMismatch}
+          overflow={liveChainProjectionOverflow}
+          onUpdateLive={handleUpdateLiveChains}
+          onRevertToLive={handleRevertEditorToLive}
+          updatePending={updateLiveChainsMutation.isPending}
+        />
+      ) : null}
 
       {/* Routing Topology Modal */}
       <RoutingTopologyModal

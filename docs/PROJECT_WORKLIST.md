@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 19:26 EDT - T547-subD3 completed after removing deprecated flow-snapshot route aliases and capturing the next legacy bridge follow-up
+Last updated: 2026-03-29 20:08 EDT - T547-subD4 implementation landed for Snapshot Editor modal extraction and Audio Table live-path launcher/copy pass; focused regression hardening is next
 
 ID: T547
 Status: [>] In Progress
@@ -164,6 +164,71 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-29 19:26 EDT - Codex
+
+ID: T547-subD4
+Status: [✓] Done
+Title: Move backend-truth runtime inventory into a modal and finish Audio Table path-first wording
+Description:
+- Goal / acceptance criteria: Replace the inline Snapshot Editor backend-truth live-chain panel with a reusable modal surface, add a launcher for that modal inside Audio Table, and update Audio Table operator-facing copy from flow/chain-era wording to the current path-first model wherever the snapshot model is authoritative. Keep truly runtime-bound concepts explicit, preserve the existing backend-live reconciliation actions, and update focused frontend coverage.
+- Why it matters: Backend runtime truth is valuable, but the always-open panel consumes prime editor space and Audio Table still teaches operators the old flow/chain mental model even after the rest of the snapshot workspace moved to paths.
+- Dependencies: T547-subD3
+- Estimated effort: Medium
+- Required outputs: shared runtime-truth modal component, Snapshot Editor/Audio Table launcher wiring, Audio Table copy updates, focused validation, and worklist/licensing notes.
+- Completion notes:
+  - Replaced the always-open Snapshot Editor backend-truth panel with a reusable `LiveRuntimePathsModal`, then added Snapshot Editor masthead/overflow launchers and an Audio Table toolbar launcher for the same modal surface.
+  - Updated Audio Table operator-facing copy to path-first wording while retaining explicit `runtime chain` language for backend-runtime objects and live activation actions.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Subtasks:
+ID: T547-subD4a
+Status: [✓] Done
+Title: Extract Snapshot Editor backend-truth inventory into a reusable modal
+Description:
+- Goal / acceptance criteria: Move the inline Snapshot Editor backend-truth live runtime inventory into a reusable modal component, preserve the existing reconciliation actions and backend-live summary/detail affordances, and replace the inline panel with a focused launcher entry point.
+- Why it matters: The always-open runtime truth panel consumes prime snapshot editing space and blocks reuse in other operator surfaces.
+- Dependencies: T547-subD4
+- Estimated effort: Medium
+- Required outputs: shared modal component, Snapshot Editor launcher wiring, focused validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 20:08 EDT - Codex
+- Completion notes:
+  - Added reusable `LiveRuntimePathsModal` and removed the always-open backend-truth inventory panel from the Snapshot Editor workspace.
+  - Wired Snapshot Editor masthead and overflow entry points to open the shared modal while preserving backend-live update/revert actions inside that modal.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T547-subD4b
+Status: [✓] Done
+Title: Add Audio Table runtime-truth launcher and path-first operator wording
+Description:
+- Goal / acceptance criteria: Wire the shared runtime-truth modal into Audio Table and update Audio Table operator-facing copy from flow/chain language to path-first wording wherever the snapshot model is authoritative, while keeping runtime-bound chain concepts explicit where needed.
+- Why it matters: Audio Table still exposes old mental-model copy and lacks parity with the runtime-truth tools available from the editor.
+- Dependencies: T547-subD4a
+- Estimated effort: Medium
+- Required outputs: Audio Table launcher wiring, path-first copy updates, focused validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 20:08 EDT - Codex
+- Completion notes:
+  - Added the shared `LiveRuntimePathsModal` launcher to the Audio Table toolbar and wired live-path update/revert actions through the existing runtime chain activation APIs.
+  - Shifted Audio Table operator copy to `Path` terminology where snapshot-local state is authoritative while keeping runtime-bound `runtime chain` wording explicit for backend objects.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T547-subD4c
+Status: [✓] Done
+Title: Lock modal extraction and wording changes with focused regression coverage
+Description:
+- Goal / acceptance criteria: Add or update focused tests for the shared runtime-truth modal and the revised Snapshot Editor / Audio Table wording so the modal extraction and path-first copy do not regress.
+- Why it matters: This refactor moves a dense operator surface and renames high-traffic copy; focused coverage is required before the next snapshot-first cleanup slice begins.
+- Dependencies: T547-subD4b
+- Estimated effort: Low
+- Required outputs: focused frontend tests, final worklist notes, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 20:15 EDT - Codex
+- Completion notes:
+  - Added a dedicated `LiveRuntimePathsModal.test.tsx` harness to lock the backend-truth modal’s live inventory, mismatch actions, and empty state.
+  - Updated `AudioTablePage.test.tsx` for the path-first wording, runtime-chain copy, modal launcher flow, and the required `ResizeObserver` setup for Carbon modal rendering.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` -> PASS.
 
 ID: T546
 Status: [✓] Done
