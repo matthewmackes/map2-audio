@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import { SynthForgePage } from './SynthForgePage'
 
+const mockNavigate = jest.fn()
 const mockListSoundfonts = jest.fn()
 const mockGetPresets = jest.fn()
 const mockGetParts = jest.fn()
@@ -13,6 +14,15 @@ const mockGetVoices = jest.fn()
 const mockGetSfzStatus = jest.fn()
 const mockGetPerformance = jest.fn()
 const mockGetPatches = jest.fn()
+const mockSynthForgeCard = jest.fn()
+
+jest.mock('react-router-dom', () => {
+  const actual = jest.requireActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
 
 jest.mock('@/app/components/PageHeader', () => ({
   PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
@@ -47,6 +57,13 @@ jest.mock('@/app/components/ParameterControl', () => ({
       />
     </label>
   ),
+}))
+
+jest.mock('@/app/components/PluginCards/Custom/JUCE/SynthForgeCard', () => ({
+  SynthForgeCard: (props: any) => {
+    mockSynthForgeCard(props)
+    return <div data-testid="synthforge-card" />
+  },
 }))
 
 jest.mock('@/app/components/PluginCards/Base/CarbonParameterSection', () => ({
@@ -300,6 +317,8 @@ function renderPage() {
 
 describe('SynthForgePage', () => {
   beforeEach(() => {
+    mockNavigate.mockReset()
+    mockSynthForgeCard.mockReset()
     mockListSoundfonts.mockReset()
     mockGetPresets.mockReset()
     mockGetParts.mockReset()
@@ -310,17 +329,15 @@ describe('SynthForgePage', () => {
     primeApi()
   })
 
-  it('renders the standalone SynthForge workspace and reflects API state across tabs', async () => {
+  it('renders the standalone SynthForge workspace with a grid breadcrumb and full card mode', async () => {
     renderPage()
 
     expect(screen.getAllByRole('heading', { name: 'SynthForge' })[0]).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /open audio grid/i })).toBeInTheDocument()
-    expect(await screen.findByText('Studio Grand')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /back to audio grid/i })).toBeInTheDocument()
+    expect(screen.getByTestId('synthforge-card')).toBeInTheDocument()
+    expect(mockSynthForgeCard.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ compact: false }))
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Engine' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Sampler Backend')).toBeInTheDocument()
-    })
+    fireEvent.click(screen.getByRole('button', { name: /back to audio grid/i }))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/juce-grid'))
   })
 })

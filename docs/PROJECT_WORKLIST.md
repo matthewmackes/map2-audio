@@ -9423,7 +9423,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-28
 
 ID: T522
-Status: [ ] Todo
+Status: [✓] Done
 Title: Compact instrument cards for JUCE Grid — SynthForgeCard compact/full mode split
 Description:
 - Goal / acceptance criteria: Refactor SynthForgeCard to support compact vs full rendering. When `compact=true` (grid context): show only a Level knob, a status line ("patch name · N voices" from analyzer WebSocket), and a Launch button navigating to `/synth-forge` using PluginCardShell. When `compact=false` (SynthForgePage context): render the full 5-tab workstation (current behavior). The card already accepts a `compact` prop from PluginCardProps.
@@ -9432,11 +9432,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: SynthForgeCard with compact/full mode; existing tests updated; typecheck + build pass.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-28
+Assigned to: Codex
+Last updated: 2026-03-28 22:10 EDT - Codex
+- Completion notes:
+  - Refactored `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx` to split compact and full rendering: compact mode now uses `PluginCardShell` with a launch affordance into `/synth-forge`, a single Level knob, and a concise `patch name · N voices` footer fed by the existing analyzer/status queries, while `compact=false` preserves the full five-tab workstation.
+  - Added focused regression coverage in `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx` for the compact status card, level control, and full-page launch behavior without regressing the workstation flow.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx src/app/pages/SynthForgePage.test.tsx` -> PASS (`3 passed`); `npm --prefix web run build` -> PASS.
 
 ID: T523
-Status: [ ] Todo
+Status: [✓] Done
 Title: Compact instrument cards for JUCE Grid — SynthForgePage breadcrumb and compact=false
 Description:
 - Goal / acceptance criteria: Update SynthForgePage to pass `compact={false}` to SynthForgeCard so the full workstation renders. Replace the "Open Audio Grid" PageHeader action button with a "Back to Audio Grid" breadcrumb using ArrowLeft icon navigating to `/juce-grid`.
@@ -9445,8 +9450,13 @@ Description:
 - Estimated effort: Small
 - Required outputs: Updated SynthForgePage; typecheck pass.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-28
+Assigned to: Codex
+Last updated: 2026-03-28 22:10 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/SynthForgePage.tsx` so the standalone page explicitly renders `SynthForgeCard` with `compact={false}` and swaps the old launch action for a `Back to Audio Grid` breadcrumb button using the `ArrowLeft` icon.
+  - Added `web/src/app/pages/SynthForgePage.test.tsx` assertions covering the breadcrumb label, explicit full-card prop wiring, and the `/juce-grid` navigation callback.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx src/app/pages/SynthForgePage.test.tsx` -> PASS (`3 passed`); `npm --prefix web run build` -> PASS.
 
 ID: T524
 Status: [ ] Todo

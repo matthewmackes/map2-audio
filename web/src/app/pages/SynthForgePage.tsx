@@ -1,4 +1,4 @@
-import { Launch, Waveform } from '@carbon/icons-react'
+import { ArrowLeft, Waveform } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -37,8 +37,8 @@ export function SynthForgePage() {
         subtitle="Sampler, SoundFont, and multitimbral synthesis workspace with the full five-tab workstation flow."
         icon={<Waveform size={24} />}
         actions={(
-          <Button kind="secondary" size="sm" renderIcon={Launch} onClick={() => navigate('/juce-grid')}>
-            Open Audio Grid
+          <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={() => navigate('/juce-grid')}>
+            Back to Audio Grid
           </Button>
         )}
       />
@@ -50,6 +50,7 @@ export function SynthForgePage() {
           onParameterChange={() => undefined}
           onParameterChangeEnd={() => undefined}
           accentColor="#38d6c4"
+          compact={false}
         />
       </div>
     </section>

@@ -26,6 +26,20 @@ jest.mock('../../Layouts/InstrumentCategoryLayout', () => ({
 }))
 
 jest.mock('../../../ParameterControl', () => ({
+  ParameterKnob: ({ label, value, onChange }: any) => (
+    <label>
+      {label}
+      <input
+        aria-label={label}
+        type="range"
+        value={value}
+        min={0}
+        max={1}
+        step={0.01}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
+  ),
   NumberInput: ({ label, value, onChange }: any) => (
     <label>
       {label}
@@ -36,6 +50,17 @@ jest.mock('../../../ParameterControl', () => ({
         onChange={(event) => onChange(Number(event.target.value))}
       />
     </label>
+  ),
+}))
+
+jest.mock('../../Base/PluginCardShell', () => ({
+  PluginCardShell: ({ plugin, visualization, children, footer, onLaunch }: any) => (
+    <section aria-label={`${plugin.name} compact shell`}>
+      {onLaunch ? <button onClick={onLaunch}>Open Full Editor</button> : null}
+      <div>{visualization}</div>
+      <div>{children}</div>
+      <div>{footer}</div>
+    </section>
   ),
 }))
 
@@ -245,7 +270,7 @@ function primeApi() {
   mockLoadSoundFont.mockResolvedValue({ status: 'ok', part_index: 0 })
 }
 
-function renderCard() {
+function renderCard(props: Partial<React.ComponentProps<typeof SynthForgeCard>> = {}) {
   return render(
     <QueryClientProvider client={makeClient()}>
       <SynthForgeCard
@@ -253,6 +278,7 @@ function renderCard() {
         parameterValues={{}}
         onParameterChange={jest.fn()}
         accentColor="#38d6c4"
+        {...props}
       />
     </QueryClientProvider>,
   )
@@ -296,5 +322,18 @@ describe('SynthForgeCard', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Play' }))
     expect(await screen.findByText('Performance Keyboard')).toBeInTheDocument()
+  })
+
+  it('renders a compact status card with level control and launches the full page', async () => {
+    window.history.pushState({}, '', '/juce-grid')
+
+    renderCard({ compact: true })
+
+    expect(await screen.findByText('Studio Grand · 7 voices')).toBeInTheDocument()
+    expect(screen.getByLabelText('Level')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Full Editor' }))
+
+    expect(window.location.pathname).toBe('/synth-forge')
   })
 })

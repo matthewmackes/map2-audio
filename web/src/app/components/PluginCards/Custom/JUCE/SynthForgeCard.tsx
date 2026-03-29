@@ -19,9 +19,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { InlineLoading, Tab, TabList, Tabs, Tag } from '@carbon/react'
 
+import { PluginCardShell } from '../../Base/PluginCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/InstrumentCategoryLayout'
-import { NumberInput } from '../../../ParameterControl'
+import { NumberInput, ParameterKnob } from '../../../ParameterControl'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import {
@@ -42,6 +43,15 @@ import type { SoundFont } from '../../../../types/library'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../../map2/hooks/useWebSocket'
 
 const SYNTHFORGE_URI = 'map2://juce/synthforge'
+
+function navigateToSynthForge() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.history.pushState({}, '', '/synth-forge')
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
 
 const PARAM = {
   TRANSPOSE: 0,
@@ -1932,6 +1942,55 @@ function SynthForgeCardBase({
         : null}
     </div>
   )
+
+  if (compact) {
+    const compactStatusLine = `${loadedDisplayName} · ${analyzerFrame?.active_voices ?? activeVoiceCount} voices`
+    const compactVisualization = (
+      <div style={S.hero}>
+        <div style={S.heroCopy}>
+          <span style={S.eyebrow}>SynthForge workstation</span>
+          <div style={S.heroTitleRow}>
+            <h3 style={{ ...S.heroTitle, fontSize: '1.4rem' }}>SynthForge</h3>
+            <Tag type={statusQuery.data?.engine_available ? 'green' : 'red'}>
+              {statusQuery.data?.engine_available ? 'Ready' : 'Offline'}
+            </Tag>
+          </div>
+          <p style={{ ...S.heroSub, margin: 0 }}>
+            Part {activePart + 1} on CH {partChannel} routed to {currentPart.output_bus}.
+          </p>
+        </div>
+      </div>
+    )
+
+    return (
+      <PluginCardShell
+        plugin={plugin}
+        accentColor={accentColor}
+        compact
+        bypassed={Boolean(plugin.bypassed)}
+        onBypassToggle={onBypassToggle}
+        onLaunch={navigateToSynthForge}
+        visualization={compactVisualization}
+        footer={<div style={S.footerStatus}><span>{compactStatusLine}</span></div>}
+        showPresetControls={false}
+        showMoreMenu={false}
+      >
+        <div style={{ display: 'grid', justifyItems: 'center' }}>
+          <ParameterKnob
+            label="Level"
+            ariaLabel="Level"
+            value={currentPart.level}
+            min={0}
+            max={1}
+            step={0.01}
+            onChange={(value) => updatePartConfig({ level: value })}
+            size="small"
+            accentColor={accentColor}
+          />
+        </div>
+      </PluginCardShell>
+    )
+  }
 
   return (
     <InstrumentCategoryLayout
