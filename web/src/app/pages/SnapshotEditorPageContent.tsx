@@ -120,7 +120,7 @@ import {
   type JuceGridRoutingMarkerId,
 } from '../components/JuceGrid/JuceGridRoutingVisualizer'
 import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/JuceGrid/JuceGridSignalCanvas'
-import { buildJuceGridLivePath } from '../components/JuceGrid/juceGridLivePath'
+import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
   applyOptimisticJuceGridLiveChainSet,
   buildJuceGridLiveChainProjection,
@@ -128,7 +128,7 @@ import {
   getJuceGridDesiredLiveChainIds,
   hasJuceGridLiveChainMismatch,
   type JuceGridLiveChainProjection,
-} from '../components/JuceGrid/juceGridLiveChains'
+} from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
@@ -137,7 +137,7 @@ import {
 import type { JuceGridRoutingState } from '../components/JuceGrid/juceGridState'
 import {
   fingerprintSnapshotData,
-} from '../components/JuceGrid/juceGridSnapshots'
+} from '../components/SnapshotEditor/snapshotEditorComparison'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'

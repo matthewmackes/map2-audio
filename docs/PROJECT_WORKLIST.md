@@ -9813,7 +9813,7 @@ Last updated: 2026-03-29 12:05 EDT - Codex
   - Updated `web/src/app/pages/SnapshotEditorPage.tsx` and `web/src/app/pages/SnapshotEditorPage.test.tsx` so the `/snapshot-editor` route now resolves through the canonical `SnapshotEditorPageContent` module instead of the legacy JUCE Grid filename.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS.
 ID: T544-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Move shared snapshot comparison and live-chain ownership into canonical SnapshotEditor modules
 Description:
 - Goal / acceptance criteria: Retire `JuceGrid` ownership for the shared snapshot comparison/live-chain helpers by moving the implementation into `SnapshotEditor` modules and updating the remaining callers to use the canonical surface.
@@ -9823,9 +9823,14 @@ Description:
 - Required outputs: canonical helper owners, compatibility re-exports only where still needed, and focused frontend validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 12:05 EDT - Codex
+Last updated: 2026-03-29 12:10 EDT - Codex
+- Completion notes:
+  - Moved the shared live-chain projection owner into `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`, restored its canonical `SnapshotEditor*` aliases in-place, and reintroduced `web/src/app/components/JuceGrid/juceGridLiveChains.ts` as a thin compatibility re-export.
+  - Moved the shared snapshot comparison owner into `web/src/app/components/SnapshotEditor/snapshotEditorComparison.ts` and the live-path owner into `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts`, then restored the matching `web/src/app/components/JuceGrid/juceGridSnapshots.ts` and `web/src/app/components/JuceGrid/juceGridLivePath.ts` compatibility re-exports.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/snapshots/SnapshotModalContent.tsx` so the canonical snapshot-editor surface no longer imports shared helper ownership from legacy `JuceGrid` filenames.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS.
 ID: T544-subC
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Move remaining ChainGraph and SignalPath ownership, then close the epic documentation
 Description:
 - Goal / acceptance criteria: Move remaining `ChainFlow*`/`*Flow*` compatibility owners into `ChainGraph*` and `*SignalPath*` files where safe, then refresh the final E-SNAP documentation/worklist notes so `T541`, `T542`, and `T544` can close together.
@@ -9835,8 +9840,8 @@ Description:
 - Required outputs: canonical graph/signal-path owners, final doc/worklist updates, and final build/test evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 12:05 EDT - Codex
+Last updated: 2026-03-29 12:10 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-03-29 12:01 EDT - Codex
+Last updated: 2026-03-29 12:10 EDT - Codex
 - Progress notes:
   - Split the remaining legacy-filename retirement into three commit-sized release bundles (`T544-subA` through `T544-subC`) so the requested commit/push/rebuild/restart loop can happen after each bundle without losing worklist fidelity.
