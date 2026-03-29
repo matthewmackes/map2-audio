@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**852** Python | **985** TypeScript | **131** C++/H | **128** Docs | **1043** total commits | **3** stars | **0** forks | **0** open issues
+**852** Python | **985** TypeScript | **131** C++/H | **128** Docs | **1045** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0febbc70`](https://github.com/matthewmackes/map2-audio/commit/0febbc70fd9ed706c849a0ae97e85fbf9c5e0038) | Clean up snapshot query surfaces and path wording | Map2 Audio | 2026-03-29 |
+| [`aebcb712`](https://github.com/matthewmackes/map2-audio/commit/aebcb7120f782947456f46f715eada15b0dc45f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`303c09ef`](https://github.com/matthewmackes/map2-audio/commit/303c09efaecd0b7eb0a90db8d82d2be1a178e926) | Migrate snapshot editor live gate to snapshot-first APIs | Map2 Audio | 2026-03-29 |
 | [`8629da53`](https://github.com/matthewmackes/map2-audio/commit/8629da531b2e606e3a1be57cca116881d813efe5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`e81de403`](https://github.com/matthewmackes/map2-audio/commit/e81de4037ef12f37395056f3e3ebbe306abf08de) | Implement snapshot-first snapshot contract and modal cutover | Map2 Audio | 2026-03-29 |
 | [`d92f677e`](https://github.com/matthewmackes/map2-audio/commit/d92f677ea4441d6fe8b3d37590b3f3b4e5eeea9b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`7aaa505a`](https://github.com/matthewmackes/map2-audio/commit/7aaa505a1753c5c92b5b595389f56f1ac0f2d48b) | Finish snapshot editor entry gate wizard | Map2 Audio | 2026-03-29 |
 | [`b4482057`](https://github.com/matthewmackes/map2-audio/commit/b448205766775aa671a25e413f1fb4ce0d5833ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
-| [`832c6791`](https://github.com/matthewmackes/map2-audio/commit/832c67913412ac6258166322fbc8e72a8355bdca) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-29 |
-| [`0f09732c`](https://github.com/matthewmackes/map2-audio/commit/0f09732cce8fa26720b75157dcbe252b553583e4) | Add snapshot entry-point wizard shell | Map2 Audio | 2026-03-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
