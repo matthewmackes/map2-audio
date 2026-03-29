@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 20:08 EDT - T547-subD4 implementation landed for Snapshot Editor modal extraction and Audio Table live-path launcher/copy pass; focused regression hardening is next
+Last updated: 2026-03-29 20:15 EDT - T547-subD4 completed with shared backend-truth modal extraction, Audio Table live-path launcher/path-first copy, focused frontend regression coverage, and licensing audit notes
 
 ID: T547
 Status: [>] In Progress
@@ -178,6 +178,7 @@ Description:
   - Replaced the always-open Snapshot Editor backend-truth panel with a reusable `LiveRuntimePathsModal`, then added Snapshot Editor masthead/overflow launchers and an Audio Table toolbar launcher for the same modal surface.
   - Updated Audio Table operator-facing copy to path-first wording while retaining explicit `runtime chain` language for backend-runtime objects and live activation actions.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gaps requiring follow-up work.
 Subtasks:
 ID: T547-subD4a
 Status: [✓] Done
