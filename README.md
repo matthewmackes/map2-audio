@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1011** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1013** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -190,7 +190,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3b71fd09`](https://github.com/matthewmackes/map2-audio/commit/3b71fd099e6ad00dc02eb2f6296c6ed669c329ff) | Show loader asset metadata on scoped cards | Map2 Audio | 2026-03-28 |
+| [`e0818a21`](https://github.com/matthewmackes/map2-audio/commit/e0818a21b13e62b2817789ccc473c0fbdca2b3da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`bb8d465a`](https://github.com/matthewmackes/map2-audio/commit/bb8d465adf42e26c2c16c78202e34f0f5d1ac8ce) | Show configured loader state in scoped UI | Map2 Audio | 2026-03-28 |
 | [`e1e08b74`](https://github.com/matthewmackes/map2-audio/commit/e1e08b7495b0d1781b3ad16d4b0b1aa88ad93c18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`c3eb44ce`](https://github.com/matthewmackes/map2-audio/commit/c3eb44cefaa7eef2f1cec09a7e9c0d4de1045552) | Refresh web version after snapshot loader updates | Map2 Audio | 2026-03-28 |
 | [`22e99ff7`](https://github.com/matthewmackes/map2-audio/commit/22e99ff7a4890de085986c3b6b57be73971cacb1) | Preserve loader state in flow snapshots | Map2 Audio | 2026-03-28 |
 | [`8d372fde`](https://github.com/matthewmackes/map2-audio/commit/8d372fde877d580637014ae3120452511cf76dfa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`ce3febc8`](https://github.com/matthewmackes/map2-audio/commit/ce3febc862ec1f7a3d36b4184061d1dd4296e2ff) | Sync scoped NAM and IR route state | Map2 Audio | 2026-03-28 |
-| [`e8a43953`](https://github.com/matthewmackes/map2-audio/commit/e8a439534fe0768a3fcebd58306c36639c9a1af7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
-| [`5851ab4a`](https://github.com/matthewmackes/map2-audio/commit/5851ab4aca83d3049ea362304ca4c242d45cd0cf) | Restore persisted loader state during chain activation | Map2 Audio | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
