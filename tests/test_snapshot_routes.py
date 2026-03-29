@@ -180,3 +180,9 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert failover["deployment"]["primary_node_id"] == "node-b"
 
     asyncio.run(_run())
+
+    registered_paths = {route.path for route in routes.router.routes}
+    assert "/api/snapshots" in registered_paths
+    assert "/api/snapshots/{snapshot_id}" in registered_paths
+    assert "/api/snapshots/{snapshot_id}/activate" in registered_paths
+    assert not any(path.startswith("/api/flow-snapshots") for path in registered_paths)

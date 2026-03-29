@@ -1,12 +1,4 @@
-"""
-Unified snapshot API routes.
-
-Primary surface:
-- /api/snapshots/*
-
-Compatibility surface during cutover:
-- /api/flow-snapshots/*
-"""
+"""Unified snapshot API routes."""
 
 from __future__ import annotations
 
@@ -15,9 +7,8 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select
 
-from app.database import Snapshot, get_session
+from app.database import get_session
 from app.services.snapshot_service import SnapshotService, UNSET
 
 logger = logging.getLogger(__name__)
@@ -278,7 +269,6 @@ def _translate_value_error(exc: ValueError) -> None:
 
 
 @router.get("/api/snapshots")
-@router.get("/api/flow-snapshots")
 async def list_snapshots() -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -312,7 +302,6 @@ async def get_live_snapshot() -> dict[str, Any]:
 
 
 @router.get("/api/snapshots/{snapshot_id}")
-@router.get("/api/flow-snapshots/{snapshot_id}")
 async def get_snapshot(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -348,7 +337,6 @@ async def open_snapshot_draft(snapshot_id: int) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots")
-@router.post("/api/flow-snapshots")
 async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -378,7 +366,6 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
 
 
 @router.patch("/api/snapshots/{snapshot_id}")
-@router.patch("/api/flow-snapshots/{snapshot_id}")
 async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> dict[str, Any]:
     try:
         detail_payload = _detail_payload_from_request(request)
@@ -416,7 +403,6 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
 
 
 @router.delete("/api/snapshots/{snapshot_id}")
-@router.delete("/api/flow-snapshots/{snapshot_id}")
 async def delete_snapshot(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -436,7 +422,6 @@ async def delete_snapshot(snapshot_id: int) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots/{snapshot_id}/activate")
-@router.post("/api/flow-snapshots/{snapshot_id}/load")
 async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -453,7 +438,6 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots/preview")
-@router.post("/api/flow-snapshots/preview")
 async def preview_snapshot(request: PreviewSnapshotRequest) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -465,7 +449,6 @@ async def preview_snapshot(request: PreviewSnapshotRequest) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots/{snapshot_id}/duplicate")
-@router.post("/api/flow-snapshots/{snapshot_id}/duplicate")
 async def duplicate_snapshot(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
@@ -511,9 +494,8 @@ async def save_snapshot_as_new(snapshot_id: int, request: SaveAsNewRequest) -> d
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.post("/api/flow-snapshots/{snapshot_id}/program")
 @router.post("/api/snapshots/{snapshot_id}/program")
-async def set_program_number_compat(snapshot_id: int, request: ProgramNumberRequest) -> dict[str, Any]:
+async def set_program_number(snapshot_id: int, request: ProgramNumberRequest) -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
@@ -534,26 +516,7 @@ async def set_program_number_compat(snapshot_id: int, request: ProgramNumberRequ
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.post("/api/flow-snapshots/reorder")
-async def reorder_snapshots(snapshot_ids: list[int] = Body(...)) -> dict[str, Any]:
-    try:
-        async with get_session() as session:
-            for order, snapshot_id in enumerate(snapshot_ids):
-                result = await session.execute(
-                    select(Snapshot).where(Snapshot.id == snapshot_id)
-                )
-                snapshot = result.scalar_one_or_none()
-                if snapshot is None:
-                    continue
-                snapshot.display_order = order
-            return {"status": "success", "message": "Reordered snapshots"}
-    except Exception as exc:
-        logger.error("Error reordering snapshots: %s", exc)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
 @router.get("/api/snapshots/by-program/{program_number}")
-@router.get("/api/flow-snapshots/by-program/{program_number}")
 async def get_snapshot_by_program(program_number: int) -> dict[str, Any]:
     try:
         async with get_session() as session:

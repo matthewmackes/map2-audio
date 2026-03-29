@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 19:33 EDT - T547-subD2 completed after path-first Snapshot Editor wording updates and regression coverage
+Last updated: 2026-03-29 19:26 EDT - T547-subD3 completed after removing deprecated flow-snapshot route aliases and capturing the next legacy bridge follow-up
 
 ID: T547
 Status: [>] In Progress
@@ -76,7 +76,7 @@ Last updated: 2026-03-29 18:57 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/snapshotLiveState.test.ts web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subD
-Status: [>] In Progress
+Status: [✓] Done
 Title: Retire deeper flow-snapshot compatibility layers and remaining editor vocabulary debt
 Description:
 - Goal / acceptance criteria: Remove or sharply isolate the remaining compatibility `flowSnapshotsApi` exports/routes and continue the path-first vocabulary migration across deeper editor/runtime panels that still intentionally expose chain/flow language. Document any runtime-facing chain concepts that must remain after the snapshot-first cutover.
@@ -86,7 +86,7 @@ Description:
 - Required outputs: compatibility-layer retirement or isolation plan, remaining vocabulary audit/remediation, focused regression coverage, and updated docs/worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 19:18 EDT - Codex
+Last updated: 2026-03-29 19:26 EDT - Codex
 - Progress notes:
   - Added snapshot-first backend fields and APIs: `derived_from_snapshot_id`, `controls_payload`, `live_state_payload`, `activated_at`, `GET /api/snapshots/live`, `POST /api/snapshots/{id}/draft`, and `POST /api/snapshots/{id}/save-as-new`.
   - Snapshot detail serialization now emits canonical snapshot-first structures: `paths`, `io_bindings`, `controls`, `assets`, `live_state`, and `lineage`, while list summaries also carry `io_bindings` and `lineage`.
@@ -96,8 +96,8 @@ Last updated: 2026-03-29 19:18 EDT - Codex
   - Fixed FastAPI route ordering so `GET /api/snapshots/live` resolves to the dedicated live snapshot endpoint instead of falling through the `/{snapshot_id}` matcher and returning `422`.
   - Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
 - Remaining scope:
-  - The main Snapshot Editor page still exposes chain/flow terminology and direct `chainsApi` mutation surfaces; the persisted snapshot contract is now snapshot-first, but the editor UI itself is not yet fully renamed/reduced to `Snapshot`/`Path`.
-  - Compatibility `/api/flow-snapshots/*` routes still exist and should be removed only after the editor page and perform surfaces stop depending on their compatibility payloads.
+  - The main Snapshot Editor page still exposes direct `chainsApi` runtime mutation surfaces in several deeper interactions, even though its primary operator language is now moving to `Snapshot` / `Path`.
+  - Remaining legacy `FlowSnapshot` debt is now concentrated in frontend compatibility types/adapters and the MIDI program-change fallback path in `app/services/midi_service.py`.
 
 ID: T547-subD1
 Status: [✓] Done
@@ -135,7 +135,7 @@ Last updated: 2026-03-29 19:33 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subD3
-Status: [ ] Todo
+Status: [✓] Done
 Title: Retire remaining backend flow-snapshot compatibility routes once editor usage is isolated
 Description:
 - Goal / acceptance criteria: Remove the deprecated `/api/flow-snapshots/*` compatibility routes that are no longer needed by shipped snapshot surfaces, and migrate any remaining backend consumers to snapshot-first services or explicit legacy boundaries. Route tests and MIDI/program recall behavior must remain covered.
@@ -145,7 +145,25 @@ Description:
 - Required outputs: route cleanup or explicit containment, test updates, and worklist notes on any intentionally retained legacy bridge.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 19:18 EDT - Codex
+Last updated: 2026-03-29 19:26 EDT - Codex
+- Completion notes:
+  - Removed the deprecated `/api/flow-snapshots/*` alias registrations from `app/routes/unified_snapshots.py`, leaving `/api/snapshots/*` as the only public HTTP snapshot surface.
+  - Added a route-table assertion in `tests/test_snapshot_routes.py` to ensure deprecated flow-snapshot route registrations do not reappear while canonical snapshot endpoints remain present.
+  - Explicitly retained the non-HTTP legacy bridge in `app/services/midi_service.py`, which still reads the old `FlowSnapshot` table for MIDI program-change fallback and now has its own follow-up task.
+  - Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS.
+
+ID: T547-subE
+Status: [ ] Todo
+Title: Remove remaining FlowSnapshot adapters and MIDI fallback outside the canonical snapshot contract
+Description:
+- Goal / acceptance criteria: Eliminate the remaining `FlowSnapshot*` compatibility types/adapters from frontend snapshot editor/library surfaces and migrate MIDI program-change fallback from the legacy `FlowSnapshot` table to the canonical snapshot model. Preserve recall behavior and cover the migrated paths with focused tests.
+- Why it matters: After route cleanup, the remaining flow-snapshot debt is now concentrated in a small number of high-leverage compatibility seams that still keep the old model alive.
+- Dependencies: T547-subD3
+- Estimated effort: High
+- Required outputs: frontend type/adapter cutover, backend MIDI fallback migration, focused regression coverage, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 19:26 EDT - Codex
 
 ID: T546
 Status: [✓] Done
