@@ -9459,7 +9459,7 @@ Last updated: 2026-03-28 22:10 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx src/app/pages/SynthForgePage.test.tsx` -> PASS (`3 passed`); `npm --prefix web run build` -> PASS.
 
 ID: T524
-Status: [ ] Todo
+Status: [✓] Done
 Title: Compact instrument cards for JUCE Grid — JuceGridPage compact prop propagation
 Description:
 - Goal / acceptance criteria: Ensure PluginCardRouter in JuceGridPage passes `compact={true}` to SynthForge and DrumMachine cards when rendered in the grid. Verify end-to-end: grid shows compact cards, Launch navigates to full pages, breadcrumbs return to grid.
@@ -9468,5 +9468,11 @@ Description:
 - Estimated effort: Small
 - Required outputs: Verified compact prop flow; full build + typecheck pass; manual verification checklist.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-28
+Assigned to: Codex
+Last updated: 2026-03-28 22:13 EDT - Codex
+- Completion notes:
+  - Verified the existing `web/src/app/pages/JuceGridPage.tsx` selected-block editor wiring already forwards `compact={isTabletTouchLayout}` into `PluginCardRouter`, which is the compact grid context used for tablet editor-sheet flows.
+  - Added focused regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` proving the selected-block card router receives `compact=true` for both `map2://juce/synthforge` and `map2://juce/drums` in tablet mode, alongside the existing launch/editor workflow coverage.
+  - Manual verification checklist: SynthForge compact card launch covered by `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx`; SynthForge breadcrumb return covered by `web/src/app/pages/SynthForgePage.test.tsx`; DrumMachine compact launch covered by `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx`; tablet grid compact-prop propagation covered by `web/src/app/pages/JuceGridPage.test.tsx`.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`31 passed`); `npm --prefix web run build` -> PASS.

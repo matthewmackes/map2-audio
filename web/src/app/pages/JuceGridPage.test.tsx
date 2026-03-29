@@ -302,10 +302,12 @@ jest.mock('../components/JuceGrid/JuceGridParameterEditor', () => ({
 }))
 
 jest.mock('../components/PluginCards', () => ({
-  PluginCardRouter: ({ forceTemplate }: { forceTemplate?: string }) => (
+  PluginCardRouter: ({ forceTemplate, compact, plugin }: { forceTemplate?: string; compact?: boolean; plugin?: { uri?: string } }) => (
     <div
       data-testid="plugin-card-router"
+      data-compact={compact ? 'true' : 'false'}
       data-force-template={forceTemplate ?? ''}
+      data-plugin-uri={plugin?.uri ?? ''}
     >
       Plugin card router
     </div>
@@ -1287,6 +1289,115 @@ describe('JuceGridPage snapshot modal workflow', () => {
     expect(within(compactTabList).getByRole('tab', { name: 'Editor' })).toBeTruthy()
     expect(within(compactTabList).getByRole('tab', { name: 'Routing' })).toBeTruthy()
     expect(within(compactTabList).getByRole('tab', { name: 'Presets' })).toBeTruthy()
+  })
+
+  it.each([
+    { uri: 'map2://juce/synthforge', name: 'SynthForge' },
+    { uri: 'map2://juce/drums', name: 'Drums' },
+  ])('passes compact mode into the selected-block card router for tablet %s editors', async ({ uri, name }) => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 5,
+    })
+    Object.defineProperty(window, 'ontouchstart', {
+      configurable: true,
+      writable: true,
+      value: true,
+    })
+    mockResolveLivePluginCardStrategy.mockReturnValue({ renderMode: 'custom' })
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      flowStates: {
+        'flow-0': { activeAudio: true, dimmed: false, sidechainKey: false },
+      },
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'group-0',
+          kind: 'series',
+          tone: 'active',
+          dashed: false,
+          flowIds: ['flow-0'],
+        },
+      ],
+    }
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri,
+              name,
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri,
+          name,
+          category: 'Instrument',
+          format: 'JUCE',
+          parameters: [
+            { index: 0, name: 'Level', symbol: 'level', min: 0, max: 1, default: 1, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={['/juce-grid']}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const selectButton = (await screen.findAllByRole('button', { name: 'Select block' }))[0]
+    fireEvent.click(selectButton)
+    fireEvent.click(screen.getByRole('button', { name: 'Open editor' }))
+
+    await waitFor(() => {
+      const router = screen.getByTestId('plugin-card-router')
+      expect(router.getAttribute('data-plugin-uri')).toBe(uri)
+      expect(router.getAttribute('data-compact')).toBe('true')
+    })
   })
 
   it('uses the live plugin card router with a forced Carbon template when the strategy resolves to template mode', async () => {
