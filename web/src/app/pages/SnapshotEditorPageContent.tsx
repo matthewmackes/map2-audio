@@ -74,6 +74,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
+import { fetchLiveSnapshotOrNull } from './snapshotLiveState'
 import { getCategoryConfig } from '../grid/shared'
 import type { AutomationLane } from '../grid/shared'
 import {
@@ -82,13 +83,15 @@ import {
   historyApi,
   audioApi,
   metricsApi,
-  flowSnapshotsApi,
   midiApiV2,
   type AudioAvbEndpoint,
   type AudioPort,
   type AudioRoutingSelectionBinding,
 } from '../../map2/api'
-import { snapshotDetailToFlowSnapshotData } from '../../map2/clients/snapshots'
+import {
+  snapshotsApi,
+  snapshotDetailToFlowSnapshotData,
+} from '../../map2/clients/snapshots'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
@@ -103,7 +106,7 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -1070,27 +1073,29 @@ export function SnapshotEditorPage() {
     refetchInterval: 5000,
   })
 
-  const flowSnapshotsQuery = useQuery<{
-    snapshots: FlowSnapshot[]
-    count: number
-    active_id: number | null
-  }>({
-    queryKey: ['flow-snapshots'],
-    queryFn: () => flowSnapshotsApi.list(),
+  const liveSnapshotQuery = useQuery({
+    queryKey: ['snapshots', 'live'],
+    queryFn: fetchLiveSnapshotOrNull,
+    refetchInterval: 5000,
+    retry: false,
+  })
+  const snapshotsSummaryQuery = useQuery({
+    queryKey: ['snapshots'],
+    queryFn: () => snapshotsApi.list(),
     refetchInterval: 5000,
   })
-  const activeSnapshotId = flowSnapshotsQuery.data?.active_id ?? null
-  const snapshotEntryRequired = flowSnapshotsQuery.isSuccess && activeSnapshotId === null
+  const activeSnapshotId = liveSnapshotQuery.data?.id ?? null
+  const snapshotEntryRequired = liveSnapshotQuery.isSuccess && liveSnapshotQuery.data === null
 
   useEffect(() => {
     if (activeSnapshotId !== null) {
       setSnapshotEntryDismissed(false)
       return
     }
-    if (flowSnapshotsQuery.isSuccess && !snapshotEntryDismissed && !snapshotsModalOpen) {
+    if (liveSnapshotQuery.isSuccess && !snapshotEntryDismissed && !snapshotsModalOpen) {
       setSnapshotsModalOpen(true)
     }
-  }, [activeSnapshotId, flowSnapshotsQuery.isSuccess, snapshotEntryDismissed, snapshotsModalOpen])
+  }, [activeSnapshotId, liveSnapshotQuery.isSuccess, snapshotEntryDismissed, snapshotsModalOpen])
 
   const handleCloseSnapshotsModal = useCallback(() => {
     setSnapshotsModalOpen(false)
@@ -1228,6 +1233,8 @@ export function SnapshotEditorPage() {
 
         // Invalidate queries to refresh UI
         queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+        queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+        queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
         clearSnapshotsDirty()
 
         pushToast(`Loaded: ${event.snapshot_name} (MIDI PC#${event.program_number})`, 'success')
@@ -1294,8 +1301,8 @@ export function SnapshotEditorPage() {
 
   const chains = chainsQuery.data?.chains || []
   const activeSnapshot = useMemo(
-    () => flowSnapshotsQuery.data?.snapshots.find((snapshot) => snapshot.id === activeSnapshotId) ?? null,
-    [activeSnapshotId, flowSnapshotsQuery.data?.snapshots],
+    () => liveSnapshotQuery.data ?? null,
+    [liveSnapshotQuery.data],
   )
   const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
@@ -1401,6 +1408,8 @@ export function SnapshotEditorPage() {
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
     if (options?.invalidateChains ?? true) {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
     }
     if (options?.toastMessage) {
       pushToast(options.toastMessage, 'success')
@@ -3318,7 +3327,7 @@ export function SnapshotEditorPage() {
     setDetailsPlugin(plugin)
   }, [])
 
-  const snapshotCount = flowSnapshotsQuery.data?.snapshots.length ?? 0
+  const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
   const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
   const midiMappingCount = midiMappings.length
   const midiMappingCountLabel = midiMappingCount > 99 ? '99+' : String(midiMappingCount)

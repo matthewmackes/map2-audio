@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 18:37 EDT - T547-subA snapshot modal/library cutover completed and build verified
+Last updated: 2026-03-29 18:49 EDT - T547-subB editor page live-snapshot gate migrated and build verified
 
 ID: T547
 Status: [>] In Progress
@@ -40,7 +40,7 @@ Last updated: 2026-03-29 18:37 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `pytest -q tests/test_snapshot_routes.py` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Migrate Snapshot Editor page live/draft loading to snapshot-first APIs
 Description:
 - Goal / acceptance criteria: Replace Snapshot Editor page dependence on `flowSnapshotsApi.list()` for active-snapshot gating and use the live snapshot contract where possible for backend truth/load state. Preserve current editor behavior and regression coverage.
@@ -50,10 +50,15 @@ Description:
 - Required outputs: page query refactor, focused validation, no behavior regressions on entry/recall.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 18:37 EDT - Codex
+Last updated: 2026-03-29 18:49 EDT - Codex
+- Completion notes:
+  - Replaced the editor page’s active-snapshot gate with a snapshot-first live query based on `GET /api/snapshots/live`, treating `404` as the canonical “no live snapshot” case instead of polling `flowSnapshotsApi.list()` for `active_id`.
+  - Added `snapshotLiveState.ts` plus `snapshotLiveState.test.ts` so the `404 => no live snapshot` behavior is explicitly covered and reusable outside the page component.
+  - Synced the page’s live/summary snapshot queries with real recall/create flows by invalidating `['snapshots']` and `['snapshots', 'live']` whenever a real snapshot load is applied to the editor, preventing stale entry-gate state after recall.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/snapshotLiveState.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subC
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Remove remaining snapshot-surface compatibility usage and chain/flow labels from high-traffic UI
 Description:
 - Goal / acceptance criteria: Eliminate remaining `flowSnapshotsApi` usage on the primary snapshot surfaces and update the highest-traffic snapshot UI copy from chain/flow vocabulary to snapshot/path wording where the new model is already authoritative. Keep any deeper architectural leftovers explicitly documented if they remain.
@@ -63,7 +68,7 @@ Description:
 - Required outputs: targeted UI copy/API cleanup, focused tests or typecheck/build validation, updated worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 18:31 EDT - Codex
+Last updated: 2026-03-29 18:49 EDT - Codex
 - Progress notes:
   - Added snapshot-first backend fields and APIs: `derived_from_snapshot_id`, `controls_payload`, `live_state_payload`, `activated_at`, `GET /api/snapshots/live`, `POST /api/snapshots/{id}/draft`, and `POST /api/snapshots/{id}/save-as-new`.
   - Snapshot detail serialization now emits canonical snapshot-first structures: `paths`, `io_bindings`, `controls`, `assets`, `live_state`, and `lineage`, while list summaries also carry `io_bindings` and `lineage`.

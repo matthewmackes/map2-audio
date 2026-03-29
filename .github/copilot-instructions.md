@@ -1361,6 +1361,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`; `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/snapshots/live`
 - **Lesson**: During API cutovers, route order and client helpers are part of the same contract. Replacing the primary query path is not enough if any secondary modal/action path still writes through the compatibility surface.
 
+**38. Snapshot Editor Empty-State Gating Must Treat `GET /api/snapshots/live` 404 As Canonical \"No Live Snapshot\" (MEDIUM - Mar 29, 2026)**
+- **Files**: `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/snapshotLiveState.ts`, `web/src/app/pages/snapshotLiveState.test.ts`
+- **Problem**: The editor page still decided whether to force the entry modal by polling the compatibility snapshot list for `active_id`, even after the snapshot-first live endpoint existed.
+- **Root Cause**: The page bootstrap logic was still anchored to flow-snapshot list semantics, and a missing live snapshot was not being modeled as a normal `404` empty-state on the canonical live endpoint.
+- **Fix**: Fetch the active snapshot through a dedicated helper around `snapshotsApi.getLive()`, translate `ApiError(404)` into `null`, use that result for the entry gate, and invalidate the page’s `['snapshots']` / `['snapshots', 'live']` queries whenever a real recall/create path applies a snapshot to the editor.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/snapshotLiveState.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In the snapshot-first model, “no live snapshot” is a valid state of the canonical live endpoint, not an error that should force a fallback to compatibility list polling.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1631,6 +1639,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-29] - E-SNAP Snapshot Editor Live-Gate Canonicalization
+- **Section**: Gotchas & Learned Fixes (#38), Update Log
+- **Change**: Documented the rule that the Snapshot Editor must derive its entry-point gate from `GET /api/snapshots/live` with `404 => null`, plus the need to invalidate the page’s live/summary snapshot queries when a real snapshot load is applied.
+- **Reason**: After the modal/library cutover, the editor page was still bootstrapping through compatibility list semantics, which kept the last high-traffic entry gate tied to `flowSnapshotsApi`.
+- **Impact**: Future snapshot-first work can treat the live endpoint as the one authoritative source for “is something live?” state and avoid reintroducing compatibility polling into the editor bootstrap path.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/snapshotLiveState.ts`, `web/src/app/pages/snapshotLiveState.test.ts`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-29] - E-SNAP Snapshot-First Modal Cutover And Live Route Ordering
 - **Section**: Gotchas & Learned Fixes (#37), Update Log
