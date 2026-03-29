@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**852** Python | **986** TypeScript | **131** C++/H | **128** Docs | **1051** total commits | **3** stars | **0** forks | **0** open issues
+**852** Python | **988** TypeScript | **131** C++/H | **128** Docs | **1053** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3050b632`](https://github.com/matthewmackes/map2-audio/commit/3050b632dfff7c4caee21fcec5f3fd20866c75ff) | Move live runtime inventory into shared modal | Map2 Audio | 2026-03-29 |
+| [`073f5014`](https://github.com/matthewmackes/map2-audio/commit/073f501444f3389592e3e6dbad18002d31176b3b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`ff2b5bd5`](https://github.com/matthewmackes/map2-audio/commit/ff2b5bd500b68b3b0ea3a3c68c5a439341b4565a) | Remove flow snapshot route aliases | Map2 Audio | 2026-03-29 |
 | [`0189b9a9`](https://github.com/matthewmackes/map2-audio/commit/0189b9a9aad1f8f021adb9cacfb3cc8cc7f87f65) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`6dc690cd`](https://github.com/matthewmackes/map2-audio/commit/6dc690cdffaaa24f69094e94d5720ae8ca1fbcc0) | Shift snapshot editor wording to paths | Map2 Audio | 2026-03-29 |
 | [`7f355513`](https://github.com/matthewmackes/map2-audio/commit/7f355513487c62d6785e5a5385a05aa4752c37b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`c62a7868`](https://github.com/matthewmackes/map2-audio/commit/c62a7868eb610447a9f04ee1f048ad4534951d3b) | Isolate flow snapshot compatibility exports | Map2 Audio | 2026-03-29 |
 | [`5e984b76`](https://github.com/matthewmackes/map2-audio/commit/5e984b76868876c6dcd9283785566d5d2d9b141a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
-| [`0febbc70`](https://github.com/matthewmackes/map2-audio/commit/0febbc70fd9ed706c849a0ae97e85fbf9c5e0038) | Clean up snapshot query surfaces and path wording | Map2 Audio | 2026-03-29 |
-| [`aebcb712`](https://github.com/matthewmackes/map2-audio/commit/aebcb7120f782947456f46f715eada15b0dc45f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
