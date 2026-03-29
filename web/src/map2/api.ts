@@ -74,9 +74,6 @@ import type {
   DiskHealthData,
   SystemHealthOverview,
   BrandingAssets,
-  FlowSnapshot,
-  FlowSnapshotDetail,
-  FlowSnapshotData,
 } from './types';
 import type {
   TesiraCapabilityEnvelope,
@@ -195,7 +192,6 @@ import {
 } from './clients/utilities';
 import {
   effectsLoopsApi,
-  flowSnapshotsApi,
   historyApi,
   sessionsApi,
   snapshotsApi,
@@ -254,7 +250,6 @@ export {
 } from './clients/utilities';
 export {
   effectsLoopsApi,
-  flowSnapshotsApi,
   historyApi,
   sessionsApi,
   snapshotsApi,
@@ -2250,7 +2245,6 @@ export const map2Api = {
   services: servicesApi,
   folders: foldersApi,
   upload: uploadApi,
-  flowSnapshots: flowSnapshotsApi,
   pipewire: pipewireApi,
   // Native JUCE Engine APIs
   engine: engineApi,

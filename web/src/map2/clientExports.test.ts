@@ -8,7 +8,6 @@ import {
   drumsApi,
   effectsLoopsApi,
   engineApi,
-  flowSnapshotsApi,
   foldersApi,
   getNodeHealth,
   getNodeIdentity,
@@ -75,7 +74,6 @@ import {
 } from './clients/utilities'
 import {
   effectsLoopsApi as splitEffectsLoopsApi,
-  flowSnapshotsApi as splitFlowSnapshotsApi,
   historyApi as splitHistoryApi,
   sessionsApi as splitSessionsApi,
   snapshotsApi as splitSnapshotsApi,
@@ -119,7 +117,6 @@ describe('map2 api compatibility barrel', () => {
     expect(pipewireApi).toBe(splitPipewireApi)
     expect(synthforgeApi).toBe(splitSynthforgeApi)
     expect(effectsLoopsApi).toBe(splitEffectsLoopsApi)
-    expect(flowSnapshotsApi).toBe(splitFlowSnapshotsApi)
     expect(historyApi).toBe(splitHistoryApi)
     expect(sessionsApi).toBe(splitSessionsApi)
     expect(snapshotsApi).toBe(splitSnapshotsApi)

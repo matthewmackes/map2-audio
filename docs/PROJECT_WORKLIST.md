@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 18:57 EDT - T547-subC high-traffic snapshot compatibility cleanup completed and build verified
+Last updated: 2026-03-29 19:21 EDT - T547-subD1 completed after isolating the shared flow-snapshot compatibility export surface
 
 ID: T547
 Status: [>] In Progress
@@ -76,7 +76,7 @@ Last updated: 2026-03-29 18:57 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/snapshotLiveState.test.ts web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subD
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Retire deeper flow-snapshot compatibility layers and remaining editor vocabulary debt
 Description:
 - Goal / acceptance criteria: Remove or sharply isolate the remaining compatibility `flowSnapshotsApi` exports/routes and continue the path-first vocabulary migration across deeper editor/runtime panels that still intentionally expose chain/flow language. Document any runtime-facing chain concepts that must remain after the snapshot-first cutover.
@@ -86,7 +86,7 @@ Description:
 - Required outputs: compatibility-layer retirement or isolation plan, remaining vocabulary audit/remediation, focused regression coverage, and updated docs/worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 18:57 EDT - Codex
+Last updated: 2026-03-29 19:18 EDT - Codex
 - Progress notes:
   - Added snapshot-first backend fields and APIs: `derived_from_snapshot_id`, `controls_payload`, `live_state_payload`, `activated_at`, `GET /api/snapshots/live`, `POST /api/snapshots/{id}/draft`, and `POST /api/snapshots/{id}/save-as-new`.
   - Snapshot detail serialization now emits canonical snapshot-first structures: `paths`, `io_bindings`, `controls`, `assets`, `live_state`, and `lineage`, while list summaries also carry `io_bindings` and `lineage`.
@@ -98,6 +98,49 @@ Last updated: 2026-03-29 18:57 EDT - Codex
 - Remaining scope:
   - The main Snapshot Editor page still exposes chain/flow terminology and direct `chainsApi` mutation surfaces; the persisted snapshot contract is now snapshot-first, but the editor UI itself is not yet fully renamed/reduced to `Snapshot`/`Path`.
   - Compatibility `/api/flow-snapshots/*` routes still exist and should be removed only after the editor page and perform surfaces stop depending on their compatibility payloads.
+
+ID: T547-subD1
+Status: [✓] Done
+Title: Isolate shared flow-snapshot compatibility exports from canonical frontend APIs
+Description:
+- Goal / acceptance criteria: Remove `flowSnapshotsApi` from the default shared `map2/api` export surface and update callers/tests so compatibility usage is explicit and isolated to the legacy workflows client. The build, typecheck, and client export tests must pass.
+- Why it matters: As long as `flowSnapshotsApi` ships from the main API barrel, new work can accidentally reintroduce compatibility coupling into snapshot-first surfaces.
+- Dependencies: T547-subD
+- Estimated effort: Low
+- Required outputs: API barrel cleanup, caller/test updates, focused validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 19:21 EDT - Codex
+- Completion notes:
+  - Removed `flowSnapshotsApi` from the shared `web/src/map2/api.ts` barrel exports and from the `map2Api` aggregate object so snapshot-first surfaces no longer expose the compatibility client by default.
+  - Updated `web/src/map2/clientExports.test.ts` to stop asserting the compatibility barrel export while preserving the rest of the split-client re-export contract.
+  - Validation: `npm --prefix web test -- --runInBand web/src/map2/clientExports.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
+
+ID: T547-subD2
+Status: [ ] Todo
+Title: Continue Snapshot Editor path-first vocabulary migration in lower-level management panels
+Description:
+- Goal / acceptance criteria: Rename operator-facing chain/flow copy in the deeper Snapshot Editor management surfaces to snapshot/path terminology where the new model is authoritative, while documenting any truly runtime-bound chain concepts that must stay. Preserve behavior and update focused tests where wording changes are asserted.
+- Why it matters: The editor still teaches the old mental model even after snapshot-first APIs landed, which weakens the cutover and confuses operators.
+- Dependencies: T547-subD1
+- Estimated effort: Medium
+- Required outputs: editor copy/component updates, focused validation, explicit notes for retained runtime-only chain concepts.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 19:18 EDT - Codex
+
+ID: T547-subD3
+Status: [ ] Todo
+Title: Retire remaining backend flow-snapshot compatibility routes once editor usage is isolated
+Description:
+- Goal / acceptance criteria: Remove the deprecated `/api/flow-snapshots/*` compatibility routes that are no longer needed by shipped snapshot surfaces, and migrate any remaining backend consumers to snapshot-first services or explicit legacy boundaries. Route tests and MIDI/program recall behavior must remain covered.
+- Why it matters: The backend compatibility surface is the last major source of chain/flow-era API shape drift and blocks a clean snapshot-first contract.
+- Dependencies: T547-subD2
+- Estimated effort: High
+- Required outputs: route cleanup or explicit containment, test updates, and worklist notes on any intentionally retained legacy bridge.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 19:18 EDT - Codex
 
 ID: T546
 Status: [✓] Done
