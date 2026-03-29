@@ -7,6 +7,7 @@ import { SnapshotModalContent } from './SnapshotModalContent'
 export interface SnapshotModalProps {
   open: boolean
   onClose: () => void
+  entryPoint?: boolean
   snapshotDraft: FlowSnapshotData | SnapshotDetail
   applySnapshotData: (snapshotData: FlowSnapshotData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
   onSnapshotSave?: () => void
@@ -36,6 +37,7 @@ function getStoredSnapshotScroll(): number {
 export function SnapshotModal({
   open,
   onClose,
+  entryPoint = false,
   snapshotDraft,
   applySnapshotData,
   onSnapshotSave,
@@ -103,12 +105,13 @@ export function SnapshotModal({
       className="snapshot-modal"
       onClose={onClose}
     >
-      <ModalHeader title="Snapshots" />
+      <ModalHeader title={entryPoint ? 'Load or Create a Snapshot' : 'Snapshots'} />
       <ModalBody
         onScroll={handleScroll}
         ref={bodyRef}
       >
         <SnapshotModalContent
+          entryPoint={entryPoint}
           onRecall={handleRecall}
           onSnapshotSave={handleSnapshotSave}
           activeTab={activeTab}

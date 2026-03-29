@@ -407,6 +407,8 @@ export function snapshotEditorStateToDetail(
     description: base?.description ?? '',
     tags: base?.tags ?? [],
     program_number: base?.program_number ?? null,
+    input_device: base?.input_device ?? null,
+    output_device: base?.output_device ?? null,
     is_active: base?.is_active ?? false,
     is_favorite: base?.is_favorite ?? false,
     display_order: base?.display_order ?? 0,

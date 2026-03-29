@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 16:02 EDT - T545 bundle 1 shipped; bundle 2 in progress
+Last updated: 2026-03-29 16:09 EDT - T545 bundle 2 shipped; bundle 3 in progress
 
 ID: T545
 Status: [>] In Progress
@@ -36,7 +36,7 @@ Last updated: 2026-03-29 16:02 EDT - Codex
   - Extended focused backend route/service coverage for create, update, list, and lookup responses carrying the new device metadata; `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` passed and `npm --prefix web run typecheck` passed.
 
 ID: T545-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Build SnapshotNewWizard component — 4-step wizard with validation and device pulling
 Description:
 - Goal / acceptance criteria: New React component `web/src/app/components/snapshots/SnapshotNewWizard.tsx`. 4 steps: (1) Name — TextInput, max 20 chars, alphanumeric + spaces/hyphens only, uniqueness checked on Next/Submit against existing snapshot names via API; (2) Routing Mode — RadioButtonGroup with options parallel_blend / series / morph / sidechain; (3) Input Device — Select pulled from backend audio device list, skippable if list is empty; (4) Output Device — same pattern, same device allowed as input. Back/Next navigation between steps. No step progress indicator — just Back/Next buttons. On final step "Create" submits. Uses Carbon design components throughout.
@@ -46,10 +46,13 @@ Description:
 - Required outputs: SnapshotNewWizard component, TypeScript types, Carbon-conformant UI.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 16:02 EDT - Codex
+Last updated: 2026-03-29 16:09 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/snapshots/SnapshotNewWizard.tsx`: a Carbon 4-step wizard for Name -> Routing Mode -> Input Device -> Output Device with name validation, duplicate checks, and live PipeWire device loading.
+  - The wizard is rendered inside the main snapshot modal rather than a nested secondary modal so the creation flow stays on one surface and remains easy to extend in the next bundle.
 
 ID: T545-subC
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Wizard submit logic — create snapshot, name chains SnapshotName-YYYYMMDD, assign to channels, activate
 Description:
 - Goal / acceptance criteria: On wizard submission: POST to create snapshot with name/routing/input_device/output_device; POST to add two chains named `{name}-{YYYYMMDD}` where date is today's date at creation time; PATCH channels to assign Chain 1 → Channel A (channel_key "ch_a"), Chain 2 → Channel B (channel_key "ch_b"); POST activate the snapshot; navigate to snapshot editor with the new snapshot loaded. All steps are backend-persisted immediately — no in-memory staging.
@@ -58,11 +61,11 @@ Description:
 - Estimated effort: Small
 - Required outputs: wizard onSubmit handler, API call sequence, error handling, post-create navigation.
 Subtasks: None
-Assigned to: unassigned
-Last updated: 2026-03-29 EDT
+Assigned to: Codex
+Last updated: 2026-03-29 16:09 EDT - Codex
 
 ID: T545-subD
-Status: [>] In Progress
+Status: [✓] Done
 Title: Update SnapshotModal/SnapshotModalContent — entry-point variant and Create New → wizard
 Description:
 - Goal / acceptance criteria: Add an `entryPoint` prop (boolean) to `SnapshotModal` and `SnapshotModalContent`. When `entryPoint=true`, the modal header reads "Load or Create a Snapshot" instead of the default. The "Create New" button/action in SnapshotModalContent launches `SnapshotNewWizard` in both entry-point and standard (toolbar-opened) contexts — replacing the current create behavior everywhere.
@@ -72,10 +75,13 @@ Description:
 - Required outputs: updated SnapshotModal, updated SnapshotModalContent, SnapshotNewWizard wired in.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 16:02 EDT - Codex
+Last updated: 2026-03-29 16:09 EDT - Codex
+- Completion notes:
+  - Added `entryPoint` support to `SnapshotModal` / `SnapshotModalContent` so the modal can either open into a "Load Existing / Create New" gateway or the standard library view, while reusing the same underlying surface.
+  - Replaced the old one-field "Save snapshot" flow with the new wizard entry from the library toolbar and active snapshot command row, keeping import/rename/program/delete actions intact.
 
 ID: T545-subE
-Status: [>] In Progress
+Status: [✓] Done
 Title: Update SnapshotEditorPageContent — auto-open library modal on no-snapshot mount, empty state
 Description:
 - Goal / acceptance criteria: On mount, if no snapshot is active (active_id is null from the snapshots list API), automatically open the snapshot library modal in entry-point mode (`entryPoint=true`). If the user dismisses the modal without loading or creating, show a "No snapshot loaded" empty-state panel (Carbon Tile with message + Button to re-open the modal) instead of the normal editor canvas. The existing editor canvas and all normal functionality are unchanged when a snapshot is loaded.
@@ -85,7 +91,10 @@ Description:
 - Required outputs: mount-time gate logic, empty-state UI, re-open button wired to modal.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 16:02 EDT - Codex
+Last updated: 2026-03-29 16:09 EDT - Codex
+- Completion notes:
+  - Updated `SnapshotEditorPageContent` to auto-open the snapshot modal in entry-point mode whenever the snapshots list API reports no active snapshot.
+  - Dismissing that modal now shows a "No snapshot loaded" empty-state tile with a button to reopen the library instead of leaving the normal editor canvas exposed as a dead end.
 
 ID: T545-subF
 Status: [ ] Todo

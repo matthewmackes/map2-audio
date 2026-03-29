@@ -867,6 +867,7 @@ export function SnapshotEditorPage() {
 
   // Flow Snapshots Panel State
   const [snapshotsModalOpen, setSnapshotsModalOpen] = useState(false)
+  const [snapshotEntryDismissed, setSnapshotEntryDismissed] = useState(false)
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
@@ -1075,6 +1076,30 @@ export function SnapshotEditorPage() {
     queryFn: () => flowSnapshotsApi.list(),
     refetchInterval: 5000,
   })
+  const activeSnapshotId = flowSnapshotsQuery.data?.active_id ?? null
+  const snapshotEntryRequired = flowSnapshotsQuery.isSuccess && activeSnapshotId === null
+
+  useEffect(() => {
+    if (activeSnapshotId !== null) {
+      setSnapshotEntryDismissed(false)
+      return
+    }
+    if (flowSnapshotsQuery.isSuccess && !snapshotEntryDismissed && !snapshotsModalOpen) {
+      setSnapshotsModalOpen(true)
+    }
+  }, [activeSnapshotId, flowSnapshotsQuery.isSuccess, snapshotEntryDismissed, snapshotsModalOpen])
+
+  const handleCloseSnapshotsModal = useCallback(() => {
+    setSnapshotsModalOpen(false)
+    if (activeSnapshotId === null) {
+      setSnapshotEntryDismissed(true)
+    }
+  }, [activeSnapshotId])
+
+  const reopenSnapshotEntryPoint = useCallback(() => {
+    setSnapshotEntryDismissed(false)
+    setSnapshotsModalOpen(true)
+  }, [])
 
   // Fetch audio status
   const audioQuery = useQuery({
@@ -4914,51 +4939,62 @@ export function SnapshotEditorPage() {
 
         <div className="juce-grid-page__unified-block">
           <main className="juce-grid-page__main">
-          {/* Multi-flow signal grids */}
-          <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
-            {livePathLayout.groups.map((group, groupIndex) => (
-              <Layer
-                key={group.id}
-                className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
-              >
-                <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
-                  {group.flowIds.map((flowId, groupIndex) => {
-                    const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
-                      ? 'Series'
-                      : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
-                        ? `Morph ${Math.round(routing.morphProgress * 100)}%`
-                        : null
-                    const connectorTone = group.kind === 'morph'
-                      ? routing.morphProgress > 0 ? 'active' : 'dim'
-                      : group.tone === 'active' ? 'active' : 'dim'
-                    const connectorDashed = group.kind === 'morph'
-                      ? routing.morphProgress <= 0
-                      : Boolean(group.dashed)
-
-                    return (
-                      <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
-                        {renderLivePathFlowCard(flowId, group.kind)}
-                        {connectorLabel && (
-                          <div
-                            className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
-                            aria-hidden
-                          >
-                            <div className="juce-grid-page__live-path-connector-arrow">
-                              <span className="juce-grid-page__live-path-connector-shaft" />
-                              <ArrowDown size={16} />
-                              <span className="juce-grid-page__live-path-connector-shaft" />
-                            </div>
-                            <span>{connectorLabel}</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+            {snapshotEntryRequired ? (
+              <Tile className="juce-grid-page__effect-modal-placeholder">
+                <div className="juce-grid-page__parameter-editor-copy">
+                  <p className="juce-grid-page__dense-card-kicker">Snapshot entry point</p>
+                  <h3 className="juce-grid-page__selected-block-placeholder-heading">No snapshot loaded</h3>
+                  <p>Open the snapshot library to load an existing design or create a new one before editing the signal canvas.</p>
                 </div>
-              </Layer>
-            ))}
-          </section>
+                <Button size="sm" kind="primary" onClick={reopenSnapshotEntryPoint}>
+                  Open snapshot library
+                </Button>
+              </Tile>
+            ) : (
+              <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
+                {livePathLayout.groups.map((group, groupIndex) => (
+                  <Layer
+                    key={group.id}
+                    className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
+                  >
+                    <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
+                      {group.flowIds.map((flowId, groupIndex) => {
+                        const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
+                          ? 'Series'
+                          : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
+                            ? `Morph ${Math.round(routing.morphProgress * 100)}%`
+                            : null
+                        const connectorTone = group.kind === 'morph'
+                          ? routing.morphProgress > 0 ? 'active' : 'dim'
+                          : group.tone === 'active' ? 'active' : 'dim'
+                        const connectorDashed = group.kind === 'morph'
+                          ? routing.morphProgress <= 0
+                          : Boolean(group.dashed)
 
+                        return (
+                          <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
+                            {renderLivePathFlowCard(flowId, group.kind)}
+                            {connectorLabel && (
+                              <div
+                                className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
+                                aria-hidden
+                              >
+                                <div className="juce-grid-page__live-path-connector-arrow">
+                                  <span className="juce-grid-page__live-path-connector-shaft" />
+                                  <ArrowDown size={16} />
+                                  <span className="juce-grid-page__live-path-connector-shaft" />
+                                </div>
+                                <span>{connectorLabel}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Layer>
+                ))}
+              </section>
+            )}
           </main>
         </div>
       </section>
@@ -5407,7 +5443,8 @@ export function SnapshotEditorPage() {
       )}
       <SnapshotModal
         open={snapshotsModalOpen}
-        onClose={() => setSnapshotsModalOpen(false)}
+        onClose={handleCloseSnapshotsModal}
+        entryPoint={snapshotEntryRequired}
         snapshotDraft={currentSnapshotDraft}
         applySnapshotData={applySnapshotState}
         onSnapshotSave={clearSnapshotsDirty}

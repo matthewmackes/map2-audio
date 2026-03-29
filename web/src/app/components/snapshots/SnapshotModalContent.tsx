@@ -24,12 +24,15 @@ import {
   interpolateSnapshotData,
 } from '../SnapshotEditor/snapshotEditorComparison'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
+import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
+import { flowSnapshotDataToSnapshotPayload, snapshotsApi } from '../../../map2/clients/snapshots'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
 export interface SnapshotModalContentProps {
+  entryPoint?: boolean
   onRecall?: () => void
   onSnapshotSave?: () => void
   activeTab?: string
@@ -39,6 +42,7 @@ export interface SnapshotModalContentProps {
 }
 
 export function SnapshotModalContent({
+  entryPoint = false,
   onRecall,
   onSnapshotSave,
   activeTab,
@@ -136,8 +140,7 @@ export function SnapshotModalContent({
     return buildSnapshotComparisonSummary(baseData, snapshotCompareDetailQuery.data.snapshot_data)
   }, [activeSnapshotDetailQuery.data?.snapshot_data, snapshotDraft, snapshotCompareDetailQuery.data?.snapshot_data])
 
-  const [showSnapshotCreateModal, setShowSnapshotCreateModal] = useState(false)
-  const [newSnapshotName, setNewSnapshotName] = useState('')
+  const [contentView, setContentView] = useState<'entry' | 'library' | 'wizard'>(entryPoint ? 'entry' : 'library')
   const [snapshotPendingRename, setSnapshotPendingRename] = useState<FlowSnapshot | null>(null)
   const [snapshotRenameValue, setSnapshotRenameValue] = useState('')
   const [snapshotPendingDelete, setSnapshotPendingDelete] = useState<FlowSnapshot | null>(null)
@@ -163,14 +166,31 @@ export function SnapshotModalContent({
 
   const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
   const createFlowSnapshotMutation = useMutation({
-    mutationFn: flowSnapshotsApi.create,
-    onSuccess: () => {
+    mutationFn: async (values: SnapshotNewWizardValues) => {
+      const request = {
+        name: values.name,
+        description: 'Created from Snapshot Editor wizard',
+        input_device: values.inputDevice,
+        output_device: values.outputDevice,
+        ...flowSnapshotDataToSnapshotPayload({
+          ...snapshotDraft,
+          routing: {
+            ...snapshotDraft.routing,
+            mode: values.routingMode === 'morph' ? 'parameter_morph' : values.routingMode,
+          },
+        }),
+      }
+      return snapshotsApi.create(request)
+    },
+    onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot saved', 'success')
+      setContentView('library')
+      pushToast('Snapshot created', 'success')
       onSnapshotSave?.()
+      loadFlowSnapshotMutation.mutate(response.snapshot_id)
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to save snapshot', 'error')
+      pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
     },
   })
 
@@ -253,24 +273,9 @@ export function SnapshotModalContent({
     },
   })
 
-  const openSnapshotCreateModal = useCallback(() => {
-    setNewSnapshotName(`Snapshot ${flowSnapshots.length + 1}`)
-    setShowSnapshotCreateModal(true)
-  }, [flowSnapshots.length])
-
-  const submitSnapshotCreate = useCallback(() => {
-    const name = newSnapshotName.trim()
-    if (!name) {
-      return
-    }
-    createFlowSnapshotMutation.mutate({
-      name,
-      description: 'Saved from Audio Grid',
-      snapshot_data: snapshotDraft,
-    })
-    setShowSnapshotCreateModal(false)
-    setNewSnapshotName('')
-  }, [createFlowSnapshotMutation, newSnapshotName, snapshotDraft])
+  const openSnapshotCreateWizard = useCallback(() => {
+    setContentView('wizard')
+  }, [])
 
   const openSnapshotRenameModal = useCallback((snapshot: FlowSnapshot) => {
     setSnapshotPendingRename(snapshot)
@@ -535,9 +540,13 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
   }, [compareSummaryId, flowSnapshots])
 
   useEffect(() => {
+    setContentView(entryPoint ? 'entry' : 'library')
+  }, [entryPoint])
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (showSnapshotCreateModal) setShowSnapshotCreateModal(false)
+        if (contentView === 'wizard') setContentView(entryPoint ? 'entry' : 'library')
         else if (snapshotPendingRename) setSnapshotPendingRename(null)
         else if (snapshotPendingProgram) closeSnapshotProgramModal()
         else if (snapshotPendingDelete) setSnapshotPendingDelete(null)
@@ -547,12 +556,57 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [closeSnapshotProgramModal, showSnapshotCreateModal, snapshotPendingRename, snapshotPendingProgram, snapshotPendingDelete, snapshotMorphTarget, snapshotMorphRunning])
+  }, [closeSnapshotProgramModal, contentView, entryPoint, snapshotPendingRename, snapshotPendingProgram, snapshotPendingDelete, snapshotMorphTarget, snapshotMorphRunning])
 
   const activeSnapshotDescription = activeSnapshot?.description?.trim()
     || (activeSnapshot
       ? 'Recallable snapshot for the current multi-flow rig.'
       : 'Capture the current routing, chains, and active blocks into the snapshot library.')
+
+  if (contentView === 'entry') {
+    return (
+      <div className="juce-grid-page__snapshot-panel">
+        <div className="juce-grid-page__snapshot-header">
+          <div className="juce-grid-page__snapshot-copy">
+            <strong>Choose a starting point</strong>
+            <span>{flowSnapshots.length} saved snapshots available</span>
+          </div>
+        </div>
+
+        <div className="juce-grid-page__snapshot-content">
+          <Tile className="juce-grid-page__effect-modal-placeholder">
+            <div className="juce-grid-page__parameter-editor-copy">
+              <p className="juce-grid-page__dense-card-kicker">Snapshot entry point</p>
+              <h3 className="juce-grid-page__selected-block-placeholder-heading">No snapshot loaded</h3>
+              <p>Load an existing snapshot from the library or create a new one with the guided wizard.</p>
+            </div>
+            <div className="juce-grid-page__snapshot-command-row">
+              <Button size="sm" kind="secondary" onClick={() => setContentView('library')}>
+                Load Existing
+              </Button>
+              <Button size="sm" kind="primary" onClick={openSnapshotCreateWizard}>
+                Create New
+              </Button>
+            </div>
+          </Tile>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentView === 'wizard') {
+    return (
+      <SnapshotNewWizard
+        existingSnapshotNames={flowSnapshots.map((snapshot) => snapshot.name)}
+        initialName={`Snapshot ${flowSnapshots.length + 1}`}
+        isSubmitting={createFlowSnapshotMutation.isPending}
+        onCancel={() => setContentView(entryPoint ? 'entry' : 'library')}
+        onSubmit={async (values) => {
+          await createFlowSnapshotMutation.mutateAsync(values)
+        }}
+      />
+    )
+  }
 
   return (
     <>
@@ -573,8 +627,8 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
             <span>{flowSnapshots.length} saved snapshots</span>
           </div>
           <div className="juce-grid-page__compact-actions">
-            <Button size="sm" kind="primary" onClick={openSnapshotCreateModal}>
-              Save as new snapshot
+            <Button size="sm" kind="primary" onClick={openSnapshotCreateWizard}>
+              Create New
             </Button>
             <Button size="sm" kind="ghost" onClick={() => setShowImportDialog(true)}>
               Import snapshot
@@ -635,9 +689,9 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                 size="sm"
                 kind={activeSnapshot ? 'secondary' : 'primary'}
                 renderIcon={Add}
-                onClick={openSnapshotCreateModal}
+                onClick={openSnapshotCreateWizard}
               >
-                Save as new snapshot
+                Create New
               </Button>
               {activeSnapshot && (
                 <Button size="sm" kind="ghost" onClick={() => openSnapshotRenameModal(activeSnapshot)}>
@@ -1004,41 +1058,6 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
           )}
         </div>
       </div>
-
-      {showSnapshotCreateModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Save snapshot"
-          modalLabel="Audio Grid workspace"
-          primaryButtonText={createFlowSnapshotMutation.isPending ? 'Saving...' : 'Save snapshot'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={newSnapshotName.trim().length === 0 || createFlowSnapshotMutation.isPending}
-          onRequestClose={() => {
-            setShowSnapshotCreateModal(false)
-            setNewSnapshotName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowSnapshotCreateModal(false)
-            setNewSnapshotName('')
-          }}
-          onRequestSubmit={submitSnapshotCreate}
-          selectorPrimaryFocus="#juce-grid-snapshot-name"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Capture the current multi-flow layout, chain routing, and active block state into the snapshot library.
-            </p>
-            <input
-              id="juce-grid-snapshot-name"
-              aria-label="Snapshot name"
-              value={newSnapshotName}
-              onChange={(event) => setNewSnapshotName(event.target.value)}
-              placeholder="Friday rehearsal"
-            />
-          </div>
-        </Modal>
-      )}
 
       {snapshotPendingRename && (
         <Modal
