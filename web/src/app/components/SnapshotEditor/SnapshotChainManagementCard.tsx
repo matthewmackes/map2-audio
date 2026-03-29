@@ -70,9 +70,9 @@ export function SnapshotChainManagementCard({
       setShowCreateModal(false)
       setNewChainName('')
       onChainSelect?.(createdChain.id)
-      pushToast(`Chain "${createdChain.name}" created`, 'success')
+      pushToast(`Path "${createdChain.name}" created`, 'success')
     },
-    onError: () => pushToast('Failed to create chain', 'error'),
+    onError: () => pushToast('Failed to create path', 'error'),
   })
 
   type ChainActivationMutationContext = {
@@ -97,13 +97,13 @@ export function SnapshotChainManagementCard({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain activated', 'success')
+      pushToast('Path activated', 'success')
     },
     onError: (_error, _chainId, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      pushToast('Failed to activate chain', 'error')
+      pushToast('Failed to activate path', 'error')
     },
   })
 
@@ -124,13 +124,13 @@ export function SnapshotChainManagementCard({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain deactivated', 'info')
+      pushToast('Path deactivated', 'info')
     },
     onError: (_error, _chainId, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      pushToast('Failed to deactivate chain', 'error')
+      pushToast('Failed to deactivate path', 'error')
     },
   })
 
@@ -140,9 +140,9 @@ export function SnapshotChainManagementCard({
       await queryClient.invalidateQueries({ queryKey: ['chains'] })
       setPendingDeleteChain(null)
       onSelectedChainRemoved?.(chainId)
-      pushToast('Chain deleted', 'warn')
+      pushToast('Path deleted', 'warn')
     },
-    onError: () => pushToast('Failed to delete chain', 'error'),
+    onError: () => pushToast('Failed to delete path', 'error'),
   })
 
   const isBusy = createMutation.isPending || activateMutation.isPending || deactivateMutation.isPending || deleteMutation.isPending
@@ -186,24 +186,24 @@ export function SnapshotChainManagementCard({
           <div className="juce-grid-page__chain-card-copy">
             <div className="juce-grid-page__chain-card-heading">
               <Branch size={18} />
-              <strong>Chains</strong>
+              <strong>Paths</strong>
             </div>
-            <p>A Chain is the Audio that will "Go Live" or be "Activated"</p>
+            <p>Each snapshot path becomes a runtime chain when it goes live or is activated.</p>
           </div>
           <div className="juce-grid-page__chain-card-header-actions">
-            <Tag type="cool-gray">Focus {focusedFlowLabel}</Tag>
+            <Tag type="cool-gray">Path {focusedFlowLabel}</Tag>
           </div>
         </div>
 
         <div className="juce-grid-page__chain-action-grid">
           <div className="juce-grid-page__chain-active-display">
             <div className="juce-grid-page__chain-active-display-header">
-              <span className="juce-grid-page__chain-action-label">Active chains</span>
+              <span className="juce-grid-page__chain-action-label">Live paths</span>
               <Tag type={activeChains.length > 0 ? 'green' : 'cool-gray'}>
                 {activeChains.length} live
               </Tag>
             </div>
-            <div className="juce-grid-page__chain-active-display-line" aria-label="Currently active chains">
+            <div className="juce-grid-page__chain-active-display-line" aria-label="Currently live paths">
               {activeChains.length > 0 ? activeChains.map((chain) => {
                 const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
                 const flowLabel = flowsUsingChain.length > 0
@@ -223,7 +223,7 @@ export function SnapshotChainManagementCard({
                 )
               }) : (
                 <span className="juce-grid-page__chain-active-chip is-empty">
-                  <span className="juce-grid-page__chain-active-chip-name">No Active Chains</span>
+                  <span className="juce-grid-page__chain-active-chip-name">No Live Paths</span>
                 </span>
               )}
             </div>
@@ -232,7 +232,7 @@ export function SnapshotChainManagementCard({
           <div className="juce-grid-page__chain-management-layout">
             <div className="juce-grid-page__chain-management-sidebar">
               <Tile className="juce-grid-page__chain-action-tile">
-                <span className="juce-grid-page__chain-action-label">Selected chain</span>
+                <span className="juce-grid-page__chain-action-label">Selected path</span>
                 {selectedChain ? (
                   <>
                     <div className="juce-grid-page__chain-action-heading">
@@ -245,13 +245,13 @@ export function SnapshotChainManagementCard({
                       </div>
                     </div>
                     <p className="juce-grid-page__chain-action-copy">
-                      Assigned to focused flow {focusedFlowLabel}. Manage the focused chain while keeping the chooser visible beside this summary.
+                      Assigned to focused path {focusedFlowLabel}. Manage the selected path while keeping the chooser visible beside this summary.
                     </p>
                     {selectedChainFlowSlots.length > 0 && (
                       <div className="juce-grid-page__chain-flow-tags">
                         {selectedChainFlowSlots.map((slot) => (
                           <Tag key={`${slot.id}-${slot.label}`} type="blue">
-                            Flow {slot.label}
+                            Path {slot.label}
                           </Tag>
                         ))}
                       </div>
@@ -259,17 +259,17 @@ export function SnapshotChainManagementCard({
                   </>
                 ) : (
                   <>
-                    <strong>No chain assigned</strong>
+                    <strong>No path assigned</strong>
                     <p className="juce-grid-page__chain-action-copy">
-                      Select a chain from the chooser to the right to bind it to focused flow {focusedFlowLabel} before duplicating, renaming, or changing activation.
+                      Select a path from the chooser to the right to bind it to focused path {focusedFlowLabel} before duplicating, renaming, or changing activation.
                     </p>
                   </>
                 )}
               </Tile>
 
               <Tile className="juce-grid-page__chain-action-tile">
-                <span className="juce-grid-page__chain-action-label">Chain operations</span>
-                <p className="juce-grid-page__chain-action-copy">Create a new chain or manage the focused chain lifecycle inside the same Carbon action group.</p>
+                <span className="juce-grid-page__chain-action-label">Path operations</span>
+                <p className="juce-grid-page__chain-action-copy">Create a new path or manage the focused path lifecycle inside the same Carbon action group.</p>
                 <div className="juce-grid-page__chain-button-row">
                   <Button
                     size="sm"
@@ -278,7 +278,7 @@ export function SnapshotChainManagementCard({
                     onClick={() => setShowCreateModal(true)}
                     disabled={createMutation.isPending}
                   >
-                    New chain
+                    New path
                   </Button>
                   <Button
                     size="sm"
@@ -286,26 +286,26 @@ export function SnapshotChainManagementCard({
                     onClick={onToggleSelectedChainActive}
                     disabled={!selectedChain}
                   >
-                    {selectedChain?.is_active ? 'Deactivate chain' : 'Activate chain'}
+                    {selectedChain?.is_active ? 'Deactivate path' : 'Activate path'}
                   </Button>
                   <Button size="sm" kind="ghost" onClick={onDuplicateChain} disabled={!selectedChain}>
                     Duplicate
                   </Button>
                   <Button size="sm" kind="ghost" onClick={onRenameChain} disabled={!selectedChain}>
-                    Rename chain
+                    Rename path
                   </Button>
                 </div>
               </Tile>
             </div>
 
             <div className="juce-grid-page__chain-chooser-panel">
-              <span className="juce-grid-page__chain-action-label">Chains chooser</span>
+              <span className="juce-grid-page__chain-action-label">Path chooser</span>
               {chainsQuery.isLoading ? (
                 <div className="juce-grid-page__chain-loading">
-                  <InlineLoading description="Loading chains" status="active" />
+                  <InlineLoading description="Loading paths" status="active" />
                 </div>
               ) : (
-                <div className="juce-grid-page__chain-grid" role="list" aria-label="Available chains">
+                <div className="juce-grid-page__chain-grid" role="list" aria-label="Available paths">
                   {chains.map((chain) => {
                     const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
                     const isSelected = selectedChainId === chain.id
@@ -345,7 +345,7 @@ export function SnapshotChainManagementCard({
                               ))}
                             </div>
                           ) : (
-                            <span className="juce-grid-page__chain-empty-copy">Not assigned to a flow</span>
+                            <span className="juce-grid-page__chain-empty-copy">Not assigned to a snapshot path</span>
                           )}
                         </div>
 
@@ -387,7 +387,7 @@ export function SnapshotChainManagementCard({
                             kind={chain.is_active ? 'secondary' : 'ghost'}
                             hasIconOnly
                             renderIcon={Power}
-                            iconDescription={chain.is_active ? `Deactivate ${chain.name}` : `Activate ${chain.name}`}
+                            iconDescription={chain.is_active ? `Deactivate path ${chain.name}` : `Activate path ${chain.name}`}
                             onClick={(event) => {
                               event.stopPropagation()
                               toggleChainPower(chain)
@@ -420,8 +420,8 @@ export function SnapshotChainManagementCard({
       {showCreateModal && (
         <Modal
           open
-          modalHeading="Create chain"
-          primaryButtonText={createMutation.isPending ? 'Creating...' : 'Create chain'}
+          modalHeading="Create path"
+          primaryButtonText={createMutation.isPending ? 'Creating...' : 'Create path'}
           secondaryButtonText="Cancel"
           primaryButtonDisabled={newChainName.trim().length === 0 || createMutation.isPending}
           onRequestClose={() => {
@@ -436,11 +436,11 @@ export function SnapshotChainManagementCard({
         >
           <div className="juce-grid-page__form-modal-body">
             <p className="juce-grid-page__modal-copy">
-              Create a new chain and assign it to focused flow {focusedFlowLabel}.
+              Create a new path and assign it to focused path {focusedFlowLabel}.
             </p>
             <TextInput
               id="juce-grid-create-chain-name"
-              labelText="Chain name"
+              labelText="Path name"
               value={newChainName}
               onChange={(event) => setNewChainName(event.target.value)}
               autoFocus
@@ -454,7 +454,7 @@ export function SnapshotChainManagementCard({
           open
           danger
           modalHeading={`Delete ${pendingDeleteChain.name}?`}
-          primaryButtonText={deleteMutation.isPending ? 'Deleting...' : 'Delete chain'}
+          primaryButtonText={deleteMutation.isPending ? 'Deleting...' : 'Delete path'}
           secondaryButtonText="Cancel"
           primaryButtonDisabled={deleteMutation.isPending}
           onRequestClose={() => setPendingDeleteChain(null)}
@@ -463,7 +463,7 @@ export function SnapshotChainManagementCard({
         >
           <div className="juce-grid-page__form-modal-body">
             <p className="juce-grid-page__modal-copy">
-              Remove this chain from the library. Any flows using it will be cleared on this page.
+              Remove this path from the library. Any snapshot paths using it will be cleared on this page.
             </p>
           </div>
         </Modal>

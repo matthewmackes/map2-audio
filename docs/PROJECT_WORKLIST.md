@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 19:21 EDT - T547-subD1 completed after isolating the shared flow-snapshot compatibility export surface
+Last updated: 2026-03-29 19:33 EDT - T547-subD2 completed after path-first Snapshot Editor wording updates and regression coverage
 
 ID: T547
 Status: [>] In Progress
@@ -117,7 +117,7 @@ Last updated: 2026-03-29 19:21 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/map2/clientExports.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T547-subD2
-Status: [ ] Todo
+Status: [✓] Done
 Title: Continue Snapshot Editor path-first vocabulary migration in lower-level management panels
 Description:
 - Goal / acceptance criteria: Rename operator-facing chain/flow copy in the deeper Snapshot Editor management surfaces to snapshot/path terminology where the new model is authoritative, while documenting any truly runtime-bound chain concepts that must stay. Preserve behavior and update focused tests where wording changes are asserted.
@@ -127,7 +127,12 @@ Description:
 - Required outputs: editor copy/component updates, focused validation, explicit notes for retained runtime-only chain concepts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 19:18 EDT - Codex
+Last updated: 2026-03-29 19:33 EDT - Codex
+- Completion notes:
+  - Updated `SnapshotChainManagementCard` to present `Paths` / `Live paths` / `Path operations` / `Path chooser` language to operators while explicitly noting that each live path is backed by a runtime chain under the hood.
+  - Updated adjacent Snapshot Editor routing, preset, and assignment modal copy in `SnapshotEditorPageContent.tsx` so the deeper page panels no longer mix chain/flow-era language into the snapshot-first path model.
+  - Added `SnapshotChainManagementCard.test.tsx` to lock the new path-first wording and runtime-chain note in place.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subD3
 Status: [ ] Todo

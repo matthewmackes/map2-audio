@@ -5067,7 +5067,7 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__compact-section-header">
                   <p className="juce-grid-page__compact-section-kicker">Signal path</p>
                   <h2>Routing topology</h2>
-                  <p>Configure how Chains and Flows are routed in reference to one another.</p>
+                  <p>Configure how snapshot paths and their live routing interact.</p>
                 </div>
                 <div className="juce-grid-page__toolbar-buttons">
                   <Button
@@ -5094,7 +5094,7 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__compact-section-header">
                   <p className="juce-grid-page__compact-section-kicker">Library</p>
                   <h2>Presets</h2>
-                  <p>Preset save/load/import and selected-chain controls now live in the Chains card above.</p>
+                  <p>Preset save/load/import and selected-path controls now live in the Paths card above.</p>
                 </div>
                 </Layer>
               )}
@@ -5908,8 +5908,8 @@ export function SnapshotEditorPage() {
           open
           size="lg"
           modalHeading={`Assign ${selectedFlowForAssignment.id}`}
-          modalLabel={selectedFlowForAssignment.chainId ? `Chain ${selectedFlowForAssignment.chainId}` : 'No chain assigned'}
-          primaryButtonText={isAssigningFlow ? 'Assigning...' : 'Assign flow'}
+          modalLabel={selectedFlowForAssignment.chainId ? `Path ${selectedFlowForAssignment.chainId}` : 'No path assigned'}
+          primaryButtonText={isAssigningFlow ? 'Assigning...' : 'Assign path'}
           secondaryButtonText="Cancel"
           primaryButtonDisabled={!selectedFlowForAssignment.chainId || !assignmentSelectedNodeId || isAssigningFlow}
           onRequestClose={closeAssignmentDialog}
@@ -5918,17 +5918,17 @@ export function SnapshotEditorPage() {
         >
           <div className="juce-grid-page__form-modal-body">
             <p className="juce-grid-page__modal-copy">
-              Select a target node for the active flow. Recommendations favor headroom and GPU compatibility when the chain analysis requires it.
+              Select a target node for the active path. Recommendations favor headroom and GPU compatibility when the underlying runtime chain analysis requires it.
             </p>
 
             {!selectedFlowForAssignment.chainId && (
               <p className="juce-grid-page__modal-copy">
-                Assign a chain to this flow before deploying it to a cluster node.
+                Assign a path to this slot before deploying it to a cluster node.
               </p>
             )}
 
             {assignmentAnalysisQuery.isLoading && (
-              <InlineLoading description="Analyzing chain requirements" status="active" />
+              <InlineLoading description="Analyzing path requirements" status="active" />
             )}
 
             {recommendedAssignmentNodes.length > 0 && (
