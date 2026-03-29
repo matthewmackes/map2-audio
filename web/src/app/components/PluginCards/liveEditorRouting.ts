@@ -5,6 +5,7 @@ export type LivePluginCardRenderMode = 'custom' | 'template' | 'generic'
 export interface LivePluginCardStrategy {
   renderMode: LivePluginCardRenderMode
   template?: PluginCardTemplate
+  forceCompact?: boolean
 }
 
 export interface LivePluginCardContext {
@@ -18,7 +19,7 @@ const LIVE_SAFE_CUSTOM_URIS = new Set([
   'map2://juce/modulation/intellifx',
 ])
 
-const LIVE_GENERIC_ONLY_URIS = new Set([
+const LIVE_COMPACT_WORKSPACE_CARD_URIS = new Set([
   'map2://juce/drums',
 ])
 
@@ -46,7 +47,7 @@ export function resolveLivePluginCardStrategy(
 
   if (isSynthForgeUri(normalizedUri)) {
     return (context.sameFamilyCount ?? 1) <= 1
-      ? { renderMode: 'custom' }
+      ? { renderMode: 'custom', forceCompact: true }
       : { renderMode: 'generic' }
   }
 
@@ -54,8 +55,8 @@ export function resolveLivePluginCardStrategy(
     return { renderMode: 'custom' }
   }
 
-  if (LIVE_GENERIC_ONLY_URIS.has(normalizedUri)) {
-    return { renderMode: 'generic' }
+  if (LIVE_COMPACT_WORKSPACE_CARD_URIS.has(normalizedUri)) {
+    return { renderMode: 'custom', forceCompact: true }
   }
 
   return {

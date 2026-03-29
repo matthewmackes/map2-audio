@@ -15,8 +15,8 @@ import {
   Tag,
 } from '@carbon/react'
 import { Information, MachineLearningModel, VolumeUp, WarningAlt } from '@carbon/icons-react'
-import { flowSnapshotsApi } from '../../../map2/api'
-import type { FlowSnapshotData, PluginLoaderState, PluginSnapshot } from '../../../map2/types'
+import { snapshotsApi } from '../../../map2/clients/snapshots'
+import type { PluginLoaderState, SnapshotDetail, SnapshotPlugin } from '../../../map2/types'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/ClusterContext'
 import { useToasts } from '../Toasts'
@@ -175,8 +175,8 @@ export function SnapshotDeployModal({
   })
 
   const snapshotDetailQuery = useQuery({
-    queryKey: ['flow-snapshots', snapshot?.id, 'detail'],
-    queryFn: () => flowSnapshotsApi.get(snapshot!.id),
+    queryKey: ['snapshots', snapshot?.id, 'detail'],
+    queryFn: () => snapshotsApi.get(snapshot!.id),
     enabled: open && Boolean(snapshot?.id),
     staleTime: 10000,
   })
@@ -225,15 +225,15 @@ export function SnapshotDeployModal({
   }, [nodes, pluginCatalogQuery.data?.plugins, snapshot, snapshotPluginUri])
 
   const assetDependencies = useMemo<DependencyDescriptor[]>(() => {
-    const snapshotData: FlowSnapshotData | undefined = snapshotDetailQuery.data?.snapshot_data
+    const snapshotData: SnapshotDetail | undefined = snapshotDetailQuery.data
     if (!snapshotData) {
       return []
     }
 
     const descriptors = new Map<string, DependencyDescriptor>()
-    const plugins = Object.values(snapshotData.chains).flatMap((chain) => chain.plugins ?? [])
+    const plugins = snapshotData.chains.flatMap((chain) => chain.plugins ?? [])
 
-    for (const plugin of plugins as PluginSnapshot[]) {
+    for (const plugin of plugins as SnapshotPlugin[]) {
       const loaderState = (plugin.loader_state ?? {}) as PluginLoaderState
       const label = snapshotLoaderLabel(loaderState)
       if (!label) {
@@ -289,7 +289,7 @@ export function SnapshotDeployModal({
   }, [
     namLibraryQuery.data,
     irLibraryQuery.data,
-    snapshotDetailQuery.data?.snapshot_data,
+    snapshotDetailQuery.data,
     sourceNodeId,
   ])
 

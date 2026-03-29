@@ -5,6 +5,7 @@
 
 // Components
 export { default as ChainFlowCanvas } from './ChainFlowCanvas';
+export { default as ChainGraphCanvas } from './ChainGraphCanvas';
 export { default as AudioPluginNode } from './nodes/AudioPluginNode';
 export { default as DeviceNode } from './nodes/DeviceNode';
 export { default as RoutingNode } from './nodes/RoutingNode';
@@ -29,14 +30,14 @@ export { createSidechainConnectionEdge, isSidechainEdge } from './edges/Sidechai
 // Flow Utilities
 export type { FlowCallbacks, ChainFlowData } from './utils/chainToFlow';
 export { chainToFlow, hasSavedPositions } from './utils/chainToFlow';
-export type { ABFlowCallbacks, ABFlowData, ABFlowNode } from './utils/chainToABFlow';
-export { chainToABFlow } from './utils/chainToABFlow';
 export { flowToChainOrder, getPluginPosition, hasOrderChanged } from './utils/flowToChain';
+export { graphToChainOrder } from './utils/graphToChain';
 export { saveNodePositions, loadNodePositions, clearNodePositions } from './utils/positionStorage';
 export { autoLayoutNodes, relayoutNodes, defaultLayoutConfig } from './layout/autoLayout';
 
 // Hooks
 export { useChainFlow } from './hooks/useChainFlow';
+export { useChainGraph } from './hooks/useChainGraph';
 export { useSidechainConnections } from './hooks/useSidechainConnections';
 export { usePluginMeters } from './hooks/usePluginMeters';
 export type { SidechainConnection as ChainBuilderSidechainConnection, SidechainAPI, PluginInfo } from './hooks/useSidechainConnections';

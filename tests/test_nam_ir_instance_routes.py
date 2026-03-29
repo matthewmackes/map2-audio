@@ -4,7 +4,10 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from app import database as database_module
 from app.routes import ir as ir_routes
 from app.routes import nam as nam_routes
 from app.services.upload_service import AssetType, UnifiedUploadService
@@ -203,6 +206,12 @@ class _FakeGlobalFallbackIrEngine:
         return {"name": "Current Chain", "items": []}
 
 
+def _make_sync_session_factory(tmp_path: Path, name: str):
+    engine = create_engine(f"sqlite:///{tmp_path / name}")
+    database_module.Base.metadata.create_all(engine)
+    return sessionmaker(bind=engine, autocommit=False, autoflush=False), engine
+
+
 def test_nam_status_uses_instance_engine_when_instance_id_present(monkeypatch):
     monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: _FakeNamEngine())
     monkeypatch.setattr(
@@ -318,6 +327,78 @@ def test_nam_routes_refuse_global_fallback_when_multiple_configured_loaders_exis
     assert exc_info.value.status_code == 409
     assert "refusing global fallback" in str(exc_info.value.detail)
     assert engine.global_load_calls == []
+
+
+def test_nam_routes_allow_global_fallback_when_plugin_position_is_unique_across_active_loaders(tmp_path, monkeypatch):
+    engine = _FakeGlobalFallbackNamEngine()
+    session_factory, db_engine = _make_sync_session_factory(tmp_path, "nam-active-position-fallback.db")
+    chain_a_id: int
+    chain_b_id: int
+
+    with session_factory() as session:
+        chain_a = database_module.Chain(name="Flow A", is_active=True)
+        chain_b = database_module.Chain(name="Flow B", is_active=True)
+        session.add_all([chain_a, chain_b])
+        session.flush()
+        chain_a_id = chain_a.id
+        chain_b_id = chain_b.id
+        session.add_all(
+            [
+                database_module.ChainPlugin(
+                    chain_id=chain_a_id,
+                    plugin_uri="map2://juce/nam",
+                    position=2,
+                    bypass=False,
+                ),
+                database_module.ChainPlugin(
+                    chain_id=chain_b_id,
+                    plugin_uri="map2://juce/nam",
+                    position=0,
+                    bypass=False,
+                ),
+            ]
+        )
+        session.commit()
+
+    monkeypatch.setattr(nam_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(nam_routes, "get_db_session", lambda: session_factory())
+    monkeypatch.setattr(
+        nam_routes,
+        "_scan_nam_models",
+        lambda: [{"name": "Global Crunch", "path": "/tmp/global-crunch.nam"}],
+    )
+
+    try:
+        assert nam_routes._configured_nam_blocks_allow_global_fallback(2) is True
+
+        payload = asyncio.run(nam_routes.load_nam_model("Global Crunch", plugin_position=2))
+
+        assert payload["status"] == "loading"
+        assert engine.global_load_calls == ["/tmp/global-crunch.nam"]
+
+        with session_factory() as session:
+            scoped_plugin = (
+                session.query(database_module.ChainPlugin)
+                .filter(
+                    database_module.ChainPlugin.chain_id == chain_a_id,
+                    database_module.ChainPlugin.position == 2,
+                )
+                .one()
+            )
+            other_plugin = (
+                session.query(database_module.ChainPlugin)
+                .filter(
+                    database_module.ChainPlugin.chain_id == chain_b_id,
+                    database_module.ChainPlugin.position == 0,
+                )
+                .one()
+            )
+
+        assert scoped_plugin.selected_asset_name == "Global Crunch"
+        assert scoped_plugin.selected_asset_path == "/tmp/global-crunch.nam"
+        assert other_plugin.selected_asset_name is None
+    finally:
+        db_engine.dispose()
 
 
 def test_nam_status_surfaces_configured_state_when_runtime_identity_is_missing(monkeypatch):
@@ -547,6 +628,78 @@ def test_ir_routes_refuse_global_fallback_when_multiple_configured_loaders_exist
 
     assert exc_info.value.status_code == 409
     assert "refusing global fallback" in str(exc_info.value.detail)
+
+
+def test_ir_routes_allow_global_fallback_when_plugin_position_is_unique_across_active_loaders(tmp_path, monkeypatch):
+    engine = _FakeGlobalFallbackIrEngine()
+    session_factory, db_engine = _make_sync_session_factory(tmp_path, "ir-active-position-fallback.db")
+    chain_a_id: int
+    chain_b_id: int
+
+    with session_factory() as session:
+        chain_a = database_module.Chain(name="Flow A", is_active=True)
+        chain_b = database_module.Chain(name="Flow B", is_active=True)
+        session.add_all([chain_a, chain_b])
+        session.flush()
+        chain_a_id = chain_a.id
+        chain_b_id = chain_b.id
+        session.add_all(
+            [
+                database_module.ChainPlugin(
+                    chain_id=chain_a_id,
+                    plugin_uri="map2://juce/convolution/cabinet",
+                    position=6,
+                    bypass=False,
+                ),
+                database_module.ChainPlugin(
+                    chain_id=chain_b_id,
+                    plugin_uri="map2://juce/convolution/cabinet",
+                    position=1,
+                    bypass=False,
+                ),
+            ]
+        )
+        session.commit()
+
+    monkeypatch.setattr(ir_routes, "get_audio_engine", lambda: engine)
+    monkeypatch.setattr(ir_routes, "get_db_session", lambda: session_factory())
+    monkeypatch.setattr(
+        ir_routes,
+        "_scan_irs",
+        lambda ir_type: [{"name": "Scoped Mesa", "path": f"/tmp/{ir_type}-scoped.wav", "size_mb": 1.5}],
+    )
+    monkeypatch.setattr(ir_routes._ir_processor, "load_ir", lambda ir_name, ir_type: True)
+
+    try:
+        assert ir_routes._configured_ir_blocks_allow_global_fallback("cabinet", 6) is True
+
+        payload = asyncio.run(ir_routes.load_cabinet_ir("Scoped Mesa", plugin_position=6))
+
+        assert payload["status"] == "loaded"
+
+        with session_factory() as session:
+            scoped_plugin = (
+                session.query(database_module.ChainPlugin)
+                .filter(
+                    database_module.ChainPlugin.chain_id == chain_a_id,
+                    database_module.ChainPlugin.position == 6,
+                )
+                .one()
+            )
+            other_plugin = (
+                session.query(database_module.ChainPlugin)
+                .filter(
+                    database_module.ChainPlugin.chain_id == chain_b_id,
+                    database_module.ChainPlugin.position == 1,
+                )
+                .one()
+            )
+
+        assert scoped_plugin.selected_asset_name == "Scoped Mesa"
+        assert scoped_plugin.selected_asset_path == "/tmp/cabinet-scoped.wav"
+        assert other_plugin.selected_asset_name is None
+    finally:
+        db_engine.dispose()
 
 
 def test_upload_service_rejects_traversal_and_saves_safe_name(monkeypatch, tmp_path: Path):

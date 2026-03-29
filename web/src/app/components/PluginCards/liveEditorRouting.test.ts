@@ -10,6 +10,7 @@ describe('resolveLivePluginCardStrategy', () => {
   it('allows the flagship SynthForge card when it is the only SynthForge block in the family', () => {
     expect(resolveLivePluginCardStrategy('map2://juce/synthforge', 'Instrument', { sameFamilyCount: 1 })).toEqual({
       renderMode: 'custom',
+      forceCompact: true,
     })
   })
 
@@ -41,6 +42,13 @@ describe('resolveLivePluginCardStrategy', () => {
   it('routes reverb IR onto the custom live editor card', () => {
     expect(resolveLivePluginCardStrategy('map2://juce/convolution/reverb', 'Convolution')).toEqual({
       renderMode: 'custom',
+    })
+  })
+
+  it('routes drum machine onto the compact custom live editor card', () => {
+    expect(resolveLivePluginCardStrategy('map2://juce/drums', 'Instrument')).toEqual({
+      renderMode: 'custom',
+      forceCompact: true,
     })
   })
 })

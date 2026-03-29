@@ -14,6 +14,13 @@ import type {
   SnapshotCategory,
   SnapshotsResponse,
 } from '../types'
+import {
+  flowSnapshotDataToSnapshotPayload,
+  snapshotDetailToFlowSnapshotData,
+  snapshotDetailToFlowSnapshotDetail,
+  snapshotSummaryToFlowSnapshot,
+  snapshotsApi as unifiedSnapshotsApi,
+} from './snapshots'
 import { appendNodeQuery, fetchJson } from '../http'
 import { API_BASE } from '../transport'
 
@@ -233,29 +240,40 @@ export const sessionsApi = {
 }
 
 export const flowSnapshotsApi = {
-  list: (nodeId?: string | null) =>
-    fetchJson<{
-      snapshots: FlowSnapshot[]
-      count: number
-      active_id: number | null
-    }>(appendNodeQuery(`${API_BASE}/flow-snapshots`, nodeId)),
+  list: async (_nodeId?: string | null) => {
+    const response = await unifiedSnapshotsApi.list()
+    return {
+      snapshots: response.snapshots.map(snapshotSummaryToFlowSnapshot),
+      count: response.count,
+      active_id: response.active_id,
+    }
+  },
 
-  get: (snapshotId: number) =>
-    fetchJson<FlowSnapshotDetail>(`${API_BASE}/flow-snapshots/${snapshotId}`),
+  get: async (snapshotId: number) =>
+    snapshotDetailToFlowSnapshotDetail(await unifiedSnapshotsApi.get(snapshotId)),
 
-  create: (request: {
+  create: async (request: {
     name: string
     description?: string
     tags?: string[]
     program_number?: number | null
     snapshot_data: FlowSnapshotData
-  }) =>
-    fetchJson<{ status: string; snapshot_id: number; message: string }>(`${API_BASE}/flow-snapshots`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    }),
+  }) => {
+    const response = await unifiedSnapshotsApi.create({
+      name: request.name,
+      description: request.description,
+      tags: request.tags,
+      program_number: request.program_number,
+      ...flowSnapshotDataToSnapshotPayload(request.snapshot_data),
+    })
+    return {
+      status: response.status,
+      snapshot_id: response.snapshot_id,
+      message: response.message,
+    }
+  },
 
-  update: (
+  update: async (
     snapshotId: number,
     updates: {
       name?: string
@@ -265,60 +283,67 @@ export const flowSnapshotsApi = {
       is_favorite?: boolean
       snapshot_data?: FlowSnapshotData
     },
-    nodeId?: string | null,
-  ) =>
-    fetchJson<{ status: string; message: string }>(
-      appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}`, nodeId),
-      { method: 'PATCH', body: JSON.stringify(updates) },
-    ),
+    _nodeId?: string | null,
+  ) => {
+    const request = {
+      name: updates.name,
+      description: updates.description,
+      tags: updates.tags,
+      display_order: updates.display_order,
+      is_favorite: updates.is_favorite,
+      ...(updates.snapshot_data ? flowSnapshotDataToSnapshotPayload(updates.snapshot_data) : {}),
+    }
+    const response = await unifiedSnapshotsApi.update(snapshotId, request)
+    return {
+      status: response.status,
+      message: response.message,
+    }
+  },
 
-  delete: (snapshotId: number, nodeId?: string | null) =>
-    fetchJson<{ status: string; message: string }>(
-      appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}`, nodeId),
-      { method: 'DELETE' },
-    ),
+  delete: async (snapshotId: number, _nodeId?: string | null) =>
+    unifiedSnapshotsApi.delete(snapshotId),
 
-  load: (snapshotId: number, nodeId?: string | null) =>
-    fetchJson<{
-      status: string
-      snapshot_id: number
-      name: string
-      snapshot_data: FlowSnapshotData
-    }>(appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}/load`, nodeId), { method: 'POST' }),
+  load: async (snapshotId: number, _nodeId?: string | null) => {
+    const response = await unifiedSnapshotsApi.activate(snapshotId)
+    return {
+      status: response.status,
+      snapshot_id: response.snapshot_id,
+      name: response.name,
+      snapshot_data: snapshotDetailToFlowSnapshotData(response.snapshot_data),
+    }
+  },
 
-  preview: (request: { snapshot_data: FlowSnapshotData }) =>
-    fetchJson<{
-      status: string
-      snapshot_data: FlowSnapshotData
-      chains_created: number
-      params_applied: number
-      bypass_applied: number
-    }>(`${API_BASE}/flow-snapshots/preview`, { method: 'POST', body: JSON.stringify(request) }),
+  preview: async (request: { snapshot_data: FlowSnapshotData }) => {
+    const response = await unifiedSnapshotsApi.preview(request.snapshot_data)
+    return {
+      status: response.status,
+      snapshot_data: snapshotDetailToFlowSnapshotData(response.snapshot_data),
+      chains_created: response.chains_created,
+      params_applied: response.params_applied,
+      bypass_applied: response.bypass_applied,
+    }
+  },
 
   setProgram: (snapshotId: number, programNumber: number | null) =>
-    fetchJson<{
-      status: string
-      snapshot_id: number
-      program_number: number | null
-    }>(`${API_BASE}/flow-snapshots/${snapshotId}/program`, {
-      method: 'POST',
-      body: JSON.stringify({ program_number: programNumber }),
-    }),
+    unifiedSnapshotsApi.setProgram(snapshotId, programNumber),
 
-  duplicate: (snapshotId: number) =>
-    fetchJson<{ status: string; snapshot_id: number; message: string }>(
-      `${API_BASE}/flow-snapshots/${snapshotId}/duplicate`,
-      { method: 'POST' },
-    ),
+  duplicate: async (snapshotId: number) => {
+    const response = await unifiedSnapshotsApi.duplicate(snapshotId)
+    return {
+      status: response.status,
+      snapshot_id: response.snapshot_id,
+      message: response.message,
+    }
+  },
 
-  reorder: (snapshotIds: number[]) =>
-    fetchJson<{ status: string; message: string }>(
-      `${API_BASE}/flow-snapshots/reorder`,
-      { method: 'POST', body: JSON.stringify(snapshotIds) },
-    ),
+  reorder: (snapshotIds: number[]) => unifiedSnapshotsApi.reorder(snapshotIds),
 
-  getByProgram: (programNumber: number) =>
-    fetchJson<{ id: number; name: string; program_number: number }>(
-      `${API_BASE}/flow-snapshots/by-program/${programNumber}`,
-    ),
+  getByProgram: async (programNumber: number) => {
+    const response = await unifiedSnapshotsApi.getByProgram(programNumber)
+    return {
+      id: response.id,
+      name: response.name,
+      program_number: response.program_number ?? programNumber,
+    }
+  },
 }

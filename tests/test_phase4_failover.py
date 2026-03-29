@@ -28,8 +28,8 @@ def client():
 
 
 def test_failover_endpoint_exists(client):
-    res = client.post("/api/cluster/flows/failover", json={"flow_id": "flow-0"})
-    assert res.status_code in (200, 400)
+    res = client.post("/api/cluster/snapshots/failover", json={"snapshot_id": 1})
+    assert res.status_code in (200, 404)
 
 
 def test_maintenance_endpoint_exists(client):

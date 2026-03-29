@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type UIEvent } from 'react'
 import { ComposedModal, ModalBody, ModalHeader } from '@carbon/react'
-import type { FlowSnapshotData } from '../../../map2/types'
+import { snapshotDetailToFlowSnapshotData } from '../../../map2/clients/snapshots'
+import type { FlowSnapshotData, SnapshotDetail } from '../../../map2/types'
 import { SnapshotModalContent } from './SnapshotModalContent'
 
 export interface SnapshotModalProps {
   open: boolean
   onClose: () => void
-  snapshotDraft: FlowSnapshotData
+  snapshotDraft: FlowSnapshotData | SnapshotDetail
   applySnapshotData: (snapshotData: FlowSnapshotData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
   onSnapshotSave?: () => void
 }
@@ -39,6 +40,9 @@ export function SnapshotModal({
   applySnapshotData,
   onSnapshotSave,
 }: SnapshotModalProps) {
+  const normalizedSnapshotDraft = 'flowSlots' in snapshotDraft
+    ? snapshotDraft
+    : snapshotDetailToFlowSnapshotData(snapshotDraft)
   const [activeTab, setActiveTab] = useState(getStoredSnapshotTab)
   const [scrollTop, setScrollTop] = useState(getStoredSnapshotScroll)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -109,7 +113,7 @@ export function SnapshotModal({
           onSnapshotSave={handleSnapshotSave}
           activeTab={activeTab}
           onTabChange={persistActiveTab}
-          snapshotDraft={snapshotDraft}
+          snapshotDraft={normalizedSnapshotDraft}
           applySnapshotData={applySnapshotData}
         />
       </ModalBody>

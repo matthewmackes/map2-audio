@@ -33,7 +33,7 @@ const MidiHubEventsPage     = lazy(() => import('./pages/midi-hub/MidiHubEventsP
 const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcessingPage').then(m => ({ default: m.MidiHubProcessingPage })))
 const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
-const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m => ({ default: m.JuceGridPage })))
+const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPage').then(m => ({ default: m.SnapshotEditorPage })))
 const AudioTablePage        = lazy(() => import('./pages/AudioTablePage').then(m => ({ default: m.AudioTablePage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
@@ -224,10 +224,11 @@ export function App() {
                                   <Route path="network" element={<MidiHubNetworkPage />} />
                                   <Route path="lab" element={<MidiHubLabPage />} />
                                 </Route>
-                                <Route path="/grid" element={<Navigate to="/juce-grid" replace />} />
-                                <Route path="/juce-grid" element={<JuceGridPage />} />
+                                <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
+                                <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
+                                <Route path="/snapshot-editor" element={<SnapshotEditorPage />} />
                                 <Route path="/audio-table" element={<AudioTablePage />} />
-                                <Route path="/grid-3d" element={<Navigate to="/juce-grid" replace />} />
+                                <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/dsp" element={<DSPPage />} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
@@ -255,7 +256,7 @@ export function App() {
                                   <Route
                                     path="flow"
                                     element={
-                                      <ErrorBoundary title="MPX1 flow view crashed" actionLabel="Reload flow view">
+                                      <ErrorBoundary title="MPX1 signal path view crashed" actionLabel="Reload signal path">
                                         <MPX1FlowView />
                                       </ErrorBoundary>
                                     }
@@ -272,7 +273,7 @@ export function App() {
                                   <Route
                                     path="flow"
                                     element={
-                                      <ErrorBoundary title="IntelFX flow view crashed" actionLabel="Reload flow view">
+                                      <ErrorBoundary title="IntelFX signal path view crashed" actionLabel="Reload signal path">
                                         <IntelFXFlowView />
                                       </ErrorBoundary>
                                     }

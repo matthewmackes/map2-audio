@@ -88,12 +88,13 @@ import {
   type AudioPort,
   type AudioRoutingSelectionBinding,
 } from '../../map2/api'
+import { snapshotDetailToFlowSnapshotData } from '../../map2/clients/snapshots'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
-import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
+import { useSnapshots } from '../hooks/useSnapshots'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
-import { getEffectIcon } from '../components/icons/effectIcons'
+import { getEffectIcon, getEffectIconSpec } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/ParameterControl'
@@ -121,6 +122,14 @@ import {
 } from '../components/JuceGrid/JuceGridRoutingVisualizer'
 import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/JuceGrid/JuceGridSignalCanvas'
 import { buildJuceGridLivePath } from '../components/JuceGrid/juceGridLivePath'
+import {
+  applyOptimisticJuceGridLiveChainSet,
+  buildJuceGridLiveChainProjection,
+  buildJuceGridRevertedStateFromLiveProjection,
+  getJuceGridDesiredLiveChainIds,
+  hasJuceGridLiveChainMismatch,
+  type JuceGridLiveChainProjection,
+} from '../components/JuceGrid/juceGridLiveChains'
 import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
@@ -296,6 +305,22 @@ function getSelectedPluginHeroIcon(meta: Plugin | null, plugin: Chain['plugins']
   return getEffectIcon('plugin')
 }
 
+function getLiveChainRepresentativeAccessibleLabel(
+  item: JuceGridLiveChainProjection['representativeItems'][number],
+): string {
+  return item.caption ? `${item.label} · ${item.caption}` : item.label
+}
+
+function getLiveChainRepresentativeIcon(
+  item: JuceGridLiveChainProjection['representativeItems'][number],
+) {
+  const iconSpec = getEffectIconSpec(item.iconHint)
+  if (iconSpec.matched) {
+    return iconSpec
+  }
+  return getEffectIconSpec(item.kind === 'loop' ? 'rack' : 'plugin')
+}
+
 function getAudioRouteLabels(
   selectedPorts: number[] | undefined,
   ports: AudioPort[] | undefined,
@@ -373,6 +398,27 @@ function getLivePathBranchLabel(
   }
 
   return flowState.annotation
+}
+
+function formatLiveChainRuntimeLabel(runtimeStatus: JuceGridLiveChainProjection['runtimeStatus']): string {
+  switch (runtimeStatus) {
+    case 'active':
+      return 'Runtime active'
+    case 'partial':
+      return 'Runtime partial'
+    case 'capability_gap':
+      return 'Capability gap'
+    case 'missing':
+      return 'Runtime unavailable'
+    case 'inactive':
+      return 'Inactive'
+    default:
+      return runtimeStatus.replace(/_/g, ' ')
+  }
+}
+
+function getLiveChainStatusTagType(projection: JuceGridLiveChainProjection): 'green' | 'warm-gray' {
+  return projection.status === 'live' ? 'green' : 'warm-gray'
 }
 
 // ============================================================================
@@ -1138,15 +1184,16 @@ export function JuceGridPage() {
   const { outputPorts: pluginOutputPorts, peaks: pluginPeaks, connected: outputsConnected } = usePluginOutputs()
 
   // Flow snapshots WebSocket hook for MIDI PC triggered loads
-  const { isConnected: snapshotsWsConnected } = useFlowSnapshots({
+  const { isConnected: snapshotsWsConnected } = useSnapshots({
     enabled: true,
     onSnapshotLoaded: useCallback((event) => {
       // Handle MIDI-triggered snapshot loads
       if (event.triggered_by === 'midi_pc') {
+        const snapshotData = snapshotDetailToFlowSnapshotData(event.snapshot_data)
         const normalizedSnapshotState = normalizeRuntimeGridState(
-          event.snapshot_data?.flowSlots,
-          event.snapshot_data?.routing,
-          event.snapshot_data?.activeFlowIndex,
+          snapshotData.flowSlots,
+          snapshotData.routing,
+          snapshotData.activeFlowIndex,
         )
         setFlowSlots(normalizedSnapshotState.flowSlots)
         setRouting(normalizedSnapshotState.routing)
@@ -1160,6 +1207,13 @@ export function JuceGridPage() {
       }
     }, [queryClient, clearSnapshotsDirty, pushToast]),
   })
+
+  useWebSocketTopic('chain_updates', useCallback((_data, message) => {
+    if (!message.type) {
+      return
+    }
+    void queryClient.invalidateQueries({ queryKey: ['chains'] })
+  }, [queryClient]))
 
   // ============================================================================
   // Effects for Enhanced Features
@@ -1214,6 +1268,30 @@ export function JuceGridPage() {
   const chains = chainsQuery.data?.chains || []
   const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
+  const liveChainProjection = useMemo(
+    () => buildJuceGridLiveChainProjection(chains, flowSlots),
+    [chains, flowSlots],
+  )
+  const desiredLiveChainIds = useMemo(
+    () => getJuceGridDesiredLiveChainIds(flowSlots),
+    [flowSlots],
+  )
+  const liveChainMismatch = useMemo(
+    () => hasJuceGridLiveChainMismatch(liveChainProjection, flowSlots),
+    [flowSlots, liveChainProjection],
+  )
+  const liveChainProjectionOverflow = liveChainProjection.length > MAX_FLOWS
+  const showLiveChainSummaryOnly = isCompactLayout || isTabletTouchLayout
+  const liveChainCounts = useMemo(() => (
+    liveChainProjection.reduce((summary, projection) => {
+      if (projection.status === 'live') {
+        summary.live += 1
+      } else {
+        summary.degraded += 1
+      }
+      return summary
+    }, { live: 0, degraded: 0 })
+  ), [liveChainProjection])
   const armedAutomationLane = useMemo(
     () => automationLanes.find((lane) => lane.armed) ?? null,
     [automationLanes],
@@ -2189,6 +2267,10 @@ export function JuceGridPage() {
     previousPluginSearchQuery: string
   }
 
+  type ChainActivationMutationContext = {
+    previousChains?: ChainsResponse
+  }
+
   const deleteMutation = useMutation({
     mutationFn: ({ chainId, pluginUri, pluginPosition }: { chainId: number; pluginUri: string; pluginPosition?: number }) =>
       chainsApi.removePlugin(chainId, pluginUri, pluginPosition),
@@ -2305,22 +2387,109 @@ export function JuceGridPage() {
 
   const activateMutation = useMutation({
     mutationFn: (chainId: number) => chainsApi.activate(chainId),
+    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active)
+          .map((chain) => chain.id),
+      )
+      nextActiveChainIds.add(chainId)
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       markSnapshotsDirty()
       pushToast('Chain activated', 'success')
     },
-    onError: (error) => pushToast(`Failed to activate: ${error}`, 'error'),
+    onError: (error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast(`Failed to activate: ${error}`, 'error')
+    },
   })
 
   const deactivateMutation = useMutation({
     mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
+    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active && chain.id !== chainId)
+          .map((chain) => chain.id),
+      )
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       markSnapshotsDirty()
       pushToast('Chain deactivated', 'info')
     },
-    onError: (error) => pushToast(`Failed to deactivate: ${error}`, 'error'),
+    onError: (error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast(`Failed to deactivate: ${error}`, 'error')
+    },
+  })
+
+  const updateLiveChainsMutation = useMutation({
+    mutationFn: async (nextActiveChainIds: number[]) => {
+      const currentActiveChainIds = new Set(
+        chains
+          .filter((chain) => chain.is_active)
+          .map((chain) => chain.id),
+      )
+      const desiredChainIdSet = new Set(nextActiveChainIds)
+      const chainIdsToActivate = nextActiveChainIds.filter((chainId) => !currentActiveChainIds.has(chainId))
+      const chainIdsToDeactivate = chains
+        .filter((chain) => chain.is_active && !desiredChainIdSet.has(chain.id))
+        .map((chain) => chain.id)
+
+      for (const chainId of chainIdsToActivate) {
+        await chainsApi.activate(chainId)
+      }
+      for (const chainId of chainIdsToDeactivate) {
+        await chainsApi.deactivate(chainId)
+      }
+
+      return {
+        chainIdsToActivate,
+        chainIdsToDeactivate,
+      }
+    },
+    onMutate: async (nextActiveChainIds): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
+    onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+      pushToast(
+        chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
+          ? 'Live chains already match the editor'
+          : 'Live chains updated from the editor',
+        'success',
+      )
+    },
+    onError: (error, _nextActiveChainIds, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast(`Failed to update live chains: ${error}`, 'error')
+    },
   })
 
   const undoMutation = useMutation({
@@ -2949,6 +3118,43 @@ export function JuceGridPage() {
   }, [queryClient, pushToast])
 
   // Chain operations
+  const handleUpdateLiveChains = useCallback(() => {
+    if (!liveChainMismatch) {
+      pushToast('Live chains already match the editor', 'info')
+      return
+    }
+    updateLiveChainsMutation.mutate(desiredLiveChainIds)
+  }, [desiredLiveChainIds, liveChainMismatch, pushToast, updateLiveChainsMutation])
+
+  const handleRevertEditorToLive = useCallback(() => {
+    if (liveChainProjectionOverflow) {
+      pushToast('Live chain count exceeds the editor flow capacity', 'warn')
+      return
+    }
+
+    const revertedState = buildJuceGridRevertedStateFromLiveProjection(
+      liveChainProjection,
+      flowSlots,
+      routing,
+      activeFlowIndex,
+      SLOT_COLORS,
+      MAX_FLOWS,
+    )
+    setFlowSlots(revertedState.flowSlots)
+    setRouting(revertedState.routing)
+    setActiveFlowIndex(revertedState.activeFlowIndex)
+    markSnapshotsDirty()
+    pushToast('Editor reverted to backend live truth', 'success')
+  }, [
+    activeFlowIndex,
+    flowSlots,
+    liveChainProjection,
+    liveChainProjectionOverflow,
+    markSnapshotsDirty,
+    pushToast,
+    routing,
+  ])
+
   const handleToggleChainActive = useCallback(() => {
     if (!currentChain) return
     if (currentChain.is_active) {
@@ -4378,7 +4584,7 @@ export function JuceGridPage() {
         chainId={currentChain?.id}
         pluginPosition={selectedPlugin.position}
         showAddToChain={false}
-        compact={isTabletTouchLayout}
+        compact={isTabletTouchLayout || Boolean(selectedPluginCardStrategy.forceCompact)}
         forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
       />
     ) : (
@@ -4556,6 +4762,157 @@ export function JuceGridPage() {
       )}
 
       <section className="juce-grid-page__signal-flow-shell" aria-label="Signal flow workspace">
+        <Layer className="juce-grid-page__live-chain-panel" data-testid="juce-grid-live-chain-panel">
+          <div className="juce-grid-page__live-chain-panel-header">
+            <div className="juce-grid-page__live-chain-panel-copy">
+              <p className="juce-grid-page__live-chain-panel-kicker">Backend truth</p>
+              <h2>Live chains</h2>
+              <p>
+                {liveChainProjection.length > 0
+                  ? 'Read-only live chain inventory sourced from backend runtime truth. The editor below can diverge until you update or revert it.'
+                  : 'No live or degraded chains are currently reported by the backend runtime.'}
+              </p>
+            </div>
+            <div className="juce-grid-page__live-chain-panel-tags">
+              <Tag type="green">{liveChainCounts.live} live</Tag>
+              {liveChainCounts.degraded > 0 && (
+                <Tag type="warm-gray">{liveChainCounts.degraded} degraded</Tag>
+              )}
+              <Tag type="cool-gray">{showLiveChainSummaryOnly ? 'Summary mode' : 'Miniature signal view'}</Tag>
+            </div>
+          </div>
+
+          {liveChainMismatch && (
+            <div className="juce-grid-page__live-chain-mismatch-banner">
+              <div className="juce-grid-page__live-chain-mismatch-copy">
+                <p className="juce-grid-page__live-chain-panel-kicker">Editor mismatch</p>
+                <h3>Local editor and backend live truth diverge</h3>
+                <p>
+                  {liveChainProjectionOverflow
+                    ? 'Backend live truth currently exceeds the editor flow capacity. Update Live remains available, but Revert Editor is disabled until the live chain count drops.'
+                    : 'Update Live pushes the editor chain set into the platform. Revert Editor rebuilds the local flow assignments from the current backend live truth.'}
+                </p>
+              </div>
+              <div className="juce-grid-page__live-chain-mismatch-actions">
+                <Button
+                  size="sm"
+                  kind="primary"
+                  renderIcon={Renew}
+                  onClick={handleUpdateLiveChains}
+                  disabled={updateLiveChainsMutation.isPending}
+                >
+                  Update Live
+                </Button>
+                <Button
+                  size="sm"
+                  kind="secondary"
+                  renderIcon={ArrowLeft}
+                  onClick={handleRevertEditorToLive}
+                  disabled={updateLiveChainsMutation.isPending || liveChainProjectionOverflow}
+                >
+                  Revert Editor
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {liveChainProjection.length === 0 ? (
+            <div className="juce-grid-page__live-chain-empty">
+              <p>No backend-live chains currently reported.</p>
+            </div>
+          ) : showLiveChainSummaryOnly ? (
+            <div className="juce-grid-page__live-chain-summary-list" aria-label="Live chains summary">
+              {liveChainProjection.map((projection) => (
+                <article
+                  key={`summary-${projection.chainId}`}
+                  className={`juce-grid-page__live-chain-summary-item is-${projection.status}`}
+                >
+                  <div className="juce-grid-page__live-chain-summary-main">
+                    <span className="juce-grid-page__live-chain-summary-flow">{projection.flowLabels.join('+')}</span>
+                    <strong>{projection.chainName}</strong>
+                  </div>
+                  <div className="juce-grid-page__live-chain-summary-tags">
+                    <Tag type={getLiveChainStatusTagType(projection)}>
+                      {projection.status === 'live' ? 'Live' : 'Degraded'}
+                    </Tag>
+                    {projection.syntheticFlow && <Tag type="cool-gray">Live-only</Tag>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="juce-grid-page__live-chain-rows" aria-label="Live chains truth rows">
+              {liveChainProjection.map((projection) => (
+                <article
+                  key={`live-chain-${projection.chainId}`}
+                  className={`juce-grid-page__live-chain-row is-${projection.status}`}
+                  data-testid={`juce-grid-live-chain-${projection.chainId}`}
+                >
+                  <div className="juce-grid-page__live-chain-row-header">
+                    <div className="juce-grid-page__live-chain-row-copy">
+                      <div className="juce-grid-page__live-chain-row-title">
+                        <span className="juce-grid-page__live-chain-row-flow">{projection.flowLabels.join('+')}</span>
+                        <strong>{projection.chainName}</strong>
+                      </div>
+                      <p>
+                        {projection.syntheticFlow ? 'Live-only lane' : 'Assigned flow'}
+                        {' · '}
+                        {formatLiveChainRuntimeLabel(projection.runtimeStatus)}
+                      </p>
+                    </div>
+                    <div className="juce-grid-page__live-chain-row-tags">
+                      <Tag type={getLiveChainStatusTagType(projection)}>
+                        {projection.status === 'live' ? 'Live' : 'Degraded'}
+                      </Tag>
+                      {projection.syntheticFlow && <Tag type="cool-gray">Live-only</Tag>}
+                    </div>
+                  </div>
+
+                  {projection.warningText && (
+                    <p className="juce-grid-page__live-chain-row-warning">{projection.warningText}</p>
+                  )}
+
+                  <div className="juce-grid-page__live-chain-miniature" aria-label={`${projection.chainName} signal chain`}>
+                    {projection.representativeItems.length > 0 ? projection.representativeItems.map((item, index) => (
+                      (() => {
+                        const iconSpec = getLiveChainRepresentativeIcon(item)
+                        const Icon = iconSpec.component
+                        const accessibleLabel = getLiveChainRepresentativeAccessibleLabel(item)
+
+                        return (
+                          <div
+                            key={`${projection.chainId}-${item.id}`}
+                            className={`juce-grid-page__live-chain-miniature-item is-${item.kind} ${item.dimmed ? 'is-dimmed' : ''}`}
+                          >
+                            <div
+                              className={`juce-grid-page__live-chain-miniature-chip is-${iconSpec.tone}`}
+                              title={accessibleLabel}
+                              aria-label={accessibleLabel}
+                            >
+                              <span
+                                className={`juce-grid-page__live-chain-miniature-icon is-${iconSpec.tone}`}
+                                aria-hidden="true"
+                              >
+                                <Icon />
+                              </span>
+                              <span className="juce-grid-page__live-chain-miniature-label">{item.label}</span>
+                            </div>
+                            {index < projection.representativeItems.length - 1 && (
+                              <ArrowRight size={12} className="juce-grid-page__live-chain-miniature-arrow" aria-hidden />
+                            )}
+                          </div>
+                        )
+                      })()
+                    )) : (
+                      <span className="juce-grid-page__live-chain-miniature-empty">No blocks</span>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </Layer>
+
         <div className="juce-grid-page__unified-block">
           <main className="juce-grid-page__main">
           {/* Multi-flow signal grids */}

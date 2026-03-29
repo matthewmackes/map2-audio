@@ -160,6 +160,18 @@ export interface LoopInsertion {
   updated_at?: string | null;
 }
 
+export type ChainRuntimeSyncStatus = 'active' | 'partial' | 'capability_gap' | (string & {});
+
+export interface ChainRuntimeSync {
+  enabled: boolean;
+  status: ChainRuntimeSyncStatus;
+  reason?: string;
+  warnings: string[];
+  runtime_items: number;
+  restored_positions: number[];
+  missing_positions: number[];
+}
+
 export interface Chain {
   id: number;
   name: string;
@@ -169,6 +181,7 @@ export interface Chain {
   plugins: ChainPlugin[];
   loop_insertions?: LoopInsertion[];
   effects_loops?: EffectsLoop[];
+  runtime_sync?: ChainRuntimeSync | null;
 }
 
 export interface ChainPlugin {
@@ -1935,6 +1948,147 @@ export interface BackupSettings {
   retention_days: number;
   auto_cleanup: boolean;
 }
+
+// ==================== Unified Snapshot Types ====================
+
+export type RoutingMode = 'parallel_blend' | 'series' | 'morph' | 'sidechain';
+
+export interface SnapshotPlugin {
+  id?: number | null;
+  uri: string;
+  name?: string | null;
+  position: number;
+  bypass: boolean;
+  parameters: Record<string, number>;
+  loader_state?: PluginLoaderState;
+  is_placeholder?: boolean;
+}
+
+export interface SnapshotChain {
+  id?: number | null;
+  name: string;
+  plugins: SnapshotPlugin[];
+  loop_insertions?: LoopInsertion[];
+  effects_loops?: EffectsLoop[];
+}
+
+export interface SnapshotChannel {
+  id?: number | null;
+  snapshot_id?: number | null;
+  channel_key: string;
+  label: string;
+  color: string;
+  muted: boolean;
+  solo: boolean;
+  dry_wet_mix: number;
+  order_index?: number;
+  chain_id: number | null;
+}
+
+export interface SnapshotRouting {
+  mode: RoutingMode;
+  active_channel_key: string | null;
+  blend_positions: Record<string, number>;
+  morph_position: number;
+  morph_source_channel_key: string | null;
+  morph_target_channel_key: string | null;
+  series_order: string[];
+}
+
+export interface SnapshotMidiMapEntry {
+  [key: string]: unknown;
+  action?: string;
+  program_number?: number;
+}
+
+export interface SnapshotAssetRef {
+  kind: string;
+  chain_id?: number | null;
+  plugin_uri?: string | null;
+  plugin_position?: number | null;
+  asset_name?: string | null;
+  asset_path?: string | null;
+  available: boolean;
+}
+
+export interface SnapshotDeploymentHistory {
+  id: number;
+  snapshot_deployment_id: number;
+  snapshot_id: number;
+  from_node_id?: string | null;
+  to_node_id: string;
+  action: string;
+  notes?: string | null;
+  created_at?: string | null;
+}
+
+export interface SnapshotDeployment {
+  id: number;
+  snapshot_id: number;
+  primary_node_id: string;
+  standby_node_ids: string[];
+  deployment_status: string;
+  assignment_strategy: string;
+  redundancy_enabled: boolean;
+  deployed_at?: string | null;
+  last_failover_time?: string | null;
+  error_message?: string | null;
+  history: SnapshotDeploymentHistory[];
+}
+
+export interface SnapshotSummary {
+  id: number;
+  name: string;
+  description: string;
+  tags: string[];
+  program_number: number | null;
+  is_active: boolean;
+  is_favorite: boolean;
+  display_order: number;
+  channels: Array<Pick<SnapshotChannel, 'id' | 'channel_key' | 'label' | 'color' | 'chain_id'>>;
+  channel_count: number;
+  chain_count: number;
+  community_uuid?: string | null;
+  community_shared: boolean;
+  community_author?: string | null;
+  community_download_count: number;
+  community_rating: number | null;
+  community_rating_count: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface SnapshotDetail extends SnapshotSummary {
+  channels: SnapshotChannel[];
+  chains: SnapshotChain[];
+  routing: SnapshotRouting;
+  midi_map: SnapshotMidiMapEntry[];
+  active_channel_index: number;
+  deployments: SnapshotDeployment[];
+}
+
+export interface SnapshotExport {
+  version: number;
+  exported_at: string;
+  snapshot: SnapshotDetail;
+  asset_manifest: SnapshotAssetRef[];
+  community_uuid?: string;
+}
+
+export interface SnapshotLoadedEvent {
+  type: 'snapshot_loaded';
+  topic: 'snapshots';
+  data: {
+    snapshot_id: number;
+    snapshot_name: string;
+    snapshot_data: SnapshotDetail;
+    triggered_by?: 'midi_pc' | 'ui';
+    program_number?: number | null;
+  };
+  timestamp: string;
+}
+
+export interface CommunitySnapshot extends SnapshotSummary {}
 
 // ==================== Flow Snapshot Types ====================
 

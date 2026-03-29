@@ -2,8 +2,8 @@
 Cluster administration and orchestration routes under /api/cluster.
 
 This module owns setup, status, metrics, node lifecycle, update, backup, and
-topology endpoints. Health-only endpoints live in `cluster_health.py`, and flow
-assignment endpoints live in `cluster_flows.py`.
+topology endpoints. Health-only endpoints live in `cluster_health.py`, and
+snapshot deployment compatibility endpoints live in `cluster_snapshots.py`.
 """
 
 import asyncio

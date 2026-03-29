@@ -114,6 +114,225 @@
   display: none;
 }
 
+.juce-grid-page__live-chain-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+}
+
+.juce-grid-page__live-chain-panel-header,
+.juce-grid-page__live-chain-panel-tags,
+.juce-grid-page__live-chain-row-header,
+.juce-grid-page__live-chain-row-tags,
+.juce-grid-page__live-chain-mismatch-banner,
+.juce-grid-page__live-chain-mismatch-actions,
+.juce-grid-page__live-chain-summary-main,
+.juce-grid-page__live-chain-summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__live-chain-panel-copy,
+.juce-grid-page__live-chain-row-copy,
+.juce-grid-page__live-chain-mismatch-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.juce-grid-page__live-chain-panel-copy h2,
+.juce-grid-page__live-chain-mismatch-copy h3 {
+  margin: 0;
+}
+
+.juce-grid-page__live-chain-panel-copy p,
+.juce-grid-page__live-chain-row-copy p,
+.juce-grid-page__live-chain-mismatch-copy p,
+.juce-grid-page__live-chain-empty p,
+.juce-grid-page__live-chain-row-warning,
+.juce-grid-page__live-chain-summary-main strong {
+  margin: 0;
+}
+
+.juce-grid-page__live-chain-panel-copy > p:last-child,
+.juce-grid-page__live-chain-row-copy p,
+.juce-grid-page__live-chain-mismatch-copy > p:last-child,
+.juce-grid-page__live-chain-empty p,
+.juce-grid-page__live-chain-row-warning {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.juce-grid-page__live-chain-panel-kicker,
+.juce-grid-page__live-chain-summary-flow,
+.juce-grid-page__live-chain-row-flow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.juce-grid-page__live-chain-panel-tags {
+  justify-content: flex-end;
+}
+
+.juce-grid-page__live-chain-mismatch-banner {
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 78%, #ffffff);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, #000000);
+}
+
+.juce-grid-page__live-chain-mismatch-actions {
+  justify-content: flex-end;
+}
+
+.juce-grid-page__live-chain-empty {
+  padding: 1rem;
+  border: 1px dashed var(--cds-border-subtle, var(--border));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, #000000);
+}
+
+.juce-grid-page__live-chain-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__live-chain-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 90%, #000000);
+}
+
+.juce-grid-page__live-chain-row.is-degraded,
+.juce-grid-page__live-chain-summary-item.is-degraded {
+  filter: saturate(0.2);
+}
+
+.juce-grid-page__live-chain-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.juce-grid-page__live-chain-row-title strong,
+.juce-grid-page__live-chain-summary-main strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.juce-grid-page__live-chain-miniature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__live-chain-miniature-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.juce-grid-page__live-chain-miniature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.4375rem 0.625rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 76%, #000000);
+}
+
+.juce-grid-page__live-chain-miniature-item.is-loop .juce-grid-page__live-chain-miniature-chip {
+  border-style: dashed;
+}
+
+.juce-grid-page__live-chain-miniature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.juce-grid-page__live-chain-miniature-icon svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.juce-grid-page__live-chain-miniature-label,
+.juce-grid-page__live-chain-miniature-empty {
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.juce-grid-page__live-chain-miniature-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-inline-size: 11rem;
+}
+
+.juce-grid-page__live-chain-miniature-chip small {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.juce-grid-page__live-chain-miniature-item.is-dimmed .juce-grid-page__live-chain-miniature-chip {
+  opacity: 0.48;
+}
+
+.juce-grid-page__live-chain-miniature-arrow {
+  flex: 0 0 auto;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.juce-grid-page__live-chain-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.juce-grid-page__live-chain-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 90%, #000000);
+}
+
+.juce-grid-page__live-chain-summary-main {
+  align-items: baseline;
+  justify-content: flex-start;
+}
+
+.juce-grid-page__live-chain-summary-tags {
+  justify-content: flex-start;
+}
+
 /* Floating action launchers — bottom-left, clears the footer bar */
 .juce-grid-page__floating-actions {
   position: fixed;
@@ -5390,6 +5609,12 @@
   .juce-grid-page__shortcut-row,
   .juce-grid-page__chain-card-header,
   .juce-grid-page__chain-card-header-actions,
+  .juce-grid-page__live-chain-panel-header,
+  .juce-grid-page__live-chain-panel-tags,
+  .juce-grid-page__live-chain-mismatch-banner,
+  .juce-grid-page__live-chain-mismatch-actions,
+  .juce-grid-page__live-chain-row-header,
+  .juce-grid-page__live-chain-row-tags,
   .juce-grid-page__chain-action-heading,
   .juce-grid-page__chain-action-tags,
   .juce-grid-page__ops-header,
@@ -5449,6 +5674,7 @@
 
   .juce-grid-page__chain-active-display-line,
   .juce-grid-page__chain-button-row,
+  .juce-grid-page__live-chain-miniature,
   .juce-grid-page__live-path-summary-meta,
   .juce-grid-page__live-path-summary-flow-actions {
     width: 100%;

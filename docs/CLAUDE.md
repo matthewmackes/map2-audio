@@ -1,6 +1,6 @@
 # MAP2 Audio Platform — AI Instructions
 
-> **Last Updated**: 2026-03-17
+> **Last Updated**: 2026-03-29
 > **Purpose**: Central reference for Claude Code working on the MAP2 Audio codebase.
 > Also see: [.github/copilot-instructions.md](.github/copilot-instructions.md) · [.gemini/instructions.md](.gemini/instructions.md)
 
@@ -208,6 +208,14 @@ All planned and in-progress work is tracked in:
 | Web pages | `web/src/app/pages/` |
 | Web components | `web/src/app/components/` |
 | API layer | `web/src/map2/api.ts` |
+| Snapshot editor page | `web/src/app/pages/SnapshotEditorPage.tsx` |
+| Snapshot API client | `web/src/map2/clients/snapshots.ts` |
+| Snapshot editor state | `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` |
+| Snapshot backend routes | `app/routes/unified_snapshots.py` |
+| Snapshot deployment routes | `app/routes/cluster_snapshots.py` |
+| Snapshot services | `app/services/snapshot_service.py`, `app/services/snapshot_deployment_service.py`, `app/services/snapshot_runtime_service.py` |
+| Snapshot migration script | `scripts/migrate_to_unified_snapshots.py` |
+| Memory index | `docs/MEMORY.md` |
 | Advanced menu items | `web/src/app/data/advancedMenuItems.ts` |
 | MIDI Hub v2 shell | `web/src/app/pages/MidiHubShell.tsx` |
 | MIDI Hub v2 area pages | `web/src/app/pages/midi-hub/MidiHub*Page.tsx` |
@@ -748,7 +756,7 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 
 - **Problem**: `useLayoutEffect` with no deps calling `setState` causes infinite render loop
 - **Fix**: Use functional updater `setState(prev => sameRef ? prev : newVal)` to break the cycle
-- **Example**: `web/src/app/components/MPX1/MPX1FlowCanvas.tsx`
+- **Example**: `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`
 
 ---
 

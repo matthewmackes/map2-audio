@@ -5,6 +5,7 @@ import { Button, InlineLoading, Layer, Modal, Tag, TextInput, Tile } from '@carb
 import { chainsApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
 import type { Chain, ChainsResponse, Plugin } from '../../../map2/types'
+import { applyOptimisticJuceGridLiveChainSet } from './juceGridLiveChains'
 import { getPluginChipMeta } from '../../utils/pluginChipMeta'
 
 interface FlowSlotRef {
@@ -74,22 +75,63 @@ export function JuceGridChainManagementCard({
     onError: () => pushToast('Failed to create chain', 'error'),
   })
 
+  type ChainActivationMutationContext = {
+    previousChains?: ChainsResponse
+  }
+
   const activateMutation = useMutation({
     mutationFn: (chainId: number) => chainsApi.activate(chainId),
+    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active)
+          .map((chain) => chain.id),
+      )
+      nextActiveChainIds.add(chainId)
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['chains'] })
       pushToast('Chain activated', 'success')
     },
-    onError: () => pushToast('Failed to activate chain', 'error'),
+    onError: (_error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast('Failed to activate chain', 'error')
+    },
   })
 
   const deactivateMutation = useMutation({
     mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
+    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active && chain.id !== chainId)
+          .map((chain) => chain.id),
+      )
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['chains'] })
       pushToast('Chain deactivated', 'info')
     },
-    onError: () => pushToast('Failed to deactivate chain', 'error'),
+    onError: (_error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast('Failed to deactivate chain', 'error')
+    },
   })
 
   const deleteMutation = useMutation({

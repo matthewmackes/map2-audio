@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi.routing import APIRoute
 
-from app.routes import cluster_admin, cluster_flows, cluster_health, deployment, deployment_health
+from app.routes import cluster_admin, cluster_health, cluster_snapshots, deployment, deployment_health
 
 
 def _method_path_map(router) -> dict[tuple[str, str], str]:
@@ -35,14 +35,14 @@ def test_cluster_routes_with_shared_prefix_have_disjoint_method_path_pairs():
     duplicates = _duplicates(
         [
             ("cluster_admin", cluster_admin.router),
-            ("cluster_flows", cluster_flows.router),
+            ("cluster_snapshots", cluster_snapshots.router),
             ("cluster_health", cluster_health.router),
         ]
     )
 
     assert duplicates == []
 
-    cluster_flow_paths = {path for (_method, path) in _method_path_map(cluster_flows.router)}
+    cluster_flow_paths = {path for (_method, path) in _method_path_map(cluster_snapshots.router)}
     cluster_health_paths = {path for (_method, path) in _method_path_map(cluster_health.router)}
     cluster_admin_paths = {path for (_method, path) in _method_path_map(cluster_admin.router)}
 

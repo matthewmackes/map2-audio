@@ -181,9 +181,55 @@ try:
     async def _requires_runtime_nam_scope(engine, plugin_position: Optional[int]) -> bool:
         return _has_plugin_position(plugin_position) and await _runtime_has_plugin_uri(engine, NAM_PLUGIN_URI)
 
-    def _configured_nam_blocks_allow_global_fallback() -> bool:
+    def _configured_nam_blocks_allow_global_fallback(plugin_position: Optional[int] = None) -> bool:
         session = get_db_session()
         try:
+            if _has_plugin_position(plugin_position):
+                active_position_count = int(
+                    session.query(ChainPlugin)
+                    .join(Chain, Chain.id == ChainPlugin.chain_id)
+                    .filter(
+                        Chain.is_active.is_(True),
+                        ChainPlugin.position == plugin_position,
+                        ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                    )
+                    .count()
+                )
+                if active_position_count == 1:
+                    return True
+                if active_position_count > 1:
+                    return False
+
+                active_count = int(
+                    session.query(ChainPlugin)
+                    .join(Chain, Chain.id == ChainPlugin.chain_id)
+                    .filter(
+                        Chain.is_active.is_(True),
+                        ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                    )
+                    .count()
+                )
+                if active_count > 0:
+                    return False
+
+                total_position_count = int(
+                    session.query(ChainPlugin)
+                    .filter(
+                        ChainPlugin.position == plugin_position,
+                        ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                    )
+                    .count()
+                )
+                if total_position_count != 1:
+                    return False
+
+                total_count = int(
+                    session.query(ChainPlugin)
+                    .filter(ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS))
+                    .count()
+                )
+                return total_count == 1
+
             active_count = int(
                 session.query(ChainPlugin)
                 .join(Chain, Chain.id == ChainPlugin.chain_id)
@@ -218,7 +264,10 @@ try:
             return False
         if await _runtime_has_plugin_uri(engine, NAM_PLUGIN_URI):
             return False
-        return await asyncio.to_thread(_configured_nam_blocks_allow_global_fallback)
+        try:
+            return await asyncio.to_thread(_configured_nam_blocks_allow_global_fallback, plugin_position)
+        except TypeError:
+            return await asyncio.to_thread(_configured_nam_blocks_allow_global_fallback)
 
     def _duplicate_loader_fallback_detail(plugin_position: Optional[int]) -> str:
         return (
@@ -232,7 +281,7 @@ try:
 
         session = get_db_session()
         try:
-            active_plugin = (
+            active_plugins = (
                 session.query(ChainPlugin)
                 .join(Chain, Chain.id == ChainPlugin.chain_id)
                 .filter(
@@ -240,20 +289,36 @@ try:
                     ChainPlugin.position == plugin_position,
                     ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
                 )
-                .first()
+                .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.id.asc())
+                .all()
             )
-            if active_plugin is not None:
-                return active_plugin
+            if len(active_plugins) == 1:
+                return active_plugins[0]
+            if len(active_plugins) > 1:
+                return None
 
-            return (
+            active_count = int(
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
+                )
+                .count()
+            )
+            if active_count > 0:
+                return None
+
+            total_plugins = (
                 session.query(ChainPlugin)
                 .filter(
                     ChainPlugin.position == plugin_position,
                     ChainPlugin.plugin_uri.in_(NAM_CONFIG_PLUGIN_URIS),
                 )
-                .order_by(ChainPlugin.chain_id.asc())
-                .first()
+                .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.id.asc())
+                .all()
             )
+            return total_plugins[0] if len(total_plugins) == 1 else None
         finally:
             session.close()
 

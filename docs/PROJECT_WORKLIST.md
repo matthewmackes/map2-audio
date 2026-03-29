@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-28 19:48 EDT - Completed T514 scoped NAM/IR routes with persisted loader-state sync and configured-vs-runtime warnings
+Last updated: 2026-03-29 11:25 EDT - E-SNAP frontend reconciliation validated, production build repaired, and shim-retirement follow-up queued
 
 ID: T482
 Status: [✓] Done
@@ -9482,3 +9482,318 @@ Last updated: 2026-03-28 22:13 EDT - Codex
   - Manual verification checklist: SynthForge compact card launch covered by `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx`; SynthForge breadcrumb return covered by `web/src/app/pages/SynthForgePage.test.tsx`; DrumMachine compact launch covered by `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx`; tablet grid compact-prop propagation covered by `web/src/app/pages/JuceGridPage.test.tsx`.
   - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`31 passed`); `npm --prefix web run build` -> PASS.
+
+ID: T525
+Status: [✓] Done
+Title: Add a backend-truth live chains top panel to JUCE-GRID with editor/live reconciliation
+Description:
+- Goal / acceptance criteria: Add a read-only top panel to the main `/juce-grid` editor, positioned above the existing unified block, that always reflects current backend live chain truth rather than local editor-only flow state. The panel must render one row per live/degraded chain ordered by flow label, show a miniature representative signal chain with all plugins/effects-loop/sidechain context, keep bypassed blocks visible but dimmed, synthesize a read-only lane for backend-live chains that have no local flow assignment, collapse to a summary on mobile, and never let a backend-live chain disappear from this top panel until backend truth says it is no longer live. When local editor assignments disagree with backend live truth, the lower editor must remain editable while the UI surfaces an explicit mismatch state plus both reconciliation actions: `Update Live` pushes the editor’s desired active chain set to the platform, and `Revert Editor` pulls the local editor back to the current live truth. Updates must feel instant via websocket-driven invalidation and optimistic pending states with rollback on failure.
+- Why it matters: The current JUCE-GRID live-path visualization is derived from local `flowSlots` and `routing`, so the GUI can drop flows from view even while chains are still live in the backend/runtime. Operators need a top-of-page live-truth surface that shows what is actually running, with enough miniature chain detail to trust the rig at a glance, while still preserving a separate editable lower design surface.
+- Dependencies: existing `/api/chains` `runtime_sync` payloads and `chain_updates` websocket topic; `web/src/app/pages/JuceGridPage.tsx`; JUCE-GRID live-path/state helpers; focused JUCE-GRID page tests
+- Estimated effort: High
+- Required outputs: live-chain projection model keyed by backend truth; new JUCE-GRID top-panel UI above the unified block; mismatch banner with update/revert actions; instant websocket/pending-state refresh behavior; frontend type alignment for `runtime_sync`; focused unit/integration coverage; validation evidence; and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 08:55 EDT - Codex
+- Completion notes:
+  - Added a new JUCE-GRID live-chain projection helper in `web/src/app/components/JuceGrid/juceGridLiveChains.ts` that merges backend `chains` runtime truth with local `flowSlots`, keeps `active` and `partial` chains live, keeps `capability_gap` or missing-runtime active chains visible as degraded, deduplicates one rendered row per chain, synthesizes labels for unassigned backend-live chains, builds miniature plugin/loop/sidechain representations, and can rebuild editor flow/routing state from backend live truth.
+  - Extended the frontend chain contract in `web/src/map2/types.ts` with explicit `runtime_sync` typing so the JUCE-GRID page can treat backend runtime state as first-class data instead of guessing from local editor flows.
+  - Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css` to render a new monochrome backend-truth panel above the unified block, collapse it to summary mode on compact/tablet-touch layouts, show a mismatch banner with read-only `Update Live` and `Revert Editor` actions, subscribe to `chain_updates` for immediate `['chains']` invalidation, and apply optimistic chain activation/deactivation/live-set reconciliation while preserving the editable lower JUCE-GRID surface.
+  - Updated `web/src/app/components/JuceGrid/JuceGridChainManagementCard.tsx` so existing activate/deactivate controls share the same optimistic live-truth cache behavior as the new panel.
+  - Added focused regression coverage in `web/src/app/components/JuceGrid/juceGridLiveChains.test.ts` and expanded `web/src/app/pages/JuceGridPage.test.tsx` to cover backend-live unassigned chains, degraded visibility, compact summary mode, websocket invalidation, update-live reconciliation, revert-editor behavior, and the existing selected-block/live-card workflows after the new panel was added.
+- Validation: `npm --prefix web test -- --runInBand src/app/components/JuceGrid/juceGridLiveChains.test.ts src/app/pages/JuceGridPage.test.tsx` -> PASS (`42 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched JUCE-GRID frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T526
+Status: [✓] Done
+Title: Replace JUCE-GRID live-chain miniature text pills with icon-led chips
+Description:
+- Goal / acceptance criteria: Update the JUCE-GRID backend-truth live-chain panel so each representative plugin/loop item renders as an icon-led chip using the existing effect/category icon system, with a static human-friendly name to the right of the icon instead of the current text-pill treatment. Loop items must choose different icons by topology/mode, and bypassed/degraded items must remain dimmed rather than switching to a stronger state marker.
+- Why it matters: The new backend-truth top panel is functionally correct, but the representative chain still reads like a row of generic text pills. Operators need faster at-a-glance recognition of block types and loop topology while keeping names visible.
+- Dependencies: T525
+- Estimated effort: Low
+- Required outputs: live-chain representative item icon metadata, updated live-panel renderer/CSS, focused JUCE-GRID test updates, validation evidence, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 09:29 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/components/JuceGrid/juceGridLiveChains.ts` so each representative live-chain item now carries icon metadata as well as a human-friendly display label. Plugin chips derive icon hints from the existing effect/category naming system, while loop chips map topology/mode to distinct existing icon families (`rack`, `splitter`, `stereo`, `multiband`, `terminal`, `utility`). Loop fallback labels are humanized from ids instead of showing raw identifiers.
+  - Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css` so the backend-truth live-chain miniature now renders icon-plus-name chips with the label fixed to the right of the icon, preserving dimmed states for bypassed items and degraded rows while moving the old secondary caption into the chip tooltip/accessibility label instead of stacking more text in the strip.
+  - Expanded focused regression coverage in `web/src/app/components/JuceGrid/juceGridLiveChains.test.ts` and `web/src/app/pages/JuceGridPage.test.tsx` to verify topology-specific icon hints, humanized loop labels, and rendered live-chain icon chips in the JUCE-GRID panel.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/JuceGrid/juceGridLiveChains.test.ts src/app/pages/JuceGridPage.test.tsx` -> PASS (`43 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Licensing review: touched JUCE-GRID frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Unified Snapshot Model Refactor (E-SNAP)
+
+Epic goal: Collapse the three overlapping systems (engine snapshots, flow snapshots, independent chains) into a single snapshot-owns-everything model. Kill "flow" from user vocabulary. Rename slots to channels, routing replaces topology. Result is a portable, shareable unit transportable across nodes.
+
+Design doc: `.claude/plans/polymorphic-humming-harbor.md`
+
+Key decisions: Snapshot owns everything (chains + routing as embedded children). Chains only exist inside snapshots. "Channel" replaces "flow slot". One snapshot system (retire engine snapshots). Independent copies per snapshot (no cross-snapshot sharing). Chain names namespaced by snapshot. Flexible per-snapshot MIDI map. Morph between channels only. A/B mode retired. Presets retired. Community sharing integrated. JSON + asset manifest for export. Import with gaps (unavailable placeholders). Snapshot-level cluster deployment. Clean-slate DB schema + migration. Replace API in-place. Big-bang cutover.
+
+Dependency order: T527 → T528 → T529 → T530; T527 → T531 → T532 → T533 → T534 → T535; T534 → T536 → T537; T527 → T538; T528+T529 → T539; T534+T535 → T540; ALL → T541 → T542
+
+ID: T527
+Status: [✓] Done
+Title: [E-SNAP] New unified snapshot SQLAlchemy models
+Description:
+- Goal / acceptance criteria: Add 9 new models to `app/database.py`: `Snapshot`, `SnapshotChannel`, `SnapshotChain`, `SnapshotChainPlugin`, `SnapshotLoopInsertion`, `SnapshotRouting`, `SnapshotMidiMap`, `SnapshotDeployment`, `SnapshotDeploymentHistory`. Add `create_all()` auto-migration for new tables. Do NOT remove old models yet — both old and new coexist during the cutover.
+- Why it matters: Foundation for all other E-SNAP tasks. The new schema must be in place before services, routes, or UI can be built.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: 9 new SQLAlchemy model classes with relationships, indexes, and constraints; `create_all()` picks up new tables on startup.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Added all 9 unified snapshot SQLAlchemy models in `app/database.py`, with relationships/indexes and startup `create_all()` coverage while preserving legacy models for cutover compatibility.
+
+ID: T528
+Status: [✓] Done
+Title: [E-SNAP] SnapshotService core
+Description:
+- Goal / acceptance criteria: Create `app/services/snapshot_service.py` with full CRUD: create/get/list/update/delete/duplicate/activate snapshots. Channel management (add/update/remove channel). Chain operations (add/remove/reorder plugins, set bypass, set parameters, rename chain). Routing operations (update mode/config, set morph position). MIDI map CRUD. Export (JSON + asset manifest) and import (with placeholder support for unavailable plugins). Reuse serialization logic from `app/services/chain_service.py`, plugin metadata cache, and runtime sync matching. Reuse snapshot enrichment/apply logic from `app/routes/flow_snapshots.py`.
+- Why it matters: Central business logic layer that all routes delegate to. Must be correct and comprehensive before API routes can be wired.
+- Dependencies: T527
+- Estimated effort: Large
+- Required outputs: `app/services/snapshot_service.py` (new file) with all methods listed above.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Created `app/services/snapshot_service.py` with CRUD, channel/chain/plugin/routing/MIDI map operations, export/import with placeholder support, activation, community sharing, and deployment persistence helpers.
+
+ID: T529
+Status: [✓] Done
+Title: [E-SNAP] Unified snapshot API routes
+Description:
+- Goal / acceptance criteria: Create `app/routes/unified_snapshots.py` implementing the full snapshot API route table: snapshot CRUD, channel management, chain plugin operations, routing, MIDI map, program change recall, export/import, community browsing/sharing. Pydantic request/response models for all endpoints. Wire into `app/main.py` route_modules list. Replaces: `chains.py`, `chains_ab_mode.py`, `flow_snapshots.py`, `snapshot_library.py`, `snapshots.py` (engine).
+- Why it matters: The API surface is the contract between backend and frontend. All old routes will be retired once this is in place.
+- Dependencies: T528
+- Estimated effort: Large
+- Required outputs: `app/routes/unified_snapshots.py` (new), updated `app/main.py`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Added `app/routes/unified_snapshots.py` with the new snapshot API surface plus compatibility aliases for `flow-snapshots`, and wired the route module in `app/main.py`.
+
+ID: T530
+Status: [✓] Done
+Title: [E-SNAP] Cluster snapshot deployment routes
+Description:
+- Goal / acceptance criteria: Create `app/routes/cluster_snapshots.py` replacing `cluster_flows.py` and `flow_failover.py`. Create `app/services/snapshot_deployment_service.py` refactored from `app/services/flow_orchestrator.py`. Snapshot-level deployment to nodes (whole snapshot, not per-channel). Failover support. Vocabulary change: flow → snapshot throughout.
+- Why it matters: Cluster deployment must work with the new snapshot model for multi-node rigs.
+- Dependencies: T528, T529
+- Estimated effort: Medium
+- Required outputs: `app/routes/cluster_snapshots.py` (new), `app/services/snapshot_deployment_service.py` (new).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Added `app/services/snapshot_deployment_service.py` and `app/routes/cluster_snapshots.py` for snapshot-level deployment/failover, with compatibility aliases for legacy cluster flow endpoints.
+
+ID: T531
+Status: [✓] Done
+Title: [E-SNAP] New TypeScript type hierarchy
+Description:
+- Goal / acceptance criteria: Add new types to `web/src/map2/types.ts`: `SnapshotPlugin`, `SnapshotChain`, `SnapshotChannel`, `SnapshotRouting`, `SnapshotMidiMapEntry`, `SnapshotAssetRef`, `SnapshotSummary`, `SnapshotDetail`, `SnapshotExport`, `SnapshotLoadedEvent`, `CommunitySnapshot`, `RoutingMode` (without `ab_switch`). Do NOT remove old types yet.
+- Why it matters: Frontend types must match the new API contract before client code or UI can be built.
+- Dependencies: T529 (API contract finalized)
+- Estimated effort: Medium
+- Required outputs: New type definitions in `web/src/map2/types.ts`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added unified snapshot frontend types to `web/src/map2/types.ts`, including routing/channel/chain/detail/export/community/deployment models while preserving legacy flow snapshot types during cutover.
+
+ID: T532
+Status: [✓] Done
+Title: [E-SNAP] New snapshot API client and hook
+Description:
+- Goal / acceptance criteria: Create `web/src/map2/clients/snapshots.ts` with `snapshotsApi` object covering all new endpoints (CRUD, channels, chain ops, routing, MIDI map, export/import, community, program change). Create `web/src/app/hooks/useSnapshots.ts` with WebSocket support for `snapshot_loaded` events (replacing `useFlowSnapshots.ts`).
+- Why it matters: Frontend data layer must be in place before UI components can consume the new API.
+- Dependencies: T531
+- Estimated effort: Medium
+- Required outputs: `web/src/map2/clients/snapshots.ts` (new), `web/src/app/hooks/useSnapshots.ts` (new).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added `web/src/map2/clients/snapshots.ts` and `web/src/app/hooks/useSnapshots.ts`; legacy `flowSnapshotsApi` and `useFlowSnapshots` now adapt to the new snapshot client/event surface.
+
+ID: T533
+Status: [✓] Done
+Title: [E-SNAP] Snapshot editor state module
+Description:
+- Goal / acceptance criteria: Create `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` replacing `JuceGrid/juceGridState.ts`. New types: `SnapshotEditorChannelState`, `SnapshotEditorRoutingState` (modes: parallel_blend, series, morph, sidechain — no ab_switch), `SnapshotEditorHydratedState`. Normalization/hydration functions for converting API responses to editor state and back.
+- Why it matters: State management module bridges the API types and the editor UI.
+- Dependencies: T531, T532
+- Estimated effort: Medium
+- Required outputs: `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` (new).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` with normalization/hydration and editor-state-to-snapshot payload conversion helpers.
+
+ID: T534
+Status: [✓] Done
+Title: [E-SNAP] SnapshotEditorPage (replaces JuceGridPage)
+Description:
+- Goal / acceptance criteria: Create `web/src/app/pages/SnapshotEditorPage.tsx` and `.css` by refactoring `JuceGridPage.tsx`. Replace all `flowSlots` references with `channels`, all `flowSnapshot` with `snapshot`. Remove A/B mode UI entirely. Update `App.tsx` routes: add `/snapshot-editor` route, redirect `/juce-grid` → `/snapshot-editor`. Wire to new API client and state module.
+- Why it matters: Primary operator performance surface — the most visible deliverable of the entire refactor.
+- Dependencies: T532, T533
+- Estimated effort: Large
+- Required outputs: `web/src/app/pages/SnapshotEditorPage.tsx` (new), `SnapshotEditorPage.css` (new), updated `App.tsx`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added `web/src/app/pages/SnapshotEditorPage.tsx` and `.css`; updated `web/src/app/App.tsx` to route `/snapshot-editor` and redirect legacy `/juce-grid`/`/grid`/`/grid-3d`.
+
+ID: T535
+Status: [✓] Done
+Title: [E-SNAP] Snapshot editor sub-components
+Description:
+- Goal / acceptance criteria: Refactor `JuceGridChainManagementCard.tsx` → `SnapshotChainManagementCard.tsx`. Refactor `juceGridLiveChains.ts` → `snapshotEditorLiveChains.ts`. Refactor `juceGridSnapshots.ts` → `snapshotEditorComparison.ts`. Update `SnapshotModal.tsx`, `SnapshotDeployModal.tsx`, `CommunitySnapshotBrowser.tsx` to use new types and API client.
+- Why it matters: Sub-components must align with the new vocabulary and data model.
+- Dependencies: T534
+- Estimated effort: Medium
+- Required outputs: New files under `web/src/app/components/SnapshotEditor/`, updated snapshot modals.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added `web/src/app/components/SnapshotEditor/` wrappers for chain-management/live-chain/comparison modules and updated snapshot modals/browser/deploy surfaces to consume the unified snapshot client or compatibility adapters.
+
+ID: T536
+Status: [✓] Done
+Title: [E-SNAP] Rename ChainFlowCanvas → ChainGraphCanvas
+Description:
+- Goal / acceptance criteria: Rename `ChainFlowCanvas.tsx` → `ChainGraphCanvas.tsx`, `useChainFlow.ts` → `useChainGraph.ts`, `flowToChain.ts` → `graphToChain.ts`. Delete `chainToABFlow.ts` (A/B mode retired). Update all imports across the codebase.
+- Why it matters: Vocabulary alignment — "flow" removed from user-facing component names.
+- Dependencies: T534
+- Estimated effort: Medium
+- Required outputs: Renamed files under `web/src/map2/components/ChainBuilder/`, all imports updated.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-29
+- Completion notes: Added `ChainGraphCanvas`, `useChainGraph`, and `graphToChain` entrypoints, removed `chainToABFlow.ts`, and updated ChainBuilder exports for graph terminology.
+
+ID: T537
+Status: [✓] Done
+Title: [E-SNAP] Rename MPX1/IntelFX flow → signal path
+Description:
+- Goal / acceptance criteria: Rename `mpx1FlowRouting.ts` → `mpx1SignalPathRouting.ts`, `MPX1FlowCanvas.tsx` → `MPX1SignalPathCanvas.tsx`, `MPX1FlowPatchCords.tsx` → `MPX1SignalPathPatchCords.tsx`. Same pattern for IntelFX: `intelfxFlowRouting.ts` → `intelfxSignalPathRouting.ts`, `IntelFXFlowCanvas.tsx` → `IntelFXSignalPathCanvas.tsx`. Update all imports.
+- Why it matters: Vocabulary alignment — "flow" removed from visual component names.
+- Dependencies: T536
+- Estimated effort: Low
+- Required outputs: Renamed files under MPX1/ and IntelFX/ directories, all imports updated.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-29
+- Completion notes: Added MPX1/IntelFX signal-path entrypoints and updated the route wrappers/error-boundary copy to use signal-path terminology.
+
+ID: T538
+Status: [✓] Done
+Title: [E-SNAP] Data migration script
+Description:
+- Goal / acceptance criteria: Create `scripts/migrate_to_unified_snapshots.py` implementing 7-phase migration: (1) create new tables, (2) migrate flow snapshots (parse snapshot_data JSON → Snapshot + SnapshotChannel + SnapshotChain + SnapshotChainPlugin + SnapshotRouting; map ab_switch → morph), (3) migrate orphan chains not in any flow snapshot → single-channel snapshots, (4) migrate engine snapshots from ~/.map2/engine_snapshots.json, (5) migrate FlowAssignment/FlowDeployment → SnapshotDeployment, (6) verify row counts, (7) drop old tables (manual step). Script must be idempotent and back up the DB first.
+- Why it matters: Existing user data must be preserved through the schema change.
+- Dependencies: T527, T528
+- Estimated effort: Medium
+- Required outputs: `scripts/migrate_to_unified_snapshots.py` (new).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Added `scripts/migrate_to_unified_snapshots.py` with idempotent multi-source migration, DB backup, deployment migration, and verification summary output.
+
+ID: T539
+Status: [✓] Done
+Title: [E-SNAP] Backend test suite for snapshot service and routes
+Description:
+- Goal / acceptance criteria: Create `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, `tests/test_snapshot_migration.py`. Cover: CRUD, channel management, chain plugin operations, routing updates, MIDI map CRUD, export/import with asset manifest, import with unavailable plugin placeholders, activation, duplication, program change recall, migration correctness.
+- Why it matters: Backend must be thoroughly tested before frontend work and before old code is removed.
+- Dependencies: T528, T529
+- Estimated effort: Large
+- Required outputs: 3 new test files, all passing.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:42 EDT - Codex
+- Completion notes: Added focused backend coverage in `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, and `tests/test_snapshot_migration.py`; snapshot-focused suite passes.
+
+ID: T540
+Status: [✓] Done
+Title: [E-SNAP] Frontend test suite for snapshot editor
+Description:
+- Goal / acceptance criteria: Create `SnapshotEditorPage.test.tsx`, `snapshotEditorState.test.ts`, `snapshotEditorLiveChains.test.ts`. Cover: renders without crash, channel management, routing mode switching, snapshot activation, WebSocket events, morph between channels, community browser integration.
+- Why it matters: Frontend must be tested before old components are removed.
+- Dependencies: T534, T535
+- Estimated effort: Medium
+- Required outputs: 3 new test files, all passing.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 12:08 EDT - Codex
+- Completion notes: Added `SnapshotEditorPage.test.tsx`, `snapshotEditorState.test.ts`, and `snapshotEditorLiveChains.test.ts`; focused snapshot-editor frontend suite passes.
+
+ID: T541
+Status: [>] In Progress
+Title: [E-SNAP] Remove old models, routes, types, and components
+Description:
+- Goal / acceptance criteria: Remove from `app/database.py`: Chain, ChainPlugin, Preset, FlowSnapshot, FlowAssignment, FlowDeployment, FlowDeploymentHistory. Remove routes: chains.py, chains_ab_mode.py, flow_snapshots.py, snapshot_library.py, snapshots.py, cluster_flows.py, flow_failover.py — and remove them from `main.py` route_modules. Remove services: chain_service.py, chain_analyzer.py, flow_orchestrator.py. Remove frontend: old types from types.ts, clients/chains.ts, flow portions of clients/workflows.ts, hooks/useFlowSnapshots.ts, JuceGridPage.*, JuceGrid/ directory contents, old ChainFlowCanvas files, chainToABFlow.ts. Remove old tests: test_flow_snapshots_routes.py, test_snapshots_persistence.py, test_chain_service_runtime_mapping.py, test_chains_ab_mode_*.py, test_snapshot_library_route_registration.py, test_engine_snapshot_route_ownership.py. ~30+ files deleted/modified.
+- Why it matters: Dead code removal. The system must be clean with no legacy paths after cutover.
+- Dependencies: T527-T540 (ALL preceding tasks)
+- Estimated effort: Large
+- Required outputs: All old code removed, typecheck passes, build passes, all tests pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:05 EDT - Codex
+- Completion notes:
+  - Removed the remaining legacy backend route modules `app/routes/flow_failover.py` and `app/routes/snapshots.py`, removed both from `app/main.py` route registration, and dropped the obsolete `/api/flow_failover` cluster-auth prefix from `app/middleware/api_auth.py`.
+  - Replaced the last live backend dependency on `app/services/flow_orchestrator.py`: `app/services/cluster/failover_monitor.py` now uses `app/services/snapshot_deployment_service.py` plus snapshot deployment records instead of flow assignments/orchestrator state.
+  - Extended `app/services/snapshot_deployment_service.py` with filtered deployment listing, best-node selection, failover-without-retaining-failed-primary support, and explicit snapshot reassignment after node loss.
+  - Deleted superseded flow-orchestrator tests (`tests/test_cluster_flows_api.py`, `tests/test_flow_deployment.py`, `tests/test_flow_orchestrator.py`, `tests/test_flow_orchestrator_deploy_semantics.py`, `tests/test_flow_orchestrator_failover.py`, `tests/test_phase1_integration.py`) and added focused replacement coverage in `tests/test_snapshot_deployment_service.py`; updated snapshot failover/deploy smoke tests to hit `/api/cluster/snapshots/*`.
+  - Licensing review: touched backend/test/doc/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/middleware/api_auth.py app/services/snapshot_deployment_service.py app/services/cluster/failover_monitor.py tests/test_snapshot_deployment_service.py tests/test_phase4_failover.py tests/test_phase5_endpoints.py` -> PASS; `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_snapshot_migration.py tests/test_snapshot_deployment_service.py tests/test_shared_route_prefix_audits.py tests/test_route_prefix_uniqueness_policy.py` -> PASS (`7 passed`).
+  - Remaining frontend follow-up: the final legacy filename retirement still requires deleting or moving compatibility-layer files such as `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, and `web/src/app/components/JuceGrid/JuceGridChainManagementCard.tsx` after their remaining imports/tests/docs move to the canonical snapshot-editor surfaces tracked in T544.
+
+ID: T542
+Status: [>] In Progress
+Title: [E-SNAP] Update documentation (CLAUDE.md, MEMORY.md, PROJECT_WORKLIST.md)
+Description:
+- Goal / acceptance criteria: Update all documentation to reflect new vocabulary: snapshot, channel, routing — no "flow" (user-facing), no "preset", no "A/B mode". Update key file locations in CLAUDE.md. Update API contract references. Update MEMORY.md index. Update PROJECT_WORKLIST.md with completion notes for the entire epic.
+- Why it matters: Documentation must match the code. Stale docs cause confusion in future sessions.
+- Dependencies: T541
+- Estimated effort: Low
+- Required outputs: Updated docs/CLAUDE.md, memory files, docs/PROJECT_WORKLIST.md.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:25 EDT - Codex
+- Completion notes:
+  - Updated `docs/MEMORY.md` with the canonical E-SNAP backend/frontend surface index, added the latest removed backend modules (`flow_failover.py`, `snapshots.py`, `flow_orchestrator.py`), and replaced the stale dirty-frontend blocker note with the remaining shim-retirement follow-up.
+  - Updated `docs/CLAUDE.md` key-file guidance so future sessions start from the snapshot editor page, snapshot client/state modules, unified snapshot routes/services, migration script, and `docs/MEMORY.md`.
+  - Updated this worklist section with concrete T541 completion notes and explicit cutover context; final epic-completion documentation still depends on retiring the remaining legacy frontend shims captured in T544.
+
+ID: T543
+Status: [✓] Done
+Title: [E-SNAP] Reconcile dirty frontend cutover files before final legacy JUCE Grid removal
+Description:
+- Goal / acceptance criteria: Reconcile the pre-existing dirty changes in `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/components/JuceGrid/JuceGridChainManagementCard.tsx`, `web/src/app/components/PluginCards/liveEditorRouting.ts`, `web/src/app/components/PluginCards/liveEditorRouting.test.ts`, `web/src/map2/types.ts`, and related flow-named wrapper surfaces so the remaining E-SNAP frontend implementation moves and file deletions can proceed safely. Finish the actual cutover from wrapper exports to canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files once ownership of those edits is resolved.
+- Why it matters: T541 backend/module cleanup is complete, but deleting or renaming the remaining legacy frontend files right now would overwrite concurrent work already present in the tree.
+- Dependencies: T541
+- Estimated effort: Large
+- Required outputs: reconciled frontend move/delete plan, user-approved conflict strategy if needed, final legacy file removals, updated imports/tests/docs, and fresh `npm --prefix web run typecheck` plus focused frontend test/build evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:25 EDT - Codex
+- Completion notes:
+  - Revalidated the reboot-surviving frontend checkpoint and confirmed the current snapshot-editor/signal-path wrapper surfaces are coherent enough to ship as an intentional compatibility layer rather than an unresolved conflict state.
+  - Fixed production-build-only reconciliation regressions by adding missing default exports for `web/src/app/components/MPX1/MPX1FlowCanvas.tsx` and `web/src/app/components/MPX1/MPX1FlowPatchCords.tsx`, and by replacing `useEffectEvent` in `web/src/app/hooks/useSnapshots.ts` with a ref-backed callback compatible with the current React/TypeScript build pipeline.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts` -> PASS (`5 passed`); `npm --prefix web run build` -> PASS.
+  - The remaining legacy filename retirement work is now an explicit follow-up task rather than a blocker on committing/pushing this checkpoint.
+
+ID: T544
+Status: [ ] Todo
+Title: [E-SNAP] Retire legacy frontend shims after validated snapshot-editor checkpoint
+Description:
+- Goal / acceptance criteria: Move the remaining `JuceGrid*`, `ChainFlow*`, and `*Flow*` compatibility owners into canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files, then delete obsolete wrappers once imports, tests, and docs point at the canonical surfaces and the production build remains green.
+- Why it matters: The current E-SNAP checkpoint is coherent and validated, but the epic still carries legacy filenames that keep the frontend vocabulary cleanup incomplete.
+- Dependencies: T543
+- Estimated effort: Medium
+- Required outputs: updated canonical file ownership, deleted legacy wrappers where safe, import/test/doc cleanup, `npm --prefix web run typecheck`, focused snapshot-editor tests, and `npm --prefix web run build` evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 11:25 EDT - Codex

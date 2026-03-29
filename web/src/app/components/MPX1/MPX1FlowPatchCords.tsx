@@ -150,3 +150,5 @@ export function MPX1FlowPatchCords({ cords, nodeRefs, canvasRef }: MPX1FlowPatch
     </svg>
   )
 }
+
+export default MPX1FlowPatchCords

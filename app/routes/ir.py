@@ -219,7 +219,7 @@ try:
 
         session = get_db_session()
         try:
-            active_plugin = (
+            active_plugins = (
                 session.query(ChainPlugin)
                 .join(Chain, Chain.id == ChainPlugin.chain_id)
                 .filter(
@@ -227,20 +227,36 @@ try:
                     ChainPlugin.position == plugin_position,
                     ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
                 )
-                .first()
+                .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.id.asc())
+                .all()
             )
-            if active_plugin is not None:
-                return active_plugin
+            if len(active_plugins) == 1:
+                return active_plugins[0]
+            if len(active_plugins) > 1:
+                return None
 
-            return (
+            active_count = int(
+                session.query(ChainPlugin)
+                .join(Chain, Chain.id == ChainPlugin.chain_id)
+                .filter(
+                    Chain.is_active.is_(True),
+                    ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                )
+                .count()
+            )
+            if active_count > 0:
+                return None
+
+            total_plugins = (
                 session.query(ChainPlugin)
                 .filter(
                     ChainPlugin.position == plugin_position,
                     ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
                 )
-                .order_by(ChainPlugin.chain_id.asc())
-                .first()
+                .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.id.asc())
+                .all()
             )
+            return total_plugins[0] if len(total_plugins) == 1 else None
         finally:
             session.close()
 
@@ -293,9 +309,55 @@ try:
         finally:
             session.close()
 
-    def _configured_ir_blocks_allow_global_fallback(ir_type: str) -> bool:
+    def _configured_ir_blocks_allow_global_fallback(ir_type: str, plugin_position: Optional[int] = None) -> bool:
         session = get_db_session()
         try:
+            if _has_plugin_position(plugin_position):
+                active_position_count = int(
+                    session.query(ChainPlugin)
+                    .join(Chain, Chain.id == ChainPlugin.chain_id)
+                    .filter(
+                        Chain.is_active.is_(True),
+                        ChainPlugin.position == plugin_position,
+                        ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                    )
+                    .count()
+                )
+                if active_position_count == 1:
+                    return True
+                if active_position_count > 1:
+                    return False
+
+                active_count = int(
+                    session.query(ChainPlugin)
+                    .join(Chain, Chain.id == ChainPlugin.chain_id)
+                    .filter(
+                        Chain.is_active.is_(True),
+                        ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                    )
+                    .count()
+                )
+                if active_count > 0:
+                    return False
+
+                total_position_count = int(
+                    session.query(ChainPlugin)
+                    .filter(
+                        ChainPlugin.position == plugin_position,
+                        ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]),
+                    )
+                    .count()
+                )
+                if total_position_count != 1:
+                    return False
+
+                total_count = int(
+                    session.query(ChainPlugin)
+                    .filter(ChainPlugin.plugin_uri.in_(IR_CONFIG_PLUGIN_URIS[ir_type]))
+                    .count()
+                )
+                return total_count == 1
+
             active_count = int(
                 session.query(ChainPlugin)
                 .join(Chain, Chain.id == ChainPlugin.chain_id)
@@ -323,7 +385,10 @@ try:
             return False
         if await _runtime_has_ir_type(engine, ir_type):
             return False
-        return await asyncio.to_thread(_configured_ir_blocks_allow_global_fallback, ir_type)
+        try:
+            return await asyncio.to_thread(_configured_ir_blocks_allow_global_fallback, ir_type, plugin_position)
+        except TypeError:
+            return await asyncio.to_thread(_configured_ir_blocks_allow_global_fallback, ir_type)
 
     def _duplicate_ir_fallback_detail(ir_type: str, plugin_position: Optional[int]) -> str:
         return (

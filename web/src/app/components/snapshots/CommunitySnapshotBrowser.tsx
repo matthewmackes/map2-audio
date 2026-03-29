@@ -9,7 +9,7 @@
  * - Upload new snapshots to community
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import {
   ChevronLeft as CaretLeft,
   ChevronRight as CaretRight,
@@ -24,24 +24,15 @@ import {
   WarningAlt as WarningCircle,
 } from '@carbon/icons-react'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
-
-interface CommunitySnapshot {
-  uuid: string
-  name: string
-  plugin_uri: string
-  plugin_name: string
-  author: string
-  category: string
-  tags: string[]
-  downloads: number
-  rating: number
-  rating_count: number
-  created_at: string
-}
+import { snapshotsApi } from '../../../map2/clients/snapshots'
+import type {
+  CommunitySnapshot as SharedCommunitySnapshot,
+  SnapshotDetail,
+} from '../../../map2/types'
 
 interface CommunitySnapshotBrowserProps {
   pluginUri?: string
-  onSnapshotDownloaded?: (parameters: Record<string, number>) => void
+  onSnapshotDownloaded?: (snapshot: SnapshotDetail) => void
   onUploadClick?: () => void
 }
 
@@ -52,7 +43,7 @@ export function CommunitySnapshotBrowser({
   onSnapshotDownloaded,
   onUploadClick,
 }: CommunitySnapshotBrowserProps) {
-  const [snapshots, setSnapshots] = useState<CommunitySnapshot[]>([])
+  const [snapshots, setSnapshots] = useState<SharedCommunitySnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -75,25 +66,42 @@ export function CommunitySnapshotBrowser({
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        sort_by: sortBy,
-        page: String(page),
-        page_size: String(pageSize),
+      const response = await snapshotsApi.browseCommunity({
+        query: search || undefined,
+        tags: category ? [category] : undefined,
       })
 
-      if (pluginUri) params.set('plugin_uri', pluginUri)
-      if (category) params.set('category', category)
-      if (search) params.set('search', search)
+      const filtered = pluginUri
+        ? response.snapshots.filter((snapshot) => (
+          snapshot.tags.some((tag) => tag.includes(pluginUri))
+          || snapshot.description.toLowerCase().includes(pluginUri.toLowerCase())
+        ))
+        : response.snapshots
 
-      const response = await fetch(`/api/preset-exchange/community/browse?${params}`)
-      const data = await response.json()
+      const sorted = [...filtered].sort((left, right) => {
+        if (sortBy === 'rating') {
+          return (right.community_rating ?? 0) - (left.community_rating ?? 0)
+        }
+        if (sortBy === 'newest') {
+          return (right.created_at ?? '').localeCompare(left.created_at ?? '')
+        }
+        return right.community_download_count - left.community_download_count
+      })
 
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to load snapshots')
+      const tagCounts = new Map<string, number>()
+      for (const snapshot of response.snapshots) {
+        for (const tag of snapshot.tags) {
+          tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+        }
       }
 
-      setSnapshots(data.presets)
-      setTotal(data.total)
+      setCategories(
+        [...tagCounts.entries()]
+          .map(([name, count]) => ({ name, count }))
+          .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name)),
+      )
+      setSnapshots(sorted)
+      setTotal(sorted.length)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load snapshots')
     } finally {
@@ -101,48 +109,29 @@ export function CommunitySnapshotBrowser({
     }
   }, [pluginUri, category, search, sortBy, page])
 
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await fetch('/api/preset-exchange/community/categories')
-      const data = await response.json()
-      setCategories(data.categories || [])
-    } catch (err) {
-      console.error('Failed to load categories:', err)
-    }
-  }, [])
-
   useEffect(() => {
     fetchSnapshots()
   }, [fetchSnapshots])
 
-  useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
-
   // Download snapshot
   const handleDownload = useCallback(
-    async (snapshot: CommunitySnapshot) => {
+    async (snapshot: SharedCommunitySnapshot) => {
       try {
-        const response = await fetch(`/api/preset-exchange/community/${snapshot.uuid}/download`, {
-          method: 'POST',
-        })
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.detail || 'Download failed')
-        }
+        const data = await snapshotsApi.downloadCommunity(snapshot.community_uuid ?? '')
 
         // Update local snapshot count
         setSnapshots((prev) =>
-          prev.map((entry) => (entry.uuid === snapshot.uuid ? { ...entry, downloads: entry.downloads + 1 } : entry))
+          prev.map((entry) => (
+            entry.community_uuid === snapshot.community_uuid
+              ? { ...entry, community_download_count: entry.community_download_count + 1 }
+              : entry
+          ))
         )
 
-        if (onSnapshotDownloaded && data.parameters) {
-          onSnapshotDownloaded(data.parameters)
+        if (onSnapshotDownloaded) {
+          onSnapshotDownloaded(data.snapshot)
         }
 
-        // Show success toast (simplified)
         alert(`Downloaded "${snapshot.name}" successfully!`)
       } catch (err) {
         alert(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -152,26 +141,19 @@ export function CommunitySnapshotBrowser({
   )
 
   // Rate snapshot
-  const handleRate = useCallback(async (snapshot: CommunitySnapshot, rating: number) => {
+  const handleRate = useCallback(async (snapshot: SharedCommunitySnapshot, rating: number) => {
     try {
-      // Generate device fingerprint
-      const fingerprint = await generateFingerprint()
-
-      const response = await fetch(
-        `/api/preset-exchange/community/${snapshot.uuid}/rate?rating=${rating}&fingerprint=${fingerprint}`,
-        { method: 'POST' }
-      )
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Rating failed')
-      }
+      const data = await snapshotsApi.rateCommunity(snapshot.community_uuid ?? '', rating)
 
       // Update local rating
       setSnapshots((prev) =>
         prev.map((entry) =>
-          entry.uuid === snapshot.uuid
-            ? { ...entry, rating: data.new_rating, rating_count: data.rating_count }
+          entry.community_uuid === snapshot.community_uuid
+            ? {
+              ...entry,
+              community_rating: data.snapshot.community_rating,
+              community_rating_count: data.snapshot.community_rating_count,
+            }
             : entry
         )
       )
@@ -180,6 +162,10 @@ export function CommunitySnapshotBrowser({
     }
   }, [])
 
+  const visibleSnapshots = useMemo(
+    () => snapshots.slice((page - 1) * pageSize, page * pageSize),
+    [page, pageSize, snapshots],
+  )
   const totalPages = Math.ceil(total / pageSize)
 
   return (
@@ -361,7 +347,7 @@ export function CommunitySnapshotBrowser({
       )}
 
       {/* Snapshot Grid */}
-      {!loading && snapshots.length > 0 && (
+      {!loading && visibleSnapshots.length > 0 && (
         <div
           style={{
             display: 'grid',
@@ -369,9 +355,9 @@ export function CommunitySnapshotBrowser({
             gap: '16px',
           }}
         >
-          {snapshots.map((snapshot) => (
+          {visibleSnapshots.map((snapshot) => (
             <SnapshotCard
-              key={snapshot.uuid}
+              key={snapshot.community_uuid}
               snapshot={snapshot}
               onDownload={() => handleDownload(snapshot)}
               onRate={(rating) => handleRate(snapshot, rating)}
@@ -456,7 +442,7 @@ function SnapshotCard({
   onDownload,
   onRate,
 }: {
-  snapshot: CommunitySnapshot
+  snapshot: SharedCommunitySnapshot
   onDownload: () => void
   onRate: (rating: number) => void
 }) {
@@ -486,10 +472,10 @@ function SnapshotCard({
           {snapshot.name}
         </h3>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
-          by {sanitizeRestrictedDisplayText(snapshot.author)}
+          by {sanitizeRestrictedDisplayText(snapshot.community_author ?? 'Anonymous')}
         </div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary, #666)' }}>
-          for {sanitizeRestrictedDisplayText(snapshot.plugin_name) || 'Processor'}
+          {snapshot.description || `${snapshot.channel_count} channel snapshot`}
         </div>
       </div>
 
@@ -526,12 +512,12 @@ function SnapshotCard({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <CloudArrowDown size={14} />
-          {snapshot.downloads}
+          {snapshot.community_download_count}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {/* Rating stars */}
           {[1, 2, 3, 4, 5].map((star) => (
-            star <= (hoverRating || snapshot.rating) ? (
+            star <= (hoverRating || snapshot.community_rating || 0) ? (
               <StarFilled
                 key={star}
                 size={14}
@@ -551,7 +537,7 @@ function SnapshotCard({
               />
             )
           ))}
-          <span style={{ marginLeft: '4px' }}>({snapshot.rating_count})</span>
+          <span style={{ marginLeft: '4px' }}>({snapshot.community_rating_count})</span>
         </div>
       </div>
 
@@ -578,23 +564,6 @@ function SnapshotCard({
       </button>
     </div>
   )
-}
-
-// Generate anonymous device fingerprint
-async function generateFingerprint(): Promise<string> {
-  const data = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    new Date().getTimezoneOffset(),
-  ].join('|')
-
-  const encoder = new TextEncoder()
-  const dataBuffer = encoder.encode(data)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 export default CommunitySnapshotBrowser

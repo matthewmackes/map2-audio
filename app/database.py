@@ -755,6 +755,262 @@ class EffectsLoopCalibration(Base):
     )
 
 
+# =============================================================================
+# UNIFIED SNAPSHOTS - Snapshot Owns Channels, Chains, Routing, MIDI, Deployment
+# =============================================================================
+
+class Snapshot(Base):
+    """Unified snapshot root record."""
+    __tablename__ = "snapshots"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, default="")
+    tags = Column(JSON, default=list)
+    program_number = Column(Integer, nullable=True, unique=True)
+    is_active = Column(Boolean, default=False)
+    display_order = Column(Integer, default=0)
+    is_favorite = Column(Boolean, default=False)
+
+    community_uuid = Column(String(64), nullable=True, unique=True, index=True)
+    community_shared = Column(Boolean, default=False)
+    community_author = Column(String(255), default="Anonymous")
+    community_download_count = Column(Integer, default=0)
+    community_rating_sum = Column(Float, default=0.0)
+    community_rating_count = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    channels = relationship(
+        "SnapshotChannel",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="SnapshotChannel.order_index",
+    )
+    chains = relationship(
+        "SnapshotChain",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="SnapshotChain.order_index",
+    )
+    routing = relationship(
+        "SnapshotRouting",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    midi_map = relationship(
+        "SnapshotMidiMap",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    deployments = relationship(
+        "SnapshotDeployment",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        Index("idx_snapshots_active_order", "is_active", "display_order"),
+        Index("idx_snapshots_shared_created", "community_shared", "created_at"),
+    )
+
+
+class SnapshotChain(Base):
+    """Chain state namespaced inside a snapshot."""
+    __tablename__ = "snapshot_chains"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    order_index = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot", back_populates="chains")
+    plugins = relationship(
+        "SnapshotChainPlugin",
+        back_populates="chain",
+        cascade="all, delete-orphan",
+        order_by="SnapshotChainPlugin.position",
+    )
+    loop_insertions = relationship(
+        "SnapshotLoopInsertion",
+        back_populates="chain",
+        cascade="all, delete-orphan",
+        order_by="SnapshotLoopInsertion.slot_index",
+    )
+
+    __table_args__ = (
+        Index("idx_snapshot_chains_snapshot_name", "snapshot_id", "name"),
+        Index("idx_snapshot_chains_snapshot_order", "snapshot_id", "order_index"),
+    )
+
+
+class SnapshotChannel(Base):
+    """Snapshot channel assignment and mix state."""
+    __tablename__ = "snapshot_channels"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    chain_id = Column(Integer, ForeignKey("snapshot_chains.id", ondelete="SET NULL"), nullable=True, index=True)
+    channel_key = Column(String(64), nullable=False)
+    label = Column(String(64), nullable=False)
+    color = Column(String(32), default="#2563eb")
+    muted = Column(Boolean, default=False)
+    solo = Column(Boolean, default=False)
+    dry_wet_mix = Column(Float, default=100.0)
+    order_index = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot", back_populates="channels")
+    chain = relationship("SnapshotChain", foreign_keys=[chain_id])
+
+    __table_args__ = (
+        Index("idx_snapshot_channels_snapshot_key", "snapshot_id", "channel_key", unique=True),
+        Index("idx_snapshot_channels_snapshot_order", "snapshot_id", "order_index"),
+    )
+
+
+class SnapshotChainPlugin(Base):
+    """Plugin rows embedded inside a snapshot chain."""
+    __tablename__ = "snapshot_chain_plugins"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_chain_id = Column(Integer, ForeignKey("snapshot_chains.id", ondelete="CASCADE"), nullable=False, index=True)
+    plugin_uri = Column(String(255), nullable=False)
+    plugin_name = Column(String(255), nullable=True)
+    position = Column(Integer, nullable=False, default=0)
+    bypass = Column(Boolean, default=False)
+    parameters = Column(JSON, default=dict)
+    loader_state = Column(JSON, default=dict)
+    is_placeholder = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    chain = relationship("SnapshotChain", back_populates="plugins")
+
+    __table_args__ = (
+        Index("idx_snapshot_chain_plugins_chain_position", "snapshot_chain_id", "position"),
+        Index("idx_snapshot_chain_plugins_chain_uri", "snapshot_chain_id", "plugin_uri"),
+    )
+
+
+class SnapshotLoopInsertion(Base):
+    """Loop insertion state embedded inside a snapshot chain."""
+    __tablename__ = "snapshot_loop_insertions"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_chain_id = Column(Integer, ForeignKey("snapshot_chains.id", ondelete="CASCADE"), nullable=False, index=True)
+    insertion_id = Column(String(64), nullable=True)
+    loop_id = Column(String(64), nullable=True)
+    slot_index = Column(Integer, nullable=False, default=0)
+    enabled = Column(Boolean, default=True)
+    mode = Column(String(32), default="serial_insert")
+    blend_pct = Column(Float, default=100.0)
+    send_gain_db = Column(Float, default=0.0)
+    return_gain_db = Column(Float, default=0.0)
+    crossfade_ms = Column(Integer, default=12)
+    band_split_hz = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    chain = relationship("SnapshotChain", back_populates="loop_insertions")
+
+    __table_args__ = (
+        Index("idx_snapshot_loop_insertions_chain_slot", "snapshot_chain_id", "slot_index"),
+        Index("idx_snapshot_loop_insertions_chain_loop", "snapshot_chain_id", "loop_id"),
+    )
+
+
+class SnapshotRouting(Base):
+    """Per-snapshot routing state."""
+    __tablename__ = "snapshot_routing"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    mode = Column(String(32), default="parallel_blend")
+    active_channel_key = Column(String(64), nullable=True)
+    blend_positions = Column(JSON, default=dict)
+    morph_position = Column(Float, default=0.5)
+    morph_source_channel_key = Column(String(64), nullable=True)
+    morph_target_channel_key = Column(String(64), nullable=True)
+    series_order = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot", back_populates="routing")
+
+
+class SnapshotMidiMap(Base):
+    """Flexible per-snapshot MIDI map stored as JSON entries."""
+    __tablename__ = "snapshot_midi_maps"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    entries = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot", back_populates="midi_map")
+
+
+class SnapshotDeployment(Base):
+    """Cluster deployment state for a whole snapshot."""
+    __tablename__ = "snapshot_deployments"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    primary_node_id = Column(String(128), nullable=False)
+    standby_node_ids = Column(JSON, default=list)
+    deployment_status = Column(String(20), default="deploying")
+    assignment_strategy = Column(String(20), default="manual")
+    redundancy_enabled = Column(Boolean, default=False)
+    deployed_at = Column(DateTime, default=datetime.utcnow)
+    last_failover_time = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot", back_populates="deployments")
+    history = relationship(
+        "SnapshotDeploymentHistory",
+        back_populates="deployment",
+        cascade="all, delete-orphan",
+        order_by="SnapshotDeploymentHistory.created_at",
+    )
+
+    __table_args__ = (
+        Index("idx_snapshot_deployments_snapshot", "snapshot_id"),
+        Index("idx_snapshot_deployments_primary_node", "primary_node_id"),
+    )
+
+
+class SnapshotDeploymentHistory(Base):
+    """Audit history for snapshot deployment and failover actions."""
+    __tablename__ = "snapshot_deployment_history"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_deployment_id = Column(Integer, ForeignKey("snapshot_deployments.id", ondelete="CASCADE"), nullable=False, index=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_node_id = Column(String(128), nullable=True)
+    to_node_id = Column(String(128), nullable=False)
+    action = Column(String(32), nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    deployment = relationship("SnapshotDeployment", back_populates="history")
+    snapshot = relationship("Snapshot")
+
+    __table_args__ = (
+        Index("idx_snapshot_deployment_history_snapshot", "snapshot_id"),
+        Index("idx_snapshot_deployment_history_to_node", "to_node_id"),
+    )
+
+
 class TesiraLoopTemplate(Base):
     """Tag-mapped Tesira template metadata for loop orchestration."""
     __tablename__ = "tesira_loop_templates"

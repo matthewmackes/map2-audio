@@ -34,7 +34,6 @@ CLUSTER_PREFIXES = (
     "/api/cluster",
     "/api/raft",
     "/api/config",
-    "/api/flow_failover",
     "/api/deployment",
     "/api/ssh_trust",
 )

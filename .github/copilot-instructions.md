@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 28, 2026 (Scoped loader route persistence sync)
+> **Last Updated**: March 29, 2026 (E-SNAP snapshot-editor build-gate reconciliation)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -249,6 +249,8 @@ cd web && npm run deploy:restart
 # Check deployment status
 cd web && npm run deploy:status
 ```
+
+- After wrapper-entrypoint renames or page/hook vocabulary migrations, treat `npm --prefix web run build` as the only authoritative gate. `npm run typecheck` can stay green while `tsc -b` fails on missing default re-exports or React APIs that the build pipeline typings do not expose.
 
 ### Backend Commands
 
@@ -1335,6 +1337,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx`; `npm --prefix web test -- --runInBand web/src/app/pages/audioTableKeyboard.test.ts`
 - **Lesson**: For Carbon/React Query suites that preseed query data, passing render coverage does not prove the mutation harness is sound. If new mutation assertions never reach their payload mocks, verify the mocked module exports are lazily bound before blaming the UI event path.
 
+**35. E-SNAP Wrapper Renames Must Pass The Production Build Gate (MEDIUM - Mar 29, 2026)**
+- **Files**: `web/src/app/hooks/useSnapshots.ts`, `web/src/app/components/MPX1/MPX1FlowCanvas.tsx`, `web/src/app/components/MPX1/MPX1FlowPatchCords.tsx`, `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`, `web/src/app/components/MPX1/MPX1SignalPathPatchCords.tsx`
+- **Problem**: The snapshot-editor/signal-path reconciliation looked healthy under `npm run typecheck` and focused tests, but the full production build failed during `tsc -b`.
+- **Root Cause**: The new MPX1 signal-path wrappers re-exported `default` from modules that only had named exports, and `useSnapshots.ts` used `useEffectEvent` even though the build pipeline's React typings did not expose that API.
+- **Fix**: Add explicit default exports to wrapper-owned components when compatibility files re-export `default`, replace `useEffectEvent` with a ref-backed callback when the current toolchain cannot type it, and always rerun `npm --prefix web run build` after wrapper-entrypoint migrations.
+- **Verification**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts`; `npm --prefix web run build`
+- **Lesson**: Vocabulary migrations that add compatibility shims are build-contract work, not just import churn. If a wrapper re-exports `default`, the source module must really export it, and new React hook APIs need to match the repo's actual build-time typings.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1605,6 +1615,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-29] - E-SNAP Snapshot-Editor Build-Gate Reconciliation
+- **Section**: Build & Test Commands, Gotchas & Learned Fixes (#35), Update Log
+- **Change**: Documented that wrapper-entrypoint vocabulary migrations must be verified with the full production build, and recorded the specific E-SNAP failure mode around missing default re-exports plus unsupported `useEffectEvent` usage in the current build pipeline.
+- **Reason**: The post-reboot reconciliation checkpoint for the snapshot editor passed `typecheck` and focused tests but still failed `npm --prefix web run build` until the wrapper/export and hook issues were repaired.
+- **Impact**: Future assistants should treat wrapper renames and hook modernizations as production-build-gated work, which reduces false-green checkpoints before commit/push or any port-3000 restart loop.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/hooks/useSnapshots.ts`, `web/src/app/components/MPX1/MPX1FlowCanvas.tsx`, `web/src/app/components/MPX1/MPX1FlowPatchCords.tsx`, `docs/PROJECT_WORKLIST.md`, `docs/MEMORY.md`
 
 ### [2026-03-28] - Scoped Loader Route Persistence Sync
 - **Section**: Gotchas & Learned Fixes (#21), Update Log

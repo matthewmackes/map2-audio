@@ -563,3 +563,5 @@ export function MPX1FlowCanvas() {
     </div>
   )
 }
+
+export default MPX1FlowCanvas

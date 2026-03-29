@@ -17,9 +17,9 @@ _ROUTE_DECORATOR_METHODS = {
 }
 
 _ALLOWED_SHARED_PREFIXES = {
-    "": frozenset({"drums", "expression", "websocket", "websocket_rt"}),
+    "": frozenset({"cluster_snapshots", "drums", "expression", "unified_snapshots", "websocket", "websocket_rt"}),
     "/api": frozenset({"effects_loops", "health"}),
-    "/api/cluster": frozenset({"cluster_admin", "cluster_flows", "cluster_health"}),
+    "/api/cluster": frozenset({"cluster_admin", "cluster_health"}),
     "/api/deployment": frozenset({"deployment", "deployment_health"}),
     "/api/lcd": frozenset({"lcd", "lcd_events"}),
 }
