@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 11:25 EDT - E-SNAP frontend reconciliation validated, production build repaired, and shim-retirement follow-up queued
+Last updated: 2026-03-29 12:31 EDT - active ledger normalized after E-SNAP closeout; no unblocked Todo/In Progress tasks remain
 
 ID: T482
 Status: [✓] Done
@@ -584,6 +584,8 @@ Last updated: 2026-03-25 11:06 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
 ## Active Blockers Only
+
+As of 2026-03-29 12:31 EDT, the active ledger contains blocker-only follow-up. There are no canonical `Status: [ ]` or `Status: [>]` tasks left to promote until an external blocker clears or a new task is added.
 
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
@@ -6835,14 +6837,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Bridge service that publishes C++ engine MIDI messages into MidiHub as a virtual port, and optionally routes Hub output back to the engine for MIDI output. Must not introduce latency > 1ms.
 Subtasks:
-  - [ ] Register a virtual "JUCE Engine Input" port in MidiHub on startup
-  - [ ] In `midi_broadcast.py._on_midi_message()`, publish raw MIDI bytes to Hub via the virtual port
-  - [ ] Register a virtual "JUCE Engine Output" port for Hub→Engine feedback path
-  - [ ] Verify Hub traffic monitor shows engine-originated messages
-  - [ ] Verify Hub routes can filter/transform engine MIDI
-  - [ ] Latency measurement: bridge overhead must be < 1ms
+  - [✓] Register a virtual "JUCE Engine Input" port in MidiHub on startup
+  - [✓] In `midi_broadcast.py._on_midi_message()`, publish raw MIDI bytes to Hub via the virtual port
+  - [✓] Register a virtual "JUCE Engine Output" port for Hub→Engine feedback path
+  - [✓] Verify Hub traffic monitor shows engine-originated messages
+  - [✓] Verify Hub routes can filter/transform engine MIDI
+  - [✓] Latency measurement: bridge overhead must be < 1ms
 Assigned to: Codex
-Last updated: 2026-03-23 18:40 EDT - Codex
+Last updated: 2026-03-29 12:31 EDT - Codex
 - Completion notes:
   - Updated `app/services/midi_broadcast.py` so the JUCE-engine monitor callback now converts engine MIDI payloads into raw bytes and injects them into MidiHub as source port `consumer:juce_engine_out` with bridge metadata instead of leaving the C++ engine isolated from the Hub routing matrix.
   - Hardened the same bridge registration path to ensure `JUCE Engine Input` and `JUCE Engine Output` virtual ports are present in MidiHub alongside the existing broadcast sink, and start the hub when the broadcast bridge attaches so the engine-originated injection path is active.
@@ -6850,6 +6852,7 @@ Last updated: 2026-03-23 18:40 EDT - Codex
   - Added focused coverage in `tests/midi_hub/test_consumer_migration.py` proving an engine-originated CC becomes inbound hub traffic from `consumer:juce_engine_out`, routes through `MidiRouter` into a virtual destination port, and shows up in broadcast activity payloads.
   - Validation passed with `pytest tests/midi_hub/test_consumer_migration.py tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py`.
   - Software-only bridge timing probe on this host measured `avg_ms=0.002149`, `p95_ms=0.003773`, and `max_ms=0.018339` across 200 injected CC messages while routing them through MidiHub, comfortably below the `< 1 ms` acceptance target for bridge overhead.
+  - Worklist bookkeeping update: the raw T382 checklist now reflects the already-shipped bridge implementation and validation evidence above.
   - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T383
