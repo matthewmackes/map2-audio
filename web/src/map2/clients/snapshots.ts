@@ -30,6 +30,8 @@ export interface SnapshotCreateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  input_device?: string | null
+  output_device?: string | null
   channels?: SnapshotChannel[]
   chains?: SnapshotDetail['chains']
   routing?: SnapshotRouting
@@ -41,6 +43,8 @@ export interface SnapshotUpdateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  input_device?: string | null
+  output_device?: string | null
   display_order?: number
   is_favorite?: boolean
   channels?: SnapshotChannel[]

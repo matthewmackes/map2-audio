@@ -33,6 +33,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 description="Service test",
                 tags=["service"],
                 program_number=10,
+                input_device="Capture 1",
+                output_device="Playback 1",
                 detail_payload={
                     "channels": [
                         {
@@ -77,6 +79,17 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["chain_count"] == 1
             assert created["routing"]["mode"] == "parallel_blend"
             assert created["midi_map"][0]["program_number"] == 10
+            assert created["input_device"] == "Capture 1"
+            assert created["output_device"] == "Playback 1"
+
+            renamed = await service.update_snapshot(
+                created["id"],
+                input_device="Capture 2",
+                output_device=None,
+            )
+            assert renamed is not None
+            assert renamed["input_device"] == "Capture 2"
+            assert renamed["output_device"] is None
 
             updated = await service.add_channel(
                 created["id"],
@@ -139,6 +152,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 }
             )
             assert imported["chains"][0]["plugins"][0]["is_placeholder"] is True
+            assert imported["input_device"] is None
+            assert imported["output_device"] is None
 
             listed = await service.list_snapshots()
             assert len(listed) == 2
@@ -146,9 +161,14 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 "Unified Snapshot",
                 "Imported Placeholder Snapshot",
             }
+            summary = next(item for item in listed if item["name"] == "Unified Snapshot")
+            assert summary["input_device"] == "Capture 2"
+            assert summary["output_device"] is None
 
             by_program = await service.get_snapshot_by_program(10)
             assert by_program is not None
             assert by_program["id"] == created["id"]
+            assert by_program["input_device"] == "Capture 2"
+            assert by_program["output_device"] is None
 
     asyncio.run(_run())

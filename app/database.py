@@ -87,6 +87,7 @@ def init_db(database_url: str = None) -> None:
     _ensure_special_settings_schema_sync()
     _ensure_midi_automation_identity_schema_sync()
     _ensure_chain_plugin_loader_state_schema_sync()
+    _ensure_snapshot_device_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -263,6 +264,16 @@ def _ensure_chain_plugin_loader_state_schema_sync() -> None:
         )
 
 
+def _ensure_snapshot_device_schema_sync() -> None:
+    """Apply additive schema upgrades for snapshot-scoped device metadata."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        _add_sqlite_column_if_missing(conn, "snapshots", "input_device", "VARCHAR(255)")
+        _add_sqlite_column_if_missing(conn, "snapshots", "output_device", "VARCHAR(255)")
+
+
 async def _ensure_special_settings_schema_async(conn) -> None:
     """Apply additive schema upgrades for special_settings in async SQLite sessions."""
     if conn.dialect.name != "sqlite":
@@ -359,6 +370,15 @@ async def _ensure_chain_plugin_loader_state_schema_async(conn) -> None:
     )
 
 
+async def _ensure_snapshot_device_schema_async(conn) -> None:
+    """Apply additive async schema upgrades for snapshot-scoped device metadata."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "input_device", "VARCHAR(255)")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_device", "VARCHAR(255)")
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -379,6 +399,7 @@ async def _ensure_tables_created() -> None:
             await _ensure_special_settings_schema_async(conn)
             await _ensure_midi_automation_identity_schema_async(conn)
             await _ensure_chain_plugin_loader_state_schema_async(conn)
+            await _ensure_snapshot_device_schema_async(conn)
         _tables_created = True
 
 
@@ -771,6 +792,8 @@ class Snapshot(Base):
     is_active = Column(Boolean, default=False)
     display_order = Column(Integer, default=0)
     is_favorite = Column(Boolean, default=False)
+    input_device = Column(String(255), nullable=True)
+    output_device = Column(String(255), nullable=True)
 
     community_uuid = Column(String(64), nullable=True, unique=True, index=True)
     community_shared = Column(Boolean, default=False)

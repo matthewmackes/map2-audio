@@ -80,6 +80,8 @@ class SnapshotCreateRequest(BaseModel):
     description: str = ""
     tags: list[str] = Field(default_factory=list)
     program_number: Optional[int] = None
+    input_device: Optional[str] = None
+    output_device: Optional[str] = None
     channels: list[SnapshotChannelInput] = Field(default_factory=list)
     chains: list[SnapshotChainInput] = Field(default_factory=list)
     routing: SnapshotRoutingInput = Field(default_factory=SnapshotRoutingInput)
@@ -92,6 +94,8 @@ class SnapshotUpdateRequest(BaseModel):
     description: Optional[str] = None
     tags: Optional[list[str]] = None
     program_number: Optional[int] = None
+    input_device: Optional[str] = None
+    output_device: Optional[str] = None
     display_order: Optional[int] = None
     is_favorite: Optional[bool] = None
     channels: Optional[list[SnapshotChannelInput]] = None
@@ -227,6 +231,8 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
                 description=request.description,
                 tags=request.tags,
                 program_number=request.program_number,
+                input_device=request.input_device,
+                output_device=request.output_device,
                 detail_payload=_detail_payload_from_request(request),
             )
             return {
@@ -256,6 +262,8 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 description=request.description if "description" in provided else UNSET,
                 tags=request.tags if "tags" in provided else UNSET,
                 program_number=request.program_number if "program_number" in provided else UNSET,
+                input_device=request.input_device if "input_device" in provided else UNSET,
+                output_device=request.output_device if "output_device" in provided else UNSET,
                 is_favorite=request.is_favorite if "is_favorite" in provided else UNSET,
                 display_order=request.display_order if "display_order" in provided else UNSET,
                 detail_payload=detail_payload,

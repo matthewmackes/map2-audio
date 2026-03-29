@@ -2042,6 +2042,8 @@ export interface SnapshotSummary {
   description: string;
   tags: string[];
   program_number: number | null;
+  input_device: string | null;
+  output_device: string | null;
   is_active: boolean;
   is_favorite: boolean;
   display_order: number;

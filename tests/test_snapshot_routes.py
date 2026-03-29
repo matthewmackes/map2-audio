@@ -53,6 +53,8 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
             routes.SnapshotCreateRequest(
                 name="Route Snapshot",
                 description="Created through route",
+                input_device="Route In",
+                output_device="Route Out",
                 channels=[
                     routes.SnapshotChannelInput(
                         channel_key="channel-0",
@@ -88,9 +90,20 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         listed = await routes.list_snapshots()
         assert listed["count"] == 1
         assert listed["snapshots"][0]["name"] == "Route Snapshot"
+        assert listed["snapshots"][0]["input_device"] == "Route In"
+        assert listed["snapshots"][0]["output_device"] == "Route Out"
 
         fetched = await routes.get_snapshot(snapshot_id)
         assert fetched["channels"][0]["label"] == "A"
+        assert fetched["input_device"] == "Route In"
+        assert fetched["output_device"] == "Route Out"
+
+        patched = await routes.update_snapshot(
+            snapshot_id,
+            routes.SnapshotUpdateRequest(input_device="Route In 2", output_device=None),
+        )
+        assert patched["snapshot"]["input_device"] == "Route In 2"
+        assert patched["snapshot"]["output_device"] is None
 
         replaced_midi_map = await routes.replace_midi_map(
             snapshot_id,

@@ -136,6 +136,8 @@ class SnapshotService:
         description: str = "",
         tags: Optional[list[str]] = None,
         program_number: Optional[int] = None,
+        input_device: Optional[str] = None,
+        output_device: Optional[str] = None,
         detail_payload: Optional[dict[str, Any]] = None,
         is_favorite: bool = False,
     ) -> dict[str, Any]:
@@ -149,6 +151,8 @@ class SnapshotService:
             program_number=program_number,
             is_favorite=is_favorite,
             display_order=max_order + 1,
+            input_device=input_device,
+            output_device=output_device,
         )
         self.session.add(snapshot)
         await self.session.flush()
@@ -170,6 +174,8 @@ class SnapshotService:
         description: Any = UNSET,
         tags: Any = UNSET,
         program_number: Any = UNSET,
+        input_device: Any = UNSET,
+        output_device: Any = UNSET,
         is_favorite: Any = UNSET,
         display_order: Any = UNSET,
         detail_payload: Any = UNSET,
@@ -189,6 +195,10 @@ class SnapshotService:
             snapshot.tags = list(tags)
         if program_number is not UNSET:
             snapshot.program_number = program_number
+        if input_device is not UNSET:
+            snapshot.input_device = input_device
+        if output_device is not UNSET:
+            snapshot.output_device = output_device
         if is_favorite is not UNSET:
             snapshot.is_favorite = bool(is_favorite)
         if display_order is not UNSET:
@@ -219,6 +229,8 @@ class SnapshotService:
             name=f"{snapshot['name']} (Copy)",
             description=snapshot.get("description", ""),
             tags=list(snapshot.get("tags", [])),
+            input_device=snapshot.get("input_device"),
+            output_device=snapshot.get("output_device"),
             detail_payload=snapshot,
         )
 
@@ -581,6 +593,8 @@ class SnapshotService:
             name=name,
             description=str(detail_payload.get("description") or ""),
             tags=list(detail_payload.get("tags") or []),
+            input_device=detail_payload.get("input_device"),
+            output_device=detail_payload.get("output_device"),
             detail_payload=detail_payload,
         )
         return imported
@@ -1165,6 +1179,8 @@ class SnapshotService:
                 "series_order": list(routing.series_order or []),
             },
             "midi_map": [dict(entry) for entry in (snapshot.midi_map.entries if snapshot.midi_map else [])],
+            "input_device": snapshot.input_device,
+            "output_device": snapshot.output_device,
         }
 
     def _normalized_to_detail(
@@ -1237,6 +1253,8 @@ class SnapshotService:
             "description": snapshot_row.description if snapshot_row is not None else "",
             "tags": list(snapshot_row.tags or []) if snapshot_row is not None else [],
             "program_number": snapshot_row.program_number if snapshot_row is not None else None,
+            "input_device": snapshot_row.input_device if snapshot_row is not None else None,
+            "output_device": snapshot_row.output_device if snapshot_row is not None else None,
             "is_active": bool(snapshot_row.is_active) if snapshot_row is not None else False,
             "is_favorite": bool(snapshot_row.is_favorite) if snapshot_row is not None else False,
             "display_order": int(snapshot_row.display_order) if snapshot_row is not None else 0,
@@ -1286,6 +1304,8 @@ class SnapshotService:
             "description": snapshot.description or "",
             "tags": list(snapshot.tags or []),
             "program_number": snapshot.program_number,
+            "input_device": snapshot.input_device,
+            "output_device": snapshot.output_device,
             "is_active": bool(snapshot.is_active),
             "is_favorite": bool(snapshot.is_favorite),
             "display_order": int(snapshot.display_order),
