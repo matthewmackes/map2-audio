@@ -66,9 +66,9 @@ import {
   historyApi,
   audioApi,
   midiApiV2,
-  flowSnapshotsApi,
 } from '../../map2/api'
 import type { AudioPort } from '../../map2/api'
+import { snapshotsApi } from '../../map2/clients/snapshots'
 import type {
   Chain,
   Plugin,
@@ -437,8 +437,8 @@ export function AudioTablePage() {
     count: number
     active_id: number | null
   }>({
-    queryKey: ['flow-snapshots'],
-    queryFn: () => flowSnapshotsApi.list(),
+    queryKey: ['snapshots'],
+    queryFn: () => snapshotsApi.list(),
     refetchInterval: 5000,
   })
 

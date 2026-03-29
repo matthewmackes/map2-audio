@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 18:49 EDT - T547-subB editor page live-snapshot gate migrated and build verified
+Last updated: 2026-03-29 18:57 EDT - T547-subC high-traffic snapshot compatibility cleanup completed and build verified
 
 ID: T547
 Status: [>] In Progress
@@ -58,7 +58,7 @@ Last updated: 2026-03-29 18:49 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/snapshotLiveState.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T547-subC
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove remaining snapshot-surface compatibility usage and chain/flow labels from high-traffic UI
 Description:
 - Goal / acceptance criteria: Eliminate remaining `flowSnapshotsApi` usage on the primary snapshot surfaces and update the highest-traffic snapshot UI copy from chain/flow vocabulary to snapshot/path wording where the new model is already authoritative. Keep any deeper architectural leftovers explicitly documented if they remain.
@@ -68,7 +68,25 @@ Description:
 - Required outputs: targeted UI copy/API cleanup, focused tests or typecheck/build validation, updated worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 18:49 EDT - Codex
+Last updated: 2026-03-29 18:57 EDT - Codex
+- Completion notes:
+  - Re-keyed `SnapshotModalContent` from `['flow-snapshots']` to canonical `['snapshots']` queries/invalidation paths so the primary snapshot library surface no longer carries compatibility-flavored cache identity.
+  - Migrated `AudioTablePage` snapshot count polling from `flowSnapshotsApi.list()` to `snapshotsApi.list()` and updated its focused test harness accordingly, removing the last real `flowSnapshotsApi` dependency from shipped app surfaces.
+  - Updated the Snapshot Editor masthead/reset modal copy from `Add channel` / `Clear flows` to `Add path` / `Reset paths` for the highest-traffic controls where the snapshot-first model is already operator-facing.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/snapshotLiveState.test.ts web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T547-subD
+Status: [ ] Todo
+Title: Retire deeper flow-snapshot compatibility layers and remaining editor vocabulary debt
+Description:
+- Goal / acceptance criteria: Remove or sharply isolate the remaining compatibility `flowSnapshotsApi` exports/routes and continue the path-first vocabulary migration across deeper editor/runtime panels that still intentionally expose chain/flow language. Document any runtime-facing chain concepts that must remain after the snapshot-first cutover.
+- Why it matters: The primary app surfaces are now snapshot-first, but shared client exports and lower-level editor/runtime panels still carry the old mental model and can pull future work back toward it.
+- Dependencies: T547-subC
+- Estimated effort: High
+- Required outputs: compatibility-layer retirement or isolation plan, remaining vocabulary audit/remediation, focused regression coverage, and updated docs/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 18:57 EDT - Codex
 - Progress notes:
   - Added snapshot-first backend fields and APIs: `derived_from_snapshot_id`, `controls_payload`, `live_state_payload`, `activated_at`, `GET /api/snapshots/live`, `POST /api/snapshots/{id}/draft`, and `POST /api/snapshots/{id}/save-as-new`.
   - Snapshot detail serialization now emits canonical snapshot-first structures: `paths`, `io_bindings`, `controls`, `assets`, `live_state`, and `lineage`, while list summaries also carry `io_bindings` and `lineage`.

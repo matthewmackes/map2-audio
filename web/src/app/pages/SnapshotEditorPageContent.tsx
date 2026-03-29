@@ -1232,7 +1232,6 @@ export function SnapshotEditorPage() {
         setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
 
         // Invalidate queries to refresh UI
-        queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
         queryClient.invalidateQueries({ queryKey: ['snapshots'] })
         queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
         clearSnapshotsDirty()
@@ -4682,8 +4681,8 @@ export function SnapshotEditorPage() {
                     kind="ghost"
                     className="juce-grid-page__masthead-icon-button"
                     renderIcon={Add}
-                    iconDescription="Add channel"
-                    aria-label="Add channel"
+                    iconDescription="Add path"
+                    aria-label="Add path"
                     onClick={addFlow}
                     disabled={flowSlots.length >= MAX_FLOWS}
                   />
@@ -4694,7 +4693,7 @@ export function SnapshotEditorPage() {
                     flipped
                   >
                     <OverflowMenuItem
-                      itemText="Clear flows"
+                      itemText="Reset paths"
                       onClick={() => setShowClearFlowsModal(true)}
                       disabled={flowSlots.length <= 1}
                     />
@@ -4729,7 +4728,7 @@ export function SnapshotEditorPage() {
                     onClick={addFlow}
                     disabled={flowSlots.length >= MAX_FLOWS}
                   >
-                    Add channel
+                    Add path
                   </Button>
                   <Button
                     size="sm"
@@ -4737,7 +4736,7 @@ export function SnapshotEditorPage() {
                     onClick={() => setShowClearFlowsModal(true)}
                     disabled={flowSlots.length <= 1}
                   >
-                    Clear flows
+                    Reset paths
                   </Button>
                   <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
                     Perform
@@ -5444,9 +5443,9 @@ export function SnapshotEditorPage() {
         <Modal
           open
           size="sm"
-          modalHeading="Clear flows"
+          modalHeading="Reset paths"
           modalLabel="Audio Grid workspace"
-          primaryButtonText="Clear flows"
+          primaryButtonText="Reset paths"
           secondaryButtonText="Cancel"
           onRequestClose={() => setShowClearFlowsModal(false)}
           onSecondarySubmit={() => setShowClearFlowsModal(false)}
@@ -5455,7 +5454,7 @@ export function SnapshotEditorPage() {
         >
           <div className="juce-grid-page__form-modal-body">
             <p className="juce-grid-page__modal-copy">
-              Reset the workspace to a single empty flow and discard the current multi-flow layout state.
+              Reset the workspace to a single empty path and discard the current multi-path layout state.
             </p>
           </div>
         </Modal>

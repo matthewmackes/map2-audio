@@ -73,7 +73,7 @@ export function SnapshotModalContent({
     count: number
     active_id: number | null
   }>({
-    queryKey: ['flow-snapshots'],
+    queryKey: ['snapshots'],
     queryFn: async () => {
       const response = await snapshotsApi.list()
       return {
@@ -88,14 +88,14 @@ export function SnapshotModalContent({
   const activeSnapshotId = flowSnapshotsQuery.data?.active_id ?? null
 
   const activeSnapshotDetailQuery = useQuery<FlowSnapshotDetail>({
-    queryKey: ['flow-snapshots', 'detail', activeSnapshotId],
+    queryKey: ['snapshots', 'detail', activeSnapshotId],
     queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(activeSnapshotId as number)),
     enabled: activeSnapshotId !== null,
   })
 
   const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
   const snapshotCompareDetailQuery = useQuery<FlowSnapshotDetail>({
-    queryKey: ['flow-snapshots', 'compare-detail', snapshotCompareTargetId],
+    queryKey: ['snapshots', 'compare-detail', snapshotCompareTargetId],
     queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotCompareTargetId as number)),
     enabled: snapshotCompareTargetId !== null,
   })
@@ -239,7 +239,7 @@ export function SnapshotModalContent({
       return snapshotsApi.activate(created.snapshot_id)
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setContentView('library')
       onSnapshotSave?.()
       applySnapshotData(snapshotDetailToFlowSnapshotData(response.snapshot_data), {
@@ -256,7 +256,7 @@ export function SnapshotModalContent({
   const loadFlowSnapshotMutation = useMutation({
     mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       applySnapshotData(snapshotDetailToFlowSnapshotData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
       onRecall?.()
     },
@@ -276,7 +276,7 @@ export function SnapshotModalContent({
         ...(updates.snapshot_data ? flowSnapshotDataToSnapshotPayload(updates.snapshot_data) : {}),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
@@ -287,7 +287,7 @@ export function SnapshotModalContent({
     mutationFn: ({ id, snapshotData }: { id: number; snapshotData: FlowSnapshotData }) =>
       snapshotsApi.update(id, flowSnapshotDataToSnapshotPayload(snapshotData)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot updated', 'success')
     },
     onError: (error) => {
@@ -298,7 +298,7 @@ export function SnapshotModalContent({
   const deleteFlowSnapshotMutation = useMutation({
     mutationFn: (snapshotId: number) => snapshotsApi.delete(snapshotId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot deleted', 'success')
     },
     onError: (error) => {
@@ -309,7 +309,7 @@ export function SnapshotModalContent({
   const duplicateFlowSnapshotMutation = useMutation({
     mutationFn: (snapshotId: number) => snapshotsApi.duplicate(snapshotId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot duplicated', 'success')
     },
     onError: (error) => {
@@ -321,7 +321,7 @@ export function SnapshotModalContent({
     mutationFn: ({ id, programNumber }: { id: number; programNumber: number | null }) =>
       snapshotsApi.setProgram(id, programNumber),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot MIDI program updated', 'success')
     },
     onError: (error) => {
@@ -332,7 +332,7 @@ export function SnapshotModalContent({
   const reorderFlowSnapshotsMutation = useMutation({
     mutationFn: (snapshotIds: number[]) => snapshotsApi.reorder(snapshotIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to reorder flow snapshots', 'error')
@@ -426,7 +426,7 @@ export function SnapshotModalContent({
 
   const fetchSnapshotDetail = useCallback((snapshotId: number) => (
     queryClient.fetchQuery({
-      queryKey: ['flow-snapshots', 'detail', snapshotId],
+      queryKey: ['snapshots', 'detail', snapshotId],
       queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotId)),
     })
   ), [queryClient])
@@ -1270,7 +1270,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onImportSuccess={(presetId, name) => {
-          queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+          queryClient.invalidateQueries({ queryKey: ['snapshots'] })
           queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
           pushToast(`Imported "${name}" successfully`, 'success')
           void presetId

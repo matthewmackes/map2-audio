@@ -193,7 +193,7 @@ const mockMidiApiV2 = {
   updateMapping: jest.fn(async () => ({})),
 }
 
-const mockFlowSnapshotsApi = {
+const mockSnapshotsApi = {
   list: jest.fn(async () => ({ snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })),
 }
 
@@ -239,11 +239,16 @@ jest.mock('../../map2/api', () => {
     historyApi: proxy(() => mockHistoryApi),
     audioApi: proxy(() => mockAudioApi),
     midiApiV2: proxy(() => mockMidiApiV2),
-    flowSnapshotsApi: proxy(() => mockFlowSnapshotsApi),
     getWsBaseUrl: () => 'ws://localhost:3000',
     getWsUrl: () => 'ws://localhost:3000/ws',
   }
 })
+
+jest.mock('../../map2/clients/snapshots', () => ({
+  snapshotsApi: {
+    list: (...args: unknown[]) => mockSnapshotsApi.list(...args),
+  },
+}))
 
 jest.mock('../hooks/useIsMobile', () => ({
   useIsMobile: () => mockUseIsMobile(),
@@ -305,7 +310,7 @@ function createQueryClient() {
   client.setQueryData(['audio', 'ports'], buildMockPortsResponse())
   client.setQueryData(['midi', 'status'], buildMockMidiStatus())
   client.setQueryData(['chains', 'presets'], buildMockPresetsResponse())
-  client.setQueryData(['flow-snapshots'], { snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })
+  client.setQueryData(['snapshots'], { snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })
   client.setQueryData(['midi', 'mappings', 'audio-table'], currentMidiMappingsResponse)
   return client
 }

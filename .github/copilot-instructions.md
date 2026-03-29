@@ -1369,6 +1369,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/pages/snapshotLiveState.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In the snapshot-first model, “no live snapshot” is a valid state of the canonical live endpoint, not an error that should force a fallback to compatibility list polling.
 
+**39. Snapshot-First UI Cleanup Must Retire Compatibility Cache Keys Along With API Calls (MEDIUM - Mar 29, 2026)**
+- **Files**: `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/AudioTablePage.test.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`
+- **Problem**: After the primary API cutover, the app could still look compatibility-shaped because modal/query invalidations were keyed under `['flow-snapshots']`, and one shipped page (`AudioTablePage`) still counted snapshots through `flowSnapshotsApi.list()`.
+- **Root Cause**: The first pass replaced mutation/read helpers but left React Query identity and one non-modal page query on the old flow-snapshot model, which kept cache invalidation and future surface work tied to compatibility vocabulary.
+- **Fix**: Move shipped app surfaces to canonical `['snapshots']` cache keys and `snapshotsApi.list()`, then keep any remaining `flowSnapshotsApi` usage isolated to explicit compatibility/export layers rather than normal UI entry points.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/snapshotLiveState.test.ts web/src/app/pages/AudioTablePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: API migration is incomplete until cache identity and secondary list surfaces migrate too. A snapshot-first app should not keep `flow-snapshots` as the default query namespace in shipped UI.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1639,6 +1647,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-29] - E-SNAP Snapshot Cache-Key And Secondary-Surface Cleanup
+- **Section**: Gotchas & Learned Fixes (#39), Update Log
+- **Change**: Documented that shipped UI surfaces should use canonical `['snapshots']` query keys and `snapshotsApi.list()` once the snapshot-first contract exists, leaving `flowSnapshotsApi` only as an explicit compatibility layer.
+- **Reason**: The third cleanup slice removed the last real compatibility snapshot query from app pages and aligned the modal/editor invalidation model with the canonical snapshot namespace.
+- **Impact**: Future snapshot work can share one query namespace and one list contract across the app instead of preserving stale compatibility cache identity after the backend cutover.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/AudioTablePage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-29] - E-SNAP Snapshot Editor Live-Gate Canonicalization
 - **Section**: Gotchas & Learned Fixes (#38), Update Log
