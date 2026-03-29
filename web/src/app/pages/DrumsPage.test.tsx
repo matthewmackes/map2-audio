@@ -5,8 +5,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 
 import { DrumsPage, DrumsWorkspace } from './DrumsPage'
 
+const mockLocation = { search: '' }
+
 jest.mock('react-router-dom', () => ({
-  useLocation: () => ({ search: '' }),
+  useLocation: () => mockLocation,
 }))
 
 const mockSetStepMutate = jest.fn()
@@ -107,10 +109,11 @@ const mockUseUpdateDrumMachineState = jest.fn()
 const mockUseUpdateDrumTransport = jest.fn()
 
 jest.mock('@/app/components/PageHeader', () => ({
-  PageHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
+  PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
     <header>
       <h1>{title}</h1>
       {subtitle ? <p>{subtitle}</p> : null}
+      {actions}
     </header>
   ),
 }))
@@ -686,6 +689,9 @@ describe('DrumsPage', () => {
       writable: true,
       value: ResizeObserverMock,
     })
+    window.localStorage.clear()
+    window.history.replaceState({}, '', '/drums')
+    mockLocation.search = ''
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: jest.fn().mockImplementation((query: string) => ({
@@ -815,6 +821,79 @@ describe('DrumsPage', () => {
     expect(screen.getByRole('link', { name: 'Skip to transport' })).toHaveAttribute('href', '#drum-transport')
     expect(screen.getByRole('link', { name: 'Skip to modes' })).toHaveAttribute('href', '#drum-modes')
     expect(screen.getByRole('link', { name: 'Skip to status' })).toHaveAttribute('href', '#drum-footer')
+  })
+
+  it('renders standalone workspace tools and routes back to the audio grid', () => {
+    renderPage()
+
+    expect(screen.getByRole('button', { name: /back to audio grid/i })).toBeInTheDocument()
+    expect(screen.getByText('Workspace Navigation')).toBeInTheDocument()
+    expect(screen.getByText('Saved Layouts')).toBeInTheDocument()
+    expect(screen.getByText('Shortcut Cues')).toBeInTheDocument()
+    expect(screen.getByText('Live Summary')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /back to audio grid/i }))
+
+    expect(window.location.pathname).toBe('/juce-grid')
+  })
+
+  it('persists workspace presets and named layouts on the standalone drums page', () => {
+    const scrollIntoView = jest.fn()
+    Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    })
+
+    const { unmount } = renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: /performance layout/i }))
+
+    expect(window.localStorage.getItem('map2:drum-workspace-preset')).toBe('performance')
+    expect(scrollIntoView).toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText('Workspace layout name'), { target: { value: 'Performance Rack' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save Layout' }))
+
+    expect(screen.getByText('Performance Rack')).toBeInTheDocument()
+    expect(window.localStorage.getItem('map2:drum-workspace-layouts')).toContain('Performance Rack')
+
+    unmount()
+    renderPage()
+
+    expect(screen.getByRole('button', { name: /performance layout.*active/i })).toBeInTheDocument()
+    expect(screen.getByText('Performance Rack')).toBeInTheDocument()
+  })
+
+  it('opens the shortcut overlay and runs quick actions from the standalone page', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcut Overlay' }))
+
+    const shortcutOverlay = screen.getByLabelText('Drum Workspace Shortcuts')
+
+    expect(within(shortcutOverlay).getByText('Quick Actions')).toBeInTheDocument()
+    expect(within(shortcutOverlay).getByRole('button', { name: /toggle playback/i })).toBeInTheDocument()
+
+    fireEvent.click(within(shortcutOverlay).getByRole('button', { name: /toggle playback/i }))
+    expect(mockUpdateTransportMutate).toHaveBeenCalledWith({ is_playing: false })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcut Overlay' }))
+    fireEvent.click(within(screen.getByLabelText('Drum Workspace Shortcuts')).getByRole('button', { name: /trigger fill/i }))
+    expect(mockTriggerFillMutate).toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcut Overlay' }))
+    fireEvent.click(within(screen.getByLabelText('Drum Workspace Shortcuts')).getByRole('button', { name: /tap tempo/i }))
+    await waitFor(() => expect(mockDrumsApiTapTempo).toHaveBeenCalled())
+  })
+
+  it('toggles the shortcut overlay from the keyboard on the standalone page', () => {
+    renderPage()
+
+    fireEvent.keyDown(window, { key: '?', shiftKey: true })
+    expect(screen.getByText('Quick Actions')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByText('Quick Actions')).not.toBeInTheDocument()
   })
 
   it('sends accented step mutations on shift-click', () => {

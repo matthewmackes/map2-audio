@@ -17,6 +17,8 @@ import {
 } from '@carbon/react'
 import {
   Add,
+  ArrowLeft,
+  Launch,
   Music,
   PauseFilled,
   PlayFilled,
@@ -108,6 +110,12 @@ import type {
 } from '@/map2/types'
 
 type DrumMode = DrumMachineState['ui_mode']
+type WorkspacePreset = 'performance' | 'editing' | 'sound-design'
+type SavedWorkspaceLayout = {
+  id: string
+  name: string
+  preset: WorkspacePreset
+}
 
 const MODE_ORDER: DrumMode[] = ['practice', 'advanced', 'backing_tracks']
 
@@ -175,6 +183,45 @@ const CC_TARGET_OPTIONS: Array<{ value: DrumCcTarget; label: string }> = [
 ]
 
 const DRUM_TRANSPORT_SWING_DESCRIPTOR = requireParameterDescriptor('drums', 'transportSwing')
+const WORKSPACE_PRESET_STORAGE_KEY = 'map2:drum-workspace-preset'
+const WORKSPACE_LAYOUTS_STORAGE_KEY = 'map2:drum-workspace-layouts'
+const WORKSPACE_SECTIONS = [
+  { id: 'drum-workspace-top', label: 'Workspace' },
+  { id: 'drum-transport', label: 'Transport' },
+  { id: 'drum-modes', label: 'Modes' },
+  { id: 'drum-footer', label: 'Status' },
+] as const
+const WORKSPACE_PRESETS: Array<{
+  id: WorkspacePreset
+  label: string
+  description: string
+  href: string
+}> = [
+  {
+    id: 'performance',
+    label: 'Performance Layout',
+    description: 'Jump to transport, live mode state, and performance status.',
+    href: '#drum-transport',
+  },
+  {
+    id: 'editing',
+    label: 'Editing Layout',
+    description: 'Jump to the sequencer, pattern tools, and step editing.',
+    href: '#drum-advanced-sequencer',
+  },
+  {
+    id: 'sound-design',
+    label: 'Sound Design Layout',
+    description: 'Jump to the instrument inspector, sample tools, and MIDI panels.',
+    href: '#drum-advanced-inspector',
+  },
+] as const
+const SHORTCUT_CUES = [
+  'Arrow keys move step focus in the sequencer grid.',
+  'Enter or Space toggles the focused step.',
+  'Shift-click selects a step for parameter-lock editing.',
+  'Use the mode tabs to jump between Practice, Advanced, and Backing Tracks.',
+] as const
 
 const shellStyle: Record<string, React.CSSProperties> = {
   page: {
@@ -716,6 +763,112 @@ const shellStyle: Record<string, React.CSSProperties> = {
     padding: '7px 8px',
     fontSize: 12,
   },
+  workspaceTools: {
+    display: 'grid',
+    gap: 18,
+  },
+  workspaceToolsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: 18,
+  },
+  workspaceToolTile: {
+    borderRadius: 16,
+    minHeight: 180,
+    display: 'grid',
+    gap: 12,
+    alignContent: 'start',
+    background: 'linear-gradient(180deg, rgba(30,30,30,0.92), rgba(18,18,18,0.98))',
+    borderTop: '3px solid rgba(69,137,255,0.72)',
+  },
+  workspaceLinkList: {
+    display: 'grid',
+    gap: 8,
+  },
+  workspaceLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: '10px 12px',
+    textDecoration: 'none',
+    fontSize: 13,
+  },
+  workspacePresetList: {
+    display: 'grid',
+    gap: 10,
+  },
+  workspacePresetButton: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: 12,
+    cursor: 'pointer',
+    display: 'grid',
+    gap: 6,
+    textAlign: 'left',
+  },
+  workspaceLayoutActions: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    gap: 10,
+    alignItems: 'end',
+  },
+  workspaceSavedLayouts: {
+    display: 'grid',
+    gap: 10,
+  },
+  workspaceSavedLayout: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: 12,
+    display: 'grid',
+    gap: 10,
+  },
+  workspaceSavedLayoutActions: {
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  shortcutCueList: {
+    margin: 0,
+    paddingLeft: 18,
+    display: 'grid',
+    gap: 6,
+    color: '#c6c6c6',
+    fontSize: 13,
+  },
+  shortcutOverlayBody: {
+    display: 'grid',
+    gap: 16,
+  },
+  shortcutOverlayGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: 16,
+  },
+  shortcutCommandList: {
+    display: 'grid',
+    gap: 8,
+  },
+  shortcutCommandButton: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: 12,
+    cursor: 'pointer',
+    display: 'grid',
+    gap: 4,
+    textAlign: 'left',
+  },
 }
 
 function transportTag(active: boolean) {
@@ -724,6 +877,53 @@ function transportTag(active: boolean) {
 
 function modeIndex(mode: DrumMode | undefined) {
   return Math.max(0, MODE_ORDER.indexOf(mode ?? 'practice'))
+}
+
+function formatPatternLabel(pattern: number, variation: number) {
+  return `P${String(pattern + 1).padStart(3, '0')} · ${variation === 0 ? 'Main' : `Var ${variation}`}`
+}
+
+function focusWorkspaceSection(href: string) {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  document.getElementById(href.replace(/^#/, ''))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function loadSavedWorkspaceLayouts(): SavedWorkspaceLayout[] {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(WORKSPACE_LAYOUTS_STORAGE_KEY) ?? '[]')
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed.filter((item): item is SavedWorkspaceLayout => (
+      item
+      && typeof item.id === 'string'
+      && typeof item.name === 'string'
+      && (item.preset === 'performance' || item.preset === 'editing' || item.preset === 'sound-design')
+    ))
+  } catch {
+    return []
+  }
+}
+
+function presetHref(preset: WorkspacePreset) {
+  return WORKSPACE_PRESETS.find((candidate) => candidate.id === preset)?.href ?? '#drum-workspace-top'
+}
+
+function navigateToAudioGrid() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.history.pushState({}, '', '/juce-grid')
+  window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
 function clampPatternLength(pattern: DrumPattern | undefined) {
@@ -3365,6 +3565,18 @@ export function DrumsWorkspace({
   const [backingTrackTempoShift, setBackingTrackTempoShift] = useState(0)
   const [backingTrackPitchShift, setBackingTrackPitchShift] = useState(0)
   const [liveMessage, setLiveMessage] = useState('Drum machine workspace ready.')
+  const [shortcutOverlayOpen, setShortcutOverlayOpen] = useState(false)
+  const [layoutDraftName, setLayoutDraftName] = useState('')
+  const [workspacePreset, setWorkspacePreset] = useState<WorkspacePreset>(() => {
+    if (typeof window === 'undefined') {
+      return 'editing'
+    }
+    const storedPreset = window.localStorage.getItem(WORKSPACE_PRESET_STORAGE_KEY)
+    return storedPreset === 'performance' || storedPreset === 'editing' || storedPreset === 'sound-design'
+      ? storedPreset
+      : 'editing'
+  })
+  const [savedLayouts, setSavedLayouts] = useState<SavedWorkspaceLayout[]>(() => loadSavedWorkspaceLayouts())
   const [sampleRecordingPad, setSampleRecordingPad] = useState<number | null>(null)
   const [sampleZoom, setSampleZoom] = useState(100)
   const [sampleScroll, setSampleScroll] = useState(0)
@@ -3673,6 +3885,42 @@ export function DrumsWorkspace({
     state,
   ])
 
+  useEffect(() => {
+    if (embedded || typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(WORKSPACE_PRESET_STORAGE_KEY, workspacePreset)
+  }, [embedded, workspacePreset])
+
+  useEffect(() => {
+    if (embedded || typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(WORKSPACE_LAYOUTS_STORAGE_KEY, JSON.stringify(savedLayouts))
+  }, [embedded, savedLayouts])
+
+  useEffect(() => {
+    if (embedded || typeof window === 'undefined') {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+        event.preventDefault()
+        setShortcutOverlayOpen((current) => !current)
+        return
+      }
+      if (event.key === 'Escape') {
+        setShortcutOverlayOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [embedded])
+
   if (stateQuery.isLoading && !state) {
     return (
       <div style={workspaceShellStyle}>
@@ -3738,9 +3986,100 @@ export function DrumsWorkspace({
     })
     announce(message)
   }
+  const applyWorkspacePreset = (preset: WorkspacePreset, href: string) => {
+    setWorkspacePreset(preset)
+    focusWorkspaceSection(href)
+  }
+  const saveCurrentLayout = () => {
+    const nextName = layoutDraftName.trim() || `${WORKSPACE_PRESETS.find((preset) => preset.id === workspacePreset)?.label ?? 'Workspace'} Snapshot`
+    const nextLayout: SavedWorkspaceLayout = {
+      id: `layout-${Date.now()}`,
+      name: nextName,
+      preset: workspacePreset,
+    }
+    setSavedLayouts((current) => [nextLayout, ...current].slice(0, 8))
+    setLayoutDraftName('')
+  }
+  const quickCommands: Array<{ label: string; hint: string; disabled?: boolean; action: () => void | Promise<void> }> = [
+    {
+      label: 'Toggle Playback',
+      hint: transport.is_playing ? 'Pause the current groove.' : 'Start the transport.',
+      action: () => {
+        updateTransport.mutate({ is_playing: !transport.is_playing })
+        announce(transport.is_playing ? 'Transport paused.' : 'Transport playing.')
+      },
+    },
+    {
+      label: 'Stop Playback',
+      hint: 'Hard stop the transport.',
+      disabled: !transport.is_playing,
+      action: () => {
+        updateTransport.mutate({ is_playing: false })
+        announce('Transport stopped.')
+      },
+    },
+    {
+      label: 'Tap Tempo',
+      hint: 'Capture a fresh tempo tap.',
+      action: () => {
+        tapTempo.mutate()
+      },
+    },
+    {
+      label: 'Trigger Fill',
+      hint: 'Fire the current fill variation.',
+      action: () => {
+        triggerFill.mutate()
+        announce('Drum fill triggered.')
+      },
+    },
+    {
+      label: 'Undo Pattern',
+      hint: 'Restore the previous pattern snapshot.',
+      disabled: getPatternHistory(transport.pattern).undo.length === 0 || historyBusy,
+      action: () => applyPatternHistory('undo'),
+    },
+    {
+      label: 'Redo Pattern',
+      hint: 'Reapply the last undone pattern snapshot.',
+      disabled: getPatternHistory(transport.pattern).redo.length === 0 || historyBusy,
+      action: () => applyPatternHistory('redo'),
+    },
+    {
+      label: 'Undo Sample',
+      hint: 'Restore the selected pad sample.',
+      disabled: getSampleHistory(selectedPad).undo.length === 0 || historyBusy,
+      action: () => applySampleHistory('undo'),
+    },
+    {
+      label: 'Redo Sample',
+      hint: 'Reapply the last undone sample change.',
+      disabled: getSampleHistory(selectedPad).redo.length === 0 || historyBusy,
+      action: () => applySampleHistory('redo'),
+    },
+    {
+      label: 'Performance Layout',
+      hint: 'Jump to transport and live status.',
+      action: () => applyWorkspacePreset('performance', '#drum-transport'),
+    },
+    {
+      label: 'Editing Layout',
+      hint: 'Jump to sequencer and pattern tools.',
+      action: () => applyWorkspacePreset('editing', '#drum-advanced-sequencer'),
+    },
+    {
+      label: 'Sound Design Layout',
+      hint: 'Jump to inspector and MIDI tools.',
+      action: () => applyWorkspacePreset('sound-design', '#drum-advanced-inspector'),
+    },
+  ]
 
   return (
-    <main className={embedded ? 'drums-page drums-page--embedded' : 'drums-page'} style={workspaceShellStyle}>
+    <main
+      className={embedded ? 'drums-page drums-page--embedded' : 'drums-page'}
+      style={workspaceShellStyle}
+      id="drum-workspace-top"
+    >
       <nav aria-label="Skip links" style={shellStyle.skipLinks}>
         <a
           href="#drum-transport"
@@ -3786,7 +4125,165 @@ export function DrumsWorkspace({
         title="Drum Machine"
         subtitle={activeModeMeta.description}
         icon={<Music size={32} style={{ color: activeModeMeta.accent }} />}
+        actions={!embedded ? (
+          <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={navigateToAudioGrid}>
+            Back to Audio Grid
+          </Button>
+        ) : undefined}
       />
+
+      {!embedded ? (
+        <section style={shellStyle.workspaceTools} aria-label="Drum workspace tools">
+          <div style={shellStyle.workspaceToolsGrid}>
+            <Tile style={shellStyle.workspaceToolTile}>
+              <div style={shellStyle.tileHeader}>
+                <h2 style={shellStyle.tileTitle}>Workspace Navigation</h2>
+                <Tag type="blue">{activeModeMeta.label}</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                The full page now owns the same focus and navigation helpers that were previously only available inside the modal workspace.
+              </p>
+              <div style={shellStyle.workspaceLinkList}>
+                {WORKSPACE_SECTIONS.map((section) => (
+                  <a key={section.id} href={`#${section.id}`} style={shellStyle.workspaceLink}>
+                    <span>{section.label}</span>
+                    <span>{section.id === 'drum-transport' ? formatPatternLabel(transport.pattern, transport.variation) : 'Jump'}</span>
+                  </a>
+                ))}
+              </div>
+              <div style={shellStyle.workspacePresetList}>
+                {WORKSPACE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    aria-pressed={workspacePreset === preset.id}
+                    onClick={() => applyWorkspacePreset(preset.id, preset.href)}
+                    style={{
+                      ...shellStyle.workspacePresetButton,
+                      borderColor: workspacePreset === preset.id ? activeModeMeta.accent : 'rgba(255,255,255,0.12)',
+                      boxShadow: workspacePreset === preset.id ? `0 0 0 1px ${activeModeMeta.accent}` : 'none',
+                    }}
+                  >
+                    <strong>{preset.label}{workspacePreset === preset.id ? ' · Active' : ''}</strong>
+                    <span style={shellStyle.tileText}>{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+            </Tile>
+
+            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(36,161,72,0.72)' }}>
+              <div style={shellStyle.tileHeader}>
+                <h2 style={shellStyle.tileTitle}>Saved Layouts</h2>
+                <Tag type="green">{savedLayouts.length} saved</Tag>
+              </div>
+              <div style={shellStyle.workspaceLayoutActions}>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Layout name</span>
+                  <input
+                    aria-label="Workspace layout name"
+                    value={layoutDraftName}
+                    onChange={(event) => setLayoutDraftName(event.currentTarget.value)}
+                    placeholder="Editing set"
+                    style={shellStyle.input}
+                  />
+                </label>
+                <Button kind="primary" size="sm" onClick={saveCurrentLayout}>
+                  Save Layout
+                </Button>
+              </div>
+              <div style={shellStyle.workspaceSavedLayouts} aria-label="Saved workspace layouts">
+                {savedLayouts.length > 0 ? savedLayouts.map((layout) => (
+                  <div key={layout.id} style={shellStyle.workspaceSavedLayout}>
+                    <div>
+                      <strong>{layout.name}</strong>
+                      <p style={shellStyle.tileText}>
+                        {WORKSPACE_PRESETS.find((preset) => preset.id === layout.preset)?.label ?? 'Custom'} preset
+                      </p>
+                    </div>
+                    <div style={shellStyle.workspaceSavedLayoutActions}>
+                      <Button kind="ghost" size="sm" onClick={() => applyWorkspacePreset(layout.preset, presetHref(layout.preset))}>
+                        Load
+                      </Button>
+                      <Button kind="danger--ghost" size="sm" onClick={() => setSavedLayouts((current) => current.filter((candidate) => candidate.id !== layout.id))}>
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                )) : (
+                  <p style={shellStyle.tileText}>
+                    Save named workspace layouts for recurring performance, editing, and sound-design views.
+                  </p>
+                )}
+              </div>
+            </Tile>
+
+            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(255,131,43,0.72)' }}>
+              <div style={shellStyle.tileHeader}>
+                <h2 style={shellStyle.tileTitle}>Shortcut Cues</h2>
+                <Tag type={historyBusy ? 'warm-gray' : 'cool-gray'}>{historyBusy ? 'History Busy' : 'Ready'}</Tag>
+              </div>
+              <ul style={shellStyle.shortcutCueList}>
+                {SHORTCUT_CUES.map((cue) => <li key={cue}>{cue}</li>)}
+              </ul>
+              <div style={shellStyle.footerGroup}>
+                <Tag type={getPatternHistory(transport.pattern).undo.length > 0 ? 'green' : 'cool-gray'}>
+                  {getPatternHistory(transport.pattern).undo.length > 0 ? 'Pattern Undo Ready' : 'Pattern Undo Empty'}
+                </Tag>
+                <Tag type={getSampleHistory(selectedPad).undo.length > 0 ? 'teal' : 'cool-gray'}>
+                  {getSampleHistory(selectedPad).undo.length > 0 ? `Pad ${selectedPad + 1} Sample Undo Ready` : 'Sample Undo Empty'}
+                </Tag>
+              </div>
+              <div style={shellStyle.buttonRow}>
+                <Button kind="secondary" size="sm" onClick={() => setShortcutOverlayOpen(true)}>
+                  Shortcut Overlay
+                </Button>
+              </div>
+            </Tile>
+
+            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(190,149,255,0.72)' }}>
+              <div style={shellStyle.tileHeader}>
+                <h2 style={shellStyle.tileTitle}>Live Summary</h2>
+                <Tag type={transport.is_playing ? 'green' : 'cool-gray'}>{transport.is_playing ? 'Playing' : 'Stopped'}</Tag>
+              </div>
+              <div style={shellStyle.statGrid}>
+                <div style={shellStyle.statCard}>
+                  <span style={shellStyle.statLabel}>Selected Pad</span>
+                  <span style={shellStyle.statValue}>{draftNames[selectedPad] ?? selectedInstrument?.name ?? `Pad ${selectedPad + 1}`}</span>
+                </div>
+                <div style={shellStyle.statCard}>
+                  <span style={shellStyle.statLabel}>Sound Source</span>
+                  <span style={shellStyle.statValue}>{selectedPadSoundSource}</span>
+                </div>
+                <div style={shellStyle.statCard}>
+                  <span style={shellStyle.statLabel}>Step Focus</span>
+                  <span style={shellStyle.statValue}>
+                    {selectedStep ? `Step ${selectedStep.stepIndex + 1}` : 'No step selected'}
+                  </span>
+                </div>
+                <div style={shellStyle.statCard}>
+                  <span style={shellStyle.statLabel}>Kit</span>
+                  <span style={shellStyle.statValue}>{activeKitName}</span>
+                </div>
+              </div>
+              <div style={shellStyle.footerGroup}>
+                <Tag type="blue">Bus {selectedPadControl.bus}</Tag>
+                <Tag type="warm-gray">Note {selectedInstrument?.default_note ?? (36 + selectedPad)}</Tag>
+                <Tag type={selectedPadControl.mute ? 'red' : 'cool-gray'}>{selectedPadControl.mute ? 'Muted' : 'Live'}</Tag>
+                <Tag type={selectedPadControl.solo ? 'cyan' : 'cool-gray'}>{selectedPadControl.solo ? 'Soloed' : 'Grouped'}</Tag>
+                {selectedStepState ? <Tag type={selectedStepState.active ? 'green' : 'cool-gray'}>{selectedStepState.active ? `Vel ${selectedStepState.velocity}` : 'Inspector only'}</Tag> : null}
+              </div>
+              <div style={shellStyle.buttonRow}>
+                <Button kind="ghost" size="sm" renderIcon={Launch} onClick={() => focusWorkspaceSection('#drum-advanced-inspector')}>
+                  Open Pad Editor
+                </Button>
+                <Button kind="ghost" size="sm" renderIcon={Launch} onClick={() => focusWorkspaceSection('#drum-advanced-step-locks')}>
+                  Open Step Locks
+                </Button>
+              </div>
+            </Tile>
+          </div>
+        </section>
+      ) : null}
 
       <section id="drum-transport" style={shellStyle.transport} aria-label="Drum transport">
         <div style={shellStyle.buttonRow}>
@@ -4536,6 +5033,53 @@ export function DrumsWorkspace({
           </Tag>
         </div>
       </footer>
+
+      {!embedded ? (
+        <Modal
+          open={shortcutOverlayOpen}
+          passiveModal
+          modalHeading="Drum Workspace Shortcuts"
+          modalLabel="Drums"
+          onRequestClose={() => setShortcutOverlayOpen(false)}
+        >
+          <div style={shellStyle.shortcutOverlayBody}>
+            <p style={shellStyle.tileText}>
+              Keyboard cues, history actions, and page focus presets now live in the dedicated drums page instead of the old JUCE Grid modal wrapper.
+            </p>
+            <div style={shellStyle.shortcutOverlayGrid}>
+              <div style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Keyboard</span>
+                <ul style={shellStyle.shortcutCueList}>
+                  <li><strong>Shift + ?</strong> opens or closes this overlay.</li>
+                  <li><strong>Arrow Keys</strong> move sequencer focus.</li>
+                  <li><strong>Enter / Space</strong> toggles the focused step.</li>
+                  <li><strong>Escape</strong> closes this overlay.</li>
+                </ul>
+              </div>
+              <div style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Quick Actions</span>
+                <div style={shellStyle.shortcutCommandList}>
+                  {quickCommands.map((command) => (
+                    <button
+                      key={command.label}
+                      type="button"
+                      disabled={command.disabled}
+                      onClick={() => {
+                        setShortcutOverlayOpen(false)
+                        void Promise.resolve(command.action())
+                      }}
+                      style={shellStyle.shortcutCommandButton}
+                    >
+                      <strong>{command.label}</strong>
+                      <span style={shellStyle.tileText}>{command.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </main>
   )
 }

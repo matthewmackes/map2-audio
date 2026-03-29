@@ -9410,7 +9410,7 @@ Last updated: 2026-03-28 22:03 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/components/PluginCards/PluginCardRouter.test.tsx` -> PASS (`4 passed`); `npm --prefix web run build` -> PASS.
 
 ID: T521
-Status: [ ] Todo
+Status: [✓] Done
 Title: Compact instrument cards for JUCE Grid — Migrate DrumMachineWorkspaceModal content to DrumsPage and delete modal
 Description:
 - Goal / acceptance criteria: Audit DrumMachineWorkspaceModal for unique features (workspace presets, shortcut overlays, saved layouts) not present in DrumsPage. Migrate any unique content into DrumsPage. Delete DrumMachineWorkspaceModal.tsx and DrumMachineWorkspaceModal.css. Remove all remaining imports/references. Add a "Back to Audio Grid" breadcrumb button in DrumsPage PageHeader actions.
@@ -9419,8 +9419,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: DrumsPage with migrated content + breadcrumb; modal files deleted; no dangling imports; tests pass.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-28
+Assigned to: Codex
+Last updated: 2026-03-28 22:39 EDT - Codex
+- Completion notes:
+  - Migrated the modal-only drum workspace affordances into `web/src/app/pages/DrumsPage.tsx`: the standalone page now owns the "Back to Audio Grid" breadcrumb action, workspace navigation shortcuts, named saved layouts persisted in local storage, workspace preset switching, a shortcut overlay with quick actions, and a live summary tile so the dedicated page fully replaces the legacy modal workflow.
+  - Added focused regression coverage in `web/src/app/pages/DrumsPage.test.tsx` for standalone routing, persisted layouts/presets, shortcut overlay actions, and keyboard shortcut toggling, while preserving the existing advanced workstation coverage and the compact-card routing assertions in `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx` and `web/src/app/pages/JuceGridPage.test.tsx`.
+  - Deleted the superseded modal implementation and its styling/tests: `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css`, and `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx`, and verified `rg -n "DrumMachineWorkspaceModal" web/src -g '*.*'` returns no matches.
+  - Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> PASS (`38 passed`); `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/pages/JuceGridPage.test.tsx` -> PASS (`72 passed`); `npm --prefix web run build` -> PASS.
 
 ID: T522
 Status: [✓] Done
