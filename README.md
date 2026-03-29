@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1015** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1017** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2d06f5d8`](https://github.com/matthewmackes/map2-audio/commit/2d06f5d8b7d1154a8bf5720b3da4d871e1590adc) | Split SynthForge compact card and page breadcrumb | Map2 Audio | 2026-03-28 |
+| [`ce7c4765`](https://github.com/matthewmackes/map2-audio/commit/ce7c47652d0b433ad5027e692672c166e3231c7b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`2806bc86`](https://github.com/matthewmackes/map2-audio/commit/2806bc86638e3e5e2c5bd8578129629f670e4f24) | Compact drum card and harden scoped loader dialogs | Map2 Audio | 2026-03-28 |
 | [`b840e359`](https://github.com/matthewmackes/map2-audio/commit/b840e359677342d2d86f971843daea42706c406f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`3b71fd09`](https://github.com/matthewmackes/map2-audio/commit/3b71fd099e6ad00dc02eb2f6296c6ed669c329ff) | Show loader asset metadata on scoped cards | Map2 Audio | 2026-03-28 |
 | [`e0818a21`](https://github.com/matthewmackes/map2-audio/commit/e0818a21b13e62b2817789ccc473c0fbdca2b3da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 | [`bb8d465a`](https://github.com/matthewmackes/map2-audio/commit/bb8d465adf42e26c2c16c78202e34f0f5d1ac8ce) | Show configured loader state in scoped UI | Map2 Audio | 2026-03-28 |
 | [`e1e08b74`](https://github.com/matthewmackes/map2-audio/commit/e1e08b7495b0d1781b3ad16d4b0b1aa88ad93c18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
-| [`c3eb44ce`](https://github.com/matthewmackes/map2-audio/commit/c3eb44cefaa7eef2f1cec09a7e9c0d4de1045552) | Refresh web version after snapshot loader updates | Map2 Audio | 2026-03-28 |
-| [`22e99ff7`](https://github.com/matthewmackes/map2-audio/commit/22e99ff7a4890de085986c3b6b57be73971cacb1) | Preserve loader state in flow snapshots | Map2 Audio | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
