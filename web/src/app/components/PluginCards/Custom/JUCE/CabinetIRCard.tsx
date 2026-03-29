@@ -35,6 +35,13 @@ interface IRStatus {
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
 
+interface CabinetIRMeta {
+  name: string
+  size: string
+  sampleRate?: string
+  duration?: string
+}
+
 interface CabinetIRCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
 }
@@ -83,6 +90,8 @@ function CabinetIRCardBase({
       return (data.irs ?? []).map((ir) => ({
         name: ir.name,
         size: `${((ir.size ?? 0) / 1024).toFixed(0)} KB`,
+        sampleRate: typeof ir.sample_rate === 'number' ? `${(ir.sample_rate / 1000).toFixed(1)} kHz` : undefined,
+        duration: typeof ir.duration === 'number' ? `${(ir.duration * 1000).toFixed(0)} ms` : undefined,
       }))
     },
   })
@@ -124,6 +133,9 @@ function CabinetIRCardBase({
   const cabinets = listQuery.data || []
   const displayIR = status?.loaded || status?.configuredIR || undefined
   const usingConfiguredFallback = Boolean(!status?.loaded && status?.configuredIR)
+  const currentCabinetMeta: CabinetIRMeta | null = displayIR
+    ? cabinets.find((cabinet) => cabinet.name === displayIR) ?? null
+    : null
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -212,6 +224,13 @@ function CabinetIRCardBase({
             <div style={{ textAlign: 'center', padding: '4px 0 8px', fontSize: 10, color: '#666' }}>
               {cabinets.length} cabinet IRs available
             </div>
+            {currentCabinetMeta && (
+              <div style={{ textAlign: 'center', padding: '0 0 8px', fontSize: 10, color: '#666' }}>
+                {`Size: ${currentCabinetMeta.size}`}
+                {currentCabinetMeta.sampleRate ? ` • Rate: ${currentCabinetMeta.sampleRate}` : ''}
+                {currentCabinetMeta.duration ? ` • Length: ${currentCabinetMeta.duration}` : ''}
+              </div>
+            )}
           </>
         }
       />

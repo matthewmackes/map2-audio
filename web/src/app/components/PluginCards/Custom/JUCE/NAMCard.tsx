@@ -13,7 +13,7 @@
  * - Model metadata display
  */
 
-import { useState, useCallback, type ChangeEvent } from 'react'
+import { useState, useCallback, useMemo, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MachineLearningModel } from '@carbon/icons-react'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
@@ -109,6 +109,10 @@ function NAMCardBase({
     ),
     refetchInterval: 500, // Fast updates for level meters
   })
+  const modelsQuery = useQuery({
+    queryKey: ['nam', 'models'],
+    queryFn: () => namApi.listModels(),
+  })
 
   const setInputGain = useCallback(async (value: number) => {
     if (instanceId) {
@@ -176,6 +180,13 @@ function NAMCardBase({
   const hasConfiguredModel = Boolean(status?.configuredModel)
   const usingConfiguredFallback = Boolean(!status?.activeModel && status?.configuredModel)
   const usingLiveModel = Boolean(status?.activeModel)
+  const currentModelDetails = useMemo(() => {
+    const models = modelsQuery.data?.models ?? []
+    if (!displayModel) {
+      return null
+    }
+    return models.find((model) => model.name === displayModel) ?? null
+  }, [displayModel, modelsQuery.data?.models])
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -424,6 +435,14 @@ function NAMCardBase({
         inputLevel={status?.inputLevel ?? 0}
         outputLevel={status?.outputLevel ?? 0}
         advancedSections={advancedSections}
+        extraContent={
+          currentModelDetails ? (
+            <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, color: '#666' }}>
+              {currentModelDetails.type ? `Type: ${currentModelDetails.type}` : 'Type: unknown'}
+              {typeof currentModelDetails.size_mb === 'number' ? ` • Size: ${currentModelDetails.size_mb.toFixed(1)} MB` : ''}
+            </div>
+          ) : undefined
+        }
       />
       <NAMManagerDialog
         open={managerOpen}

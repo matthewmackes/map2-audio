@@ -216,6 +216,13 @@ describe('NAMManagerDialog', () => {
     expect(screen.queryByText('Mesa Mark V')).not.toBeInTheDocument()
   })
 
+  it('shows richer model metadata columns', async () => {
+    renderDialog()
+
+    expect(await screen.findByText('amp')).toBeInTheDocument()
+    expect(screen.getByText('42.6 MB')).toBeInTheDocument()
+  })
+
   it('uploads a NAM file from the file chooser control', async () => {
     renderDialog()
 

@@ -329,6 +329,34 @@ describe('JUCE asset selector cards', () => {
     expect(screen.getByText('NAM manager open')).toBeInTheDocument()
   })
 
+  it('shows loaded asset metadata on NAM and IR cards', async () => {
+    renderCard(
+      <>
+        <NAMCard
+          plugin={makePlugin('NAM', 'Amplifier')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#ff6b6b"
+        />
+        <CabinetIRCard
+          plugin={makePlugin('Cabinet IR', 'Convolution')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#f97316"
+        />
+        <ReverbIRCard
+          plugin={makePlugin('Reverb IR', 'Convolution')}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#a855f7"
+        />
+      </>,
+    )
+
+    expect(await screen.findByText('Size: 512 KB')).toBeInTheDocument()
+    expect(screen.getByText('Size: 1260 KB')).toBeInTheDocument()
+  })
+
   it('opens the shared cabinet IR manager from the Select action', async () => {
     renderCard(
       <CabinetIRCard

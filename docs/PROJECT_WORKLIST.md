@@ -9335,7 +9335,7 @@ Last updated: 2026-03-28 20:31 EDT - Codex
   - Added focused frontend regression coverage in `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, and `web/src/app/components/loaders/IRManagerDialog.test.tsx` for configured-state rendering and scoped runtime warnings.
 
 ID: T517
-Status: [ ] Todo
+Status: [✓] Done
 Title: Show richer loaded-file metadata on NAM, cabinet IR, and reverb IR selected-block GUIs
 Description:
 - Goal / acceptance criteria: Update the selected-block NAM, cabinet IR, and reverb IR cards and shared loader dialogs so operators can see materially useful metadata for the currently loaded asset without guessing from a bare filename alone. The final UI must present a compact but readable loaded-asset summary on the cards, use richer metadata rows/details in the dialogs where appropriate, and stay duplicate-safe under `instance_id` / `plugin_position` scoping. Metadata fields should be driven by the best available backend/library data per asset type, cabinet and reverb should use domain-specific metadata sets rather than one generic IR summary, and when library metadata is missing the system should calculate technical file facts directly from the underlying asset instead of leaving the UI blank. Cabinet IR presentation should also parse useful filename/path semantics when present (for example cabinet family, mic token, mix token, or variant labels) rather than treating the filename as opaque text only.
@@ -9346,4 +9346,9 @@ Description:
 - Required outputs: agreed metadata field set and presentation hierarchy, domain-specific cabinet/reverb metadata treatment, fallback technical-metadata extraction/calculation for missing asset facts, cabinet filename-semantic parsing where useful, a design graphic/prototype demonstrating the new cabinet/IR/NAM information hierarchy, reusable schematic/presentation objects if needed to render cabinet details dynamically, frontend card/dialog updates for NAM/cabinet/reverb, backend/API metadata additions if current status/list payloads are insufficient, focused frontend/backend tests, and worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-28 18:51 EDT - Codex
+Last updated: 2026-03-28 20:40 EDT - Codex
+- Completion notes:
+  - Added richer selected-block loader metadata presentation to the JUCE cabinet and reverb IR cards by carrying size/sample-rate/duration details from the shared library queries and rendering those summaries directly on the cards alongside live/configured status.
+  - Extended the selected-block NAM card to hydrate model library metadata from the NAM model list query so the card can show live/configured state plus model type/size when available, while the shared NAM manager dialog now includes a dedicated type column alongside size.
+  - Preserved the scoped configured/live warning work from `T516`, so the new metadata blocks stay duplicate-safe under `instance_id` / `plugin_position` scoping instead of drifting back to global loader state.
+  - Added focused frontend regression coverage in `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` and `web/src/app/components/loaders/NAMManagerDialog.test.tsx` for the new metadata rendering paths.

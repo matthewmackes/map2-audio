@@ -320,6 +320,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                       <TableHead>
                         <TableRow>
                           <TableHeader>Name</TableHeader>
+                          <TableHeader>Type</TableHeader>
                           <TableHeader>Size</TableHeader>
                           <TableHeader>Status</TableHeader>
                           <TableHeader>Action</TableHeader>
@@ -335,6 +336,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                           return (
                             <TableRow key={model.name}>
                               <TableCell>{model.name}</TableCell>
+                              <TableCell>{model.type || 'unknown'}</TableCell>
                               <TableCell>{sizeMb ? `${sizeMb.toFixed(1)} MB` : '-'}</TableCell>
                               <TableCell>
                                 {isActive ? (

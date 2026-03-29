@@ -37,6 +37,13 @@ interface IRStatus {
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
 
+interface ReverbIRMeta {
+  name: string
+  size: string
+  sampleRate?: string
+  duration?: string
+}
+
 interface ReverbIRCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
 }
@@ -86,6 +93,8 @@ function ReverbIRCardBase({
       return (data.irs ?? []).map((ir) => ({
         name: ir.name,
         size: `${((ir.size ?? 0) / 1024).toFixed(0)} KB`,
+        sampleRate: typeof ir.sample_rate === 'number' ? `${(ir.sample_rate / 1000).toFixed(1)} kHz` : undefined,
+        duration: typeof ir.duration === 'number' ? `${(ir.duration * 1000).toFixed(0)} ms` : undefined,
       }))
     },
   })
@@ -116,6 +125,9 @@ function ReverbIRCardBase({
   const reverbs = listQuery.data || []
   const displayIR = status?.loaded || status?.configuredIR || undefined
   const usingConfiguredFallback = Boolean(!status?.loaded && status?.configuredIR)
+  const currentReverbMeta: ReverbIRMeta | null = displayIR
+    ? reverbs.find((reverb) => reverb.name === displayIR) ?? null
+    : null
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -212,6 +224,13 @@ function ReverbIRCardBase({
             <div style={{ textAlign: 'center', padding: '4px 0 8px', fontSize: 10, color: '#666' }}>
               {reverbs.length} reverb IRs available
             </div>
+            {currentReverbMeta && (
+              <div style={{ textAlign: 'center', padding: '0 0 8px', fontSize: 10, color: '#666' }}>
+                {`Size: ${currentReverbMeta.size}`}
+                {currentReverbMeta.sampleRate ? ` • Rate: ${currentReverbMeta.sampleRate}` : ''}
+                {currentReverbMeta.duration ? ` • Length: ${currentReverbMeta.duration}` : ''}
+              </div>
+            )}
           </>
         }
       />
