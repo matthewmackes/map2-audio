@@ -2001,6 +2001,55 @@ export interface SnapshotMidiMapEntry {
   program_number?: number;
 }
 
+export interface SnapshotPath {
+  id: string;
+  name: string;
+  label: string;
+  color: string;
+  muted: boolean;
+  solo: boolean;
+  dry_wet_mix: number;
+  order_index: number;
+  snapshot_chain_id: number | null;
+  runtime_chain_id: number | null;
+  plugins: SnapshotPlugin[];
+  loop_insertions?: LoopInsertion[];
+  effects_loops?: EffectsLoop[];
+}
+
+export interface SnapshotIOBindings {
+  input_device: string | null;
+  output_device: string | null;
+  remap_required: boolean;
+}
+
+export interface SnapshotControls {
+  midi_map: SnapshotMidiMapEntry[];
+  automation_lanes: Array<Record<string, unknown>>;
+  expression_mappings: Array<Record<string, unknown>>;
+}
+
+export interface SnapshotLineage {
+  derived_from_snapshot_id: number | null;
+}
+
+export interface SnapshotLivePathState {
+  path_id: string;
+  label?: string | null;
+  color?: string | null;
+  snapshot_chain_id: number | null;
+  runtime_chain_id: number | null;
+  runtime_chain_name?: string | null;
+  activation_status?: string | null;
+}
+
+export interface SnapshotLiveState {
+  is_live: boolean;
+  activated_at?: string | null;
+  paths: SnapshotLivePathState[];
+  runtime_chains: Chain[];
+}
+
 export interface SnapshotAssetRef {
   kind: string;
   chain_id?: number | null;
@@ -2056,6 +2105,8 @@ export interface SnapshotSummary {
   community_download_count: number;
   community_rating: number | null;
   community_rating_count: number;
+  io_bindings?: SnapshotIOBindings;
+  lineage?: SnapshotLineage;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -2065,6 +2116,12 @@ export interface SnapshotDetail extends SnapshotSummary {
   chains: SnapshotChain[];
   routing: SnapshotRouting;
   midi_map: SnapshotMidiMapEntry[];
+  paths: SnapshotPath[];
+  io_bindings: SnapshotIOBindings;
+  controls: SnapshotControls;
+  assets: SnapshotAssetRef[];
+  live_state: SnapshotLiveState;
+  lineage: SnapshotLineage;
   active_channel_index: number;
   deployments: SnapshotDeployment[];
 }

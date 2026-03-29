@@ -3,8 +3,10 @@ import asyncio
 from app import database as database_module
 from app.routes import cluster_snapshots as cluster_routes
 from app.routes import unified_snapshots as routes
+from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services import snapshot_runtime_service
+from sqlalchemy import select
 
 
 def _init_temp_db(tmp_path):
@@ -48,25 +50,33 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
 
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
     async def _run():
         created = await routes.create_snapshot(
             routes.SnapshotCreateRequest(
                 name="Route Snapshot",
                 description="Created through route",
-                input_device="Route In",
-                output_device="Route Out",
-                channels=[
-                    routes.SnapshotChannelInput(
-                        channel_key="channel-0",
+                io_bindings=routes.SnapshotIOBindingsInput(
+                    input_device="Route In",
+                    output_device="Route Out",
+                ),
+                controls=routes.SnapshotControlsInput(
+                    midi_map=[{"action": "load_snapshot", "program_number": 12}],
+                ),
+                paths=[
+                    routes.SnapshotPathInput(
+                        id="path-a",
+                        name="Route Path A",
                         label="A",
                         color="#2563eb",
-                        chain_id=1,
-                    )
-                ],
-                chains=[
-                    routes.SnapshotChainInput(
-                        id=1,
-                        name="Route Chain",
                         plugins=[
                             routes.SnapshotPluginInput(
                                 uri="urn:test:route-plugin",
@@ -74,13 +84,14 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                                 parameters={"drive": 0.75},
                             )
                         ],
+                        snapshot_chain_id=1,
                     )
                 ],
                 routing=routes.SnapshotRoutingInput(
                     mode="parallel_blend",
-                    active_channel_key="channel-0",
-                    blend_positions={"channel-0": 100.0},
-                    series_order=["channel-0"],
+                    active_channel_key="path-a",
+                    blend_positions={"path-a": 100.0},
+                    series_order=["path-a"],
                 ),
             )
         )
@@ -92,15 +103,20 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert listed["snapshots"][0]["name"] == "Route Snapshot"
         assert listed["snapshots"][0]["input_device"] == "Route In"
         assert listed["snapshots"][0]["output_device"] == "Route Out"
+        assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
 
         fetched = await routes.get_snapshot(snapshot_id)
         assert fetched["channels"][0]["label"] == "A"
         assert fetched["input_device"] == "Route In"
         assert fetched["output_device"] == "Route Out"
+        assert fetched["paths"][0]["id"] == "path-a"
+        assert fetched["controls"]["midi_map"][0]["program_number"] == 12
 
         patched = await routes.update_snapshot(
             snapshot_id,
-            routes.SnapshotUpdateRequest(input_device="Route In 2", output_device=None),
+            routes.SnapshotUpdateRequest(
+                io_bindings=routes.SnapshotIOBindingsInput(input_device="Route In 2", output_device=None),
+            ),
         )
         assert patched["snapshot"]["input_device"] == "Route In 2"
         assert patched["snapshot"]["output_device"] is None
@@ -113,6 +129,22 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         activated = await routes.activate_snapshot(snapshot_id)
         assert activated["status"] == "success"
+        assert activated["snapshot_data"]["live_state"]["is_live"] is True
+
+        live_snapshot = await routes.get_live_snapshot()
+        assert live_snapshot["id"] == snapshot_id
+        assert live_snapshot["live_state"]["is_live"] is True
+
+        draft = await routes.open_snapshot_draft(snapshot_id)
+        assert draft["status"] == "success"
+        assert draft["snapshot"]["id"] == snapshot_id
+
+        saved_as_new = await routes.save_snapshot_as_new(
+            snapshot_id,
+            routes.SaveAsNewRequest(name="Route Snapshot v2"),
+        )
+        assert saved_as_new["status"] == "success"
+        assert saved_as_new["snapshot"]["lineage"]["derived_from_snapshot_id"] == snapshot_id
 
         shared = await routes.share_snapshot(snapshot_id, routes.CommunityShareRequest(author_name="Codex"))
         assert shared["snapshot"]["community_shared"] is True

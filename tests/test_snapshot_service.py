@@ -2,7 +2,9 @@ import asyncio
 
 from app import database as database_module
 from app.services import snapshot_runtime_service
+from app.services.chain_service import ChainService
 from app.services.snapshot_service import SnapshotService
+from sqlalchemy import select
 
 
 def _init_temp_db(tmp_path):
@@ -23,6 +25,15 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
 
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
 
     async def _run():
         async with database_module.get_session() as session:
@@ -81,6 +92,11 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["midi_map"][0]["program_number"] == 10
             assert created["input_device"] == "Capture 1"
             assert created["output_device"] == "Playback 1"
+            assert created["io_bindings"]["input_device"] == "Capture 1"
+            assert created["controls"]["midi_map"][0]["program_number"] == 10
+            assert created["lineage"]["derived_from_snapshot_id"] is None
+            assert created["paths"][0]["id"] == "channel-0"
+            assert created["paths"][0]["label"] == "A"
 
             renamed = await service.update_snapshot(
                 created["id"],
@@ -107,6 +123,19 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated is not None
             assert activated["params_applied"] == 3
             assert activated["bypass_applied"] == 2
+            assert activated["snapshot_data"]["live_state"]["is_live"] is True
+
+            live_snapshot = await service.get_live_snapshot()
+            assert live_snapshot is not None
+            assert live_snapshot["id"] == created["id"]
+            assert live_snapshot["live_state"]["is_live"] is True
+
+            saved_as_new = await service.save_snapshot_as_new(created["id"], name="Unified Snapshot v2")
+            assert saved_as_new is not None
+            assert saved_as_new["name"] == "Unified Snapshot v2"
+            assert saved_as_new["program_number"] is None
+            assert saved_as_new["lineage"]["derived_from_snapshot_id"] == created["id"]
+            assert saved_as_new["controls"]["midi_map"][0]["program_number"] == 10
 
             exported = await service.export_snapshot(created["id"])
             assert exported is not None
@@ -156,14 +185,17 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert imported["output_device"] is None
 
             listed = await service.list_snapshots()
-            assert len(listed) == 2
+            assert len(listed) == 3
             assert {item["name"] for item in listed} == {
                 "Unified Snapshot",
+                "Unified Snapshot v2",
                 "Imported Placeholder Snapshot",
             }
             summary = next(item for item in listed if item["name"] == "Unified Snapshot")
             assert summary["input_device"] == "Capture 2"
             assert summary["output_device"] is None
+            assert summary["io_bindings"]["input_device"] == "Capture 2"
+            assert summary["lineage"]["derived_from_snapshot_id"] is None
 
             by_program = await service.get_snapshot_by_program(10)
             assert by_program is not None

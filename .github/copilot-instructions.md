@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 29, 2026 (E-SNAP snapshot-editor build-gate reconciliation)
+> **Last Updated**: March 29, 2026 (E-SNAP snapshot-first modal cutover and live-route ordering fix)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1353,6 +1353,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts web/src/app/pages/SnapshotEditorPage.test.tsx`; `npm --prefix web run build`
 - **Lesson**: In vocabulary migrations, the canonical filename must become the real owner. Compatibility wrappers are transitional and should never remain the source of truth.
 
+**37. Snapshot-First Routes Must Beat Dynamic Snapshot ID Matchers, And UI Cutovers Must Remove Hidden Compatibility Writes (HIGH - Mar 29, 2026)**
+- **Files**: `app/routes/unified_snapshots.py`, `web/src/map2/clients/snapshots.ts`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `tests/test_snapshot_routes.py`, `web/src/app/components/snapshots/SnapshotModalContent.test.tsx`
+- **Problem**: The canonical snapshot-first surface looked deployed, but `GET /api/snapshots/live` returned `422` because it was shadowed by `/{snapshot_id}`, and the snapshot modal still wrote through `flowSnapshotsApi.update(...)` plus `/api/flow-snapshots/{id}/program` for two mutation paths.
+- **Root Cause**: FastAPI matches static routes in declaration order relative to dynamic params, and the UI cutover only replaced the obvious modal mutations while leaving one “Update snapshot” path and one program-number helper on the compatibility API.
+- **Fix**: Declare `/api/snapshots/live` before `/api/snapshots/{snapshot_id}`, move the modal’s active-snapshot refresh onto `snapshotsApi.update(...)` with snapshot-first payload conversion, and expose/use `/api/snapshots/{id}/program` so operator-facing snapshot surfaces stop silently depending on `/api/flow-snapshots/*`.
+- **Verification**: `pytest -q tests/test_snapshot_routes.py`; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`; `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/snapshots/live`
+- **Lesson**: During API cutovers, route order and client helpers are part of the same contract. Replacing the primary query path is not enough if any secondary modal/action path still writes through the compatibility surface.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1623,6 +1631,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-29] - E-SNAP Snapshot-First Modal Cutover And Live Route Ordering
+- **Section**: Gotchas & Learned Fixes (#37), Update Log
+- **Change**: Documented the snapshot-first route-ordering rule for `/api/snapshots/live` and the requirement to remove hidden compatibility writes when migrating modal/editor snapshot surfaces off `flowSnapshotsApi`.
+- **Reason**: The first snapshot-first deployment still failed in two subtle ways: a static route shadowed by `/{snapshot_id}`, and secondary modal actions that still wrote through `/api/flow-snapshots/*` even after the main list/detail/activate path moved.
+- **Impact**: Future snapshot cutovers should verify both route declaration order and every secondary mutation helper, which reduces false-green deployments where the canonical API exists but the UI still leaks compatibility traffic.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/unified_snapshots.py`, `web/src/map2/clients/snapshots.ts`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-29] - E-SNAP Canonical Ownership Flip For SnapshotEditor, ChainGraph, And SignalPath
 - **Section**: Gotchas & Learned Fixes (#36), Update Log

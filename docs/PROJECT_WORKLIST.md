@@ -6,7 +6,93 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 17:12 EDT - T545 shipped complete; no remaining unblocked todo items
+Last updated: 2026-03-29 18:37 EDT - T547-subA snapshot modal/library cutover completed and build verified
+
+ID: T547
+Status: [>] In Progress
+Title: Hard-cut Snapshot-first refactor to replace chain/flow rig-state architecture
+Description:
+- Goal / acceptance criteria: Replace the current mixed chain/flow/unified-snapshot architecture with one canonical Snapshot model that owns the full end-to-end rig configuration. Remove operator-facing chain/flow concepts, rename the child grouping concept to Path if needed, make activation materialize the live runtime graph directly from the snapshot, migrate existing snapshot/flow/chain data without loss, and update the Snapshot Editor plus recall workflows to use snapshot-only APIs and state.
+- Why it matters: The current rig-state model is split across incompatible persistence and runtime identities, causing broken activation, confusing UX, and non-traceable state. Snapshot must become the single understandable and auditable container for the full signal path.
+- Dependencies: T546
+- Estimated effort: High
+- Required outputs: new snapshot domain/API contract, activation/runtime materialization refactor, editor state-model rewrite, migration of existing data, removal of operator-facing chain/flow workflows, and focused regression/integration coverage.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 18:27 EDT - Codex
+- Subtasks:
+ID: T547-subA
+Status: [✓] Done
+Title: Migrate snapshot library modal workflows off flow-snapshot compatibility APIs
+Description:
+- Goal / acceptance criteria: Replace `flowSnapshotsApi` usage in snapshot library/editor-entry surfaces with snapshot-first `snapshotsApi` list/detail/activate/update/delete/duplicate/save flows while keeping the current operator behavior intact. Snapshot modal tests must cover the snapshot-first path.
+- Why it matters: The library modal still depends on compatibility payloads even though the canonical snapshot contract and routes now exist.
+- Dependencies: T547
+- Estimated effort: Medium
+- Required outputs: snapshot modal/query refactor, compatibility-free snapshot mutations on that surface, focused tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 18:37 EDT - Codex
+- Completion notes:
+  - Refactored `SnapshotModalContent` to source snapshot list/detail/recall/update/delete/duplicate/reorder/program flows from `snapshotsApi` and convert the canonical snapshot contract into the existing modal/editor draft shape at the boundary.
+  - Removed the modal's last hidden compatibility write path by routing “Update snapshot” through `snapshotsApi.update(...)` with snapshot-first payload conversion instead of `flowSnapshotsApi.update(...)`.
+  - Added the canonical `/api/snapshots/{id}/program` route alias and moved the snapshot client MIDI-program helper to that snapshot-first endpoint so the modal no longer writes through `/api/flow-snapshots/*` for program assignment.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `pytest -q tests/test_snapshot_routes.py` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T547-subB
+Status: [>] In Progress
+Title: Migrate Snapshot Editor page live/draft loading to snapshot-first APIs
+Description:
+- Goal / acceptance criteria: Replace Snapshot Editor page dependence on `flowSnapshotsApi.list()` for active-snapshot gating and use the live snapshot contract where possible for backend truth/load state. Preserve current editor behavior and regression coverage.
+- Why it matters: The editor page is still bootstrapping through flow-snapshot compatibility state even after snapshot-first activation/runtime materialization landed.
+- Dependencies: T547-subA
+- Estimated effort: Medium
+- Required outputs: page query refactor, focused validation, no behavior regressions on entry/recall.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 18:37 EDT - Codex
+
+ID: T547-subC
+Status: [ ] Todo
+Title: Remove remaining snapshot-surface compatibility usage and chain/flow labels from high-traffic UI
+Description:
+- Goal / acceptance criteria: Eliminate remaining `flowSnapshotsApi` usage on the primary snapshot surfaces and update the highest-traffic snapshot UI copy from chain/flow vocabulary to snapshot/path wording where the new model is already authoritative. Keep any deeper architectural leftovers explicitly documented if they remain.
+- Why it matters: The operator-facing cutover is incomplete until the main snapshot surfaces stop presenting the old model.
+- Dependencies: T547-subB
+- Estimated effort: Medium
+- Required outputs: targeted UI copy/API cleanup, focused tests or typecheck/build validation, updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 18:31 EDT - Codex
+- Progress notes:
+  - Added snapshot-first backend fields and APIs: `derived_from_snapshot_id`, `controls_payload`, `live_state_payload`, `activated_at`, `GET /api/snapshots/live`, `POST /api/snapshots/{id}/draft`, and `POST /api/snapshots/{id}/save-as-new`.
+  - Snapshot detail serialization now emits canonical snapshot-first structures: `paths`, `io_bindings`, `controls`, `assets`, `live_state`, and `lineage`, while list summaries also carry `io_bindings` and `lineage`.
+  - Snapshot activation now clears prior snapshot-materialized runtime chains, rebuilds runtime chains directly from the snapshot payload, records live path/runtime identity in `live_state_payload`, and keeps the legacy flow-snapshot websocket payload during the cutover.
+  - Frontend snapshot adapters now localize runtime chain IDs back into snapshot-local path IDs on save, hydrate editor flow slots from `paths`/`live_state`, and expose `snapshotsApi.getLive()`, `openDraft()`, and `saveAsNew()`.
+  - The New Snapshot wizard was refactored to create snapshot `paths` directly in a single snapshot create call, then activate the snapshot, removing the brittle multi-step snapshot-chain provisioning path from this entry flow.
+  - Fixed FastAPI route ordering so `GET /api/snapshots/live` resolves to the dedicated live snapshot endpoint instead of falling through the `/{snapshot_id}` matcher and returning `422`.
+  - Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
+- Remaining scope:
+  - The main Snapshot Editor page still exposes chain/flow terminology and direct `chainsApi` mutation surfaces; the persisted snapshot contract is now snapshot-first, but the editor UI itself is not yet fully renamed/reduced to `Snapshot`/`Path`.
+  - Compatibility `/api/flow-snapshots/*` routes still exist and should be removed only after the editor page and perform surfaces stop depending on their compatibility payloads.
+
+ID: T546
+Status: [✓] Done
+Title: Fix New Snapshot wizard provisioning when chains/channels are not made live
+Description:
+- Goal / acceptance criteria: Creating a new snapshot from the Snapshot Editor wizard must reliably provision two chains, bind them to channels `ch_a` / `ch_b`, activate the snapshot, and open the editor with the new snapshot live even if intermediate chain-create responses are stale or incomplete. Add focused regression coverage for the stale-response case.
+- Why it matters: The guided entry flow is currently broken for operators; new snapshots open without provisioned channels/chains and nothing becomes active.
+- Dependencies: T545
+- Estimated effort: Small
+- Required outputs: frontend provisioning fix, focused test coverage, worklist update.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 17:46 EDT - Codex
+- Completion notes:
+  - Updated the Snapshot Editor wizard provisioning flow to stop trusting intermediate `addChain` responses for channel/chain identity. After both chains are created, it now fetches the snapshot detail fresh, resolves `ch_a` / `ch_b` plus the two new chain IDs from authoritative state, then performs channel assignment and activation.
+  - Expanded `SnapshotModalContent.test.tsx` to cover the regression case where both `addChain` calls return stale/incomplete payloads; the wizard now recovers by calling `snapshotsApi.get()` before assignment.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Deployment: refreshed `map2-web-prod.service` by terminating the old `serve_web_dist.mjs` PID and letting systemd restart it on port `3000`; verified new PID plus `curl http://127.0.0.1:3000/` -> `200`.
 
 ID: T545
 Status: [✓] Done

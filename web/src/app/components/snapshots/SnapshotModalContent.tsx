@@ -15,7 +15,6 @@ import {
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
-import { flowSnapshotsApi } from '../../../map2/api'
 import type { ChainSnapshot, FlowSnapshot, FlowSnapshotDetail, FlowSnapshotData } from '../../../map2/types'
 import {
   buildSnapshotComparisonSummary,
@@ -25,17 +24,16 @@ import {
 } from '../SnapshotEditor/snapshotEditorComparison'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
-import { snapshotDetailToFlowSnapshotData, snapshotsApi } from '../../../map2/clients/snapshots'
+import {
+  flowSnapshotDataToSnapshotPayload,
+  snapshotDetailToFlowSnapshotData,
+  snapshotDetailToFlowSnapshotDetail,
+  snapshotSummaryToFlowSnapshot,
+  snapshotsApi,
+} from '../../../map2/clients/snapshots'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
-}
-
-function formatSnapshotWizardDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-  return `${year}${month}${day}`
 }
 
 export interface SnapshotModalContentProps {
@@ -76,7 +74,14 @@ export function SnapshotModalContent({
     active_id: number | null
   }>({
     queryKey: ['flow-snapshots'],
-    queryFn: () => flowSnapshotsApi.list(),
+    queryFn: async () => {
+      const response = await snapshotsApi.list()
+      return {
+        snapshots: response.snapshots.map(snapshotSummaryToFlowSnapshot),
+        count: response.count,
+        active_id: response.active_id,
+      }
+    },
     refetchInterval: 5000,
   })
 
@@ -84,14 +89,14 @@ export function SnapshotModalContent({
 
   const activeSnapshotDetailQuery = useQuery<FlowSnapshotDetail>({
     queryKey: ['flow-snapshots', 'detail', activeSnapshotId],
-    queryFn: () => flowSnapshotsApi.get(activeSnapshotId as number),
+    queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(activeSnapshotId as number)),
     enabled: activeSnapshotId !== null,
   })
 
   const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
   const snapshotCompareDetailQuery = useQuery<FlowSnapshotDetail>({
     queryKey: ['flow-snapshots', 'compare-detail', snapshotCompareTargetId],
-    queryFn: () => flowSnapshotsApi.get(snapshotCompareTargetId as number),
+    queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotCompareTargetId as number)),
     enabled: snapshotCompareTargetId !== null,
   })
 
@@ -174,34 +179,52 @@ export function SnapshotModalContent({
   const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
   const createFlowSnapshotMutation = useMutation({
     mutationFn: async (values: SnapshotNewWizardValues) => {
-      const channelDefinitions = [
+      const pathDefinitions = [
         {
-          channel_key: 'ch_a',
+          id: 'ch_a',
+          name: `${values.name} Path A`,
           label: 'A',
           color: '#2563eb',
           muted: false,
           solo: false,
           dry_wet_mix: 100,
-          chain_id: null,
+          order_index: 0,
+          snapshot_chain_id: 1,
+          runtime_chain_id: null,
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
         },
         {
-          channel_key: 'ch_b',
+          id: 'ch_b',
+          name: `${values.name} Path B`,
           label: 'B',
           color: '#22c55e',
           muted: false,
           solo: false,
           dry_wet_mix: 100,
-          chain_id: null,
+          order_index: 1,
+          snapshot_chain_id: 2,
+          runtime_chain_id: null,
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
         },
       ]
-      const chainName = `${values.name}-${formatSnapshotWizardDate(new Date())}`
       const created = await snapshotsApi.create({
         name: values.name,
         description: 'Created from Snapshot Editor wizard',
-        input_device: values.inputDevice,
-        output_device: values.outputDevice,
-        channels: channelDefinitions,
-        chains: [],
+        io_bindings: {
+          input_device: values.inputDevice,
+          output_device: values.outputDevice,
+          remap_required: false,
+        },
+        controls: {
+          midi_map: [],
+          automation_lanes: [],
+          expression_mappings: [],
+        },
+        paths: pathDefinitions,
         routing: {
           mode: values.routingMode,
           active_channel_key: 'ch_a',
@@ -213,25 +236,6 @@ export function SnapshotModalContent({
         },
         midi_map: [],
       })
-
-      const afterFirstChain = await snapshotsApi.addChain(created.snapshot_id, chainName)
-      const firstChain = afterFirstChain.chains[afterFirstChain.chains.length - 1]
-      const afterSecondChain = await snapshotsApi.addChain(created.snapshot_id, chainName)
-      const secondChain = afterSecondChain.chains[afterSecondChain.chains.length - 1]
-      const channelA = afterSecondChain.channels.find((channel) => channel.channel_key === 'ch_a')
-      const channelB = afterSecondChain.channels.find((channel) => channel.channel_key === 'ch_b')
-
-      if (!firstChain?.id || !secondChain?.id || !channelA?.id || !channelB?.id) {
-        throw new Error('Snapshot wizard provisioning did not return the expected channels and chains.')
-      }
-
-      await snapshotsApi.updateChannel(created.snapshot_id, channelA.id, {
-        chain_id: firstChain.id,
-      })
-      await snapshotsApi.updateChannel(created.snapshot_id, channelB.id, {
-        chain_id: secondChain.id,
-      })
-
       return snapshotsApi.activate(created.snapshot_id)
     },
     onSuccess: async (response) => {
@@ -250,10 +254,10 @@ export function SnapshotModalContent({
   })
 
   const loadFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.load(snapshotId),
+    mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      applySnapshotData(data.snapshot_data, { toastMessage: 'Snapshot recalled', invalidateChains: true })
+      applySnapshotData(snapshotDetailToFlowSnapshotData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
       onRecall?.()
     },
     onError: (error) => {
@@ -262,8 +266,15 @@ export function SnapshotModalContent({
   })
 
   const updateFlowSnapshotMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Parameters<typeof flowSnapshotsApi.update>[1] }) =>
-      flowSnapshotsApi.update(id, updates),
+    mutationFn: ({ id, updates }: { id: number; updates: { name?: string; description?: string; tags?: string[]; display_order?: number; is_favorite?: boolean; snapshot_data?: FlowSnapshotData } }) =>
+      snapshotsApi.update(id, {
+        name: updates.name,
+        description: updates.description,
+        tags: updates.tags,
+        display_order: updates.display_order,
+        is_favorite: updates.is_favorite,
+        ...(updates.snapshot_data ? flowSnapshotDataToSnapshotPayload(updates.snapshot_data) : {}),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
     },
@@ -274,7 +285,7 @@ export function SnapshotModalContent({
 
   const refreshActiveSnapshotMutation = useMutation({
     mutationFn: ({ id, snapshotData }: { id: number; snapshotData: FlowSnapshotData }) =>
-      flowSnapshotsApi.update(id, { snapshot_data: snapshotData }),
+      snapshotsApi.update(id, flowSnapshotDataToSnapshotPayload(snapshotData)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       pushToast('Snapshot updated', 'success')
@@ -285,7 +296,7 @@ export function SnapshotModalContent({
   })
 
   const deleteFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.delete(snapshotId),
+    mutationFn: (snapshotId: number) => snapshotsApi.delete(snapshotId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       pushToast('Snapshot deleted', 'success')
@@ -296,7 +307,7 @@ export function SnapshotModalContent({
   })
 
   const duplicateFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.duplicate(snapshotId),
+    mutationFn: (snapshotId: number) => snapshotsApi.duplicate(snapshotId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       pushToast('Snapshot duplicated', 'success')
@@ -308,7 +319,7 @@ export function SnapshotModalContent({
 
   const setFlowSnapshotProgramMutation = useMutation({
     mutationFn: ({ id, programNumber }: { id: number; programNumber: number | null }) =>
-      flowSnapshotsApi.setProgram(id, programNumber),
+      snapshotsApi.setProgram(id, programNumber),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       pushToast('Snapshot MIDI program updated', 'success')
@@ -319,7 +330,7 @@ export function SnapshotModalContent({
   })
 
   const reorderFlowSnapshotsMutation = useMutation({
-    mutationFn: (snapshotIds: number[]) => flowSnapshotsApi.reorder(snapshotIds),
+    mutationFn: (snapshotIds: number[]) => snapshotsApi.reorder(snapshotIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
     },
@@ -416,14 +427,15 @@ export function SnapshotModalContent({
   const fetchSnapshotDetail = useCallback((snapshotId: number) => (
     queryClient.fetchQuery({
       queryKey: ['flow-snapshots', 'detail', snapshotId],
-      queryFn: () => flowSnapshotsApi.get(snapshotId),
+      queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotId)),
     })
   ), [queryClient])
 
   const previewSnapshotData = useCallback(async (snapshotData: FlowSnapshotData) => {
-    const result = await flowSnapshotsApi.preview({ snapshot_data: snapshotData })
-    applySnapshotData(result.snapshot_data, { toastMessage: null, invalidateChains: false })
-    return result.snapshot_data
+    const result = await snapshotsApi.preview(snapshotData)
+    const nextSnapshotData = snapshotDetailToFlowSnapshotData(result.snapshot_data)
+    applySnapshotData(nextSnapshotData, { toastMessage: null, invalidateChains: false })
+    return nextSnapshotData
   }, [applySnapshotData])
 
   const toggleSnapshotCompare = useCallback((snapshot: FlowSnapshot) => {

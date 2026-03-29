@@ -15,6 +15,7 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from app.database import Snapshot, get_session
 from app.services.snapshot_service import SnapshotService, UNSET
@@ -75,13 +76,44 @@ class SnapshotRoutingInput(BaseModel):
     series_order: list[str] = Field(default_factory=list)
 
 
+class SnapshotPathInput(BaseModel):
+    id: Optional[str] = None
+    name: Optional[str] = None
+    label: Optional[str] = None
+    color: Optional[str] = None
+    muted: bool = False
+    solo: bool = False
+    dry_wet_mix: float = 100.0
+    order_index: Optional[int] = None
+    snapshot_chain_id: Optional[int] = None
+    runtime_chain_id: Optional[int] = None
+    plugins: list[SnapshotPluginInput] = Field(default_factory=list)
+    loop_insertions: list[SnapshotLoopInsertionInput] = Field(default_factory=list)
+    effects_loops: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SnapshotIOBindingsInput(BaseModel):
+    input_device: Optional[str] = None
+    output_device: Optional[str] = None
+
+
+class SnapshotControlsInput(BaseModel):
+    midi_map: list[dict[str, Any]] = Field(default_factory=list)
+    automation_lanes: list[dict[str, Any]] = Field(default_factory=list)
+    expression_mappings: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class SnapshotCreateRequest(BaseModel):
     name: str
     description: str = ""
     tags: list[str] = Field(default_factory=list)
     program_number: Optional[int] = None
+    derived_from_snapshot_id: Optional[int] = None
     input_device: Optional[str] = None
     output_device: Optional[str] = None
+    io_bindings: Optional[SnapshotIOBindingsInput] = None
+    controls: Optional[SnapshotControlsInput] = None
+    paths: Optional[list[SnapshotPathInput]] = None
     channels: list[SnapshotChannelInput] = Field(default_factory=list)
     chains: list[SnapshotChainInput] = Field(default_factory=list)
     routing: SnapshotRoutingInput = Field(default_factory=SnapshotRoutingInput)
@@ -94,8 +126,12 @@ class SnapshotUpdateRequest(BaseModel):
     description: Optional[str] = None
     tags: Optional[list[str]] = None
     program_number: Optional[int] = None
+    derived_from_snapshot_id: Optional[int] = None
     input_device: Optional[str] = None
     output_device: Optional[str] = None
+    io_bindings: Optional[SnapshotIOBindingsInput] = None
+    controls: Optional[SnapshotControlsInput] = None
+    paths: Optional[list[SnapshotPathInput]] = None
     display_order: Optional[int] = None
     is_favorite: Optional[bool] = None
     channels: Optional[list[SnapshotChannelInput]] = None
@@ -161,13 +197,53 @@ class CommunityRateRequest(BaseModel):
     rating: int
 
 
+class SaveAsNewRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 def _detail_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
     if request.snapshot_data is not None:
         return request.snapshot_data
 
     if isinstance(request, SnapshotUpdateRequest):
-        if request.channels is None and request.chains is None and request.routing is None and request.midi_map is None:
+        if request.paths is None and request.channels is None and request.chains is None and request.routing is None and request.midi_map is None:
             return UNSET
+
+    if request.paths:
+        channels: list[dict[str, Any]] = []
+        chains: list[dict[str, Any]] = []
+        for index, path in enumerate(request.paths):
+            path_id = path.id or f"path-{index}"
+            synthetic_chain_id = path.snapshot_chain_id or index + 1
+            chains.append(
+                {
+                    "id": synthetic_chain_id,
+                    "name": path.name or path.label or f"Path {index + 1}",
+                    "plugins": [item.model_dump(exclude_none=True) for item in path.plugins],
+                    "loop_insertions": [item.model_dump(exclude_none=True) for item in path.loop_insertions],
+                    "effects_loops": [dict(item) for item in path.effects_loops],
+                }
+            )
+            channels.append(
+                {
+                    "channel_key": path_id,
+                    "label": path.label or path.name or f"Path {index + 1}",
+                    "color": path.color or "#2563eb",
+                    "muted": path.muted,
+                    "solo": path.solo,
+                    "dry_wet_mix": path.dry_wet_mix,
+                    "chain_id": synthetic_chain_id,
+                }
+            )
+        routing_payload = request.routing.model_dump(exclude_none=True) if request.routing is not None else {}
+        midi_map = request.controls.midi_map if request.controls is not None else list(request.midi_map or [])
+        return {
+            "channels": channels,
+            "chains": chains,
+            "routing": routing_payload,
+            "midi_map": [dict(entry) for entry in midi_map],
+        }
 
     return {
         "channels": [item.model_dump(exclude_none=True) for item in (request.channels or [])],
@@ -175,6 +251,22 @@ def _detail_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdate
         "routing": request.routing.model_dump(exclude_none=True) if request.routing is not None else {},
         "midi_map": list(request.midi_map or []),
     }
+
+
+def _resolve_input_device(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
+    return request.io_bindings.input_device if request.io_bindings is not None else request.input_device
+
+
+def _resolve_output_device(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
+    return request.io_bindings.output_device if request.io_bindings is not None else request.output_device
+
+
+def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
+    if isinstance(request, SnapshotUpdateRequest) and request.controls is None:
+        return UNSET
+    if request.controls is None:
+        return None
+    return request.controls.model_dump(exclude_none=True)
 
 
 def _raise_not_found(entity: str) -> None:
@@ -203,6 +295,22 @@ async def list_snapshots() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.get("/api/snapshots/live")
+async def get_live_snapshot() -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.get_live_snapshot()
+            if snapshot is None:
+                _raise_not_found("Live snapshot")
+            return snapshot
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting live snapshot: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/api/snapshots/{snapshot_id}")
 @router.get("/api/flow-snapshots/{snapshot_id}")
 async def get_snapshot(snapshot_id: int) -> dict[str, Any]:
@@ -220,6 +328,25 @@ async def get_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.post("/api/snapshots/{snapshot_id}/draft")
+async def open_snapshot_draft(snapshot_id: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.get_snapshot(snapshot_id)
+            if snapshot is None:
+                _raise_not_found("Snapshot")
+            return {
+                "status": "success",
+                "snapshot": snapshot,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error opening draft for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.post("/api/snapshots")
 @router.post("/api/flow-snapshots")
 async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
@@ -231,8 +358,10 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
                 description=request.description,
                 tags=request.tags,
                 program_number=request.program_number,
-                input_device=request.input_device,
-                output_device=request.output_device,
+                derived_from_snapshot_id=request.derived_from_snapshot_id,
+                input_device=_resolve_input_device(request),
+                output_device=_resolve_output_device(request),
+                controls_payload=_controls_payload_from_request(request),
                 detail_payload=_detail_payload_from_request(request),
             )
             return {
@@ -262,8 +391,10 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 description=request.description if "description" in provided else UNSET,
                 tags=request.tags if "tags" in provided else UNSET,
                 program_number=request.program_number if "program_number" in provided else UNSET,
-                input_device=request.input_device if "input_device" in provided else UNSET,
-                output_device=request.output_device if "output_device" in provided else UNSET,
+                derived_from_snapshot_id=request.derived_from_snapshot_id if "derived_from_snapshot_id" in provided else UNSET,
+                input_device=_resolve_input_device(request) if "input_device" in provided or "io_bindings" in provided else UNSET,
+                output_device=_resolve_output_device(request) if "output_device" in provided or "io_bindings" in provided else UNSET,
+                controls_payload=_controls_payload_from_request(request) if "controls" in provided else UNSET,
                 is_favorite=request.is_favorite if "is_favorite" in provided else UNSET,
                 display_order=request.display_order if "display_order" in provided else UNSET,
                 detail_payload=detail_payload,
@@ -355,7 +486,33 @@ async def duplicate_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.post("/api/snapshots/{snapshot_id}/save-as-new")
+async def save_snapshot_as_new(snapshot_id: int, request: SaveAsNewRequest) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.save_snapshot_as_new(
+                snapshot_id,
+                name=request.name,
+                description=request.description,
+            )
+            if snapshot is None:
+                _raise_not_found("Snapshot")
+            return {
+                "status": "success",
+                "snapshot_id": snapshot["id"],
+                "message": f"Created snapshot: {snapshot['name']}",
+                "snapshot": snapshot,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error saving snapshot %s as new: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.post("/api/flow-snapshots/{snapshot_id}/program")
+@router.post("/api/snapshots/{snapshot_id}/program")
 async def set_program_number_compat(snapshot_id: int, request: ProgramNumberRequest) -> dict[str, Any]:
     try:
         async with get_session() as session:

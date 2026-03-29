@@ -87,6 +87,23 @@ describe('snapshotEditorState', () => {
           chain_id: 44,
         },
       ],
+      paths: [
+        {
+          id: 'channel-a',
+          name: 'Primary Path',
+          label: 'A',
+          color: '#2563eb',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          order_index: 0,
+          snapshot_chain_id: 44,
+          runtime_chain_id: null,
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
+        },
+      ],
       chains: [
         {
           id: 44,
@@ -106,6 +123,25 @@ describe('snapshotEditorState', () => {
         series_order: ['channel-a'],
       },
       midi_map: [{ action: 'load_snapshot', program_number: 11 }],
+      io_bindings: {
+        input_device: null,
+        output_device: null,
+        remap_required: false,
+      },
+      controls: {
+        midi_map: [{ action: 'load_snapshot', program_number: 11 }],
+        automation_lanes: [],
+        expression_mappings: [],
+      },
+      assets: [],
+      live_state: {
+        is_live: false,
+        paths: [],
+        runtime_chains: [],
+      },
+      lineage: {
+        derived_from_snapshot_id: null,
+      },
       active_channel_index: 0,
       channel_count: 1,
       chain_count: 1,

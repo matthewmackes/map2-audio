@@ -3,10 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockPushToast = jest.fn()
-const mockFlowSnapshotsList = jest.fn()
+const mockSnapshotsList = jest.fn()
 const mockSnapshotsCreate = jest.fn()
-const mockSnapshotsAddChain = jest.fn()
-const mockSnapshotsUpdateChannel = jest.fn()
 const mockSnapshotsActivate = jest.fn()
 const mockGetDevices = jest.fn()
 
@@ -15,16 +13,6 @@ jest.mock('../Toasts', () => ({
 }))
 
 jest.mock('../../../map2/api', () => ({
-  flowSnapshotsApi: {
-    list: (...args: unknown[]) => mockFlowSnapshotsList(...args),
-    get: jest.fn(),
-    load: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    duplicate: jest.fn(),
-    setProgram: jest.fn(),
-    reorder: jest.fn(),
-  },
   pipewireApi: {
     getDevices: (...args: unknown[]) => mockGetDevices(...args),
   },
@@ -36,9 +24,8 @@ jest.mock('../../../map2/clients/snapshots', () => {
     ...actual,
     snapshotsApi: {
       ...actual.snapshotsApi,
+      list: (...args: unknown[]) => mockSnapshotsList(...args),
       create: (...args: unknown[]) => mockSnapshotsCreate(...args),
-      addChain: (...args: unknown[]) => mockSnapshotsAddChain(...args),
-      updateChannel: (...args: unknown[]) => mockSnapshotsUpdateChannel(...args),
       activate: (...args: unknown[]) => mockSnapshotsActivate(...args),
     },
   }
@@ -49,13 +36,6 @@ jest.mock('./SnapshotImportDialog', () => ({
 }))
 
 const { SnapshotModalContent } = require('./SnapshotModalContent') as typeof import('./SnapshotModalContent')
-
-function formatDateStamp(date: Date): string {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-  return `${year}${month}${day}`
-}
 
 function buildQueryClient() {
   return new QueryClient({
@@ -124,7 +104,7 @@ describe('SnapshotModalContent', () => {
       })),
     })
 
-    mockFlowSnapshotsList.mockResolvedValue({
+    mockSnapshotsList.mockResolvedValue({
       snapshots: [
         {
           id: 5,
@@ -132,12 +112,20 @@ describe('SnapshotModalContent', () => {
           description: '',
           tags: [],
           program_number: null,
+          input_device: null,
+          output_device: null,
           is_active: false,
           is_favorite: false,
           display_order: 0,
-          flow_slots: [],
+          channels: [],
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
         },
       ],
       count: 1,
@@ -166,35 +154,13 @@ describe('SnapshotModalContent', () => {
     expect(screen.getAllByRole('button', { name: 'Create New' }).length).toBeGreaterThan(0)
   })
 
-  it('creates, provisions, assigns, and activates a new snapshot from the wizard', async () => {
-    const expectedChainName = `Fresh Snapshot-${formatDateStamp(new Date())}`
+  it('creates and activates a new snapshot from the wizard using snapshot paths', async () => {
     mockSnapshotsCreate.mockResolvedValue({
       status: 'success',
       snapshot_id: 101,
       message: 'Created snapshot',
       snapshot: { id: 101 },
     })
-    mockSnapshotsAddChain
-      .mockResolvedValueOnce({
-        id: 101,
-        channels: [
-          { id: 11, channel_key: 'ch_a' },
-          { id: 12, channel_key: 'ch_b' },
-        ],
-        chains: [{ id: 201, name: expectedChainName }],
-      })
-      .mockResolvedValueOnce({
-        id: 101,
-        channels: [
-          { id: 11, channel_key: 'ch_a' },
-          { id: 12, channel_key: 'ch_b' },
-        ],
-        chains: [
-          { id: 201, name: expectedChainName },
-          { id: 202, name: expectedChainName },
-        ],
-      })
-    mockSnapshotsUpdateChannel.mockResolvedValue({ id: 101 })
     mockSnapshotsActivate.mockResolvedValue({
       status: 'success',
       snapshot_id: 101,
@@ -215,8 +181,8 @@ describe('SnapshotModalContent', () => {
           { id: 12, snapshot_id: 101, channel_key: 'ch_b', label: 'B', color: '#22c55e', muted: false, solo: false, dry_wet_mix: 100, order_index: 1, chain_id: 202 },
         ],
         chains: [
-          { id: 201, name: expectedChainName, plugins: [], loop_insertions: [], effects_loops: [] },
-          { id: 202, name: expectedChainName, plugins: [], loop_insertions: [], effects_loops: [] },
+          { id: 201, name: 'Fresh Snapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
+          { id: 202, name: 'Fresh Snapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
         ],
         routing: {
           mode: 'series',
@@ -228,6 +194,61 @@ describe('SnapshotModalContent', () => {
           series_order: ['ch_a', 'ch_b'],
         },
         midi_map: [],
+        paths: [
+          {
+            id: 'ch_a',
+            name: 'Fresh Snapshot Path A',
+            label: 'A',
+            color: '#2563eb',
+            muted: false,
+            solo: false,
+            dry_wet_mix: 100,
+            order_index: 0,
+            snapshot_chain_id: 201,
+            runtime_chain_id: 301,
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+          },
+          {
+            id: 'ch_b',
+            name: 'Fresh Snapshot Path B',
+            label: 'B',
+            color: '#22c55e',
+            muted: false,
+            solo: false,
+            dry_wet_mix: 100,
+            order_index: 1,
+            snapshot_chain_id: 202,
+            runtime_chain_id: 302,
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+          },
+        ],
+        io_bindings: {
+          input_device: 'Input Alpha',
+          output_device: 'Output Beta',
+          remap_required: false,
+        },
+        controls: {
+          midi_map: [],
+          automation_lanes: [],
+          expression_mappings: [],
+        },
+        assets: [],
+        live_state: {
+          is_live: true,
+          activated_at: '2026-03-29T12:00:00Z',
+          paths: [
+            { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+            { path_id: 'ch_b', snapshot_chain_id: 202, runtime_chain_id: 302 },
+          ],
+          runtime_chains: [],
+        },
+        lineage: {
+          derived_from_snapshot_id: null,
+        },
         active_channel_index: 0,
         channel_count: 2,
         chain_count: 2,
@@ -257,20 +278,28 @@ describe('SnapshotModalContent', () => {
 
     expect(mockSnapshotsCreate).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Fresh Snapshot',
-      input_device: 'Input Alpha',
-      output_device: 'Output Beta',
+      io_bindings: expect.objectContaining({
+        input_device: 'Input Alpha',
+        output_device: 'Output Beta',
+      }),
+      paths: [
+        expect.objectContaining({
+          id: 'ch_a',
+          label: 'A',
+          snapshot_chain_id: 1,
+        }),
+        expect.objectContaining({
+          id: 'ch_b',
+          label: 'B',
+          snapshot_chain_id: 2,
+        }),
+      ],
       routing: expect.objectContaining({
         mode: 'series',
         active_channel_key: 'ch_a',
       }),
     }))
-    expect(mockSnapshotsAddChain).toHaveBeenNthCalledWith(1, 101, expectedChainName)
-    expect(mockSnapshotsAddChain).toHaveBeenNthCalledWith(2, 101, expectedChainName)
-    expect(mockSnapshotsUpdateChannel).toHaveBeenNthCalledWith(1, 101, 11, { chain_id: 201 })
-    expect(mockSnapshotsUpdateChannel).toHaveBeenNthCalledWith(2, 101, 12, { chain_id: 202 })
-    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockSnapshotsAddChain.mock.invocationCallOrder[0])
-    expect(mockSnapshotsAddChain.mock.invocationCallOrder[1]).toBeLessThan(mockSnapshotsUpdateChannel.mock.invocationCallOrder[0])
-    expect(mockSnapshotsUpdateChannel.mock.invocationCallOrder[1]).toBeLessThan(mockSnapshotsActivate.mock.invocationCallOrder[0])
+    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockSnapshotsActivate.mock.invocationCallOrder[0])
 
     await waitFor(() => expect(applySnapshotData).toHaveBeenCalled())
     expect(onRecall).toHaveBeenCalled()

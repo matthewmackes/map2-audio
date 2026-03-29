@@ -9,9 +9,12 @@ import type {
   FlowSlotSummary,
   RoutingConfigSnapshot,
   SnapshotChannel,
+  SnapshotControls,
   SnapshotDeployment,
   SnapshotDetail,
   SnapshotExport,
+  SnapshotIOBindings,
+  SnapshotPath,
   SnapshotLoadedEvent,
   SnapshotMidiMapEntry,
   SnapshotPlugin,
@@ -30,8 +33,12 @@ export interface SnapshotCreateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  derived_from_snapshot_id?: number | null
   input_device?: string | null
   output_device?: string | null
+  io_bindings?: SnapshotIOBindings
+  controls?: SnapshotControls
+  paths?: SnapshotPath[]
   channels?: SnapshotChannel[]
   chains?: SnapshotDetail['chains']
   routing?: SnapshotRouting
@@ -43,8 +50,12 @@ export interface SnapshotUpdateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  derived_from_snapshot_id?: number | null
   input_device?: string | null
   output_device?: string | null
+  io_bindings?: SnapshotIOBindings
+  controls?: SnapshotControls
+  paths?: SnapshotPath[]
   display_order?: number
   is_favorite?: boolean
   channels?: SnapshotChannel[]
@@ -80,6 +91,11 @@ export interface SnapshotCreateResponse {
 export interface SnapshotUpdateResponse {
   status: string
   message: string
+  snapshot: SnapshotDetail
+}
+
+export interface SnapshotDraftResponse {
+  status: string
   snapshot: SnapshotDetail
 }
 
@@ -146,35 +162,73 @@ function fromLegacyRoutingMode(mode: RoutingConfigSnapshot['mode']): SnapshotRou
   return mode === 'parameter_morph' || mode === 'ab_switch' ? 'morph' : mode
 }
 
+function normalizeSnapshotPlugin(plugin: SnapshotPlugin): SnapshotPlugin {
+  return {
+    uri: plugin.uri,
+    position: plugin.position,
+    bypass: plugin.bypass,
+    parameters: { ...plugin.parameters },
+    loader_state: plugin.loader_state,
+    name: plugin.name,
+    is_placeholder: plugin.is_placeholder,
+  }
+}
+
 export function snapshotDetailToFlowSnapshotData(detail: SnapshotDetail): FlowSnapshotData {
+  const detailPaths = Array.isArray(detail.paths) ? detail.paths : []
+  const paths = detailPaths.length > 0
+    ? detailPaths
+    : detail.channels.map((channel, index) => {
+      const chain = detail.chains.find((candidate) => candidate.id === channel.chain_id)
+      return {
+        id: channel.channel_key,
+        name: chain?.name ?? `Path ${index + 1}`,
+        label: channel.label,
+        color: channel.color,
+        muted: channel.muted,
+        solo: channel.solo,
+        dry_wet_mix: channel.dry_wet_mix,
+        order_index: channel.order_index ?? index,
+        snapshot_chain_id: channel.chain_id ?? null,
+        runtime_chain_id: null,
+        plugins: chain?.plugins ?? [],
+        loop_insertions: chain?.loop_insertions ?? [],
+        effects_loops: chain?.effects_loops ?? [],
+      }
+    })
+  const livePathById = new Map(
+    (detail.live_state?.paths ?? []).map((path) => [path.path_id, path] as const),
+  )
   const chains = Object.fromEntries(
-    detail.chains.map((chain, index) => [
-      String(chain.id ?? index + 1),
-      {
-        name: chain.name,
-        plugins: chain.plugins.map((plugin): SnapshotPlugin => ({
-          uri: plugin.uri,
-          position: plugin.position,
-          bypass: plugin.bypass,
-          parameters: { ...plugin.parameters },
-          loader_state: plugin.loader_state,
-          name: plugin.name,
-          is_placeholder: plugin.is_placeholder,
-        })),
-      },
-    ]),
+    paths.flatMap((path) => {
+      const livePath = livePathById.get(path.id)
+      const editorChainId = livePath?.runtime_chain_id ?? path.runtime_chain_id ?? path.snapshot_chain_id
+      if (editorChainId === null) {
+        return []
+      }
+      return [[
+        String(editorChainId),
+        {
+          name: path.name,
+          plugins: path.plugins.map(normalizeSnapshotPlugin),
+        },
+      ]]
+    }),
   )
 
   return {
-    flowSlots: detail.channels.map((channel) => ({
-      id: channel.channel_key,
-      chainId: channel.chain_id ?? null,
-      label: channel.label,
-      color: channel.color,
-      muted: channel.muted,
-      solo: channel.solo,
-      dryWetMix: channel.dry_wet_mix,
-    })),
+    flowSlots: paths.map((path) => {
+      const livePath = livePathById.get(path.id)
+      return {
+        id: path.id,
+        chainId: livePath?.runtime_chain_id ?? path.runtime_chain_id ?? path.snapshot_chain_id,
+        label: path.label,
+        color: path.color,
+        muted: path.muted,
+        solo: path.solo,
+        dryWetMix: path.dry_wet_mix,
+      }
+    }),
     routing: {
       mode: toLegacyRoutingMode(detail.routing.mode),
       activeSlotId: detail.routing.active_channel_key,
@@ -191,12 +245,15 @@ export function snapshotDetailToFlowSnapshotData(detail: SnapshotDetail): FlowSn
 
 export function flowSnapshotDataToSnapshotPayload(
   snapshotData: FlowSnapshotData,
-): Pick<SnapshotDetail, 'channels' | 'chains' | 'routing' | 'midi_map'> {
+): Pick<SnapshotDetail, 'paths' | 'channels' | 'chains' | 'routing' | 'midi_map' | 'controls'> {
   const chainEntries = Object.entries(snapshotData.chains ?? {})
-  const chains = chainEntries.map(([chainKey, chain], index) => {
-    const numericChainId = Number.parseInt(chainKey, 10)
+  const snapshotChainIdBySourceKey = new Map<string, number>(
+    chainEntries.map(([chainKey], index) => [chainKey, index + 1] as const),
+  )
+  const chains = chainEntries.map(([chainKey, chain]) => {
+    const snapshotChainId = snapshotChainIdBySourceKey.get(chainKey)
     return {
-      id: Number.isFinite(numericChainId) ? numericChainId : index + 1,
+      id: snapshotChainId ?? null,
       name: chain.name,
       plugins: (chain.plugins ?? []).map((plugin) => ({
         uri: plugin.uri,
@@ -211,8 +268,36 @@ export function flowSnapshotDataToSnapshotPayload(
       effects_loops: [],
     }
   })
+  const paths = (snapshotData.flowSlots ?? []).map((channel, index) => {
+    const sourceChainKey = channel.chainId !== null ? String(channel.chainId) : null
+    const chain = sourceChainKey ? snapshotData.chains?.[sourceChainKey] : undefined
+    return {
+      id: channel.id,
+      name: chain?.name ?? `Path ${channel.label}`,
+      label: channel.label,
+      color: channel.color,
+      muted: channel.muted,
+      solo: channel.solo,
+      dry_wet_mix: channel.dryWetMix,
+      order_index: index,
+      snapshot_chain_id: sourceChainKey ? (snapshotChainIdBySourceKey.get(sourceChainKey) ?? null) : null,
+      runtime_chain_id: null,
+      plugins: (chain?.plugins ?? []).map((plugin) => ({
+        uri: plugin.uri,
+        name: undefined,
+        position: plugin.position,
+        bypass: plugin.bypass,
+        parameters: { ...plugin.parameters },
+        loader_state: plugin.loader_state,
+        is_placeholder: false,
+      })),
+      loop_insertions: [],
+      effects_loops: [],
+    }
+  })
 
   return {
+    paths,
     channels: (snapshotData.flowSlots ?? []).map((channel, index) => ({
       channel_key: channel.id,
       label: channel.label,
@@ -221,7 +306,9 @@ export function flowSnapshotDataToSnapshotPayload(
       solo: channel.solo,
       dry_wet_mix: channel.dryWetMix,
       order_index: index,
-      chain_id: channel.chainId ?? null,
+      chain_id: channel.chainId !== null
+        ? (snapshotChainIdBySourceKey.get(String(channel.chainId)) ?? null)
+        : null,
     })),
     chains,
     routing: {
@@ -234,6 +321,11 @@ export function flowSnapshotDataToSnapshotPayload(
       series_order: [...snapshotData.routing.seriesOrder],
     },
     midi_map: [],
+    controls: {
+      midi_map: [],
+      automation_lanes: [],
+      expression_mappings: [],
+    },
   }
 }
 
@@ -291,6 +383,14 @@ export const snapshotsApi = {
   get: (snapshotId: number) =>
     fetchJson<SnapshotDetail>(`${API_BASE}/snapshots/${snapshotId}`, { cache: 'no-store' }),
 
+  getLive: () =>
+    fetchJson<SnapshotDetail>(`${API_BASE}/snapshots/live`, { cache: 'no-store' }),
+
+  openDraft: (snapshotId: number) =>
+    fetchJson<SnapshotDraftResponse>(`${API_BASE}/snapshots/${snapshotId}/draft`, {
+      method: 'POST',
+    }),
+
   create: (request: SnapshotCreateRequest) =>
     fetchJson<SnapshotCreateResponse>(`${API_BASE}/snapshots`, {
       method: 'POST',
@@ -300,6 +400,12 @@ export const snapshotsApi = {
   update: (snapshotId: number, request: SnapshotUpdateRequest) =>
     fetchJson<SnapshotUpdateResponse>(`${API_BASE}/snapshots/${snapshotId}`, {
       method: 'PATCH',
+      body: JSON.stringify(request),
+    }),
+
+  saveAsNew: (snapshotId: number, request: { name?: string; description?: string } = {}) =>
+    fetchJson<SnapshotCreateResponse>(`${API_BASE}/snapshots/${snapshotId}/save-as-new`, {
+      method: 'POST',
       body: JSON.stringify(request),
     }),
 
@@ -345,7 +451,7 @@ export const snapshotsApi = {
 
   setProgram: (snapshotId: number, programNumber: number | null) =>
     fetchJson<{ status: string; snapshot_id: number; program_number: number | null }>(
-      `${API_BASE}/flow-snapshots/${snapshotId}/program`,
+      `${API_BASE}/snapshots/${snapshotId}/program`,
       {
         method: 'POST',
         body: JSON.stringify({ program_number: programNumber }),

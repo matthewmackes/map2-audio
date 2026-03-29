@@ -348,11 +348,24 @@ export function normalizeSnapshotEditorStateSources(
 }
 
 export function snapshotDetailToEditorState(
-  snapshot: Pick<SnapshotDetail, 'channels' | 'routing' | 'active_channel_index'>,
+  snapshot: Pick<SnapshotDetail, 'channels' | 'paths' | 'routing' | 'active_channel_index'>,
   options: SnapshotEditorNormalizationOptions,
 ): SnapshotEditorHydratedState {
+  const snapshotPaths = Array.isArray(snapshot.paths) ? snapshot.paths : []
+  const channelsSource = snapshotPaths.length > 0
+    ? snapshotPaths.map((path) => ({
+      channel_key: path.id,
+      chain_id: path.runtime_chain_id ?? path.snapshot_chain_id,
+      label: path.label,
+      color: path.color,
+      muted: path.muted,
+      solo: path.solo,
+      dry_wet_mix: path.dry_wet_mix,
+      order_index: path.order_index,
+    }))
+    : snapshot.channels
   return normalizeSnapshotEditorStateSources(
-    snapshot.channels,
+    channelsSource,
     snapshot.routing,
     snapshot.active_channel_index,
     options,
@@ -376,23 +389,109 @@ export function snapshotEditorStateToRouting(
 export function snapshotEditorStateToDetailPayload(
   state: SnapshotEditorHydratedState,
   base?: Partial<SnapshotDetail>,
-): Pick<SnapshotDetail, 'channels' | 'chains' | 'routing' | 'midi_map'> {
+): Pick<SnapshotDetail, 'paths' | 'channels' | 'chains' | 'routing' | 'midi_map' | 'controls'> {
+  const baseChains = base?.chains ?? []
+  const basePathsById = new Map((base?.paths ?? []).map((path) => [path.id, path] as const))
+  const snapshotChainIdByRuntimeId = new Map<number, number>()
+  let nextSyntheticSnapshotChainId = Math.max(
+    0,
+    ...baseChains.map((chain) => chain.id ?? 0),
+    ...(base?.paths ?? []).map((path) => path.snapshot_chain_id ?? 0),
+  )
+
+  state.channels.forEach((channel) => {
+    if (channel.chainId === null) {
+      return
+    }
+    const basePath = basePathsById.get(channel.id)
+    const preservedSnapshotChainId = basePath?.runtime_chain_id === channel.chainId
+      ? basePath.snapshot_chain_id
+      : (
+        basePath?.runtime_chain_id === null && basePath?.snapshot_chain_id === channel.chainId
+          ? basePath.snapshot_chain_id
+          : null
+      )
+    if (preservedSnapshotChainId !== null && preservedSnapshotChainId !== undefined) {
+      snapshotChainIdByRuntimeId.set(channel.chainId, preservedSnapshotChainId)
+      nextSyntheticSnapshotChainId = Math.max(nextSyntheticSnapshotChainId, preservedSnapshotChainId)
+      return
+    }
+    if (!snapshotChainIdByRuntimeId.has(channel.chainId)) {
+      nextSyntheticSnapshotChainId += 1
+      snapshotChainIdByRuntimeId.set(channel.chainId, nextSyntheticSnapshotChainId)
+    }
+  })
+
+  const chains = baseChains.map((chain) => {
+    const sourceRuntimeChainId = state.channels.find((channel) => (
+      channel.chainId !== null && (
+        chain.id === channel.chainId
+        || basePathsById.get(channel.id)?.snapshot_chain_id === chain.id
+      )
+    ))?.chainId ?? null
+    const nextId = sourceRuntimeChainId !== null
+      ? (snapshotChainIdByRuntimeId.get(sourceRuntimeChainId) ?? null)
+      : chain.id ?? null
+
+    return {
+      ...chain,
+      id: nextId,
+    }
+  })
+
+  const channels = state.channels.map((channel, index) => ({
+    id: base?.channels?.[index]?.id ?? null,
+    snapshot_id: base?.id ?? null,
+    channel_key: channel.id,
+    label: channel.label,
+    color: channel.color,
+    muted: channel.muted,
+    solo: channel.solo,
+    dry_wet_mix: channel.dryWetMix,
+    order_index: index,
+    chain_id: channel.chainId !== null
+      ? (snapshotChainIdByRuntimeId.get(channel.chainId) ?? null)
+      : null,
+  }))
+
   return {
-    channels: state.channels.map((channel, index) => ({
-      id: base?.channels?.[index]?.id ?? null,
-      snapshot_id: base?.id ?? null,
-      channel_key: channel.id,
-      label: channel.label,
-      color: channel.color,
-      muted: channel.muted,
-      solo: channel.solo,
-      dry_wet_mix: channel.dryWetMix,
-      order_index: index,
-      chain_id: channel.chainId,
-    })),
-    chains: base?.chains ?? [],
+    paths: state.channels.map((channel, index) => {
+      const basePath = basePathsById.get(channel.id)
+      const snapshotChainId = channel.chainId !== null
+        ? (snapshotChainIdByRuntimeId.get(channel.chainId) ?? null)
+        : null
+      const sourceChain = channel.chainId !== null
+        ? baseChains.find((chain) => (
+          chain.id === channel.chainId
+          || basePath?.snapshot_chain_id === chain.id
+        ))
+        : undefined
+
+      return {
+        id: channel.id,
+        name: sourceChain?.name ?? basePath?.name ?? `Path ${channel.label}`,
+        label: channel.label,
+        color: channel.color,
+        muted: channel.muted,
+        solo: channel.solo,
+        dry_wet_mix: channel.dryWetMix,
+        order_index: index,
+        snapshot_chain_id: snapshotChainId,
+        runtime_chain_id: null,
+        plugins: sourceChain?.plugins ?? [],
+        loop_insertions: sourceChain?.loop_insertions ?? [],
+        effects_loops: sourceChain?.effects_loops ?? [],
+      }
+    }),
+    channels,
+    chains,
     routing: snapshotEditorStateToRouting(state.routing),
     midi_map: base?.midi_map ?? [],
+    controls: base?.controls ?? {
+      midi_map: base?.midi_map ?? [],
+      automation_lanes: [],
+      expression_mappings: [],
+    },
   }
 }
 
@@ -414,8 +513,24 @@ export function snapshotEditorStateToDetail(
     display_order: base?.display_order ?? 0,
     channels: payload.channels,
     chains: payload.chains,
+    paths: payload.paths,
     routing: payload.routing,
     midi_map: payload.midi_map,
+    io_bindings: base?.io_bindings ?? {
+      input_device: base?.input_device ?? null,
+      output_device: base?.output_device ?? null,
+      remap_required: false,
+    },
+    controls: payload.controls,
+    assets: base?.assets ?? [],
+    live_state: base?.live_state ?? {
+      is_live: false,
+      paths: [],
+      runtime_chains: [],
+    },
+    lineage: base?.lineage ?? {
+      derived_from_snapshot_id: null,
+    },
     active_channel_index: state.activeChannelIndex,
     channel_count: payload.channels.length,
     chain_count: payload.chains.length,

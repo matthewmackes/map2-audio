@@ -265,13 +265,17 @@ def _ensure_chain_plugin_loader_state_schema_sync() -> None:
 
 
 def _ensure_snapshot_device_schema_sync() -> None:
-    """Apply additive schema upgrades for snapshot-scoped device metadata."""
+    """Apply additive schema upgrades for snapshot-scoped metadata and runtime state."""
     if _engine is None or _engine.dialect.name != "sqlite":
         return
 
     with _engine.begin() as conn:
         _add_sqlite_column_if_missing(conn, "snapshots", "input_device", "VARCHAR(255)")
         _add_sqlite_column_if_missing(conn, "snapshots", "output_device", "VARCHAR(255)")
+        _add_sqlite_column_if_missing(conn, "snapshots", "derived_from_snapshot_id", "INTEGER")
+        _add_sqlite_column_if_missing(conn, "snapshots", "controls_payload", "JSON")
+        _add_sqlite_column_if_missing(conn, "snapshots", "live_state_payload", "JSON")
+        _add_sqlite_column_if_missing(conn, "snapshots", "activated_at", "DATETIME")
 
 
 async def _ensure_special_settings_schema_async(conn) -> None:
@@ -371,12 +375,16 @@ async def _ensure_chain_plugin_loader_state_schema_async(conn) -> None:
 
 
 async def _ensure_snapshot_device_schema_async(conn) -> None:
-    """Apply additive async schema upgrades for snapshot-scoped device metadata."""
+    """Apply additive async schema upgrades for snapshot-scoped metadata and runtime state."""
     if conn.dialect.name != "sqlite":
         return
 
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "input_device", "VARCHAR(255)")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_device", "VARCHAR(255)")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "derived_from_snapshot_id", "INTEGER")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "controls_payload", "JSON")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "live_state_payload", "JSON")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "activated_at", "DATETIME")
 
 
 async def _ensure_tables_created() -> None:
@@ -792,8 +800,12 @@ class Snapshot(Base):
     is_active = Column(Boolean, default=False)
     display_order = Column(Integer, default=0)
     is_favorite = Column(Boolean, default=False)
+    derived_from_snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="SET NULL"), nullable=True)
     input_device = Column(String(255), nullable=True)
     output_device = Column(String(255), nullable=True)
+    controls_payload = Column(JSON, default=dict)
+    live_state_payload = Column(JSON, default=dict)
+    activated_at = Column(DateTime, nullable=True)
 
     community_uuid = Column(String(64), nullable=True, unique=True, index=True)
     community_shared = Column(Boolean, default=False)
@@ -834,6 +846,7 @@ class Snapshot(Base):
         back_populates="snapshot",
         cascade="all, delete-orphan",
     )
+    derived_from_snapshot = relationship("Snapshot", remote_side=[id], uselist=False)
 
     __table_args__ = (
         Index("idx_snapshots_active_order", "is_active", "display_order"),
