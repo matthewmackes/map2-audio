@@ -27,9 +27,9 @@ export type { AudioConnectionEdgeData, AudioConnectionEdge as AudioConnectionEdg
 export type { SidechainConnectionEdgeData, SidechainConnectionEdge as SidechainConnectionEdgeType } from './edges/SidechainConnectionEdgeTypes';
 export { createSidechainConnectionEdge, isSidechainEdge } from './edges/SidechainConnectionEdgeTypes';
 
-// Flow Utilities
-export type { FlowCallbacks, ChainFlowData } from './utils/chainToFlow';
-export { chainToFlow, hasSavedPositions } from './utils/chainToFlow';
+// Graph Utilities
+export type { GraphCallbacks, FlowCallbacks, ChainGraphData, ChainFlowData } from './utils/chainToGraph';
+export { chainToGraph, chainToFlow, hasSavedPositions } from './utils/chainToGraph';
 export { flowToChainOrder, getPluginPosition, hasOrderChanged } from './utils/flowToChain';
 export { graphToChainOrder } from './utils/graphToChain';
 export { saveNodePositions, loadNodePositions, clearNodePositions } from './utils/positionStorage';
@@ -38,6 +38,7 @@ export { autoLayoutNodes, relayoutNodes, defaultLayoutConfig } from './layout/au
 // Hooks
 export { useChainFlow } from './hooks/useChainFlow';
 export { useChainGraph } from './hooks/useChainGraph';
+export { useFlowSync, useGraphSync } from './hooks/useGraphSync';
 export { useSidechainConnections } from './hooks/useSidechainConnections';
 export { usePluginMeters } from './hooks/usePluginMeters';
 export type { SidechainConnection as ChainBuilderSidechainConnection, SidechainAPI, PluginInfo } from './hooks/useSidechainConnections';

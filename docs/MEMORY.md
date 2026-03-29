@@ -11,12 +11,18 @@
 
 ## Frontend Snapshot Editor Surfaces
 
-- Page entry: `web/src/app/pages/SnapshotEditorPage.tsx`
+- Route entry: `web/src/app/pages/SnapshotEditorPage.tsx`
+- Page owner: `web/src/app/pages/SnapshotEditorPageContent.tsx`
 - Snapshot client: `web/src/map2/clients/snapshots.ts`
 - Snapshot websocket hook: `web/src/app/hooks/useSnapshots.ts`
 - Snapshot editor state: `web/src/app/components/SnapshotEditor/snapshotEditorState.ts`
 - Snapshot editor live-chain helpers: `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`
 - Snapshot editor comparison helpers: `web/src/app/components/SnapshotEditor/snapshotEditorComparison.ts`
+- Snapshot editor live-path helpers: `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts`
+- Snapshot chain management: `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`
+- Chain graph canvas owner: `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`
+- MPX1 signal-path owner: `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`
+- IntelFX signal-path owner: `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx`
 
 ## Vocabulary
 
@@ -34,7 +40,7 @@
 - Removed: `app/services/flow_orchestrator.py`
 - Removed legacy backend tests tied only to those route surfaces.
 
-## Remaining E-SNAP Follow-up
+## Compatibility Wrappers
 
-- The frontend checkpoint is now coherent and build-clean, but `JuceGrid*`, `ChainFlow*`, and `*Flow*` compatibility shims still remain in the tree.
-- Do not delete or rename those files blindly; retire them only after their remaining imports/tests/docs move to the canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` surfaces.
+- Legacy `JuceGrid*`, `ChainFlow*`, and `*Flow*` filenames that still exist in the tree are compatibility wrappers only.
+- Canonical ownership now lives under `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files; prefer those paths for all new imports and documentation.

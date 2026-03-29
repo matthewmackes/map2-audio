@@ -1345,6 +1345,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts`; `npm --prefix web run build`
 - **Lesson**: Vocabulary migrations that add compatibility shims are build-contract work, not just import churn. If a wrapper re-exports `default`, the source module must really export it, and new React hook APIs need to match the repo's actual build-time typings.
 
+**36. Canonical Vocabulary Migrations Must Promote The Canonical File Owner (MEDIUM - Mar 29, 2026)**
+- **Files**: `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`, `web/src/app/components/SnapshotEditor/snapshotEditorComparison.ts`, `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts`, `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`, `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`, `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx`
+- **Problem**: The repo had canonical snapshot-editor, chain-graph, and signal-path filenames, but the live implementation still lived behind legacy `JuceGrid*`, `ChainFlow*`, and `*Flow*` owners.
+- **Root Cause**: Earlier migrations added compatibility wrappers without flipping ownership, so new imports, docs, and future cleanup work kept drifting back toward the legacy filenames.
+- **Fix**: Move the implementation into the canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files first, then keep the legacy filenames only as thin re-export wrappers until outside callers are retired.
+- **Verification**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts web/src/app/pages/SnapshotEditorPage.test.tsx`; `npm --prefix web run build`
+- **Lesson**: In vocabulary migrations, the canonical filename must become the real owner. Compatibility wrappers are transitional and should never remain the source of truth.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1615,6 +1623,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-29] - E-SNAP Canonical Ownership Flip For SnapshotEditor, ChainGraph, And SignalPath
+- **Section**: Gotchas & Learned Fixes (#36), Update Log
+- **Change**: Documented that the real implementation for snapshot-editor, chain-graph, and device signal-path surfaces now lives under the canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files, with legacy filenames kept only as compatibility re-exports.
+- **Reason**: The final E-SNAP shim-retirement pass closed the remaining ownership gap after the earlier build-gate reconciliation, and future assistants need to start from the canonical files instead of reopening legacy wrappers.
+- **Impact**: Future work can target the actual owner modules directly, which reduces wrapper churn, keeps docs accurate, and makes follow-up shim deletion safer.
+- **Files**: `.github/copilot-instructions.md`, `docs/CLAUDE.md`, `docs/MEMORY.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`, `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`, `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx`
 
 ### [2026-03-29] - E-SNAP Snapshot-Editor Build-Gate Reconciliation
 - **Section**: Build & Test Commands, Gotchas & Learned Fixes (#35), Update Log

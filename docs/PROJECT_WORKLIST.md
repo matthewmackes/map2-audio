@@ -9730,7 +9730,7 @@ Last updated: 2026-03-29 12:08 EDT - Codex
 - Completion notes: Added `SnapshotEditorPage.test.tsx`, `snapshotEditorState.test.ts`, and `snapshotEditorLiveChains.test.ts`; focused snapshot-editor frontend suite passes.
 
 ID: T541
-Status: [>] In Progress
+Status: [✓] Done
 Title: [E-SNAP] Remove old models, routes, types, and components
 Description:
 - Goal / acceptance criteria: Remove from `app/database.py`: Chain, ChainPlugin, Preset, FlowSnapshot, FlowAssignment, FlowDeployment, FlowDeploymentHistory. Remove routes: chains.py, chains_ab_mode.py, flow_snapshots.py, snapshot_library.py, snapshots.py, cluster_flows.py, flow_failover.py — and remove them from `main.py` route_modules. Remove services: chain_service.py, chain_analyzer.py, flow_orchestrator.py. Remove frontend: old types from types.ts, clients/chains.ts, flow portions of clients/workflows.ts, hooks/useFlowSnapshots.ts, JuceGridPage.*, JuceGrid/ directory contents, old ChainFlowCanvas files, chainToABFlow.ts. Remove old tests: test_flow_snapshots_routes.py, test_snapshots_persistence.py, test_chain_service_runtime_mapping.py, test_chains_ab_mode_*.py, test_snapshot_library_route_registration.py, test_engine_snapshot_route_ownership.py. ~30+ files deleted/modified.
@@ -9740,7 +9740,7 @@ Description:
 - Required outputs: All old code removed, typecheck passes, build passes, all tests pass.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 11:05 EDT - Codex
+Last updated: 2026-03-29 12:20 EDT - Codex
 - Completion notes:
   - Removed the remaining legacy backend route modules `app/routes/flow_failover.py` and `app/routes/snapshots.py`, removed both from `app/main.py` route registration, and dropped the obsolete `/api/flow_failover` cluster-auth prefix from `app/middleware/api_auth.py`.
   - Replaced the last live backend dependency on `app/services/flow_orchestrator.py`: `app/services/cluster/failover_monitor.py` now uses `app/services/snapshot_deployment_service.py` plus snapshot deployment records instead of flow assignments/orchestrator state.
@@ -9748,10 +9748,10 @@ Last updated: 2026-03-29 11:05 EDT - Codex
   - Deleted superseded flow-orchestrator tests (`tests/test_cluster_flows_api.py`, `tests/test_flow_deployment.py`, `tests/test_flow_orchestrator.py`, `tests/test_flow_orchestrator_deploy_semantics.py`, `tests/test_flow_orchestrator_failover.py`, `tests/test_phase1_integration.py`) and added focused replacement coverage in `tests/test_snapshot_deployment_service.py`; updated snapshot failover/deploy smoke tests to hit `/api/cluster/snapshots/*`.
   - Licensing review: touched backend/test/doc/worklist files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md app web/src tests systemd scripts ReadMe-Make_New_Node.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - Validation: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/middleware/api_auth.py app/services/snapshot_deployment_service.py app/services/cluster/failover_monitor.py tests/test_snapshot_deployment_service.py tests/test_phase4_failover.py tests/test_phase5_endpoints.py` -> PASS; `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_snapshot_migration.py tests/test_snapshot_deployment_service.py tests/test_shared_route_prefix_audits.py tests/test_route_prefix_uniqueness_policy.py` -> PASS (`7 passed`).
-  - Remaining frontend follow-up: the final legacy filename retirement still requires deleting or moving compatibility-layer files such as `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, and `web/src/app/components/JuceGrid/JuceGridChainManagementCard.tsx` after their remaining imports/tests/docs move to the canonical snapshot-editor surfaces tracked in T544.
+  - Closed the remaining frontend ownership gap tracked in `T544`: canonical implementation now lives in `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/components/SnapshotEditor/*`, `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`, and the MPX1/IntelFX `*SignalPath*` files, while the remaining legacy `JuceGrid*`, `ChainFlow*`, and `*Flow*` filenames are thin compatibility wrappers only.
 
 ID: T542
-Status: [>] In Progress
+Status: [✓] Done
 Title: [E-SNAP] Update documentation (CLAUDE.md, MEMORY.md, PROJECT_WORKLIST.md)
 Description:
 - Goal / acceptance criteria: Update all documentation to reflect new vocabulary: snapshot, channel, routing — no "flow" (user-facing), no "preset", no "A/B mode". Update key file locations in CLAUDE.md. Update API contract references. Update MEMORY.md index. Update PROJECT_WORKLIST.md with completion notes for the entire epic.
@@ -9761,11 +9761,12 @@ Description:
 - Required outputs: Updated docs/CLAUDE.md, memory files, docs/PROJECT_WORKLIST.md.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 11:25 EDT - Codex
+Last updated: 2026-03-29 12:20 EDT - Codex
 - Completion notes:
   - Updated `docs/MEMORY.md` with the canonical E-SNAP backend/frontend surface index, added the latest removed backend modules (`flow_failover.py`, `snapshots.py`, `flow_orchestrator.py`), and replaced the stale dirty-frontend blocker note with the remaining shim-retirement follow-up.
   - Updated `docs/CLAUDE.md` key-file guidance so future sessions start from the snapshot editor page, snapshot client/state modules, unified snapshot routes/services, migration script, and `docs/MEMORY.md`.
-  - Updated this worklist section with concrete T541 completion notes and explicit cutover context; final epic-completion documentation still depends on retiring the remaining legacy frontend shims captured in T544.
+  - Updated `docs/CLAUDE.md` and `docs/MEMORY.md` again after the final shim-retirement pass so they now point future sessions at `SnapshotEditorPageContent.tsx`, `snapshotEditorLivePath.ts`, `SnapshotChainManagementCard.tsx`, `ChainGraphCanvas.tsx`, and the MPX1/IntelFX `*SignalPath*` owners instead of the legacy wrapper files.
+  - Updated `.github/copilot-instructions.md` with the canonical-ownership migration rule and the final E-SNAP ownership-flip log entry so future assistants treat legacy wrapper filenames as compatibility shims rather than primary edit targets.
 
 ID: T543
 Status: [✓] Done
@@ -9786,7 +9787,7 @@ Last updated: 2026-03-29 11:25 EDT - Codex
   - The remaining legacy filename retirement work is now an explicit follow-up task rather than a blocker on committing/pushing this checkpoint.
 
 ID: T544
-Status: [>] In Progress
+Status: [✓] Done
 Title: [E-SNAP] Retire legacy frontend shims after validated snapshot-editor checkpoint
 Description:
 - Goal / acceptance criteria: Move the remaining `JuceGrid*`, `ChainFlow*`, and `*Flow*` compatibility owners into canonical `SnapshotEditor*`, `ChainGraph*`, and `*SignalPath*` files, then delete obsolete wrappers once imports, tests, and docs point at the canonical surfaces and the production build remains green.
@@ -9830,7 +9831,7 @@ Last updated: 2026-03-29 12:10 EDT - Codex
   - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/snapshots/SnapshotModalContent.tsx` so the canonical snapshot-editor surface no longer imports shared helper ownership from legacy `JuceGrid` filenames.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS.
 ID: T544-subC
-Status: [>] In Progress
+Status: [✓] Done
 Title: Move remaining ChainGraph and SignalPath ownership, then close the epic documentation
 Description:
 - Goal / acceptance criteria: Move remaining `ChainFlow*`/`*Flow*` compatibility owners into `ChainGraph*` and `*SignalPath*` files where safe, then refresh the final E-SNAP documentation/worklist notes so `T541`, `T542`, and `T544` can close together.
@@ -9840,8 +9841,17 @@ Description:
 - Required outputs: canonical graph/signal-path owners, final doc/worklist updates, and final build/test evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 12:10 EDT - Codex
+Last updated: 2026-03-29 12:20 EDT - Codex
+- Completion notes:
+  - Promoted the chain-builder owner surfaces into `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`, `hooks/useChainGraph.ts`, `hooks/useGraphSync.ts`, and `utils/chainToGraph.ts`, while restoring the legacy `ChainFlow*`, `useChainFlow`, `useFlowSync`, and `chainToFlow` files as compatibility re-exports.
+  - Promoted the MPX1 and IntelFX signal-path owner surfaces into `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`, `MPX1SignalPathPatchCords.tsx`, `mpx1SignalPathRouting.ts`, `MPX1SignalPathCanvas.css`, `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx`, `IntelFXSignalPathPatchCords.tsx`, `intelfxSignalPathRouting.ts`, and `IntelFXSignalPathCanvas.css`, while restoring the legacy `*Flow*` filenames as compatibility wrappers.
+  - Closed the epic documentation by updating `docs/CLAUDE.md`, `docs/MEMORY.md`, `.github/copilot-instructions.md`, and this worklist so future sessions start from the canonical owner files and treat the legacy names as wrappers only.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 Assigned to: Codex
-Last updated: 2026-03-29 12:10 EDT - Codex
+Last updated: 2026-03-29 12:20 EDT - Codex
 - Progress notes:
   - Split the remaining legacy-filename retirement into three commit-sized release bundles (`T544-subA` through `T544-subC`) so the requested commit/push/rebuild/restart loop can happen after each bundle without losing worklist fidelity.
+- Completion notes:
+  - Bundle A moved snapshot-editor page and chain-management ownership into canonical `SnapshotEditor*` files with compatibility wrappers retained only where external imports still existed.
+  - Bundle B moved shared snapshot-editor helper ownership into canonical `SnapshotEditor` modules and removed direct canonical-page imports from legacy `JuceGrid` helper paths.
+  - Bundle C moved the remaining chain-graph and device signal-path ownership into canonical `ChainGraph*` and `*SignalPath*` files, then closed the final E-SNAP documentation and worklist notes.

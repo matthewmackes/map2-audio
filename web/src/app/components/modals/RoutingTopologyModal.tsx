@@ -50,7 +50,7 @@ import { MidiCcBadge } from '../Controls/MidiCcBadge'
 import {
   JuceGridRoutingVisualizer,
   type JuceGridRoutingFlowInfo,
-} from '../JuceGrid/JuceGridRoutingVisualizer'
+} from '../SnapshotEditor/SnapshotEditorRoutingVisualizer'
 import './RoutingTopologyModal.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────────

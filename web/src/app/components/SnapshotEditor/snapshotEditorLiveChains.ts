@@ -14,7 +14,7 @@ import {
   type JuceGridFlowSlotState,
   type JuceGridRoutingState,
   type JuceGridSlotPaletteEntry,
-} from '../JuceGrid/juceGridState'
+} from './snapshotEditorFlowState'
 
 const LIVE_RUNTIME_STATUSES = new Set<ChainRuntimeSyncStatus>(['active', 'partial'])
 

@@ -208,9 +208,15 @@ All planned and in-progress work is tracked in:
 | Web pages | `web/src/app/pages/` |
 | Web components | `web/src/app/components/` |
 | API layer | `web/src/map2/api.ts` |
-| Snapshot editor page | `web/src/app/pages/SnapshotEditorPage.tsx` |
+| Snapshot editor route entry | `web/src/app/pages/SnapshotEditorPage.tsx` |
+| Snapshot editor page owner | `web/src/app/pages/SnapshotEditorPageContent.tsx` |
 | Snapshot API client | `web/src/map2/clients/snapshots.ts` |
 | Snapshot editor state | `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` |
+| Snapshot editor live path | `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts` |
+| Snapshot editor chain management | `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` |
+| Chain graph canvas | `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx` |
+| MPX1 signal-path canvas | `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx` |
+| IntelFX signal-path canvas | `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx` |
 | Snapshot backend routes | `app/routes/unified_snapshots.py` |
 | Snapshot deployment routes | `app/routes/cluster_snapshots.py` |
 | Snapshot services | `app/services/snapshot_service.py`, `app/services/snapshot_deployment_service.py`, `app/services/snapshot_runtime_service.py` |

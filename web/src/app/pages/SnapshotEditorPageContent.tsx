@@ -110,16 +110,16 @@ import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { ChainAssignmentModal } from '../components/modals/ChainAssignmentModal'
-import { JuceGridSelectedBlockMidiPanel } from '../components/JuceGrid/JuceGridSelectedBlockMidiPanel'
+import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
-import { JuceGridParameterEditor } from '../components/JuceGrid/JuceGridParameterEditor'
+import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
 import {
   JuceGridRoutingVisualizer,
   getJuceGridRoutingInspectorItems,
   type JuceGridRoutingMarkerId,
-} from '../components/JuceGrid/JuceGridRoutingVisualizer'
-import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/JuceGrid/JuceGridSignalCanvas'
+} from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
+import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
 import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
   applyOptimisticJuceGridLiveChainSet,
@@ -133,8 +133,8 @@ import {
   createDefaultJuceGridFlowSlots,
   createDefaultJuceGridRouting,
   normalizeJuceGridStateSources,
-} from '../components/JuceGrid/juceGridState'
-import type { JuceGridRoutingState } from '../components/JuceGrid/juceGridState'
+} from '../components/SnapshotEditor/snapshotEditorFlowState'
+import type { JuceGridRoutingState } from '../components/SnapshotEditor/snapshotEditorFlowState'
 import {
   fingerprintSnapshotData,
 } from '../components/SnapshotEditor/snapshotEditorComparison'
