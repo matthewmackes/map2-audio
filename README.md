@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **964** TypeScript | **131** C++/H | **127** Docs | **1019** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **962** TypeScript | **131** C++/H | **127** Docs | **1021** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -190,7 +190,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5c631f64`](https://github.com/matthewmackes/map2-audio/commit/5c631f64148b489567bbb7a33cfdc42ad9f62e14) | Migrate drum workspace modal into drums page | Map2 Audio | 2026-03-28 |
+| [`ea86b950`](https://github.com/matthewmackes/map2-audio/commit/ea86b9505e25d294592532c19398984b0bbc066a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`285c6384`](https://github.com/matthewmackes/map2-audio/commit/285c6384748acaf8284f43f04b9c13e6f4abd2bc) | Verify JUCE Grid compact routing for instrument cards | Map2 Audio | 2026-03-28 |
 | [`53d85f6c`](https://github.com/matthewmackes/map2-audio/commit/53d85f6c91bf1f4afbddbec1d6016b7054d35d9d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`2d06f5d8`](https://github.com/matthewmackes/map2-audio/commit/2d06f5d8b7d1154a8bf5720b3da4d871e1590adc) | Split SynthForge compact card and page breadcrumb | Map2 Audio | 2026-03-28 |
 | [`ce7c4765`](https://github.com/matthewmackes/map2-audio/commit/ce7c47652d0b433ad5027e692672c166e3231c7b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`2806bc86`](https://github.com/matthewmackes/map2-audio/commit/2806bc86638e3e5e2c5bd8578129629f670e4f24) | Compact drum card and harden scoped loader dialogs | Map2 Audio | 2026-03-28 |
 | [`b840e359`](https://github.com/matthewmackes/map2-audio/commit/b840e359677342d2d86f971843daea42706c406f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
-| [`3b71fd09`](https://github.com/matthewmackes/map2-audio/commit/3b71fd099e6ad00dc02eb2f6296c6ed669c329ff) | Show loader asset metadata on scoped cards | Map2 Audio | 2026-03-28 |
-| [`e0818a21`](https://github.com/matthewmackes/map2-audio/commit/e0818a21b13e62b2817789ccc473c0fbdca2b3da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
