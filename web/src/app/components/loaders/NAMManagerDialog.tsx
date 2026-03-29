@@ -17,6 +17,7 @@ import {
 } from '@carbon/react'
 import { MachineLearningModel, Renew, StarFilled } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
+import { ApiError } from '../../../map2/http'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { AssetUploadButton } from './AssetUploadButton'
@@ -42,6 +43,22 @@ interface Props {
   onLoadNAM?: (modelName: string) => void
   instanceId?: number
   pluginPosition?: number
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const detail =
+      typeof error.body === 'object' && error.body !== null && 'detail' in error.body
+        ? (error.body as { detail?: unknown }).detail
+        : undefined
+    if (typeof detail === 'string' && detail.trim().length > 0) {
+      return detail
+    }
+  }
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+  return fallback
 }
 
 export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginPosition }: Props) {
@@ -85,6 +102,15 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
     enabled: open,
   })
 
+  const activeModel = statusQuery.data?.activeModel
+  const configuredModel = statusQuery.data?.configuredModel
+  const runtimeWarning = statusQuery.data?.runtimeWarning
+  const scopedRuntimeUnavailable = Boolean(
+    (resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined)
+      && runtimeWarning
+      && !activeModel,
+  )
+
   const loadMutation = useMutation({
     mutationFn: (name: string) => (
       resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
@@ -99,7 +125,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
       pushToast(`Loaded NAM model: ${name}`, 'success')
       onLoadNAM?.(name)
     },
-    onError: () => pushToast('Failed to load NAM model', 'error'),
+    onError: (error) => pushToast(getErrorMessage(error, 'Failed to load NAM model'), 'error'),
   })
 
   const uploadMutation = useMutation({
@@ -112,12 +138,14 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
       await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       const uploadedName = data.model?.name
       pushToast(`Uploaded: ${uploadedName || 'NAM model'}`, 'success')
-      if (uploadedName) {
+      if (uploadedName && !scopedRuntimeUnavailable) {
         try {
           await loadMutation.mutateAsync(uploadedName)
         } catch {
           // loadMutation surfaces its own error toast
         }
+      } else if (uploadedName && scopedRuntimeUnavailable) {
+        pushToast('Selected block is not active in the live runtime; uploaded model was added to the library only.', 'warn')
       }
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),
@@ -136,10 +164,6 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
     [modelsQuery.data?.models],
   )
   const featured = featuredQuery.data?.models ?? []
-  const activeModel = statusQuery.data?.activeModel
-  const configuredModel = statusQuery.data?.configuredModel
-  const runtimeWarning = statusQuery.data?.runtimeWarning
-
   const normalizedSearch = search.trim().toLowerCase()
 
   const modelsByType = useMemo(() => {
@@ -251,6 +275,15 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
             subtitle={runtimeWarning}
           />
         )}
+        {scopedRuntimeUnavailable && (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Load unavailable"
+            subtitle="This selected block is configured but not active in the live runtime, so scoped model loads are disabled."
+          />
+        )}
 
         {!normalizedSearch && featured.length > 0 && (
           <section className="model-manager-dialog__featured">
@@ -281,9 +314,9 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                         kind="tertiary"
                         size="sm"
                         onClick={() => loadMutation.mutate(model.name)}
-                        disabled={isLoading || loadMutation.isPending}
+                        disabled={isLoading || loadMutation.isPending || scopedRuntimeUnavailable}
                       >
-                        {isLoading ? 'Loading...' : 'Load'}
+                        {scopedRuntimeUnavailable ? 'Unavailable' : isLoading ? 'Loading...' : 'Load'}
                       </Button>
                     )}
                   </article>
@@ -358,9 +391,9 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                                   kind="tertiary"
                                   size="sm"
                                   onClick={() => loadMutation.mutate(model.name)}
-                                  disabled={isActive || loadMutation.isPending}
+                                  disabled={isActive || loadMutation.isPending || scopedRuntimeUnavailable}
                                 >
-                                  {isLoading ? 'Loading...' : 'Load'}
+                                  {scopedRuntimeUnavailable ? 'Unavailable' : isLoading ? 'Loading...' : 'Load'}
                                 </Button>
                               </TableCell>
                             </TableRow>

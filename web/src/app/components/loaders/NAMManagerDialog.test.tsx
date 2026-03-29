@@ -333,4 +333,44 @@ describe('NAMManagerDialog', () => {
     expect(screen.getByText('Configured NAM block is not active in the live runtime')).toBeInTheDocument()
     expect(screen.getAllByText('Configured').length).toBeGreaterThan(0)
   })
+
+  it('disables scoped loads and skips upload auto-load when the selected block is not active in the live runtime', async () => {
+    mockGetScopedStatus.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: 'Mesa Mark V',
+      runtimeWarning: 'Configured NAM block is not active in the live runtime',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
+
+    renderDialog(17, 9)
+
+    const unavailableButtons = await screen.findAllByRole('button', { name: 'Unavailable' })
+    expect(unavailableButtons.length).toBeGreaterThan(0)
+    expect(unavailableButtons[0]).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model file'), {
+      target: {
+        files: [new File(['nam-data'], 'fresh-profile.nam', { type: 'application/octet-stream' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalledTimes(1)
+    })
+    await waitFor(() => {
+      expect(mockPushToast).toHaveBeenCalledWith(
+        'Selected block is not active in the live runtime; uploaded model was added to the library only.',
+        'warn',
+      )
+    })
+    expect(mockLoadModelScoped).not.toHaveBeenCalled()
+  })
 })

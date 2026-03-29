@@ -12,6 +12,7 @@ import { Tag, Toggle } from '@carbon/react'
 import {
   CopyFile,
   FolderOpen,
+  Launch,
   OverflowMenuVertical,
   Reset,
   Save,
@@ -35,6 +36,7 @@ interface PluginCardShellProps {
   onCopyParams?: () => void
   onResetParams?: () => void
   onOpenMidiMappings?: () => void
+  onLaunch?: () => void
   showPresetControls?: boolean
   showBypass?: boolean
   showMoreMenu?: boolean
@@ -56,6 +58,7 @@ export function PluginCardShell({
   onCopyParams,
   onResetParams,
   onOpenMidiMappings,
+  onLaunch,
   showPresetControls = true,
   showBypass = true,
   showMoreMenu = true,
@@ -140,6 +143,16 @@ export function PluginCardShell({
           </div>
 
           <div className="plugin-card-header-right">
+            {onLaunch && (
+              <button
+                className="plugin-card-btn"
+                onClick={onLaunch}
+                title="Open Full Editor"
+                aria-label="Open Full Editor"
+              >
+                <Launch size={14} />
+              </button>
+            )}
             {showPresetControls && (
               <div className="plugin-card-preset-controls">
                 {onLoadPreset && (

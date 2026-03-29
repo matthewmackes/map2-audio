@@ -231,4 +231,36 @@ describe('IRManagerDialog', () => {
     expect(screen.getByText('Configured cabinet IR block is not active in the live runtime')).toBeInTheDocument()
     expect(screen.getAllByText('Configured').length).toBeGreaterThan(0)
   })
+
+  it('disables scoped IR loads and skips upload auto-load when the selected block is not active in the live runtime', async () => {
+    mockGetTypeStatus.mockResolvedValue({
+      available: true,
+      loaded_cabinet: null,
+      configuredIR: 'Cab B',
+      runtimeWarning: 'Configured cabinet IR block is not active in the live runtime',
+    })
+
+    renderDialog(21, 7)
+
+    const unavailableButtons = await screen.findAllByRole('button', { name: 'Unavailable' })
+    expect(unavailableButtons.length).toBeGreaterThan(0)
+    expect(unavailableButtons[0]).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR file'), {
+      target: {
+        files: [new File(['wave-data'], 'new-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockUploadCabinet).toHaveBeenCalledTimes(1)
+    })
+    await waitFor(() => {
+      expect(mockPushToast).toHaveBeenCalledWith(
+        'Selected block is not active in the live runtime; uploaded cabinet IR was added to the library only.',
+        'warn',
+      )
+    })
+    expect(mockLoadCabinetAtPosition).not.toHaveBeenCalled()
+  })
 })

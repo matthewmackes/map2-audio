@@ -17,6 +17,7 @@ import {
 } from '@carbon/react'
 import { Renew, VolumeUp, Waveform } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
+import { ApiError } from '../../../map2/http'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
 import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { AssetUploadButton } from './AssetUploadButton'
@@ -107,6 +108,22 @@ function formatMeta(duration?: number, size?: number, sampleRate?: number, fallb
   return sampleRate ? `${base} @ ${(sampleRate / 1000).toFixed(1)} kHz` : base
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const detail =
+      typeof error.body === 'object' && error.body !== null && 'detail' in error.body
+        ? (error.body as { detail?: unknown }).detail
+        : undefined
+    if (typeof detail === 'string' && detail.trim().length > 0) {
+      return detail
+    }
+  }
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+  return fallback
+}
+
 export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, pluginPosition }: Props) {
   const config = IR_CONFIGS[type]
   const Icon = config.icon
@@ -142,7 +159,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
       pushToast(`Loaded ${type} IR: ${name}`, 'success')
       onLoad?.(name)
     },
-    onError: () => pushToast(`Failed to load ${type} IR`, 'error'),
+    onError: (error) => pushToast(getErrorMessage(error, `Failed to load ${type} IR`), 'error'),
   })
 
   const uploadMutation = useMutation({
@@ -155,12 +172,14 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
       await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       const uploadedName = data.filename
       pushToast(`Uploaded: ${uploadedName || 'IR file'}`, 'success')
-      if (uploadedName) {
+      if (uploadedName && !scopedRuntimeUnavailable) {
         try {
           await loadMutation.mutateAsync(uploadedName)
         } catch {
           // loadMutation surfaces its own error toast
         }
+      } else if (uploadedName && scopedRuntimeUnavailable) {
+        pushToast(`Selected block is not active in the live runtime; uploaded ${type} IR was added to the library only.`, 'warn')
       }
     },
     onError: () => pushToast(`Failed to upload ${type} IR`, 'error'),
@@ -185,6 +204,11 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
   const filteredIRs = irs.filter((ir) => ir.name.toLowerCase().includes(normalizedSearch))
   const configuredIR = statusQuery.data?.configuredIR
   const runtimeWarning = statusQuery.data?.runtimeWarning
+  const scopedRuntimeUnavailable = Boolean(
+    ((typeof instanceId === 'number' && instanceId > 0) || resolvedPluginPosition !== undefined)
+      && runtimeWarning
+      && !loadedIR,
+  )
 
   const handleRefresh = () => {
     void irsQuery.refetch()
@@ -266,6 +290,15 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
             subtitle={runtimeWarning}
           />
         )}
+        {scopedRuntimeUnavailable && (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Load unavailable"
+            subtitle="This selected block is configured but not active in the live runtime, so scoped IR loads are disabled."
+          />
+        )}
 
         {irsQuery.isLoading ? (
           <InlineLoading description={config.loadingMessage} status="active" />
@@ -319,10 +352,10 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
                         <Button
                           kind="tertiary"
                           size="sm"
-                          disabled={isActive || loadMutation.isPending}
+                          disabled={isActive || loadMutation.isPending || scopedRuntimeUnavailable}
                           onClick={() => loadMutation.mutate(ir.name)}
                         >
-                          {isLoading ? 'Loading...' : 'Load'}
+                          {scopedRuntimeUnavailable ? 'Unavailable' : isLoading ? 'Loading...' : 'Load'}
                         </Button>
                       </TableCell>
                     </TableRow>

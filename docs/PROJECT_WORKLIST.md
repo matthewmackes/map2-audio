@@ -9352,3 +9352,111 @@ Last updated: 2026-03-28 20:40 EDT - Codex
   - Extended the selected-block NAM card to hydrate model library metadata from the NAM model list query so the card can show live/configured state plus model type/size when available, while the shared NAM manager dialog now includes a dedicated type column alongside size.
   - Preserved the scoped configured/live warning work from `T516`, so the new metadata blocks stay duplicate-safe under `instance_id` / `plugin_position` scoping instead of drifting back to global loader state.
   - Added focused frontend regression coverage in `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` and `web/src/app/components/loaders/NAMManagerDialog.test.tsx` for the new metadata rendering paths.
+
+ID: T518
+Status: [✓] Done
+Title: Disable unsafe selected-block loader actions when runtime identity is unavailable
+Description:
+- Goal / acceptance criteria: When selected-block NAM or IR dialogs know the configured block is not active in the live runtime and scoped mutations will fail closed, the dialogs must not present active `Load` actions that end in a generic error toast. Instead, they must surface the runtime warning clearly, disable unsafe scoped load attempts, keep uploads library-only unless a safe scoped load is available, and add focused frontend regression coverage.
+- Why it matters: The backend duplicate-safe fallback hardening is correct, but the current dialogs still invite operators to click `Load` and then show `Failed to load NAM model`, which looks like a broken feature instead of an unavailable runtime scope.
+- Dependencies: T514; T516; T517
+- Estimated effort: Medium
+- Required outputs: selected-block loader dialog UX hardening for unsafe runtime-warning states, focused frontend tests, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 21:18 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/loaders/NAMManagerDialog.tsx` so scoped runtime-warning states with no live target now disable unsafe `Load` actions, show a dedicated `Load unavailable` notice, skip upload auto-load in that state, and surface backend `detail` text instead of a generic NAM failure toast when a scoped mutation still errors.
+  - Applied the same guarded behavior to `web/src/app/components/loaders/IRManagerDialog.tsx` so cabinet and reverb dialogs no longer present clickable scoped load actions when the selected block is configured but not active in the live runtime, and uploads fall back to library-only with a clear warning toast.
+  - Added focused regression coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx` and `web/src/app/components/loaders/IRManagerDialog.test.tsx` for the disabled-action/runtime-warning path and the upload-without-auto-load behavior.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/loaders/NAMManagerDialog.test.tsx src/app/components/loaders/IRManagerDialog.test.tsx` -> PASS (`19 passed`); `npm --prefix web run build` -> PASS.
+
+ID: T519
+Status: [✓] Done
+Title: Compact instrument cards for JUCE Grid — PluginCardShell Launch button
+Description:
+- Goal / acceptance criteria: Add an `onLaunch` callback prop to `PluginCardShell`. When provided, render a Carbon `Launch` icon button in the header-right area (before preset controls) that calls the callback. Title: "Open Full Editor".
+- Why it matters: Instruments (SynthForge, Drums) need a consistent, discoverable way to open their full-page editors from the compact grid card. The shell is the shared base for all plugin cards.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: Updated `PluginCardShell` with `onLaunch` prop and rendered Launch button; typecheck pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 22:03 EDT - Codex
+- Completion notes:
+  - Added an optional `onLaunch` prop to `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` and rendered a shared Carbon `Launch` header button before preset controls with the required `Open Full Editor` labeling.
+  - Kept the new shell action additive so existing plugin cards remain unchanged unless they explicitly opt in, which makes the shared instrument-card launch affordance safe to adopt incrementally.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: covered indirectly by `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/components/PluginCards/PluginCardRouter.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T520
+Status: [✓] Done
+Title: Compact instrument cards for JUCE Grid — DrumMachineCard compact rewrite
+Description:
+- Goal / acceptance criteria: Replace the full DrumMachineCard body (step visualization, bus metering, mode grid, workspace modal) with a compact layout showing only: Volume knob, editable BPM NumberInput, Play/Stop transport button, and a Launch button in the header navigating to `/drums`. Remove DrumMachineWorkspaceModal import and state.
+- Why it matters: The current card renders a full workstation inline in the grid, making the grid crowded and inconsistent with simpler effect cards. The compact card provides essential controls while the full page handles deep editing.
+- Dependencies: T519
+- Estimated effort: Medium
+- Required outputs: Rewritten DrumMachineCard with compact layout; existing tests updated; typecheck + build pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-28 22:03 EDT - Codex
+- Completion notes:
+  - Replaced the oversized inline workstation in `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx` with a compact grid card that keeps only the required essentials: a volume knob, editable BPM numeric control, play/stop transport button, and shared header launch action into `/drums`.
+  - Removed the card’s dependency on `DrumMachineWorkspaceModal` and the old inline pattern/metering/mode-routing workspace state, so the grid no longer embeds the full drum workspace.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx` to assert the compact controls and shared launch navigation behavior instead of the deleted modal workstation flow.
+  - Licensing review: touched frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts with no third-party override in scope; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .github/copilot-instructions.md web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/components/PluginCards/PluginCardRouter.test.tsx` -> PASS (`4 passed`); `npm --prefix web run build` -> PASS.
+
+ID: T521
+Status: [ ] Todo
+Title: Compact instrument cards for JUCE Grid — Migrate DrumMachineWorkspaceModal content to DrumsPage and delete modal
+Description:
+- Goal / acceptance criteria: Audit DrumMachineWorkspaceModal for unique features (workspace presets, shortcut overlays, saved layouts) not present in DrumsPage. Migrate any unique content into DrumsPage. Delete DrumMachineWorkspaceModal.tsx and DrumMachineWorkspaceModal.css. Remove all remaining imports/references. Add a "Back to Audio Grid" breadcrumb button in DrumsPage PageHeader actions.
+- Why it matters: The modal is superseded by direct page navigation from the compact card. Consolidating into DrumsPage avoids two parallel code paths for the same workspace.
+- Dependencies: T520
+- Estimated effort: Medium
+- Required outputs: DrumsPage with migrated content + breadcrumb; modal files deleted; no dangling imports; tests pass.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T522
+Status: [ ] Todo
+Title: Compact instrument cards for JUCE Grid — SynthForgeCard compact/full mode split
+Description:
+- Goal / acceptance criteria: Refactor SynthForgeCard to support compact vs full rendering. When `compact=true` (grid context): show only a Level knob, a status line ("patch name · N voices" from analyzer WebSocket), and a Launch button navigating to `/synth-forge` using PluginCardShell. When `compact=false` (SynthForgePage context): render the full 5-tab workstation (current behavior). The card already accepts a `compact` prop from PluginCardProps.
+- Why it matters: The full multitimbral workstation with 5 tabs is too large for an inline grid card. Compact mode shows just the essentials while the dedicated page provides the full editor.
+- Dependencies: T519
+- Estimated effort: Medium
+- Required outputs: SynthForgeCard with compact/full mode; existing tests updated; typecheck + build pass.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T523
+Status: [ ] Todo
+Title: Compact instrument cards for JUCE Grid — SynthForgePage breadcrumb and compact=false
+Description:
+- Goal / acceptance criteria: Update SynthForgePage to pass `compact={false}` to SynthForgeCard so the full workstation renders. Replace the "Open Audio Grid" PageHeader action button with a "Back to Audio Grid" breadcrumb using ArrowLeft icon navigating to `/juce-grid`.
+- Why it matters: The SynthForgePage is now the canonical full-editor destination from the compact grid card. The breadcrumb provides clear return navigation.
+- Dependencies: T522
+- Estimated effort: Small
+- Required outputs: Updated SynthForgePage; typecheck pass.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
+
+ID: T524
+Status: [ ] Todo
+Title: Compact instrument cards for JUCE Grid — JuceGridPage compact prop propagation
+Description:
+- Goal / acceptance criteria: Ensure PluginCardRouter in JuceGridPage passes `compact={true}` to SynthForge and DrumMachine cards when rendered in the grid. Verify end-to-end: grid shows compact cards, Launch navigates to full pages, breadcrumbs return to grid.
+- Why it matters: Final integration step ensuring the compact cards actually render in the grid context and the full navigation loop works.
+- Dependencies: T520; T522; T523
+- Estimated effort: Small
+- Required outputs: Verified compact prop flow; full build + typecheck pass; manual verification checklist.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-28
