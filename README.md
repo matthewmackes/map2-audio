@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**862** Python | **962** TypeScript | **131** C++/H | **127** Docs | **1021** total commits | **3** stars | **0** forks | **0** open issues
+**862** Python | **962** TypeScript | **131** C++/H | **127** Docs | **1022** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,6 +203,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2bbd679a`](https://github.com/matthewmackes/map2-audio/commit/2bbd679a3fa96b697f317d681ad1e6b400da7e2a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`5c631f64`](https://github.com/matthewmackes/map2-audio/commit/5c631f64148b489567bbb7a33cfdc42ad9f62e14) | Migrate drum workspace modal into drums page | Map2 Audio | 2026-03-28 |
 | [`ea86b950`](https://github.com/matthewmackes/map2-audio/commit/ea86b9505e25d294592532c19398984b0bbc066a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`285c6384`](https://github.com/matthewmackes/map2-audio/commit/285c6384748acaf8284f43f04b9c13e6f4abd2bc) | Verify JUCE Grid compact routing for instrument cards | Map2 Audio | 2026-03-28 |
@@ -210,7 +211,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`2d06f5d8`](https://github.com/matthewmackes/map2-audio/commit/2d06f5d8b7d1154a8bf5720b3da4d871e1590adc) | Split SynthForge compact card and page breadcrumb | Map2 Audio | 2026-03-28 |
 | [`ce7c4765`](https://github.com/matthewmackes/map2-audio/commit/ce7c47652d0b433ad5027e692672c166e3231c7b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`2806bc86`](https://github.com/matthewmackes/map2-audio/commit/2806bc86638e3e5e2c5bd8578129629f670e4f24) | Compact drum card and harden scoped loader dialogs | Map2 Audio | 2026-03-28 |
-| [`b840e359`](https://github.com/matthewmackes/map2-audio/commit/b840e359677342d2d86f971843daea42706c406f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
