@@ -109,8 +109,8 @@ import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
-import { ChainAssignmentModal } from '../components/modals/ChainAssignmentModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
+import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
@@ -493,6 +493,32 @@ const SLOT_COLORS = [
   { label: 'F', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' },
 ]
 
+function sanitizeTraceableNamePart(value: string | null | undefined, fallback: string): string {
+  const normalized = (value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[^\w -]/g, '')
+
+  return normalized.length > 0 ? normalized : fallback
+}
+
+function formatCompactTimestamp(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`
+}
+
+function buildTraceableChannelChainName(snapshotName: string | null, channelLabel: string): string {
+  const baseName = sanitizeTraceableNamePart(snapshotName, 'Snapshot Editor')
+  const normalizedChannelLabel = sanitizeTraceableNamePart(channelLabel, 'A')
+  return `${baseName} - ${formatCompactTimestamp()} - Channel ${normalizedChannelLabel}`
+}
+
 const FLOW_CARD_ROUTING_MODE_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
   parallel_blend: 'MIX',
   ab_switch: 'A/B',
@@ -834,13 +860,6 @@ export function SnapshotEditorPage() {
     navigate(`/platforms/about?${params.toString()}`)
   }, [navigate])
 
-  // Chain assignment modal — flowId drives which flow is being edited
-  const [chainModalFlowId, setChainModalFlowId] = useState<string | null>(null)
-  // When rename is triggered from inside the chain assignment modal we need the
-  // specific chainId rather than currentChain (which may differ from the modal's
-  // pending selection while a different flow is focused).
-  const [renameChainForId, setRenameChainForId] = useState<number | null>(null)
-  
   // Special settings for plugin filtering
   const { settings: specialSettings } = useSpecialSettings()
 
@@ -984,22 +1003,6 @@ export function SnapshotEditorPage() {
   }, [])
 
   const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
-
-  // Derived: the flow slot currently targeted by the chain assignment modal
-  const chainModalFlow = chainModalFlowId
-    ? flowSlots.find((s) => s.id === chainModalFlowId) ?? null
-    : null
-
-  // Auto-open chain assignment modal when a flow has no chain assigned.
-  // We target the first unassigned flow found (or the active flow if it's unassigned).
-  useEffect(() => {
-    const firstUnassigned = flowSlots.find((s) => s.chainId === null)
-    if (firstUnassigned && chainModalFlowId === null) {
-      setChainModalFlowId(firstUnassigned.id)
-    }
-  // Only re-run when flowSlots change — not when the modal opens/closes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flowSlots])
 
   // ============================================================================
   // Queries
@@ -1290,6 +1293,10 @@ export function SnapshotEditorPage() {
   // ============================================================================
 
   const chains = chainsQuery.data?.chains || []
+  const activeSnapshot = useMemo(
+    () => flowSnapshotsQuery.data?.snapshots.find((snapshot) => snapshot.id === activeSnapshotId) ?? null,
+    [activeSnapshotId, flowSnapshotsQuery.data?.snapshots],
+  )
   const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
   const liveChainProjection = useMemo(
@@ -2577,7 +2584,6 @@ export function SnapshotEditorPage() {
       markSnapshotsDirty()
       setShowRenameChainModal(false)
       setRenameChainName('')
-      setRenameChainForId(null)
       pushToast('Chain renamed', 'success')
     },
     onError: (error) => pushToast(`Failed to rename: ${error}`, 'error'),
@@ -2588,25 +2594,52 @@ export function SnapshotEditorPage() {
   // ============================================================================
 
   // Flow management
-  const addFlow = useCallback(() => {
+  const addFlow = useCallback(async () => {
     if (flowSlots.length >= MAX_FLOWS) return
+
     const nextIndex = flowSlots.length
     const colorConfig = SLOT_COLORS[nextIndex] || SLOT_COLORS[nextIndex % SLOT_COLORS.length]
-    const newSlot: FlowSlot = {
-      id: `flow-${Date.now()}`,
-      chainId: null,
-      label: colorConfig.label,
-      color: colorConfig.color,
-      muted: false,
-      solo: false,
-      dryWetMix: 100,
+    const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
+
+    try {
+      const newChain = await chainsApi.create(chainName)
+      const newSlot: FlowSlot = {
+        id: `flow-${Date.now()}`,
+        chainId: newChain.id,
+        label: colorConfig.label,
+        color: colorConfig.color,
+        muted: false,
+        solo: false,
+        dryWetMix: 100,
+      }
+
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
+        if (!current) {
+          return current
+        }
+        const alreadyPresent = current.chains.some((chain) => chain.id === newChain.id)
+        if (alreadyPresent) {
+          return current
+        }
+        return {
+          ...current,
+          chains: [...current.chains, newChain],
+          count: current.count + 1,
+        }
+      })
+
+      setFlowSlots((prev) => [...prev, newSlot])
+      setRouting((prev) => ({
+        ...prev,
+        seriesOrder: [...prev.seriesOrder, newSlot.id],
+      }))
+      markSnapshotsDirty()
+      pushToast(`Channel ${colorConfig.label} created with ${chainName}`, 'success')
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+    } catch (error) {
+      pushToast(`Failed to add channel: ${error}`, 'error')
     }
-    setFlowSlots(prev => [...prev, newSlot])
-    setRouting(prev => ({
-      ...prev,
-      seriesOrder: [...prev.seriesOrder, newSlot.id],
-    }))
-  }, [flowSlots.length])
+  }, [activeSnapshot?.name, flowSlots.length, markSnapshotsDirty, pushToast, queryClient])
 
   const removeFlow = useCallback((flowId: string) => {
     if (flowSlots.length <= MIN_FLOWS) return
@@ -3245,53 +3278,12 @@ export function SnapshotEditorPage() {
 
   const submitRenameChain = useCallback(() => {
     const normalizedName = renameChainName.trim()
-    // Use renameChainForId when triggered from the chain assignment modal
-    const targetId = renameChainForId ?? currentChain?.id
-    if (!targetId || !normalizedName) {
+    if (!currentChain || !normalizedName) {
       setShowRenameChainModal(false)
-      setRenameChainForId(null)
       return
     }
-    renameMutation.mutate({ chainId: targetId, name: normalizedName })
-  }, [currentChain, renameChainName, renameChainForId, renameMutation])
-
-  // Modal-context lifecycle handlers — receive chainId from the modal's pending selection
-  const handleModalToggleActive = useCallback((chainId: number) => {
-    const chain = chains.find((c) => c.id === chainId)
-    if (!chain) return
-    if (chain.is_active) {
-      deactivateMutation.mutate(chainId)
-    } else {
-      activateMutation.mutate(chainId)
-    }
-  }, [chains, activateMutation, deactivateMutation])
-
-  const handleModalDuplicate = useCallback((chainId: number) => {
-    const chain = chains.find((c) => c.id === chainId)
-    if (!chain) return
-    const newName = `${chain.name} Copy`
-    chainsApi.create(newName)
-      .then((newChain) => {
-        queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
-          if (!current) return current
-          const alreadyPresent = current.chains.some((c) => c.id === newChain.id)
-          if (alreadyPresent) return current
-          return { ...current, chains: [...current.chains, newChain], count: current.count + 1 }
-        })
-        queryClient.invalidateQueries({ queryKey: ['chains'] })
-        markSnapshotsDirty()
-        pushToast(`Chain "${newName}" created`, 'success')
-      })
-      .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
-  }, [chains, queryClient, pushToast, markSnapshotsDirty])
-
-  const handleModalRename = useCallback((chainId: number) => {
-    const chain = chains.find((c) => c.id === chainId)
-    if (!chain) return
-    setRenameChainForId(chainId)
-    setRenameChainName(chain.name)
-    setShowRenameChainModal(true)
-  }, [chains])
+    renameMutation.mutate({ chainId: currentChain.id, name: normalizedName })
+  }, [currentChain, renameChainName, renameMutation])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -4323,7 +4315,7 @@ export function SnapshotEditorPage() {
                         size="sm"
                         kind={!flowChain ? 'primary' : 'ghost'}
                         renderIcon={Edit}
-                        onClick={() => setChainModalFlowId(flow.id)}
+                        onClick={() => selectFlowIndex(index)}
                       >
                         {flowChain ? 'Edit chain' : 'Assign chain'}
                       </Button>
@@ -4450,7 +4442,7 @@ export function SnapshotEditorPage() {
                         className="juce-grid-page__flow-card-action"
                         onClick={(event) => {
                           event.stopPropagation()
-                          setChainModalFlowId(flow.id)
+                          selectFlowIndex(index)
                         }}
                       />
                     </div>
@@ -4681,8 +4673,8 @@ export function SnapshotEditorPage() {
                     kind="ghost"
                     className="juce-grid-page__masthead-icon-button"
                     renderIcon={Add}
-                    iconDescription="Add flow"
-                    aria-label="Add flow"
+                    iconDescription="Add channel"
+                    aria-label="Add channel"
                     onClick={addFlow}
                     disabled={flowSlots.length >= MAX_FLOWS}
                   />
@@ -4728,7 +4720,7 @@ export function SnapshotEditorPage() {
                     onClick={addFlow}
                     disabled={flowSlots.length >= MAX_FLOWS}
                   >
-                    Add flow
+                    Add channel
                   </Button>
                   <Button
                     size="sm"
@@ -4938,6 +4930,26 @@ export function SnapshotEditorPage() {
         </Layer>
 
         <div className="juce-grid-page__unified-block">
+          <SnapshotChainManagementCard
+            selectedChainId={activeFlow?.chainId ?? null}
+            onChainSelect={(chainId) => {
+              if (!activeFlow) return
+              updateFlow(activeFlow.id, { chainId })
+            }}
+            onSelectedChainRemoved={handleChainRemoved}
+            flowSlots={flowSlots}
+            focusedFlowLabel={activeFlowLabel}
+            onToggleSelectedChainActive={handleToggleChainActive}
+            onDuplicateChain={handleDuplicateChain}
+            onRenameChain={handleRenameChain}
+            pluginMeta={pluginMeta}
+            onPluginChipClick={(chainId, pluginUri, pluginPosition) => {
+              if (!activeFlow) return
+              updateFlow(activeFlow.id, { chainId })
+              handlePluginSelect(pluginUri, pluginPosition)
+            }}
+          />
+
           <main className="juce-grid-page__main">
             {snapshotEntryRequired ? (
               <Tile className="juce-grid-page__effect-modal-placeholder">
@@ -5367,19 +5379,17 @@ export function SnapshotEditorPage() {
           open
           size="sm"
           modalHeading="Rename chain"
-          modalLabel={currentChain?.name || chains.find((c) => c.id === renameChainForId)?.name || 'Current chain'}
+          modalLabel={currentChain?.name || 'Current chain'}
           primaryButtonText={renameMutation.isPending ? 'Saving...' : 'Rename chain'}
           secondaryButtonText="Cancel"
-          primaryButtonDisabled={(!currentChain && !renameChainForId) || renameChainName.trim().length === 0 || renameMutation.isPending}
+          primaryButtonDisabled={!currentChain || renameChainName.trim().length === 0 || renameMutation.isPending}
           onRequestClose={() => {
             setShowRenameChainModal(false)
             setRenameChainName('')
-            setRenameChainForId(null)
           }}
           onSecondarySubmit={() => {
             setShowRenameChainModal(false)
             setRenameChainName('')
-            setRenameChainForId(null)
           }}
           onRequestSubmit={submitRenameChain}
           selectorPrimaryFocus="#juce-grid-rename-chain-name"
@@ -6223,31 +6233,6 @@ export function SnapshotEditorPage() {
         activeFlowId={routing.activeSlotId}
       />
 
-      {/* Chain Assignment Modal — auto-opens for unassigned flows; manual via Edit button */}
-      <ChainAssignmentModal
-        open={chainModalFlowId !== null}
-        flowLabel={chainModalFlow?.label ?? ''}
-        currentChainId={chainModalFlow?.chainId ?? null}
-        flowSlots={flowSlots}
-        pluginMeta={pluginMeta}
-        onApply={(chainId) => {
-          if (chainModalFlowId) {
-            updateFlow(chainModalFlowId, { chainId })
-          }
-        }}
-        onClose={() => setChainModalFlowId(null)}
-        onSelectedChainRemoved={handleChainRemoved}
-        onPluginChipClick={(chainId, pluginUri, pluginPosition) => {
-          if (chainModalFlowId) {
-            updateFlow(chainModalFlowId, { chainId })
-          }
-          setChainModalFlowId(null)
-          handlePluginSelect(pluginUri, pluginPosition)
-        }}
-        onToggleActive={handleModalToggleActive}
-        onDuplicate={handleModalDuplicate}
-        onRename={handleModalRename}
-      />
     </div>
   )
 }

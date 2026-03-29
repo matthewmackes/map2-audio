@@ -25,10 +25,17 @@ import {
 } from '../SnapshotEditor/snapshotEditorComparison'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
-import { flowSnapshotDataToSnapshotPayload, snapshotsApi } from '../../../map2/clients/snapshots'
+import { snapshotDetailToFlowSnapshotData, snapshotsApi } from '../../../map2/clients/snapshots'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+function formatSnapshotWizardDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}${month}${day}`
 }
 
 export interface SnapshotModalContentProps {
@@ -167,27 +174,75 @@ export function SnapshotModalContent({
   const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
   const createFlowSnapshotMutation = useMutation({
     mutationFn: async (values: SnapshotNewWizardValues) => {
-      const request = {
+      const channelDefinitions = [
+        {
+          channel_key: 'ch_a',
+          label: 'A',
+          color: '#2563eb',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          chain_id: null,
+        },
+        {
+          channel_key: 'ch_b',
+          label: 'B',
+          color: '#22c55e',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          chain_id: null,
+        },
+      ]
+      const chainName = `${values.name}-${formatSnapshotWizardDate(new Date())}`
+      const created = await snapshotsApi.create({
         name: values.name,
         description: 'Created from Snapshot Editor wizard',
         input_device: values.inputDevice,
         output_device: values.outputDevice,
-        ...flowSnapshotDataToSnapshotPayload({
-          ...snapshotDraft,
-          routing: {
-            ...snapshotDraft.routing,
-            mode: values.routingMode === 'morph' ? 'parameter_morph' : values.routingMode,
-          },
-        }),
+        channels: channelDefinitions,
+        chains: [],
+        routing: {
+          mode: values.routingMode,
+          active_channel_key: 'ch_a',
+          blend_positions: { ch_a: 100, ch_b: 100 },
+          morph_position: 0.5,
+          morph_source_channel_key: 'ch_a',
+          morph_target_channel_key: 'ch_b',
+          series_order: ['ch_a', 'ch_b'],
+        },
+        midi_map: [],
+      })
+
+      const afterFirstChain = await snapshotsApi.addChain(created.snapshot_id, chainName)
+      const firstChain = afterFirstChain.chains[afterFirstChain.chains.length - 1]
+      const afterSecondChain = await snapshotsApi.addChain(created.snapshot_id, chainName)
+      const secondChain = afterSecondChain.chains[afterSecondChain.chains.length - 1]
+      const channelA = afterSecondChain.channels.find((channel) => channel.channel_key === 'ch_a')
+      const channelB = afterSecondChain.channels.find((channel) => channel.channel_key === 'ch_b')
+
+      if (!firstChain?.id || !secondChain?.id || !channelA?.id || !channelB?.id) {
+        throw new Error('Snapshot wizard provisioning did not return the expected channels and chains.')
       }
-      return snapshotsApi.create(request)
+
+      await snapshotsApi.updateChannel(created.snapshot_id, channelA.id, {
+        chain_id: firstChain.id,
+      })
+      await snapshotsApi.updateChannel(created.snapshot_id, channelB.id, {
+        chain_id: secondChain.id,
+      })
+
+      return snapshotsApi.activate(created.snapshot_id)
     },
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       setContentView('library')
-      pushToast('Snapshot created', 'success')
       onSnapshotSave?.()
-      loadFlowSnapshotMutation.mutate(response.snapshot_id)
+      applySnapshotData(snapshotDetailToFlowSnapshotData(response.snapshot_data), {
+        toastMessage: 'Snapshot created',
+        invalidateChains: true,
+      })
+      onRecall?.()
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')

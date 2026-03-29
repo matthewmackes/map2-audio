@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 16:09 EDT - T545 bundle 2 shipped; bundle 3 in progress
+Last updated: 2026-03-29 17:12 EDT - T545 shipped complete; no remaining unblocked todo items
 
 ID: T545
-Status: [>] In Progress
+Status: [✓] Done
 Title: Snapshot Editor entry-point gate — library modal on load + New Snapshot Wizard
 Description:
 - Goal / acceptance criteria: When no snapshot is loaded and the user opens the Snapshot Editor page, the snapshot library modal opens automatically. The modal presents two paths: (1) Load Existing — shows the full existing SnapshotModalContent library browser; (2) Create New — launches a 4-step wizard (Name → Routing Mode → Input Device → Output Device). The wizard creates the snapshot immediately on the backend, names two chains as `SnapshotName-YYYYMMDD`, auto-assigns Chain 1 → Channel A and Chain 2 → Channel B, activates the snapshot, and opens the editor. The modal is dismissible; dismissing shows a "No snapshot loaded" empty state with a button to re-open. The same "Create New" wizard replaces the current create path everywhere the snapshot library modal is opened.
@@ -52,7 +52,7 @@ Last updated: 2026-03-29 16:09 EDT - Codex
   - The wizard is rendered inside the main snapshot modal rather than a nested secondary modal so the creation flow stays on one surface and remains easy to extend in the next bundle.
 
 ID: T545-subC
-Status: [>] In Progress
+Status: [✓] Done
 Title: Wizard submit logic — create snapshot, name chains SnapshotName-YYYYMMDD, assign to channels, activate
 Description:
 - Goal / acceptance criteria: On wizard submission: POST to create snapshot with name/routing/input_device/output_device; POST to add two chains named `{name}-{YYYYMMDD}` where date is today's date at creation time; PATCH channels to assign Chain 1 → Channel A (channel_key "ch_a"), Chain 2 → Channel B (channel_key "ch_b"); POST activate the snapshot; navigate to snapshot editor with the new snapshot loaded. All steps are backend-persisted immediately — no in-memory staging.
@@ -62,7 +62,11 @@ Description:
 - Required outputs: wizard onSubmit handler, API call sequence, error handling, post-create navigation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 16:09 EDT - Codex
+Last updated: 2026-03-29 16:31 EDT - Codex
+- Completion notes:
+  - Wired the wizard submit path to create a new snapshot, add two date-stamped chains, bind them to `ch_a` and `ch_b`, activate the finished snapshot, and hydrate the editor directly from the activation response.
+  - The full provisioning path now stays backend-persisted step-by-step via unified snapshot create, add-chain, update-channel, and activate calls rather than staging the new design only in frontend state.
+  - Production build follow-up fixed the initial channel payload to include explicit `chain_id: null` values and removed one stale rename-modal cleanup reference left behind by the chain-management refactor.
 
 ID: T545-subD
 Status: [✓] Done
@@ -97,7 +101,7 @@ Last updated: 2026-03-29 16:09 EDT - Codex
   - Dismissing that modal now shows a "No snapshot loaded" empty-state tile with a button to reopen the library instead of leaving the normal editor canvas exposed as a dead end.
 
 ID: T545-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Tests — SnapshotNewWizard component and updated SnapshotModal entry-point behavior
 Description:
 - Goal / acceptance criteria: Add `SnapshotNewWizard.test.tsx` covering: renders step 1, name validation (empty / too long / special chars / duplicate), Back/Next navigation, device step skip when list empty, submit calls API in correct sequence. Add/update `SnapshotModal.test.tsx` to cover: entry-point variant renders correct header, Create New opens wizard, Load Existing shows library. All tests pass with `npm run typecheck` and `npm run build` clean.
@@ -106,12 +110,12 @@ Description:
 - Estimated effort: Small
 - Required outputs: SnapshotNewWizard.test.tsx, updated SnapshotModal.test.tsx, all passing.
 Subtasks: None
-Assigned to: unassigned
-Last updated: 2026-03-29 EDT
 Assigned to: Codex
-Last updated: 2026-03-29 15:55 EDT - Codex
-- Progress notes:
-  - Split into three commit-sized release bundles to match the requested commit/push/rebuild/restart loop: bundle 1 = `T545-subA`; bundle 2 = `T545-subB` + `T545-subD` + `T545-subE`; bundle 3 = `T545-subC` + `T545-subF`.
+Last updated: 2026-03-29 16:31 EDT - Codex
+- Completion notes:
+  - Added focused wizard coverage in `SnapshotNewWizard.test.tsx` for render, validation, navigation, empty-device skips, and final submit values.
+  - Added entry-point and provisioning flow coverage across `SnapshotModal.test.tsx` and `SnapshotModalContent.test.tsx`, including the create -> addChain -> addChain -> updateChannel -> updateChannel -> activate sequence.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotNewWizard.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/snapshots/SnapshotModal.test.tsx` passed; `npm --prefix web run typecheck` passed; `npm --prefix web run build` passed.
 
 ID: T482
 Status: [✓] Done

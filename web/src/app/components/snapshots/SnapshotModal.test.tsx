@@ -1,7 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
-const mockSnapshotModalContent = jest.fn(({ onRecall }: { onRecall?: () => void }) => (
+const mockSnapshotModalContent = jest.fn(({ onRecall }: { onRecall?: () => void; entryPoint?: boolean }) => (
   <div>
     <button type="button" onClick={() => onRecall?.()}>
       Recall snapshot
@@ -49,6 +49,13 @@ describe('SnapshotModal', () => {
     render(<SnapshotModal {...baseProps} />)
 
     expect(await screen.findByText('Snapshots')).toBeTruthy()
+  })
+
+  it('renders the entry-point title and forwards entryPoint to content', async () => {
+    render(<SnapshotModal {...baseProps} entryPoint />)
+
+    expect(await screen.findByText('Load or Create a Snapshot')).toBeTruthy()
+    expect(mockSnapshotModalContent).toHaveBeenLastCalledWith(expect.objectContaining({ entryPoint: true }))
   })
 
   it('calls onClose when the close button is clicked', async () => {

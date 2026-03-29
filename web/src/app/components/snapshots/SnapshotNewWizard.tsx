@@ -182,10 +182,12 @@ export function SnapshotNewWizard({
               maxLength={20}
               value={name}
               onChange={(event) => {
-                setName(event.target.value)
-                if (nameError) {
-                  setNameError(validateSnapshotName(event.target.value, existingSnapshotNames))
-                }
+                const nextValue = event.target.value
+                setName(nextValue)
+                setNameError(validateSnapshotName(nextValue, existingSnapshotNames))
+              }}
+              onBlur={() => {
+                setNameError(validateSnapshotName(name, existingSnapshotNames))
               }}
               invalid={Boolean(nameError)}
               invalidText={nameError ?? undefined}
