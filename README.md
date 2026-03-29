@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**852** Python | **981** TypeScript | **131** C++/H | **128** Docs | **1030** total commits | **3** stars | **0** forks | **0** open issues
+**852** Python | **981** TypeScript | **131** C++/H | **128** Docs | **1032** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4e85900f`](https://github.com/matthewmackes/map2-audio/commit/4e85900f4fc559f944bce537379fdd2bca9e0c74) | Normalize blocker-only worklist bookkeeping | Map2 Audio | 2026-03-29 |
+| [`1780a6b3`](https://github.com/matthewmackes/map2-audio/commit/1780a6b38233f9beb6af9dbd5a727ba8c2b4bd3a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`a30131cb`](https://github.com/matthewmackes/map2-audio/commit/a30131cba2e3c1266e6392a846a7984aac63ecdb) | Promote chain graph and signal path owners to canonical f... | Map2 Audio | 2026-03-29 |
 | [`5ed1f6c4`](https://github.com/matthewmackes/map2-audio/commit/5ed1f6c40fbef7b33ab9fd97aea527630975514b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`51b4c67d`](https://github.com/matthewmackes/map2-audio/commit/51b4c67da9f03e75efde46317ce8380f761317a5) | Move snapshot editor helper owners into canonical modules | Map2 Audio | 2026-03-29 |
 | [`1e9201ca`](https://github.com/matthewmackes/map2-audio/commit/1e9201cadf969e9062091c92f33024034b3d322f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`79f1acc0`](https://github.com/matthewmackes/map2-audio/commit/79f1acc007bb4f23725067c62174bc9111447728) | Move snapshot editor owners into canonical files | Map2 Audio | 2026-03-29 |
 | [`175caea0`](https://github.com/matthewmackes/map2-audio/commit/175caea0c1fb9ac6993d98ccc5d19205e7bdb38f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
-| [`b2621264`](https://github.com/matthewmackes/map2-audio/commit/b26212646d9e02873c08f2b1c49785eac047d315) | Land E-SNAP snapshot cutover checkpoint | Map2 Audio | 2026-03-29 |
-| [`d8224618`](https://github.com/matthewmackes/map2-audio/commit/d8224618ffb715e943dc53c65cb6c978c872008e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
