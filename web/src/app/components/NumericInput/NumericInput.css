@@ -114,7 +114,10 @@
 
 .numeric-input__field.is-overlay-hidden {
   color: transparent;
+  -webkit-text-fill-color: transparent;
   caret-color: transparent;
+  opacity: 0;
+  text-shadow: none;
 }
 
 .numeric-input__field::selection {

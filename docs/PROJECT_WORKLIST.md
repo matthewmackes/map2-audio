@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 10:33 EDT - T566 completed Artifacts-native snapshots workspace
+Last updated: 2026-03-30 12:15 EDT - T568 completed sequential snapshot questionnaire workflow
+
+ID: T568
+Status: [✓] Done
+Title: Add sequential snapshot questionnaire capture and distinct Carbon-aligned action accents
+Description:
+- Goal / acceptance criteria: Replace the direct snapshot-create affordance with a guided questionnaire that asks 10 questions one at a time, preserves Carbon modal behavior, and writes the captured answers into snapshot metadata for both Snapshot Editor and Audio Artifacts create flows. The action cluster must also use clearer per-action color accents so Artifacts, New Snapshot, Update Snapshot, and MIDI read as distinct controls without abandoning Carbon styling. Focused frontend regression coverage and production-build validation are required.
+- Why it matters: The direct create button did not honor the requested guided question flow, and the clustered controls were too visually similar to scan quickly during live operation.
+- Dependencies: T566
+- Estimated effort: Medium
+- Required outputs: reusable snapshot questionnaire modal, editor/artifacts integration, action-color differentiation, focused tests, production validation evidence, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 12:15 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/snapshots/SnapshotQuestionnaireModal.tsx` and `web/src/app/components/snapshots/SnapshotQuestionnaireModal.css` to provide a reusable 10-step Carbon modal that asks one question at a time, uses per-step accent colors, and serializes the answers into snapshot metadata fields plus enriched description/tags.
+  - Integrated the questionnaire into both `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, replacing direct create mutations with guided capture while preserving existing activation behavior.
+  - Updated `web/src/app/pages/SnapshotEditorPage.css` so Artifacts, New Snapshot, Update Snapshot, and MIDI each carry clearer Carbon-aligned accent treatment in both floating and tablet launcher variants.
+  - Added focused regression coverage in `web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx` for sequential one-at-a-time navigation and metadata submission shaping.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T567
+Status: [✓] Done
+Title: Correct the Snapshot Editor flow-card LCD volume overlap regression
+Description:
+- Goal / acceptance criteria: Remove the visible overlap between the flow-card LCD volume display and the underlying numeric input text so the volume readout renders as one clean segmented-LCD value in the live Snapshot Editor card. The fix must preserve inline editing behavior and include focused regression coverage.
+- Why it matters: The approved card flattening shipped with a visible readout overlap that breaks the primary hierarchy and makes the volume control look unstable.
+- Dependencies: T565
+- Estimated effort: Low
+- Required outputs: numeric-input overlay fix, any required flow-card sizing adjustment, focused regression coverage, validation evidence, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 11:08 EDT - Codex
+- Completion notes:
+  - Hardened the overlaid numeric-input hidden state in `web/src/app/components/NumericInput/NumericInput.css` by adding `-webkit-text-fill-color: transparent`, `opacity: 0`, and `text-shadow: none` so the raw input text cannot bleed through the LCD overlay when the display overlay is active.
+  - Added focused regression coverage in `web/src/app/components/NumericInput/NumericInput.test.tsx` to prove the underlying field stays hidden while the overlay is shown and becomes visible again on focus for inline editing.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/NumericInput/NumericInput.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T566
 Status: [✓] Done

@@ -257,4 +257,31 @@ describe('NumericInput', () => {
 
     jest.useRealTimers()
   })
+
+  it('hides the raw field while a display overlay is shown and restores it on focus', () => {
+    render(
+      <NumericInput
+        label="Mix"
+        descriptor={createParameterDescriptor({ min: 0, max: 100, step: 1, defaultValue: 50, unit: '%' })}
+        value={50}
+        onChange={() => {}}
+        displayOverlay={<div data-testid="numeric-overlay">LCD</div>}
+      />,
+    )
+
+    const input = screen.getByRole('slider', { name: 'Mix' })
+
+    expect(screen.getByTestId('numeric-overlay')).toBeTruthy()
+    expect(input.classList.contains('is-overlay-hidden')).toBe(true)
+
+    fireEvent.focus(input)
+
+    expect(screen.queryByTestId('numeric-overlay')).toBeNull()
+    expect(input.classList.contains('is-overlay-hidden')).toBe(false)
+
+    fireEvent.blur(input)
+
+    expect(screen.getByTestId('numeric-overlay')).toBeTruthy()
+    expect(input.classList.contains('is-overlay-hidden')).toBe(true)
+  })
 })

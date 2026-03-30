@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 29, 2026 (E-SNAP canonical MIDI snapshot recall cutover)
+> **Last Updated**: March 30, 2026 (sequential snapshot questionnaire capture)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1385,6 +1385,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_midi_service_snapshot_program_change.py tests/test_snapshot_service.py`
 - **Lesson**: Snapshot recall should have one activation path. If MIDI can load a snapshot, it must call the same canonical service used by UI/API recall instead of rebuilding compatibility logic in `MIDIService`.
 
+**41. Sequential Snapshot Questionnaires Need Step-Based UI And Full Build Validation (MEDIUM - Mar 30, 2026)**
+- **Files**: `web/src/app/components/snapshots/SnapshotQuestionnaireModal.tsx`, `web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx`, `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/SnapshotEditorPage.css`
+- **Problem**: A snapshot-create redesign can look correct with a modal and local `typecheck`, but still violate the user's "ask questions one at a time" requirement or fail the production build on route/module integration details.
+- **Root Cause**: It is easy to drift into grouped-form UX instead of explicit sequential questioning, and `npm --prefix web run typecheck` does not always surface `tsc -b` failures like `JSX` namespace typing or declaration-order issues.
+- **Fix**: Use an explicit step-based questionnaire that renders one prompt at a time, add focused tests for sequential navigation and final metadata shaping, and always rerun `npm --prefix web run build` after the local compile step.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In this codebase, "ask questions" is a behavior contract. Sequential UI flow and production-build validation are both required to call the work complete.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1655,6 +1663,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-30] - Sequential Snapshot Questionnaire Capture
+- **Section**: Gotchas & Learned Fixes (#41), Update Log
+- **Change**: Documented the rule that snapshot-create question flows must be step-based and that `npm --prefix web run build` is mandatory even when local `typecheck` already passes.
+- **Reason**: The questionnaire rollout surfaced both a user-facing interaction contract and build-only integration failures that would be easy to miss during local UI work.
+- **Impact**: Future "ask questions" UI work should ship with sequential-flow tests plus full build validation instead of stopping at local compile success.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/snapshots/SnapshotQuestionnaireModal.tsx`, `web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx`, `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-29] - E-SNAP Snapshot Cache-Key And Secondary-Surface Cleanup
 - **Section**: Gotchas & Learned Fixes (#39), Update Log
@@ -2146,5 +2161,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 27, 2026
+**Last Updated**: March 30, 2026
 **Maintained by**: GitHub Copilot AI Assistants

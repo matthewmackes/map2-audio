@@ -88,6 +88,7 @@ import {
 } from '../../map2/api'
 import {
   snapshotsApi,
+  flowSnapshotDataToSnapshotPayload,
 } from '../../map2/clients/snapshots'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
@@ -101,6 +102,10 @@ import { NumberInput } from '../components/ParameterControl'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
+import {
+  SnapshotQuestionnaireModal,
+  type SnapshotQuestionnaireValue,
+} from '../components/snapshots/SnapshotQuestionnaireModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
@@ -775,6 +780,7 @@ export function SnapshotEditorPage() {
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
   const [selectedPluginPosition, setSelectedPluginPosition] = useState<number | null>(initialPluginPersistence.selectedPluginPosition)
   const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
+  const [snapshotQuestionnaireOpen, setSnapshotQuestionnaireOpen] = useState(false)
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
@@ -1040,6 +1046,8 @@ export function SnapshotEditorPage() {
     queryFn: () => snapshotsApi.list(),
     refetchInterval: 5000,
   })
+  const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
+  const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
   const snapshotEntryRequired = liveSnapshotQuery.isSuccess && liveSnapshotQuery.data === null
 
   const openArtifactsSnapshots = useCallback(() => {
@@ -1332,6 +1340,60 @@ export function SnapshotEditorPage() {
       chains: chainSnapshots,
     }
   }, [effectiveChainById, flowSlots, routing, activeFlowIndex])
+
+  const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
+
+  const createSnapshotFromEditorMutation = useMutation({
+    mutationFn: async (draft?: SnapshotQuestionnaireValue) => {
+      const created = await snapshotsApi.create({
+        name: draft?.name?.trim() || `Snapshot ${snapshotCount + 1}`,
+        description: draft?.description?.trim() || 'Created from Snapshot Editor',
+        tags: draft?.tags ?? [],
+        program_number: draft?.program_number ?? null,
+        input_device: draft?.input_device ?? null,
+        output_device: draft?.output_device ?? null,
+        ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
+      })
+      return snapshotsApi.activate(created.snapshot_id)
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      clearSnapshotsDirty()
+      setSnapshotQuestionnaireOpen(false)
+      pushToast('Snapshot created', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
+    },
+  })
+
+  const defaultSnapshotQuestionnaireValue = useMemo<SnapshotQuestionnaireValue>(() => ({
+    name: `Snapshot ${snapshotCount + 1}`,
+    description: 'Created from Snapshot Editor',
+    tags: [],
+    program_number: null,
+    input_device: null,
+    output_device: null,
+  }), [snapshotCount])
+
+  const updateActiveSnapshotMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) {
+        throw new Error('No active snapshot to update')
+      }
+      return snapshotsApi.update(activeSnapshot.id, flowSnapshotDataToSnapshotPayload(currentSnapshotDraft))
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      clearSnapshotsDirty()
+      pushToast('Snapshot updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
+    },
+  })
 
   const setEditorSnapshotState = useCallback((data: SnapshotDraftData) => {
     const normalizedSnapshotState = normalizeRuntimeGridState(
@@ -3300,8 +3362,6 @@ export function SnapshotEditorPage() {
     setDetailsPlugin(plugin)
   }, [])
 
-  const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
-  const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
   const midiMappingCount = midiMappings.length
   const midiMappingCountLabel = midiMappingCount > 99 ? '99+' : String(midiMappingCount)
   const prefersReducedMotion = useMemo(() => {
@@ -3312,34 +3372,59 @@ export function SnapshotEditorPage() {
   }, [])
 
   const renderSnapshotsTrigger = () => (
-    <div className="snapshot-rail-trigger snapshot-floating-trigger">
-      {snapshotsDirty && (
-        prefersReducedMotion ? (
-          <span className="snapshot-rail-trigger__pulse" aria-hidden />
-        ) : (
-          <motion.span
-            className="snapshot-rail-trigger__pulse"
-            aria-hidden
-            initial={{ scale: 0.9, opacity: 0.7 }}
-            animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
-            transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
-          />
-        )
-      )}
-      <Button
-        hasIconOnly
-        size="lg"
-        kind="ghost"
-        renderIcon={Camera}
-        iconDescription="Open Snapshots"
-        aria-label="Open Snapshots"
-        aria-expanded={snapshotsModalOpen}
-        className="snapshot-rail-trigger__button"
-        onClick={openArtifactsSnapshots}
-      />
-      <div className="snapshot-rail-trigger__label-group">
-        <span className="snapshot-rail-trigger__label">Snapshots</span>
-        <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
+    <div className="snapshot-trigger-cluster">
+      <div className="snapshot-rail-trigger snapshot-floating-trigger">
+        {snapshotsDirty && (
+          prefersReducedMotion ? (
+            <span className="snapshot-rail-trigger__pulse" aria-hidden />
+          ) : (
+            <motion.span
+              className="snapshot-rail-trigger__pulse"
+              aria-hidden
+              initial={{ scale: 0.9, opacity: 0.7 }}
+              animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
+              transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
+            />
+          )
+        )}
+        <Button
+          hasIconOnly
+          size="lg"
+          kind="ghost"
+          renderIcon={Camera}
+          iconDescription="Open Artifacts"
+          aria-label="Open Artifacts"
+          aria-expanded={snapshotsModalOpen}
+          className="snapshot-rail-trigger__button"
+          onClick={openArtifactsSnapshots}
+        />
+        <div className="snapshot-rail-trigger__label-group">
+          <span className="snapshot-rail-trigger__label">Artifacts</span>
+          <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
+        </div>
+      </div>
+
+      <div className="snapshot-trigger-cluster__actions">
+        <Button
+          size="md"
+          kind="primary"
+          renderIcon={Add}
+          className="snapshot-trigger-cluster__button snapshot-trigger-cluster__button--create"
+          onClick={() => setSnapshotQuestionnaireOpen(true)}
+          disabled={createSnapshotFromEditorMutation.isPending}
+        >
+          {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
+        </Button>
+        <Button
+          size="md"
+          kind="secondary"
+          renderIcon={Renew}
+          className="snapshot-trigger-cluster__button snapshot-trigger-cluster__button--update"
+          onClick={() => updateActiveSnapshotMutation.mutate()}
+          disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
+        >
+          {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
+        </Button>
       </div>
     </div>
   )
@@ -3390,11 +3475,11 @@ export function SnapshotEditorPage() {
           size="md"
           kind={snapshotsModalOpen ? 'secondary' : 'ghost'}
           renderIcon={Camera}
-          aria-label="Open Snapshots"
+          aria-label="Open Artifacts"
           className="juce-grid-page__tablet-launcher-utility"
           onClick={openArtifactsSnapshots}
         >
-          Snapshots {snapshotCountLabel}
+          Artifacts {snapshotCountLabel}
         </Button>
       )
     }
@@ -4970,6 +5055,26 @@ export function SnapshotEditorPage() {
           <section className="juce-grid-page__tablet-launcher" aria-label="Tablet workspace launcher">
             <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--left">
               {renderTabletLauncherUtilityButton('snapshots')}
+              <Button
+                size="md"
+                kind="primary"
+                renderIcon={Add}
+                className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--create"
+                onClick={() => setSnapshotQuestionnaireOpen(true)}
+                disabled={createSnapshotFromEditorMutation.isPending}
+              >
+                {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
+              </Button>
+              <Button
+                size="md"
+                kind="secondary"
+                renderIcon={Renew}
+                className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--update"
+                onClick={() => updateActiveSnapshotMutation.mutate()}
+                disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
+              >
+                {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
+              </Button>
               {renderTabletLauncherUtilityButton('midi')}
             </div>
 
@@ -5095,6 +5200,16 @@ export function SnapshotEditorPage() {
           {renderMidiTrigger()}
         </div>
       )}
+
+      <SnapshotQuestionnaireModal
+        open={snapshotQuestionnaireOpen}
+        title="Create snapshot"
+        label="Snapshot capture"
+        initialValue={defaultSnapshotQuestionnaireValue}
+        submitting={createSnapshotFromEditorMutation.isPending}
+        onClose={() => setSnapshotQuestionnaireOpen(false)}
+        onSubmit={(draft) => createSnapshotFromEditorMutation.mutate(draft)}
+      />
 
       {pendingTabletDeletePlugin && (
         <Modal
