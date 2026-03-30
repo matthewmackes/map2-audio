@@ -4770,6 +4770,7 @@ export function SnapshotEditorPage() {
               updateFlow(activeFlow.id, { chainId })
               handlePluginSelect(pluginUri, pluginPosition)
             }}
+            liveSnapshot={activeSnapshot}
           />
 
           <main className="juce-grid-page__main">
@@ -4908,7 +4909,7 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__compact-section-header">
                   <p className="juce-grid-page__compact-section-kicker">Library</p>
                   <h2>Presets</h2>
-                  <p>Preset save/load/import and selected-path controls now live in the Paths card above.</p>
+                  <p>Preset save and recall state now appears in the live snapshot status card above.</p>
                 </div>
                 </Layer>
               )}

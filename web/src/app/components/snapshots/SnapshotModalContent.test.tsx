@@ -76,7 +76,7 @@ function renderContent(props: Partial<React.ComponentProps<typeof SnapshotModalC
     </QueryClientProvider>,
   )
 
-  return { applySnapshotData, onRecall }
+  return { applySnapshotData, onRecall, queryClient }
 }
 
 describe('SnapshotModalContent', () => {
@@ -262,7 +262,7 @@ describe('SnapshotModalContent', () => {
       bypass_applied: 0,
     })
 
-    const { applySnapshotData, onRecall } = renderContent()
+    const { applySnapshotData, onRecall, queryClient } = renderContent()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Create New' }))
     fireEvent.change(await screen.findByLabelText('Snapshot name'), { target: { value: 'Fresh Snapshot' } })
@@ -303,6 +303,12 @@ describe('SnapshotModalContent', () => {
 
     await waitFor(() => expect(applySnapshotData).toHaveBeenCalled())
     expect(onRecall).toHaveBeenCalled()
+    expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
+      expect.objectContaining({
+        id: 101,
+        name: 'Fresh Snapshot',
+      }),
+    )
     expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')
   })
 })

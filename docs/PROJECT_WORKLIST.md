@@ -6,7 +6,41 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 21:50 EDT - T547 snapshot-first hard-cutover core completed through canonical MIDI snapshot recall, leaving only blocker-gated follow-up items
+Last updated: 2026-03-29 22:46 EDT - T549 completed the Snapshot Editor live snapshot status redesign and cleared focused plus production-build validation
+
+ID: T549
+Status: [✓] Done
+Title: Replace Snapshot Editor Paths management card with read-only live snapshot status surface
+Description:
+- Goal / acceptance criteria: Remove the current Snapshot Editor `Paths` management area shown in the editor header block and replace it with a Carbon-guided, read-only live snapshot status area in the same location. The new surface must show the currently live snapshot only, use the snapshot name as the hero, render assigned MIDI PC and all assigned MIDI channels in LCD styling to the right of the title, display all remaining requested snapshot attributes in compact professional tiles or rows, use effect-friendly wording, and show a clear `No live snapshot` empty state when nothing is active.
+- Why it matters: The current Paths card is operationally dense and teaches a management workflow the user no longer wants in that part of the editor. The replacement should make live snapshot state immediately legible during performance/editing.
+- Dependencies: T548
+- Estimated effort: Medium
+- Required outputs: component redesign, Snapshot Editor wiring from canonical live snapshot data, focused frontend regression validation, and updated worklist notes.
+- Completion notes:
+  - Replaced the old `SnapshotChainManagementCard` path chooser/operations block with a read-only live snapshot status surface driven by the editor’s canonical live snapshot query, including a hero snapshot name, LCD-style MIDI PC/channel readout, compact Carbon tiles for the remaining snapshot attributes, and a `No live snapshot` empty state.
+  - Wired `SnapshotEditorPageContent` to pass the active live snapshot into the redesigned card and updated stale compact-workflow copy that still referenced the removed Paths management card.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 22:46 EDT - Codex
+
+ID: T548
+Status: [✓] Done
+Title: Seed live snapshot cache immediately after modal create/recall so Snapshot Editor populates
+Description:
+- Goal / acceptance criteria: Ensure that after creating or recalling a snapshot from the snapshot modal, the Snapshot Editor leaves the entry-point placeholder immediately and renders the activated snapshot workspace without waiting for a polling/refetch round-trip. Focused regression coverage must lock the cache handoff behavior.
+- Why it matters: The snapshot modal already receives the activated canonical snapshot detail, but the editor page gates its workspace on the live-snapshot query. If that cache stays `null` until refetch, operators can land in a broken-looking empty editor right after successful create/recall.
+- Dependencies: T547
+- Estimated effort: Low
+- Required outputs: snapshot-modal live-query cache seeding on create/recall, focused frontend regression validation, worklist notes.
+- Completion notes:
+  - Updated `SnapshotModalContent` to seed `['snapshots', 'live']` with the activated snapshot detail on both create-and-activate and recall success paths before invalidating the broader snapshot queries.
+  - Extended `SnapshotModalContent.test.tsx` to assert that the shared React Query cache now holds the activated live snapshot immediately after the new-snapshot wizard completes.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 22:16 EDT - Codex
 
 ID: T547
 Status: [✓] Done

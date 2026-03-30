@@ -1,12 +1,8 @@
-import { useMemo, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Add, Branch, Power, TrashCan } from '@carbon/icons-react'
-import { Button, InlineLoading, Layer, Modal, Tag, TextInput, Tile } from '@carbon/react'
-import { chainsApi } from '../../../map2/api'
-import { useToasts } from '../Toasts'
-import type { Chain, ChainsResponse, Plugin } from '../../../map2/types'
-import { applyOptimisticSnapshotEditorLiveChainSet } from './snapshotEditorLiveChains'
-import { getPluginChipMeta } from '../../utils/pluginChipMeta'
+import { useMemo } from 'react'
+import { Music } from '@carbon/icons-react'
+import { Layer, Tag, Tile } from '@carbon/react'
+import type { SnapshotDetail, SnapshotMidiMapEntry } from '../../../map2/types'
+import { SegmentedLedText } from '../Displays/SegmentedLedText'
 
 interface FlowSlotRef {
   id: string
@@ -14,9 +10,6 @@ interface FlowSlotRef {
   label: string
   color: string
 }
-
-/** Max plugin chips shown before +N overflow tag */
-const MAX_VISIBLE_CHIPS = 5
 
 interface SnapshotChainManagementCardProps {
   selectedChainId?: number | null
@@ -27,447 +20,253 @@ interface SnapshotChainManagementCardProps {
   onToggleSelectedChainActive: () => void
   onDuplicateChain: () => void
   onRenameChain: () => void
-  /** Plugin metadata lookup (URI → Plugin) passed from parent to avoid duplicate fetch */
-  pluginMeta?: Record<string, Plugin>
-  /** Called when a plugin chip is clicked — selects the chain and opens that plugin's editor */
+  pluginMeta?: Record<string, unknown>
   onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
+  liveSnapshot?: SnapshotDetail | null
 }
 
-export function SnapshotChainManagementCard({
-  selectedChainId,
-  onChainSelect,
-  onSelectedChainRemoved,
-  flowSlots = [],
-  focusedFlowLabel = 'A',
-  onToggleSelectedChainActive,
-  onDuplicateChain,
-  onRenameChain,
-  pluginMeta = {},
-  onPluginChipClick,
-}: SnapshotChainManagementCardProps) {
-  const queryClient = useQueryClient()
-  const { pushToast } = useToasts()
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newChainName, setNewChainName] = useState('')
-  const [pendingDeleteChain, setPendingDeleteChain] = useState<Chain | null>(null)
+interface SnapshotStatusTile {
+  label: string
+  value: string
+  tone?: 'default' | 'secondary'
+  wide?: boolean
+}
 
-  const chainsQuery = useQuery<ChainsResponse>({
-    queryKey: ['chains'],
-    queryFn: () => chainsApi.list(),
-    refetchInterval: 5000,
-  })
+const MIDI_CHANNEL_KEYS = ['channel', 'midi_channel', 'midiChannel', 'channel_number', 'channelNumber'] as const
+const MIDI_CHANNEL_LIST_KEYS = ['channels', 'midi_channels', 'midiChannels', 'channel_numbers', 'channelNumbers'] as const
 
-  const chains = chainsQuery.data?.chains || []
-  const selectedChain = useMemo(
-    () => chains.find((chain) => chain.id === selectedChainId) ?? null,
-    [chains, selectedChainId],
-  )
-
-  const createMutation = useMutation({
-    mutationFn: (name: string) => chainsApi.create(name),
-    onSuccess: async (createdChain) => {
-      await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      setShowCreateModal(false)
-      setNewChainName('')
-      onChainSelect?.(createdChain.id)
-      pushToast(`Path "${createdChain.name}" created`, 'success')
-    },
-    onError: () => pushToast('Failed to create path', 'error'),
-  })
-
-  type ChainActivationMutationContext = {
-    previousChains?: ChainsResponse
+function parseMidiNumbers(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => parseMidiNumbers(item))
   }
 
-  const activateMutation = useMutation({
-    mutationFn: (chainId: number) => chainsApi.activate(chainId),
-    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active)
-          .map((chain) => chain.id),
-      )
-      nextActiveChainIds.add(chainId)
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
-      ))
-      return { previousChains }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Path activated', 'success')
-    },
-    onError: (_error, _chainId, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      pushToast('Failed to activate path', 'error')
-    },
-  })
-
-  const deactivateMutation = useMutation({
-    mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
-    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active && chain.id !== chainId)
-          .map((chain) => chain.id),
-      )
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
-      ))
-      return { previousChains }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Path deactivated', 'info')
-    },
-    onError: (_error, _chainId, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      pushToast('Failed to deactivate path', 'error')
-    },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (chainId: number) => chainsApi.delete(chainId),
-    onSuccess: async (_, chainId) => {
-      await queryClient.invalidateQueries({ queryKey: ['chains'] })
-      setPendingDeleteChain(null)
-      onSelectedChainRemoved?.(chainId)
-      pushToast('Path deleted', 'warn')
-    },
-    onError: () => pushToast('Failed to delete path', 'error'),
-  })
-
-  const isBusy = createMutation.isPending || activateMutation.isPending || deactivateMutation.isPending || deleteMutation.isPending
-
-  const selectedChainFlowSlots = useMemo(
-    () => selectedChain ? flowSlots.filter((slot) => slot.chainId === selectedChain.id) : [],
-    [flowSlots, selectedChain],
-  )
-  const activeChains = useMemo(
-    () => chains.filter((chain) => chain.is_active),
-    [chains],
-  )
-
-  const handleTileKeyDown = (event: ReactKeyboardEvent<HTMLElement>, chainId: number) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      onChainSelect?.(chainId)
-    }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return [Math.trunc(value)]
   }
 
-  const toggleChainPower = (chain: Chain) => {
-    if (chain.is_active) {
-      deactivateMutation.mutate(chain.id)
+  if (typeof value === 'string') {
+    return value
+      .split(/[\s,/:|]+/)
+      .map((segment) => Number.parseInt(segment, 10))
+      .filter((segment) => Number.isFinite(segment))
+  }
+
+  return []
+}
+
+function collectSnapshotMidiEntries(snapshot: SnapshotDetail): SnapshotMidiMapEntry[] {
+  const canonicalEntries = Array.isArray(snapshot.controls?.midi_map) ? snapshot.controls.midi_map : []
+  const compatibilityEntries = Array.isArray(snapshot.midi_map) ? snapshot.midi_map : []
+  return [...canonicalEntries, ...compatibilityEntries]
+}
+
+function normalizeUniqueMidiNumbers(values: number[]): number[] {
+  return Array.from(new Set(values.filter((value) => Number.isFinite(value)))).sort((left, right) => left - right)
+}
+
+function isSnapshotRecallEntry(entry: SnapshotMidiMapEntry): boolean {
+  return entry.action === undefined || entry.action === 'load_snapshot'
+}
+
+function collectMidiPrograms(snapshot: SnapshotDetail): number[] {
+  const values = snapshot.program_number !== null ? [snapshot.program_number] : []
+  collectSnapshotMidiEntries(snapshot).forEach((entry) => {
+    if (!isSnapshotRecallEntry(entry)) {
       return
     }
-    activateMutation.mutate(chain.id)
-  }
+    values.push(...parseMidiNumbers(entry.program_number))
+  })
+  return normalizeUniqueMidiNumbers(values)
+}
 
-  const submitCreateChain = () => {
-    const normalizedName = newChainName.trim()
-    if (!normalizedName) {
+function collectMidiChannels(snapshot: SnapshotDetail): number[] {
+  const values: number[] = []
+
+  collectSnapshotMidiEntries(snapshot).forEach((entry) => {
+    if (!isSnapshotRecallEntry(entry)) {
       return
     }
-    createMutation.mutate(normalizedName)
+
+    MIDI_CHANNEL_KEYS.forEach((key) => {
+      values.push(...parseMidiNumbers(entry[key]))
+    })
+
+    MIDI_CHANNEL_LIST_KEYS.forEach((key) => {
+      values.push(...parseMidiNumbers(entry[key]))
+    })
+  })
+
+  return normalizeUniqueMidiNumbers(values)
+}
+
+function formatRoutingMode(mode: SnapshotDetail['routing']['mode']): string {
+  switch (mode) {
+    case 'parallel_blend':
+      return 'Parallel'
+    case 'series':
+      return 'Series'
+    case 'morph':
+      return 'Morph'
+    case 'sidechain':
+      return 'Sidechain'
+    default:
+      return 'Custom'
   }
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) {
+    return 'Unavailable'
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Unavailable'
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(parsed)
+}
+
+function formatMidiReadout(snapshot: SnapshotDetail): string {
+  const programs = collectMidiPrograms(snapshot)
+  const channels = collectMidiChannels(snapshot)
+  const programText = programs.length > 0
+    ? programs.map((value) => String(value).padStart(3, '0')).join('/')
+    : '--'
+  const channelText = channels.length > 0
+    ? channels.map((value) => String(value).padStart(2, '0')).join('/')
+    : '--'
+  return `PC ${programText}  CH ${channelText}`
+}
+
+function buildStatusTiles(snapshot: SnapshotDetail): SnapshotStatusTile[] {
+  const pathCount = snapshot.channel_count || snapshot.paths.length
+  return [
+    {
+      label: 'Description',
+      value: snapshot.description.trim() || 'No description',
+      tone: snapshot.description.trim() ? 'default' : 'secondary',
+      wide: true,
+    },
+    {
+      label: 'Input device',
+      value: snapshot.io_bindings?.input_device || snapshot.input_device || 'Not assigned',
+      tone: snapshot.io_bindings?.input_device || snapshot.input_device ? 'default' : 'secondary',
+    },
+    {
+      label: 'Output device',
+      value: snapshot.io_bindings?.output_device || snapshot.output_device || 'Not assigned',
+      tone: snapshot.io_bindings?.output_device || snapshot.output_device ? 'default' : 'secondary',
+    },
+    {
+      label: 'Routing mode',
+      value: formatRoutingMode(snapshot.routing.mode),
+    },
+    {
+      label: 'Path count',
+      value: `${pathCount} ${pathCount === 1 ? 'path' : 'paths'}`,
+    },
+    {
+      label: 'Favorite status',
+      value: snapshot.is_favorite ? 'Favorite' : 'Standard',
+      tone: snapshot.is_favorite ? 'default' : 'secondary',
+    },
+    {
+      label: 'Last updated',
+      value: formatDateTime(snapshot.updated_at || snapshot.created_at),
+    },
+    {
+      label: 'Derived from snapshot',
+      value: snapshot.lineage?.derived_from_snapshot_id !== null
+        ? `Snapshot #${snapshot.lineage.derived_from_snapshot_id}`
+        : 'Original snapshot',
+      tone: snapshot.lineage?.derived_from_snapshot_id !== null ? 'default' : 'secondary',
+    },
+  ]
+}
+
+export function SnapshotChainManagementCard(props: SnapshotChainManagementCardProps) {
+  const { liveSnapshot = null } = props
+
+  const statusTiles = useMemo(
+    () => (liveSnapshot ? buildStatusTiles(liveSnapshot) : []),
+    [liveSnapshot],
+  )
+  const midiReadout = useMemo(
+    () => (liveSnapshot ? formatMidiReadout(liveSnapshot) : 'PC --  CH --'),
+    [liveSnapshot],
+  )
 
   return (
-    <>
-      <Layer className="juce-grid-page__chain-card">
-        <div className="juce-grid-page__chain-card-header">
-          <div className="juce-grid-page__chain-card-copy">
-            <div className="juce-grid-page__chain-card-heading">
-              <Branch size={18} />
-              <strong>Paths</strong>
-            </div>
-            <p>Each snapshot path becomes a runtime chain when it goes live or is activated.</p>
+    <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
+      <div className="juce-grid-page__snapshot-status-header">
+        <div className="juce-grid-page__snapshot-status-header-copy">
+          <div className="juce-grid-page__snapshot-status-heading">
+            <Music size={18} />
+            <strong>Live Snapshot</strong>
           </div>
-          <div className="juce-grid-page__chain-card-header-actions">
-            <Tag type="cool-gray">Path {focusedFlowLabel}</Tag>
+          <p>Read-only status for the snapshot currently driving this signal workspace.</p>
+        </div>
+        {liveSnapshot && (
+          <div className="juce-grid-page__snapshot-status-header-actions">
+            <Tag type="green">Live now</Tag>
+            {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
+          </div>
+        )}
+      </div>
+
+      {liveSnapshot ? (
+        <div className="juce-grid-page__snapshot-status-layout">
+          <div className="juce-grid-page__snapshot-status-hero">
+            <div className="juce-grid-page__snapshot-status-hero-copy">
+              <span className="juce-grid-page__chain-action-label">Current snapshot</span>
+              <div className="juce-grid-page__snapshot-status-hero-row">
+                <h2 className="juce-grid-page__snapshot-status-title">{liveSnapshot.name}</h2>
+                <div className="juce-grid-page__snapshot-status-midi">
+                  <SegmentedLedText
+                    value={midiReadout}
+                    size="md"
+                    color="#78a9ff"
+                    className="juce-grid-page__snapshot-status-midi-readout"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="juce-grid-page__snapshot-status-grid" role="list" aria-label="Live snapshot attributes">
+            {statusTiles.map((tile) => (
+              <Tile
+                key={tile.label}
+                role="listitem"
+                className={`juce-grid-page__snapshot-status-tile ${tile.wide ? 'is-wide' : ''}`}
+              >
+                <span className="juce-grid-page__chain-action-label">{tile.label}</span>
+                <strong className={`juce-grid-page__snapshot-status-value ${tile.tone === 'secondary' ? 'is-secondary' : ''}`}>
+                  {tile.value}
+                </strong>
+              </Tile>
+            ))}
           </div>
         </div>
-
-        <div className="juce-grid-page__chain-action-grid">
-          <div className="juce-grid-page__chain-active-display">
-            <div className="juce-grid-page__chain-active-display-header">
-              <span className="juce-grid-page__chain-action-label">Live paths</span>
-              <Tag type={activeChains.length > 0 ? 'green' : 'cool-gray'}>
-                {activeChains.length} live
-              </Tag>
-            </div>
-            <div className="juce-grid-page__chain-active-display-line" aria-label="Currently live paths">
-              {activeChains.length > 0 ? activeChains.map((chain) => {
-                const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
-                const flowLabel = flowsUsingChain.length > 0
-                  ? flowsUsingChain.map((slot) => slot.label).join('+')
-                  : 'Live'
-                const accentColor = flowsUsingChain[0]?.color || 'var(--cds-support-success, #24a148)'
-
-                return (
-                  <span
-                    key={`active-chain-${chain.id}`}
-                    className="juce-grid-page__chain-active-chip"
-                    style={{ '--chain-active-accent': accentColor } as CSSProperties}
-                  >
-                    <span className="juce-grid-page__chain-active-chip-flow">{flowLabel}</span>
-                    <span className="juce-grid-page__chain-active-chip-name">{chain.name}</span>
-                  </span>
-                )
-              }) : (
-                <span className="juce-grid-page__chain-active-chip is-empty">
-                  <span className="juce-grid-page__chain-active-chip-name">No Live Paths</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="juce-grid-page__chain-management-layout">
-            <div className="juce-grid-page__chain-management-sidebar">
-              <Tile className="juce-grid-page__chain-action-tile">
-                <span className="juce-grid-page__chain-action-label">Selected path</span>
-                {selectedChain ? (
-                  <>
-                    <div className="juce-grid-page__chain-action-heading">
-                      <strong>{selectedChain.name}</strong>
-                      <div className="juce-grid-page__chain-action-tags">
-                        <Tag type={selectedChain.is_active ? 'green' : 'cool-gray'}>
-                          {selectedChain.is_active ? 'Active' : 'Inactive'}
-                        </Tag>
-                        <Tag type="cool-gray">{selectedChain.plugins.length} blocks</Tag>
-                      </div>
-                    </div>
-                    <p className="juce-grid-page__chain-action-copy">
-                      Assigned to focused path {focusedFlowLabel}. Manage the selected path while keeping the chooser visible beside this summary.
-                    </p>
-                    {selectedChainFlowSlots.length > 0 && (
-                      <div className="juce-grid-page__chain-flow-tags">
-                        {selectedChainFlowSlots.map((slot) => (
-                          <Tag key={`${slot.id}-${slot.label}`} type="blue">
-                            Path {slot.label}
-                          </Tag>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <strong>No path assigned</strong>
-                    <p className="juce-grid-page__chain-action-copy">
-                      Select a path from the chooser to the right to bind it to focused path {focusedFlowLabel} before duplicating, renaming, or changing activation.
-                    </p>
-                  </>
-                )}
-              </Tile>
-
-              <Tile className="juce-grid-page__chain-action-tile">
-                <span className="juce-grid-page__chain-action-label">Path operations</span>
-                <p className="juce-grid-page__chain-action-copy">Create a new path or manage the focused path lifecycle inside the same Carbon action group.</p>
-                <div className="juce-grid-page__chain-button-row">
-                  <Button
-                    size="sm"
-                    kind="ghost"
-                    renderIcon={Add}
-                    onClick={() => setShowCreateModal(true)}
-                    disabled={createMutation.isPending}
-                  >
-                    New path
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind={selectedChain?.is_active ? 'secondary' : 'primary'}
-                    onClick={onToggleSelectedChainActive}
-                    disabled={!selectedChain}
-                  >
-                    {selectedChain?.is_active ? 'Deactivate path' : 'Activate path'}
-                  </Button>
-                  <Button size="sm" kind="ghost" onClick={onDuplicateChain} disabled={!selectedChain}>
-                    Duplicate
-                  </Button>
-                  <Button size="sm" kind="ghost" onClick={onRenameChain} disabled={!selectedChain}>
-                    Rename path
-                  </Button>
-                </div>
-              </Tile>
-            </div>
-
-            <div className="juce-grid-page__chain-chooser-panel">
-              <span className="juce-grid-page__chain-action-label">Path chooser</span>
-              {chainsQuery.isLoading ? (
-                <div className="juce-grid-page__chain-loading">
-                  <InlineLoading description="Loading paths" status="active" />
-                </div>
-              ) : (
-                <div className="juce-grid-page__chain-grid" role="list" aria-label="Available paths">
-                  {chains.map((chain) => {
-                    const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
-                    const isSelected = selectedChainId === chain.id
-
-                    return (
-                      <article
-                        key={chain.id}
-                        role="listitem"
-                        tabIndex={0}
-                        className={`juce-grid-page__chain-tile ${isSelected ? 'is-selected' : ''} ${chain.is_active ? 'is-active' : ''}`}
-                        onClick={() => onChainSelect?.(chain.id)}
-                        onKeyDown={(event) => handleTileKeyDown(event, chain.id)}
-                        aria-pressed={isSelected}
-                      >
-                        <div className="juce-grid-page__chain-tile-header">
-                          <div className="juce-grid-page__chain-tile-copy">
-                            <strong>{chain.name}</strong>
-                            <span>{chain.plugins.length} loaded {chain.plugins.length === 1 ? 'block' : 'blocks'}</span>
-                          </div>
-                          <div className="juce-grid-page__chain-tile-tags">
-                            {isSelected && <Tag type="blue">Focused</Tag>}
-                            {chain.is_active && <Tag type="green">Active</Tag>}
-                          </div>
-                        </div>
-
-                        <div className="juce-grid-page__chain-tile-meta">
-                          {flowsUsingChain.length > 0 ? (
-                            <div className="juce-grid-page__chain-flow-pills">
-                              {flowsUsingChain.map((slot) => (
-                                <span
-                                  key={`${chain.id}-${slot.id}`}
-                                  className="juce-grid-page__chain-flow-pill"
-                                  style={{ '--chain-flow-color': slot.color } as CSSProperties}
-                                >
-                                  {slot.label}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="juce-grid-page__chain-empty-copy">Not assigned to a snapshot path</span>
-                          )}
-                        </div>
-
-                        {/* Plugin chip strip */}
-                        {chain.plugins.length > 0 && (
-                          <div className="juce-grid-page__chain-tile-chips">
-                            {chain.plugins.slice(0, MAX_VISIBLE_CHIPS).map((plugin) => {
-                              const meta = pluginMeta[plugin.uri]
-                              const category = meta?.category || meta?.class_label || plugin.plugin_display_type
-                              const { label, tagType } = getPluginChipMeta(category, plugin.bypassed)
-                              return (
-                                <Tag
-                                  key={`${chain.id}-${plugin.uri}-${plugin.position}`}
-                                  type={tagType}
-                                  size="sm"
-                                  title={meta?.name || plugin.name || plugin.uri}
-                                  className={`juce-grid-page__chain-plugin-chip${plugin.bypassed ? ' is-bypassed' : ''}${onPluginChipClick ? ' is-clickable' : ''}`}
-                                  onClick={onPluginChipClick ? (e) => {
-                                    e.stopPropagation()
-                                    onChainSelect?.(chain.id)
-                                    onPluginChipClick(chain.id, plugin.uri, plugin.position)
-                                  } : undefined}
-                                >
-                                  {label}
-                                </Tag>
-                              )
-                            })}
-                            {chain.plugins.length > MAX_VISIBLE_CHIPS && (
-                              <Tag type="cool-gray" size="sm" className="juce-grid-page__chain-plugin-chip">
-                                +{chain.plugins.length - MAX_VISIBLE_CHIPS}
-                              </Tag>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="juce-grid-page__chain-tile-actions">
-                          <Button
-                            size="sm"
-                            kind={chain.is_active ? 'secondary' : 'ghost'}
-                            hasIconOnly
-                            renderIcon={Power}
-                            iconDescription={chain.is_active ? `Deactivate path ${chain.name}` : `Activate path ${chain.name}`}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              toggleChainPower(chain)
-                            }}
-                            disabled={isBusy}
-                          />
-                          <Button
-                            size="sm"
-                            kind="danger--tertiary"
-                            hasIconOnly
-                            renderIcon={TrashCan}
-                            iconDescription={`Delete ${chain.name}`}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setPendingDeleteChain(chain)
-                            }}
-                            disabled={isBusy}
-                          />
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Layer>
-
-      {showCreateModal && (
-        <Modal
-          open
-          modalHeading="Create path"
-          primaryButtonText={createMutation.isPending ? 'Creating...' : 'Create path'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={newChainName.trim().length === 0 || createMutation.isPending}
-          onRequestClose={() => {
-            setShowCreateModal(false)
-            setNewChainName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowCreateModal(false)
-            setNewChainName('')
-          }}
-          onRequestSubmit={submitCreateChain}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Create a new path and assign it to focused path {focusedFlowLabel}.
-            </p>
-            <TextInput
-              id="juce-grid-create-chain-name"
-              labelText="Path name"
-              value={newChainName}
-              onChange={(event) => setNewChainName(event.target.value)}
-              autoFocus
+      ) : (
+        <Tile className="juce-grid-page__snapshot-status-empty">
+          <span className="juce-grid-page__chain-action-label">Current snapshot</span>
+          <h2 className="juce-grid-page__snapshot-status-title">No live snapshot</h2>
+          <p>Recall or create a snapshot to populate live snapshot status here.</p>
+          <div className="juce-grid-page__snapshot-status-midi">
+            <SegmentedLedText
+              value={midiReadout}
+              size="md"
+              color="#525252"
+              className="juce-grid-page__snapshot-status-midi-readout is-idle"
             />
           </div>
-        </Modal>
+        </Tile>
       )}
-
-      {pendingDeleteChain && (
-        <Modal
-          open
-          danger
-          modalHeading={`Delete ${pendingDeleteChain.name}?`}
-          primaryButtonText={deleteMutation.isPending ? 'Deleting...' : 'Delete path'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={deleteMutation.isPending}
-          onRequestClose={() => setPendingDeleteChain(null)}
-          onSecondarySubmit={() => setPendingDeleteChain(null)}
-          onRequestSubmit={() => deleteMutation.mutate(pendingDeleteChain.id)}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Remove this path from the library. Any snapshot paths using it will be cleared on this page.
-            </p>
-          </div>
-        </Modal>
-      )}
-    </>
+    </Layer>
   )
 }

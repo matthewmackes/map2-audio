@@ -220,6 +220,7 @@ export function SnapshotModalContent({
       return snapshotsApi.activate(created.snapshot_id)
     },
     onSuccess: async (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setContentView('library')
       onSnapshotSave?.()
@@ -237,6 +238,7 @@ export function SnapshotModalContent({
   const loadFlowSnapshotMutation = useMutation({
     mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (data) => {
+      queryClient.setQueryData(['snapshots', 'live'], data.snapshot_data)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
       onRecall?.()

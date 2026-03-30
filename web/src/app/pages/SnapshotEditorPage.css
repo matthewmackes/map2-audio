@@ -973,6 +973,117 @@
   border: 1px dashed var(--cds-border-subtle, var(--border));
 }
 
+.juce-grid-page__snapshot-status-card {
+  gap: 1rem;
+}
+
+.juce-grid-page__snapshot-status-header,
+.juce-grid-page__snapshot-status-header-actions,
+.juce-grid-page__snapshot-status-hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__snapshot-status-header-copy,
+.juce-grid-page__snapshot-status-hero-copy,
+.juce-grid-page__snapshot-status-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-header-copy p,
+.juce-grid-page__snapshot-status-empty p {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.875rem;
+}
+
+.juce-grid-page__snapshot-status-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.juce-grid-page__snapshot-status-hero,
+.juce-grid-page__snapshot-status-empty {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, var(--cds-link-primary, #0f62fe));
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer, var(--surface)) 90%, #050505), color-mix(in srgb, var(--cds-layer-hover, rgba(255,255,255,0.03)) 82%, #050505));
+}
+
+.juce-grid-page__snapshot-status-title {
+  margin: 0;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.juce-grid-page__snapshot-status-midi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 100%;
+  margin-inline-start: auto;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-link-primary, #0f62fe) 42%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, rgba(255,255,255,0.04)) 78%, #040404);
+}
+
+.juce-grid-page__snapshot-status-midi-readout {
+  font-size: clamp(1.5rem, 2.6vw, 3rem);
+  letter-spacing: 0.02em;
+}
+
+.juce-grid-page__snapshot-status-midi-readout.is-idle {
+  opacity: 0.65;
+}
+
+.juce-grid-page__snapshot-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.juce-grid-page__snapshot-status-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-height: 6.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, #050505);
+}
+
+.juce-grid-page__snapshot-status-tile.is-wide {
+  grid-column: 1 / -1;
+}
+
+.juce-grid-page__snapshot-status-value {
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: 0.975rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.juce-grid-page__snapshot-status-value.is-secondary {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-weight: 500;
+}
+
 .juce-grid-page__assignment-values {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5609,6 +5720,9 @@
   .juce-grid-page__shortcut-row,
   .juce-grid-page__chain-card-header,
   .juce-grid-page__chain-card-header-actions,
+  .juce-grid-page__snapshot-status-header,
+  .juce-grid-page__snapshot-status-header-actions,
+  .juce-grid-page__snapshot-status-hero-row,
   .juce-grid-page__live-chain-panel-header,
   .juce-grid-page__live-chain-panel-tags,
   .juce-grid-page__live-chain-mismatch-banner,
@@ -5676,9 +5790,18 @@
   .juce-grid-page__chain-button-row,
   .juce-grid-page__live-chain-miniature,
   .juce-grid-page__live-path-summary-meta,
-  .juce-grid-page__live-path-summary-flow-actions {
+  .juce-grid-page__live-path-summary-flow-actions,
+  .juce-grid-page__snapshot-status-midi {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .juce-grid-page__snapshot-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__snapshot-status-midi-readout {
+    font-size: clamp(1.2rem, 5vw, 2rem);
   }
 
   .juce-grid-page__masthead-primary-actions {
