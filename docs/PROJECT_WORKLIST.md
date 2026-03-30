@@ -6,7 +6,40 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 06:34 EDT - T555 completed after widening the Snapshot Editor top card to the workspace frame
+Last updated: 2026-03-30 06:45 EDT - T557 completed after moving the Snapshot Editor metadata pills into the overview card footer
+
+ID: T557
+Status: [✓] Done
+Title: Move the Snapshot Editor metadata pills into the snapshot overview card footer
+Description:
+- Goal / acceptance criteria: Place the live snapshot metadata pills inside the bottom edge of the Snapshot Overview card on the same horizontal row as the `Live now` pill instead of rendering them as a separate strip below the card.
+- Why it matters: The current detached pill row breaks the overview card composition and wastes vertical space under the hero surface.
+- Dependencies: T556
+- Estimated effort: Low
+- Required outputs: overview card layout update, pill positioning update, focused validation, and updated worklist notes.
+- Completion notes:
+  - Moved the live snapshot metadata pills into the overview card footer in `SnapshotChainManagementCard`, placing them on the same bottom row as the `Live now` chip instead of rendering them in a detached strip below the card.
+  - Updated the footer/pill flex styling in `SnapshotEditorPage.css` so the chips align horizontally on desktop and wrap back to a left-aligned stacked layout on narrow widths.
+  - Validation: `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:45 EDT - Codex
+
+ID: T556
+Status: [✓] Done
+Title: Remove the remaining horizontal inset from the Snapshot Editor top title card
+Description:
+- Goal / acceptance criteria: Make the top Snapshot Editor title card visually align edge-to-edge with the live snapshot card below it by removing the extra shell padding that still narrows the header.
+- Why it matters: The title card still appears pinched relative to the live snapshot hero even after matching the shared max width, which breaks visual alignment at the top of the page.
+- Dependencies: T555
+- Estimated effort: Low
+- Required outputs: header spacing adjustment, focused validation, and updated worklist notes.
+- Completion notes:
+  - Removed the horizontal padding from `juce-grid-page__header-shell`, so the Snapshot Editor top title card now aligns flush with the live snapshot card below instead of being inset inside the shared frame.
+  - Validation: `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:42 EDT - Codex
 
 ID: T555
 Status: [✓] Done

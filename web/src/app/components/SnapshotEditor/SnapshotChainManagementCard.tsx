@@ -212,25 +212,30 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   />
                 </div>
               </div>
-              <div className="juce-grid-page__snapshot-status-header-actions">
-                <Tag type="green">Live now</Tag>
-                {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
+              <div className="juce-grid-page__snapshot-status-footer">
+                <div className="juce-grid-page__snapshot-status-header-actions">
+                  <Tag type="green">Live now</Tag>
+                  {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
+                </div>
+                <div
+                  className="juce-grid-page__snapshot-status-pills"
+                  role="list"
+                  aria-label="Live snapshot attributes"
+                >
+                  {statusTiles.map((tile) => (
+                    <Tag
+                      key={tile.label}
+                      type={tile.tone === 'secondary' ? 'warm-gray' : 'cool-gray'}
+                      size="md"
+                      className="juce-grid-page__snapshot-status-pill"
+                    >
+                      <span className="juce-grid-page__snapshot-status-pill-label">{tile.label}</span>
+                      <strong className="juce-grid-page__snapshot-status-pill-value">{tile.value}</strong>
+                    </Tag>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="juce-grid-page__snapshot-status-pills" role="list" aria-label="Live snapshot attributes">
-            {statusTiles.map((tile) => (
-              <Tag
-                key={tile.label}
-                type={tile.tone === 'secondary' ? 'warm-gray' : 'cool-gray'}
-                size="md"
-                className="juce-grid-page__snapshot-status-pill"
-              >
-                <span className="juce-grid-page__snapshot-status-pill-label">{tile.label}</span>
-                <strong className="juce-grid-page__snapshot-status-pill-value">{tile.value}</strong>
-              </Tag>
-            ))}
           </div>
         </div>
       ) : (
