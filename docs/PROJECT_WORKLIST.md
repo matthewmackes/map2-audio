@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 11:13 EDT - T564 logged Snapshot Editor flow-card handoff spec and theme-token cleanup
+Last updated: 2026-03-30 10:33 EDT - T566 completed Artifacts-native snapshots workspace
+
+ID: T566
+Status: [✓] Done
+Title: Replace Snapshot Library modal with an Artifacts-native Snapshots category
+Description:
+- Goal / acceptance criteria: Remove the current Snapshot Library modal workflow and add `Snapshots` as a top-level Audio Artifacts category. The routed Artifacts surface must expose snapshot name, active/dirty flags, and MIDI PC directly in the main list, and provide integrated detail coverage for full snapshot contents, saved/dirty lifecycle, and cluster/node operations. Cluster behavior must be best-effort, missing resources must fall back to defaults rather than hard-fail, and node/sync operations should be surfaced from overflow-driven controls inside the routed workspace instead of a separate popup.
+- Why it matters: The user wants snapshots treated as first-class artifacts rather than a detached modal workflow, with richer operational visibility into snapshot contents and cluster behavior directly inside the library UI.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: updated worklist notes, Audio Artifacts Snapshots category/workspace implementation, Snapshot Editor trigger/modal removal or replacement, focused frontend validation, and build/typecheck evidence.
+- Assigned to: Codex
+- Last updated: 2026-03-30 10:33 EDT - Codex
+- Completion notes:
+  - Added `snapshots` as a top-level Audio Artifacts category in `web/src/app/pages/AudioArtifactsPage.tsx` and implemented the routed `SnapshotArtifactsWorkspace` in `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, giving snapshots an embedded library/detail workspace instead of a separate Snapshot Library modal.
+  - The new Artifacts Snapshots workspace surfaces the mandatory list fields (`Name`, `Flag`, `MIDI PC`), exposes full detail coverage for contained snapshot data, lifecycle state (`Saved`, `Modified / Dirty`), routing/environment state, asset/default-remap behavior, and best-effort cluster deployment history plus node-targeted overflow actions.
+  - Replaced the Snapshot Editor’s modal entrypoints in `web/src/app/pages/SnapshotEditorPageContent.tsx` so the floating/tablet Snapshots triggers and empty-entry CTA now route operators into `/artifacts?category=snapshots` instead of opening `SnapshotModal`.
+  - Added/updated focused coverage in `web/src/app/pages/AudioArtifactsPage.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T565
+Status: [✓] Done
+Title: Implement the Snapshot Editor flow-card redesign from the approved handoff spec
+Description:
+- Goal / acceptance criteria: Apply the approved Snapshot Editor flow-card redesign in the live desktop card surface. The implementation must flatten the card, remove the heavy service-bar treatment, keep the channel tile visually primary, move the LCD volume beside it, convert mute/solo to compact flat-text controls, compress routing/context data into a single metadata strip, replace the node-assignment action with a labeled `Network_3`-based `Assign` control, and remove hard-coded card-level accent colors in favor of active theme tokens. Focused frontend coverage and build/typecheck evidence are required.
+- Why it matters: The handoff spec is complete, but the shipped flow card still uses the old thick multi-cluster composition and hard-coded color behavior, which does not match the approved hierarchy or theme contract.
+- Dependencies: T564
+- Estimated effort: Medium
+- Required outputs: updated Snapshot Editor flow-card markup/CSS, theme-token cleanup, focused tests or test updates, validation evidence, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 09:52 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.ts` and focused coverage in `web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` to centralize the approved desktop metadata-strip ordering plus theme-token-driven LED and slot palette values.
+  - Reworked the desktop flow-card header in `web/src/app/pages/SnapshotEditorPageContent.tsx` so the channel tile remains primary, the LCD volume sits beside it, mute/solo render as compact flat-text controls, the routing/context copy collapses into a single metadata strip, and the node assignment action uses a labeled `Network_3`-based `Assign` control. Normalized the remaining tablet node-action icon to `Network_3` as the editor’s default node affordance.
+  - Flattened the card styling in `web/src/app/pages/SnapshotEditorPage.css` by removing the heavy outlined treatment, tightening the header height, converting emphasis to layer/background shifts, adding channel overlay states for mute/solo, and making the volume readout borderless while keeping the LCD treatment prominent.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T564
 Status: [✓] Done
@@ -19,7 +55,7 @@ Description:
 - Required outputs: handoff spec in `docs/design`, theme-token cleanup guidance, node-icon decision, and updated worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-30 11:13 EDT - Codex
+Last updated: 2026-03-30 09:13 EDT - Codex
 - Completion notes:
   - Added `docs/design/SNAPSHOT_EDITOR_FLOW_CARD_HANDOFF_20260330.md` as the canonical design handoff for the Snapshot Editor flow card, including locked layout decisions, row order, sizing, metadata ordering, interaction behavior, and acceptance criteria.
   - Recorded `Network_3` from `@carbon/icons-react` as the default platform node icon for this action and future node-referencing surfaces unless a topology-specific icon is required.

@@ -50,6 +50,18 @@ jest.mock('../components/artifacts/ArtifactDownloadModal', () => ({
   ),
 }))
 
+jest.mock('../components/artifacts/SnapshotArtifactsWorkspace', () => ({
+  SnapshotArtifactsWorkspace: ({
+    searchQuery,
+  }: {
+    searchQuery?: string
+  }) => (
+    <div data-testid="snapshot-artifacts-workspace">
+      {searchQuery ?? ''}
+    </div>
+  ),
+}))
+
 jest.mock('../../map2/api', () => ({
   pluginsApi: {
     discover: jest.fn(),
@@ -209,6 +221,15 @@ describe('AudioArtifactsPage routed workspace', () => {
     expect(screen.getAllByText('local-rack').length).toBeGreaterThan(0)
     expect(screen.getByText('Items in view')).toBeInTheDocument()
     expect(screen.getAllByText('1 items').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Snapshots').length).toBeGreaterThan(0)
+  })
+
+  it('renders snapshots as a top-level artifacts workspace category', async () => {
+    renderArtifacts('/artifacts?category=snapshots&q=dirty')
+
+    expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
+    expect(screen.getAllByText('Saved signal-state artifacts with lifecycle, full content visibility, and best-effort cluster deployment context').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('snapshot-artifacts-workspace')).toHaveTextContent('dirty')
   })
 
   it('renders the library route and opens inline detail and sync panels inside the workspace', async () => {

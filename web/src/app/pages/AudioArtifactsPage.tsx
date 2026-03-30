@@ -50,6 +50,7 @@ import {
 } from '@carbon/icons-react'
 import { pluginsApi, irApi, namApi, soundfontApi } from '../../map2/api'
 import { ArtifactDownloadModal } from '../components/artifacts/ArtifactDownloadModal'
+import { SnapshotArtifactsWorkspace } from '../components/artifacts/SnapshotArtifactsWorkspace'
 import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
@@ -70,6 +71,7 @@ type ArtifactCategory =
   | 'reverb-irs'
   | 'soundfonts'
   | 'native-juce'
+  | 'snapshots'
 
 interface CategoryMeta {
   id: ArtifactCategory
@@ -120,6 +122,7 @@ const DISCOVER_TAB_BY_CATEGORY: Record<ArtifactCategory, 'plugin-packs' | 'nam' 
   'reverb-irs': 'reverb-irs',
   soundfonts: 'soundfonts',
   'native-juce': 'plugin-packs',
+  snapshots: 'plugin-packs',
 }
 
 // ─── Category Definitions ─────────────────────────────────────────────────────
@@ -230,6 +233,21 @@ const CATEGORIES: CategoryMeta[] = [
       { key: 'category', header: 'Category' },
       { key: 'node', header: 'Node' },
       { key: 'status', header: 'Status' },
+    ],
+  },
+  {
+    id: 'snapshots',
+    label: 'Snapshots',
+    shortLabel: 'Shots',
+    icon: FolderDetails,
+    description: 'Saved signal-state artifacts with lifecycle, full content visibility, and best-effort cluster deployment context',
+    primaryAction: 'Inspect Snapshot',
+    statusLabel: (item) => String(item.status ?? 'Saved'),
+    statusType: (item) => item.statusRaw === 'active' ? 'green' : item.statusRaw === 'dirty' ? 'blue' : 'warm-gray',
+    columns: [
+      { key: 'name', header: 'Name' },
+      { key: 'flag', header: 'Flag' },
+      { key: 'midiPc', header: 'MIDI PC' },
     ],
   },
 ]
@@ -726,6 +744,10 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   const allRows: ArtifactRow[] = useMemo(() => {
     const nodeName = nodes.find((n) => n.nodeId === selectedNodeId)?.hostname ?? 'Local'
 
+    if (activeCategory === 'snapshots') {
+      return []
+    }
+
     if (activeCategory === 'lv2-plugins') {
       return (pluginBrowser.allPlugins ?? []).map((p) => ({
         id: p.uri,
@@ -846,6 +868,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
 
   // ── Loading state ─────────────────────────────────────────────────────────
   const isLoading =
+    (activeCategory === 'snapshots' && false) ||
     (activeCategory === 'lv2-plugins' && pluginBrowser.isLoading) ||
     (activeCategory === 'nam-models' && namModelsQuery.isLoading) ||
     (activeCategory === 'cabinet-irs' && irCabinetsQuery.isLoading) ||
@@ -992,7 +1015,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
 
   // ── Active sync jobs badge ────────────────────────────────────────────────
   const activeSyncCount = syncJobs.filter((j) => j.status === 'syncing' || j.status === 'queued').length
-  const showArtifactsAside = !discoverMode && ((detailOpen && selectedItem !== null) || syncDrawerOpen)
+  const showArtifactsAside = !discoverMode && activeCategory !== 'snapshots' && ((detailOpen && selectedItem !== null) || syncDrawerOpen)
   const discoverInitialTab = DISCOVER_TAB_BY_CATEGORY[activeCategory]
   const selectedNodeLabel = nodes.find((node) => node.nodeId === selectedNodeId)?.hostname ?? 'this node'
   const sidebarNavItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => [
@@ -1090,9 +1113,15 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
                   kind="primary"
                   size="sm"
                   renderIcon={Upload}
-                  onClick={() => setUploadModalOpen(true)}
+                  onClick={() => {
+                    if (activeCategory === 'snapshots') {
+                      pushToast('info', 'Use the Snapshots workspace actions', 'Create and import actions are available inside the Snapshots category.')
+                      return
+                    }
+                    setUploadModalOpen(true)
+                  }}
                 >
-                  Upload
+                  {activeCategory === 'snapshots' ? 'Workspace actions' : 'Upload'}
                 </Button>
               </>
             )}
@@ -1192,7 +1221,16 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
                   </div>
                 </div>
 
-                {isLoading ? (
+                {activeCategory === 'snapshots' ? (
+                  <SnapshotArtifactsWorkspace
+                    searchQuery={searchQuery}
+                    onSearchQueryChange={(value) => updateParams({ q: value || null, page: '1' })}
+                    isClusterMode={isClusterMode}
+                    nodes={nodes}
+                    localNodeId={localNodeId}
+                    onToast={pushToast}
+                  />
+                ) : isLoading ? (
                   <Tile className="aap__table-tile">
                     <TableContainer>
                       <Table>
