@@ -6,7 +6,46 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 13:49 EDT - T572 completed platform polling follow-up
+Last updated: 2026-03-30 15:08 EDT - T574 completed hero snapshot click-to-rename
+
+ID: T574
+Status: [✓] Done
+Title: Add click-to-rename support for the live snapshot name in the Snapshot Editor hero
+Description:
+- Goal / acceptance criteria: Allow operators to rename the active live snapshot directly from the unified Snapshot Editor hero by clicking the snapshot name, opening a Carbon-aligned rename affordance prefilled with the current name, persisting the rename through the existing snapshots update API, and refreshing the relevant snapshot state without disturbing the live editor draft. Validation must cover the new hero affordance plus focused rename behavior.
+- Why it matters: The new unified hero made the snapshot name visually primary, but it is still read-only even though the operator expects that focal element to be the rename entrypoint.
+- Dependencies: T573
+- Estimated effort: Medium
+- Required outputs: hero title rename affordance, Snapshot Editor rename modal/update flow, focused regression updates, validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 15:08 EDT - Codex
+- Completion notes:
+  - Turned the live snapshot title inside `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` into the rename trigger by wrapping the hero name in an inline Carbon-style button treatment that keeps the snapshot visually primary while exposing an accessible click target and pending-state disablement.
+  - Added page-owned rename state and a dedicated live-snapshot rename mutation in `web/src/app/pages/SnapshotEditorPageContent.tsx`, reusing `snapshotsApi.update(...)` for name-only persistence, updating the `['snapshots', 'live']` cache with the returned snapshot, and presenting a Carbon modal prefilled with the current snapshot name.
+  - Extended the hero styling in `web/src/app/pages/SnapshotEditorPage.css` to support the inline rename affordance without changing the approved hero hierarchy, and updated focused coverage in `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` to assert the title-based rename entrypoint.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T573
+Status: [✓] Done
+Title: Merge the Snapshot Editor masthead, live snapshot card, and MIDI readout into one Carbon hero
+Description:
+- Goal / acceptance criteria: Replace the current three-part top Snapshot Editor treatment with one unified Carbon-first hero card that absorbs the `Audio Grid` masthead actions, keeps the live snapshot name as the main focus, preserves the existing `PC / CH` segmented readout without altering it, and converts the snapshot metadata pills into one inline key/value summary row. The absorbed desktop action order must be `Add path`, `Reset paths`, `Network Routing`, `Live Now!`, `Local Routing`, `Perform`, `Shortcuts`, with accent treatments limited to Carbon-green `Add path`, Carbon-red `Reset paths`, orange `Perform`, and a live-state accent for `Live Now!`.
+- Why it matters: The current top-of-page stack still reads as three separate cards and repeats hierarchy, while the user wants one cleaner platform-standard hero with Carbon productive structure and flatter surface treatment.
+- Dependencies: T553, T557
+- Estimated effort: Medium
+- Required outputs: unified Snapshot Editor hero markup, Carbon-aligned CSS cleanup, focused regression updates, validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 14:38 EDT - Codex
+- Completion notes:
+  - Merged the former `Audio Grid` masthead, live snapshot hero, and `PC / CH` segmented readout into one shared top-of-page hero by moving the action strip into `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` and promoting that card to the true top of `web/src/app/pages/SnapshotEditorPageContent.tsx`.
+  - Updated the absorbed desktop actions to the requested order and labels: `Add path`, `Reset paths`, `Network Routing`, `Live Now!`, `Local Routing`, `Perform`, `Shortcuts`; kept `PC / CH` readout formatting unchanged; changed the snapshot eyebrow from `Current snapshot` to `Live`; and converted the old metadata pills into one inline summary row.
+  - Flattened the hero surface styling in `web/src/app/pages/SnapshotEditorPage.css` onto a more Carbon-productive tile treatment, while adding restrained accent overrides for green `Add path`, red reset, live-state `Live Now!`, and orange `Perform`.
+  - Updated focused regression coverage in `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` to assert the unified hero structure, retained LCD readout, summary-row metadata, and no-live-snapshot fallback.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T571
 Status: [✓] Done

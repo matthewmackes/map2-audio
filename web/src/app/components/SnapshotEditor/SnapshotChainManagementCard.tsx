@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
-import { Layer, Tag, Tile } from '@carbon/react'
+import { Edit } from '@carbon/icons-react'
+import { useMemo, type ReactNode } from 'react'
+import { Layer, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotMidiMapEntry } from '../../../map2/types'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
+import { MapAudioGridIcon } from '../icons/map'
 
 interface FlowSlotRef {
   id: string
@@ -22,6 +24,9 @@ interface SnapshotChainManagementCardProps {
   pluginMeta?: Record<string, unknown>
   onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
   liveSnapshot?: SnapshotDetail | null
+  heroActions?: ReactNode
+  onRenameSnapshot?: () => void
+  snapshotRenamePending?: boolean
 }
 
 interface SnapshotStatusTile {
@@ -181,9 +186,14 @@ function buildStatusTiles(snapshot: SnapshotDetail): SnapshotStatusTile[] {
 }
 
 export function SnapshotChainManagementCard(props: SnapshotChainManagementCardProps) {
-  const { liveSnapshot = null } = props
+  const {
+    liveSnapshot = null,
+    heroActions,
+    onRenameSnapshot,
+    snapshotRenamePending = false,
+  } = props
 
-  const statusTiles = useMemo(
+  const statusSummaryItems = useMemo(
     () => (liveSnapshot ? buildStatusTiles(liveSnapshot) : []),
     [liveSnapshot],
   )
@@ -191,68 +201,95 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     () => (liveSnapshot ? formatMidiReadout(liveSnapshot) : 'PC --  CH --'),
     [liveSnapshot],
   )
+  const isLive = Boolean(liveSnapshot?.live_state?.is_live ?? liveSnapshot?.is_active)
+  const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
 
   return (
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
-      {liveSnapshot ? (
-        <div className="juce-grid-page__snapshot-status-layout">
-          <div className="juce-grid-page__snapshot-status-hero">
-            <div className="juce-grid-page__snapshot-status-hero-copy">
-              <div className="juce-grid-page__snapshot-status-hero-row">
-                <div>
-                  <span className="juce-grid-page__chain-action-label">Current snapshot</span>
-                  <h2 className="juce-grid-page__snapshot-status-title">{liveSnapshot.name}</h2>
+      <div className="juce-grid-page__snapshot-status-layout">
+        <div className="juce-grid-page__snapshot-status-hero">
+          <div className="juce-grid-page__snapshot-status-top-row">
+            <div className="juce-grid-page__snapshot-status-brand">
+              <div className="juce-grid-page__snapshot-status-brand-row">
+                <div className="juce-grid-page__workspace-header-icon juce-grid-page__snapshot-status-brand-icon" aria-hidden="true">
+                  <MapAudioGridIcon size={32} />
                 </div>
-                <div className="juce-grid-page__snapshot-status-midi">
-                  <SegmentedLedText
-                    value={midiReadout}
-                    size="md"
-                    color="#78a9ff"
-                    className="juce-grid-page__snapshot-status-midi-readout"
-                  />
+                <div className="juce-grid-page__snapshot-status-brand-copy">
+                  <h1 className="juce-grid-page__workspace-header-title">Audio Grid</h1>
+                  <p className="juce-grid-page__workspace-header-subtitle">
+                    Build signal flow, configure routing, and manage the live snapshot workspace.
+                  </p>
                 </div>
               </div>
-              <div className="juce-grid-page__snapshot-status-footer">
-                <div className="juce-grid-page__snapshot-status-header-actions">
-                  <Tag type="green">Live now</Tag>
-                  {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
-                </div>
-                <div
-                  className="juce-grid-page__snapshot-status-pills"
-                  role="list"
-                  aria-label="Live snapshot attributes"
-                >
-                  {statusTiles.map((tile) => (
-                    <Tag
-                      key={tile.label}
-                      type={tile.tone === 'secondary' ? 'warm-gray' : 'cool-gray'}
-                      size="md"
-                      className="juce-grid-page__snapshot-status-pill"
-                    >
-                      <span className="juce-grid-page__snapshot-status-pill-label">{tile.label}</span>
-                      <strong className="juce-grid-page__snapshot-status-pill-value">{tile.value}</strong>
+              <div className="juce-grid-page__snapshot-status-live-block">
+                <span className="juce-grid-page__chain-action-label">Live</span>
+                <div className="juce-grid-page__snapshot-status-live-row">
+                  <h2 className="juce-grid-page__snapshot-status-title">
+                    {liveSnapshot && onRenameSnapshot ? (
+                      <button
+                        type="button"
+                        className="juce-grid-page__snapshot-status-title-button"
+                        onClick={onRenameSnapshot}
+                        disabled={snapshotRenamePending}
+                        aria-label={`Rename snapshot ${snapshotTitle}`}
+                        title="Rename snapshot"
+                      >
+                        <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
+                        <Edit size={20} aria-hidden="true" />
+                      </button>
+                    ) : snapshotTitle}
+                  </h2>
+                  {isLive && (
+                    <Tag type="green" size="sm" className="juce-grid-page__snapshot-status-live-tag">
+                      Live now
                     </Tag>
-                  ))}
+                  )}
                 </div>
+                {!liveSnapshot && (
+                  <p className="juce-grid-page__snapshot-status-empty-copy">
+                    Recall or create a snapshot to populate live snapshot status here.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="juce-grid-page__snapshot-status-aside">
+              {heroActions ? (
+                <div className="juce-grid-page__snapshot-status-actions" role="toolbar" aria-label="Snapshot hero actions">
+                  {heroActions}
+                </div>
+              ) : null}
+              <div className="juce-grid-page__snapshot-status-midi">
+                <SegmentedLedText
+                  value={midiReadout}
+                  size="md"
+                  color={liveSnapshot ? '#78a9ff' : '#525252'}
+                  className={`juce-grid-page__snapshot-status-midi-readout ${liveSnapshot ? '' : 'is-idle'}`}
+                />
               </div>
             </div>
           </div>
+
+          {statusSummaryItems.length > 0 ? (
+            <div
+              className="juce-grid-page__snapshot-status-summary-row"
+              role="list"
+              aria-label="Live snapshot summary"
+            >
+              {statusSummaryItems.map((item) => (
+                <div
+                  key={item.label}
+                  className={`juce-grid-page__snapshot-status-summary-item ${item.tone === 'secondary' ? 'is-secondary' : ''}`}
+                  role="listitem"
+                >
+                  <span className="juce-grid-page__snapshot-status-summary-label">{item.label}</span>
+                  <span className="juce-grid-page__snapshot-status-summary-value">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
-      ) : (
-        <Tile className="juce-grid-page__snapshot-status-empty">
-          <span className="juce-grid-page__chain-action-label">Current snapshot</span>
-          <h2 className="juce-grid-page__snapshot-status-title">No live snapshot</h2>
-          <p>Recall or create a snapshot to populate live snapshot status here.</p>
-          <div className="juce-grid-page__snapshot-status-midi">
-            <SegmentedLedText
-              value={midiReadout}
-              size="md"
-              color="#525252"
-              className="juce-grid-page__snapshot-status-midi-readout is-idle"
-            />
-          </div>
-        </Tile>
-      )}
+      </div>
     </Layer>
   )
 }

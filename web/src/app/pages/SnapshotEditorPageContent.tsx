@@ -782,6 +782,8 @@ export function SnapshotEditorPage() {
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
   const [savePresetName, setSavePresetName] = useState('')
+  const [showRenameSnapshotModal, setShowRenameSnapshotModal] = useState(false)
+  const [renameSnapshotName, setRenameSnapshotName] = useState('')
   const [showRenameChainModal, setShowRenameChainModal] = useState(false)
   const [renameChainName, setRenameChainName] = useState('')
   const [presetPendingDelete, setPresetPendingDelete] = useState<Snapshot | null>(null)
@@ -1400,6 +1402,21 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
+    },
+  })
+
+  const renameActiveSnapshotMutation = useMutation({
+    mutationFn: async ({ snapshotId, name }: { snapshotId: number; name: string }) =>
+      snapshotsApi.update(snapshotId, { name }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      setShowRenameSnapshotModal(false)
+      setRenameSnapshotName('')
+      pushToast(`Snapshot renamed to "${response.snapshot.name}"`, 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to rename snapshot', 'error')
     },
   })
 
@@ -3315,6 +3332,14 @@ export function SnapshotEditorPage() {
     setShowRenameChainModal(true)
   }, [currentChain])
 
+  const handleRenameSnapshot = useCallback(() => {
+    if (!activeSnapshot) {
+      return
+    }
+    setRenameSnapshotName(activeSnapshot.name)
+    setShowRenameSnapshotModal(true)
+  }, [activeSnapshot])
+
   const handleChainRemoved = useCallback((chainId: number) => {
     setFlowSlots((previous) => previous.map((slot) => (
       slot.chainId === chainId
@@ -3336,6 +3361,14 @@ export function SnapshotEditorPage() {
     }
     renameMutation.mutate({ chainId: currentChain.id, name: normalizedName })
   }, [currentChain, renameChainName, renameMutation])
+
+  const submitRenameSnapshot = useCallback(() => {
+    const normalizedName = renameSnapshotName.trim()
+    if (!activeSnapshot || !normalizedName || normalizedName === activeSnapshot.name.trim()) {
+      return
+    }
+    renameActiveSnapshotMutation.mutate({ snapshotId: activeSnapshot.id, name: normalizedName })
+  }, [activeSnapshot, renameSnapshotName, renameActiveSnapshotMutation])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -3996,6 +4029,7 @@ export function SnapshotEditorPage() {
         if (isTextEntryTarget(e.target)) {
           if (e.key === 'Escape') {
             if (showSavePresetModal) setShowSavePresetModal(false)
+            else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
             else if (showRenameChainModal) setShowRenameChainModal(false)
             else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
             else if (presetPendingDelete) setPresetPendingDelete(null)
@@ -4112,6 +4146,7 @@ export function SnapshotEditorPage() {
       // Escape = Close modals/deselect
       if (e.key === 'Escape') {
         if (showSavePresetModal) setShowSavePresetModal(false)
+        else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
         else if (showRenameChainModal) setShowRenameChainModal(false)
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
@@ -4135,7 +4170,7 @@ export function SnapshotEditorPage() {
   }, [
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
-    flowSlots, showSavePresetModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
+    flowSlots, showSavePresetModal, showRenameSnapshotModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
     showClearFlowsModal, showLiveRuntimeModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, setSelectedPluginSelection,
@@ -4626,6 +4661,74 @@ export function SnapshotEditorPage() {
   ) : null
   const canPageTabletFocusedBranchBackward = tabletFocusedBranchPage > 0
   const canPageTabletFocusedBranchForward = tabletFocusedBranchPage < tabletFocusedBranchPageCount - 1
+  const liveRuntimeActive = Boolean(activeSnapshot?.live_state?.is_live ?? activeSnapshot?.is_active)
+  const snapshotHeroActions = (
+    <>
+      <Button
+        size="sm"
+        kind="primary"
+        renderIcon={Add}
+        className="juce-grid-page__hero-action juce-grid-page__hero-action--success"
+        onClick={addFlow}
+        disabled={flowSlots.length >= MAX_FLOWS}
+      >
+        Add path
+      </Button>
+      <Button
+        size="sm"
+        kind="danger"
+        className="juce-grid-page__hero-action"
+        onClick={() => setShowClearFlowsModal(true)}
+        disabled={flowSlots.length <= 1}
+      >
+        Reset paths
+      </Button>
+      <Button
+        size="sm"
+        kind="secondary"
+        renderIcon={Network_3}
+        className="juce-grid-page__hero-action"
+        onClick={() => setShowAudioNodesModal(true)}
+      >
+        Network Routing
+      </Button>
+      <Button
+        size="sm"
+        kind={liveRuntimeActive ? 'primary' : 'secondary'}
+        renderIcon={Launch}
+        className={`juce-grid-page__hero-action juce-grid-page__hero-action--live ${liveRuntimeActive ? 'is-live' : ''}`}
+        onClick={() => setShowLiveRuntimeModal(true)}
+      >
+        Live Now!
+      </Button>
+      <Button
+        size="sm"
+        kind="secondary"
+        renderIcon={Flow}
+        className="juce-grid-page__hero-action"
+        onClick={() => setShowRoutingTopologyModal(true)}
+      >
+        Local Routing
+      </Button>
+      <Button
+        size="sm"
+        kind="primary"
+        renderIcon={Music}
+        className="juce-grid-page__hero-action juce-grid-page__hero-action--perform"
+        onClick={() => setShowPerformModal(true)}
+      >
+        Perform
+      </Button>
+      <Button
+        size="sm"
+        kind="ghost"
+        className="juce-grid-page__hero-action"
+        onClick={() => setShowKeyboardHelp(true)}
+      >
+        Shortcuts
+      </Button>
+    </>
+  )
 
   if (showViewportBlockScreen) {
     return (
@@ -4642,164 +4745,7 @@ export function SnapshotEditorPage() {
   return (
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
       <LandscapePrompt componentId="juce-grid" />
-      <section className="juce-grid-page__header-shell juce-grid-page__signal-flow-shell">
-        <Layer className="juce-grid-page__workspace-header">
-          <div className="juce-grid-page__workspace-header-main">
-            <div className="juce-grid-page__workspace-header-left">
-              <div className="juce-grid-page__workspace-header-icon" aria-hidden="true">
-                <MapAudioGridIcon size={32} />
-              </div>
-              <div>
-                <h1 className="juce-grid-page__workspace-header-title">Audio Grid</h1>
-                <p className="juce-grid-page__workspace-header-subtitle">
-                  Build signal flow, configure routing, and manage the live snapshot workspace.
-                </p>
-              </div>
-            </div>
-            <div className="juce-grid-page__masthead-actions">
-              <div className="juce-grid-page__masthead-primary-actions">
-                {isTabletTouchLayout ? (
-                  <>
-                    <Button
-                      hasIconOnly
-                      size="sm"
-                      kind="ghost"
-                      className="juce-grid-page__masthead-icon-button"
-                      renderIcon={Network_3}
-                      iconDescription="Open Audio Nodes"
-                      aria-label="Open Audio Nodes"
-                      onClick={() => setShowAudioNodesModal(true)}
-                    />
-                    <Button
-                      hasIconOnly
-                      size="sm"
-                      kind="ghost"
-                      className="juce-grid-page__masthead-icon-button"
-                      renderIcon={Flow}
-                      iconDescription="Configure routing"
-                      aria-label="Configure routing"
-                      onClick={() => setShowRoutingTopologyModal(true)}
-                    />
-                    <Button
-                      hasIconOnly
-                      size="sm"
-                      kind="ghost"
-                      className="juce-grid-page__masthead-icon-button"
-                      renderIcon={Add}
-                      iconDescription="Add path"
-                      aria-label="Add path"
-                      onClick={addFlow}
-                      disabled={flowSlots.length >= MAX_FLOWS}
-                    />
-                    <OverflowMenu
-                      ariaLabel="Audio Grid secondary actions"
-                      iconDescription="Audio Grid secondary actions"
-                      size="sm"
-                      flipped
-                    >
-                      <OverflowMenuItem
-                        itemText="Live paths"
-                        onClick={() => setShowLiveRuntimeModal(true)}
-                      />
-                      <OverflowMenuItem
-                        itemText="Reset paths"
-                        onClick={() => setShowClearFlowsModal(true)}
-                        disabled={flowSlots.length <= 1}
-                      />
-                      <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
-                    </OverflowMenu>
-                    <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
-                      Perform
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      size="sm"
-                      kind="secondary"
-                      renderIcon={Network_3}
-                      onClick={() => setShowAudioNodesModal(true)}
-                    >
-                      Audio Nodes
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="secondary"
-                      renderIcon={Flow}
-                      onClick={() => setShowRoutingTopologyModal(true)}
-                    >
-                      Configure routing
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="primary"
-                      renderIcon={Add}
-                      onClick={addFlow}
-                      disabled={flowSlots.length >= MAX_FLOWS}
-                    >
-                      Add path
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="danger--tertiary"
-                      onClick={() => setShowClearFlowsModal(true)}
-                      disabled={flowSlots.length <= 1}
-                    >
-                      Reset paths
-                    </Button>
-                    <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
-                      Perform
-                    </Button>
-                  </>
-                )}
-              </div>
-              {!isTabletTouchLayout && (
-                <div className="juce-grid-page__masthead-secondary-actions">
-                  <Button size="sm" kind="ghost" onClick={() => setShowLiveRuntimeModal(true)}>
-                    Live paths
-                  </Button>
-                  {!isCompactLayout && (
-                    <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
-                      Shortcuts
-                    </Button>
-                  )}
-                  {isCompactLayout && (
-                    <OverflowMenu
-                      ariaLabel="Audio Grid secondary actions"
-                      iconDescription="Audio Grid secondary actions"
-                      size="sm"
-                      flipped
-                    >
-                      <OverflowMenuItem itemText="Live paths" onClick={() => setShowLiveRuntimeModal(true)} />
-                      <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
-                    </OverflowMenu>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </Layer>
-      </section>
-
-      {showCompactWorkflowPanels && (
-        <Layer className="juce-grid-page__compact-tabs">
-          <Tabs
-            selectedIndex={Math.max(0, COMPACT_TAB_ORDER.findIndex((tab) => tab.id === compactTab))}
-            onChange={({ selectedIndex }) => {
-              setCompactTab(COMPACT_TAB_ORDER[selectedIndex]?.id ?? 'grid')
-            }}
-          >
-            <TabList aria-label="Audio Grid compact workflows" contained>
-              {COMPACT_TAB_ORDER.map((tab) => (
-                <Tab key={tab.id}>{tab.label}</Tab>
-              ))}
-            </TabList>
-          </Tabs>
-        </Layer>
-      )}
-
-      <section className="juce-grid-page__signal-flow-shell" aria-label="Signal flow workspace">
-
+      <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">
           <SnapshotChainManagementCard
             selectedChainId={activeFlow?.chainId ?? null}
@@ -4820,8 +4766,33 @@ export function SnapshotEditorPage() {
               handlePluginSelect(pluginUri, pluginPosition)
             }}
             liveSnapshot={activeSnapshot}
+            heroActions={snapshotHeroActions}
+            onRenameSnapshot={handleRenameSnapshot}
+            snapshotRenamePending={renameActiveSnapshotMutation.isPending}
           />
+        </div>
+      </section>
 
+      {showCompactWorkflowPanels && (
+        <Layer className="juce-grid-page__compact-tabs">
+          <Tabs
+            selectedIndex={Math.max(0, COMPACT_TAB_ORDER.findIndex((tab) => tab.id === compactTab))}
+            onChange={({ selectedIndex }) => {
+              setCompactTab(COMPACT_TAB_ORDER[selectedIndex]?.id ?? 'grid')
+            }}
+          >
+            <TabList aria-label="Audio Grid compact workflows" contained>
+              {COMPACT_TAB_ORDER.map((tab) => (
+                <Tab key={tab.id}>{tab.label}</Tab>
+              ))}
+            </TabList>
+          </Tabs>
+        </Layer>
+      )}
+
+      <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--body" aria-label="Signal flow workspace">
+
+        <div className="juce-grid-page__unified-block">
           <main className="juce-grid-page__main">
             {snapshotEntryRequired ? (
               <Tile className="juce-grid-page__effect-modal-placeholder">
@@ -5296,6 +5267,46 @@ export function SnapshotEditorPage() {
               value={renameChainName}
               onChange={(event) => setRenameChainName(event.target.value)}
               placeholder="Main performance chain"
+            />
+          </div>
+        </Modal>
+      )}
+
+      {showRenameSnapshotModal && (
+        <Modal
+          open
+          size="sm"
+          modalHeading="Rename snapshot"
+          modalLabel={activeSnapshot?.name || 'Live snapshot'}
+          primaryButtonText={renameActiveSnapshotMutation.isPending ? 'Saving...' : 'Rename snapshot'}
+          secondaryButtonText="Cancel"
+          primaryButtonDisabled={
+            !activeSnapshot
+            || renameSnapshotName.trim().length === 0
+            || renameSnapshotName.trim() === activeSnapshot.name.trim()
+            || renameActiveSnapshotMutation.isPending
+          }
+          onRequestClose={() => {
+            setShowRenameSnapshotModal(false)
+            setRenameSnapshotName('')
+          }}
+          onSecondarySubmit={() => {
+            setShowRenameSnapshotModal(false)
+            setRenameSnapshotName('')
+          }}
+          onRequestSubmit={submitRenameSnapshot}
+          selectorPrimaryFocus="#juce-grid-rename-snapshot-name"
+        >
+          <div className="juce-grid-page__form-modal-body">
+            <p className="juce-grid-page__modal-copy">
+              Rename the live snapshot directly from the hero card without leaving the Audio Grid workspace.
+            </p>
+            <TextInput
+              id="juce-grid-rename-snapshot-name"
+              labelText="Snapshot name"
+              value={renameSnapshotName}
+              onChange={(event) => setRenameSnapshotName(event.target.value)}
+              placeholder="Snapshot name"
             />
           </div>
         </Modal>

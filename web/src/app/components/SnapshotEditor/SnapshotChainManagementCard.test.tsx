@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import type { SnapshotDetail } from '../../../map2/types'
 import { SnapshotChainManagementCard } from './SnapshotChainManagementCard'
 
@@ -99,24 +99,39 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
   }
 }
 
-function renderCard(liveSnapshot: SnapshotDetail | null = buildLiveSnapshot()) {
+function renderCard(
+  liveSnapshot: SnapshotDetail | null = buildLiveSnapshot(),
+  options: { onRenameSnapshot?: jest.Mock; snapshotRenamePending?: boolean } = {},
+) {
   return render(
     <SnapshotChainManagementCard
       onToggleSelectedChainActive={jest.fn()}
       onDuplicateChain={jest.fn()}
       onRenameChain={jest.fn()}
       liveSnapshot={liveSnapshot}
+      onRenameSnapshot={options.onRenameSnapshot}
+      snapshotRenamePending={options.snapshotRenamePending}
+      heroActions={(
+        <>
+          <button type="button">Network Routing</button>
+          <button type="button">Perform</button>
+        </>
+      )}
     />,
   )
 }
 
 describe('SnapshotChainManagementCard', () => {
-  it('renders the live snapshot hero with LCD MIDI assignments and compact status pills', () => {
+  it('renders the unified live snapshot hero with title, actions, LCD readout, and summary row', () => {
     const { container } = renderCard()
 
+    expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
+    expect(screen.getByText('Live')).toBeInTheDocument()
+    expect(screen.getByText('Network Routing')).toBeInTheDocument()
+    expect(screen.getByText('Perform')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC 023  CH 01/05"]')).toBeInTheDocument()
-    expect(screen.queryByText('Live Snapshot')).not.toBeInTheDocument()
+    expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
     expect(screen.queryByText('Lead-ready snapshot for the main performance set.')).not.toBeInTheDocument()
     expect(screen.getByText('Input device')).toBeInTheDocument()
@@ -130,14 +145,30 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Derived from snapshot')).toBeInTheDocument()
     expect(screen.getByText('Snapshot #7')).toBeInTheDocument()
     expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
-    expect(container.querySelectorAll('.juce-grid-page__snapshot-status-pill').length).toBeGreaterThan(0)
+    expect(container.querySelector('.juce-grid-page__snapshot-status-summary-row')).toBeInTheDocument()
+    expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
   })
 
-  it('renders a clear empty state when no live snapshot is active', () => {
+  it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {
+    const onRenameSnapshot = jest.fn()
+
+    renderCard(buildLiveSnapshot(), { onRenameSnapshot })
+
+    const renameButton = screen.getByRole('button', { name: 'Rename snapshot Friday Night Drive' })
+    expect(renameButton).toBeInTheDocument()
+
+    fireEvent.click(renameButton)
+
+    expect(onRenameSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders a clear empty state inside the same unified hero when no live snapshot is active', () => {
     const { container } = renderCard(null)
 
+    expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('No live snapshot')).toBeInTheDocument()
     expect(screen.getByText('Recall or create a snapshot to populate live snapshot status here.')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC --  CH --"]')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Rename snapshot/i })).not.toBeInTheDocument()
   })
 })

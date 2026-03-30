@@ -339,7 +339,7 @@ ls -lh web/dist/assets/*.js | wc -l
 - **Key Rule**: NEVER use `sleep` commands - they cause `^C` interrupts that kill builds
 
 ### 2. Web Server Configuration
-- **File**: `WEB_SERVER_PORTS.md`
+- **File**: `docs/WEB_SERVER_PORTS.md`
 - **Why**: Defines production-only server setup (no dev server, only port 3000)
 - **Key Rules**:
   - Only use the dedicated production web server on port `3000` (`map2-web-prod.service` or direct `node scripts/serve_web_dist.mjs`), never `vite dev`
@@ -1401,6 +1401,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: For high-frequency operator actions like snapshot creation, directness is the baseline. Guided capture is an exception, not the default.
 
+**43. Snapshot Hero Rename Should Keep The Title As The Trigger While Persistence Stays Page-Owned (LOW - Mar 30, 2026)**
+- **Files**: `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx`
+- **Problem**: After the unified Snapshot Editor hero landed, the live snapshot name became the visual focal point but remained read-only, which forced rename behavior away from the operator’s obvious click target.
+- **Root Cause**: The hero card was treated as presentation-only text even though the user-facing hierarchy changed and the live snapshot title became the natural entrypoint for rename.
+- **Fix**: Keep the hero card presentational except for an accessible title button that opens rename, while the actual rename mutation/cache invalidation stays in the page container via `snapshotsApi.update({ name })` and the `['snapshots', 'live']` cache update.
+- **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: When a Carbon hero promotes a data label into the primary focal element, the interaction model should usually follow the same hierarchy: the visible title becomes the trigger, but persistence logic remains in the owning route.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1671,6 +1679,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-30] - Snapshot Hero Rename Trigger And Web-Port Reference Fix
+- **Section**: Gotchas & Learned Fixes (#43), Additional Resources, Essential Files to Read First, Update Log
+- **Change**: Documented the rule that the live Snapshot Editor hero title should act as the rename trigger while the owning page handles the name-only snapshot update mutation, and corrected the stale `WEB_SERVER_PORTS.md` references to `docs/WEB_SERVER_PORTS.md`.
+- **Reason**: The hero merge changed the operator hierarchy enough that rename needed to move onto the focal title itself, and the repo guidance still pointed at a non-existent root-level port-config file.
+- **Impact**: Future snapshot-hero work can preserve the correct ownership split for rename behavior, and future deploy/restart work will open the right port-configuration document without path confusion.
+- **Files**: `.github/copilot-instructions.md`, `docs/WEB_SERVER_PORTS.md`, `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-30] - Snapshot Create Direct-Action Rollback
 - **Section**: Gotchas & Learned Fixes (#42), Update Log
@@ -2125,7 +2140,7 @@ systemctl --user status pipewire
 - `docs/PROFESSIONAL_GUITAR_PROCESSOR_EVALUATION.md` - Industry standards & requirements
 - `docs/TIER_A_IMPLEMENTATION_COMPLETE.md` - Performance requirements & validation
 - `docs/EVALUATION_SUMMARY_AND_NEXT_STEPS.md` - Current gaps and roadmap
-- `WEB_SERVER_PORTS.md` - Port configuration reference
+- `docs/WEB_SERVER_PORTS.md` - Port configuration reference
 
 ### Testing & Validation
 - `test_tier_a_locks.py` - Verify critical settings are locked
