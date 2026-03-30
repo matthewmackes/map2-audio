@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 08:00 EDT - T560 completed after locking snapshot library recall cache preservation
+Last updated: 2026-03-30 08:13 EDT - T561 completed after refactoring live snapshot hydration into the editor route
+
+ID: T561
+Status: [✓] Done
+Title: Hydrate Snapshot Editor workspace from the canonical live snapshot on route entry
+Description:
+- Goal / acceptance criteria: Ensure Snapshot Editor route entry and refresh load the actual live snapshot runtime chains into the branch workspace, not just the header metadata. Refactor the hydration flow so route entry, modal create/recall, and MIDI-triggered loads share one canonical runtime-chain hydration path, and add focused regression coverage for the runtime-chain mapping logic.
+- Why it matters: The current editor can show a populated live snapshot header while the branch workspace still renders `Assign a chain to start editing`, which leaves the operator in a broken half-hydrated state.
+- Dependencies: T558
+- Estimated effort: Medium
+- Required outputs: hydration-flow refactor, route-entry/runtime-chain fix, focused regression coverage, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 08:13 EDT - Codex
+- Completion notes:
+  - Added a shared live-snapshot hydration helper in `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.ts` so runtime-chain cache merging and snapshot-to-editor draft conversion happen through one canonical path instead of being reimplemented ad hoc.
+  - Refactored `SnapshotEditorPageContent` to hydrate the branch workspace from `liveSnapshotQuery` on route entry/refresh, seed the `['chains']` cache from `live_state.runtime_chains`, and skip redundant rehydration with a snapshot fingerprint guard so periodic query refreshes do not clobber unchanged local state.
+  - Repointed the modal’s runtime-chain cache merge to the shared helper and added focused regression coverage in `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` for runtime-chain ID mapping and cache hydration.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T560
 Status: [✓] Done

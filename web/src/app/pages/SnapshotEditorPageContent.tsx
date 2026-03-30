@@ -90,7 +90,6 @@ import {
 } from '../../map2/api'
 import {
   snapshotsApi,
-  snapshotDetailToDraftData,
 } from '../../map2/clients/snapshots'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
@@ -106,7 +105,7 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -141,6 +140,7 @@ import type { JuceGridRoutingState } from '../components/SnapshotEditor/snapshot
 import {
   fingerprintSnapshotData,
 } from '../components/SnapshotEditor/snapshotEditorComparison'
+import { buildSnapshotEditorLiveSnapshotHydration } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
@@ -860,6 +860,7 @@ export function SnapshotEditorPage() {
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
+  const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
   const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
@@ -1185,24 +1186,26 @@ export function SnapshotEditorPage() {
     onSnapshotLoaded: useCallback((event) => {
       // Handle MIDI-triggered snapshot loads
       if (event.triggered_by === 'midi_pc') {
-        const snapshotData = snapshotDetailToDraftData(event.snapshot_data)
-        const normalizedSnapshotState = normalizeRuntimeGridState(
-          snapshotData.flowSlots,
-          snapshotData.routing,
-          snapshotData.activeFlowIndex,
+        const hydration = buildSnapshotEditorLiveSnapshotHydration(
+          event.snapshot_data,
+          queryClient.getQueryData<ChainsResponse>(['chains']),
         )
+        const normalizedSnapshotState = normalizeRuntimeGridState(
+          hydration.snapshotData.flowSlots,
+          hydration.snapshotData.routing,
+          hydration.snapshotData.activeFlowIndex,
+        )
+        queryClient.setQueryData(['chains'], hydration.chainsResponse)
+        queryClient.setQueryData(['snapshots', 'live'], event.snapshot_data)
+        lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
         setFlowSlots(normalizedSnapshotState.flowSlots)
         setRouting(normalizedSnapshotState.routing)
         setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
-
-        // Invalidate queries to refresh UI
-        queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-        queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
         clearSnapshotsDirty()
-
+        queryClient.invalidateQueries({ queryKey: ['snapshots'] })
         pushToast(`Loaded: ${event.snapshot_name} (MIDI PC#${event.program_number})`, 'success')
       }
-    }, [queryClient, clearSnapshotsDirty, pushToast]),
+    }, [clearSnapshotsDirty, pushToast, queryClient]),
   })
 
   useWebSocketTopic('chain_updates', useCallback((_data, message) => {
@@ -1347,10 +1350,7 @@ export function SnapshotEditorPage() {
     [currentSnapshotDraft],
   )
 
-  const applySnapshotState = useCallback((
-    data: SnapshotDraftData,
-    options?: { toastMessage?: string | null; invalidateChains?: boolean },
-  ) => {
+  const setEditorSnapshotState = useCallback((data: SnapshotDraftData) => {
     const normalizedSnapshotState = normalizeRuntimeGridState(
       data.flowSlots,
       data.routing,
@@ -1359,9 +1359,17 @@ export function SnapshotEditorPage() {
     setFlowSlots(normalizedSnapshotState.flowSlots)
     setRouting(normalizedSnapshotState.routing)
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
-    // Always refresh snapshot queries so the library stays in sync.
-    queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-    queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+  }, [])
+
+  const applySnapshotState = useCallback((
+    data: SnapshotDraftData,
+    options?: { toastMessage?: string | null; invalidateChains?: boolean; refreshSnapshotQueries?: boolean },
+  ) => {
+    setEditorSnapshotState(data)
+    if (options?.refreshSnapshotQueries ?? true) {
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+    }
     // Only invalidate chains when explicitly requested. Callers that already
     // injected runtime chains via setQueryData should pass false (or omit) to
     // prevent a background refetch from overwriting the injected data with a
@@ -1372,7 +1380,52 @@ export function SnapshotEditorPage() {
     if (options?.toastMessage) {
       pushToast(options.toastMessage, 'success')
     }
-  }, [pushToast, queryClient])
+  }, [pushToast, queryClient, setEditorSnapshotState])
+
+  const hydrateEditorFromLiveSnapshot = useCallback((
+    detail: SnapshotDetail,
+    options?: { toastMessage?: string | null },
+  ) => {
+    const hydration = buildSnapshotEditorLiveSnapshotHydration(
+      detail,
+      queryClient.getQueryData<ChainsResponse>(['chains']),
+    )
+    queryClient.setQueryData(['chains'], hydration.chainsResponse)
+    queryClient.setQueryData(['snapshots', 'live'], detail)
+    lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
+    setEditorSnapshotState(hydration.snapshotData)
+    clearSnapshotsDirty()
+    queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    if (options?.toastMessage) {
+      pushToast(options.toastMessage, 'success')
+    }
+  }, [clearSnapshotsDirty, pushToast, queryClient, setEditorSnapshotState])
+
+  useEffect(() => {
+    if (!liveSnapshotQuery.isSuccess) {
+      return
+    }
+
+    if (liveSnapshotQuery.data === null) {
+      lastHydratedLiveSnapshotFingerprintRef.current = null
+      return
+    }
+
+    const hydration = buildSnapshotEditorLiveSnapshotHydration(
+      liveSnapshotQuery.data,
+      queryClient.getQueryData<ChainsResponse>(['chains']),
+    )
+    if (lastHydratedLiveSnapshotFingerprintRef.current === hydration.fingerprint) {
+      return
+    }
+
+    hydrateEditorFromLiveSnapshot(liveSnapshotQuery.data)
+  }, [
+    hydrateEditorFromLiveSnapshot,
+    liveSnapshotQuery.data,
+    liveSnapshotQuery.isSuccess,
+    queryClient,
+  ])
 
   const activeFlow = flowSlots[activeFlowIndex]
   const flowIndexById = useMemo(() => (

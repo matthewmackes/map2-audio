@@ -22,6 +22,7 @@ import {
   fingerprintSnapshotData,
   interpolateSnapshotData,
 } from '../SnapshotEditor/snapshotEditorComparison'
+import { upsertRuntimeChains } from '../SnapshotEditor/snapshotEditorLiveSnapshotHydration'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
 import {
@@ -41,29 +42,6 @@ function getSnapshotPathSummaries(snapshot: SnapshotSummary) {
     label: channel.label,
     color: channel.color,
   }))
-}
-
-function upsertRuntimeChains(
-  current: ChainsResponse | undefined,
-  runtimeChains: Chain[],
-): ChainsResponse {
-  if (runtimeChains.length === 0) {
-    return current ?? { chains: [], count: 0 }
-  }
-
-  const chainById = new Map<number, Chain>()
-  for (const chain of current?.chains ?? []) {
-    chainById.set(chain.id, chain)
-  }
-  for (const chain of runtimeChains) {
-    chainById.set(chain.id, chain)
-  }
-
-  const chains = [...chainById.values()]
-  return {
-    chains,
-    count: chains.length,
-  }
 }
 
 export interface SnapshotModalContentProps {
