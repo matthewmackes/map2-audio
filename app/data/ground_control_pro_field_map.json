@@ -1,0 +1,314 @@
+{
+  "profile_id": "v1_13_bulk_dump",
+  "schema_version": "2026-03-30",
+  "source_documents": [
+    {
+      "title": "Ground Control Pro Manual",
+      "url": "https://voodoolab.com/wp-content/uploads/2022/08/ground_control_pro_manual.pdf",
+      "notes": "Official MIDI SysEx backup and restore workflow with XMIT MEM and RECEIVE MEM."
+    },
+    {
+      "title": "Ground Control Pro + Eleven Rack Expansion Pack - Page 4",
+      "url": "https://voodoolab.com/forum/viewtopic5f57.html?start=30&t=2688",
+      "notes": "Forum trace showing F0 00 00 07 10 header and SendSX split-long-message guidance."
+    },
+    {
+      "title": "Ground Control Pro Editor",
+      "url": "https://gcproeditor.com/",
+      "notes": "Public editor UI exposing device, pedal, GCX, MIDI, instant access, utility, and preset concepts."
+    },
+    {
+      "title": "markphilpot/gcpeditor js/gcp.js",
+      "url": "https://raw.githubusercontent.com/markphilpot/gcpeditor/master/js/gcp.js",
+      "notes": "Community reverse-engineered byte geometry and block layout used as the initial field-map basis."
+    }
+  ],
+  "templates": [
+    {
+      "scope": "config",
+      "path_template": "global_config.devices[{index}].name",
+      "offset": 0,
+      "width": 8,
+      "count": 8,
+      "stride": 8,
+      "encoding": "ascii_upper_padded",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.devices[{index}].midi_channel",
+      "offset": 64,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.devices[{index}].program_offset_mode",
+      "offset": 72,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "enum_binary",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.devices[{index}].definition_raw",
+      "offset": 80,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "unknown_reserved",
+      "editable": false
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.pedals[{index}].exists",
+      "offset": 88,
+      "width": 1,
+      "count": 2,
+      "stride": 1,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.utility.extended_memory_raw",
+      "offset": 90,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "uint7",
+      "confidence": "unknown_reserved",
+      "editable": false
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.gcx.vca_exists",
+      "offset": 91,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.gcx.num_gcx",
+      "offset": 92,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.gcx.switch_types[{index}]",
+      "offset": 93,
+      "width": 1,
+      "count": 32,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.utility.program_access_mode",
+      "offset": 125,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "enum_binary",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.midi.soft_options_raw",
+      "offset": 126,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "bitfield",
+      "confidence": "confirmed",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.utility.directory_speed",
+      "offset": 127,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.midi.program_change_receive_channel",
+      "offset": 128,
+      "width": 1,
+      "count": 1,
+      "stride": 0,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.instant_access[{index}].function",
+      "offset": 129,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.instant_access[{index}].detail",
+      "offset": 137,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.instant_access[{index}].transmit_cc",
+      "offset": 145,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "config",
+      "path_template": "global_config.instant_access[{index}].switch_type",
+      "offset": 153,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "enum_binary",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].name",
+      "offset": 0,
+      "width": 10,
+      "count": 1,
+      "stride": 0,
+      "encoding": "ascii_upper_padded",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].device_program_changes[{index}].enabled",
+      "offset": 10,
+      "width": 1,
+      "count": 8,
+      "stride": 2,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].device_program_changes[{index}].program",
+      "offset": 11,
+      "width": 1,
+      "count": 8,
+      "stride": 2,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].device_program_banks_raw[{index}]",
+      "offset": 26,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "unknown_reserved",
+      "editable": false
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].pedal_definitions[{index}]",
+      "offset": 34,
+      "width": 1,
+      "count": 2,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].pedal_device_assignments[{index}]",
+      "offset": 36,
+      "width": 1,
+      "count": 2,
+      "stride": 1,
+      "encoding": "uint7",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].gcx_loop_states[{index}]",
+      "offset": 38,
+      "width": 1,
+      "count": 32,
+      "stride": 1,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].gcx_toggles[{index}]",
+      "offset": 70,
+      "width": 1,
+      "count": 4,
+      "stride": 1,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    },
+    {
+      "scope": "preset",
+      "path_template": "presets[{preset_index}].instant_access_state[{index}]",
+      "offset": 74,
+      "width": 1,
+      "count": 8,
+      "stride": 1,
+      "encoding": "bool_byte",
+      "confidence": "inferred",
+      "editable": true
+    }
+  ]
+}

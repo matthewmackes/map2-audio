@@ -1,0 +1,69 @@
+profile_id: v1_13_bulk_dump
+generated_at: '2026-03-30T13:07:27.572304+00:00'
+generator: app.services.ground_control_pro.fixtures.write_fixture_bundle
+fixtures:
+- filename: factory_default_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: factory-default approximation
+  change_intent: []
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: b67e3f26223708f2115958ed7e94a14d366203053b3361494c8e37f539cb324c
+  size_bytes: 16567
+- filename: single_name_change_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: single controlled delta
+  change_intent:
+  - presets[0].name
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: 6f7f838bc1beda193fe766f92e11f70826a9e77c147b6635b46e14e1c7140295
+  size_bytes: 16567
+- filename: single_channel_change_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: single controlled delta
+  change_intent:
+  - global_config.devices[0].midi_channel
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: b5b2a34ae05d8432095a59a65b11a1a5cf2d2df9f719a75451c38863a47f2b80
+  size_bytes: 16567
+- filename: single_ia_change_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: single controlled delta
+  change_intent:
+  - global_config.instant_access[0].function
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: 92eddc927bf3e1994e3e5891e6f0d65d3f1527492585e23deb221659a1a299ec
+  size_bytes: 16567
+- filename: single_pedal_change_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: single controlled delta
+  change_intent:
+  - presets[0].pedal_device_assignments[0]
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: 54cb0f160531f7648d46c906d894011934cae9f83a9b39200d9b503c0d996a57
+  size_bytes: 16567
+- filename: single_program_change_v113.syx
+  firmware_version: '1.13'
+  source_device: synthetic-reference
+  state: single controlled delta
+  change_intent:
+  - presets[0].device_program_changes[0].program
+  profile_id: v1_13_bulk_dump
+  synthetic: true
+  hardware_verified: false
+  sha256: b0f349cc792e5baaca3dbeb60c128f3b08ab6c752954718c6ebd3b7b7692b862
+  size_bytes: 16567

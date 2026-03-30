@@ -35,6 +35,7 @@ const DEVICE_TYPE_SEARCH_TERMS: Record<string, string[]> = {
   'hotone-jogg': ['hotone jogg', 'jogg', '84ef 0014'],
   'generic-interface': ['hotone jogg', 'jogg', '84ef 0014'],
   'lexicon-mpx1': ['lexicon mpx 1', 'mpx 1', 'lexicon'],
+  'ground-control-pro': ['ground control pro', 'voodoo lab ground control', 'gc pro', 'groundcontrolpro', 'voodoo lab'],
 }
 
 function normalize(value: unknown): string {

@@ -66,6 +66,7 @@ const IntelFXMonitorView    = lazy(() => import('./pages/IntelFXMonitorView').th
 const IntelFXFlowView       = lazy(() => import('./pages/IntelFXFlowView').then(m => ({ default: m.IntelFXFlowView })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
 const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
+const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -243,6 +244,7 @@ export function App() {
                                 <Route path="/drums" element={<DrumsPage />} />
                                 <Route path="/synth-forge" element={<SynthForgePage />} />
                                 <Route path="/expression" element={<ExpressionPage />} />
+                                <Route path="/ground-control-pro" element={<GroundControlProPage />} />
                                 <Route path="/tesira/*" element={<TesiraPage />} />
                                 <Route path="/mpx1/*" element={<MPX1Page />}>
                                   <Route index element={<Navigate to="panel" replace />} />

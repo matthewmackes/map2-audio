@@ -64,6 +64,14 @@ jest.mock('./pages/SynthForgePage', () => ({
   },
 }))
 
+jest.mock('./pages/GroundControlProPage', () => ({
+  GroundControlProPage: () => {
+    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="ground-control-pro-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
     const { useLocation: mockUseLocation } = require('react-router-dom')
@@ -120,5 +128,13 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('synthforge-route')).toHaveTextContent('/synth-forge')
+  })
+
+  it('keeps Ground Control Pro as a first-class routed surface', async () => {
+    window.history.pushState({}, '', '/ground-control-pro')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('ground-control-pro-route')).toHaveTextContent('/ground-control-pro')
   })
 })

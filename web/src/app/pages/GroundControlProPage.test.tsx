@@ -1,0 +1,255 @@
+import React from 'react'
+import '@testing-library/jest-dom'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+const mockUseDeviceLocation = jest.fn()
+const mockGroundControlProApi = {
+  getPorts: jest.fn(),
+  getFieldMap: jest.fn(),
+  importDump: jest.fn(),
+  getSession: jest.fn(),
+  compileSession: jest.fn(),
+  exportJson: jest.fn(),
+  exportYaml: jest.fn(),
+  backup: jest.fn(),
+  push: jest.fn(),
+  redumpVerify: jest.fn(),
+  diff: jest.fn(),
+  getJob: jest.fn(),
+  getArtifact: jest.fn(),
+}
+
+function buildModel() {
+  return {
+    profile_id: 'v1_13_bulk_dump',
+    global_config: {
+      devices: Array.from({ length: 8 }, (_, index) => ({
+        name: `DEV${index + 1}`,
+        midi_channel: index + 1,
+        program_offset_mode: index % 2,
+        definition_raw: index,
+        confidence: 'inferred',
+      })),
+      pedals: Array.from({ length: 2 }, () => ({ exists: 1, confidence: 'inferred' })),
+      gcx: {
+        num_gcx: 2,
+        vca_exists: 1,
+        switch_types: Array.from({ length: 32 }, (_, index) => index % 2),
+        confidence: 'inferred',
+      },
+      midi: {
+        soft_options_raw: 0,
+        global_program: true,
+        link_mode: 1,
+        respond_to_program_change: true,
+        program_change_receive_channel: 8,
+        confidence: 'confirmed',
+      },
+      instant_access: Array.from({ length: 8 }, (_, index) => ({
+        function: index,
+        detail: index,
+        transmit_cc: index % 2,
+        switch_type: index % 2,
+        confidence: 'inferred',
+      })),
+      utility: {
+        directory_speed: 3,
+        program_access_mode: 1,
+        extended_memory_raw: 2,
+        confidence: 'inferred',
+      },
+    },
+    presets: Array.from({ length: 200 }, (_, presetIndex) => ({
+      index: presetIndex,
+      name: `P${String(presetIndex).padStart(3, '0')}`,
+      device_program_changes: Array.from({ length: 8 }, (_, deviceIndex) => ({
+        enabled: (presetIndex + deviceIndex) % 2,
+        program: (presetIndex + deviceIndex) % 128,
+        confidence: 'inferred',
+      })),
+      device_program_banks_raw: Array.from({ length: 8 }, (_, index) => index),
+      pedal_definitions: [0, 1],
+      pedal_device_assignments: [1, 2],
+      gcx_loop_states: Array.from({ length: 32 }, (_, index) => index % 2),
+      gcx_toggles: [0, 1, 0, 1],
+      instant_access_state: Array.from({ length: 8 }, (_, index) => index % 2),
+      confidence: 'inferred',
+    })),
+  }
+}
+
+jest.mock('@carbon/react', () => {
+  const actual = jest.requireActual('@carbon/react')
+  return {
+    ...actual,
+    FileUploaderDropContainer: ({ labelText, onAddFiles }: { labelText: string; onAddFiles: (event: React.SyntheticEvent<HTMLElement>, content: { addedFiles: File[] }) => void }) => (
+      <button type="button" onClick={(event) => onAddFiles(event as unknown as React.SyntheticEvent<HTMLElement>, { addedFiles: [new File(['fixture'], 'fixture.syx', { type: 'application/octet-stream' })] })}>
+        {labelText}
+      </button>
+    ),
+    FileUploaderItem: ({ name }: { name: string }) => <div>{name}</div>,
+  }
+})
+
+jest.mock('../hooks/useDeviceLocation', () => ({
+  useDeviceLocation: (...args: unknown[]) => mockUseDeviceLocation(...args),
+}))
+
+jest.mock('../components/PageHeader', () => ({
+  PageHeader: ({
+    title,
+    subtitle,
+    actions,
+  }: {
+    title: string
+    subtitle?: string
+    actions?: React.ReactNode
+  }) => (
+    <div>
+      <div>{title}</div>
+      {subtitle ? <div>{subtitle}</div> : null}
+      {actions}
+    </div>
+  ),
+}))
+
+jest.mock('../../map2/groundControlProApi', () => ({
+  __esModule: true,
+  default: mockGroundControlProApi,
+}))
+
+const { GroundControlProPage } = require('./GroundControlProPage') as typeof import('./GroundControlProPage')
+
+describe('GroundControlProPage', () => {
+  beforeEach(() => {
+    if (typeof window.matchMedia !== 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      })
+    }
+    if (typeof window.ResizeObserver === 'undefined') {
+      class ResizeObserverMock {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+      Object.defineProperty(window, 'ResizeObserver', {
+        writable: true,
+        value: ResizeObserverMock,
+      })
+      Object.defineProperty(globalThis, 'ResizeObserver', {
+        writable: true,
+        value: ResizeObserverMock,
+      })
+    }
+    if (typeof HTMLElement.prototype.scrollIntoView !== 'function') {
+      HTMLElement.prototype.scrollIntoView = jest.fn()
+    }
+
+    mockUseDeviceLocation.mockReset()
+    Object.values(mockGroundControlProApi).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset()
+      }
+    })
+
+    mockUseDeviceLocation.mockReturnValue({ location: null, matches: [], isLoading: false })
+    mockGroundControlProApi.getPorts.mockResolvedValue({
+      rtmidi_available: true,
+      inputs: [{ index: 0, name: 'Input A', connected: false }],
+      outputs: [{ index: 0, name: 'Output A', connected: false }],
+      recommended_input_index: 0,
+      recommended_output_index: 0,
+    })
+    mockGroundControlProApi.getFieldMap.mockResolvedValue({
+      profile_id: 'v1_13_bulk_dump',
+      schema_version: '2026-03-30',
+      source_documents: [{ title: 'Manual', url: 'https://example.com/manual.pdf', notes: 'official' }],
+      templates: [{ path_template: 'presets[{preset_index}].name' }],
+      unknown_byte_count: 1608,
+      expanded_count: 400,
+    })
+    mockGroundControlProApi.getArtifact.mockResolvedValue({
+      artifact_id: 'artifact-1',
+      kind: 'source_syx',
+      path: '/tmp/factory.syx',
+      size_bytes: 16567,
+      sha256: 'sha',
+      created_at: '2026-03-30T12:00:00Z',
+      metadata: {},
+      content_preview: '',
+    })
+  })
+
+  it('renders the full tabbed workspace and keeps push gated before import', async () => {
+    render(<GroundControlProPage />)
+
+    await waitFor(() => expect(mockGroundControlProApi.getPorts).toHaveBeenCalled())
+    await waitFor(() => expect(mockGroundControlProApi.getFieldMap).toHaveBeenCalled())
+
+    expect(screen.getByText('Forensic-grade SysEx import, validation, editing, backup, and transmit workflow for Voodoo Lab Ground Control Pro.')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Overview' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Configuration' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Presets' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Validation & Transfer' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Forensics' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
+    expect(screen.getByText('Hardware not detected')).toBeTruthy()
+  })
+
+  it('imports a dump into the editable session model and keeps push gated without backup', async () => {
+    const importedModel = buildModel()
+    mockGroundControlProApi.importDump.mockResolvedValue({
+      session_id: 'session-1',
+      source_name: 'factory_default_v113.syx',
+      profile_id: 'v1_13_bulk_dump',
+      created_at: '2026-03-30T12:00:00Z',
+      updated_at: '2026-03-30T12:00:00Z',
+      model: importedModel,
+      validation: {
+        total_payload_size: 16567,
+        exact_size_ok: true,
+        preamble_ok: true,
+        terminator_ok: true,
+        offsets_ok: true,
+        field_ranges_ok: true,
+        unknown_bytes_preserved: true,
+        round_trip_identity: true,
+        unknown_byte_count: 1608,
+        errors: [],
+        warnings: [],
+        changed_offsets: [],
+      },
+      summary: {
+        preset_count: 200,
+        unknown_byte_count: 1608,
+        source_artifact_id: 'artifact-1',
+        compiled_artifact_id: null,
+        backup_artifact_id: null,
+      },
+      artifacts: [],
+    })
+
+    render(<GroundControlProPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drop a Ground Control Pro .syx dump here or click to browse' }))
+
+    await waitFor(() => expect(mockGroundControlProApi.importDump).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByText('Dump imported')).toBeTruthy())
+
+    expect(screen.getByText('factory_default_v113.syx')).toBeTruthy()
+    expect(screen.getByText('No fresh backup yet')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
+    expect(screen.getAllByRole('button', { name: 'Compile' })[0]).not.toBeDisabled()
+  })
+})

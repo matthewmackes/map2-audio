@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 08:13 EDT - T561 completed after refactoring live snapshot hydration into the editor route
+Last updated: 2026-03-30 11:13 EDT - T564 logged Snapshot Editor flow-card handoff spec and theme-token cleanup
+
+ID: T564
+Status: [✓] Done
+Title: Document Snapshot Editor flow-card flattening handoff and theme-token cleanup
+Description:
+- Goal / acceptance criteria: Capture the approved Snapshot Editor flow-card redesign as a handoff-ready spec covering the flatter/borderless composition, channel-letter-first hierarchy, LCD volume placement, compact flat-text mute/solo controls, dense metadata strip, new node assignment action, and explicit theme-token color rules. The handoff must name the implementation owner files, define the platform-default node icon, and call out the current hard-coded color sources that need to be removed during implementation.
+- Why it matters: The card direction is now approved, but without one canonical handoff artifact the implementation could drift on hierarchy, interaction order, icon choice, or theme compliance.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: handoff spec in `docs/design`, theme-token cleanup guidance, node-icon decision, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 11:13 EDT - Codex
+- Completion notes:
+  - Added `docs/design/SNAPSHOT_EDITOR_FLOW_CARD_HANDOFF_20260330.md` as the canonical design handoff for the Snapshot Editor flow card, including locked layout decisions, row order, sizing, metadata ordering, interaction behavior, and acceptance criteria.
+  - Recorded `Network_3` from `@carbon/icons-react` as the default platform node icon for this action and future node-referencing surfaces unless a topology-specific icon is required.
+  - Documented the theme migration requirements against `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/SnapshotEditorPage.css`, `web/src/app/components/Displays/SegmentedLedText.tsx`, and the Carbon-backed theme layer under `web/src/app/theme/themes.ts`, including removal of `FLOW_CARD_LED_COLOR` and other card-level hard-coded accent values.
+  - Validation: Not run; docs-only handoff/worklist update.
 
 ID: T561
 Status: [✓] Done
@@ -10571,3 +10589,42 @@ Last updated: 2026-03-29 12:20 EDT - Codex
   - Bundle A moved snapshot-editor page and chain-management ownership into canonical `SnapshotEditor*` files with compatibility wrappers retained only where external imports still existed.
   - Bundle B moved shared snapshot-editor helper ownership into canonical `SnapshotEditor` modules and removed direct canonical-page imports from legacy `JuceGrid` helper paths.
   - Bundle C moved the remaining chain-graph and device signal-path ownership into canonical `ChainGraph*` and `*SignalPath*` files, then closed the final E-SNAP documentation and worklist notes.
+
+ID: T562
+Status: [✓] Done
+Title: Make live snapshot path hydration and activation path-authoritative end-to-end
+Description:
+- Goal / acceptance criteria: Ensure Snapshot Editor live branch cards always materialize from canonical live snapshot path state, and guarantee backend activation creates/restores a runtime chain per path so the live workspace never falls back to unassigned branch cards for valid paths.
+- Why it matters: The GUI branch cards stayed blank because runtime path assignments could be dropped or never materialized even while the live snapshot header loaded correctly, leaving the editor with path shells but no resolvable chains.
+- Dependencies: T561
+- Estimated effort: Medium
+- Required outputs: path-authoritative backend normalization/materialization, frontend live-chain resolution that survives stale `/api/chains` responses, regression coverage, and live verification on port 3000.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 08:33 EDT - Codex
+- Completion notes:
+  - Refined `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.ts` so live branch cards resolve from effective live snapshot chains synthesized from `paths`/`live_state.runtime_chains`, instead of depending exclusively on the refetched global chain list.
+  - Refactored `app/services/snapshot_service.py` so snapshot normalization now reconciles `paths` into canonical channels/chains, synthetic path chains keep stable IDs through enrichment, and activation always materializes a runtime chain per live path even when the stored snapshot path is empty.
+  - Added regression coverage in `tests/test_snapshot_routes.py` and `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts`; validation passed with `pytest -q tests/test_snapshot_routes.py`, `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx`, and `npm --prefix web run build`.
+  - Deployed the updated web bundle (`index-BIV_YMxA.js`) to port `3000`, restarted the backend through `POST /api/system/restart-backend`, reactivated `Snapshot 1`, and verified `GET /api/snapshots/live` now returns active runtime chains for `ch_a` and `ch_b`.
+
+ID: T563
+Status: [✗] Blocked
+Title: Implement Ground Control Pro full-capability Labs route, backend core, and SysEx workflow
+Description:
+- Goal / acceptance criteria: Deliver the new `/ground-control-pro` routed Carbon page plus Labs launcher, implement the Ground Control Pro Python core under `app/services/ground_control_pro`, expose the planned FastAPI endpoints for import/export/compile/backup/push/diff/session/artifact access, add fixture-backed parser/serializer/validation coverage, and document the reverse-engineering field map and evidence workflow. The implementation must support the fixed full-memory dump geometry, preserve unknown bytes exactly, and gate device push on clean structural and round-trip validation.
+- Why it matters: The requested Ground Control Pro tool is a first-class MAP2 MIDI hardware workflow, not a sketch. The repo needs a real integrated route, service, data model, fixtures, and safety posture so the feature can be exercised and qualified from the existing shell.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: backend route and service package, web route/page/client, field-map JSON, fixture set and docs, focused backend/frontend tests, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 09:14 EDT - Codex
+- Completion notes:
+  - Added the full Ground Control Pro backend surface under `app/services/ground_control_pro` and `app/routes/ground_control_pro.py`, including fixed-profile SysEx parsing, structured model and field-map handling, deterministic serialization, validation, MIDI transport, artifact/session/job management, CLI helpers, and deterministic fixture generation support.
+  - Added the routed Carbon page at `web/src/app/pages/GroundControlProPage.tsx`, registered `/ground-control-pro` in `web/src/app/App.tsx`, added the clickable Labs launcher/profile metadata, and surfaced import, structured edit, compile/export, backup, push gating, re-dump verify, diff, and forensics views inside the existing MAP2 shell.
+  - Added deterministic `.syx` regression fixtures under `tests/fixtures/ground_control_pro`, the reverse-engineering/evidence document `docs/ground-control-pro-reverse-engineering.md`, focused backend tests (`tests/test_ground_control_pro_parser.py`, `tests/test_ground_control_pro_service.py`, `tests/test_ground_control_pro_routes.py`), and focused frontend coverage (`web/src/app/pages/GroundControlProPage.test.tsx`) plus route/navigation regression updates.
+  - Validation: `python3 -m pytest -q tests/test_ground_control_pro_parser.py tests/test_ground_control_pro_service.py tests/test_ground_control_pro_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/App.platformRoute.test.tsx web/src/app/data/advancedMenuItems.test.ts web/src/app/pages/GroundControlProPage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Blocked notes:
+  - The remaining acceptance criteria require a physical Voodoo Lab Ground Control Pro and live MIDI hardware-in-the-loop verification for backup capture, unchanged retransmit, post-power-cycle re-dump identity, and controlled single-field confirmation against real hardware dumps.
+  - The repo now contains the complete software path and deterministic synthetic fixtures, but the hardware-qualified acceptance gate cannot be closed from this environment without the actual device.

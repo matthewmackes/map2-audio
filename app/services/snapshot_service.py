@@ -1042,6 +1042,7 @@ class SnapshotService:
 
         raw_chains = payload.get("chains", [])
         normalized_chains: list[dict[str, Any]] = []
+        chain_by_ref: dict[str, dict[str, Any]] = {}
         if isinstance(raw_chains, dict):
             chain_items = list(raw_chains.items())
         elif isinstance(raw_chains, list):
@@ -1091,6 +1092,88 @@ class SnapshotService:
                     "loop_insertions": loop_insertions,
                 }
             )
+            chain_by_ref[chain_key] = normalized_chains[-1]
+
+        raw_paths = payload.get("paths", []) or []
+        normalized_paths: list[dict[str, Any]] = []
+        next_path_chain_ref = len(normalized_chains)
+        for index, raw_path in enumerate(raw_paths):
+            if not isinstance(raw_path, dict):
+                continue
+
+            path_plugins: list[dict[str, Any]] = []
+            for plugin_index, raw_plugin in enumerate(raw_path.get("plugins", []) or []):
+                if not isinstance(raw_plugin, dict):
+                    continue
+                uri = str(raw_plugin.get("uri") or raw_plugin.get("plugin_uri") or "").strip()
+                if not uri:
+                    continue
+                path_plugins.append(
+                    {
+                        "uri": uri,
+                        "name": raw_plugin.get("name"),
+                        "position": plugin_index,
+                        "bypass": bool(raw_plugin.get("bypass", raw_plugin.get("bypassed", False))),
+                        "parameters": {
+                            str(key): float(value)
+                            for key, value in dict(raw_plugin.get("parameters") or {}).items()
+                            if isinstance(key, str) and isinstance(value, (int, float))
+                        },
+                        "loader_state": dict(raw_plugin.get("loader_state") or {}),
+                        "is_placeholder": bool(raw_plugin.get("is_placeholder", False)) or not _plugin_available(uri),
+                    }
+                )
+
+            path_chain_ref_value = (
+                raw_path.get("snapshot_chain_id")
+                if raw_path.get("snapshot_chain_id") is not None
+                else raw_path.get("runtime_chain_id")
+            )
+            if path_chain_ref_value is None:
+                next_path_chain_ref += 1
+                path_chain_ref = f"path:{raw_path.get('id') or index}:{next_path_chain_ref}"
+            else:
+                path_chain_ref = str(path_chain_ref_value)
+
+            normalized_paths.append(
+                {
+                    "channel_key": str(raw_path.get("id") or f"path-{index}"),
+                    "label": str(raw_path.get("label") or raw_path.get("name") or _stable_channel_label(index)),
+                    "color": str(raw_path.get("color") or DEFAULT_CHANNEL_COLOR),
+                    "muted": _normalize_bool(raw_path.get("muted"), False),
+                    "solo": _normalize_bool(raw_path.get("solo"), False),
+                    "dry_wet_mix": _safe_float(raw_path.get("dry_wet_mix", raw_path.get("dryWetMix")), DEFAULT_DRY_WET_MIX),
+                    "chain_ref": path_chain_ref,
+                    "chain_name": str(raw_path.get("name") or raw_path.get("label") or f"Path {index + 1}"),
+                    "plugins": path_plugins,
+                    "loop_insertions": [
+                        dict(item)
+                        for item in (raw_path.get("loop_insertions") or [])
+                        if isinstance(item, dict)
+                    ],
+                }
+            )
+
+            if path_chain_ref not in seen_chain_refs:
+                normalized_chains.append(
+                    {
+                        "source_key": path_chain_ref,
+                        "name": normalized_paths[-1]["chain_name"],
+                        "plugins": path_plugins,
+                        "loop_insertions": normalized_paths[-1]["loop_insertions"],
+                    }
+                )
+                seen_chain_refs.add(path_chain_ref)
+                chain_by_ref[path_chain_ref] = normalized_chains[-1]
+            else:
+                existing_chain = chain_by_ref.get(path_chain_ref)
+                if existing_chain is not None:
+                    if not existing_chain.get("plugins") and path_plugins:
+                        existing_chain["plugins"] = path_plugins
+                    if not existing_chain.get("loop_insertions") and normalized_paths[-1]["loop_insertions"]:
+                        existing_chain["loop_insertions"] = normalized_paths[-1]["loop_insertions"]
+                    if existing_chain.get("name", "").startswith("Chain "):
+                        existing_chain["name"] = normalized_paths[-1]["chain_name"]
 
         raw_channels = payload.get("channels", payload.get("flowSlots", [])) or []
         normalized_channels: list[dict[str, Any]] = []
@@ -1121,6 +1204,33 @@ class SnapshotService:
                     "chain_ref": chain_ref,
                 }
             )
+
+        path_by_channel_key = {
+            path["channel_key"]: path
+            for path in normalized_paths
+        }
+        if normalized_channels:
+            for channel in normalized_channels:
+                matching_path = path_by_channel_key.get(channel["channel_key"])
+                if matching_path is None:
+                    continue
+                if channel["chain_ref"] is None:
+                    channel["chain_ref"] = matching_path["chain_ref"]
+                if not channel.get("label"):
+                    channel["label"] = matching_path["label"]
+        else:
+            normalized_channels = [
+                {
+                    "channel_key": path["channel_key"],
+                    "label": path["label"],
+                    "color": path["color"],
+                    "muted": path["muted"],
+                    "solo": path["solo"],
+                    "dry_wet_mix": path["dry_wet_mix"],
+                    "chain_ref": path["chain_ref"],
+                }
+                for path in normalized_paths
+            ]
 
         if not normalized_channels:
             normalized_channels.append(
@@ -1287,68 +1397,64 @@ class SnapshotService:
 
         for channel in detail.get("channels", []):
             snapshot_chain_id = channel.get("chain_id")
-            runtime_chain_id: Optional[int] = None
-            runtime_chain_name: Optional[str] = None
-            activation_status = "unassigned"
-            if snapshot_chain_id is not None:
-                source_chain = chain_by_id.get(snapshot_chain_id)
-                if isinstance(source_chain, dict):
-                    runtime_chain = Chain(
-                        name=f"{source_chain.get('name') or 'Path'} ({channel.get('label') or channel.get('channel_key')})",
-                        is_active=False,
-                        config=json.dumps(
-                            {
-                                "source_kind": "snapshot_path",
-                                "snapshot_id": snapshot.id,
-                                "snapshot_chain_id": snapshot_chain_id,
-                                "path_id": channel.get("channel_key"),
-                            }
-                        ),
+            source_chain = chain_by_id.get(snapshot_chain_id) if snapshot_chain_id is not None else None
+            runtime_chain = Chain(
+                name=f"{source_chain.get('name') if isinstance(source_chain, dict) and source_chain.get('name') else 'Path'} ({channel.get('label') or channel.get('channel_key')})",
+                is_active=False,
+                config=json.dumps(
+                    {
+                        "source_kind": "snapshot_path",
+                        "snapshot_id": snapshot.id,
+                        "snapshot_chain_id": snapshot_chain_id,
+                        "path_id": channel.get("channel_key"),
+                    }
+                ),
+            )
+            self.session.add(runtime_chain)
+            await self.session.flush()
+
+            if isinstance(source_chain, dict):
+                for plugin in source_chain.get("plugins", []):
+                    if not isinstance(plugin, dict):
+                        continue
+                    self.session.add(
+                        ChainPlugin(
+                            chain_id=runtime_chain.id,
+                            plugin_uri=str(plugin.get("uri") or ""),
+                            position=int(plugin.get("position", 0)),
+                            bypass=bool(plugin.get("bypass", False)),
+                            **self.chain_service._chain_plugin_loader_columns(
+                                str(plugin.get("uri") or ""),
+                                plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else None,
+                            ),
+                        )
                     )
-                    self.session.add(runtime_chain)
-                    await self.session.flush()
 
-                    for plugin in source_chain.get("plugins", []):
-                        if not isinstance(plugin, dict):
-                            continue
-                        self.session.add(
-                            ChainPlugin(
-                                chain_id=runtime_chain.id,
-                                plugin_uri=str(plugin.get("uri") or ""),
-                                position=int(plugin.get("position", 0)),
-                                bypass=bool(plugin.get("bypass", False)),
-                                **self.chain_service._chain_plugin_loader_columns(
-                                    str(plugin.get("uri") or ""),
-                                    plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else None,
-                                ),
-                            )
+                for loop in source_chain.get("loop_insertions", []):
+                    if not isinstance(loop, dict):
+                        continue
+                    self.session.add(
+                        EffectsLoopInsertion(
+                            insertion_id=f"snapshot-{snapshot.id}-{uuid4().hex[:12]}",
+                            chain_id=runtime_chain.id,
+                            loop_id=str(loop.get("loop_id") or ""),
+                            slot_index=int(loop.get("slot_index", 0)),
+                            enabled=bool(loop.get("enabled", True)),
+                            mode=str(loop.get("mode") or "serial_insert"),
+                            blend_pct=_safe_float(loop.get("blend_pct"), 100.0),
+                            send_gain_db=_safe_float(loop.get("send_gain_db"), 0.0),
+                            return_gain_db=_safe_float(loop.get("return_gain_db"), 0.0),
+                            crossfade_ms=int(_safe_int(loop.get("crossfade_ms")) or 12),
+                            band_split_hz=list(loop.get("band_split_hz") or []),
                         )
+                    )
 
-                    for loop in source_chain.get("loop_insertions", []):
-                        if not isinstance(loop, dict):
-                            continue
-                        self.session.add(
-                            EffectsLoopInsertion(
-                                insertion_id=f"snapshot-{snapshot.id}-{uuid4().hex[:12]}",
-                                chain_id=runtime_chain.id,
-                                loop_id=str(loop.get("loop_id") or ""),
-                                slot_index=int(loop.get("slot_index", 0)),
-                                enabled=bool(loop.get("enabled", True)),
-                                mode=str(loop.get("mode") or "serial_insert"),
-                                blend_pct=_safe_float(loop.get("blend_pct"), 100.0),
-                                send_gain_db=_safe_float(loop.get("send_gain_db"), 0.0),
-                                return_gain_db=_safe_float(loop.get("return_gain_db"), 0.0),
-                                crossfade_ms=int(_safe_int(loop.get("crossfade_ms")) or 12),
-                                band_split_hz=list(loop.get("band_split_hz") or []),
-                            )
-                        )
-
-                    await self.session.flush()
-                    activated = await self.chain_service.activate_chain(runtime_chain.id)
-                    runtime_chain_id = runtime_chain.id
-                    runtime_chain_name = runtime_chain.name
-                    activation_status = "active" if activated else "degraded"
-                    activated_runtime_chain_ids.append(runtime_chain.id)
+            await self.session.flush()
+            activated = await self.chain_service.activate_chain(runtime_chain.id)
+            runtime_chain_id = runtime_chain.id
+            runtime_chain_name = runtime_chain.name
+            activation_status = "active" if activated else "degraded"
+            activated_runtime_chain_ids.append(runtime_chain.id)
 
             runtime_paths.append(
                 {
@@ -1474,10 +1580,16 @@ class SnapshotService:
 
         chain_ids_by_ref: dict[str, Optional[int]] = {}
         chains_payload: list[dict[str, Any]] = []
+        next_generated_chain_id = max(
+            [int(chain.get("id")) for chain in chain_entries if chain.get("id") is not None] or [0]
+        )
         for index, chain in enumerate(chain_entries):
             chain_id = chain.get("id")
             if chain_id is None and snapshot_row is not None and index < len(snapshot_row.chains):
                 chain_id = snapshot_row.chains[index].id
+            if chain_id is None:
+                next_generated_chain_id += 1
+                chain_id = next_generated_chain_id
             chain_ids_by_ref[chain["source_key"]] = chain_id
             chains_payload.append(
                 {

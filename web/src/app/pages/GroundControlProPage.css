@@ -1,0 +1,120 @@
+.ground-control-pro-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--cds-link-primary) 16%, transparent), transparent 36%),
+    linear-gradient(180deg, var(--cds-layer-01), color-mix(in srgb, var(--cds-layer-01) 90%, var(--cds-layer-02)));
+}
+
+.ground-control-pro-page__surface {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.ground-control-pro-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-06);
+  padding: var(--cds-spacing-06);
+}
+
+.ground-control-pro-page__header-actions,
+.ground-control-pro-page__tag-row,
+.ground-control-pro-page__port-grid,
+.ground-control-pro-page__validation-stack,
+.ground-control-pro-page__section-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.ground-control-pro-page__hero-tile {
+  padding: var(--cds-spacing-06);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-02) 92%, white) 0%, var(--cds-layer-02) 100%);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 80%, var(--cds-link-primary));
+}
+
+.ground-control-pro-page__hero-copy,
+.ground-control-pro-page__hero-actions,
+.ground-control-pro-page__copy-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+}
+
+.ground-control-pro-page__eyebrow {
+  margin: 0;
+  color: var(--cds-link-primary);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ground-control-pro-page__panel-grid,
+.ground-control-pro-page__configuration-grid,
+.ground-control-pro-page__presets-layout,
+.ground-control-pro-page__device-grid,
+.ground-control-pro-page__device-program-grid,
+.ground-control-pro-page__instant-access-grid {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.ground-control-pro-page__panel-grid,
+.ground-control-pro-page__configuration-grid,
+.ground-control-pro-page__presets-layout {
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+}
+
+.ground-control-pro-page__device-grid,
+.ground-control-pro-page__device-program-grid,
+.ground-control-pro-page__instant-access-grid {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.ground-control-pro-page__nested-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  background: var(--cds-layer-02);
+}
+
+.ground-control-pro-page__config-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--cds-spacing-05);
+  margin-bottom: var(--cds-spacing-05);
+}
+
+.ground-control-pro-page__table-container {
+  background: var(--cds-layer-01);
+}
+
+.ground-control-pro-page__selected-row td {
+  background: color-mix(in srgb, var(--cds-link-primary) 14%, var(--cds-layer-01));
+}
+
+.ground-control-pro-page__code-block {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ground-control-pro-page__source-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  padding-left: var(--cds-spacing-05);
+}
+
+@media (max-width: 1056px) {
+  .ground-control-pro-page__content {
+    padding: var(--cds-spacing-05);
+  }
+}

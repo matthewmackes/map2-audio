@@ -136,6 +136,7 @@ describe('navigation catalog', () => {
       '/midi-hub',
       '/mpx1',
       '/intelfx',
+      '/ground-control-pro',
       '/tesira',
       '/edirol-ua1000',
       '/hotone-jogg',

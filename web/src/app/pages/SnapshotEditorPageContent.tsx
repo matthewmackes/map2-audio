@@ -140,7 +140,10 @@ import type { JuceGridRoutingState } from '../components/SnapshotEditor/snapshot
 import {
   fingerprintSnapshotData,
 } from '../components/SnapshotEditor/snapshotEditorComparison'
-import { buildSnapshotEditorLiveSnapshotHydration } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
+import {
+  buildEffectiveLiveSnapshotChains,
+  buildSnapshotEditorLiveSnapshotHydration,
+} from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
@@ -1270,11 +1273,24 @@ export function SnapshotEditorPage() {
     () => liveSnapshotQuery.data ?? null,
     [liveSnapshotQuery.data],
   )
+  const effectiveChainsResponse = useMemo(
+    () => (
+      activeSnapshot
+        ? buildEffectiveLiveSnapshotChains(activeSnapshot, chainsQuery.data)
+        : (chainsQuery.data ?? { chains: [], count: 0 })
+    ),
+    [activeSnapshot, chainsQuery.data],
+  )
+  const effectiveChains = effectiveChainsResponse.chains
+  const effectiveChainById = useMemo(
+    () => new Map(effectiveChains.map((chain) => [chain.id, chain] as const)),
+    [effectiveChains],
+  )
   const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
   const liveChainProjection = useMemo(
-    () => buildJuceGridLiveChainProjection(chains, flowSlots),
-    [chains, flowSlots],
+    () => buildJuceGridLiveChainProjection(effectiveChains, flowSlots),
+    [effectiveChains, flowSlots],
   )
   const desiredLiveChainIds = useMemo(
     () => getJuceGridDesiredLiveChainIds(flowSlots),
@@ -1295,8 +1311,8 @@ export function SnapshotEditorPage() {
   const jackMetrics = jackQuery.data
 
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
-    return chains.find(c => c.id === slot.chainId)
-  }, [chains])
+    return slot.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
+  }, [effectiveChainById])
 
   // Capture the current workspace as a snapshot draft
   const captureCurrentState = useCallback((): SnapshotDraftData => {
@@ -1304,7 +1320,7 @@ export function SnapshotEditorPage() {
 
     for (const slot of flowSlots) {
       if (slot.chainId) {
-        const chain = chains.find(c => c.id === slot.chainId)
+        const chain = effectiveChainById.get(slot.chainId)
         if (chain) {
           chainSnapshots[String(slot.chainId)] = {
             name: chain.name,
@@ -1342,7 +1358,7 @@ export function SnapshotEditorPage() {
       activeFlowIndex,
       chains: chainSnapshots,
     }
-  }, [flowSlots, routing, activeFlowIndex, chains])
+  }, [effectiveChainById, flowSlots, routing, activeFlowIndex])
 
   const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
   const currentSnapshotFingerprint = useMemo(
@@ -1462,8 +1478,8 @@ export function SnapshotEditorPage() {
   ])
   const currentChain = useMemo(() => {
     if (!activeFlow) return null
-    return chains.find(c => c.id === activeFlow.chainId) || null
-  }, [chains, activeFlow])
+    return activeFlow.chainId !== null ? effectiveChainById.get(activeFlow.chainId) ?? null : null
+  }, [activeFlow, effectiveChainById])
 
   useEffect(() => {
     if (!isTabletTouchLayout) {
@@ -1499,7 +1515,7 @@ export function SnapshotEditorPage() {
       const next: Record<string, number> = {}
 
       flowSlots.forEach((flow) => {
-        const flowChain = chains.find((entry) => entry.id === flow.chainId)
+        const flowChain = flow.chainId !== null ? effectiveChainById.get(flow.chainId) : undefined
         const maxPage = Math.max(0, Math.ceil((flowChain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE) - 1)
         const currentPage = previous[flow.id] ?? 0
         const clampedPage = Math.max(0, Math.min(currentPage, maxPage))
@@ -1515,7 +1531,7 @@ export function SnapshotEditorPage() {
 
       return next
     })
-  }, [chains, flowSlots, isTabletTouchLayout])
+  }, [effectiveChainById, flowSlots, isTabletTouchLayout])
 
   const routingVisualizerFlows = useMemo(() => (
     flowSlots.map((slot, i) => ({
@@ -1540,7 +1556,7 @@ export function SnapshotEditorPage() {
   const tabletFocusedFlowIndex = tabletFocusedBranchId ? flowIndexById.get(tabletFocusedBranchId) ?? -1 : -1
   const tabletFocusedFlow = tabletFocusedFlowIndex >= 0 ? flowSlots[tabletFocusedFlowIndex] : null
   const tabletFocusedChain = tabletFocusedFlow
-    ? chains.find((entry) => entry.id === tabletFocusedFlow.chainId) ?? null
+    ? (tabletFocusedFlow.chainId !== null ? effectiveChainById.get(tabletFocusedFlow.chainId) ?? null : null)
     : null
   const tabletFocusedBranchPage = tabletFocusedFlow ? branchPageByFlowId[tabletFocusedFlow.id] ?? 0 : 0
   const tabletFocusedBranchPageCount = tabletFocusedChain
@@ -1940,8 +1956,8 @@ export function SnapshotEditorPage() {
 
   const activeFlowChain = useMemo(() => {
     const slot = flowSlots[activeFlowIndex]
-    return slot ? chains.find(c => c.id === slot.chainId) : undefined
-  }, [flowSlots, activeFlowIndex, chains])
+    return slot?.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
+  }, [flowSlots, activeFlowIndex, effectiveChainById])
 
   const avbReadinessState = useMemo(() => {
     const readiness = portsInfo?.avb_readiness

@@ -218,6 +218,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Open MIDI Hub for everyday MIDI setup, routing, controller changes, and troubleshooting.',
     bestFor: 'MIDI setup and control',
   },
+  '/ground-control-pro': {
+    summary: 'Forensic-grade Ground Control Pro workspace for full-memory SysEx import, validation, structured editing, backup capture, and safe device writeback.',
+    capabilities: [
+      'Import and parse full .syx memory dumps',
+      'Edit global settings and 200 presets from one Carbon route',
+      'Compile deterministic byte-accurate full-memory dumps',
+      'Capture backups and archive every transmitted payload',
+      'Compare source, compiled, and re-dumped bytes by offset',
+      'Track confidence labels and preserve unknown bytes exactly',
+    ],
+    learnMore: 'Use Ground Control Pro when you need a safe, auditable editor for device-wide configuration rather than ad hoc MIDI writes or undocumented partial changes.',
+    bestFor: 'Ground Control Pro backup, editing, and qualified writeback',
+  },
   '/expression': {
     summary: 'Expression-control mapping surface connecting pedals and MIDI CC to realtime engine parameters.',
     capabilities: [

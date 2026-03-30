@@ -133,6 +133,8 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         activated = await routes.activate_snapshot(snapshot_id)
         assert activated["status"] == "success"
         assert activated["snapshot_data"]["live_state"]["is_live"] is True
+        assert activated["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] is not None
+        assert len(activated["snapshot_data"]["live_state"]["runtime_chains"]) == 1
         assert cache_invalidations == ["chains"]
 
         live_snapshot = await routes.get_live_snapshot()
@@ -193,6 +195,58 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         )
         assert failover["status"] == "failed_over"
         assert failover["deployment"]["primary_node_id"] == "node-b"
+
+        created_from_paths_only = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="Paths Only Snapshot",
+                snapshot_data={
+                    "paths": [
+                        {
+                            "id": "ch_a",
+                            "name": "Clean A",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "plugins": [],
+                        },
+                        {
+                            "id": "ch_b",
+                            "name": "Drive B",
+                            "label": "B",
+                            "color": "#22c55e",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:path-only-plugin",
+                                    "parameters": {"mix": 0.5},
+                                }
+                            ],
+                        },
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "ch_a",
+                        "blend_positions": {"ch_a": 100.0, "ch_b": 100.0},
+                        "series_order": ["ch_a", "ch_b"],
+                    },
+                },
+            )
+        )
+        paths_only_id = created_from_paths_only["snapshot_id"]
+
+        fetched_paths_only = await routes.get_snapshot(paths_only_id)
+        channel_chain_ids = [channel["chain_id"] for channel in fetched_paths_only["channels"]]
+        assert all(chain_id is not None for chain_id in channel_chain_ids)
+        assert len(set(channel_chain_ids)) == 2
+        assert fetched_paths_only["paths"][0]["snapshot_chain_id"] == fetched_paths_only["channels"][0]["chain_id"]
+        assert fetched_paths_only["paths"][1]["snapshot_chain_id"] == fetched_paths_only["channels"][1]["chain_id"]
+        assert any(
+            chain["name"] == "Drive B" and chain["plugins"] and chain["plugins"][0]["uri"] == "urn:test:path-only-plugin"
+            for chain in fetched_paths_only["chains"]
+        )
+
+        activated_paths_only = await routes.activate_snapshot(paths_only_id)
+        assert activated_paths_only["status"] == "success"
+        assert all(path["runtime_chain_id"] is not None for path in activated_paths_only["snapshot_data"]["live_state"]["paths"])
+        assert len(activated_paths_only["snapshot_data"]["live_state"]["runtime_chains"]) == 2
 
     asyncio.run(_run())
 
