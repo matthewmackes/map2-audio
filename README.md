@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1068** total commits | **3** stars | **0** forks | **0** open issues
+**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1070** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e88007b1`](https://github.com/matthewmackes/map2-audio/commit/e88007b1fa03f17d96ccce9881da9c0659f670b4) | Refine snapshot editor live status and snapshot cache han... | Map2 Audio | 2026-03-29 |
+| [`381552e8`](https://github.com/matthewmackes/map2-audio/commit/381552e8a4179afe9459a3cffc9ef8e54ac2309c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`d162e526`](https://github.com/matthewmackes/map2-audio/commit/d162e526de6484ada612c234f0c92de8d0591cdc) | Refresh audio hardware blocker evidence | Map2 Audio | 2026-03-29 |
 | [`1a4362fe`](https://github.com/matthewmackes/map2-audio/commit/1a4362fe23d38c49e149943c87f1faee5f720211) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`afc14133`](https://github.com/matthewmackes/map2-audio/commit/afc141332559cb9748f5a415d05270da19807c53) | Refresh AVB blocker evidence | Map2 Audio | 2026-03-29 |
 | [`103df0f9`](https://github.com/matthewmackes/map2-audio/commit/103df0f9e319bebbb6a64b2128ab3c30102fc504) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`ace58f17`](https://github.com/matthewmackes/map2-audio/commit/ace58f1764d2cde83a6aefc2da8e01b3edc615d8) | Refresh MIDI hardware blocker evidence | Map2 Audio | 2026-03-29 |
 | [`7f0ce824`](https://github.com/matthewmackes/map2-audio/commit/7f0ce8244c713ec98bf08d1879a9962f1fa55d15) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
-| [`09d08873`](https://github.com/matthewmackes/map2-audio/commit/09d08873144af87196f060ea5b9fdd967ad1b43e) | Close T547 snapshot-first epic in worklist | Map2 Audio | 2026-03-29 |
-| [`89f6127a`](https://github.com/matthewmackes/map2-audio/commit/89f6127ab81ef96baac2d81ea7c7b7812ad4706b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
