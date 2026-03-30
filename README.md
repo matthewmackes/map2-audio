@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1082** total commits | **3** stars | **0** forks | **0** open issues
+**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1085** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1cd3e071`](https://github.com/matthewmackes/map2-audio/commit/1cd3e071b1e7112c45c55f52cb272e1acc6d3c77) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-30 |
+| [`763cfbbd`](https://github.com/matthewmackes/map2-audio/commit/763cfbbdedf97b99fd46c70aac4cd79144aad809) | Add MIDI snapshot activation cache coverage | Map2 Audio | 2026-03-30 |
+| [`731368b2`](https://github.com/matthewmackes/map2-audio/commit/731368b29d2441678dacbd0052248fd13cca7fe4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`bc709d71`](https://github.com/matthewmackes/map2-audio/commit/bc709d7140402924ec9f9e01b8fe96f06f8e065e) | Fix snapshot activation chain cache invalidation | Map2 Audio | 2026-03-30 |
 | [`2df6cbf6`](https://github.com/matthewmackes/map2-audio/commit/2df6cbf661f40ca853ba5161a91011114a50ce9d) | Align snapshot editor masthead width | Map2 Audio | 2026-03-30 |
 | [`5550a4db`](https://github.com/matthewmackes/map2-audio/commit/5550a4dbf79430a205ef03c947160a4ea7116270) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`d20bb09d`](https://github.com/matthewmackes/map2-audio/commit/d20bb09d23a80526358279df9cfb5697a6ea0b13) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`cfb77a43`](https://github.com/matthewmackes/map2-audio/commit/cfb77a437954b126507d79d248d51903c1788410) | Refine snapshot editor overview footer layout | Map2 Audio | 2026-03-30 |
-| [`9f21d7fc`](https://github.com/matthewmackes/map2-audio/commit/9f21d7fc485c67fe5b3a2690df2d367b1194e0cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
-| [`5767069b`](https://github.com/matthewmackes/map2-audio/commit/5767069b4c655bcf7d74ad58727887043f1e60c4) | Refine snapshot editor live status layout | Map2 Audio | 2026-03-30 |
-| [`8a729ad5`](https://github.com/matthewmackes/map2-audio/commit/8a729ad57d85897b70eb9c8d502435bcafd4b8cd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
