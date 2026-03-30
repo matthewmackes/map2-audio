@@ -106,6 +106,7 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
+import { PageHeader } from '../components/PageHeader'
 import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
@@ -4600,109 +4601,107 @@ export function SnapshotEditorPage() {
       <LandscapePrompt componentId="juce-grid" />
       <Grid className="juce-grid-page__header-shell juce-grid-page__section-frame juce-grid-page__section-frame--header">
         <Column sm={4} md={8} lg={16} className="juce-grid-page__section-column">
-          <Layer className={`juce-grid-page__thin-bar ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
-            <div className="juce-grid-page__thin-bar-main">
-              <div className="juce-grid-page__thin-bar-brand" aria-label="Audio Grid">
-                <MapAudioGridIcon size={isTabletTouchLayout ? 28 : 38} />
-                {!isTabletTouchLayout && <h1 className="juce-grid-page__thin-bar-title">Audio Grid</h1>}
-              </div>
-            </div>
-            <div className="juce-grid-page__masthead-actions">
+          <PageHeader
+            title="Audio Grid"
+            subtitle="Build signal flow, configure routing, and manage the live snapshot workspace."
+            icon={<MapAudioGridIcon size={32} />}
+            actions={(
+              <div className="juce-grid-page__masthead-actions">
               <div className="juce-grid-page__masthead-primary-actions">
-              {isTabletTouchLayout ? (
-                <>
-                  <Button
-                    hasIconOnly
-                    size="sm"
-                    kind="ghost"
-                    className="juce-grid-page__masthead-icon-button"
-                    renderIcon={Network_3}
-                    iconDescription="Open Audio Nodes"
-                    aria-label="Open Audio Nodes"
-                    onClick={() => setShowAudioNodesModal(true)}
-                  />
-                  <Button
-                    hasIconOnly
-                    size="sm"
-                    kind="ghost"
-                    className="juce-grid-page__masthead-icon-button"
-                    renderIcon={Flow}
-                    iconDescription="Configure routing"
-                    aria-label="Configure routing"
-                    onClick={() => setShowRoutingTopologyModal(true)}
-                  />
-                  <Button
-                    hasIconOnly
-                    size="sm"
-                    kind="ghost"
-                    className="juce-grid-page__masthead-icon-button"
-                    renderIcon={Add}
-                    iconDescription="Add path"
-                    aria-label="Add path"
-                    onClick={addFlow}
-                    disabled={flowSlots.length >= MAX_FLOWS}
-                  />
-                  <OverflowMenu
-                    ariaLabel="Audio Grid secondary actions"
-                    iconDescription="Audio Grid secondary actions"
-                    size="sm"
-                    flipped
-                  >
-                    <OverflowMenuItem
-                      itemText="Live paths"
-                      onClick={() => setShowLiveRuntimeModal(true)}
+                {isTabletTouchLayout ? (
+                  <>
+                    <Button
+                      hasIconOnly
+                      size="sm"
+                      kind="ghost"
+                      className="juce-grid-page__masthead-icon-button"
+                      renderIcon={Network_3}
+                      iconDescription="Open Audio Nodes"
+                      aria-label="Open Audio Nodes"
+                      onClick={() => setShowAudioNodesModal(true)}
                     />
-                    <OverflowMenuItem
-                      itemText="Reset paths"
+                    <Button
+                      hasIconOnly
+                      size="sm"
+                      kind="ghost"
+                      className="juce-grid-page__masthead-icon-button"
+                      renderIcon={Flow}
+                      iconDescription="Configure routing"
+                      aria-label="Configure routing"
+                      onClick={() => setShowRoutingTopologyModal(true)}
+                    />
+                    <Button
+                      hasIconOnly
+                      size="sm"
+                      kind="ghost"
+                      className="juce-grid-page__masthead-icon-button"
+                      renderIcon={Add}
+                      iconDescription="Add path"
+                      aria-label="Add path"
+                      onClick={addFlow}
+                      disabled={flowSlots.length >= MAX_FLOWS}
+                    />
+                    <OverflowMenu
+                      ariaLabel="Audio Grid secondary actions"
+                      iconDescription="Audio Grid secondary actions"
+                      size="sm"
+                      flipped
+                    >
+                      <OverflowMenuItem
+                        itemText="Live paths"
+                        onClick={() => setShowLiveRuntimeModal(true)}
+                      />
+                      <OverflowMenuItem
+                        itemText="Reset paths"
+                        onClick={() => setShowClearFlowsModal(true)}
+                        disabled={flowSlots.length <= 1}
+                      />
+                      <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
+                    </OverflowMenu>
+                    <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
+                      Perform
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      kind="secondary"
+                      renderIcon={Network_3}
+                      onClick={() => setShowAudioNodesModal(true)}
+                    >
+                      Audio Nodes
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="secondary"
+                      renderIcon={Flow}
+                      onClick={() => setShowRoutingTopologyModal(true)}
+                    >
+                      Configure routing
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="primary"
+                      renderIcon={Add}
+                      onClick={addFlow}
+                      disabled={flowSlots.length >= MAX_FLOWS}
+                    >
+                      Add path
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="danger--tertiary"
                       onClick={() => setShowClearFlowsModal(true)}
                       disabled={flowSlots.length <= 1}
-                    />
-                    <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
-                  </OverflowMenu>
-                  <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
-                    Perform
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    size="sm"
-                    kind="secondary"
-                    renderIcon={Network_3}
-                    onClick={() => setShowAudioNodesModal(true)}
-                  >
-                    Audio Nodes
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind="secondary"
-                    renderIcon={Flow}
-                    onClick={() => setShowRoutingTopologyModal(true)}
-                  >
-                    Configure routing
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind="primary"
-                    renderIcon={Add}
-                    onClick={addFlow}
-                    disabled={flowSlots.length >= MAX_FLOWS}
-                  >
-                    Add path
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind="danger--tertiary"
-                    onClick={() => setShowClearFlowsModal(true)}
-                    disabled={flowSlots.length <= 1}
-                  >
-                    Reset paths
-                  </Button>
-                  <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
-                    Perform
-                  </Button>
-                </>
-              )}
+                    >
+                      Reset paths
+                    </Button>
+                    <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
+                      Perform
+                    </Button>
+                  </>
+                )}
               </div>
               {!isTabletTouchLayout && (
                 <div className="juce-grid-page__masthead-secondary-actions">
@@ -4727,8 +4726,9 @@ export function SnapshotEditorPage() {
                   )}
                 </div>
               )}
-            </div>
-          </Layer>
+              </div>
+            )}
+          />
         </Column>
       </Grid>
 

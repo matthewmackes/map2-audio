@@ -114,11 +114,11 @@ describe('SnapshotChainManagementCard', () => {
   it('renders the live snapshot hero with LCD MIDI assignments and compact status tiles', () => {
     const { container } = renderCard()
 
-    expect(screen.getByText('Live Snapshot')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC 023  CH 01/05"]')).toBeInTheDocument()
-    expect(screen.getByText('Description')).toBeInTheDocument()
-    expect(screen.getByText('Lead-ready snapshot for the main performance set.')).toBeInTheDocument()
+    expect(screen.queryByText('Live Snapshot')).not.toBeInTheDocument()
+    expect(screen.queryByText('Description')).not.toBeInTheDocument()
+    expect(screen.queryByText('Lead-ready snapshot for the main performance set.')).not.toBeInTheDocument()
     expect(screen.getByText('Input device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
     expect(screen.getByText('Output device')).toBeInTheDocument()

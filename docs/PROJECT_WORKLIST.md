@@ -6,7 +6,59 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 22:46 EDT - T549 completed the Snapshot Editor live snapshot status redesign and cleared focused plus production-build validation
+Last updated: 2026-03-30 06:17 EDT - T552 completed the Snapshot Editor shared page banner swap
+
+ID: T552
+Status: [✓] Done
+Title: Replace Snapshot Editor custom Audio Grid masthead with the shared GUI page banner
+Description:
+- Goal / acceptance criteria: Remove the Snapshot Editor-specific `Audio Grid` logo/text masthead and replace it with the same shared top banner component used across the rest of the GUI, while preserving the existing page actions and responsive behavior.
+- Why it matters: Snapshot Editor still uses a one-off header that does not match the visual/navigation system used by the other routed pages, making the GUI feel inconsistent.
+- Dependencies: T551
+- Estimated effort: Low
+- Required outputs: shared banner wiring on Snapshot Editor, removal of the local masthead block, focused validation, and updated worklist notes.
+- Completion notes:
+  - Replaced the Snapshot Editor custom thin-bar `Audio Grid` masthead with the shared `PageHeader` component already used across the rest of the GUI.
+  - Kept the existing Audio Grid action cluster attached to the new shared banner so routing, audio-node, path, perform, and secondary actions continue to work in the same place.
+  - Validation: `npm --prefix web run typecheck` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:17 EDT - Codex
+
+ID: T551
+Status: [✓] Done
+Title: Remove redundant Live Snapshot header and description tile from Snapshot Editor status surface
+Description:
+- Goal / acceptance criteria: Simplify the Snapshot Editor live snapshot status surface by removing the top `Live Snapshot` header/copy strip and removing the standalone `Description` tile from the attribute grid, while preserving the hero name, MIDI LCD block, empty state, and remaining metadata tiles.
+- Why it matters: Those two cards add height without improving operator usefulness, and the user wants the status surface to start directly with the live snapshot identity and actionable metadata.
+- Dependencies: T549
+- Estimated effort: Low
+- Required outputs: targeted component/layout cleanup, focused regression validation, and updated worklist notes.
+- Completion notes:
+  - Removed the top `Live Snapshot` header/copy strip from `SnapshotChainManagementCard` and kept the live/favorite tags attached to the hero block instead of consuming their own row.
+  - Removed the standalone `Description` tile from the live snapshot attribute grid so the surface starts with the snapshot hero and then proceeds directly into compact metadata tiles.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:11 EDT - Codex
+
+ID: T550
+Status: [✓] Done
+Title: Hydrate Snapshot Editor chain workspace immediately after new snapshot creation
+Description:
+- Goal / acceptance criteria: Ensure that creating a new snapshot from the Snapshot Editor wizard leaves the operator inside a populated editable workspace instead of an unassigned-chain shell. The create path must materialize snapshot-backed runtime chains, seed the editor-facing cache/state needed to render them immediately, and add focused regression coverage proving the new snapshot can be edited right away.
+- Why it matters: The current create flow promotes the new snapshot to live state, but the editor still lands on `Assign a chain to start editing`, which makes snapshot creation feel broken and blocks immediate configuration.
+- Dependencies: T549
+- Estimated effort: Medium
+- Required outputs: create-flow payload/runtime hydration fix, focused regression validation, and updated completion notes.
+- Completion notes:
+  - Updated the Snapshot Editor new-snapshot wizard create payload to send canonical `chains` alongside `paths`, so snapshot activation can materialize runtime chains immediately instead of activating an empty live shell.
+  - Seeded the shared `['chains']` React Query cache from `snapshot_data.live_state.runtime_chains` on create and recall success so the editor surfaces the newly live chain workspace without waiting for the next `/chains` poll.
+  - Extended `SnapshotModalContent.test.tsx` to assert the wizard create payload now includes `chains` and that the shared chains cache is hydrated with the newly materialized runtime chains.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:02 EDT - Codex
 
 ID: T549
 Status: [✓] Done
@@ -18,9 +70,9 @@ Description:
 - Estimated effort: Medium
 - Required outputs: component redesign, Snapshot Editor wiring from canonical live snapshot data, focused frontend regression validation, and updated worklist notes.
 - Completion notes:
-  - Replaced the old `SnapshotChainManagementCard` path chooser/operations block with a read-only live snapshot status surface driven by the editor’s canonical live snapshot query, including a hero snapshot name, LCD-style MIDI PC/channel readout, compact Carbon tiles for the remaining snapshot attributes, and a `No live snapshot` empty state.
-  - Wired `SnapshotEditorPageContent` to pass the active live snapshot into the redesigned card and updated stale compact-workflow copy that still referenced the removed Paths management card.
-  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Replaced the old `SnapshotChainManagementCard` path chooser/operations block with a read-only live snapshot status surface driven by the editor’s canonical live snapshot query, including a hero snapshot name, LCD-style MIDI PC/channel readout, compact Carbon tiles for the remaining snapshot attributes, and a `No live snapshot` empty state.
+- Wired `SnapshotEditorPageContent` to pass the active live snapshot into the redesigned card and updated stale compact-workflow copy that still referenced the removed Paths management card.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-29 22:46 EDT - Codex

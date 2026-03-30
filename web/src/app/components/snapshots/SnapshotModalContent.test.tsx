@@ -244,7 +244,30 @@ describe('SnapshotModalContent', () => {
             { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
             { path_id: 'ch_b', snapshot_chain_id: 202, runtime_chain_id: 302 },
           ],
-          runtime_chains: [],
+          runtime_chains: [
+            {
+              id: 301,
+              name: 'Fresh Snapshot Path A (A)',
+              is_active: true,
+              created_at: '2026-03-29T12:00:00Z',
+              updated_at: '2026-03-29T12:00:00Z',
+              plugins: [],
+              loop_insertions: [],
+              effects_loops: [],
+              runtime_sync: null,
+            },
+            {
+              id: 302,
+              name: 'Fresh Snapshot Path B (B)',
+              is_active: true,
+              created_at: '2026-03-29T12:00:00Z',
+              updated_at: '2026-03-29T12:00:00Z',
+              plugins: [],
+              loop_insertions: [],
+              effects_loops: [],
+              runtime_sync: null,
+            },
+          ],
         },
         lineage: {
           derived_from_snapshot_id: null,
@@ -294,6 +317,16 @@ describe('SnapshotModalContent', () => {
           snapshot_chain_id: 2,
         }),
       ],
+      chains: [
+        expect.objectContaining({
+          id: 1,
+          name: 'Fresh Snapshot Path A',
+        }),
+        expect.objectContaining({
+          id: 2,
+          name: 'Fresh Snapshot Path B',
+        }),
+      ],
       routing: expect.objectContaining({
         mode: 'series',
         active_channel_key: 'ch_a',
@@ -307,6 +340,15 @@ describe('SnapshotModalContent', () => {
       expect.objectContaining({
         id: 101,
         name: 'Fresh Snapshot',
+      }),
+    )
+    expect(queryClient.getQueryData(['chains'])).toEqual(
+      expect.objectContaining({
+        count: 2,
+        chains: expect.arrayContaining([
+          expect.objectContaining({ id: 301, name: 'Fresh Snapshot Path A (A)' }),
+          expect.objectContaining({ id: 302, name: 'Fresh Snapshot Path B (B)' }),
+        ]),
       }),
     )
     expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')

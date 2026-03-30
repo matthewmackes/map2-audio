@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Music } from '@carbon/icons-react'
 import { Layer, Tag, Tile } from '@carbon/react'
 import type { SnapshotDetail, SnapshotMidiMapEntry } from '../../../map2/types'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
@@ -146,12 +145,6 @@ function buildStatusTiles(snapshot: SnapshotDetail): SnapshotStatusTile[] {
   const pathCount = snapshot.channel_count || snapshot.paths.length
   return [
     {
-      label: 'Description',
-      value: snapshot.description.trim() || 'No description',
-      tone: snapshot.description.trim() ? 'default' : 'secondary',
-      wide: true,
-    },
-    {
       label: 'Input device',
       value: snapshot.io_bindings?.input_device || snapshot.input_device || 'Not assigned',
       tone: snapshot.io_bindings?.input_device || snapshot.input_device ? 'default' : 'secondary',
@@ -202,29 +195,15 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
 
   return (
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
-      <div className="juce-grid-page__snapshot-status-header">
-        <div className="juce-grid-page__snapshot-status-header-copy">
-          <div className="juce-grid-page__snapshot-status-heading">
-            <Music size={18} />
-            <strong>Live Snapshot</strong>
-          </div>
-          <p>Read-only status for the snapshot currently driving this signal workspace.</p>
-        </div>
-        {liveSnapshot && (
-          <div className="juce-grid-page__snapshot-status-header-actions">
-            <Tag type="green">Live now</Tag>
-            {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
-          </div>
-        )}
-      </div>
-
       {liveSnapshot ? (
         <div className="juce-grid-page__snapshot-status-layout">
           <div className="juce-grid-page__snapshot-status-hero">
             <div className="juce-grid-page__snapshot-status-hero-copy">
-              <span className="juce-grid-page__chain-action-label">Current snapshot</span>
               <div className="juce-grid-page__snapshot-status-hero-row">
-                <h2 className="juce-grid-page__snapshot-status-title">{liveSnapshot.name}</h2>
+                <div>
+                  <span className="juce-grid-page__chain-action-label">Current snapshot</span>
+                  <h2 className="juce-grid-page__snapshot-status-title">{liveSnapshot.name}</h2>
+                </div>
                 <div className="juce-grid-page__snapshot-status-midi">
                   <SegmentedLedText
                     value={midiReadout}
@@ -233,6 +212,10 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     className="juce-grid-page__snapshot-status-midi-readout"
                   />
                 </div>
+              </div>
+              <div className="juce-grid-page__snapshot-status-header-actions">
+                <Tag type="green">Live now</Tag>
+                {liveSnapshot.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
               </div>
             </div>
           </div>

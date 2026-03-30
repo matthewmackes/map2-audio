@@ -29,6 +29,7 @@ import {
   snapshotDetailToDraftData,
   snapshotsApi,
 } from '../../../map2/clients/snapshots'
+import type { Chain, ChainsResponse } from '../../../map2/types'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
@@ -40,6 +41,29 @@ function getSnapshotPathSummaries(snapshot: SnapshotSummary) {
     label: channel.label,
     color: channel.color,
   }))
+}
+
+function upsertRuntimeChains(
+  current: ChainsResponse | undefined,
+  runtimeChains: Chain[],
+): ChainsResponse {
+  if (runtimeChains.length === 0) {
+    return current ?? { chains: [], count: 0 }
+  }
+
+  const chainById = new Map<number, Chain>()
+  for (const chain of current?.chains ?? []) {
+    chainById.set(chain.id, chain)
+  }
+  for (const chain of runtimeChains) {
+    chainById.set(chain.id, chain)
+  }
+
+  const chains = [...chainById.values()]
+  return {
+    chains,
+    count: chains.length,
+  }
 }
 
 export interface SnapshotModalContentProps {
@@ -192,6 +216,13 @@ export function SnapshotModalContent({
           effects_loops: [],
         },
       ]
+      const chainDefinitions = pathDefinitions.map((path) => ({
+        id: path.snapshot_chain_id,
+        name: path.name,
+        plugins: path.plugins,
+        loop_insertions: path.loop_insertions,
+        effects_loops: path.effects_loops,
+      }))
       const created = await snapshotsApi.create({
         name: values.name,
         description: 'Created from Snapshot Editor wizard',
@@ -206,6 +237,7 @@ export function SnapshotModalContent({
           expression_mappings: [],
         },
         paths: pathDefinitions,
+        chains: chainDefinitions,
         routing: {
           mode: values.routingMode,
           active_channel_key: 'ch_a',
@@ -221,6 +253,10 @@ export function SnapshotModalContent({
     },
     onSuccess: async (response) => {
       queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      queryClient.setQueryData<ChainsResponse | undefined>(
+        ['chains'],
+        (current) => upsertRuntimeChains(current, response.snapshot_data.live_state?.runtime_chains ?? []),
+      )
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setContentView('library')
       onSnapshotSave?.()
@@ -239,6 +275,10 @@ export function SnapshotModalContent({
     mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (data) => {
       queryClient.setQueryData(['snapshots', 'live'], data.snapshot_data)
+      queryClient.setQueryData<ChainsResponse | undefined>(
+        ['chains'],
+        (current) => upsertRuntimeChains(current, data.snapshot_data.live_state?.runtime_chains ?? []),
+      )
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
       onRecall?.()
