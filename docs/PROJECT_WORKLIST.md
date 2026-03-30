@@ -993,6 +993,60 @@ Last updated: 2026-03-25 11:06 EDT - Codex
   - Extended `web/src/app/pages/AudioArtifactsPage.test.tsx` with a focused regression proving the upgraded left rail renders and the existing routed behaviors still pass.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
+ID: T548
+Status: [>] In Progress
+Title: Refresh stale hardware-blocker evidence and promote any newly unblocked work
+Description:
+- Goal / acceptance criteria: Re-audit the current host for hardware-gated tasks that remain `Blocked`, update stale blocker notes with concrete live evidence, and promote any task back into active work if its prior blocker is no longer real.
+- Why it matters: The ledger currently says only blocked work remains, but stale blocker notes can hide newly actionable tasks or waste future effort on outdated assumptions.
+- Dependencies: T547
+- Estimated effort: Low
+- Required outputs: refreshed blocker notes, any supported status promotions, validation commands, and restart-safe worklist notes.
+Subtasks:
+ID: T548-subA
+Status: [✓] Done
+Title: Refresh MIDI hardware blocker notes from live ALSA sequencer evidence
+Description:
+- Goal / acceptance criteria: Verify current ALSA sequencer/device access and attached MIDI endpoint inventory, then update `T066` blocker notes to reflect what is actually present versus still missing.
+- Why it matters: The current `T066-subQ` note claims `/dev/snd/seq` is unavailable, which may no longer be true and would mislead the next hardware validation pass.
+- Dependencies: T548
+- Estimated effort: Low
+- Required outputs: live MIDI environment evidence, updated `T066` blocker notes, and any status promotion if physical MIDI endpoints are now available.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 22:02 EDT - Codex
+- Completion notes:
+  - Verified live MIDI host state on 2026-03-29: `/dev/snd/seq` is present and ALSA sequencer access is available, but `aconnect -i`, `aconnect -o`, and `amidi -l` show no attached MIDI adapters or endpoints to qualify.
+  - Updated `T066-subQ` so the blocker is now accurately scoped to missing physical MIDI hardware instead of missing sequencer access.
+
+ID: T548-subB
+Status: [>] In Progress
+Title: Refresh AVB blocker notes from current interface/PTP/entity evidence
+Description:
+- Goal / acceptance criteria: Verify live AVB interface state, NIC evidence, PTP state, and AVDECC entity discovery status, then update `T004` / `T360+` blocker notes so they reflect the current host instead of older assumptions.
+- Why it matters: The blocker queue still mentions no AVB-capable NIC, which may now be stale even if the deeper PTP/entity blockers remain.
+- Dependencies: T548-subA
+- Estimated effort: Low
+- Required outputs: current AVB status evidence, updated blocker notes, and any status promotions supported by that evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 22:02 EDT - Codex
+
+ID: T548-subC
+Status: [ ] Todo
+Title: Refresh audio hardware blocker notes for latency-evidence tasks
+Description:
+- Goal / acceptance criteria: Verify the currently attached audio devices relevant to latency-evidence blockers and update tasks like `T055` to reflect the real host inventory and remaining missing hardware.
+- Why it matters: Latency-evidence tasks depend on specific hardware models, and stale blocker notes make it unclear whether the missing piece is device presence, wiring, or only the measurement session.
+- Dependencies: T548-subB
+- Estimated effort: Low
+- Required outputs: current audio hardware inventory evidence, updated blocker notes, and any status promotions supported by that evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 21:58 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-03-29 21:58 EDT - Codex
+
 ## Active Blockers Only
 
 As of 2026-03-29 12:31 EDT, the active ledger contains blocker-only follow-up. There are no canonical `Status: [ ]` or `Status: [>]` tasks left to promote until an external blocker clears or a new task is added.
@@ -2441,7 +2495,7 @@ Assigned to: User + Codex
 Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Qualification runner, runbook, and doc scaffold are complete in the archive.
-  - Current environment still has no `/dev/snd/seq` access and no attached adapters.
+  - Rechecked on 2026-03-29: `/dev/snd/seq` is present, but `aconnect -i`, `aconnect -o`, and `amidi -l` still show no attached MIDI adapters/endpoints to qualify.
 ID: T066-subR
 Status: [✗] Blocked
 Title: Comprehensive MIDI Hub integration testing and regression validation
