@@ -54,6 +54,8 @@ import { SnapshotArtifactsWorkspace } from '../components/artifacts/SnapshotArti
 import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
+import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
+import { useRouteActive } from '../hooks/useRouteActive'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
@@ -677,6 +679,20 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 6000)
   }, [])
 
+  const artifactsRouteActive = useRouteActive(['/artifacts'])
+  const artifactsStatusCadence = useRealtimeCadence({
+    routeActive: artifactsRouteActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
+  const artifactsInventoryCadence = useRealtimeCadence({
+    routeActive: artifactsRouteActive,
+    visibleMs: 30_000,
+    hiddenMs: 120_000,
+    inactiveMs: false,
+  })
+
   // ── Data queries ──────────────────────────────────────────────────────────
   const pluginBrowser = usePluginBrowser({ nodeId: detailNodeId })
 
@@ -697,7 +713,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => irApi.listCabinets(detailNodeId),
     enabled: activeCategory === 'cabinet-irs',
     staleTime: 15000,
-    refetchInterval: 30000,
+    refetchInterval: artifactsInventoryCadence,
   })
 
   const irReverbsQuery = useQuery({
@@ -705,7 +721,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => irApi.listReverbs(detailNodeId),
     enabled: activeCategory === 'reverb-irs',
     staleTime: 15000,
-    refetchInterval: 30000,
+    refetchInterval: artifactsInventoryCadence,
   })
 
   const irStatusQuery = useQuery({
@@ -713,7 +729,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => irApi.getStatus(detailNodeId),
     enabled: activeCategory === 'cabinet-irs' || activeCategory === 'reverb-irs',
     staleTime: 5000,
-    refetchInterval: 10000,
+    refetchInterval: artifactsStatusCadence,
   })
 
   const namStatusQuery = useQuery({
@@ -721,7 +737,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => namApi.getStatus(detailNodeId),
     enabled: activeCategory === 'nam-models',
     staleTime: 5000,
-    refetchInterval: 10000,
+    refetchInterval: artifactsStatusCadence,
   })
 
   const namModelsQuery = useQuery({
@@ -729,7 +745,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => namApi.listModels({ limit: 500 }, detailNodeId),
     enabled: activeCategory === 'nam-models',
     staleTime: 15000,
-    refetchInterval: 30000,
+    refetchInterval: artifactsInventoryCadence,
   })
 
   const soundfontsQuery = useQuery({
@@ -737,7 +753,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     queryFn: () => soundfontApi.listSoundfonts({ limit: 500 } as any, detailNodeId),
     enabled: activeCategory === 'soundfonts',
     staleTime: 15000,
-    refetchInterval: 30000,
+    refetchInterval: artifactsInventoryCadence,
   })
 
   // ── Build rows from API data ───────────────────────────────────────────────

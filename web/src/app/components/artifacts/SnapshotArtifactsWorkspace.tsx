@@ -26,6 +26,8 @@ import {
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
 import type { SnapshotDetail, SnapshotExport, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
+import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
+import { useRouteActive } from '../../hooks/useRouteActive'
 
 type ToastKind = 'error' | 'info' | 'success' | 'warning'
 
@@ -141,17 +143,30 @@ export function SnapshotArtifactsWorkspace({
   const [programValue, setProgramValue] = useState<string>('')
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importPayloadText, setImportPayloadText] = useState('')
+  const routeActive = useRouteActive(['/artifacts'])
+  const snapshotCadence = useRealtimeCadence({
+    routeActive,
+    visibleMs: 5_000,
+    hiddenMs: 20_000,
+    inactiveMs: false,
+  })
+  const deploymentCadence = useRealtimeCadence({
+    routeActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
 
   const snapshotsQuery = useQuery({
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),
-    refetchInterval: 5000,
+    refetchInterval: snapshotCadence,
   })
   const liveSnapshotQuery = useQuery({
     queryKey: ['snapshots', 'live'],
     queryFn: () => snapshotsApi.getLive(),
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: snapshotCadence,
   })
   const nodesQuery = useQuery({
     queryKey: ['cluster', 'nodes'],
@@ -163,7 +178,7 @@ export function SnapshotArtifactsWorkspace({
     queryKey: ['cluster', 'snapshots', 'deployments'],
     queryFn: () => snapshotsApi.listDeployments(),
     enabled: isClusterMode,
-    refetchInterval: 10000,
+    refetchInterval: deploymentCadence,
   })
 
   const snapshots = snapshotsQuery.data?.snapshots ?? []

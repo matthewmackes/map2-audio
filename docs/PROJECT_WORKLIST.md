@@ -6,7 +6,37 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 13:36 EDT - T570 completed React GUI responsiveness hardening slice
+Last updated: 2026-03-30 13:45 EDT - T571 completed artifacts responsiveness follow-up and T572 remains queued
+
+ID: T571
+Status: [✓] Done
+Title: Extend visibility-aware realtime cadence to Audio Artifacts and snapshot library surfaces
+Description:
+- Goal / acceptance criteria: Apply the shared `usePageVisible` / `useRouteActive` / `useRealtimeCadence` responsiveness primitives to the Audio Artifacts page and embedded snapshot artifacts workspace so hidden or inactive artifact routes slow down background polling instead of keeping the previous fixed 5s/10s/30s cadence. Validation must confirm the affected frontend slice still typechecks, builds, and preserves artifact workspace behavior.
+- Why it matters: The first responsiveness slice improved the heaviest editor/platform routes, but the artifacts library still uses unconditional polling on a user-facing route with large lists and detail panes.
+- Dependencies: T570
+- Estimated effort: Medium
+- Required outputs: route-aware cadence integration for `web/src/app/pages/AudioArtifactsPage.tsx` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, worklist notes, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 13:45 EDT - Codex
+- Completion notes:
+  - Added route-aware cadence handling to `web/src/app/pages/AudioArtifactsPage.tsx`, replacing the fixed IR/NAM/soundfont inventory and status polling intervals with shared `useRouteActive('/artifacts')` and `useRealtimeCadence(...)` values so hidden or inactive artifact routes back off automatically.
+  - Applied the same responsiveness primitives in `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` so snapshot list/live/deployment polling now slows down outside the active artifacts route instead of running at a fixed 5s or 10s cadence.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS.
+
+ID: T572
+Status: [ ] Todo
+Title: Extend visibility-aware realtime cadence to remaining platform operations and diagnostics surfaces
+Description:
+- Goal / acceptance criteria: Normalize the remaining fixed platform polling hotspots in the node operations and platform capabilities surfaces so hidden or inactive routes stop or slow background refreshes instead of polling at fixed 1.5s to 30s intervals. Validation must confirm the platform operations UI still builds cleanly and retains expected refresh behavior while active.
+- Why it matters: The platform shell already moved to route-aware cadence, but the node-operations and diagnostics panels still maintain separate fixed polling loops that keep the GUI busier than needed.
+- Dependencies: T570
+- Estimated effort: Medium
+- Required outputs: cadence integration for `web/src/app/hooks/useNodeOperations.ts` and related platform diagnostics surfaces, worklist notes, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 13:44 EDT - Codex
 
 ID: T570
 Status: [✓] Done
