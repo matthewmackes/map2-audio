@@ -139,6 +139,17 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert live_snapshot["id"] == snapshot_id
         assert live_snapshot["live_state"]["is_live"] is True
 
+        program_update = await routes.set_program_number(
+            snapshot_id,
+            routes.ProgramNumberRequest(program_number=5),
+        )
+        assert program_update["program_number"] == 5
+
+        activated_by_program = await routes.activate_snapshot_by_program(5)
+        assert activated_by_program["status"] == "success"
+        assert activated_by_program["snapshot_id"] == snapshot_id
+        assert cache_invalidations == ["chains", "chains"]
+
         draft = await routes.open_snapshot_draft(snapshot_id)
         assert draft["status"] == "success"
         assert draft["snapshot"]["id"] == snapshot_id

@@ -6,7 +6,23 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 07:44 EDT - T558 completed after locking snapshot activation chain-cache invalidation
+Last updated: 2026-03-30 07:51 EDT - T559 completed after locking MIDI program snapshot activation invalidation coverage
+
+ID: T559
+Status: [✓] Done
+Title: Cover MIDI program snapshot activation cache invalidation
+Description:
+- Goal / acceptance criteria: Add focused regression coverage proving the snapshot activation-by-program route invalidates the chain list cache after activating the mapped snapshot, mirroring the direct activation path.
+- Why it matters: The route logic already invalidates the cache, but without coverage a future refactor could regress MIDI program-change recall while the UI activation test still passes.
+- Dependencies: T558
+- Estimated effort: Low
+- Required outputs: focused backend regression coverage, validation, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 07:51 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_routes.py` to set a snapshot MIDI program number, activate the snapshot through `activate_snapshot_by_program`, and assert the chain cache invalidation hook fires a second time for the MIDI-driven route.
+  - Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS.
 
 ID: T558
 Status: [✓] Done
