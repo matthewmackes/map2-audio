@@ -6,7 +6,24 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 06:17 EDT - T552 completed the Snapshot Editor shared page banner swap
+Last updated: 2026-03-30 06:23 EDT - T553 completed the Audio Artifacts-style top card restyle for Snapshot Editor
+
+ID: T553
+Status: [✓] Done
+Title: Apply the Audio Artifacts top card layout pattern to Snapshot Editor
+Description:
+- Goal / acceptance criteria: Replace the current Snapshot Editor top banner treatment with the same overall card layout pattern used by the Audio Artifacts page: icon/title/subtitle block on the left and the primary action strip on the right, while preserving existing Snapshot Editor actions and responsive behavior.
+- Why it matters: The user wants Snapshot Editor to align with the Artifacts page’s stronger top-card layout rather than the generic shared banner currently in place.
+- Dependencies: T552
+- Estimated effort: Low
+- Required outputs: Snapshot Editor header markup/style refactor, focused validation, and updated worklist notes.
+- Completion notes:
+  - Replaced the generic `PageHeader` usage in `SnapshotEditorPageContent` with a local top-card header structure modeled on the Audio Artifacts page: icon/title/subtitle block on the left and the existing action clusters on the right.
+  - Added Snapshot Editor-local header styles in `SnapshotEditorPage.css` to mirror the Artifacts layout pattern while preserving the editor’s tablet sticky-header and responsive action behavior.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:23 EDT - Codex
 
 ID: T552
 Status: [✓] Done
