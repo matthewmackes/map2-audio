@@ -262,7 +262,7 @@ export function SnapshotModalContent({
       onSnapshotSave?.()
       applySnapshotData(snapshotDetailToDraftData(response.snapshot_data), {
         toastMessage: 'Snapshot created',
-        invalidateChains: true,
+        invalidateChains: false,
       })
       onRecall?.()
     },
@@ -280,7 +280,7 @@ export function SnapshotModalContent({
         (current) => upsertRuntimeChains(current, data.snapshot_data.live_state?.runtime_chains ?? []),
       )
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
+      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: false })
       onRecall?.()
     },
     onError: (error) => {

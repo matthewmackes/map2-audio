@@ -2,6 +2,7 @@ import asyncio
 
 from app import database as database_module
 from app.routes import cluster_snapshots as cluster_routes
+from app.routes import chains as chain_routes
 from app.routes import unified_snapshots as routes
 from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
@@ -39,6 +40,7 @@ class _FakeRegistry:
 
 def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
+    cache_invalidations: list[str] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
@@ -49,6 +51,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
 
     async def _fake_activate_chain(self, chain_id):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
@@ -130,6 +133,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         activated = await routes.activate_snapshot(snapshot_id)
         assert activated["status"] == "success"
         assert activated["snapshot_data"]["live_state"]["is_live"] is True
+        assert cache_invalidations == ["chains"]
 
         live_snapshot = await routes.get_live_snapshot()
         assert live_snapshot["id"] == snapshot_id

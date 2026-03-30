@@ -429,7 +429,9 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
             payload = await service.activate_snapshot(snapshot_id)
             if payload is None:
                 _raise_not_found("Snapshot")
-            return payload
+        from app.routes.chains import _invalidate_chain_list_cache
+        _invalidate_chain_list_cache()
+        return payload
     except HTTPException:
         raise
     except Exception as exc:
@@ -543,7 +545,9 @@ async def activate_snapshot_by_program(program_number: int) -> dict[str, Any]:
             payload = await service.activate_snapshot(summary["id"], triggered_by="midi_pc")
             if payload is None:
                 _raise_not_found("Snapshot")
-            return payload
+        from app.routes.chains import _invalidate_chain_list_cache
+        _invalidate_chain_list_cache()
+        return payload
     except HTTPException:
         raise
     except Exception as exc:

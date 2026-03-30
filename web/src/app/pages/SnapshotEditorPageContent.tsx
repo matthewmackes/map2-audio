@@ -1359,10 +1359,15 @@ export function SnapshotEditorPage() {
     setFlowSlots(normalizedSnapshotState.flowSlots)
     setRouting(normalizedSnapshotState.routing)
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
-    if (options?.invalidateChains ?? true) {
+    // Always refresh snapshot queries so the library stays in sync.
+    queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+    // Only invalidate chains when explicitly requested. Callers that already
+    // injected runtime chains via setQueryData should pass false (or omit) to
+    // prevent a background refetch from overwriting the injected data with a
+    // stale server-side cached response.
+    if (options?.invalidateChains) {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
     }
     if (options?.toastMessage) {
       pushToast(options.toastMessage, 'success')

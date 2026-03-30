@@ -335,6 +335,13 @@ describe('SnapshotModalContent', () => {
     expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockSnapshotsActivate.mock.invocationCallOrder[0])
 
     await waitFor(() => expect(applySnapshotData).toHaveBeenCalled())
+    expect(applySnapshotData).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        toastMessage: 'Snapshot created',
+        invalidateChains: false,
+      }),
+    )
     expect(onRecall).toHaveBeenCalled()
     expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
       expect.objectContaining({

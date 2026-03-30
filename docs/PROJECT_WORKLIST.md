@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 06:45 EDT - T557 completed after moving the Snapshot Editor metadata pills into the overview card footer
+Last updated: 2026-03-30 07:44 EDT - T558 completed after locking snapshot activation chain-cache invalidation
+
+ID: T558
+Status: [✓] Done
+Title: Prevent stale chain cache from overwriting live runtime state after snapshot activation
+Description:
+- Goal / acceptance criteria: Ensure snapshot create/recall and MIDI/UI activation paths leave the Snapshot Editor bound to the newly materialized runtime chains immediately, without a stale `/api/chains` cache response overwriting the injected live state. Focused backend/frontend validation must prove the cache invalidation flow stays coherent.
+- Why it matters: Operators can activate a snapshot successfully and still land in a stale or empty editor if the chain list cache is not invalidated at the server boundary and the client immediately refetches old chain data over the newly injected runtime chains.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: route/cache invalidation fix, focused validation, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 07:44 EDT - Codex
+- Completion notes:
+  - Invalidated the backend chain list cache inside both snapshot activation routes in `app/routes/unified_snapshots.py`, so UI and MIDI-program activation paths cannot serve stale cached `/api/chains` data immediately after runtime materialization.
+  - Updated the snapshot modal/editor handoff so create and recall flows keep the injected runtime chains in the React Query cache and avoid an immediate `['chains']` invalidation that could overwrite them with stale server data.
+  - Added focused regression coverage in `tests/test_snapshot_routes.py` and `web/src/app/components/snapshots/SnapshotModalContent.test.tsx` to lock the invalidation path and the `invalidateChains: false` client contract.
+  - Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T557
 Status: [✓] Done
