@@ -111,7 +111,7 @@ function renderCard(liveSnapshot: SnapshotDetail | null = buildLiveSnapshot()) {
 }
 
 describe('SnapshotChainManagementCard', () => {
-  it('renders the live snapshot hero with LCD MIDI assignments and compact status tiles', () => {
+  it('renders the live snapshot hero with LCD MIDI assignments and compact status pills', () => {
     const { container } = renderCard()
 
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
@@ -129,6 +129,8 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('2 paths')).toBeInTheDocument()
     expect(screen.getByText('Derived from snapshot')).toBeInTheDocument()
     expect(screen.getByText('Snapshot #7')).toBeInTheDocument()
+    expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
+    expect(container.querySelectorAll('.juce-grid-page__snapshot-status-pill').length).toBeGreaterThan(0)
   })
 
   it('renders a clear empty state when no live snapshot is active', () => {

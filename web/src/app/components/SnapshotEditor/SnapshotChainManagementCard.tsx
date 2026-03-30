@@ -28,7 +28,6 @@ interface SnapshotStatusTile {
   label: string
   value: string
   tone?: 'default' | 'secondary'
-  wide?: boolean
 }
 
 const MIDI_CHANNEL_KEYS = ['channel', 'midi_channel', 'midiChannel', 'channel_number', 'channelNumber'] as const
@@ -220,18 +219,17 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
             </div>
           </div>
 
-          <div className="juce-grid-page__snapshot-status-grid" role="list" aria-label="Live snapshot attributes">
+          <div className="juce-grid-page__snapshot-status-pills" role="list" aria-label="Live snapshot attributes">
             {statusTiles.map((tile) => (
-              <Tile
+              <Tag
                 key={tile.label}
-                role="listitem"
-                className={`juce-grid-page__snapshot-status-tile ${tile.wide ? 'is-wide' : ''}`}
+                type={tile.tone === 'secondary' ? 'warm-gray' : 'cool-gray'}
+                size="md"
+                className="juce-grid-page__snapshot-status-pill"
               >
-                <span className="juce-grid-page__chain-action-label">{tile.label}</span>
-                <strong className={`juce-grid-page__snapshot-status-value ${tile.tone === 'secondary' ? 'is-secondary' : ''}`}>
-                  {tile.value}
-                </strong>
-              </Tile>
+                <span className="juce-grid-page__snapshot-status-pill-label">{tile.label}</span>
+                <strong className="juce-grid-page__snapshot-status-pill-value">{tile.value}</strong>
+              </Tag>
             ))}
           </div>
         </div>

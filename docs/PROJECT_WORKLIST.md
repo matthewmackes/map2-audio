@@ -6,7 +6,41 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 06:23 EDT - T553 completed the Audio Artifacts-style top card restyle for Snapshot Editor
+Last updated: 2026-03-30 06:34 EDT - T555 completed after widening the Snapshot Editor top card to the workspace frame
+
+ID: T555
+Status: [✓] Done
+Title: Widen the Snapshot Editor top header card to match the workspace card width
+Description:
+- Goal / acceptance criteria: Make the Snapshot Editor top header card span the same maximum width as the cards below it instead of the narrower header frame currently applied.
+- Why it matters: The top card currently looks visually pinched relative to the main workspace surfaces below it, which breaks alignment across the page.
+- Dependencies: T554
+- Estimated effort: Low
+- Required outputs: layout-width adjustment, focused validation, and updated worklist notes.
+- Completion notes:
+  - Added a dedicated `juce-grid-page__section-frame--header` width override so the Snapshot Editor top header card now uses the same `118rem` maximum width as the workspace cards below it.
+  - Validation: `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:34 EDT - Codex
+
+ID: T554
+Status: [✓] Done
+Title: Convert Snapshot Editor live snapshot metadata cards into pills
+Description:
+- Goal / acceptance criteria: Replace the remaining live snapshot metadata card row in Snapshot Editor with compact pills that carry the same information inline with the hero area, and remove the existing metadata card strip entirely.
+- Why it matters: The current row of seven metadata cards consumes too much vertical space for read-only status. Compact pills keep the information visible while reducing layout weight.
+- Dependencies: T553
+- Estimated effort: Low
+- Required outputs: snapshot status component/style update, focused regression validation, and updated worklist notes.
+- Completion notes:
+  - Replaced the live snapshot metadata tile strip in `SnapshotChainManagementCard` with compact inline pills that carry input device, output device, routing mode, path count, favorite status, last updated, and lineage in the hero area.
+  - Removed the old metadata grid/tile styles from `SnapshotEditorPage.css` and added pill-specific presentation so the data wraps compactly without preserving the previous card row.
+  - Extended the focused regression to assert the old metadata grid is gone and the new pill treatment renders.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 06:31 EDT - Codex
 
 ID: T553
 Status: [✓] Done
