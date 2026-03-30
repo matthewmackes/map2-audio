@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1078** total commits | **3** stars | **0** forks | **0** open issues
+**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1079** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,6 +203,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d20bb09d`](https://github.com/matthewmackes/map2-audio/commit/d20bb09d23a80526358279df9cfb5697a6ea0b13) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`cfb77a43`](https://github.com/matthewmackes/map2-audio/commit/cfb77a437954b126507d79d248d51903c1788410) | Refine snapshot editor overview footer layout | Map2 Audio | 2026-03-30 |
 | [`9f21d7fc`](https://github.com/matthewmackes/map2-audio/commit/9f21d7fc485c67fe5b3a2690df2d367b1194e0cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`5767069b`](https://github.com/matthewmackes/map2-audio/commit/5767069b4c655bcf7d74ad58727887043f1e60c4) | Refine snapshot editor live status layout | Map2 Audio | 2026-03-30 |
@@ -210,7 +211,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`ac5f8141`](https://github.com/matthewmackes/map2-audio/commit/ac5f814109e630b9ea9a6e5cb838498cd0fee7b9) | Match snapshot editor header to artifacts layout | Map2 Audio | 2026-03-30 |
 | [`2a674a56`](https://github.com/matthewmackes/map2-audio/commit/2a674a56a11110d59293ad52df7abe962dfe5e35) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`a5d6289e`](https://github.com/matthewmackes/map2-audio/commit/a5d6289ecf1495d672b3885817583be149da12a5) | Refine snapshot editor creation flow and shared banner | Map2 Audio | 2026-03-30 |
-| [`6dfeca32`](https://github.com/matthewmackes/map2-audio/commit/6dfeca325bbef71100d61faeeac638e19c7ba765) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
