@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-29 20:15 EDT - T547-subD4 completed with shared backend-truth modal extraction, Audio Table live-path launcher/path-first copy, focused frontend regression coverage, and licensing audit notes
+Last updated: 2026-03-29 21:50 EDT - T547 snapshot-first hard-cutover core completed through canonical MIDI snapshot recall, leaving only blocker-gated follow-up items
 
 ID: T547
-Status: [>] In Progress
+Status: [✓] Done
 Title: Hard-cut Snapshot-first refactor to replace chain/flow rig-state architecture
 Description:
 - Goal / acceptance criteria: Replace the current mixed chain/flow/unified-snapshot architecture with one canonical Snapshot model that owns the full end-to-end rig configuration. Remove operator-facing chain/flow concepts, rename the child grouping concept to Path if needed, make activation materialize the live runtime graph directly from the snapshot, migrate existing snapshot/flow/chain data without loss, and update the Snapshot Editor plus recall workflows to use snapshot-only APIs and state.
@@ -17,9 +17,12 @@ Description:
 - Dependencies: T546
 - Estimated effort: High
 - Required outputs: new snapshot domain/API contract, activation/runtime materialization refactor, editor state-model rewrite, migration of existing data, removal of operator-facing chain/flow workflows, and focused regression/integration coverage.
+ - Completion notes:
+  - Landed the snapshot-first contract, runtime materialization, snapshot-library/editor cutover work, live-route cleanup, path-first runtime-truth modal, and canonical MIDI snapshot recall path across `T547-subA` through `T547-subE`.
+  - All listed `T547` subtasks are now complete; remaining worklist items are blocker-gated follow-ups outside this epic.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 18:27 EDT - Codex
+Last updated: 2026-03-29 21:50 EDT - Codex
 - Subtasks:
 ID: T547-subA
 Status: [✓] Done
