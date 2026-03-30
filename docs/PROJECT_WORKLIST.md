@@ -6,7 +6,23 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 07:51 EDT - T559 completed after locking MIDI program snapshot activation invalidation coverage
+Last updated: 2026-03-30 08:00 EDT - T560 completed after locking snapshot library recall cache preservation
+
+ID: T560
+Status: [✓] Done
+Title: Cover snapshot library recall cache preservation
+Description:
+- Goal / acceptance criteria: Add focused frontend regression coverage proving that recalling an existing snapshot from the library view preserves the injected runtime chains and calls `applySnapshotData` with `invalidateChains: false`.
+- Why it matters: The create flow is covered after T558, but the recall path uses a separate mutation handler and could regress independently, causing the library recall path to overwrite fresh runtime chains with stale chain data.
+- Dependencies: T558
+- Estimated effort: Low
+- Required outputs: focused frontend regression coverage, validation, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 08:00 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/components/snapshots/SnapshotModalContent.test.tsx` with a library recall regression that expands the snapshot library, recalls an existing snapshot, and asserts the live snapshot cache, chain cache, and `invalidateChains: false` handoff all preserve the injected runtime chains.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS.
 
 ID: T559
 Status: [✓] Done

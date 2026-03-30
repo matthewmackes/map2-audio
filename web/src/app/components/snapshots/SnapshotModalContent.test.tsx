@@ -360,4 +360,132 @@ describe('SnapshotModalContent', () => {
     )
     expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')
   })
+
+  it('recalls an existing snapshot without invalidating freshly injected chains', async () => {
+    mockSnapshotsActivate.mockResolvedValue({
+      status: 'success',
+      snapshot_id: 5,
+      name: 'Existing Snapshot',
+      snapshot_data: {
+        id: 5,
+        name: 'Existing Snapshot',
+        description: '',
+        tags: [],
+        program_number: 12,
+        input_device: 'Input Alpha',
+        output_device: 'Output Beta',
+        is_active: true,
+        is_favorite: true,
+        display_order: 0,
+        channels: [
+          { id: 21, snapshot_id: 5, channel_key: 'ch_a', label: 'A', color: '#2563eb', muted: false, solo: false, dry_wet_mix: 100, order_index: 0, chain_id: 401 },
+        ],
+        chains: [
+          { id: 401, name: 'Existing Snapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
+        ],
+        routing: {
+          mode: 'parallel_blend',
+          active_channel_key: 'ch_a',
+          blend_positions: { ch_a: 100 },
+          morph_position: 0.5,
+          morph_source_channel_key: 'ch_a',
+          morph_target_channel_key: 'ch_a',
+          series_order: ['ch_a'],
+        },
+        midi_map: [],
+        paths: [
+          {
+            id: 'ch_a',
+            name: 'Existing Snapshot Path A',
+            label: 'A',
+            color: '#2563eb',
+            muted: false,
+            solo: false,
+            dry_wet_mix: 100,
+            order_index: 0,
+            snapshot_chain_id: 401,
+            runtime_chain_id: 501,
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+          },
+        ],
+        io_bindings: {
+          input_device: 'Input Alpha',
+          output_device: 'Output Beta',
+          remap_required: false,
+        },
+        controls: {
+          midi_map: [],
+          automation_lanes: [],
+          expression_mappings: [],
+        },
+        assets: [],
+        live_state: {
+          is_live: true,
+          activated_at: '2026-03-29T12:00:00Z',
+          paths: [
+            { path_id: 'ch_a', snapshot_chain_id: 401, runtime_chain_id: 501 },
+          ],
+          runtime_chains: [
+            {
+              id: 501,
+              name: 'Existing Snapshot Path A (A)',
+              is_active: true,
+              created_at: '2026-03-29T12:00:00Z',
+              updated_at: '2026-03-29T12:00:00Z',
+              plugins: [],
+              loop_insertions: [],
+              effects_loops: [],
+              runtime_sync: null,
+            },
+          ],
+        },
+        lineage: {
+          derived_from_snapshot_id: null,
+        },
+        active_channel_index: 0,
+        channel_count: 1,
+        chain_count: 1,
+        community_shared: false,
+        community_download_count: 0,
+        community_rating: null,
+        community_rating_count: 0,
+        deployments: [],
+      },
+      params_applied: 0,
+      bypass_applied: 0,
+    })
+
+    const { applySnapshotData, onRecall, queryClient } = renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Snapshot Library/i }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Recall' }))
+
+    await waitFor(() => expect(mockSnapshotsActivate).toHaveBeenCalledWith(5))
+    expect(applySnapshotData).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        toastMessage: 'Snapshot recalled',
+        invalidateChains: false,
+      }),
+    )
+    expect(onRecall).toHaveBeenCalled()
+    expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
+      expect.objectContaining({
+        id: 5,
+        name: 'Existing Snapshot',
+      }),
+    )
+    expect(queryClient.getQueryData(['chains'])).toEqual(
+      expect.objectContaining({
+        count: 1,
+        chains: expect.arrayContaining([
+          expect.objectContaining({ id: 501, name: 'Existing Snapshot Path A (A)' }),
+        ]),
+      }),
+    )
+    expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')
+  })
 })
