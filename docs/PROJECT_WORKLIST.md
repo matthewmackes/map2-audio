@@ -994,7 +994,7 @@ Last updated: 2026-03-25 11:06 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
 ID: T548
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refresh stale hardware-blocker evidence and promote any newly unblocked work
 Description:
 - Goal / acceptance criteria: Re-audit the current host for hardware-gated tasks that remain `Blocked`, update stale blocker notes with concrete live evidence, and promote any task back into active work if its prior blocker is no longer real.
@@ -1002,6 +1002,11 @@ Description:
 - Dependencies: T547
 - Estimated effort: Low
 - Required outputs: refreshed blocker notes, any supported status promotions, validation commands, and restart-safe worklist notes.
+Assigned to: Codex
+Last updated: 2026-03-29 20:28 EDT - Codex
+- Completion notes:
+  - Refreshed stale blocker evidence for MIDI, AVB, and latency hardware tasks against the live host on 2026-03-29.
+  - Result: no previously blocked task was promoted; the stale notes were corrected so the remaining blockers now point to missing external hardware or lab sessions rather than missing local platform support.
 Subtasks:
 ID: T548-subA
 Status: [✓] Done
@@ -1036,7 +1041,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
   - Verified `/api/avb/avdecc/entities` still returns an empty entity list and PTP state remains `UNKNOWN`, so the remaining blocker is missing peer hardware / grandmaster lock rather than missing local NIC support.
 
 ID: T548-subC
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refresh audio hardware blocker notes for latency-evidence tasks
 Description:
 - Goal / acceptance criteria: Verify the currently attached audio devices relevant to latency-evidence blockers and update tasks like `T055` to reflect the real host inventory and remaining missing hardware.
@@ -1046,11 +1051,14 @@ Description:
 - Required outputs: current audio hardware inventory evidence, updated blocker notes, and any status promotions supported by that evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 20:26 EDT - Codex
+Last updated: 2026-03-29 20:28 EDT - Codex
+- Completion notes:
+  - Verified on 2026-03-29 that the current host exposes `Jogg USB Audio`, onboard `HDA Intel PCH` analog I/O, and HDMI playback devices via ALSA.
+  - Confirmed the UA-1000 is not currently attached, so the remaining blocker for `T055` is specific missing target hardware rather than generic device access.
 
 ## Active Blockers Only
 
-As of 2026-03-29 12:31 EDT, the active ledger contains blocker-only follow-up. There are no canonical `Status: [ ]` or `Status: [>]` tasks left to promote until an external blocker clears or a new task is added.
+As of 2026-03-29 20:28 EDT, the active ledger contains blocker-only follow-up. There are no canonical `Status: [ ]` or `Status: [>]` tasks left to promote until an external blocker clears or a new task is added.
 
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
@@ -2629,10 +2637,11 @@ Description:
 - Required outputs: Repeated RTT result set, average/p95 comparison, and keep/rollback recommendation.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-16 00:00 - Codex
+Last updated: 2026-03-29 20:28 EDT - Codex
 - Blocked notes:
   - Matrix runner and runbook are complete in the archive.
-  - Remaining blocker is the physical loopback session.
+  - Current host audio inventory shows `Jogg USB Audio`, onboard `HDA Intel PCH` analog I/O, and HDMI playback, but no attached UA-1000.
+  - Remaining blocker is specifically the UA-1000 hardware + physical loopback session, not generic ALSA device access.
 
 ID: T099
 Status: [✗] Blocked
