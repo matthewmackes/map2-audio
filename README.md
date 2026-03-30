@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**852** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1058** total commits | **3** stars | **0** forks | **0** open issues
+**853** Python | **989** TypeScript | **131** C++/H | **128** Docs | **1060** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`517809ce`](https://github.com/matthewmackes/map2-audio/commit/517809ce41079cd333621ed103a7f3a708d71ba9) | Route MIDI snapshot recall through canonical snapshot ser... | Map2 Audio | 2026-03-29 |
+| [`55af3f5b`](https://github.com/matthewmackes/map2-audio/commit/55af3f5b57108e39ec686c6b5afb1c92a3773bd5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`d8049db1`](https://github.com/matthewmackes/map2-audio/commit/d8049db1099ce59b256a0f889c0ef3803c45a71a) | Move snapshot editor draft logic to canonical types | Map2 Audio | 2026-03-29 |
 | [`f748edb8`](https://github.com/matthewmackes/map2-audio/commit/f748edb82901be421def42f5d22f97a79cd00c0c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`52a583ba`](https://github.com/matthewmackes/map2-audio/commit/52a583ba46b5e095e3e4473e37986d8185f7b0a9) | Cut snapshot modal surfaces over to canonical types | Map2 Audio | 2026-03-29 |
 | [`8e9cde46`](https://github.com/matthewmackes/map2-audio/commit/8e9cde4693eb11e1a145304e61b49e5b6277814d) | Update worklist for live runtime modal rollout | Map2 Audio | 2026-03-29 |
 | [`20057c9c`](https://github.com/matthewmackes/map2-audio/commit/20057c9c640b0a052fbb113651c985aedcaec62f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
 | [`3050b632`](https://github.com/matthewmackes/map2-audio/commit/3050b632dfff7c4caee21fcec5f3fd20866c75ff) | Move live runtime inventory into shared modal | Map2 Audio | 2026-03-29 |
-| [`073f5014`](https://github.com/matthewmackes/map2-audio/commit/073f501444f3389592e3e6dbad18002d31176b3b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-29 |
-| [`ff2b5bd5`](https://github.com/matthewmackes/map2-audio/commit/ff2b5bd500b68b3b0ea3a3c68c5a439341b4565a) | Remove flow snapshot route aliases | Map2 Audio | 2026-03-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
