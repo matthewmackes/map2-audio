@@ -181,7 +181,7 @@ Last updated: 2026-03-29 21:22 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModal.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotDeployModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T547-subE2
-Status: [ ] Todo
+Status: [✓] Done
 Title: Move Snapshot Editor state and comparison helpers to canonical snapshot-draft types
 Description:
 - Goal / acceptance criteria: Replace remaining `FlowSnapshotData` usage in Snapshot Editor page/state/comparison helpers with a canonical snapshot-draft type, remove editor-facing flow-snapshot adapter calls, and preserve load/save/compare behavior.
@@ -191,7 +191,12 @@ Description:
 - Required outputs: editor type migration, adapter cleanup, focused frontend validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 21:07 EDT - Codex
+Last updated: 2026-03-29 21:34 EDT - Codex
+- Completion notes:
+  - Switched `SnapshotEditorPageContent.tsx` from `FlowSnapshotData` and `snapshotDetailToFlowSnapshotData` to canonical `SnapshotDraftData` and `snapshotDetailToDraftData` for MIDI-triggered recall hydration, draft capture, and draft apply flows.
+  - Refactored `snapshotEditorComparison.ts` to use canonical draft typing plus path-first comparison fields and morph-compatibility wording, then updated `SnapshotModalContent.tsx` to consume the renamed comparison summary fields.
+  - Added `snapshotEditorComparison.test.ts` to lock path-first comparison semantics and morph interpolation behavior; reran editor-state and page smoke coverage.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorComparison.test.ts` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T547-subE3
 Status: [ ] Todo

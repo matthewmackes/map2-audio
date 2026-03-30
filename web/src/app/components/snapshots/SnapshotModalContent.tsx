@@ -782,11 +782,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
               </div>
 
               <div className="juce-grid-page__compact-tags">
-                <Tag type="cool-gray">{snapshotComparisonSummary.flowChanges} path changes</Tag>
+                <Tag type="cool-gray">{snapshotComparisonSummary.pathChanges} path changes</Tag>
                 <Tag type="cool-gray">{snapshotComparisonSummary.chainChanges} chain changes</Tag>
                 <Tag type="cool-gray">{snapshotComparisonSummary.paramChanges} param changes</Tag>
                 {snapshotComparisonSummary.routingChanged && <Tag type="purple">Routing changed</Tag>}
-                {snapshotComparisonSummary.activeFlowChanged && <Tag type="blue">Active path changed</Tag>}
+                {snapshotComparisonSummary.activePathChanged && <Tag type="blue">Active path changed</Tag>}
               </div>
 
               {activeSnapshot && activeSnapshotNeedsUpdate && (

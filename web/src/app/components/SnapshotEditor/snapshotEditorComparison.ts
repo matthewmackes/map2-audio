@@ -1,11 +1,11 @@
-import type { ChainSnapshot, FlowSnapshotData } from '../../../map2/types'
+import type { ChainSnapshot, SnapshotDraftData } from '../../../map2/types'
 
 export interface SnapshotComparisonSummary {
-  flowChanges: number
+  pathChanges: number
   chainChanges: number
   paramChanges: number
   routingChanged: boolean
-  activeFlowChanged: boolean
+  activePathChanged: boolean
 }
 
 function stableSerialize(value: unknown): string {
@@ -21,31 +21,31 @@ function stableSerialize(value: unknown): string {
   return JSON.stringify(value)
 }
 
-function getChainSnapshotForChainId(snapshotData: FlowSnapshotData, chainId: number | null): ChainSnapshot | null {
+function getChainSnapshotForChainId(snapshotData: SnapshotDraftData, chainId: number | null): ChainSnapshot | null {
   if (chainId === null) {
     return null
   }
   return snapshotData.chains[String(chainId)] ?? null
 }
 
-export function fingerprintSnapshotData(snapshotData: FlowSnapshotData): string {
+export function fingerprintSnapshotData(snapshotData: SnapshotDraftData): string {
   return stableSerialize(snapshotData)
 }
 
 export function buildSnapshotComparisonSummary(
-  source: FlowSnapshotData,
-  target: FlowSnapshotData,
+  source: SnapshotDraftData,
+  target: SnapshotDraftData,
 ): SnapshotComparisonSummary {
-  let flowChanges = 0
+  let pathChanges = 0
   let chainChanges = 0
   let paramChanges = 0
 
-  const flowCount = Math.max(source.flowSlots.length, target.flowSlots.length)
-  for (let index = 0; index < flowCount; index += 1) {
+  const pathCount = Math.max(source.flowSlots.length, target.flowSlots.length)
+  for (let index = 0; index < pathCount; index += 1) {
     const sourceSlot = source.flowSlots[index]
     const targetSlot = target.flowSlots[index]
     if (!sourceSlot || !targetSlot) {
-      flowChanges += 1
+      pathChanges += 1
       continue
     }
 
@@ -68,7 +68,7 @@ export function buildSnapshotComparisonSummary(
       hasChain: targetSlot.chainId !== null,
     })
     if (sourceSlotFingerprint !== targetSlotFingerprint) {
-      flowChanges += 1
+      pathChanges += 1
     }
 
     const sourceChain = getChainSnapshotForChainId(source, sourceSlot.chainId)
@@ -104,20 +104,20 @@ export function buildSnapshotComparisonSummary(
   }
 
   return {
-    flowChanges,
+    pathChanges,
     chainChanges,
     paramChanges,
     routingChanged: stableSerialize(source.routing) !== stableSerialize(target.routing),
-    activeFlowChanged: source.activeFlowIndex !== target.activeFlowIndex,
+    activePathChanged: source.activeFlowIndex !== target.activeFlowIndex,
   }
 }
 
 export function checkSnapshotMorphCompatibility(
-  source: FlowSnapshotData,
-  target: FlowSnapshotData,
+  source: SnapshotDraftData,
+  target: SnapshotDraftData,
 ): { ok: boolean; reason: string | null } {
   if (source.flowSlots.length !== target.flowSlots.length) {
-    return { ok: false, reason: 'Morph requires the same number of flows in both snapshots.' }
+    return { ok: false, reason: 'Morph requires the same number of paths in both snapshots.' }
   }
   if (source.routing.mode !== target.routing.mode) {
     return { ok: false, reason: 'Morph requires both snapshots to use the same routing mode.' }
@@ -127,7 +127,7 @@ export function checkSnapshotMorphCompatibility(
     const sourceSlot = source.flowSlots[index]
     const targetSlot = target.flowSlots[index]
     if (!targetSlot || sourceSlot.id !== targetSlot.id) {
-      return { ok: false, reason: 'Morph requires matching flow slot identities.' }
+      return { ok: false, reason: 'Morph requires matching path identities.' }
     }
 
     const sourceChain = getChainSnapshotForChainId(source, sourceSlot.chainId)
@@ -136,14 +136,14 @@ export function checkSnapshotMorphCompatibility(
       continue
     }
     if (!sourceChain || !targetChain) {
-      return { ok: false, reason: 'Morph requires chain assignments on the same flows in both snapshots.' }
+      return { ok: false, reason: 'Morph requires chain assignments on the same paths in both snapshots.' }
     }
     if (sourceChain.plugins.length !== targetChain.plugins.length) {
-      return { ok: false, reason: 'Morph requires matching plugin counts for each flow.' }
+      return { ok: false, reason: 'Morph requires matching plugin counts for each path.' }
     }
     for (let pluginIndex = 0; pluginIndex < sourceChain.plugins.length; pluginIndex += 1) {
       if (sourceChain.plugins[pluginIndex]?.uri !== targetChain.plugins[pluginIndex]?.uri) {
-        return { ok: false, reason: 'Morph requires matching plugin order for each compared flow.' }
+        return { ok: false, reason: 'Morph requires matching plugin order for each compared path.' }
       }
     }
   }
@@ -152,10 +152,10 @@ export function checkSnapshotMorphCompatibility(
 }
 
 export function interpolateSnapshotData(
-  source: FlowSnapshotData,
-  target: FlowSnapshotData,
+  source: SnapshotDraftData,
+  target: SnapshotDraftData,
   progress: number,
-): FlowSnapshotData {
+): SnapshotDraftData {
   const clamped = Math.max(0, Math.min(1, progress))
 
   const flowSlots = source.flowSlots.map((sourceSlot, index) => {

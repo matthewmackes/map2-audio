@@ -90,7 +90,7 @@ import {
 } from '../../map2/api'
 import {
   snapshotsApi,
-  snapshotDetailToFlowSnapshotData,
+  snapshotDetailToDraftData,
 } from '../../map2/clients/snapshots'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
@@ -106,7 +106,7 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -1179,13 +1179,13 @@ export function SnapshotEditorPage() {
   // Plugin output metering hook
   const { outputPorts: pluginOutputPorts, peaks: pluginPeaks, connected: outputsConnected } = usePluginOutputs()
 
-  // Flow snapshots WebSocket hook for MIDI PC triggered loads
+  // Snapshot WebSocket hook for MIDI PC triggered loads
   const { isConnected: snapshotsWsConnected } = useSnapshots({
     enabled: true,
     onSnapshotLoaded: useCallback((event) => {
       // Handle MIDI-triggered snapshot loads
       if (event.triggered_by === 'midi_pc') {
-        const snapshotData = snapshotDetailToFlowSnapshotData(event.snapshot_data)
+        const snapshotData = snapshotDetailToDraftData(event.snapshot_data)
         const normalizedSnapshotState = normalizeRuntimeGridState(
           snapshotData.flowSlots,
           snapshotData.routing,
@@ -1295,8 +1295,8 @@ export function SnapshotEditorPage() {
     return chains.find(c => c.id === slot.chainId)
   }, [chains])
 
-  // Flow Snapshots: Capture current state for saving
-  const captureCurrentState = useCallback((): FlowSnapshotData => {
+  // Capture the current workspace as a snapshot draft
+  const captureCurrentState = useCallback((): SnapshotDraftData => {
     const chainSnapshots: Record<string, ChainSnapshot> = {}
 
     for (const slot of flowSlots) {
@@ -1348,7 +1348,7 @@ export function SnapshotEditorPage() {
   )
 
   const applySnapshotState = useCallback((
-    data: FlowSnapshotData,
+    data: SnapshotDraftData,
     options?: { toastMessage?: string | null; invalidateChains?: boolean },
   ) => {
     const normalizedSnapshotState = normalizeRuntimeGridState(
