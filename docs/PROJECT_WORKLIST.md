@@ -153,7 +153,7 @@ Last updated: 2026-03-29 19:26 EDT - Codex
   - Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS.
 
 ID: T547-subE
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove remaining FlowSnapshot adapters and MIDI fallback outside the canonical snapshot contract
 Description:
 - Goal / acceptance criteria: Eliminate the remaining `FlowSnapshot*` compatibility types/adapters from frontend snapshot editor/library surfaces and migrate MIDI program-change fallback from the legacy `FlowSnapshot` table to the canonical snapshot model. Preserve recall behavior and cover the migrated paths with focused tests.
@@ -161,6 +161,12 @@ Description:
 - Dependencies: T547-subD3
 - Estimated effort: High
 - Required outputs: frontend type/adapter cutover, backend MIDI fallback migration, focused regression coverage, and updated worklist notes.
+- Completion notes:
+  - Removed the remaining shipped frontend `FlowSnapshot*` summary/detail usage from snapshot library and editor entry surfaces by introducing canonical `SnapshotDraftData`, moving modal/library surfaces to `SnapshotSummary` / `SnapshotDetail`, and cutting editor draft hydration/comparison over to canonical draft helpers.
+  - Migrated MIDI program-change snapshot recall away from the legacy `FlowSnapshot` table so backend snapshot recall now resolves and activates through `SnapshotService`, matching the canonical UI/API recall contract.
+  - Added focused frontend and backend regression coverage for the snapshot modal, snapshot comparison helpers, and MIDI program-change snapshot precedence/fallback paths.
+Assigned to: Codex
+Last updated: 2026-03-29 21:50 EDT - Codex
 Subtasks:
 ID: T547-subE1
 Status: [✓] Done
@@ -199,7 +205,7 @@ Last updated: 2026-03-29 21:34 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorComparison.test.ts` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/SnapshotEditorPage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T547-subE3
-Status: [ ] Todo
+Status: [✓] Done
 Title: Migrate MIDI program-change fallback from FlowSnapshot table to canonical snapshots
 Description:
 - Goal / acceptance criteria: Update MIDI program-change recall to resolve and activate canonical snapshots by program number instead of consulting the legacy `FlowSnapshot` table, while preserving operator-facing recall behavior and websocket/editor refresh paths.
@@ -209,9 +215,12 @@ Description:
 - Required outputs: backend service migration, focused backend regression coverage, final worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 21:07 EDT - Codex
-Assigned to: Codex
-Last updated: 2026-03-29 21:07 EDT - Codex
+Last updated: 2026-03-29 21:50 EDT - Codex
+- Completion notes:
+  - Replaced the legacy `FlowSnapshot` lookup in `app/services/midi_service.py` with canonical program-number resolution and activation through `SnapshotService`, so MIDI-triggered recall now reuses the same snapshot activation path as the UI/API.
+  - Added `tests/test_midi_service_snapshot_program_change.py` to lock snapshot-first precedence over chain fallback and the fallback-to-chain behavior when no snapshot is mapped.
+  - Recorded the canonical MIDI recall rule in `.github/copilot-instructions.md` and `.gemini/instructions.md`.
+  - Validation: `pytest -q tests/test_midi_service_snapshot_program_change.py` -> PASS; `pytest -q tests/test_snapshot_service.py` -> PASS.
 
 ID: T547-subD4
 Status: [✓] Done

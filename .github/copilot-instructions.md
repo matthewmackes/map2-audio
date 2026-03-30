@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 29, 2026 (E-SNAP snapshot-first modal cutover and live-route ordering fix)
+> **Last Updated**: March 29, 2026 (E-SNAP canonical MIDI snapshot recall cutover)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1376,6 +1376,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Move shipped app surfaces to canonical `['snapshots']` cache keys and `snapshotsApi.list()`, then keep any remaining `flowSnapshotsApi` usage isolated to explicit compatibility/export layers rather than normal UI entry points.
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/snapshotLiveState.test.ts web/src/app/pages/AudioTablePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: API migration is incomplete until cache identity and secondary list surfaces migrate too. A snapshot-first app should not keep `flow-snapshots` as the default query namespace in shipped UI.
+
+**40. MIDI Program-Change Snapshot Recall Must Reuse Canonical Snapshot Activation (HIGH - Mar 29, 2026)**
+- **Files**: `app/services/midi_service.py`, `app/services/snapshot_service.py`, `tests/test_midi_service_snapshot_program_change.py`
+- **Problem**: MIDI program-change recall still depended on the legacy `FlowSnapshot` table even after the snapshot-first routes and editor surfaces moved to canonical snapshots.
+- **Root Cause**: `MIDIService` kept its own direct compatibility lookup and websocket-broadcast path instead of delegating to `SnapshotService`, so MIDI-triggered recalls could drift from the canonical snapshot activation contract.
+- **Fix**: Resolve snapshots by program number through `SnapshotService.get_snapshot_by_program()`, then activate them through `SnapshotService.activate_snapshot(triggered_by="midi_pc")` and keep focused tests for snapshot precedence over chain fallback.
+- **Verification**: `pytest -q tests/test_midi_service_snapshot_program_change.py tests/test_snapshot_service.py`
+- **Lesson**: Snapshot recall should have one activation path. If MIDI can load a snapshot, it must call the same canonical service used by UI/API recall instead of rebuilding compatibility logic in `MIDIService`.
 
 ---
 
