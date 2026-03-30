@@ -20,6 +20,8 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsApi } from '../../map2/api'
 import type { SystemMetrics, MetricsSummary } from '../../map2/types'
+import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
+import { useRouteActive } from '../hooks/useRouteActive'
 
 interface CategoryResult {
   name: string
@@ -89,26 +91,45 @@ export function PlatformCapabilities() {
   const [_loading, setLoading] = useState(true)
   const [runningTest, setRunningTest] = useState(false)
   const queryClient = useQueryClient()
+  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const servicesCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 5_000,
+    hiddenMs: 20_000,
+    inactiveMs: false,
+  })
+  const metricsCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 4_000,
+    hiddenMs: 15_000,
+    inactiveMs: false,
+  })
+  const metricsSummaryCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
 
   // Fetch services status
   const servicesStatus = useQuery<ServicesStatusResponse>({
     queryKey: ['services', 'status'],
     queryFn: servicesApi.getStatus,
-    refetchInterval: 5000,
+    refetchInterval: servicesCadence,
   })
 
   // Fetch current metrics
   const metricsCurrentQuery = useQuery<SystemMetrics>({
     queryKey: ['metrics', 'current'],
     queryFn: metricsApi.getCurrent,
-    refetchInterval: 4000,
+    refetchInterval: metricsCadence,
   })
 
   // Fetch metrics summary
   const metricsSummaryQuery = useQuery<MetricsSummary>({
     queryKey: ['metrics', 'summary'],
     queryFn: metricsApi.getSummary,
-    refetchInterval: 10000,
+    refetchInterval: metricsSummaryCadence,
   })
 
   useEffect(() => {

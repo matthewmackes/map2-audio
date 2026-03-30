@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 13:45 EDT - T571 completed artifacts responsiveness follow-up and T572 remains queued
+Last updated: 2026-03-30 13:49 EDT - T572 completed platform polling follow-up
 
 ID: T571
 Status: [✓] Done
@@ -26,7 +26,7 @@ Last updated: 2026-03-30 13:45 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS.
 
 ID: T572
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extend visibility-aware realtime cadence to remaining platform operations and diagnostics surfaces
 Description:
 - Goal / acceptance criteria: Normalize the remaining fixed platform polling hotspots in the node operations and platform capabilities surfaces so hidden or inactive routes stop or slow background refreshes instead of polling at fixed 1.5s to 30s intervals. Validation must confirm the platform operations UI still builds cleanly and retains expected refresh behavior while active.
@@ -36,7 +36,11 @@ Description:
 - Required outputs: cadence integration for `web/src/app/hooks/useNodeOperations.ts` and related platform diagnostics surfaces, worklist notes, and validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-30 13:44 EDT - Codex
+Last updated: 2026-03-30 13:49 EDT - Codex
+- Completion notes:
+  - Added shared route-aware cadence handling to `web/src/app/hooks/useNodeOperations.ts`, replacing the fixed 1.5s/10s/30s polling intervals with the same `/platforms` and `/labs` visibility-aware cadence model used in the platform shell so background node operations stop or slow when the route is inactive.
+  - Applied the same responsiveness primitives to `web/src/app/components/PlatformCapabilities.tsx` so services status and metrics queries now back off automatically outside the active platform routes instead of running at fixed 4s/5s/10s intervals.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS.
 
 ID: T570
 Status: [✓] Done

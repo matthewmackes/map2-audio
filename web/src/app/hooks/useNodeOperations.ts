@@ -14,6 +14,8 @@ import {
   fetchUpdateApplicationVersion,
   triggerUpdateApplication,
 } from './updateApplicationApi'
+import { useRealtimeCadence } from './useRealtimeCadence'
+import { useRouteActive } from './useRouteActive'
 
 // ── Response types ──────────────────────────────────────────────────────────
 
@@ -236,83 +238,108 @@ export interface NodeOperationsData {
 
 export function useNodeOperations(): NodeOperationsData {
   const qc = useQueryClient()
+  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const platformFastCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 5_000,
+    hiddenMs: 20_000,
+    inactiveMs: false,
+  })
+  const platformStandardCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
+  const platformVerySlowCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 30_000,
+    hiddenMs: 60_000,
+    inactiveMs: false,
+  })
+  const platformApplicationCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 1_500,
+    hiddenMs: 5_000,
+    inactiveMs: false,
+  })
 
   // ── Queries ─────────────────────────────────────────────────────────────
 
   const versionQ = useQuery({
     queryKey: KEYS.version,
     queryFn: () => fetchJson<PlatformVersionInfo>('/api/version'),
-    refetchInterval: 30_000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20_000,
   })
 
   const deployModeQ = useQuery({
     queryKey: KEYS.deploymentMode,
     queryFn: () => fetchJson<DeploymentModeInfo>('/api/deployment/mode'),
-    refetchInterval: POLL_MS,
+    refetchInterval: platformStandardCadence,
     staleTime: STALE_MS,
   })
 
   const deployStatusQ = useQuery({
     queryKey: KEYS.deploymentStatus,
     queryFn: () => fetchJson<DeploymentStatusInfo>('/api/deployment/status'),
-    refetchInterval: POLL_MS,
+    refetchInterval: platformStandardCadence,
     staleTime: STALE_MS,
   })
 
   const updateStatusQ = useQuery({
     queryKey: KEYS.updateStatus,
     queryFn: () => fetchJson<UpdateStatusInfo>('/api/cluster/update/status'),
-    refetchInterval: POLL_MS,
+    refetchInterval: platformStandardCadence,
     staleTime: STALE_MS,
   })
 
   const applicationStatusQ = useQuery({
     queryKey: KEYS.applicationStatus,
     queryFn: () => fetchUpdateApplicationStatus(),
-    refetchInterval: 1_500,
+    refetchInterval: platformApplicationCadence,
     staleTime: 1_000,
   })
 
   const hybridVersionQ = useQuery({
     queryKey: KEYS.updateHybridVersion,
     queryFn: () => fetchUpdateApplicationVersion(),
-    refetchInterval: 30_000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20_000,
   })
 
   const backupStatusQ = useQuery({
     queryKey: KEYS.backupStatus,
     queryFn: () => fetchJson<BackupStatusInfo>('/api/backup/status'),
-    refetchInterval: 30_000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20_000,
   })
 
   const backupListQ = useQuery({
     queryKey: KEYS.backupList,
     queryFn: () => fetchJson<{ backups: BackupEntry[] }>('/api/backup/'),
-    refetchInterval: 30_000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20_000,
   })
 
   const healthQ = useQuery({
     queryKey: KEYS.health,
     queryFn: () => fetchJson<HealthCheckInfo>('/api/health'),
-    refetchInterval: POLL_MS,
+    refetchInterval: platformStandardCadence,
     staleTime: STALE_MS,
   })
 
   const remediationQ = useQuery({
     queryKey: KEYS.remediation,
     queryFn: () => fetchJson<RemediationSummaryInfo>('/api/platform-remediation/summary'),
-    refetchInterval: POLL_MS,
+    refetchInterval: platformStandardCadence,
     staleTime: STALE_MS,
   })
 
   const manifestDriftQ = useQuery({
     queryKey: KEYS.manifestDrift,
     queryFn: () => fetchJson<ManifestDriftInfo>('/api/cluster/update/manifest/drift'),
-    refetchInterval: 30_000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20_000,
   })
 
