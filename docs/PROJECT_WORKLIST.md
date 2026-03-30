@@ -1020,7 +1020,7 @@ Last updated: 2026-03-29 22:02 EDT - Codex
   - Updated `T066-subQ` so the blocker is now accurately scoped to missing physical MIDI hardware instead of missing sequencer access.
 
 ID: T548-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refresh AVB blocker notes from current interface/PTP/entity evidence
 Description:
 - Goal / acceptance criteria: Verify live AVB interface state, NIC evidence, PTP state, and AVDECC entity discovery status, then update `T004` / `T360+` blocker notes so they reflect the current host instead of older assumptions.
@@ -1030,10 +1030,13 @@ Description:
 - Required outputs: current AVB status evidence, updated blocker notes, and any status promotions supported by that evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 22:02 EDT - Codex
+Last updated: 2026-03-29 20:26 EDT - Codex
+- Completion notes:
+  - Verified on 2026-03-29 that `/api/avb/status` reports AVB operational and available on `enp11s0`, with `ptp4l` running and an Intel `igb` NIC present on the host.
+  - Verified `/api/avb/avdecc/entities` still returns an empty entity list and PTP state remains `UNKNOWN`, so the remaining blocker is missing peer hardware / grandmaster lock rather than missing local NIC support.
 
 ID: T548-subC
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Refresh audio hardware blocker notes for latency-evidence tasks
 Description:
 - Goal / acceptance criteria: Verify the currently attached audio devices relevant to latency-evidence blockers and update tasks like `T055` to reflect the real host inventory and remaining missing hardware.
@@ -1043,9 +1046,7 @@ Description:
 - Required outputs: current audio hardware inventory evidence, updated blocker notes, and any status promotions supported by that evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 21:58 EDT - Codex
-Assigned to: Codex
-Last updated: 2026-03-29 21:58 EDT - Codex
+Last updated: 2026-03-29 20:26 EDT - Codex
 
 ## Active Blockers Only
 
@@ -1066,10 +1067,11 @@ Description:
 - Required outputs: Updated qualification matrix, archived evidence artifacts, and pass/fail summary for the AVB gates.
 Subtasks: None
 Assigned to: Lab + Codex
-Last updated: 2026-03-16 00:00 - Codex
+Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - Software prep, wrappers, and false-pass hardening are complete in the archive.
-  - Current host still shows no discovered AVB devices, no active streams, and `INITIALIZING` PTP state.
+  - Current host now reports AVB operational on `enp11s0` with `ptp4l` running, so the old “no NIC” assumption is cleared.
+  - Remaining blocker is still hardware-in-the-loop: `/api/avb/avdecc/entities` is empty, there are no active streams, and PTP state is `UNKNOWN` rather than locked to a peer grandmaster.
   - Source archive references: `T004` in `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
 ## Tesira
@@ -1511,10 +1513,10 @@ Description:
 - Required outputs: PTP status showing locked state, setup evidence, marker file updated.
 Subtasks: None
 Assigned to: Lab + Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
-  - No AVB-capable NIC currently connected to testbed.
-  - PTP stuck in INITIALIZING with no peer.
+  - Test host now has an Intel `igb` AVB-capable NIC on `enp11s0`, and runtime AVB readiness reports operational/available.
+  - PTP still is not locked to a peer grandmaster: `/api/avb/status` reports `ptp.state=\"UNKNOWN\"` and there is no connected AVB peer or TSN switch session to drive synchronization.
   - Priority: P0 — blocks basic AVB functionality.
 
 ID: T361
@@ -1528,10 +1530,10 @@ Description:
 - Required outputs: AVDECC entity list, AEM model JSON, entity metadata validation.
 Subtasks: None
 Assigned to: Lab + Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
-  - USE_AVDECC=OFF by default in CMakeLists.txt:205.
-  - No AVDECC entities ever discovered on testbed.
+  - Runtime AVDECC support is enabled on this host, but `/api/avb/avdecc/entities` still returns an empty entity list.
+  - This remains blocked on a connected AVDECC-capable peer device and successful discovery traffic on the AVB network.
   - Priority: P0.
 
 ID: T362
@@ -1545,9 +1547,9 @@ Description:
 - Required outputs: Stream stats showing framesSent/framesReceived > 0, zero errors, audio capture evidence.
 Subtasks: None
 Assigned to: Lab + Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
-  - No AVB streams have ever carried audio on this testbed.
+  - No AVB streams are active on the current host because there are still no discovered peer entities and no locked PTP session.
   - Priority: P0.
 
 ID: T363
