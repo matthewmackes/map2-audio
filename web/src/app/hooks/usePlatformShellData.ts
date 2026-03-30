@@ -50,6 +50,8 @@ import type {
   UpdateHybridVersionInfo,
 } from './useNodeOperations'
 import { fetchUpdateApplicationStatus, fetchUpdateApplicationVersion } from './updateApplicationApi'
+import { useRealtimeCadence } from './useRealtimeCadence'
+import { useRouteActive } from './useRouteActive'
 
 interface DeploymentModeResponse {
   mode?: string
@@ -230,15 +232,40 @@ function endpointActivity(endpoint: MidiClusterEndpoint, activeConnections: numb
 }
 
 export function usePlatformShellData(): PlatformShellData {
+  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const platformFastCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 5_000,
+    hiddenMs: 20_000,
+    inactiveMs: false,
+  })
+  const platformStandardCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
+  const platformSlowCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 15_000,
+    hiddenMs: 45_000,
+    inactiveMs: false,
+  })
+  const platformVerySlowCadence = useRealtimeCadence({
+    routeActive: platformRouteActive,
+    visibleMs: 30_000,
+    hiddenMs: 60_000,
+    inactiveMs: false,
+  })
   const topologyQuery = useNodeTopology()
   const identityQuery = useNodeIdentity()
-  const pipewire = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
-  const cpu = useCPUMetrics({ useWebSocket: false, pollingInterval: 5000 })
+  const pipewire = usePipeWire({ useWebSocket: false, pollingInterval: typeof platformFastCadence === 'number' ? platformFastCadence : 5_000 })
+  const cpu = useCPUMetrics({ useWebSocket: false, pollingInterval: typeof platformFastCadence === 'number' ? platformFastCadence : 5_000 })
 
   const networkQuery = useQuery<NetworkStatus>({
     queryKey: ['platform', 'network-status'],
     queryFn: networkApi.getStatus,
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -251,7 +278,7 @@ export function usePlatformShellData(): PlatformShellData {
       }
       return response.json() as Promise<DeploymentModeResponse>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -264,7 +291,7 @@ export function usePlatformShellData(): PlatformShellData {
       }
       return response.json() as Promise<ClusterStatusResponse>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -287,31 +314,31 @@ export function usePlatformShellData(): PlatformShellData {
   const trafficStatsQuery = useQuery<TrafficStatsResponse>({
     queryKey: ['platform', 'observatory', 'traffic-stats'],
     queryFn: () => getTrafficStats() as Promise<TrafficStatsResponse>,
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
   const observatoryEndpointsQuery = useQuery<{ endpoints: APIEndpoint[] }>({
     queryKey: ['platform', 'observatory', 'endpoints'],
     queryFn: wwwApi.getEndpoints,
-    refetchInterval: 15000,
+    refetchInterval: platformSlowCadence,
     staleTime: 10000,
   })
   const observatoryLogsQuery = useQuery<{ logs: AccessLog[] }>({
     queryKey: ['platform', 'observatory', 'logs'],
     queryFn: () => wwwApi.getAccessLogs(40),
-    refetchInterval: 15000,
+    refetchInterval: platformSlowCadence,
     staleTime: 10000,
   })
   const observatoryWsQuery = useQuery<WebSocketStats>({
     queryKey: ['platform', 'observatory', 'websocket'],
     queryFn: wwwApi.getWebSocketStats,
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
   const observatoryStatusQuery = useQuery<WWWStatus>({
     queryKey: ['platform', 'observatory', 'status'],
     queryFn: wwwApi.getStatus,
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -324,7 +351,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<PlatformVersionInfo>
     },
-    refetchInterval: 30000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20000,
   })
 
@@ -335,21 +362,21 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<UpdateStatusInfo>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
   const nodeApplicationStatusQuery = useQuery<HybridApplicationStatusInfo>({
     queryKey: ['platform', 'node-application-status'],
     queryFn: () => fetchUpdateApplicationStatus(),
-    refetchInterval: 5000,
+    refetchInterval: platformFastCadence,
     staleTime: 2000,
   })
 
   const nodeHybridVersionQuery = useQuery<UpdateHybridVersionInfo>({
     queryKey: ['platform', 'node-hybrid-version'],
     queryFn: () => fetchUpdateApplicationVersion(),
-    refetchInterval: 30000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20000,
   })
 
@@ -360,7 +387,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<BackupStatusInfo>
     },
-    refetchInterval: 30000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20000,
   })
 
@@ -371,7 +398,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<HealthCheckInfo>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -382,7 +409,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<DeploymentStatusInfo>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -393,7 +420,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<RemediationSummaryInfo>
     },
-    refetchInterval: 10000,
+    refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
 
@@ -404,7 +431,7 @@ export function usePlatformShellData(): PlatformShellData {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json() as Promise<ManifestDriftInfo>
     },
-    refetchInterval: 30000,
+    refetchInterval: platformVerySlowCadence,
     staleTime: 20000,
   })
 

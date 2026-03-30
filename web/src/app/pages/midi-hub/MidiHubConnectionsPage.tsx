@@ -61,7 +61,9 @@ export function MidiHubConnectionsPage() {
               </Tabs>
             </div>
 
-            {mode === 'matrix' ? <MidiRoutingMatrix /> : <MidiPatchbay />}
+            {mode === 'matrix'
+              ? <MidiRoutingMatrix active />
+              : <MidiPatchbay active />}
             <MidiHubQuickRouter />
           </MidiHubPanelShell>
 

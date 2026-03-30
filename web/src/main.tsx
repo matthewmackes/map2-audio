@@ -3,30 +3,15 @@ import '@fontsource/ibm-plex-sans/400.css'
 import '@fontsource/ibm-plex-sans/500.css'
 import '@fontsource/ibm-plex-sans/600.css'
 import '@fontsource/ibm-plex-sans/700.css'
-import '@fontsource/fira-sans/400.css'
-import '@fontsource/fira-sans/500.css'
-import '@fontsource/fira-sans/600.css'
-import '@fontsource/fira-sans/700.css'
-import '@fontsource/inter/400.css'
-import '@fontsource/inter/500.css'
-import '@fontsource/inter/600.css'
-import '@fontsource/inter/700.css'
-import '@fontsource/roboto/400.css'
-import '@fontsource/roboto/500.css'
-import '@fontsource/roboto/700.css'
-import '@fontsource/space-grotesk/400.css'
-import '@fontsource/space-grotesk/500.css'
-import '@fontsource/space-grotesk/700.css'
 import '@carbon/styles/css/styles.css'
 import './index.css'
 import './styles/mobile.css'
 import ErrorBoundary from './ErrorBoundary'
 import { initializePlatformTypography, initializeTheme } from './app/theme'
+import { installDevResponsivenessDiagnostics, markShellReady } from './app/performance/devDiagnostics'
 
 const rootElement = document.getElementById('root')
-const FONT_READY_TIMEOUT_MS = 2500
 const STYLESHEET_READY_TIMEOUT_MS = 2500
-const WINDOW_LOAD_TIMEOUT_MS = 4000
 const PRELOAD_RECOVERY_KEY = 'map2:preload-recovery-ts'
 const PRELOAD_RECOVERY_WINDOW_MS = 15000
 
@@ -41,41 +26,6 @@ function removeExternalGoogleFontLinks(): void {
       node.parentNode?.removeChild(node)
     })
   })
-}
-
-function waitForWindowLoad(timeoutMs: number): Promise<void> {
-  if (document.readyState === 'complete') return Promise.resolve()
-
-  return new Promise((resolve) => {
-    let settled = false
-    const onLoad = () => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timeoutId)
-      resolve()
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      if (settled) return
-      settled = true
-      window.removeEventListener('load', onLoad)
-      resolve()
-    }, timeoutMs)
-
-    window.addEventListener('load', onLoad, { once: true })
-  })
-}
-
-function waitForFontsReady(timeoutMs: number): Promise<void> {
-  const fontSet = document.fonts
-  if (!fontSet?.ready) return Promise.resolve()
-
-  return Promise.race([
-    fontSet.ready.then(() => {}),
-    new Promise<void>((resolve) => {
-      window.setTimeout(resolve, timeoutMs)
-    }),
-  ])
 }
 
 function waitForStylesheetsReady(timeoutMs: number): Promise<void> {
@@ -112,6 +62,33 @@ function nextAnimationFrame(): Promise<void> {
   })
 }
 
+function preloadNonCriticalFonts(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const loadFonts = () => {
+    void Promise.allSettled([
+      import('@fontsource/fira-sans/400.css'),
+      import('@fontsource/fira-sans/500.css'),
+      import('@fontsource/fira-sans/600.css'),
+      import('@fontsource/fira-sans/700.css'),
+      import('@fontsource/inter/400.css'),
+      import('@fontsource/inter/500.css'),
+      import('@fontsource/inter/600.css'),
+      import('@fontsource/inter/700.css'),
+      import('@fontsource/roboto/400.css'),
+      import('@fontsource/roboto/500.css'),
+      import('@fontsource/roboto/700.css'),
+      import('@fontsource/space-grotesk/400.css'),
+      import('@fontsource/space-grotesk/500.css'),
+      import('@fontsource/space-grotesk/700.css'),
+    ])
+  }
+
+  window.setTimeout(loadFonts, 0)
+}
+
 function installVitePreloadRecovery(): void {
   if (typeof window === 'undefined') return
 
@@ -138,19 +115,16 @@ function installVitePreloadRecovery(): void {
 async function mountApp() {
   if (!rootElement) return
 
+  installDevResponsivenessDiagnostics()
   installVitePreloadRecovery()
   removeExternalGoogleFontLinks()
 
-  // Wait for full load + font settlement to avoid forced layout and FOUC.
-  await waitForWindowLoad(WINDOW_LOAD_TIMEOUT_MS)
   await waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS)
-  await waitForFontsReady(FONT_READY_TIMEOUT_MS)
 
   const { App } = await import('./app/App')
   await waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS)
-  await nextAnimationFrame()
 
-  // Initialize theme after resources settle to avoid forced layout before stylesheets load.
+  // Initialize theme before render, but do not block first paint on non-critical fonts.
   initializeTheme()
   initializePlatformTypography()
   createRoot(rootElement).render(
@@ -158,6 +132,10 @@ async function mountApp() {
       <App />
     </ErrorBoundary>
   )
+
+  await nextAnimationFrame()
+  markShellReady()
+  preloadNonCriticalFonts()
 }
 
 void mountApp()

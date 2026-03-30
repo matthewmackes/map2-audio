@@ -2,13 +2,27 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { midiClusterApi, type MidiClusterClock, type MidiClusterConnection, type MidiClusterEndpoint, type MidiClusterHealth, type MidiClusterNode, type MidiClusterSummary } from '../../map2/api'
+import { useRealtimeCadence } from './useRealtimeCadence'
+import { useRouteActive } from './useRouteActive'
 import useMidiClusterEvents from './useMidiClusterEvents'
 
 const QUERY_BASE = ['midi-cluster'] as const
+const MIDI_CLUSTER_ROUTE_PATTERNS = ['/platforms', '/labs']
+
+function useMidiClusterCadence(visibleMs: number, hiddenMs: number, inactiveMs: number | false = false) {
+  const routeActive = useRouteActive(MIDI_CLUSTER_ROUTE_PATTERNS)
+  return useRealtimeCadence({
+    routeActive,
+    visibleMs,
+    hiddenMs,
+    inactiveMs,
+  })
+}
 
 export function useMidiClusterNodes() {
   const queryClient = useQueryClient()
   const events = useMidiClusterEvents('midi_cluster_nodes')
+  const refetchInterval = useMidiClusterCadence(10_000, 30_000)
 
   useEffect(() => {
     if (events.latestEvent) {
@@ -19,13 +33,14 @@ export function useMidiClusterNodes() {
   return useQuery<MidiClusterNode[]>({
     queryKey: [...QUERY_BASE, 'nodes'],
     queryFn: midiClusterApi.listNodes,
-    refetchInterval: 10000,
+    refetchInterval,
   })
 }
 
 export function useMidiClusterConnections() {
   const queryClient = useQueryClient()
   const events = useMidiClusterEvents('midi_cluster_connections')
+  const refetchInterval = useMidiClusterCadence(8_000, 20_000)
 
   useEffect(() => {
     if (events.latestEvent) {
@@ -36,21 +51,23 @@ export function useMidiClusterConnections() {
   return useQuery<MidiClusterConnection[]>({
     queryKey: [...QUERY_BASE, 'connections'],
     queryFn: midiClusterApi.listConnections,
-    refetchInterval: 8000,
+    refetchInterval,
   })
 }
 
 export function useMidiClusterEndpoints() {
+  const refetchInterval = useMidiClusterCadence(15_000, 45_000)
   return useQuery<MidiClusterEndpoint[]>({
     queryKey: [...QUERY_BASE, 'endpoints'],
     queryFn: midiClusterApi.listEndpoints,
-    refetchInterval: 15000,
+    refetchInterval,
   })
 }
 
 export function useMidiClusterClock() {
   const queryClient = useQueryClient()
   const events = useMidiClusterEvents('midi_cluster_clock')
+  const refetchInterval = useMidiClusterCadence(8_000, 20_000)
 
   useEffect(() => {
     if (events.latestEvent) {
@@ -61,23 +78,25 @@ export function useMidiClusterClock() {
   return useQuery<MidiClusterClock>({
     queryKey: [...QUERY_BASE, 'clock'],
     queryFn: midiClusterApi.getClock,
-    refetchInterval: 8000,
+    refetchInterval,
   })
 }
 
 export function useMidiClusterHealth() {
+  const refetchInterval = useMidiClusterCadence(15_000, 45_000)
   return useQuery<MidiClusterHealth>({
     queryKey: [...QUERY_BASE, 'health'],
     queryFn: midiClusterApi.getHealth,
-    refetchInterval: 15000,
+    refetchInterval,
   })
 }
 
 export function useMidiClusterSummary() {
+  const refetchInterval = useMidiClusterCadence(15_000, 45_000)
   return useQuery<MidiClusterSummary>({
     queryKey: [...QUERY_BASE, 'summary'],
     queryFn: midiClusterApi.getSummary,
-    refetchInterval: 15000,
+    refetchInterval,
   })
 }
 

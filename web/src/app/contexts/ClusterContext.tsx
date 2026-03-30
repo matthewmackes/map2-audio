@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 
 type ClusterContextValue = {
   activeNodeId: string | null
@@ -102,6 +103,11 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
     updateSettings: updateSpecialSettings,
   } = useSpecialSettings()
 
+  const peersRefetchInterval = useRealtimeCadence({
+    visibleMs: 10_000,
+    hiddenMs: 60_000,
+  })
+
   const peersQuery = useQuery<PeersResponse>({
     queryKey: ['cluster', 'peers'],
     queryFn: async () => {
@@ -112,7 +118,7 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
       return resp.json() as Promise<PeersResponse>
     },
     staleTime: 5000,
-    refetchInterval: 10000,
+    refetchInterval: peersRefetchInterval,
   })
 
   const { nodes, localNodeId } = useMemo(() => buildNodes(peersQuery.data), [peersQuery.data])

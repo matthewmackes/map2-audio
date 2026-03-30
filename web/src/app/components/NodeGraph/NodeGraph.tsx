@@ -1,20 +1,18 @@
 import './NodeGraph.css'
 
-import dagre from 'dagre'
 import { useMemo } from 'react'
 import ReactFlow, {
   Background,
   BackgroundVariant,
   Controls,
-  MarkerType,
   type Edge,
   type Node,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
 import type { NodeTopology } from '../../types/node'
-import { getNodePresence } from '../../utils/nodeDisplay'
 import { NodeGraphCard, type NodeGraphCardData } from './NodeGraphCard'
+import { buildNodeGraphEdges, buildNodeGraphNodes, layoutNodeGraph } from './nodeGraphLayout'
 
 interface NodeGraphProps {
   topology: NodeTopology | undefined
@@ -22,113 +20,18 @@ interface NodeGraphProps {
   onNodeClick: (nodeId: string) => void
 }
 
-const NODE_WIDTH = 260
-const NODE_HEIGHT = 92
 const nodeTypes = { nodeCard: NodeGraphCard }
 
-function layoutGraph(nodes: Node<NodeGraphCardData>[], edges: Edge[]) {
-  if (nodes.length <= 1) {
-    return nodes.map((node) => ({
-      ...node,
-      position: { x: 160, y: 140 },
-    }))
-  }
-
-  const graph = new dagre.graphlib.Graph()
-  graph.setDefaultEdgeLabel(() => ({}))
-  graph.setGraph({ rankdir: 'LR', ranksep: 150, nodesep: 70 })
-
-  nodes.forEach((node) => {
-    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
-  })
-
-  edges.forEach((edge) => {
-    graph.setEdge(edge.source, edge.target)
-  })
-
-  dagre.layout(graph)
-
-  return nodes.map((node) => {
-    const position = graph.node(node.id)
-    return {
-      ...node,
-      position: {
-        x: position.x - NODE_WIDTH / 2,
-        y: position.y - NODE_HEIGHT / 2,
-      },
-    }
-  })
-}
-
 export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProps) {
-  const nodeRecords = Array.isArray(topology?.nodes) ? topology.nodes : []
-  const audioEdges = Array.isArray(topology?.audio_edges) ? topology.audio_edges : []
-  const networkEdges = Array.isArray(topology?.network_edges) ? topology.network_edges : []
-
   const nodes = useMemo<Node<NodeGraphCardData>[]>(() => {
-    const draftNodes = nodeRecords.map((node) => ({
-      id: node.node_id,
-      type: 'nodeCard',
-      position: { x: 0, y: 0 },
-      data: {
-        node,
-        presence: getNodePresence(node, viewedNodeId),
-        onSelect: onNodeClick,
-      },
-      draggable: false,
-      selectable: false,
-    }))
-
-    const draftEdges: Edge[] = [
-      ...audioEdges.map((edge) => ({
-        id: `audio:${edge.source_node_id}:${edge.dest_node_id}:${edge.stream_type}`,
-        source: edge.source_node_id,
-        target: edge.dest_node_id,
-        type: 'smoothstep',
-        animated: edge.active,
-        label: edge.stream_type.toUpperCase(),
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#0f62fe' },
-        style: { stroke: '#0f62fe', strokeWidth: 2 },
-        labelStyle: { fill: '#0f62fe', fontWeight: 600 },
-      })),
-      ...networkEdges.map((edge) => ({
-        id: `network:${edge.source_node_id}:${edge.dest_node_id}`,
-        source: edge.source_node_id,
-        target: edge.dest_node_id,
-        type: 'smoothstep',
-        label: edge.latency_ms == null ? '' : `${edge.latency_ms.toFixed(1)}ms`,
-        style: { stroke: '#8d8d8d', strokeDasharray: '6 3', strokeWidth: 1.5 },
-        labelStyle: { fill: '#8d8d8d', fontWeight: 500 },
-      })),
-    ]
-
-    return layoutGraph(draftNodes, draftEdges)
-  }, [audioEdges, networkEdges, nodeRecords, onNodeClick, viewedNodeId])
+    const draftNodes = buildNodeGraphNodes(topology, viewedNodeId, onNodeClick)
+    const draftEdges = buildNodeGraphEdges(topology)
+    return layoutNodeGraph(draftNodes, draftEdges)
+  }, [topology, onNodeClick, viewedNodeId])
 
   const edges = useMemo<Edge[]>(() => {
-    return [
-      ...audioEdges.map((edge) => ({
-        id: `audio:${edge.source_node_id}:${edge.dest_node_id}:${edge.stream_type}`,
-        source: edge.source_node_id,
-        target: edge.dest_node_id,
-        type: 'smoothstep',
-        animated: edge.active,
-        label: edge.stream_type.toUpperCase(),
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#0f62fe' },
-        style: { stroke: '#0f62fe', strokeWidth: 2 },
-        labelStyle: { fill: '#0f62fe', fontWeight: 600 },
-      })),
-      ...networkEdges.map((edge) => ({
-        id: `network:${edge.source_node_id}:${edge.dest_node_id}`,
-        source: edge.source_node_id,
-        target: edge.dest_node_id,
-        type: 'smoothstep',
-        label: edge.latency_ms == null ? '' : `${edge.latency_ms.toFixed(1)}ms`,
-        style: { stroke: '#8d8d8d', strokeDasharray: '6 3', strokeWidth: 1.5 },
-        labelStyle: { fill: '#8d8d8d', fontWeight: 500 },
-      })),
-    ]
-  }, [audioEdges, networkEdges])
+    return buildNodeGraphEdges(topology)
+  }, [topology])
 
   return (
     <div className="node-graph">

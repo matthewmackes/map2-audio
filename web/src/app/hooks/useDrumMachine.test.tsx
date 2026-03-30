@@ -1,6 +1,7 @@
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { drumsApi } from '@/map2/api'
 import {
@@ -73,7 +74,11 @@ function makeWrapper() {
   })
 
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    return (
+      <MemoryRouter initialEntries={['/drums']}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </MemoryRouter>
+    )
   }
 }
 

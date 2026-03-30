@@ -23,6 +23,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { chainsApi } from '../../map2/api'
 import type { Chain } from '../../map2/types'
+import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
+import { useRouteActive } from '../hooks/useRouteActive'
 
 // ── Carbon tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -375,6 +377,13 @@ function TapTempo({
   tapSignal: number
   flashing: boolean
 }) {
+  const routeActive = useRouteActive(['/perform'])
+  const pollInterval = useRealtimeCadence({
+    routeActive,
+    visibleMs: 500,
+    hiddenMs: false,
+    inactiveMs: false,
+  })
   const [bpm, setBpm] = useState<number | null>(null)
   const [midiSync, setMidiSync] = useState(false)
   const [label, setLabel] = useState<'MIN' | 'MAX' | null>(null)
@@ -410,6 +419,10 @@ function TapTempo({
   useEffect(() => () => clearTimeout(lockTimer.current), [])
 
   useEffect(() => {
+    if (!pollInterval) {
+      return undefined
+    }
+
     let closed = false
     const pollClock = async () => {
       try {
@@ -434,12 +447,12 @@ function TapTempo({
     void pollClock()
     const id = window.setInterval(() => {
       void pollClock()
-    }, 500)
+    }, pollInterval)
     return () => {
       closed = true
       window.clearInterval(id)
     }
-  }, [])
+  }, [pollInterval])
 
   useEffect(() => {
     if (tapSignal === lastTapSignalRef.current) return
@@ -510,6 +523,13 @@ function Tuner({
   toggleSignal: number
   flashing: boolean
 }) {
+  const routeActive = useRouteActive(['/perform'])
+  const pollInterval = useRealtimeCadence({
+    routeActive,
+    visibleMs: 150,
+    hiddenMs: false,
+    inactiveMs: false,
+  })
   const [tuner, setTuner] = useState<TunerData>({
     note: '--', octave: 4, cents: 0, in_tune: false, online: false,
   })
@@ -519,6 +539,10 @@ function Tuner({
   const mutedRef = useRef<boolean>(false)
 
   useEffect(() => {
+    if (!pollInterval) {
+      return undefined
+    }
+
     const poll = async () => {
       try {
         const d = await apiFetch<TunerData>('/v2/expression/engine/tuner')
@@ -528,9 +552,9 @@ function Tuner({
       }
     }
     poll()
-    intervalRef.current = setInterval(poll, 100)
+    intervalRef.current = setInterval(poll, pollInterval)
     return () => clearInterval(intervalRef.current)
-  }, [])
+  }, [pollInterval])
 
   useEffect(() => {
     mutedRef.current = muted
@@ -645,6 +669,13 @@ function Tuner({
 
 // ── HealthBar ─────────────────────────────────────────────────────────────────
 function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
+  const routeActive = useRouteActive(['/perform'])
+  const healthPollInterval = useRealtimeCadence({
+    routeActive,
+    visibleMs: 1_000,
+    hiddenMs: 5_000,
+    inactiveMs: false,
+  })
   const [health, setHealth] = useState<HealthData>({
     engineStatus: 'offline', rtlMs: 0, xruns: 0, cpuPct: 0,
   })
@@ -674,6 +705,10 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
 
   // Health poll
   useEffect(() => {
+    if (!healthPollInterval) {
+      return undefined
+    }
+
     const poll = async () => {
       try {
         const [engine, jitter, cpu] = await Promise.allSettled([
@@ -693,9 +728,9 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
       } catch { /* silent */ }
     }
     poll()
-    const id = setInterval(poll, 1000)
+    const id = setInterval(poll, healthPollInterval)
     return () => clearInterval(id)
-  }, [])
+  }, [healthPollInterval])
 
   useEffect(() => () => {
     if (midiTimer.current) clearTimeout(midiTimer.current)
@@ -804,6 +839,19 @@ function ghostBtn(disabled: boolean): React.CSSProperties {
 export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const routeActive = useRouteActive(['/perform'])
+  const chainsRefetchInterval = useRealtimeCadence({
+    routeActive,
+    visibleMs: 5_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
+  const performanceEventPollInterval = useRealtimeCadence({
+    routeActive,
+    visibleMs: 250,
+    hiddenMs: false,
+    inactiveMs: false,
+  })
   const [page, setPage] = useState(0)
   const [activeChainId, setActiveChainId] = useState<number | null>(null)
   const [activatingId, setActivatingId] = useState<number | null>(null)
@@ -842,7 +890,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
   const { data: chainsData } = useQuery({
     queryKey: ['chains'],
     queryFn: () => chainsApi.list(),
-    refetchInterval: 5000,
+    refetchInterval: chainsRefetchInterval,
     staleTime: 3000,
   })
 
@@ -1071,6 +1119,10 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
 
   // Poll MIDI-triggered performance actions.
   useEffect(() => {
+    if (!performanceEventPollInterval) {
+      return undefined
+    }
+
     let closed = false
     const poll = async () => {
       try {
@@ -1096,12 +1148,12 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
     void poll()
     const id = window.setInterval(() => {
       void poll()
-    }, 120)
+    }, performanceEventPollInterval)
     return () => {
       closed = true
       window.clearInterval(id)
     }
-  }, [dispatchPerformanceEvent])
+  }, [dispatchPerformanceEvent, performanceEventPollInterval])
 
   // Keyboard shortcuts for page nav.
   useEffect(() => {

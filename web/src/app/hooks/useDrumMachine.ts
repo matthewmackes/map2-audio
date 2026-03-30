@@ -16,6 +16,18 @@ import type {
   DrumTransportUpdate,
   DrumVelocityCurve,
 } from '@/map2/types'
+import { useRealtimeCadence } from './useRealtimeCadence'
+import { useRouteActive } from './useRouteActive'
+
+function useDrumRealtimeCadence(visibleMs: number, hiddenMs: number, inactiveMs: number | false = false) {
+  const routeActive = useRouteActive(['/drums'])
+  return useRealtimeCadence({
+    routeActive,
+    visibleMs,
+    hiddenMs,
+    inactiveMs,
+  })
+}
 
 function invalidateDrumState(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: ['drums', 'state'] })
@@ -39,10 +51,11 @@ export function useDrumMachineState() {
 }
 
 export function useDrumTransport() {
+  const refetchInterval = useDrumRealtimeCadence(500, 2_000)
   return useQuery({
     queryKey: ['drums', 'transport'],
     queryFn: drumsApi.getTransport,
-    refetchInterval: 500,
+    refetchInterval,
     staleTime: 250,
   })
 }
@@ -56,10 +69,11 @@ export function useDrumPattern(patternId: number) {
 }
 
 export function useDrumPosition() {
+  const refetchInterval = useDrumRealtimeCadence(250, 1_000)
   return useQuery({
     queryKey: ['drums', 'position'],
     queryFn: drumsApi.getPosition,
-    refetchInterval: 250,
+    refetchInterval,
     staleTime: 100,
   })
 }
@@ -72,10 +86,12 @@ export function useDrumSong() {
 }
 
 export function useDrumSongTransport() {
+  const activeRefetchInterval = useDrumRealtimeCadence(250, 1_000)
+  const idleRefetchInterval = useDrumRealtimeCadence(1_000, 5_000)
   return useQuery({
     queryKey: ['drums', 'song', 'transport'],
     queryFn: drumsApi.getSongTransport,
-    refetchInterval: (query) => (query.state.data?.is_playing ? 250 : 1_000),
+    refetchInterval: (query) => (query.state.data?.is_playing ? activeRefetchInterval : idleRefetchInterval),
     staleTime: 100,
   })
 }
@@ -112,24 +128,25 @@ export function useDrumActiveKit() {
 }
 
 export function useDrumMixer() {
+  const refetchInterval = useDrumRealtimeCadence(1_000, 5_000)
   const pads = useQuery({
     queryKey: ['drums', 'mixer', 'pads'],
     queryFn: drumsApi.getPadControls,
-    refetchInterval: 1_000,
+    refetchInterval,
     staleTime: 500,
   })
 
   const buses = useQuery({
     queryKey: ['drums', 'mixer', 'buses'],
     queryFn: drumsApi.getBusMixer,
-    refetchInterval: 1_000,
+    refetchInterval,
     staleTime: 500,
   })
 
   const master = useQuery({
     queryKey: ['drums', 'mixer', 'master'],
     queryFn: drumsApi.getMasterVolume,
-    refetchInterval: 1_000,
+    refetchInterval,
     staleTime: 500,
   })
 
@@ -232,10 +249,11 @@ export function useDrumSampleEditor(padId: number, points = 256) {
 }
 
 export function useDrumMetering() {
+  const refetchInterval = useDrumRealtimeCadence(1_000, 5_000)
   return useQuery({
     queryKey: ['drums', 'metering'],
     queryFn: drumsApi.getMetering,
-    refetchInterval: 1_000,
+    refetchInterval,
     staleTime: 500,
   })
 }
@@ -260,10 +278,11 @@ export function useDrumMidiMapping() {
 }
 
 export function useDrumMidiLearn() {
+  const activeRefetchInterval = useDrumRealtimeCadence(500, 2_000)
   const status = useQuery({
     queryKey: ['drums', 'midi', 'learn'],
     queryFn: drumsApi.getMidiLearnStatus,
-    refetchInterval: (query) => (query.state.data?.active ? 500 : false),
+    refetchInterval: (query) => (query.state.data?.active ? activeRefetchInterval : false),
     staleTime: 250,
   })
 
@@ -278,11 +297,12 @@ export function useDrumMidiLearn() {
 
 export function useDrumCcMapping() {
   const mappings = useDrumCcMappings()
+  const activeRefetchInterval = useDrumRealtimeCadence(500, 2_000)
 
   const learn = useQuery({
     queryKey: ['drums', 'midi', 'cc-learn'],
     queryFn: drumsApi.getCcLearnStatus,
-    refetchInterval: (query) => (query.state.data?.active ? 500 : false),
+    refetchInterval: (query) => (query.state.data?.active ? activeRefetchInterval : false),
     staleTime: 250,
   })
 

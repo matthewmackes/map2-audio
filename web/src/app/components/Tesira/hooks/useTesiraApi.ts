@@ -3,8 +3,9 @@
  * All hooks use the tesiraApi object from map2/api.ts.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { tesiraApi } from '../../../../map2/api'
+import { usePageVisible } from '../../../hooks/usePageVisible'
 import type {
   TesiraCapabilityEnvelope,
   TesiraCrosspointMatrix,
@@ -97,18 +98,6 @@ export const TESIRA_KEYS = {
   discoveryStatus: ['tesira', 'discovery', 'status'] as const,
   firmwareLatest: ['tesira', 'firmware', 'latest'] as const,
   deviceFirmware: (id: string) => ['tesira', 'devices', id, 'firmware'] as const,
-}
-
-function usePageVisible(): boolean {
-  const [visible, setVisible] = useState<boolean>(typeof document === 'undefined' ? true : !document.hidden)
-
-  useEffect(() => {
-    const onVisibility = () => setVisible(!document.hidden)
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [])
-
-  return visible
 }
 
 async function fetchTesiraFanout<T>(path: string): Promise<Record<string, FanoutNodeResponse<T>>> {

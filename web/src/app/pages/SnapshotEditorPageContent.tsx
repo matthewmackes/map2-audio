@@ -71,6 +71,8 @@ import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
+import { useRouteActive } from '../hooks/useRouteActive'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { fetchLiveSnapshotOrNull } from './snapshotLiveState'
 import { getCategoryConfig } from '../grid/shared'
@@ -963,6 +965,31 @@ export function SnapshotEditorPage() {
   }, [])
 
   const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
+  const snapshotRouteActive = useRouteActive(['/snapshot-editor'])
+  const snapshotStandardCadence = useRealtimeCadence({
+    routeActive: snapshotRouteActive,
+    visibleMs: 5_000,
+    hiddenMs: 20_000,
+    inactiveMs: false,
+  })
+  const snapshotFastCadence = useRealtimeCadence({
+    routeActive: snapshotRouteActive,
+    visibleMs: 2_000,
+    hiddenMs: 10_000,
+    inactiveMs: false,
+  })
+  const snapshotMeterCadence = useRealtimeCadence({
+    routeActive: snapshotRouteActive,
+    visibleMs: 1_000,
+    hiddenMs: 5_000,
+    inactiveMs: false,
+  })
+  const snapshotSlowCadence = useRealtimeCadence({
+    routeActive: snapshotRouteActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
 
   // ============================================================================
   // Queries
@@ -972,7 +999,7 @@ export function SnapshotEditorPage() {
   const chainsQuery = useQuery({
     queryKey: ['chains'],
     queryFn: () => chainsApi.list(),
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
   })
 
   // Fetch available plugins
@@ -987,7 +1014,7 @@ export function SnapshotEditorPage() {
   const historyQuery = useQuery({
     queryKey: ['history', 'status'],
     queryFn: historyApi.getStatus,
-    refetchInterval: 2000,
+    refetchInterval: snapshotFastCadence,
   })
 
   // Fetch presets
@@ -999,7 +1026,7 @@ export function SnapshotEditorPage() {
   const midiStatusQuery = useQuery({
     queryKey: ['midi', 'status'],
     queryFn: midiApiV2.getStatus,
-    refetchInterval: 2000,
+    refetchInterval: snapshotFastCadence,
   })
 
   const midiLearnStatusQuery = useQuery({
@@ -1007,7 +1034,7 @@ export function SnapshotEditorPage() {
     queryFn: midiApiV2.getLearnStatus,
     refetchInterval: (query) => {
       const learnStatus = query.state.data as { learning?: boolean } | undefined
-      return midiLearnActive || learnStatus?.learning ? 500 : 2000
+      return midiLearnActive || learnStatus?.learning ? snapshotMeterCadence : snapshotFastCadence
     },
   })
 
@@ -1027,19 +1054,19 @@ export function SnapshotEditorPage() {
 
       return midiApiV2.getMappings()
     },
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
   })
 
   const liveSnapshotQuery = useQuery({
     queryKey: ['snapshots', 'live'],
     queryFn: fetchLiveSnapshotOrNull,
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
     retry: false,
   })
   const snapshotsSummaryQuery = useQuery({
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
   })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
   const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
@@ -1057,33 +1084,33 @@ export function SnapshotEditorPage() {
   const audioQuery = useQuery({
     queryKey: ['audio', 'status'],
     queryFn: () => audioApi.getStatus(),
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
   })
 
   const audioLevelsQuery = useQuery({
     queryKey: ['audio', 'levels'],
     queryFn: audioApi.getLevels,
-    refetchInterval: 500,
+    refetchInterval: snapshotMeterCadence,
   })
 
   // Fetch JACK metrics
   const jackQuery = useQuery({
     queryKey: ['metrics', 'jack'],
     queryFn: metricsApi.getJack,
-    refetchInterval: 2000,
+    refetchInterval: snapshotFastCadence,
   })
 
   // Fetch audio port routing
   const portsQuery = useQuery({
     queryKey: ['audio', 'ports'],
     queryFn: audioApi.getPorts,
-    refetchInterval: 10000,
+    refetchInterval: snapshotSlowCadence,
   })
 
   const routingQuery = useQuery({
     queryKey: ['audio', 'routing'],
     queryFn: audioApi.getRouting,
-    refetchInterval: 5000,
+    refetchInterval: snapshotStandardCadence,
   })
 
   const clusterNodesQuery = useQuery({
@@ -1096,7 +1123,7 @@ export function SnapshotEditorPage() {
         nodes: Array.isArray(data?.nodes) ? data.nodes : [],
       }
     },
-    refetchInterval: assignmentDialogOpen ? 2000 : false,
+    refetchInterval: assignmentDialogOpen ? snapshotFastCadence : false,
     enabled: assignmentDialogOpen,
   })
 

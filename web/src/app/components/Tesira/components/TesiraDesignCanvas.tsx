@@ -34,6 +34,14 @@ interface TesiraDesignCanvasProps {
   deviceId: string
 }
 
+function graphFingerprint(graph: { nodes?: unknown[]; edges?: unknown[]; groups?: unknown[] } | null | undefined) {
+  return JSON.stringify({
+    nodes: graph?.nodes ?? [],
+    edges: graph?.edges ?? [],
+    groups: graph?.groups ?? [],
+  })
+}
+
 function toFlowNode(node: any, index: number): Node {
   return {
     id: node.id,
@@ -100,14 +108,36 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
   const selectedDesignQuery = useTesiraDesign(deviceId, selectedDesignId)
   const diagnosticsQuery = useTesiraDesignDiagnostics(deviceId, selectedDesignId)
   const selectedDesign = selectedDesignQuery.data?.design
+  const selectedDesignGraphFingerprint = useMemo(
+    () => graphFingerprint(selectedDesign?.graph),
+    [selectedDesign?.graph],
+  )
 
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [graphDirty, setGraphDirty] = useState(false)
+  const hydratedDesignIdRef = React.useRef<string | null>(null)
+  const hydratedGraphFingerprintRef = React.useRef<string>('')
 
   useEffect(() => {
     if (!selectedDesign) {
       setNodes([])
       setEdges([])
+      setGraphDirty(false)
+      hydratedDesignIdRef.current = null
+      hydratedGraphFingerprintRef.current = ''
+      return
+    }
+
+    if (
+      graphDirty
+      && hydratedDesignIdRef.current === selectedDesign.design_id
+      && hydratedGraphFingerprintRef.current === selectedDesignGraphFingerprint
+    ) {
+      return
+    }
+
+    if (graphDirty && hydratedDesignIdRef.current === selectedDesign.design_id) {
       return
     }
 
@@ -116,7 +146,10 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
     const flowEdges = (graph.edges || []).map((edge: any, index: number) => toFlowEdge(edge, index))
     setNodes(flowNodes)
     setEdges(flowEdges)
-  }, [selectedDesign, setNodes, setEdges])
+    setGraphDirty(false)
+    hydratedDesignIdRef.current = selectedDesign.design_id
+    hydratedGraphFingerprintRef.current = selectedDesignGraphFingerprint
+  }, [graphDirty, selectedDesign, selectedDesignGraphFingerprint, setEdges, setNodes])
 
   useEffect(() => {
     if (!selectedDesignId && designs?.designs?.length) {
@@ -125,7 +158,22 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
   }, [designs, selectedDesignId])
 
   const onConnect = (params: Edge | Connection) => {
+    setGraphDirty(true)
     setEdges((eds) => addEdge({ ...params, type: 'smoothstep' }, eds))
+  }
+
+  const handleNodesStateChange = (changes: Parameters<typeof onNodesChange>[0]) => {
+    if (changes.length > 0) {
+      setGraphDirty(true)
+    }
+    onNodesChange(changes)
+  }
+
+  const handleEdgesStateChange = (changes: Parameters<typeof onEdgesChange>[0]) => {
+    if (changes.length > 0) {
+      setGraphDirty(true)
+    }
+    onEdgesChange(changes)
   }
 
   const blockOptions = useMemo(() => library?.blocks ?? [], [library])
@@ -177,6 +225,9 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
       designId: selectedDesignId,
       graph: graphPayload,
     })
+    setGraphDirty(false)
+    hydratedDesignIdRef.current = selectedDesignId
+    hydratedGraphFingerprintRef.current = graphFingerprint(graphPayload)
   }
 
   const handleValidate = async () => {
@@ -263,6 +314,7 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
         io: selectedBlock.io || { inputs: [], outputs: [] },
       },
     }
+    setGraphDirty(true)
     setNodes((previous) => [...previous, newNode])
   }
 
@@ -500,8 +552,8 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
+            onNodesChange={handleNodesStateChange}
+            onEdgesChange={handleEdgesStateChange}
             onConnect={onConnect}
             fitView
           >

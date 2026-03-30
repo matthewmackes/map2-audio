@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 12:28 EDT - T569 removed snapshot questionnaire flow and restored direct create
+Last updated: 2026-03-30 13:36 EDT - T570 completed React GUI responsiveness hardening slice
+
+ID: T570
+Status: [✓] Done
+Title: Implement the React GUI responsiveness hardening slice across startup, realtime polling, and graph surfaces
+Description:
+- Goal / acceptance criteria: Improve perceived smoothness and responsiveness in the React GUI by removing unnecessary startup blocking, introducing shared visibility/route-aware realtime cadence helpers, reducing unnecessary background polling on the heaviest surfaces, and hardening graph/canvas behavior so background refreshes do not clobber interactive state. Validation must include focused frontend coverage plus typecheck/build evidence.
+- Why it matters: The current UI already has good foundations, but broad polling, startup blocking, and hot render coupling are still causing avoidable latency and visual sluggishness in the operator-facing surfaces.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: worklist notes, startup boot-path improvements, shared realtime helper hooks, targeted polling-cadence reductions across Snapshot Editor/Platform/MIDI/Drums/Perform, graph dirty-guard or layout-cache hardening, focused tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 13:36 EDT - Codex
+- Completion notes:
+  - Added shared responsiveness primitives in `web/src/app/hooks/usePageVisible.ts`, `web/src/app/hooks/useRouteActive.ts`, and `web/src/app/hooks/useRealtimeCadence.ts`, then applied them across Platform shell, Snapshot Editor, MIDI Hub, Drum hooks, Perform mode, Cluster context, and Tesira polling so hidden or inactive routes slow down or stop unnecessary realtime refreshes.
+  - Removed startup paint blockers in `web/src/main.tsx` by rendering after stylesheet readiness instead of waiting on `window.load` and full font settlement, keeping IBM Plex as the boot-critical family and lazily importing the secondary font families after first paint.
+  - Added dev-only responsiveness instrumentation in `web/src/app/performance/devDiagnostics.ts`, route-hover prefetching in `web/src/app/routePrefetch.ts` plus `web/src/app/layout/AppShell.tsx`, and shortened page-transition timings in `web/src/app/components/PageTransition.tsx` and `web/src/app/components/PageTransition.css` to improve perceived navigation responsiveness.
+  - Hardened graph surfaces by extracting cached Dagre layout logic into `web/src/app/components/NodeGraph/nodeGraphLayout.ts` for topology-fingerprint reuse, and by adding dirty-state hydration guards in `web/src/app/components/Tesira/components/TesiraDesignCanvas.tsx` so background refetches do not overwrite unsaved local graph edits.
+  - Added focused regression coverage in `web/src/app/hooks/useRealtimeCadence.test.tsx`, `web/src/app/components/NodeGraph/nodeGraphLayout.test.ts`, `web/src/app/components/Tesira/components/TesiraDesignCanvas.test.tsx`, and `web/src/app/hooks/useDrumMachine.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/hooks/useRealtimeCadence.test.tsx web/src/app/components/NodeGraph/nodeGraphLayout.test.ts web/src/app/components/Tesira/components/TesiraDesignCanvas.test.tsx web/src/app/hooks/useDrumMachine.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T569
 Status: [✓] Done

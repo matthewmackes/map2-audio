@@ -31,6 +31,7 @@ import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
+import { prefetchAppRoute } from '../routePrefetch'
 import './AppShell.css'
 
 interface TopNavItem {
@@ -380,6 +381,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         onClick={() => {
           closeTransientMenus()
         }}
+        onMouseEnter={() => prefetchAppRoute(item.to)}
+        onFocus={() => prefetchAppRoute(item.to)}
       >
         <span className={`nav-tab-icon${isAudioGridTab ? ' nav-tab-icon--audio-grid' : ''}`}>
           <Icon size={isAudioGridTab ? 20 : 16} aria-hidden />
@@ -853,6 +856,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               to={item.to}
               className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
               onClick={closeMobileNavigation}
+              onMouseEnter={() => prefetchAppRoute(item.to)}
+              onFocus={() => prefetchAppRoute(item.to)}
               title={`${item.description} • ${item.maturity}`}
             >
               <span className="mobile-bottom-tab-icon">

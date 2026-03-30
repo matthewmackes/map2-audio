@@ -24,7 +24,7 @@ const mockDesignLibraryResponse = {
   blocks: [{ block_type: 'LevelControl', title: 'Level Control', io: { inputs: [], outputs: [] } }],
 }
 
-const mockDesignDetailResponse = {
+let mockDesignDetailResponse = {
   design: {
     design_id: 'design-1',
     name: 'Ballroom Main',
@@ -167,6 +167,15 @@ describe('TesiraDesignCanvas', () => {
     mockCompileActiveMutateAsync.mockClear()
     mockCompileAllMutateAsync.mockClear()
     mockCompileUncompiledMutateAsync.mockClear()
+    mockDesignDetailResponse = {
+      design: {
+        design_id: 'design-1',
+        name: 'Ballroom Main',
+        compile_status: 'UNCOMPILED',
+        compile_revision: 0,
+        graph: { nodes: [], edges: [], groups: [] },
+      },
+    }
   })
 
   it('adds a library block to the graph and saves the selected design', async () => {
@@ -201,6 +210,35 @@ describe('TesiraDesignCanvas', () => {
           groups: [],
         }),
       })
+    })
+  })
+
+  it('preserves unsaved local graph edits when the selected design refetches', async () => {
+    const { rerender } = render(<TesiraDesignCanvas deviceId="tesira-1" />)
+
+    fireEvent.change(screen.getByLabelText('Block'), {
+      target: { value: 'LevelControl' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add block' }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('react-flow').textContent).toContain('1 nodes')
+    })
+
+    mockDesignDetailResponse = {
+      design: {
+        design_id: 'design-1',
+        name: 'Ballroom Main',
+        compile_status: 'UNCOMPILED',
+        compile_revision: 0,
+        graph: { nodes: [], edges: [], groups: [] },
+      },
+    }
+
+    rerender(<TesiraDesignCanvas deviceId="tesira-1" />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('react-flow').textContent).toContain('1 nodes')
     })
   })
 })

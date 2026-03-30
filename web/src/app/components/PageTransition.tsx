@@ -4,6 +4,7 @@ import { useLocation, useNavigationType } from 'react-router-dom'
 
 import { MapClusterFabricIcon } from './icons/map'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
+import { markRouteRenderReady, markRouteRenderStart, reportRouteRequestVolume } from '../performance/devDiagnostics'
 import './PageTransition.css'
 
 type TransitionScope = {
@@ -24,9 +25,9 @@ interface TransitionSnapshot {
   direction: TransitionDirection
 }
 
-const BLOCK_REVEAL_DURATION_MS = 880
-const FADE_DURATION_MS = 220
-const PAGER_SLIDE_DURATION_MS = 520
+const BLOCK_REVEAL_DURATION_MS = 160
+const FADE_DURATION_MS = 140
+const PAGER_SLIDE_DURATION_MS = 160
 const TRANSITION_BLOCK_COLUMNS = 8
 const TRANSITION_BLOCK_ROWS = 5
 const TRANSITION_BLOCK_MOBILE_COLUMNS = 5
@@ -126,6 +127,31 @@ export function PageTransition({ children }: PageTransitionProps) {
       window.clearTimeout(timeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    markRouteRenderStart(location.pathname)
+
+    let cancelled = false
+    let firstFrameId = 0
+    let secondFrameId = 0
+
+    firstFrameId = window.requestAnimationFrame(() => {
+      secondFrameId = window.requestAnimationFrame(() => {
+        if (cancelled) {
+          return
+        }
+
+        markRouteRenderReady(location.pathname)
+        reportRouteRequestVolume(location.pathname)
+      })
+    })
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(firstFrameId)
+      window.cancelAnimationFrame(secondFrameId)
+    }
+  }, [location.pathname])
 
   return (
     <div className={`page-transition-scope${transition?.mode === 'pager' ? ' page-transition-scope--pager-active' : ''}`}>

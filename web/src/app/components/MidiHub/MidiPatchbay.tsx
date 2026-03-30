@@ -6,6 +6,8 @@ import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 import { normalizePatchbayTopologyNodeIds } from './patchbayTopology'
 import { readPorts } from './portUtils'
+import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
+import { useRouteActive } from '../../hooks/useRouteActive'
 
 type NodeInfo = {
   id: string
@@ -30,10 +32,25 @@ function handleSvgActionKey(event: KeyboardEvent<SVGElement>, action: () => void
   action()
 }
 
-export function MidiPatchbay() {
+export function MidiPatchbay({ active = true }: { active?: boolean }) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
+  const routeActive = useRouteActive(['/midi-hub/connections'])
+  const standardCadence = useRealtimeCadence({
+    enabled: active,
+    routeActive,
+    visibleMs: 2_500,
+    hiddenMs: 10_000,
+    inactiveMs: false,
+  })
+  const trafficCadence = useRealtimeCadence({
+    enabled: active,
+    routeActive,
+    visibleMs: 1_000,
+    hiddenMs: 5_000,
+    inactiveMs: false,
+  })
   const [pendingSource, setPendingSource] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<MidiHubRoute | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeInfo | null>(null)
@@ -45,25 +62,25 @@ export function MidiPatchbay() {
   const statusQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'status'],
     queryFn: () => midiHubApi.getStatus(nodeId),
-    refetchInterval: 2500,
+    refetchInterval: standardCadence,
   })
 
   const routesQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'routes'],
     queryFn: () => midiHubApi.getRoutes(nodeId),
-    refetchInterval: 2500,
+    refetchInterval: standardCadence,
   })
 
   const topologyQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'topology'],
     queryFn: () => midiHubApi.getTopology(nodeId),
-    refetchInterval: 2500,
+    refetchInterval: standardCadence,
   })
 
   const trafficQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'traffic', 'patchbay-heatmap'],
     queryFn: () => midiHubApi.getTrafficSnapshot({ limit: 1000 }, nodeId),
-    refetchInterval: 1000,
+    refetchInterval: trafficCadence,
   })
 
   const ports = useMemo(

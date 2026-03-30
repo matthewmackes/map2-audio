@@ -30,6 +30,8 @@ import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useToasts } from '../Toasts'
 import { readPorts } from './portUtils'
+import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
+import { useRouteActive } from '../../hooks/useRouteActive'
 
 type MatrixSelection = {
   sourcePort: string
@@ -91,10 +93,18 @@ function hasAdvancedRouteState(route: MidiHubRoute | undefined): boolean {
   return false
 }
 
-export function MidiRoutingMatrix() {
+export function MidiRoutingMatrix({ active = true }: { active?: boolean }) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
+  const routeActive = useRouteActive(['/midi-hub/connections'])
+  const refetchInterval = useRealtimeCadence({
+    enabled: active,
+    routeActive,
+    visibleMs: 2_500,
+    hiddenMs: 10_000,
+    inactiveMs: false,
+  })
   const [selection, setSelection] = useState<MatrixSelection | null>(null)
   const [searchValue, setSearchValue] = useState('')
   const [enabled, setEnabled] = useState(true)
@@ -109,13 +119,13 @@ export function MidiRoutingMatrix() {
   const statusQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'status'],
     queryFn: () => midiHubApi.getStatus(nodeId),
-    refetchInterval: 2500,
+    refetchInterval,
   })
 
   const routesQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'routes'],
     queryFn: () => midiHubApi.getRoutes(nodeId),
-    refetchInterval: 2500,
+    refetchInterval,
   })
 
   const routeMap = useMemo(() => buildRouteMap(routesQuery.data?.routes ?? []), [routesQuery.data?.routes])
