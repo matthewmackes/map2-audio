@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**870** Python | **997** TypeScript | **131** C++/H | **129** Docs | **1097** total commits | **3** stars | **0** forks | **0** open issues
+**870** Python | **995** TypeScript | **131** C++/H | **129** Docs | **1099** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`28e3fb5a`](https://github.com/matthewmackes/map2-audio/commit/28e3fb5aa2a5f20e54e3ec9b811e8925dd28250f) | Restore direct snapshot creation | Map2 Audio | 2026-03-30 |
+| [`dbf8b1b6`](https://github.com/matthewmackes/map2-audio/commit/dbf8b1b6dc6d9e7c9c016ba51f9e7915a0fca7ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`569ae033`](https://github.com/matthewmackes/map2-audio/commit/569ae03306ced3c4ae4fa54e12f4112f21a194cd) | Add sequential snapshot questionnaire workflow | Map2 Audio | 2026-03-30 |
 | [`36fb264e`](https://github.com/matthewmackes/map2-audio/commit/36fb264e09a8ef799fdb66ba65ede8279d094351) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`ae4094f9`](https://github.com/matthewmackes/map2-audio/commit/ae4094f9ddf0e17d8d7969152885c542ded4071a) | Add snapshot artifacts workspace and flatten flow cards | Map2 Audio | 2026-03-30 |
 | [`f53f85e1`](https://github.com/matthewmackes/map2-audio/commit/f53f85e1363204f78729b9baf0d2bcbb0f65f968) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
 | [`71d01a5e`](https://github.com/matthewmackes/map2-audio/commit/71d01a5e2ae3fb33cc01b175d9029663598c1ebc) | Complete snapshot hydration fixes and add Ground Control ... | Map2 Audio | 2026-03-30 |
 | [`d5ccf6df`](https://github.com/matthewmackes/map2-audio/commit/d5ccf6df28f5a0ad7f84e89df406e73a6f867573) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-30 |
-| [`a468386b`](https://github.com/matthewmackes/map2-audio/commit/a468386b17a3b876f8bb780aa80b16908761a9fc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-30 |
-| [`f6f329b7`](https://github.com/matthewmackes/map2-audio/commit/f6f329b7b5c6a13f28186f109dced30abdd5c2da) | Fix snapshot editor live hydration | Map2 Audio | 2026-03-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
