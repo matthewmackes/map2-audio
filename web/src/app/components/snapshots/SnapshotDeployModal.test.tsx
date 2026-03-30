@@ -5,11 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockPushToast = jest.fn()
 const mockFetch = jest.fn()
-const mockGetFlowSnapshot = jest.fn()
+const mockGetSnapshot = jest.fn()
 
-jest.mock('../../../map2/api', () => ({
-  flowSnapshotsApi: {
-    get: (...args: unknown[]) => mockGetFlowSnapshot(...args),
+jest.mock('../../../map2/clients/snapshots', () => ({
+  snapshotsApi: {
+    get: (...args: unknown[]) => mockGetSnapshot(...args),
   },
 }))
 
@@ -77,52 +77,82 @@ function renderDialog(onClose = jest.fn()) {
 
 describe('SnapshotDeployModal', () => {
   beforeEach(() => {
-    mockGetFlowSnapshot.mockReset()
+    mockGetSnapshot.mockReset()
     mockPushToast.mockReset()
     mockFetch.mockReset()
 
-    mockGetFlowSnapshot.mockResolvedValue({
+    mockGetSnapshot.mockResolvedValue({
       id: 101,
       name: 'Studio Clean',
       description: '',
       tags: [],
       program_number: null,
+      input_device: null,
+      output_device: null,
       is_active: false,
       is_favorite: false,
       display_order: 1,
-      flow_slots: [],
       created_at: '2026-03-28T00:00:00Z',
       updated_at: '2026-03-28T00:00:00Z',
-      snapshot_data: {
-        flowSlots: [],
-        routing: {
-          mode: 'parallel_blend',
-          activeSlotId: null,
-          blendPositions: {},
-          morphProgress: 0,
-          morphSourceSlotId: null,
-          morphTargetSlotId: null,
-          seriesOrder: [],
-        },
-        activeFlowIndex: 0,
-        chains: {
-          '1': {
-            name: 'Amp Chain',
-            plugins: [
-              {
-                uri: 'map2://juce/nam',
-                position: 0,
-                bypass: false,
-                parameters: {},
-                loader_state: {
-                  selected_asset_name: 'Edge Clean',
-                  selected_asset_path: '/models/edge-clean.nam',
-                },
-              },
-            ],
-          },
-        },
+      channels: [],
+      channel_count: 0,
+      chain_count: 1,
+      community_shared: false,
+      community_download_count: 0,
+      community_rating: null,
+      community_rating_count: 0,
+      routing: {
+        mode: 'parallel_blend',
+        active_channel_key: null,
+        blend_positions: {},
+        morph_position: 0,
+        morph_source_channel_key: null,
+        morph_target_channel_key: null,
+        series_order: [],
       },
+      midi_map: [],
+      paths: [],
+      io_bindings: {
+        input_device: null,
+        output_device: null,
+        remap_required: false,
+      },
+      controls: {
+        midi_map: [],
+        automation_lanes: [],
+        expression_mappings: [],
+      },
+      chains: [
+        {
+          id: 1,
+          name: 'Amp Path',
+          plugins: [
+            {
+              uri: 'map2://juce/nam',
+              position: 0,
+              bypass: false,
+              parameters: {},
+              loader_state: {
+                selected_asset_name: 'Edge Clean',
+                selected_asset_path: '/models/edge-clean.nam',
+              },
+            },
+          ],
+          loop_insertions: [],
+          effects_loops: [],
+        },
+      ],
+      assets: [],
+      live_state: {
+        is_live: false,
+        paths: [],
+        runtime_chains: [],
+      },
+      lineage: {
+        derived_from_snapshot_id: null,
+      },
+      active_channel_index: 0,
+      deployments: [],
     })
 
     if (typeof window.matchMedia !== 'function') {
@@ -235,7 +265,7 @@ describe('SnapshotDeployModal', () => {
     expect(await screen.findByText('node-b')).toBeInTheDocument()
     expect(await screen.findByText('Edge Clean')).toBeInTheDocument()
 
-    await waitFor(() => expect(mockGetFlowSnapshot).toHaveBeenCalledWith(101))
+    await waitFor(() => expect(mockGetSnapshot).toHaveBeenCalledWith(101))
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/preset-exchange/cluster/library?content_type=nam&node_id=all')

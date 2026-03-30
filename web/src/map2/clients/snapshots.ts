@@ -12,6 +12,7 @@ import type {
   SnapshotControls,
   SnapshotDeployment,
   SnapshotDetail,
+  SnapshotDraftData,
   SnapshotExport,
   SnapshotIOBindings,
   SnapshotPath,
@@ -174,7 +175,7 @@ function normalizeSnapshotPlugin(plugin: SnapshotPlugin): SnapshotPlugin {
   }
 }
 
-export function snapshotDetailToFlowSnapshotData(detail: SnapshotDetail): FlowSnapshotData {
+export function snapshotDetailToDraftData(detail: SnapshotDetail): SnapshotDraftData {
   const detailPaths = Array.isArray(detail.paths) ? detail.paths : []
   const paths = detailPaths.length > 0
     ? detailPaths
@@ -352,10 +353,12 @@ export function snapshotSummaryToFlowSnapshot(summary: SnapshotSummary): FlowSna
   }
 }
 
+export const snapshotDetailToFlowSnapshotData = snapshotDetailToDraftData
+
 export function snapshotDetailToFlowSnapshotDetail(detail: SnapshotDetail): FlowSnapshotDetail {
   return {
     ...snapshotSummaryToFlowSnapshot(detail),
-    snapshot_data: snapshotDetailToFlowSnapshotData(detail),
+    snapshot_data: snapshotDetailToDraftData(detail),
   }
 }
 
@@ -368,7 +371,7 @@ export function snapshotLoadedEventToFlowSnapshotEvent(
     data: {
       snapshot_id: event.data.snapshot_id,
       snapshot_name: event.data.snapshot_name,
-      snapshot_data: snapshotDetailToFlowSnapshotData(event.data.snapshot_data),
+      snapshot_data: snapshotDetailToDraftData(event.data.snapshot_data),
       triggered_by: event.data.triggered_by,
       program_number: event.data.program_number,
     },
@@ -419,7 +422,7 @@ export const snapshotsApi = {
       method: 'POST',
     }),
 
-  preview: (snapshotData: Pick<SnapshotDetail, 'channels' | 'chains' | 'routing' | 'midi_map'> | FlowSnapshotData) => {
+  preview: (snapshotData: Pick<SnapshotDetail, 'channels' | 'chains' | 'routing' | 'midi_map'> | SnapshotDraftData) => {
     const payload = 'flowSlots' in snapshotData
       ? flowSnapshotDataToSnapshotPayload(snapshotData)
       : snapshotData

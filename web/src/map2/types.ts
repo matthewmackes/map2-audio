@@ -2188,13 +2188,16 @@ export interface ChainSnapshot {
   plugins: PluginSnapshot[];
 }
 
-/** Complete flow snapshot data payload */
-export interface FlowSnapshotData {
+/** Editable snapshot draft payload used by the snapshot library and editor */
+export interface SnapshotDraftData {
   flowSlots: FlowSlotSnapshot[];
   routing: RoutingConfigSnapshot;
   activeFlowIndex: number;
   chains: Record<string, ChainSnapshot>;  // chainId -> ChainSnapshot
 }
+
+/** @deprecated Use SnapshotDraftData */
+export type FlowSnapshotData = SnapshotDraftData;
 
 /** Flow slot summary for list view */
 export interface FlowSlotSummary {

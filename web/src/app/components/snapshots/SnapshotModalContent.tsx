@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Add, ChevronRight, Draggable, Flow, Renew } from '@carbon/icons-react'
+import { Add, ChevronRight, Draggable, Renew } from '@carbon/icons-react'
 import {
   Button,
   InlineLoading,
@@ -15,7 +15,7 @@ import {
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
-import type { ChainSnapshot, FlowSnapshot, FlowSnapshotDetail, FlowSnapshotData } from '../../../map2/types'
+import type { SnapshotDetail, SnapshotDraftData, SnapshotSummary } from '../../../map2/types'
 import {
   buildSnapshotComparisonSummary,
   checkSnapshotMorphCompatibility,
@@ -26,14 +26,20 @@ import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
 import {
   flowSnapshotDataToSnapshotPayload,
-  snapshotDetailToFlowSnapshotData,
-  snapshotDetailToFlowSnapshotDetail,
-  snapshotSummaryToFlowSnapshot,
+  snapshotDetailToDraftData,
   snapshotsApi,
 } from '../../../map2/clients/snapshots'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+function getSnapshotPathSummaries(snapshot: SnapshotSummary) {
+  return snapshot.channels.map((channel) => ({
+    id: channel.channel_key,
+    label: channel.label,
+    color: channel.color,
+  }))
 }
 
 export interface SnapshotModalContentProps {
@@ -42,8 +48,8 @@ export interface SnapshotModalContentProps {
   onSnapshotSave?: () => void
   activeTab?: string
   onTabChange?: (activeTab: string) => void
-  snapshotDraft: FlowSnapshotData
-  applySnapshotData: (snapshotData: FlowSnapshotData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
+  snapshotDraft: SnapshotDraftData
+  applySnapshotData: (snapshotData: SnapshotDraftData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
 }
 
 export function SnapshotModalContent({
@@ -68,115 +74,90 @@ export function SnapshotModalContent({
     }
   }, [safeTab, handleTabChange])
 
-  const flowSnapshotsQuery = useQuery<{
-    snapshots: FlowSnapshot[]
+  const snapshotsQuery = useQuery<{
+    snapshots: SnapshotSummary[]
     count: number
     active_id: number | null
   }>({
     queryKey: ['snapshots'],
-    queryFn: async () => {
-      const response = await snapshotsApi.list()
-      return {
-        snapshots: response.snapshots.map(snapshotSummaryToFlowSnapshot),
-        count: response.count,
-        active_id: response.active_id,
-      }
-    },
+    queryFn: async () => snapshotsApi.list(),
     refetchInterval: 5000,
   })
 
-  const activeSnapshotId = flowSnapshotsQuery.data?.active_id ?? null
+  const activeSnapshotId = snapshotsQuery.data?.active_id ?? null
 
-  const activeSnapshotDetailQuery = useQuery<FlowSnapshotDetail>({
+  const activeSnapshotDetailQuery = useQuery<SnapshotDetail>({
     queryKey: ['snapshots', 'detail', activeSnapshotId],
-    queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(activeSnapshotId as number)),
+    queryFn: async () => snapshotsApi.get(activeSnapshotId as number),
     enabled: activeSnapshotId !== null,
   })
 
   const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
-  const snapshotCompareDetailQuery = useQuery<FlowSnapshotDetail>({
+  const snapshotCompareDetailQuery = useQuery<SnapshotDetail>({
     queryKey: ['snapshots', 'compare-detail', snapshotCompareTargetId],
-    queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotCompareTargetId as number)),
+    queryFn: async () => snapshotsApi.get(snapshotCompareTargetId as number),
     enabled: snapshotCompareTargetId !== null,
   })
 
-  const flowSnapshots = useMemo(() => {
-    const raw = flowSnapshotsQuery.data?.snapshots || []
+  const savedSnapshots = useMemo(() => {
+    const raw = snapshotsQuery.data?.snapshots || []
     return [...raw].sort((a, b) => {
       if (a.is_favorite && !b.is_favorite) return -1
       if (!a.is_favorite && b.is_favorite) return 1
       return a.display_order - b.display_order
     })
-  }, [flowSnapshotsQuery.data?.snapshots])
+  }, [snapshotsQuery.data?.snapshots])
 
   const activeSnapshot = useMemo(
-    () => flowSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active) ?? null,
-    [activeSnapshotId, flowSnapshots],
+    () => savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active) ?? null,
+    [activeSnapshotId, savedSnapshots],
   )
   const favoriteSnapshots = useMemo(
-    () => flowSnapshots.filter((snapshot) => snapshot.is_favorite),
-    [flowSnapshots],
+    () => savedSnapshots.filter((snapshot) => snapshot.is_favorite),
+    [savedSnapshots],
   )
   const librarySnapshots = useMemo(
-    () => flowSnapshots.filter((snapshot) => !snapshot.is_favorite),
-    [flowSnapshots],
+    () => savedSnapshots.filter((snapshot) => !snapshot.is_favorite),
+    [savedSnapshots],
   )
   const activeSnapshotNeedsUpdate = useMemo(
     () => Boolean(
       activeSnapshot
-      && activeSnapshotDetailQuery.data?.snapshot_data
-      && fingerprintSnapshotData(activeSnapshotDetailQuery.data.snapshot_data) !== fingerprintSnapshotData(snapshotDraft),
+      && activeSnapshotDetailQuery.data
+      && fingerprintSnapshotData(snapshotDetailToDraftData(activeSnapshotDetailQuery.data)) !== fingerprintSnapshotData(snapshotDraft),
     ),
-    [activeSnapshot, activeSnapshotDetailQuery.data?.snapshot_data, snapshotDraft],
+    [activeSnapshot, activeSnapshotDetailQuery.data, snapshotDraft],
   )
 
-  const currentSnapshotFingerprint = useMemo(
-    () => fingerprintSnapshotData(snapshotDraft),
-    [snapshotDraft],
-  )
-  const activeSnapshotFingerprint = useMemo(
-    () => activeSnapshotDetailQuery.data?.snapshot_data
-      ? fingerprintSnapshotData(activeSnapshotDetailQuery.data.snapshot_data)
-      : null,
-    [activeSnapshotDetailQuery.data?.snapshot_data],
-  )
-  const compareTargetSnapshot = useMemo(
-    () => flowSnapshots.find((snapshot) => snapshot.id === snapshotCompareTargetId) ?? null,
-    [flowSnapshots, snapshotCompareTargetId],
-  )
   const snapshotComparisonSummary = useMemo(() => {
-    if (!snapshotCompareDetailQuery.data?.snapshot_data) {
+    if (!snapshotCompareDetailQuery.data) {
       return null
     }
-    const baseData = activeSnapshotDetailQuery.data?.snapshot_data ?? snapshotDraft
-    return buildSnapshotComparisonSummary(baseData, snapshotCompareDetailQuery.data.snapshot_data)
-  }, [activeSnapshotDetailQuery.data?.snapshot_data, snapshotDraft, snapshotCompareDetailQuery.data?.snapshot_data])
+    const baseData = activeSnapshotDetailQuery.data
+      ? snapshotDetailToDraftData(activeSnapshotDetailQuery.data)
+      : snapshotDraft
+    return buildSnapshotComparisonSummary(baseData, snapshotDetailToDraftData(snapshotCompareDetailQuery.data))
+  }, [activeSnapshotDetailQuery.data, snapshotDraft, snapshotCompareDetailQuery.data])
 
   const [contentView, setContentView] = useState<'entry' | 'library' | 'wizard'>(entryPoint ? 'entry' : 'library')
-  const [snapshotPendingRename, setSnapshotPendingRename] = useState<FlowSnapshot | null>(null)
+  const [snapshotPendingRename, setSnapshotPendingRename] = useState<SnapshotSummary | null>(null)
   const [snapshotRenameValue, setSnapshotRenameValue] = useState('')
-  const [snapshotPendingDelete, setSnapshotPendingDelete] = useState<FlowSnapshot | null>(null)
-  const [snapshotPendingProgram, setSnapshotPendingProgram] = useState<FlowSnapshot | null>(null)
+  const [snapshotPendingDelete, setSnapshotPendingDelete] = useState<SnapshotSummary | null>(null)
+  const [snapshotPendingProgram, setSnapshotPendingProgram] = useState<SnapshotSummary | null>(null)
   const [snapshotProgramValue, setSnapshotProgramValue] = useState('')
   const [draggedSnapshotId, setDraggedSnapshotId] = useState<number | null>(null)
   const [dragOverSnapshotId, setDragOverSnapshotId] = useState<number | null>(null)
   const [snapshotLibraryExpanded, setSnapshotLibraryExpanded] = useState(false)
   const [momentarySnapshotId, setMomentarySnapshotId] = useState<number | null>(null)
-  const [snapshotMorphTarget, setSnapshotMorphTarget] = useState<FlowSnapshot | null>(null)
+  const [snapshotMorphTarget, setSnapshotMorphTarget] = useState<SnapshotSummary | null>(null)
   const [snapshotMorphDurationMs, setSnapshotMorphDurationMs] = useState(1200)
   const [snapshotMorphRunning, setSnapshotMorphRunning] = useState(false)
   const [snapshotCompareTarget, setSnapshotCompareTarget] = useState<number | null>(null)
 
   const [snapshotComparisonId, setSnapshotComparisonId] = useState<number | null>(null)
-  const activeSnapshotDataForCompare = useMemo(() => {
-    if (!snapshotComparisonId) {
-      return null
-    }
-    return flowSnapshots.find((snapshot) => snapshot.id === snapshotComparisonId) ?? null
-  }, [flowSnapshots, snapshotComparisonId])
   const compareSummaryId = useMemo(() => snapshotComparisonId ?? snapshotCompareTarget, [snapshotComparisonId, snapshotCompareTarget])
 
-  const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
+  const momentaryRestoreStateRef = useRef<SnapshotDraftData | null>(null)
   const createFlowSnapshotMutation = useMutation({
     mutationFn: async (values: SnapshotNewWizardValues) => {
       const pathDefinitions = [
@@ -242,7 +223,7 @@ export function SnapshotModalContent({
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setContentView('library')
       onSnapshotSave?.()
-      applySnapshotData(snapshotDetailToFlowSnapshotData(response.snapshot_data), {
+      applySnapshotData(snapshotDetailToDraftData(response.snapshot_data), {
         toastMessage: 'Snapshot created',
         invalidateChains: true,
       })
@@ -257,7 +238,7 @@ export function SnapshotModalContent({
     mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      applySnapshotData(snapshotDetailToFlowSnapshotData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
+      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: true })
       onRecall?.()
     },
     onError: (error) => {
@@ -266,7 +247,7 @@ export function SnapshotModalContent({
   })
 
   const updateFlowSnapshotMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: { name?: string; description?: string; tags?: string[]; display_order?: number; is_favorite?: boolean; snapshot_data?: FlowSnapshotData } }) =>
+    mutationFn: ({ id, updates }: { id: number; updates: { name?: string; description?: string; tags?: string[]; display_order?: number; is_favorite?: boolean; snapshot_data?: SnapshotDraftData } }) =>
       snapshotsApi.update(id, {
         name: updates.name,
         description: updates.description,
@@ -284,7 +265,7 @@ export function SnapshotModalContent({
   })
 
   const refreshActiveSnapshotMutation = useMutation({
-    mutationFn: ({ id, snapshotData }: { id: number; snapshotData: FlowSnapshotData }) =>
+    mutationFn: ({ id, snapshotData }: { id: number; snapshotData: SnapshotDraftData }) =>
       snapshotsApi.update(id, flowSnapshotDataToSnapshotPayload(snapshotData)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
@@ -335,7 +316,7 @@ export function SnapshotModalContent({
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to reorder flow snapshots', 'error')
+      pushToast(error instanceof Error ? error.message : 'Failed to reorder snapshots', 'error')
     },
   })
 
@@ -343,7 +324,7 @@ export function SnapshotModalContent({
     setContentView('wizard')
   }, [])
 
-  const openSnapshotRenameModal = useCallback((snapshot: FlowSnapshot) => {
+  const openSnapshotRenameModal = useCallback((snapshot: SnapshotSummary) => {
     setSnapshotPendingRename(snapshot)
     setSnapshotRenameValue(snapshot.name)
   }, [])
@@ -372,7 +353,7 @@ export function SnapshotModalContent({
     setSnapshotPendingDelete(null)
   }, [deleteFlowSnapshotMutation, snapshotPendingDelete])
 
-  const openSnapshotProgramModal = useCallback((snapshot: FlowSnapshot) => {
+  const openSnapshotProgramModal = useCallback((snapshot: SnapshotSummary) => {
     setSnapshotPendingProgram(snapshot)
     setSnapshotProgramValue(snapshot.program_number?.toString() || '')
   }, [])
@@ -399,18 +380,18 @@ export function SnapshotModalContent({
     closeSnapshotProgramModal()
   }, [closeSnapshotProgramModal, snapshotPendingProgram, setFlowSnapshotProgramMutation, snapshotProgramValue, pushToast])
 
-  const clearSnapshotProgram = useCallback((snapshot: FlowSnapshot) => {
+  const clearSnapshotProgram = useCallback((snapshot: SnapshotSummary) => {
     setFlowSnapshotProgramMutation.mutate({ id: snapshot.id, programNumber: null })
   }, [setFlowSnapshotProgramMutation])
 
-  const handleSnapshotFavoriteToggle = useCallback((snapshot: FlowSnapshot) => {
+  const handleSnapshotFavoriteToggle = useCallback((snapshot: SnapshotSummary) => {
     updateFlowSnapshotMutation.mutate({
       id: snapshot.id,
       updates: { is_favorite: !snapshot.is_favorite },
     })
   }, [updateFlowSnapshotMutation])
 
-  const handleSnapshotDuplicate = useCallback((snapshot: FlowSnapshot) => {
+  const handleSnapshotDuplicate = useCallback((snapshot: SnapshotSummary) => {
     duplicateFlowSnapshotMutation.mutate(snapshot.id)
   }, [duplicateFlowSnapshotMutation])
 
@@ -427,22 +408,22 @@ export function SnapshotModalContent({
   const fetchSnapshotDetail = useCallback((snapshotId: number) => (
     queryClient.fetchQuery({
       queryKey: ['snapshots', 'detail', snapshotId],
-      queryFn: async () => snapshotDetailToFlowSnapshotDetail(await snapshotsApi.get(snapshotId)),
+      queryFn: async () => snapshotsApi.get(snapshotId),
     })
   ), [queryClient])
 
-  const previewSnapshotData = useCallback(async (snapshotData: FlowSnapshotData) => {
+  const previewSnapshotData = useCallback(async (snapshotData: SnapshotDraftData) => {
     const result = await snapshotsApi.preview(snapshotData)
-    const nextSnapshotData = snapshotDetailToFlowSnapshotData(result.snapshot_data)
+    const nextSnapshotData = snapshotDetailToDraftData(result.snapshot_data)
     applySnapshotData(nextSnapshotData, { toastMessage: null, invalidateChains: false })
     return nextSnapshotData
   }, [applySnapshotData])
 
-  const toggleSnapshotCompare = useCallback((snapshot: FlowSnapshot) => {
+  const toggleSnapshotCompare = useCallback((snapshot: SnapshotSummary) => {
     setSnapshotCompareTargetId((current) => current === snapshot.id ? null : snapshot.id)
   }, [])
 
-  const startMomentaryPreview = useCallback(async (snapshot: FlowSnapshot) => {
+  const startMomentaryPreview = useCallback(async (snapshot: SnapshotSummary) => {
     if (momentarySnapshotId !== null || snapshotMorphRunning) {
       return
     }
@@ -451,7 +432,7 @@ export function SnapshotModalContent({
       const detail = await fetchSnapshotDetail(snapshot.id)
       momentaryRestoreStateRef.current = snapshotDraft
       setMomentarySnapshotId(snapshot.id)
-      await previewSnapshotData(detail.snapshot_data)
+      await previewSnapshotData(snapshotDetailToDraftData(detail))
     } catch (error) {
       momentaryRestoreStateRef.current = null
       setMomentarySnapshotId(null)
@@ -507,7 +488,9 @@ export function SnapshotModalContent({
     try {
       const sourceDetail = activeSnapshotDetailQuery.data ?? await fetchSnapshotDetail(activeSnapshot.id)
       const targetDetail = await fetchSnapshotDetail(snapshotMorphTarget.id)
-      const compatibility = checkSnapshotMorphCompatibility(sourceDetail.snapshot_data, targetDetail.snapshot_data)
+      const sourceDraft = snapshotDetailToDraftData(sourceDetail)
+      const targetDraft = snapshotDetailToDraftData(targetDetail)
+      const compatibility = checkSnapshotMorphCompatibility(sourceDraft, targetDraft)
       if (!compatibility.ok) {
         pushToast(compatibility.reason || 'Snapshots are not morph-compatible.', 'error')
         return
@@ -517,8 +500,8 @@ export function SnapshotModalContent({
       const steps = Math.max(6, Math.min(20, Math.round(snapshotMorphDurationMs / 100)))
       for (let step = 1; step < steps; step += 1) {
         const frame = interpolateSnapshotData(
-          sourceDetail.snapshot_data,
-          targetDetail.snapshot_data,
+          sourceDraft,
+          targetDraft,
           step / steps,
         )
         await previewSnapshotData(frame)
@@ -548,7 +531,7 @@ export function SnapshotModalContent({
     snapshotMorphTarget,
   ])
 
-const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, snapshot: FlowSnapshot) => {
+const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, snapshot: SnapshotSummary) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       loadFlowSnapshotMutation.mutate(snapshot.id)
@@ -580,7 +563,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
       return
     }
 
-    const nextOrder = [...flowSnapshots]
+    const nextOrder = [...savedSnapshots]
     const draggedIndex = nextOrder.findIndex((snapshot) => snapshot.id === draggedSnapshotId)
     const targetIndex = nextOrder.findIndex((snapshot) => snapshot.id === targetSnapshotId)
 
@@ -593,18 +576,18 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
     nextOrder.splice(targetIndex, 0, movedSnapshot)
     reorderFlowSnapshotsMutation.mutate(nextOrder.map((snapshot) => snapshot.id))
     handleSnapshotDragEnd()
-  }, [draggedSnapshotId, flowSnapshots, handleSnapshotDragEnd, reorderFlowSnapshotsMutation])
+  }, [draggedSnapshotId, savedSnapshots, handleSnapshotDragEnd, reorderFlowSnapshotsMutation])
 
   const [showImportDialog, setShowImportDialog] = useState(false)
-  const isLoading = flowSnapshotsQuery.isLoading
+  const isLoading = snapshotsQuery.isLoading
   const activeSnapshotDisplayName = activeSnapshot?.name || 'Live Workspace'
   const activeSnapshotDisplayNumber = activeSnapshot ? String(activeSnapshot.id).padStart(2, '0') : 'LIVE'
   const snapshotComparisonSnapshot = useMemo(() => {
     if (compareSummaryId === null) {
       return null
     }
-    return flowSnapshots.find((snapshot) => snapshot.id === compareSummaryId) ?? null
-  }, [compareSummaryId, flowSnapshots])
+    return savedSnapshots.find((snapshot) => snapshot.id === compareSummaryId) ?? null
+  }, [compareSummaryId, savedSnapshots])
 
   useEffect(() => {
     setContentView(entryPoint ? 'entry' : 'library')
@@ -627,8 +610,8 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
 
   const activeSnapshotDescription = activeSnapshot?.description?.trim()
     || (activeSnapshot
-      ? 'Recallable snapshot for the current multi-flow rig.'
-      : 'Capture the current routing, chains, and active blocks into the snapshot library.')
+      ? 'Recallable snapshot for the current signal-path workspace.'
+      : 'Capture the current routing, paths, and active blocks into the snapshot library.')
 
   if (contentView === 'entry') {
     return (
@@ -636,7 +619,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
         <div className="juce-grid-page__snapshot-header">
           <div className="juce-grid-page__snapshot-copy">
             <strong>Choose a starting point</strong>
-            <span>{flowSnapshots.length} saved snapshots available</span>
+            <span>{savedSnapshots.length} saved snapshots available</span>
           </div>
         </div>
 
@@ -664,8 +647,8 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
   if (contentView === 'wizard') {
     return (
       <SnapshotNewWizard
-        existingSnapshotNames={flowSnapshots.map((snapshot) => snapshot.name)}
-        initialName={`Snapshot ${flowSnapshots.length + 1}`}
+        existingSnapshotNames={savedSnapshots.map((snapshot) => snapshot.name)}
+        initialName={`Snapshot ${savedSnapshots.length + 1}`}
         isSubmitting={createFlowSnapshotMutation.isPending}
         onCancel={() => setContentView(entryPoint ? 'entry' : 'library')}
         onSubmit={async (values) => {
@@ -691,7 +674,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
         <div className="juce-grid-page__snapshot-header">
           <div className="juce-grid-page__snapshot-copy">
             <strong>Snapshots</strong>
-            <span>{flowSnapshots.length} saved snapshots</span>
+            <span>{savedSnapshots.length} saved snapshots</span>
           </div>
           <div className="juce-grid-page__compact-actions">
             <Button size="sm" kind="primary" onClick={openSnapshotCreateWizard}>
@@ -733,7 +716,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                   Updated {new Date(activeSnapshot.updated_at).toLocaleString()}
                 </Tag>
               ) : (
-                <Tag type="warm-gray">{flowSnapshots.length} saved snapshots available</Tag>
+                <Tag type="warm-gray">{savedSnapshots.length} saved snapshots available</Tag>
               )}
               {activeSnapshot && activeSnapshotDetailQuery.isLoading && (
                 <Tag type="blue">Inspecting active snapshot</Tag>
@@ -799,11 +782,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
               </div>
 
               <div className="juce-grid-page__compact-tags">
-                <Tag type="cool-gray">{snapshotComparisonSummary.flowChanges} flow changes</Tag>
+                <Tag type="cool-gray">{snapshotComparisonSummary.flowChanges} path changes</Tag>
                 <Tag type="cool-gray">{snapshotComparisonSummary.chainChanges} chain changes</Tag>
                 <Tag type="cool-gray">{snapshotComparisonSummary.paramChanges} param changes</Tag>
                 {snapshotComparisonSummary.routingChanged && <Tag type="purple">Routing changed</Tag>}
-                {snapshotComparisonSummary.activeFlowChanged && <Tag type="blue">Active flow changed</Tag>}
+                {snapshotComparisonSummary.activeFlowChanged && <Tag type="blue">Active path changed</Tag>}
               </div>
 
               {activeSnapshot && activeSnapshotNeedsUpdate && (
@@ -816,11 +799,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
 
           {isLoading ? (
             <InlineLoading description="Loading snapshots" status="active" />
-          ) : flowSnapshots.length === 0 ? (
+          ) : savedSnapshots.length === 0 ? (
             <div className="juce-grid-page__empty-state">
               <p>No snapshots saved yet</p>
               <p className="juce-grid-page__empty-state-copy">
-                Capture the current multi-flow state to build a reusable snapshot library.
+                Capture the current signal-path state to build a reusable snapshot library.
               </p>
             </div>
           ) : (
@@ -878,7 +861,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                             </p>
 
                             <div className="juce-grid-page__snapshot-slot-row">
-                              {snapshot.flow_slots.map((slot) => (
+                              {getSnapshotPathSummaries(snapshot).map((slot) => (
                                 <span
                                   key={`${snapshot.id}-${slot.id}`}
                                   className="juce-grid-page__snapshot-slot"
@@ -1027,11 +1010,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                               </div>
 
                               <p className="juce-grid-page__snapshot-description">
-                                {snapshot.description || 'Recallable snapshot for the current multi-flow rig.'}
+                                {snapshot.description || 'Recallable snapshot for the current signal-path workspace.'}
                               </p>
 
                               <div className="juce-grid-page__snapshot-slot-row">
-                                {snapshot.flow_slots.map((slot) => (
+                                {getSnapshotPathSummaries(snapshot).map((slot) => (
                                   <span
                                     key={`${snapshot.id}-${slot.id}`}
                                     className="juce-grid-page__snapshot-slot"

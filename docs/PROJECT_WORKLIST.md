@@ -153,7 +153,7 @@ Last updated: 2026-03-29 19:26 EDT - Codex
   - Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS.
 
 ID: T547-subE
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Remove remaining FlowSnapshot adapters and MIDI fallback outside the canonical snapshot contract
 Description:
 - Goal / acceptance criteria: Eliminate the remaining `FlowSnapshot*` compatibility types/adapters from frontend snapshot editor/library surfaces and migrate MIDI program-change fallback from the legacy `FlowSnapshot` table to the canonical snapshot model. Preserve recall behavior and cover the migrated paths with focused tests.
@@ -161,9 +161,52 @@ Description:
 - Dependencies: T547-subD3
 - Estimated effort: High
 - Required outputs: frontend type/adapter cutover, backend MIDI fallback migration, focused regression coverage, and updated worklist notes.
+Subtasks:
+ID: T547-subE1
+Status: [✓] Done
+Title: Remove FlowSnapshot compatibility types from snapshot library and modal surfaces
+Description:
+- Goal / acceptance criteria: Cut snapshot library, modal, and deploy surfaces over from `FlowSnapshot*` compatibility types/adapters to canonical snapshot summary/detail or a canonical snapshot-draft type, while preserving existing create/load/preview/compare flows.
+- Why it matters: The snapshot library is still the main operator entry point and currently keeps the removed flow-snapshot mental model alive in the frontend contract.
+- Dependencies: T547-subD4
+- Estimated effort: Medium
+- Required outputs: snapshot modal/library type migration, deploy-surface cleanup, focused frontend validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-29 19:26 EDT - Codex
+Last updated: 2026-03-29 21:22 EDT - Codex
+- Completion notes:
+  - Introduced canonical `SnapshotDraftData` in `web/src/map2/types.ts` and used direct `SnapshotSummary` / `SnapshotDetail` contracts across `SnapshotModal.tsx` and `SnapshotModalContent.tsx`, removing library-surface dependence on `FlowSnapshot*` summary/detail adapters.
+  - Reworked snapshot-library rendering to derive path chips from canonical snapshot channels and updated operator-facing library copy from multi-flow wording to signal-path wording.
+  - Updated `SnapshotDeployModal.test.tsx` to mock the direct `snapshotsApi` client and canonical snapshot detail payload instead of the removed legacy API barrel surface.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModal.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotDeployModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
+
+ID: T547-subE2
+Status: [ ] Todo
+Title: Move Snapshot Editor state and comparison helpers to canonical snapshot-draft types
+Description:
+- Goal / acceptance criteria: Replace remaining `FlowSnapshotData` usage in Snapshot Editor page/state/comparison helpers with a canonical snapshot-draft type, remove editor-facing flow-snapshot adapter calls, and preserve load/save/compare behavior.
+- Why it matters: The editor is still the deepest remaining consumer of the legacy naming/model and blocks a clean snapshot-first mental model.
+- Dependencies: T547-subE1
+- Estimated effort: Medium
+- Required outputs: editor type migration, adapter cleanup, focused frontend validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 21:07 EDT - Codex
+
+ID: T547-subE3
+Status: [ ] Todo
+Title: Migrate MIDI program-change fallback from FlowSnapshot table to canonical snapshots
+Description:
+- Goal / acceptance criteria: Update MIDI program-change recall to resolve and activate canonical snapshots by program number instead of consulting the legacy `FlowSnapshot` table, while preserving operator-facing recall behavior and websocket/editor refresh paths.
+- Why it matters: The backend MIDI bridge is the last runtime path that still depends on the removed flow-snapshot persistence model.
+- Dependencies: T547-subE2
+- Estimated effort: Medium
+- Required outputs: backend service migration, focused backend regression coverage, final worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-29 21:07 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-03-29 21:07 EDT - Codex
 
 ID: T547-subD4
 Status: [✓] Done

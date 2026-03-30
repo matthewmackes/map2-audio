@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState, type UIEvent } from 'react'
 import { ComposedModal, ModalBody, ModalHeader } from '@carbon/react'
-import { snapshotDetailToFlowSnapshotData } from '../../../map2/clients/snapshots'
-import type { FlowSnapshotData, SnapshotDetail } from '../../../map2/types'
+import { snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
+import type { SnapshotDetail, SnapshotDraftData } from '../../../map2/types'
 import { SnapshotModalContent } from './SnapshotModalContent'
 
 export interface SnapshotModalProps {
   open: boolean
   onClose: () => void
   entryPoint?: boolean
-  snapshotDraft: FlowSnapshotData | SnapshotDetail
-  applySnapshotData: (snapshotData: FlowSnapshotData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
+  snapshotDraft: SnapshotDraftData | SnapshotDetail
+  applySnapshotData: (snapshotData: SnapshotDraftData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
   onSnapshotSave?: () => void
 }
 
@@ -44,7 +44,7 @@ export function SnapshotModal({
 }: SnapshotModalProps) {
   const normalizedSnapshotDraft = 'flowSlots' in snapshotDraft
     ? snapshotDraft
-    : snapshotDetailToFlowSnapshotData(snapshotDraft)
+    : snapshotDetailToDraftData(snapshotDraft)
   const [activeTab, setActiveTab] = useState(getStoredSnapshotTab)
   const [scrollTop, setScrollTop] = useState(getStoredSnapshotScroll)
   const bodyRef = useRef<HTMLDivElement>(null)
