@@ -26,10 +26,6 @@ import {
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
 import type { SnapshotDetail, SnapshotExport, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
-import {
-  SnapshotQuestionnaireModal,
-  type SnapshotQuestionnaireValue,
-} from '../snapshots/SnapshotQuestionnaireModal'
 
 type ToastKind = 'error' | 'info' | 'success' | 'warning'
 
@@ -143,7 +139,6 @@ export function SnapshotArtifactsWorkspace({
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<number | null>(null)
   const [targetNodeId, setTargetNodeId] = useState<string>('')
   const [programValue, setProgramValue] = useState<string>('')
-  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importPayloadText, setImportPayloadText] = useState('')
 
@@ -277,15 +272,10 @@ export function SnapshotArtifactsWorkspace({
   })
 
   const createMutation = useMutation({
-    mutationFn: async (draft?: SnapshotQuestionnaireValue) => {
-      const name = draft?.name?.trim() || `Snapshot ${snapshots.length + 1}`
+    mutationFn: async () => {
+      const name = `Snapshot ${snapshots.length + 1}`
       const created = await snapshotsApi.create({
         ...createDefaultSnapshotRequest(name),
-        description: draft?.description?.trim() || 'Created from Audio Artifacts snapshots workspace',
-        tags: draft?.tags ?? [],
-        program_number: draft?.program_number ?? null,
-        input_device: draft?.input_device ?? null,
-        output_device: draft?.output_device ?? null,
       })
       return snapshotsApi.activate(created.snapshot_id)
     },
@@ -293,20 +283,10 @@ export function SnapshotArtifactsWorkspace({
       await queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       queryClient.setQueryData(['snapshots', 'live'], result.snapshot_data)
       setSelectedSnapshotId(result.snapshot_id)
-      setCreateModalOpen(false)
       onToast('success', 'Snapshot created', result.name)
     },
     onError: (error: Error) => onToast('error', 'Failed to create snapshot', error.message),
   })
-
-  const defaultQuestionnaireValue: SnapshotQuestionnaireValue = {
-    name: `Snapshot ${snapshots.length + 1}`,
-    description: 'Created from Audio Artifacts snapshots workspace',
-    tags: [],
-    program_number: null,
-    input_device: null,
-    output_device: null,
-  }
 
   const importMutation = useMutation({
     mutationFn: async () => {
@@ -373,7 +353,7 @@ export function SnapshotArtifactsWorkspace({
               <Button kind="secondary" size="sm" renderIcon={CloudUpload} onClick={() => setImportModalOpen(true)}>
                 Import snapshot
               </Button>
-              <Button kind="primary" size="sm" renderIcon={Add} onClick={() => setCreateModalOpen(true)} disabled={createMutation.isPending}>
+              <Button kind="primary" size="sm" renderIcon={Add} onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Creating…' : 'Create snapshot'}
               </Button>
             </div>
@@ -675,16 +655,6 @@ export function SnapshotArtifactsWorkspace({
           )}
         </Tile>
       </div>
-
-      <SnapshotQuestionnaireModal
-        open={createModalOpen}
-        title="Create snapshot"
-        label="Artifacts snapshot capture"
-        initialValue={defaultQuestionnaireValue}
-        submitting={createMutation.isPending}
-        onClose={() => setCreateModalOpen(false)}
-        onSubmit={(draft) => createMutation.mutate(draft)}
-      />
 
       <Modal
         open={importModalOpen}

@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 12:15 EDT - T568 completed sequential snapshot questionnaire workflow
+Last updated: 2026-03-30 12:28 EDT - T569 removed snapshot questionnaire flow and restored direct create
+
+ID: T569
+Status: [✓] Done
+Title: Remove the snapshot questionnaire flow and restore direct create actions
+Description:
+- Goal / acceptance criteria: Remove the one-at-a-time questionnaire from snapshot creation and return both Snapshot Editor `New Snapshot` and Audio Artifacts `Create snapshot` actions to direct-create behavior, while preserving the clearer action-accent styling already applied. Validation must confirm the direct-create rollback compiles and builds cleanly.
+- Why it matters: The user explicitly reversed the questionnaire requirement and wants snapshot creation to be immediate again.
+- Dependencies: T568
+- Estimated effort: Low
+- Required outputs: questionnaire removal, direct-create mutation restoration, cleanup of unused questionnaire files, validation evidence, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 12:28 EDT - Codex
+- Completion notes:
+  - Removed the questionnaire integration from `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, restoring direct snapshot creation with the prior default name/description behavior.
+  - Deleted the unused questionnaire implementation and coverage files: `web/src/app/components/snapshots/SnapshotQuestionnaireModal.tsx`, `web/src/app/components/snapshots/SnapshotQuestionnaireModal.css`, and `web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx`.
+  - Preserved the Carbon-aligned action-accent styling so the create/update/artifacts controls still read distinctly without the questionnaire stepper.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T568
 Status: [✓] Done

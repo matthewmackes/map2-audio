@@ -102,10 +102,6 @@ import { NumberInput } from '../components/ParameterControl'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
-import {
-  SnapshotQuestionnaireModal,
-  type SnapshotQuestionnaireValue,
-} from '../components/snapshots/SnapshotQuestionnaireModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
@@ -780,7 +776,6 @@ export function SnapshotEditorPage() {
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
   const [selectedPluginPosition, setSelectedPluginPosition] = useState<number | null>(initialPluginPersistence.selectedPluginPosition)
   const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
-  const [snapshotQuestionnaireOpen, setSnapshotQuestionnaireOpen] = useState(false)
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
@@ -1344,14 +1339,10 @@ export function SnapshotEditorPage() {
   const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
 
   const createSnapshotFromEditorMutation = useMutation({
-    mutationFn: async (draft?: SnapshotQuestionnaireValue) => {
+    mutationFn: async () => {
       const created = await snapshotsApi.create({
-        name: draft?.name?.trim() || `Snapshot ${snapshotCount + 1}`,
-        description: draft?.description?.trim() || 'Created from Snapshot Editor',
-        tags: draft?.tags ?? [],
-        program_number: draft?.program_number ?? null,
-        input_device: draft?.input_device ?? null,
-        output_device: draft?.output_device ?? null,
+        name: `Snapshot ${snapshotCount + 1}`,
+        description: 'Created from Snapshot Editor',
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
       })
       return snapshotsApi.activate(created.snapshot_id)
@@ -1360,22 +1351,12 @@ export function SnapshotEditorPage() {
       queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       clearSnapshotsDirty()
-      setSnapshotQuestionnaireOpen(false)
       pushToast('Snapshot created', 'success')
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
     },
   })
-
-  const defaultSnapshotQuestionnaireValue = useMemo<SnapshotQuestionnaireValue>(() => ({
-    name: `Snapshot ${snapshotCount + 1}`,
-    description: 'Created from Snapshot Editor',
-    tags: [],
-    program_number: null,
-    input_device: null,
-    output_device: null,
-  }), [snapshotCount])
 
   const updateActiveSnapshotMutation = useMutation({
     mutationFn: async () => {
@@ -3410,7 +3391,7 @@ export function SnapshotEditorPage() {
           kind="primary"
           renderIcon={Add}
           className="snapshot-trigger-cluster__button snapshot-trigger-cluster__button--create"
-          onClick={() => setSnapshotQuestionnaireOpen(true)}
+          onClick={() => createSnapshotFromEditorMutation.mutate()}
           disabled={createSnapshotFromEditorMutation.isPending}
         >
           {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
@@ -5060,7 +5041,7 @@ export function SnapshotEditorPage() {
                 kind="primary"
                 renderIcon={Add}
                 className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--create"
-                onClick={() => setSnapshotQuestionnaireOpen(true)}
+                onClick={() => createSnapshotFromEditorMutation.mutate()}
                 disabled={createSnapshotFromEditorMutation.isPending}
               >
                 {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
@@ -5200,16 +5181,6 @@ export function SnapshotEditorPage() {
           {renderMidiTrigger()}
         </div>
       )}
-
-      <SnapshotQuestionnaireModal
-        open={snapshotQuestionnaireOpen}
-        title="Create snapshot"
-        label="Snapshot capture"
-        initialValue={defaultSnapshotQuestionnaireValue}
-        submitting={createSnapshotFromEditorMutation.isPending}
-        onClose={() => setSnapshotQuestionnaireOpen(false)}
-        onSubmit={(draft) => createSnapshotFromEditorMutation.mutate(draft)}
-      />
 
       {pendingTabletDeletePlugin && (
         <Modal

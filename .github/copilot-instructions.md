@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 30, 2026 (sequential snapshot questionnaire capture)
+> **Last Updated**: March 30, 2026 (snapshot create restored to direct action)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1393,6 +1393,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotQuestionnaireModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In this codebase, "ask questions" is a behavior contract. Sequential UI flow and production-build validation are both required to call the work complete.
 
+**42. Snapshot Creation Should Stay Direct Unless The Current Task Explicitly Requires A Guided Flow (LOW - Mar 30, 2026)**
+- **Files**: `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`
+- **Problem**: A guided questionnaire can be technically correct but still be the wrong operator workflow when the user wants `New Snapshot` to stay immediate.
+- **Root Cause**: The earlier change solved a specific request but changed the default operator behavior for snapshot capture more broadly than the follow-up requirement allowed.
+- **Fix**: Keep snapshot creation as a direct action by default and only introduce a guided question flow when the current task explicitly asks for it; if the requirement changes, remove the flow instead of leaving dormant modal code behind.
+- **Verification**: `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For high-frequency operator actions like snapshot creation, directness is the baseline. Guided capture is an exception, not the default.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1663,6 +1671,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-30] - Snapshot Create Direct-Action Rollback
+- **Section**: Gotchas & Learned Fixes (#42), Update Log
+- **Change**: Documented that snapshot creation should remain direct unless a current task explicitly requests a guided questionnaire flow, and recorded the cleanup of the now-unused questionnaire files.
+- **Reason**: The user reversed the earlier questionnaire request, so the repo guidance needed to reflect the preferred default behavior for this action.
+- **Impact**: Future snapshot-create work should treat direct creation as the default operator path and avoid keeping inactive question-flow code around after requirements change.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-30] - Sequential Snapshot Questionnaire Capture
 - **Section**: Gotchas & Learned Fixes (#41), Update Log
