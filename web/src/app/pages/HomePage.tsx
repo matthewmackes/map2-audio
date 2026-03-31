@@ -18,6 +18,7 @@ import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hook
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import type { NodeSummary, NodeTopology } from '../types/node'
+import landingBg from '../../assets/map2-landing-bg.png'
 import './HomePage.css'
 
 // ── Audio flow summary ──────────────────────────────────────────────────────
@@ -225,113 +226,118 @@ export function HomePage() {
 
   return (
     <div className="hp2-root">
-      <nav className="hp2-layout" aria-label="Workspaces">
-        <div className="hp2-column hp2-column--left">
-          <ClickableTile
-            className="hp2-card hp2-card--hero"
-            onClick={() => navigate(HERO_CARD.to)}
-          >
-            <div className="hp2-card__body">
-              <HERO_CARD.icon size={24} />
-              <h2 className="hp2-card__title">{HERO_CARD.title}</h2>
-              <p className="hp2-card__desc">{HERO_CARD.description}</p>
-              <div className="hp2-card__flow" aria-label="Audio Grid signal flow">
-                {audioFlowPaths.length > 0 ? (
-                  audioFlowPaths.map((path) => (
-                    <div key={path.id} className="hp2-card__flow-row">
-                      {path.nodes.map((node, index) => (
-                        <div key={`${path.id}-${node.node_id}-${index}`} className="hp2-card__flow-segment">
-                          <span className="hp2-card__flow-node">
-                            <BareMetalServer size={14} aria-hidden />
-                            <span>{getFriendlyNodeName(node)}</span>
-                          </span>
-                          {index < path.nodes.length - 1 ? <ArrowRight size={14} aria-hidden className="hp2-card__flow-arrow" /> : null}
-                        </div>
-                      ))}
-                    </div>
-                  ))
-                ) : (
-                  <p className="hp2-card__flow-empty">No Active Flow</p>
-                )}
+      <div className="hp2-shell">
+        <div className="hp2-hero" role="img" aria-label="Mackes Audio Platform">
+          <img src={landingBg} alt="" className="hp2-hero__img" aria-hidden="true" />
+          <div className="hp2-hero__scrim" aria-hidden="true" />
+        </div>
+        <nav className="hp2-layout" aria-label="Workspaces">
+          <div className="hp2-column hp2-column--left">
+            <ClickableTile
+              className="hp2-card hp2-card--hero"
+              onClick={() => navigate(HERO_CARD.to)}
+            >
+              <div className="hp2-card__body">
+                <HERO_CARD.icon size={24} />
+                <h2 className="hp2-card__title">{HERO_CARD.title}</h2>
+                <p className="hp2-card__desc">{HERO_CARD.description}</p>
+                <div className="hp2-card__flow" aria-label="Audio Grid signal flow">
+                  {audioFlowPaths.length > 0 ? (
+                    audioFlowPaths.map((path) => (
+                      <div key={path.id} className="hp2-card__flow-row">
+                        {path.nodes.map((node, index) => (
+                          <div key={`${path.id}-${node.node_id}-${index}`} className="hp2-card__flow-segment">
+                            <span className="hp2-card__flow-node">
+                              <BareMetalServer size={14} aria-hidden />
+                              <span>{getFriendlyNodeName(node)}</span>
+                            </span>
+                            {index < path.nodes.length - 1 ? <ArrowRight size={14} aria-hidden className="hp2-card__flow-arrow" /> : null}
+                          </div>
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="hp2-card__flow-empty">No Active Flow</p>
+                  )}
+                </div>
               </div>
+              <ArrowRight size={20} className="hp2-card__arrow" />
+            </ClickableTile>
+
+            <div className="hp2-subgrid" aria-label="Performance workspaces">
+              {LEFT_COLUMN_CARDS.map((card) => (
+                <ClickableTile
+                  key={card.id}
+                  className="hp2-card hp2-card--subgrid"
+                  onClick={() => navigate(card.to)}
+                >
+                  <div className="hp2-card__body">
+                    <card.icon size={20} />
+                    <h2 className="hp2-card__title">{card.title}</h2>
+                    <p className="hp2-card__desc">{card.description}</p>
+                  </div>
+                  <ArrowRight size={16} className="hp2-card__arrow" />
+                </ClickableTile>
+              ))}
             </div>
-            <ArrowRight size={20} className="hp2-card__arrow" />
-          </ClickableTile>
-
-          <div className="hp2-subgrid" aria-label="Performance workspaces">
-            {LEFT_COLUMN_CARDS.map((card) => (
-              <ClickableTile
-                key={card.id}
-                className="hp2-card hp2-card--subgrid"
-                onClick={() => navigate(card.to)}
-              >
-                <div className="hp2-card__body">
-                  <card.icon size={20} />
-                  <h2 className="hp2-card__title">{card.title}</h2>
-                  <p className="hp2-card__desc">{card.description}</p>
-                </div>
-                <ArrowRight size={16} className="hp2-card__arrow" />
-              </ClickableTile>
-            ))}
           </div>
-        </div>
+          <div className="hp2-column hp2-column--right">
+            {RIGHT_COLUMN_CARDS.map((card) => {
+              const dynamicDesc =
+                card.id === 'platforms' && nodeStatusLabel
+                  ? (syncWorkflowAvailable ? nodeStatusLabel : 'Sync unavailable')
+                  : card.description
 
-        <div className="hp2-column hp2-column--right">
-          {RIGHT_COLUMN_CARDS.map((card) => {
-            const dynamicDesc =
-              card.id === 'platforms' && nodeStatusLabel
-                ? (syncWorkflowAvailable ? nodeStatusLabel : 'Sync unavailable')
-                : card.description
+              return (
+                <ClickableTile
+                  key={card.id}
+                  className="hp2-card hp2-card--middle"
+                  onClick={() => navigate(card.to)}
+                >
+                  <div className="hp2-card__body">
+                    <card.icon size={20} />
+                    <h2 className="hp2-card__title">{card.title}</h2>
+                    {card.id === 'platforms' && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
+                      <div className="hp2-card__pills" aria-label="Platforms remediation pills">
+                        {remediationPills.map((pill) => (
+                          <button
+                            key={`${pill.workflow}-${pill.state}`}
+                            type="button"
+                            className="hp2-card__pill"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              const nodeIds = (remediationSummary.data?.nodes ?? [])
+                                .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
+                                .map((node) => node.node_id)
+                              if (pill.workflow === 'adoption') {
+                                navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
+                                return
+                              }
+                              setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
+                            }}
+                          >
+                            {pill.label}: {pill.count}
+                          </button>
+                        ))}
+                        {!syncWorkflowAvailable ? (
+                          <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <p className="hp2-card__desc">{dynamicDesc}</p>
+                  </div>
+                  <ArrowRight size={16} className="hp2-card__arrow" />
+                </ClickableTile>
+              )
+            })}
+          </div>
+        </nav>
 
-            return (
-              <ClickableTile
-                key={card.id}
-                className="hp2-card hp2-card--middle"
-                onClick={() => navigate(card.to)}
-              >
-                <div className="hp2-card__body">
-                  <card.icon size={20} />
-                  <h2 className="hp2-card__title">{card.title}</h2>
-                  {card.id === 'platforms' && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
-                    <div className="hp2-card__pills" aria-label="Platforms remediation pills">
-                      {remediationPills.map((pill) => (
-                        <button
-                          key={`${pill.workflow}-${pill.state}`}
-                          type="button"
-                          className="hp2-card__pill"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            const nodeIds = (remediationSummary.data?.nodes ?? [])
-                              .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
-                              .map((node) => node.node_id)
-                            if (pill.workflow === 'adoption') {
-                              navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
-                              return
-                            }
-                            setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
-                          }}
-                        >
-                          {pill.label}: {pill.count}
-                        </button>
-                      ))}
-                      {!syncWorkflowAvailable ? (
-                        <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <p className="hp2-card__desc">{dynamicDesc}</p>
-                </div>
-                <ArrowRight size={16} className="hp2-card__arrow" />
-              </ClickableTile>
-            )
-          })}
-        </div>
-      </nav>
-
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="hp2-footer">
-        {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
-      </footer>
+        {/* ── Footer ───────────────────────────────────────────── */}
+        <footer className="hp2-footer">
+          {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
+        </footer>
+      </div>
       {activeRemediation ? (
         <PlatformRemediationWorkflow
           mode={activeRemediation.mode}

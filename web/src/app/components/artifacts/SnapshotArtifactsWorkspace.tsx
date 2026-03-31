@@ -24,10 +24,15 @@ import {
   WarningAlt,
 } from '@carbon/icons-react'
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
-import type { SnapshotDetail, SnapshotExport, SnapshotSummary } from '../../../map2/types'
+import type { SnapshotDetail, SnapshotExport, SnapshotRuntimeLiveState, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
+import {
+  useClusterSnapshotRuntimeLiveState,
+  useSnapshotActivationEvents,
+  useSnapshotRuntimeLiveState,
+} from '../../hooks/useSnapshotRuntimeState'
 
 type ToastKind = 'error' | 'info' | 'success' | 'warning'
 
@@ -114,9 +119,17 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
-function computeDirty(snapshot: SnapshotSummary, snapshotDetail: SnapshotDetail | undefined, liveSnapshot: SnapshotDetail | null | undefined) {
-  if (!snapshot.is_active || !snapshotDetail || !liveSnapshot) {
+function computeDirty(
+  snapshot: SnapshotSummary,
+  snapshotDetail: SnapshotDetail | undefined,
+  liveSnapshot: SnapshotDetail | null | undefined,
+  runtimeState: SnapshotRuntimeLiveState | undefined,
+) {
+  if (runtimeState?.snapshot_id !== snapshot.id || !snapshotDetail || !liveSnapshot) {
     return false
+  }
+  if (snapshotDetail.snapshot_revision && liveSnapshot.snapshot_revision) {
+    return snapshotDetail.snapshot_revision !== liveSnapshot.snapshot_revision
   }
   return fingerprintSnapshotData(snapshotDetailToDraftData(snapshotDetail)) !== fingerprintSnapshotData(snapshotDetailToDraftData(liveSnapshot))
 }
@@ -168,6 +181,17 @@ export function SnapshotArtifactsWorkspace({
     retry: false,
     refetchInterval: snapshotCadence,
   })
+  const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
+    refetchInterval: snapshotCadence,
+  })
+  const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({
+    enabled: isClusterMode,
+    refetchInterval: deploymentCadence,
+  })
+  const activationEventsQuery = useSnapshotActivationEvents(undefined, {
+    limit: 100,
+    refetchInterval: snapshotCadence,
+  })
   const nodesQuery = useQuery({
     queryKey: ['cluster', 'nodes'],
     queryFn: () => snapshotsApi.listNodes(),
@@ -184,6 +208,7 @@ export function SnapshotArtifactsWorkspace({
   const snapshots = snapshotsQuery.data?.snapshots ?? []
   const activeSnapshotId = snapshotsQuery.data?.active_id ?? null
   const selectedId = selectedSnapshotId ?? activeSnapshotId ?? snapshots[0]?.id ?? null
+  const runtimeState = runtimeStateQuery.data
 
   const selectedSnapshotQuery = useQuery({
     queryKey: ['snapshots', 'detail', selectedId],
@@ -227,11 +252,15 @@ export function SnapshotArtifactsWorkspace({
     mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
       queryClient.setQueryData(['snapshots', 'live'], result.snapshot_data)
+      if (result.runtime_live_state) {
+        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
+      }
       setSelectedSnapshotId(result.snapshot_id)
-      onToast('success', 'Snapshot activated', result.name)
+      onToast('success', 'Snapshot made live', result.name)
     },
-    onError: (error: Error) => onToast('error', 'Failed to activate snapshot', error.message),
+    onError: (error: Error) => onToast('error', 'Failed to make snapshot live', error.message),
   })
 
   const duplicateMutation = useMutation({
@@ -296,7 +325,11 @@ export function SnapshotArtifactsWorkspace({
     },
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      await queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
       queryClient.setQueryData(['snapshots', 'live'], result.snapshot_data)
+      if (result.runtime_live_state) {
+        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
+      }
       setSelectedSnapshotId(result.snapshot_id)
       onToast('success', 'Snapshot created', result.name)
     },
@@ -339,12 +372,22 @@ export function SnapshotArtifactsWorkspace({
     } as SnapshotSummary),
     selectedSnapshot,
     liveSnapshotQuery.data ?? null,
+    runtimeState,
   )
 
   const selectedDeployment = useMemo(
     () => deploymentsQuery.data?.deployments.filter((deployment) => deployment.snapshot_id === selectedId) ?? [],
     [deploymentsQuery.data?.deployments, selectedId],
   )
+  const selectedSnapshotRuntimeNodes = useMemo(
+    () => (
+      clusterRuntimeStateQuery.data?.nodes ?? []
+    ).filter((node) => node.snapshot_id === selectedId || node.live_snapshot_payload?.id === selectedId),
+    [clusterRuntimeStateQuery.data?.nodes, selectedId],
+  )
+  const selectedSnapshotLocalRuntime = selectedId !== null && runtimeState?.snapshot_id === selectedId
+    ? runtimeState
+    : null
 
   const targetNodeName = remoteNodes.find((node) => node.id === targetNodeId)?.hostname ?? targetNodeId
 
@@ -361,6 +404,9 @@ export function SnapshotArtifactsWorkspace({
               <Button kind="ghost" size="sm" renderIcon={Renew} onClick={() => {
                 void queryClient.invalidateQueries({ queryKey: ['snapshots'] })
                 void queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+                void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+                void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local', 100] })
+                void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
                 void queryClient.invalidateQueries({ queryKey: ['cluster', 'snapshots', 'deployments'] })
               }}>
                 Refresh
@@ -419,7 +465,7 @@ export function SnapshotArtifactsWorkspace({
                       </div>
                       <div className="aap-snapshots__card-actions">
                         <OverflowMenu ariaLabel={`Snapshot actions for ${snapshot.name}`} onClick={(event) => event.stopPropagation()}>
-                          <OverflowMenuItem itemText="Activate snapshot" onClick={() => activateMutation.mutate(snapshot.id)} />
+                          <OverflowMenuItem itemText="Make Live" onClick={() => activateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem itemText="Duplicate snapshot" onClick={() => duplicateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem itemText="Export snapshot" onClick={() => exportMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem isDelete itemText="Delete snapshot" onClick={() => deleteMutation.mutate(snapshot.id)} />
@@ -427,7 +473,23 @@ export function SnapshotArtifactsWorkspace({
                       </div>
                     </div>
                     <div className="aap-snapshots__card-flags">
-                      <Tag type={snapshot.is_active ? 'green' : 'cool-gray'}>{snapshot.is_active ? 'Active' : 'Saved'}</Tag>
+                      <Tag
+                        type={
+                          runtimeState?.snapshot_id === snapshot.id
+                            ? runtimeState.display_state === 'live_warning'
+                              ? 'warm-gray'
+                              : runtimeState.display_state === 'offline'
+                                ? 'red'
+                                : 'green'
+                            : 'cool-gray'
+                        }
+                      >
+                        {runtimeState?.snapshot_id === snapshot.id
+                          ? runtimeState.display_state === 'live_warning'
+                            ? 'Live + Warning'
+                            : runtimeState.display_label
+                          : 'Saved'}
+                      </Tag>
                       <Tag type={isDirty ? 'purple' : 'warm-gray'}>{isDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
                       {snapshot.program_number !== null ? <Tag type="blue">MIDI PC {snapshot.program_number}</Tag> : null}
                     </div>
@@ -498,7 +560,19 @@ export function SnapshotArtifactsWorkspace({
               </div>
 
               <div className="aap-snapshots__detail-tags">
-                <Tag type={selectedSnapshot.is_active ? 'green' : 'cool-gray'}>{selectedSnapshot.is_active ? 'Active' : 'Saved'}</Tag>
+                <Tag
+                  type={
+                    selectedSnapshotLocalRuntime
+                      ? selectedSnapshotLocalRuntime.display_state === 'live_warning'
+                        ? 'warm-gray'
+                        : selectedSnapshotLocalRuntime.display_state === 'offline'
+                          ? 'red'
+                          : 'green'
+                      : 'cool-gray'
+                  }
+                >
+                  {selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Saved'}
+                </Tag>
                 <Tag type={selectedSnapshotDirty ? 'purple' : 'warm-gray'}>{selectedSnapshotDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
                 <Tag type="blue">MIDI PC {selectedSnapshot.program_number === null ? '—' : selectedSnapshot.program_number}</Tag>
                 <Tag type="cool-gray">Routing {selectedSnapshot.routing.mode}</Tag>
@@ -511,7 +585,8 @@ export function SnapshotArtifactsWorkspace({
                     <div><dt>Created</dt><dd>{formatDate(selectedSnapshot.created_at)}</dd></div>
                     <div><dt>Updated</dt><dd>{formatDate(selectedSnapshot.updated_at)}</dd></div>
                     <div><dt>Lifecycle flags</dt><dd>{selectedSnapshotDirty ? 'Saved, Modified / Dirty' : 'Saved'}</dd></div>
-                    <div><dt>Live activation</dt><dd>{selectedSnapshot.live_state.is_live ? formatDate(selectedSnapshot.live_state.activated_at) : 'Not live'}</dd></div>
+                    <div><dt>Live activation</dt><dd>{selectedSnapshotLocalRuntime ? formatDate(selectedSnapshotLocalRuntime.emitted_at) : 'Not live'}</dd></div>
+                    <div><dt>Runtime freshness</dt><dd>{selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Stopped'}</dd></div>
                   </dl>
                 </section>
 
@@ -519,8 +594,9 @@ export function SnapshotArtifactsWorkspace({
                   <h4>Surface fields</h4>
                   <dl>
                     <div><dt>Name</dt><dd>{selectedSnapshot.name}</dd></div>
-                    <div><dt>Flag</dt><dd>{selectedSnapshot.is_active ? 'Active' : 'Saved'}</dd></div>
+                    <div><dt>Flag</dt><dd>{selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Saved'}</dd></div>
                     <div><dt>MIDI PC</dt><dd>{selectedSnapshot.program_number === null ? '—' : selectedSnapshot.program_number}</dd></div>
+                    <div><dt>Revision</dt><dd>{selectedSnapshot.snapshot_revision ?? '—'}</dd></div>
                   </dl>
                 </section>
 
@@ -618,6 +694,55 @@ export function SnapshotArtifactsWorkspace({
                       </div>
                     ))}
                   </div>
+                )}
+                {(selectedSnapshotRuntimeNodes.length > 0 || selectedSnapshotLocalRuntime) ? (
+                  <div className="aap-snapshots__deployment-list">
+                    {(selectedSnapshotRuntimeNodes.length > 0 ? selectedSnapshotRuntimeNodes : selectedSnapshotLocalRuntime ? [selectedSnapshotLocalRuntime] : []).map((node) => (
+                      <div key={node.node_id} className="aap-snapshots__deployment-card">
+                        <div className="aap-snapshots__deployment-header">
+                          <strong>{node.node_id}</strong>
+                          <Tag
+                            type={
+                              node.display_state === 'live_warning'
+                                ? 'warm-gray'
+                                : node.display_state === 'offline'
+                                  ? 'red'
+                                  : node.display_state === 'live'
+                                    ? 'green'
+                                    : 'cool-gray'
+                            }
+                          >
+                            {node.display_label}
+                          </Tag>
+                        </div>
+                        <p>Triggered by: {node.triggered_by ?? '—'}</p>
+                        <p>Last runtime event: {formatDate(node.emitted_at)}</p>
+                        <p>Revision: {node.snapshot_revision ?? '—'}</p>
+                        <p>Freshness age: {node.age_seconds === null ? '—' : `${node.age_seconds.toFixed(1)}s`}</p>
+                        {node.failure_reason ? (
+                          <Tag type="red" renderIcon={WarningAlt}>{node.failure_reason}</Tag>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="aap-snapshots__section">
+                <h4>Activation history</h4>
+                {activationEventsQuery.isLoading ? (
+                  <InlineLoading description="Loading activation history" status="active" />
+                ) : activationEventsQuery.data?.events.length ? (
+                  <div className="aap-snapshots__deployment-history">
+                    {activationEventsQuery.data.events.map((event) => (
+                      <div key={event.request_id}>
+                        <strong>{event.snapshot_name ?? 'Snapshot'}</strong> · {event.outcome} · {formatDate(event.confirmed_live_at ?? event.requested_at)}
+                        {event.failure_reason ? ` · ${event.failure_reason}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="aap-snapshots__section-copy">No local activation events recorded yet. The backend retains the last 100 events per node.</p>
                 )}
               </section>
 

@@ -24,7 +24,7 @@ interface SnapshotChainManagementCardProps {
   pluginMeta?: Record<string, unknown>
   onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
   liveSnapshot?: SnapshotDetail | null
-  heroActions?: ReactNode
+  detailsAction?: ReactNode
   onRenameSnapshot?: () => void
   snapshotRenamePending?: boolean
 }
@@ -188,7 +188,7 @@ function buildStatusTiles(snapshot: SnapshotDetail): SnapshotStatusTile[] {
 export function SnapshotChainManagementCard(props: SnapshotChainManagementCardProps) {
   const {
     liveSnapshot = null,
-    heroActions,
+    detailsAction,
     onRenameSnapshot,
     snapshotRenamePending = false,
   } = props
@@ -254,11 +254,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
             </div>
 
             <div className="juce-grid-page__snapshot-status-aside">
-              {heroActions ? (
-                <div className="juce-grid-page__snapshot-status-actions" role="toolbar" aria-label="Snapshot hero actions">
-                  {heroActions}
-                </div>
-              ) : null}
               <div className="juce-grid-page__snapshot-status-midi">
                 <SegmentedLedText
                   value={midiReadout}
@@ -270,22 +265,25 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
             </div>
           </div>
 
-          {statusSummaryItems.length > 0 ? (
+          {statusSummaryItems.length > 0 || detailsAction ? (
             <div
-              className="juce-grid-page__snapshot-status-summary-row"
-              role="list"
+              className={`juce-grid-page__snapshot-status-summary-row ${detailsAction ? 'has-details-action' : ''}`}
               aria-label="Live snapshot summary"
             >
               {statusSummaryItems.map((item) => (
                 <div
                   key={item.label}
                   className={`juce-grid-page__snapshot-status-summary-item ${item.tone === 'secondary' ? 'is-secondary' : ''}`}
-                  role="listitem"
                 >
                   <span className="juce-grid-page__snapshot-status-summary-label">{item.label}</span>
                   <span className="juce-grid-page__snapshot-status-summary-value">{item.value}</span>
                 </div>
               ))}
+              {detailsAction ? (
+                <div className="juce-grid-page__snapshot-status-summary-action">
+                  {detailsAction}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

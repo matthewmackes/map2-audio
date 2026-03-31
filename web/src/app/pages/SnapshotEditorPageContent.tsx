@@ -17,7 +17,6 @@ import { useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
-  Camera,
   ArrowLeft,
   ArrowDown,
   ArrowRight,
@@ -43,6 +42,7 @@ import {
   ArrowsHorizontal,
   Close,
   Edit,
+  Information,
   Network_3,
 } from '@carbon/icons-react'
 import {
@@ -54,6 +54,8 @@ import {
   Grid,
   InlineLoading,
   Layer,
+  MenuButton,
+  MenuItem,
   Modal,
   OverflowMenu,
   OverflowMenuItem,
@@ -74,7 +76,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
-import { fetchLiveSnapshotOrNull } from './snapshotLiveState'
+import { fetchLiveSnapshotOrNull, removeRuntimeChainsFromLiveSnapshot } from './snapshotLiveState'
 import { getCategoryConfig } from '../grid/shared'
 import type { AutomationLane } from '../grid/shared'
 import {
@@ -96,6 +98,7 @@ import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
+import { useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
@@ -847,9 +850,12 @@ export function SnapshotEditorPage() {
 
   // Automation Timeline State
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
+  const [footerHeight, setFooterHeight] = useState(56)
+  const [automationPanelHeight, setAutomationPanelHeight] = useState(0)
+  const footerRef = useRef<HTMLElement | null>(null)
+  const automationPanelRef = useRef<HTMLDivElement | null>(null)
 
   // Flow Snapshots Panel State
-  const snapshotsModalOpen = false
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
@@ -931,6 +937,53 @@ export function SnapshotEditorPage() {
       localStorage.setItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY, effectModalOpen ? 'true' : 'false')
     } catch {}
   }, [effectModalOpen])
+
+  useEffect(() => {
+    const footerNode = footerRef.current
+    if (!footerNode) {
+      return
+    }
+
+    const updateFooterHeight = () => {
+      setFooterHeight(Math.ceil(footerNode.getBoundingClientRect().height))
+    }
+
+    updateFooterHeight()
+
+    if (typeof ResizeObserver !== 'function') {
+      return
+    }
+
+    const observer = new ResizeObserver(() => updateFooterHeight())
+    observer.observe(footerNode)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!automationTimelineExpanded) {
+      setAutomationPanelHeight(0)
+      return
+    }
+
+    const panelNode = automationPanelRef.current
+    if (!panelNode) {
+      return
+    }
+
+    const updatePanelHeight = () => {
+      setAutomationPanelHeight(Math.ceil(panelNode.getBoundingClientRect().height))
+    }
+
+    updatePanelHeight()
+
+    if (typeof ResizeObserver !== 'function') {
+      return
+    }
+
+    const observer = new ResizeObserver(() => updatePanelHeight())
+    observer.observe(panelNode)
+    return () => observer.disconnect()
+  }, [automationTimelineExpanded, automationLanes.length])
 
   useEffect(() => {
     const persistScrollPosition = () => {
@@ -1064,6 +1117,9 @@ export function SnapshotEditorPage() {
     queryFn: fetchLiveSnapshotOrNull,
     refetchInterval: snapshotStandardCadence,
     retry: false,
+  })
+  const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
+    refetchInterval: snapshotStandardCadence,
   })
   const snapshotsSummaryQuery = useQuery({
     queryKey: ['snapshots'],
@@ -1221,6 +1277,7 @@ export function SnapshotEditorPage() {
       return
     }
     void queryClient.invalidateQueries({ queryKey: ['chains'] })
+    void queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
   }, [queryClient]))
 
   // ============================================================================
@@ -1297,6 +1354,15 @@ export function SnapshotEditorPage() {
     () => buildJuceGridLiveChainProjection(effectiveChains, flowSlots),
     [effectiveChains, flowSlots],
   )
+  const pruneLiveSnapshotCache = useCallback((chainIds: readonly number[]) => {
+    if (chainIds.length === 0) {
+      return
+    }
+
+    queryClient.setQueryData<SnapshotDetail | null | undefined>(['snapshots', 'live'], (current) => (
+      removeRuntimeChainsFromLiveSnapshot(current, chainIds)
+    ))
+  }, [queryClient])
   const desiredLiveChainIds = useMemo(
     () => getJuceGridDesiredLiveChainIds(flowSlots),
     [flowSlots],
@@ -1378,6 +1444,9 @@ export function SnapshotEditorPage() {
     },
     onSuccess: (response) => {
       queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      if (response.runtime_live_state) {
+        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], response.runtime_live_state)
+      }
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       clearSnapshotsDirty()
       pushToast('Snapshot created', 'success')
@@ -2369,6 +2438,7 @@ export function SnapshotEditorPage() {
 
   type ChainActivationMutationContext = {
     previousChains?: ChainsResponse
+    previousLiveSnapshot?: SnapshotDetail | null
   }
 
   const deleteMutation = useMutation({
@@ -2503,6 +2573,7 @@ export function SnapshotEditorPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
       markSnapshotsDirty()
       pushToast('Chain activated', 'success')
     },
@@ -2518,7 +2589,9 @@ export function SnapshotEditorPage() {
     mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
     onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
+      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
       const nextActiveChainIds = new Set(
         (previousChains?.chains ?? [])
           .filter((chain) => chain.is_active && chain.id !== chainId)
@@ -2527,10 +2600,12 @@ export function SnapshotEditorPage() {
       queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
         applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
       ))
-      return { previousChains }
+      pruneLiveSnapshotCache([chainId])
+      return { previousChains, previousLiveSnapshot }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
       markSnapshotsDirty()
       pushToast('Chain deactivated', 'info')
     },
@@ -2538,7 +2613,52 @@ export function SnapshotEditorPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
+      if (context?.previousLiveSnapshot !== undefined) {
+        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
+      }
       pushToast(`Failed to deactivate: ${error}`, 'error')
+    },
+  })
+
+  const killLivePathMutation = useMutation({
+    mutationFn: async (chainId: number) => {
+      await chainsApi.deactivate(chainId)
+      return chainId
+    },
+    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active && chain.id !== chainId)
+          .map((chain) => chain.id),
+      )
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+      ))
+      pruneLiveSnapshotCache([chainId])
+      return { previousChains, previousLiveSnapshot }
+    },
+    onSuccess: (chainId) => {
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      const killedChain = chains.find((chain) => chain.id === chainId)
+      markSnapshotsDirty()
+      pushToast(
+        killedChain ? `Killed live path: ${killedChain.name}` : 'Killed live path',
+        'info',
+      )
+    },
+    onError: (error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      if (context?.previousLiveSnapshot !== undefined) {
+        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
+      }
+      pushToast(`Failed to kill live path: ${error}`, 'error')
     },
   })
 
@@ -2569,14 +2689,24 @@ export function SnapshotEditorPage() {
     },
     onMutate: async (nextActiveChainIds): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
+      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
+      const currentActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active)
+          .map((chain) => chain.id),
+      )
+      const chainIdsToDeactivate = [...currentActiveChainIds].filter((chainId) => !nextActiveChainIds.includes(chainId))
       queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
         applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
       ))
-      return { previousChains }
+      pruneLiveSnapshotCache(chainIdsToDeactivate)
+      return { previousChains, previousLiveSnapshot }
     },
     onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
       pushToast(
         chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
           ? 'Live chains already match the editor'
@@ -2587,6 +2717,9 @@ export function SnapshotEditorPage() {
     onError: (error, _nextActiveChainIds, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      if (context?.previousLiveSnapshot !== undefined) {
+        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
       }
       pushToast(`Failed to update live chains: ${error}`, 'error')
     },
@@ -3281,6 +3414,10 @@ export function SnapshotEditorPage() {
     routing,
   ])
 
+  const handleKillLiveChain = useCallback((chainId: number) => {
+    killLivePathMutation.mutate(chainId)
+  }, [killLivePathMutation])
+
   const handleToggleChainActive = useCallback(() => {
     if (!currentChain) return
     if (currentChain.is_active) {
@@ -3405,6 +3542,9 @@ export function SnapshotEditorPage() {
 
   const midiMappingCount = midiMappings.length
   const midiMappingCountLabel = midiMappingCount > 99 ? '99+' : String(midiMappingCount)
+  const snapshotWorkspaceTitle = snapshotCount > 0
+    ? `${snapshotCountLabel} saved snapshots`
+    : 'Open snapshots workspace'
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return false
@@ -3412,133 +3552,69 @@ export function SnapshotEditorPage() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
 
-  const renderSnapshotsTrigger = () => (
-    <div className="snapshot-trigger-cluster">
-      <div className="snapshot-rail-trigger snapshot-floating-trigger">
-        {snapshotsDirty && (
-          prefersReducedMotion ? (
-            <span className="snapshot-rail-trigger__pulse" aria-hidden />
-          ) : (
-            <motion.span
-              className="snapshot-rail-trigger__pulse"
-              aria-hidden
-              initial={{ scale: 0.9, opacity: 0.7 }}
-              animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
-              transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
-            />
-          )
-        )}
-        <Button
-          hasIconOnly
-          size="lg"
-          kind="ghost"
-          renderIcon={Camera}
-          iconDescription="Open Artifacts"
-          aria-label="Open Artifacts"
-          aria-expanded={snapshotsModalOpen}
-          className="snapshot-rail-trigger__button"
-          onClick={openArtifactsSnapshots}
-        />
-        <div className="snapshot-rail-trigger__label-group">
-          <span className="snapshot-rail-trigger__label">Artifacts</span>
-          <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
-        </div>
-      </div>
-
-      <div className="snapshot-trigger-cluster__actions">
-        <Button
-          size="md"
-          kind="primary"
-          renderIcon={Add}
-          className="snapshot-trigger-cluster__button snapshot-trigger-cluster__button--create"
-          onClick={() => createSnapshotFromEditorMutation.mutate()}
-          disabled={createSnapshotFromEditorMutation.isPending}
-        >
-          {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
-        </Button>
-        <Button
-          size="md"
-          kind="secondary"
-          renderIcon={Renew}
-          className="snapshot-trigger-cluster__button snapshot-trigger-cluster__button--update"
-          onClick={() => updateActiveSnapshotMutation.mutate()}
-          disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
-        >
-          {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
-        </Button>
-      </div>
-    </div>
-  )
-
-  const renderMidiTrigger = () => (
-    <div className="snapshot-rail-trigger snapshot-floating-trigger snapshot-floating-trigger--midi">
-      {(midiLearnActive || midiLearnInProgress) && (
+  const renderSnapshotsToolbar = () => (
+    <div className={`snapshot-toolbar ${snapshotsDirty ? 'is-dirty' : ''}`} role="toolbar" aria-label="Snapshots toolbar">
+      {snapshotsDirty && (
         prefersReducedMotion ? (
-          <span className="snapshot-rail-trigger__pulse snapshot-rail-trigger__pulse--learn" aria-hidden />
+          <span className="snapshot-toolbar__pulse" aria-hidden />
         ) : (
           <motion.span
-            className="snapshot-rail-trigger__pulse snapshot-rail-trigger__pulse--learn"
+            className="snapshot-toolbar__pulse"
             aria-hidden
             initial={{ scale: 0.9, opacity: 0.7 }}
-            animate={{ scale: [0.95, 1.3, 0.95], opacity: [0.9, 0.3, 0.9] }}
-            transition={{ repeat: Infinity, repeatType: 'loop', duration: 0.8 }}
+            animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
+            transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
           />
         )
       )}
-      <Button
-        hasIconOnly
-        size="lg"
-        kind="ghost"
-        renderIcon={Music}
-        iconDescription="Open MIDI"
-        aria-label="Open MIDI"
-        aria-expanded={midiModalOpen}
-        aria-controls="juce-grid-midi-modal"
-        className="snapshot-rail-trigger__button"
-        onClick={() => setMidiModalOpen(true)}
-      />
-      <div className="snapshot-rail-trigger__label-group">
-        <span className="snapshot-rail-trigger__label">MIDI</span>
-        <span className="snapshot-rail-trigger__count">
-          {midiLearnActive || midiLearnInProgress ? 'Learn armed' : midiMappingCountLabel}
-        </span>
+      <div className="snapshot-toolbar__label" title={snapshotWorkspaceTitle}>
+        <span className="snapshot-toolbar__title">Snapshots</span>
+      </div>
+      <div className="snapshot-toolbar__actions">
+        <Button
+          size="sm"
+          kind="secondary"
+          className="snapshot-toolbar__button snapshot-toolbar__button--new"
+          onClick={() => createSnapshotFromEditorMutation.mutate()}
+          disabled={createSnapshotFromEditorMutation.isPending}
+        >
+          {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New'}
+        </Button>
+        <Button
+          size="sm"
+          kind="secondary"
+          className="snapshot-toolbar__button snapshot-toolbar__button--update"
+          onClick={() => updateActiveSnapshotMutation.mutate()}
+          disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
+        >
+          {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update'}
+        </Button>
+        <Button
+          size="sm"
+          kind="secondary"
+          className="snapshot-toolbar__button snapshot-toolbar__button--load"
+          onClick={openArtifactsSnapshots}
+          aria-label="Open snapshots workspace"
+          title={snapshotWorkspaceTitle}
+        >
+          Load
+        </Button>
       </div>
     </div>
   )
 
-  const renderTabletLauncherUtilityButton = (
-    kind: 'snapshots' | 'midi',
-  ) => {
-    if (kind === 'snapshots') {
-      return (
-        <Button
-          key="snapshots"
-          size="md"
-          kind={snapshotsModalOpen ? 'secondary' : 'ghost'}
-          renderIcon={Camera}
-          aria-label="Open Artifacts"
-          className="juce-grid-page__tablet-launcher-utility"
-          onClick={openArtifactsSnapshots}
-        >
-          Artifacts {snapshotCountLabel}
-        </Button>
-      )
-    }
-
-    return (
-      <Button
-        key="midi"
-        size="md"
-        kind={midiModalOpen ? 'secondary' : 'ghost'}
-        renderIcon={Music}
-        aria-label="Open MIDI"
-        className="juce-grid-page__tablet-launcher-utility"
-        onClick={() => setMidiModalOpen(true)}
-      >
-        {midiLearnActive || midiLearnInProgress ? 'MIDI Learn armed' : `MIDI ${midiMappingCountLabel}`}
-      </Button>
-    )
-  }
+  const renderTabletLoadButton = () => (
+    <Button
+      size="md"
+      kind="ghost"
+      aria-label="Open snapshots workspace"
+      className="juce-grid-page__tablet-launcher-utility"
+      onClick={openArtifactsSnapshots}
+      title={snapshotWorkspaceTitle}
+    >
+      Load
+    </Button>
+  )
 
   const renderSelectedBlockNavBar = (options: {
     disabled?: boolean
@@ -4019,6 +4095,26 @@ export function SnapshotEditorPage() {
       )}
     </div>
   )
+
+  const automationToggleBottomOffset = useMemo(() => (
+    footerHeight + 12 + (automationTimelineExpanded ? automationPanelHeight + 12 : 0)
+  ), [automationPanelHeight, automationTimelineExpanded, footerHeight])
+
+  const automationFloatingToggleStyle = useMemo<CSSProperties>(() => ({
+    bottom: `calc(${automationToggleBottomOffset}px + env(safe-area-inset-bottom))`,
+  }), [automationToggleBottomOffset])
+
+  const automationFloatingToggleTitle = useMemo(() => {
+    const statusLabel = automationRecording
+      ? 'Recording'
+      : automationPlaying
+        ? 'Playing'
+        : automationLanes.length > 0
+          ? 'Ready'
+          : 'Idle'
+    const armedLabel = armedAutomationLane ? ` • Armed ${armedAutomationLane.parameterName}` : ''
+    return `${statusLabel} • ${automationLanes.length} lanes${armedLabel}`
+  }, [armedAutomationLane, automationLanes.length, automationPlaying, automationRecording])
 
   // ============================================================================
   // Keyboard Shortcuts
@@ -4661,73 +4757,77 @@ export function SnapshotEditorPage() {
   ) : null
   const canPageTabletFocusedBranchBackward = tabletFocusedBranchPage > 0
   const canPageTabletFocusedBranchForward = tabletFocusedBranchPage < tabletFocusedBranchPageCount - 1
-  const liveRuntimeActive = Boolean(activeSnapshot?.live_state?.is_live ?? activeSnapshot?.is_active)
-  const snapshotHeroActions = (
-    <>
-      <Button
-        size="sm"
-        kind="primary"
+  const liveRuntimeDisplayState = runtimeStateQuery.data?.display_state
+  const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
+  const liveRuntimeButtonLabel = liveRuntimeDisplayState === 'live_warning'
+    ? 'Live Warning'
+    : liveRuntimeDisplayState === 'offline'
+      ? 'Offline'
+      : liveRuntimeActive
+        ? 'Live'
+        : 'Live State'
+  const snapshotDetailsAction = (
+    <MenuButton
+      label="Details"
+      size="sm"
+      kind="tertiary"
+      menuAlignment="bottom-end"
+      menuBorder
+      className="juce-grid-page__snapshot-status-details-menu"
+    >
+      <MenuItem
+        label="Add path"
         renderIcon={Add}
-        className="juce-grid-page__hero-action juce-grid-page__hero-action--success"
+        className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--add"
         onClick={addFlow}
         disabled={flowSlots.length >= MAX_FLOWS}
-      >
-        Add path
-      </Button>
-      <Button
-        size="sm"
+      />
+      <MenuItem
+        label="Reset paths"
         kind="danger"
-        className="juce-grid-page__hero-action"
+        renderIcon={TrashCan}
+        className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowClearFlowsModal(true)}
         disabled={flowSlots.length <= 1}
-      >
-        Reset paths
-      </Button>
-      <Button
-        size="sm"
-        kind="secondary"
+      />
+      <MenuItem
+        label="Network Routing"
         renderIcon={Network_3}
-        className="juce-grid-page__hero-action"
+        className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowAudioNodesModal(true)}
-      >
-        Network Routing
-      </Button>
-      <Button
-        size="sm"
-        kind={liveRuntimeActive ? 'primary' : 'secondary'}
+      />
+      <MenuItem
+        label={liveRuntimeButtonLabel}
         renderIcon={Launch}
-        className={`juce-grid-page__hero-action juce-grid-page__hero-action--live ${liveRuntimeActive ? 'is-live' : ''}`}
+        className={`juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--live ${liveRuntimeActive ? 'is-live' : ''}`}
         onClick={() => setShowLiveRuntimeModal(true)}
-      >
-        Live Now!
-      </Button>
-      <Button
-        size="sm"
-        kind="secondary"
+      />
+      <MenuItem
+        label="Local Routing"
         renderIcon={Flow}
-        className="juce-grid-page__hero-action"
+        className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowRoutingTopologyModal(true)}
-      >
-        Local Routing
-      </Button>
-      <Button
-        size="sm"
-        kind="primary"
+      />
+      <MenuItem
+        label="Perform"
         renderIcon={Music}
-        className="juce-grid-page__hero-action juce-grid-page__hero-action--perform"
+        className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--perform"
         onClick={() => setShowPerformModal(true)}
-      >
-        Perform
-      </Button>
-      <Button
-        size="sm"
-        kind="ghost"
-        className="juce-grid-page__hero-action"
+      />
+      <MenuItem
+        label="MIDI"
+        renderIcon={Music}
+        className={`juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--midi ${midiLearnActive || midiLearnInProgress ? 'is-learning' : ''}`}
+        title={midiLearnActive || midiLearnInProgress ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`}
+        onClick={() => setMidiModalOpen(true)}
+      />
+      <MenuItem
+        label="Shortcuts"
+        renderIcon={Information}
+        className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowKeyboardHelp(true)}
-      >
-        Shortcuts
-      </Button>
-    </>
+      />
+    </MenuButton>
   )
 
   if (showViewportBlockScreen) {
@@ -4766,7 +4866,7 @@ export function SnapshotEditorPage() {
               handlePluginSelect(pluginUri, pluginPosition)
             }}
             liveSnapshot={activeSnapshot}
-            heroActions={snapshotHeroActions}
+            detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
           />
@@ -4799,7 +4899,7 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__parameter-editor-copy">
                   <p className="juce-grid-page__dense-card-kicker">Snapshot entry point</p>
                   <h3 className="juce-grid-page__selected-block-placeholder-heading">No snapshot loaded</h3>
-                  <p>Open the Artifacts Snapshots workspace to load an existing design or create a new one before editing the signal canvas.</p>
+                  <p>Open the Snapshots workspace to load an existing design or create a new one before editing the signal canvas.</p>
                 </div>
                 <Button size="sm" kind="primary" onClick={reopenSnapshotEntryPoint}>
                   Open snapshots workspace
@@ -5033,7 +5133,6 @@ export function SnapshotEditorPage() {
         <>
           <section className="juce-grid-page__tablet-launcher" aria-label="Tablet workspace launcher">
             <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--left">
-              {renderTabletLauncherUtilityButton('snapshots')}
               <Button
                 size="md"
                 kind="primary"
@@ -5054,7 +5153,7 @@ export function SnapshotEditorPage() {
               >
                 {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
               </Button>
-              {renderTabletLauncherUtilityButton('midi')}
+              {renderTabletLoadButton()}
             </div>
 
             <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--center">
@@ -5174,9 +5273,8 @@ export function SnapshotEditorPage() {
       )}
 
       {!isTabletTouchLayout && (
-        <div className="juce-grid-page__floating-actions" aria-label="Audio Grid floating actions">
-          {renderSnapshotsTrigger()}
-          {renderMidiTrigger()}
+        <div className="juce-grid-page__floating-actions" aria-label="Snapshots floating toolbar">
+          {renderSnapshotsToolbar()}
         </div>
       )}
 
@@ -6003,10 +6101,28 @@ export function SnapshotEditorPage() {
 
       {/* Automation Timeline Bottom Panel */}
       {automationTimelineExpanded && (
-        <div className="juce-grid-page__automation-panel">
+        <div
+          id="juce-grid-automation-panel"
+          ref={automationPanelRef}
+          className="juce-grid-page__automation-panel"
+        >
           {renderAutomationWorkspace({ compact: isCompactLayout })}
         </div>
       )}
+
+      <Button
+        size="sm"
+        kind="secondary"
+        className={`juce-grid-page__automation-floating-toggle ${automationTimelineExpanded ? 'is-expanded' : ''}`}
+        style={automationFloatingToggleStyle}
+        onClick={() => setAutomationTimelineExpanded((previous) => !previous)}
+        aria-controls="juce-grid-automation-panel"
+        aria-expanded={automationTimelineExpanded}
+        aria-label={automationTimelineExpanded ? 'Hide automation toolbar' : 'Show automation toolbar'}
+        title={automationFloatingToggleTitle}
+      >
+        Automation
+      </Button>
 
       {/* Unified Audio Port Selector — per-flow or global */}
       <JuceGridAudioPortModal
@@ -6023,34 +6139,7 @@ export function SnapshotEditorPage() {
       />
 
       {/* Footer Status Bar */}
-      <footer className="juce-grid-page__footer">
-        <button
-          type="button"
-          className={`juce-grid-page__automation-footer-toggle ${automationTimelineExpanded ? 'is-expanded' : ''}`}
-          onClick={() => setAutomationTimelineExpanded((previous) => !previous)}
-          aria-expanded={automationTimelineExpanded}
-        >
-          <div className="juce-grid-page__automation-footer-copy">
-            <p className="juce-grid-page__automation-footer-kicker">Automation</p>
-            <h2 className="juce-grid-page__automation-footer-heading">
-              {automationRecording
-                ? 'Recording'
-                : automationPlaying
-                  ? 'Playing'
-                  : automationLanes.length > 0
-                    ? 'Ready'
-                    : 'Idle'}
-            </h2>
-          </div>
-          <div className="juce-grid-page__automation-footer-meta">
-            <span>{formatAutomationTime(automationCurrentTime)} / {formatAutomationTime(automationDuration)}</span>
-            <span>{automationLanes.length} lanes</span>
-            {automationLoopEnabled && <span>Loop</span>}
-            {armedAutomationLane && <span>Armed {armedAutomationLane.parameterName}</span>}
-          </div>
-          <ChevronRight size={16} className={`juce-grid-page__automation-footer-chevron ${automationTimelineExpanded ? 'is-open' : ''}`} />
-        </button>
-
+      <footer ref={footerRef} className="juce-grid-page__footer">
         <div
           className={`juce-grid-page__status-chip ${cpuStatus}`}
           title={`CPU: ${cpuMetrics.totalCpuPercent.toFixed(1)}%`}
@@ -6113,6 +6202,8 @@ export function SnapshotEditorPage() {
           onUpdateLive={handleUpdateLiveChains}
           onRevertToLive={handleRevertEditorToLive}
           updatePending={updateLiveChainsMutation.isPending}
+          onKillLivePath={handleKillLiveChain}
+          killPending={killLivePathMutation.isPending}
         />
       ) : null}
 

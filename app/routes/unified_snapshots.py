@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import httpx
 import logging
 from typing import Any, Optional
 
@@ -268,6 +269,50 @@ def _translate_value_error(exc: ValueError) -> None:
     raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+def _normalize_optional_query_string(value: Any) -> Optional[str]:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _normalize_bounded_limit(value: Any, *, default: int, minimum: int, maximum: int) -> int:
+    try:
+        candidate = int(value)
+    except (TypeError, ValueError):
+        candidate = default
+    return max(minimum, min(maximum, candidate))
+
+
+async def _proxy_runtime_read(node_id: str, path: str, *, params: Optional[dict[str, Any]] = None) -> Optional[dict[str, Any]]:
+    from app.services.node_discovery_service import get_node_discovery_service
+    from app.services.snapshot_runtime_state_service import resolve_local_node_id
+
+    normalized_node_id = str(node_id or "").strip()
+    if not normalized_node_id or normalized_node_id in {"local", resolve_local_node_id()}:
+        return None
+
+    target = await get_node_discovery_service().resolve_known_node(normalized_node_id)
+    if target is None:
+        _raise_not_found("Node")
+    if target.is_local:
+        return None
+
+    try:
+        base_url = str(target.api_url or f"http://{target.host}:8080").rstrip("/")
+        async with httpx.AsyncClient(timeout=3.0, follow_redirects=True) as client:
+            response = await client.get(
+                f"{base_url}{path}",
+                params=params or None,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            return payload if isinstance(payload, dict) else {"data": payload}
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            _raise_not_found("Node runtime state")
+        raise HTTPException(status_code=exc.response.status_code, detail=exc.response.text) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to contact node {normalized_node_id}: {exc}") from exc
+
+
 @router.get("/api/snapshots")
 async def list_snapshots() -> dict[str, Any]:
     try:
@@ -298,6 +343,74 @@ async def get_live_snapshot() -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error getting live snapshot: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/runtime/live-state")
+async def get_runtime_live_state(node_id: Optional[str] = Query(None)) -> dict[str, Any]:
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+    try:
+        normalized_node_id = _normalize_optional_query_string(node_id)
+        proxied = await _proxy_runtime_read(normalized_node_id or "", "/api/runtime/live-state")
+        if proxied is not None:
+            return proxied
+
+        async with get_session() as session:
+            service = SnapshotRuntimeStateService(session)
+            return await service.get_live_state()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting runtime live state: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/cluster/runtime/live-state")
+async def get_cluster_runtime_live_state() -> dict[str, Any]:
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+    try:
+        async with get_session() as session:
+            service = SnapshotRuntimeStateService(session)
+            return await service.get_cluster_live_state()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting cluster runtime live state: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/runtime/activation-events")
+async def get_runtime_activation_events(
+    limit: int = Query(100, ge=1, le=100),
+    node_id: Optional[str] = Query(None),
+) -> dict[str, Any]:
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+    try:
+        normalized_limit = _normalize_bounded_limit(limit, default=100, minimum=1, maximum=100)
+        normalized_node_id = _normalize_optional_query_string(node_id)
+        proxied = await _proxy_runtime_read(
+            normalized_node_id or "",
+            "/api/runtime/activation-events",
+            params={"limit": normalized_limit},
+        )
+        if proxied is not None:
+            return proxied
+
+        async with get_session() as session:
+            service = SnapshotRuntimeStateService(session)
+            events = await service.list_activation_events(limit=normalized_limit)
+            return {
+                "node_id": service.local_node_id,
+                "count": len(events),
+                "events": events,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting runtime activation events: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

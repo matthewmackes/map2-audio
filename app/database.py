@@ -1047,6 +1047,62 @@ class SnapshotDeploymentHistory(Base):
     )
 
 
+class SnapshotNodeLiveState(Base):
+    """Authoritative per-node runtime live-state projection."""
+    __tablename__ = "snapshot_node_live_state"
+
+    id = Column(Integer, primary_key=True)
+    node_id = Column(String(128), nullable=False, unique=True, index=True)
+    seq = Column(Integer, nullable=False, default=0)
+    state = Column(String(32), nullable=False, default="stopped")
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="SET NULL"), nullable=True, index=True)
+    snapshot_revision = Column(String(64), nullable=True, index=True)
+    triggered_by = Column(String(32), nullable=True)
+    last_successful_request_id = Column(String(64), nullable=True, index=True)
+    failure_reason = Column(Text, nullable=True)
+    live_snapshot_payload = Column(JSON, default=dict)
+    runtime_metrics = Column(JSON, default=dict)
+    last_requested_at = Column(DateTime, nullable=True)
+    last_runtime_event_at = Column(DateTime, nullable=True)
+    last_transition_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot")
+
+    __table_args__ = (
+        Index("idx_snapshot_node_live_state_snapshot_state", "snapshot_id", "state"),
+    )
+
+
+class SnapshotActivationEvent(Base):
+    """Durable audit log for snapshot activation requests and outcomes."""
+    __tablename__ = "snapshot_activation_events"
+
+    id = Column(Integer, primary_key=True)
+    node_id = Column(String(128), nullable=False, index=True)
+    request_id = Column(String(64), nullable=False, unique=True, index=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="SET NULL"), nullable=True, index=True)
+    snapshot_name = Column(String(255), nullable=True)
+    snapshot_revision = Column(String(64), nullable=True, index=True)
+    triggered_by = Column(String(32), nullable=True)
+    requested_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    confirmed_live_at = Column(DateTime, nullable=True)
+    outcome = Column(String(32), nullable=False, default="requested")
+    failure_reason = Column(Text, nullable=True)
+    activation_latency_ms = Column(Float, nullable=True)
+    runtime_metrics = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    snapshot = relationship("Snapshot")
+
+    __table_args__ = (
+        Index("idx_snapshot_activation_events_node_requested", "node_id", "requested_at"),
+        Index("idx_snapshot_activation_events_snapshot_outcome", "snapshot_id", "outcome"),
+    )
+
+
 class TesiraLoopTemplate(Base):
     """Tag-mapped Tesira template metadata for loop orchestration."""
     __tablename__ = "tesira_loop_templates"

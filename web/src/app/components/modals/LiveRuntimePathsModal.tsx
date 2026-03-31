@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Renew } from '@carbon/icons-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ArrowRight, Renew, TrashCan } from '@carbon/icons-react'
 import { Button, Modal, Tag } from '@carbon/react'
 import { getEffectIconSpec } from '../icons/effectIcons'
 import type { JuceGridLiveChainProjection } from '../SnapshotEditor/snapshotEditorLiveChains'
@@ -14,6 +15,8 @@ interface LiveRuntimePathsModalProps {
   onUpdateLive?: () => void
   onRevertToLive?: () => void
   updatePending?: boolean
+  onKillLivePath?: (chainId: number) => void
+  killPending?: boolean
 }
 
 function getRepresentativeAccessibleLabel(
@@ -63,7 +66,19 @@ export function LiveRuntimePathsModal({
   onUpdateLive,
   onRevertToLive,
   updatePending = false,
+  onKillLivePath,
+  killPending = false,
 }: LiveRuntimePathsModalProps) {
+  const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
+
+  useEffect(() => {
+    setSelectedChainId((current) => (
+      current !== null && projections.some((projection) => projection.chainId === current)
+        ? current
+        : null
+    ))
+  }, [projections])
+
   if (!open) {
     return null
   }
@@ -78,6 +93,48 @@ export function LiveRuntimePathsModal({
   }, { live: 0, degraded: 0 })
 
   const showMismatchBanner = mismatch && (onUpdateLive || onRevertToLive)
+  const selectionEnabled = Boolean(onKillLivePath)
+  const selectedProjection = useMemo(
+    () => projections.find((projection) => projection.chainId === selectedChainId) ?? null,
+    [projections, selectedChainId],
+  )
+  const inventoryCopy = projections.length > 0
+    ? (
+      selectionEnabled
+        ? 'Select one live path, then use Kill Live Path to deactivate its runtime chain.'
+        : 'Read-only live path inventory sourced from backend runtime truth. Each live path maps to a runtime chain while active.'
+    )
+    : 'No live or degraded paths are currently reported by the backend runtime.'
+
+  const handleKillLivePath = () => {
+    if (!selectedProjection || !onKillLivePath) {
+      return
+    }
+    onKillLivePath(selectedProjection.chainId)
+  }
+
+  const renderSelectionControl = (projection: JuceGridLiveChainProjection) => {
+    if (!selectionEnabled) {
+      return null
+    }
+
+    const isSelected = selectedChainId === projection.chainId
+    return (
+      <button
+        type="button"
+        className={`live-runtime-paths-modal__selector ${isSelected ? 'is-selected' : ''}`}
+        role="radio"
+        aria-checked={isSelected}
+        aria-label={`Select ${projection.chainName}`}
+        onClick={() => setSelectedChainId(projection.chainId)}
+      >
+        <span className="live-runtime-paths-modal__selector-indicator" aria-hidden="true" />
+        <span className="live-runtime-paths-modal__selector-label">
+          {isSelected ? 'Selected' : 'Select'}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <Modal
@@ -92,14 +149,25 @@ export function LiveRuntimePathsModal({
       <div className="live-runtime-paths-modal" data-testid="live-runtime-paths-modal">
         <div className="live-runtime-paths-modal__header">
           <p className="live-runtime-paths-modal__copy">
-            {projections.length > 0
-              ? 'Read-only live path inventory sourced from backend runtime truth. Each live path maps to a runtime chain while active.'
-              : 'No live or degraded paths are currently reported by the backend runtime.'}
+            {inventoryCopy}
           </p>
-          <div className="live-runtime-paths-modal__tags">
-            <Tag type="green">{counts.live} live</Tag>
-            {counts.degraded > 0 ? <Tag type="warm-gray">{counts.degraded} degraded</Tag> : null}
-            <Tag type="cool-gray">{summaryOnly ? 'Summary mode' : 'Miniature signal view'}</Tag>
+          <div className="live-runtime-paths-modal__header-actions">
+            <div className="live-runtime-paths-modal__tags">
+              <Tag type="green">{counts.live} live</Tag>
+              {counts.degraded > 0 ? <Tag type="warm-gray">{counts.degraded} degraded</Tag> : null}
+              <Tag type="cool-gray">{summaryOnly ? 'Summary mode' : 'Miniature signal view'}</Tag>
+            </div>
+            {selectionEnabled ? (
+              <Button
+                size="sm"
+                kind="danger--tertiary"
+                renderIcon={TrashCan}
+                disabled={!selectedProjection || killPending}
+                onClick={handleKillLivePath}
+              >
+                Kill Live Path
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -146,17 +214,22 @@ export function LiveRuntimePathsModal({
             <p>No backend-live paths currently reported.</p>
           </div>
         ) : summaryOnly ? (
-          <div className="live-runtime-paths-modal__summary-list" aria-label="Live paths summary">
+          <div
+            className="live-runtime-paths-modal__summary-list"
+            aria-label="Live paths summary"
+            role={selectionEnabled ? 'radiogroup' : undefined}
+          >
             {projections.map((projection) => (
               <article
                 key={`summary-${projection.chainId}`}
-                className={`live-runtime-paths-modal__summary-item is-${projection.status}`}
+                className={`live-runtime-paths-modal__summary-item is-${projection.status} ${selectedChainId === projection.chainId ? 'is-selected' : ''}`}
               >
                 <div className="live-runtime-paths-modal__summary-main">
                   <span className="live-runtime-paths-modal__path-label">{projection.flowLabels.join('+')}</span>
                   <strong>{projection.chainName}</strong>
                 </div>
                 <div className="live-runtime-paths-modal__summary-tags">
+                  {renderSelectionControl(projection)}
                   <Tag type={getStatusTagType(projection)}>
                     {projection.status === 'live' ? 'Live' : 'Degraded'}
                   </Tag>
@@ -166,11 +239,15 @@ export function LiveRuntimePathsModal({
             ))}
           </div>
         ) : (
-          <div className="live-runtime-paths-modal__rows" aria-label="Live paths truth rows">
+          <div
+            className="live-runtime-paths-modal__rows"
+            aria-label="Live paths truth rows"
+            role={selectionEnabled ? 'radiogroup' : undefined}
+          >
             {projections.map((projection) => (
               <article
                 key={`runtime-path-${projection.chainId}`}
-                className={`live-runtime-paths-modal__row is-${projection.status}`}
+                className={`live-runtime-paths-modal__row is-${projection.status} ${selectedChainId === projection.chainId ? 'is-selected' : ''}`}
               >
                 <div className="live-runtime-paths-modal__row-header">
                   <div className="live-runtime-paths-modal__row-copy">
@@ -185,6 +262,7 @@ export function LiveRuntimePathsModal({
                     </p>
                   </div>
                   <div className="live-runtime-paths-modal__row-tags">
+                    {renderSelectionControl(projection)}
                     <Tag type={getStatusTagType(projection)}>
                       {projection.status === 'live' ? 'Live' : 'Degraded'}
                     </Tag>

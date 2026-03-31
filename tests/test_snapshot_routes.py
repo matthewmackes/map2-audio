@@ -140,6 +140,20 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         live_snapshot = await routes.get_live_snapshot()
         assert live_snapshot["id"] == snapshot_id
         assert live_snapshot["live_state"]["is_live"] is True
+        assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
+
+        runtime_live_state = await routes.get_runtime_live_state()
+        assert runtime_live_state["snapshot_id"] == snapshot_id
+        assert runtime_live_state["display_state"] == "live"
+
+        activation_events = await routes.get_runtime_activation_events()
+        assert activation_events["count"] >= 1
+        assert activation_events["events"][0]["snapshot_id"] == snapshot_id
+        assert activation_events["events"][0]["outcome"] == "success"
+
+        cluster_runtime = await routes.get_cluster_runtime_live_state()
+        assert cluster_runtime["local_node_id"] == runtime_live_state["node_id"]
+        assert any(node["snapshot_id"] == snapshot_id for node in cluster_runtime["nodes"])
 
         program_update = await routes.set_program_number(
             snapshot_id,

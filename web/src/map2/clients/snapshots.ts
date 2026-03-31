@@ -14,11 +14,15 @@ import type {
   SnapshotDetail,
   SnapshotDraftData,
   SnapshotExport,
+  SnapshotActivationEventsResponse,
+  SnapshotActivationIntent,
   SnapshotIOBindings,
   SnapshotPath,
   SnapshotLoadedEvent,
   SnapshotMidiMapEntry,
   SnapshotPlugin,
+  SnapshotRuntimeClusterLiveStateResponse,
+  SnapshotRuntimeLiveState,
   SnapshotRouting,
   SnapshotSummary,
 } from '../types'
@@ -78,6 +82,9 @@ export interface SnapshotActivationResponse {
   snapshot_id: number
   name: string
   snapshot_data: SnapshotDetail
+  snapshot_revision?: string
+  activation_intent?: SnapshotActivationIntent
+  runtime_live_state?: SnapshotRuntimeLiveState
   params_applied: number
   bypass_applied: number
 }
@@ -388,6 +395,23 @@ export const snapshotsApi = {
 
   getLive: () =>
     fetchJson<SnapshotDetail>(`${API_BASE}/snapshots/live`, { cache: 'no-store' }),
+
+  getRuntimeLiveState: (nodeId?: string | null) => {
+    const query = nodeId ? `?node_id=${encodeURIComponent(nodeId)}` : ''
+    return fetchJson<SnapshotRuntimeLiveState>(`${API_BASE}/runtime/live-state${query}`, { cache: 'no-store' })
+  },
+
+  getClusterRuntimeLiveState: () =>
+    fetchJson<SnapshotRuntimeClusterLiveStateResponse>(`${API_BASE}/cluster/runtime/live-state`, { cache: 'no-store' }),
+
+  getActivationEvents: (limit = 100, nodeId?: string | null) => {
+    const params = new URLSearchParams()
+    params.set('limit', String(limit))
+    if (nodeId) {
+      params.set('node_id', nodeId)
+    }
+    return fetchJson<SnapshotActivationEventsResponse>(`${API_BASE}/runtime/activation-events?${params.toString()}`, { cache: 'no-store' })
+  },
 
   openDraft: (snapshotId: number) =>
     fetchJson<SnapshotDraftResponse>(`${API_BASE}/snapshots/${snapshotId}/draft`, {

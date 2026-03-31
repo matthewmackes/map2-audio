@@ -280,6 +280,10 @@ async def lifespan(app):
         from app.services.plugin_preset_lifecycle import get_preset_lifecycle
         from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
         from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
+        from app.services.snapshot_runtime_state_service import (
+            start_snapshot_runtime_heartbeat,
+            stop_snapshot_runtime_heartbeat,
+        )
         from app.database import checkpoint_database
         from app.services.lcd_manager import LCDManager, set_lcd_manager as set_global_lcd_manager
         from app.services.event_producers import (
@@ -423,6 +427,8 @@ async def lifespan(app):
         await safe_start_service(logger, "Metering broadcast service", start_metering_broadcast)
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
+        # Start authoritative snapshot runtime heartbeat broadcaster.
+        await safe_start_service(logger, "Snapshot runtime heartbeat", start_snapshot_runtime_heartbeat)
         # Attach MIDI v2 service to MidiHub consumer stream (program-change handling).
         try:
             from app.services.midi_service import midi_service
@@ -591,6 +597,7 @@ async def lifespan(app):
                 await safe_stop_service(logger, "Heartbeat monitor", heartbeat.stop)
         
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
+        await safe_stop_service(logger, "Snapshot runtime heartbeat", stop_snapshot_runtime_heartbeat)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
         try:
             from app.services.midi_service import midi_service

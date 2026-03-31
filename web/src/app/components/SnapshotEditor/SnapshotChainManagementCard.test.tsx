@@ -111,25 +111,20 @@ function renderCard(
       liveSnapshot={liveSnapshot}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
-      heroActions={(
-        <>
-          <button type="button">Network Routing</button>
-          <button type="button">Perform</button>
-        </>
-      )}
+      detailsAction={<button type="button">Details</button>}
     />,
   )
 }
 
 describe('SnapshotChainManagementCard', () => {
-  it('renders the unified live snapshot hero with title, actions, LCD readout, and summary row', () => {
+  it('renders the unified live snapshot hero with title, details trigger, LCD readout, and summary row', () => {
     const { container } = renderCard()
+    const summaryRow = container.querySelector('.juce-grid-page__snapshot-status-summary-row')
 
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
     expect(screen.getByText('Live')).toBeInTheDocument()
-    expect(screen.getByText('Network Routing')).toBeInTheDocument()
-    expect(screen.getByText('Perform')).toBeInTheDocument()
+    expect(screen.getByText('Details')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC 023  CH 01/05"]')).toBeInTheDocument()
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
@@ -145,8 +140,10 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Derived from snapshot')).toBeInTheDocument()
     expect(screen.getByText('Snapshot #7')).toBeInTheDocument()
     expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
-    expect(container.querySelector('.juce-grid-page__snapshot-status-summary-row')).toBeInTheDocument()
+    expect(summaryRow).toBeInTheDocument()
+    expect(summaryRow).toContainElement(screen.getByText('Details'))
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
+    expect(screen.queryByRole('toolbar', { name: 'Snapshot hero actions' })).not.toBeInTheDocument()
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {
@@ -168,6 +165,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('No live snapshot')).toBeInTheDocument()
     expect(screen.getByText('Recall or create a snapshot to populate live snapshot status here.')).toBeInTheDocument()
+    expect(screen.getByText('Details')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC --  CH --"]')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Rename snapshot/i })).not.toBeInTheDocument()
   })

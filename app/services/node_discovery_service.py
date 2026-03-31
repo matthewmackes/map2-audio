@@ -49,6 +49,7 @@ class KnownNodeEndpoint:
     host: str
     hostname: str
     is_local: bool = False
+    api_url: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,7 @@ class NodeDiscoveryService:
                 host="127.0.0.1",
                 hostname=local_identity.hostname,
                 is_local=True,
+                api_url="http://127.0.0.1:8080",
             )
 
         await self._refresh_peer_index()
@@ -201,16 +203,24 @@ class NodeDiscoveryService:
                 host="127.0.0.1",
                 hostname=local_identity.hostname,
                 is_local=True,
+                api_url="http://127.0.0.1:8080",
             ),
             local_identity.hostname.lower(): KnownNodeEndpoint(
                 node_id=local_identity.node_id,
                 host="127.0.0.1",
                 hostname=local_identity.hostname,
                 is_local=True,
+                api_url="http://127.0.0.1:8080",
             ),
         }
         for peer in peers:
-            endpoint = KnownNodeEndpoint(node_id=peer.node_id, host=peer.host, hostname=peer.hostname, is_local=False)
+            endpoint = KnownNodeEndpoint(
+                node_id=peer.node_id,
+                host=peer.host,
+                hostname=peer.hostname,
+                is_local=False,
+                api_url=peer.api_url,
+            )
             for key in {peer.node_id.lower(), peer.host.lower(), peer.hostname.lower()}:
                 index[key] = endpoint
 

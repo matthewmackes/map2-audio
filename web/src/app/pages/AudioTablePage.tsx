@@ -600,6 +600,40 @@ export function AudioTablePage() {
     },
   })
 
+  const killLivePathMutation = useMutation({
+    mutationFn: async (chainId: number) => {
+      await chainsApi.deactivate(chainId)
+      return chainId
+    },
+    onMutate: async (chainId): Promise<LiveChainMutationContext> => {
+      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const nextActiveChainIds = new Set(
+        (previousChains?.chains ?? [])
+          .filter((chain) => chain.is_active && chain.id !== chainId)
+          .map((chain) => chain.id),
+      )
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
+        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
+      ))
+      return { previousChains }
+    },
+    onSuccess: (chainId) => {
+      void queryClient.invalidateQueries({ queryKey: ['chains'] })
+      const killedChain = chains.find((chain) => chain.id === chainId)
+      pushToast(
+        killedChain ? `Killed live path: ${killedChain.name}` : 'Killed live path',
+        'info',
+      )
+    },
+    onError: (error, _chainId, context) => {
+      if (context?.previousChains) {
+        queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      pushToast(`Failed to kill live path: ${error}`, 'error')
+    },
+  })
+
   const savePresetMutation = useMutation({
     mutationFn: async ({ chainId, name }: { chainId: number; name: string }) =>
       chainsApi.savePreset(chainId, name),
@@ -1107,6 +1141,10 @@ export function AudioTablePage() {
     routing,
   ])
 
+  const handleKillLivePath = useCallback((chainId: number) => {
+    killLivePathMutation.mutate(chainId)
+  }, [killLivePathMutation])
+
   // ── Column picker ───────────────────────────────────────────────────────
 
   const toggleColumnGroup = useCallback((group: 'midiGroup' | 'automationGroup' | 'inputLevel' | 'outputLevel') => {
@@ -1538,6 +1576,8 @@ export function AudioTablePage() {
           onUpdateLive={handleUpdateLivePaths}
           onRevertToLive={handleRevertWorkspaceToLive}
           updatePending={updateLivePathsMutation.isPending}
+          onKillLivePath={handleKillLivePath}
+          killPending={killLivePathMutation.isPending}
         />
       ) : null}
     </div>

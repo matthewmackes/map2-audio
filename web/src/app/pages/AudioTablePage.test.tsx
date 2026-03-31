@@ -1115,12 +1115,22 @@ describe('AudioTablePage — Toolbar', () => {
     expect(setActiveNode).toHaveBeenCalledWith('rack-a')
   })
 
-  it('opens the live-paths backend-truth modal from the toolbar', async () => {
+  it('opens the live-paths modal and kills the selected backend path', async () => {
     renderPage()
 
     fireEvent.click(getToolbarButton('Live paths'))
 
     expect(await screen.findByTestId('live-runtime-paths-modal')).toBeInTheDocument()
-    expect(screen.getByText(/Read-only live path inventory sourced from backend runtime truth/i)).toBeInTheDocument()
+    expect(screen.getByText(/Select one live path, then use Kill Live Path/i)).toBeInTheDocument()
+
+    const killButton = screen.getByText('Kill Live Path').closest('button') as HTMLButtonElement
+    expect(killButton).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Select Main' }))
+    fireEvent.click(killButton)
+
+    await waitFor(() => {
+      expect(mockChainsApi.deactivate).toHaveBeenCalledWith(1)
+    })
   })
 })

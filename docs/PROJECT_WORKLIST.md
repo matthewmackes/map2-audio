@@ -6,7 +6,191 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 15:08 EDT - T574 completed hero snapshot click-to-rename
+Last updated: 2026-03-30 21:23 EDT - T582 completed snapshot runtime UTC cleanup
+
+ID: T581
+Status: [✓] Done
+Title: Add focused hook-level regression coverage for snapshot runtime live-state subscriptions
+Description:
+- Goal / acceptance criteria: Add focused Jest coverage for `web/src/app/hooks/useSnapshotRuntimeState.ts` covering initial REST fetches, websocket cache updates, node filtering, activation-event deduping, and cluster runtime-state query behavior so the new authoritative live-state hooks are locked down at the hook boundary.
+- Why it matters: The new runtime-truth UI depends on query and websocket coordination, but the current validation only proves page/cache behavior and does not yet pin the hook contract itself.
+- Dependencies: T578
+- Estimated effort: Medium
+- Required outputs: hook-level tests, any required mock/query cleanup, validation evidence, and completion notes in this worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 21:21 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/hooks/useSnapshotRuntimeState.test.tsx` with focused hook-level coverage for local runtime-state hydration, scoped websocket cache updates, activation-event deduping plus node filtering, and the cluster runtime-state query path.
+  - Reused direct `snapshotsApi` mocks and websocket-topic handler capture so the new authoritative live-state hooks are validated at the query/websocket merge boundary instead of only through page-level behavior.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/hooks/useSnapshotRuntimeState.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
+
+ID: T582
+Status: [✓] Done
+Title: Replace new snapshot runtime UTC timestamp calls with timezone-safe helpers
+Description:
+- Goal / acceptance criteria: Remove the new `datetime.utcnow()` usage introduced in the snapshot runtime live-state path by switching the touched runtime/snapshot services to timezone-safe UTC helpers while preserving existing naive-UTC storage and payload behavior.
+- Why it matters: Python 3.14 now flags `datetime.utcnow()` as deprecated, and the new snapshot runtime slice currently adds fresh warnings in a core activation path.
+- Dependencies: T578
+- Estimated effort: Low
+- Required outputs: backend timestamp helper/refactor, preserved runtime-state semantics, focused validation evidence, and completion notes in this worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 21:23 EDT - Codex
+- Completion notes:
+  - Added timezone-safe `_utcnow()` helpers in `app/services/snapshot_runtime_state_service.py` and `app/services/snapshot_service.py`, using `datetime.now(timezone.utc).replace(tzinfo=None)` so the runtime live-state path keeps naive-UTC storage semantics without relying on deprecated `datetime.utcnow()`.
+  - Normalized parsed ISO timestamps in `app/services/snapshot_runtime_state_service.py` back to naive UTC before latency math and staleness calculations, which keeps intent-confirmation timing stable even when incoming payloads carry timezone offsets.
+  - Replaced every `datetime.utcnow()` call in the touched snapshot runtime and snapshot service files, leaving the remaining warning surface limited to older SQLAlchemy defaults and unrelated deployment code outside this cycle.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS (`3 passed`; remaining warnings limited to SQLAlchemy defaults and `app/services/snapshot_deployment_service.py`); `rg -n "datetime\\.utcnow\\(" app/services/snapshot_runtime_state_service.py app/services/snapshot_service.py` -> PASS (no matches); `npm --prefix web test -- --runInBand web/src/app/hooks/useSnapshotRuntimeState.test.tsx` -> PASS.
+
+ID: T580
+Status: [✓] Done
+Title: Move snapshot editor hero actions into a metadata-row Details dropdown
+Description:
+- Goal / acceptance criteria: Replace the current top-right snapshot editor hero button cluster with a single Carbon-themed `Details` dropdown trigger that sits at the far right of the live snapshot metadata row, opens a dropdown menu, and contains the existing action set in menu form while reclaiming the old header space.
+- Why it matters: The current action strip dominates the hero header and competes with the live snapshot title, while the operator requested a tighter Carbon-style action affordance anchored in the summary row.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: snapshot editor page/card refactor, Carbon-aligned dropdown styling, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 21:11 EDT - Codex
+- Completion notes:
+  - Replaced the snapshot editor’s top-right hero button cluster in `web/src/app/pages/SnapshotEditorPageContent.tsx` with a Carbon `MenuButton`-driven `Details` dropdown that preserves the existing action order while moving all actions into one anchored menu.
+  - Refactored `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the new `Details` control renders as the far-right action cell in the live snapshot metadata row, which reclaims the old header space while keeping the MIDI readout in the hero aside.
+  - Updated `web/src/app/pages/SnapshotEditorPage.css` to add the Carbon-aligned summary-row action slot, details trigger styling, and menu icon accents for Add path, live state, Perform, and MIDI, including responsive behavior for tablet and narrow layouts.
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` so the focused regression coverage now asserts the `Details` trigger is present in the summary row and the old hero toolbar is no longer rendered.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice or ownership gaps requiring follow-up work.
+
+ID: T579
+Status: [✓] Done
+Title: Align home launcher shell width with the banner image
+Description:
+- Goal / acceptance criteria: Reduce the effective width of the home page launcher shell so the banner image and launcher card grid share the same centered content width, eliminating the need for left/right spacer treatment beside the banner while preserving the existing mobile stacking behavior.
+- Why it matters: The current home hero is capped while the launcher cards span the full page width, which makes the banner rely on surrounding spacer columns instead of a coherent shared page shell.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: home page layout/CSS update, focused validation evidence, licensing review note, and completion notes in this worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 19:51 EDT - Codex
+- Completion notes:
+  - Added a shared `hp2-shell` wrapper in `web/src/app/pages/HomePage.tsx` so the banner, launcher grid, and footer now live inside one centered page shell instead of mixing a capped hero with full-width launcher cards.
+  - Updated `web/src/app/pages/HomePage.css` to move the home launcher surface onto a shared `900px` shell width, while keeping the existing two-column desktop layout and the single-column mobile breakpoint behavior intact.
+  - Added a local image-asset mock in `web/src/app/pages/HomePage.test.tsx` so the focused home-page Jest target can load the banner import during validation without changing broader test configuration.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS; `npm --prefix web run typecheck` -> PASS.
+- Licensing review: touched home-page frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'` and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T577
+Status: [✓] Done
+Title: Capture authoritative live-state and synchronization requirements for snapshot-driven JUCE runtime control
+Description:
+- Goal / acceptance criteria: Run a structured requirements interview that defines an industry-standard, repeatable, measurable model for authoritative live-state control across local and remote nodes, with snapshots as configuration containers and the JUCE realtime process as the only source of truth for actual live audio. The interview must gather enough detail to produce an implementable source-of-truth, sync, and GUI-state specification.
+- Why it matters: The platform needs one defensible contract for what is truly live, what is merely requested or cached, how divergence is measured, and how local/cluster operator surfaces remain accurate under realtime conditions.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: 20-question answer set, documented architectural decisions, follow-on implementation/spec task(s), and any new standing rules that must be remembered.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 17:03 EDT - Codex
+- Completion notes:
+  - Completed the 20-question one-at-a-time architecture interview and captured the core control contract: the JUCE realtime process is the only authoritative source of truth for actual live audio state; GUI/backend may represent request intent and divergence state but must not assert live status without runtime confirmation.
+  - Captured node/state decisions: each node can run one snapshot at a time; the same snapshot may be live on multiple nodes; nodes publish their own local runtime truth independently; node failures remain isolated; and node-local mutations create `unsaved live divergence` until explicitly saved as a new snapshot.
+  - Captured sync/comparison decisions: `Make Live` and MIDI PC both request activation, but `live` is only entered after runtime confirmation; only `Live` and `Stopped` are desired steady states; divergence uses exact equality on a canonical normalized snapshot payload with unique/transient fields removed; GUI/backend own divergence detection; and the preferred transport model is event-driven updates plus periodic per-node reconciliation heartbeat/snapshot rather than database-derived live truth.
+  - Captured staleness/audit requirements: runtime truth may remain visually `Live` with a warning badge for up to 15 seconds, warning begins after 10 seconds without fresh confirmation, and the platform must retain the last 100 activation events with request time, confirmed-live time, source, snapshot id/version, node id, success/failure, and failure reason.
+
+ID: T578
+Status: [✓] Done
+Title: Write the authoritative live-state and cluster synchronization specification for snapshots and JUCE runtime
+Description:
+- Goal / acceptance criteria: Convert the captured T577 answers into a concrete architecture/specification that defines state models, command flow, runtime event contracts, node-local/live-truth ownership, staleness handling, divergence normalization, cluster sync transport, audit/event retention, and GUI rendering rules. The spec should be implementable across backend, JUCE, websocket/eventing, and frontend surfaces without ambiguity.
+- Why it matters: The requirements are now captured, but the platform still needs one written contract engineers can implement and test against consistently across local and remote nodes.
+- Dependencies: T577
+- Estimated effort: Medium
+- Required outputs: spec document or ADR, explicit state machine, message contract, timeout rules, normalization rules, validation metrics, and follow-on implementation task breakdown.
+Subtasks:
+  - ID: T578-A
+    Status: [✓] Done
+    Title: Implement backend node-scoped runtime live-state authority and activation audit spine
+    Description:
+    - Goal / acceptance criteria: Add authoritative per-node runtime live-state storage, activation intent/audit recording, canonical snapshot normalization + revision hashing, and compatibility projection updates so live status is derived from runtime-confirmed state rather than cache or request intent.
+    - Why it matters: Backend contracts must exist before GUI and cluster views can consume runtime truth consistently.
+    - Dependencies: T577
+    - Estimated effort: High
+    - Required outputs: schema additions, runtime live-state service, activation flow refactor, REST/websocket payload contracts, and backend regression coverage.
+    Assigned to: Codex
+    Last updated: 2026-03-30 17:55 EDT - Codex
+  - ID: T578-B
+    Status: [✓] Done
+    Title: Move snapshot UI live badges and divergence checks to authoritative node runtime truth
+    Description:
+    - Goal / acceptance criteria: Replace cache-derived live rendering with node-scoped runtime live-state subscriptions and REST fallback, apply 10s warning and 15s offline rules, surface activation history, and align make-live controls with the new backend contracts.
+    - Why it matters: Operator-visible state must match realtime truth locally and across the cluster.
+    - Dependencies: T578-A
+    - Estimated effort: High
+    - Required outputs: frontend types/clients/hooks, Snapshot Editor and related UI updates, websocket handling, focused frontend coverage, and validation evidence.
+    Assigned to: Codex
+    Last updated: 2026-03-30 17:55 EDT - Codex
+  - ID: T578-C
+    Status: [✓] Done
+    Title: Publish the formal authoritative live-state specification and rollout notes
+    Description:
+    - Goal / acceptance criteria: Persist the final architecture/spec, including state machine, message schemas, timeout behavior, compatibility rules, and phased rollout notes that match the implemented contracts.
+    - Why it matters: The implementation needs an explicit source document for future engineering and operations work.
+    - Dependencies: T578-A, T578-B
+    - Estimated effort: Medium
+    - Required outputs: spec/ADR document, worklist completion notes, and follow-on gaps/tasks if any remain.
+    Assigned to: Codex
+    Last updated: 2026-03-30 17:55 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-03-30 17:55 EDT - Codex
+- Completion notes:
+  - Added authoritative per-node runtime live-state storage and activation audit persistence in `app/database.py`, plus the new runtime state/audit service in `app/services/snapshot_runtime_state_service.py` with monotonic node sequence numbers, 1 Hz heartbeats, 10 s warning and 15 s offline freshness rules, websocket broadcasts, last-100-event retention, and cluster read aggregation.
+  - Refactored snapshot activation in `app/services/snapshot_service.py` so GUI and MIDI Program Change requests create activation intents, compute canonical normalized `snapshot_revision` hashes, and only promote snapshots to live compatibility projections after runtime apply succeeds; failures now resolve to node-local `stopped` runtime truth instead of leaving stale live state behind.
+  - Added runtime live-state and activation-event REST compatibility surfaces in `app/routes/unified_snapshots.py`, updated node discovery remote-runtime reads to use discovered API URLs, started the runtime heartbeat from `app/main.py`, and synchronized snapshot-backed chain activation/deactivation with the authoritative node runtime payload in `app/services/chain_service.py`.
+  - Moved frontend snapshot live rendering toward authoritative node runtime truth by extending snapshot API/types/websocket contracts, adding `web/src/app/hooks/useSnapshotRuntimeState.ts`, updating `web/src/app/pages/SnapshotEditorPageContent.tsx`, and upgrading `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` so `Make Live`, dirty/divergence checks, runtime freshness badges, per-node runtime state, and activation history all consume the new backend contracts.
+  - Published the formal engineering contract in `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`, documenting state ownership, normalization rules, event schemas, timeout behavior, compatibility expectations, and rollout guidance for future runtime/JUCE work.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T576
+Status: [✓] Done
+Title: Fix Kill Live Path so snapshot-backed live paths disappear from backend truth
+Description:
+- Goal / acceptance criteria: Make `Kill Live Path` actually remove a selected snapshot-materialized runtime path from the live Snapshot Editor backend-truth modal by updating the backend deactivation flow for snapshot-backed chains, refreshing the live snapshot query on chain updates, and adding focused regression coverage. The fix must preserve existing chain deactivation behavior for non-snapshot chains.
+- Why it matters: The newly added live-path kill control currently looks interactive but leaves degraded snapshot-backed rows visible, which makes the operator-facing action read as broken.
+- Dependencies: T575
+- Estimated effort: Medium
+- Required outputs: backend deactivation/live-snapshot cleanup, frontend live-snapshot invalidation fix, focused regression updates, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 16:41 EDT - Codex
+- Completion notes:
+  - Updated `app/services/chain_service.py` so chain deactivation now marks `runtime_sync` inactive for all chains and, for snapshot-materialized runtime chains, removes the matching live path/runtime chain id from the owning snapshot’s `live_state_payload` so Snapshot Editor no longer reconstructs the killed row.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so `chain_updates` also invalidate `['snapshots', 'live']`, and the modal kill mutation explicitly refreshes the live snapshot query after deactivation.
+  - Added `web/src/app/pages/snapshotLiveState.ts` cache-prune helpers and applied them in `web/src/app/pages/SnapshotEditorPageContent.tsx` so `Kill Live Path`, direct deactivation, and Update Live immediately strip removed runtime chains from the in-memory `['snapshots', 'live']` snapshot cache instead of waiting for a later poll/websocket refresh.
+  - Added focused backend regression coverage in `tests/test_snapshot_service.py` proving that deactivating a snapshot runtime chain removes it from `get_live_snapshot()` and clears the path’s `runtime_chain_id`, while retaining the existing modal/frontend coverage added under `T575`.
+- Validation: `pytest -q tests/test_snapshot_service.py` -> PASS; `pytest -q tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/snapshotLiveState.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched backend/frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; prior repository license scan remains sufficient and no new notice or ownership gaps were introduced by this regression fix.
+
+ID: T575
+Status: [✓] Done
+Title: Add live-path selection and Kill Live Path controls to the backend-truth modal
+Description:
+- Goal / acceptance criteria: Extend the shared live runtime paths modal so operators can select one backend-live path, trigger a `Kill Live Path` action from the modal itself, and have both Snapshot Editor and Audio Table wire that action through the existing chain deactivate API with optimistic live-truth refresh behavior. Preserve the existing update/revert workflows and add focused regression coverage plus validation evidence.
+- Why it matters: The backend-truth modal currently shows live paths but leaves operators without an in-context way to shut down a specific live path, which forces context switching and weakens the modal’s operational value.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: modal selection affordance, `Kill Live Path` action wiring in Snapshot Editor and Audio Table, focused regression updates, validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-30 15:31 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/modals/LiveRuntimePathsModal.tsx` and `.css` so the backend-truth modal now supports single-path selection, selected-row styling, and a header-level `Kill Live Path` control while preserving the existing mismatch/update/revert surfaces.
+  - Wired the shared modal into `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/pages/AudioTablePage.tsx` with dedicated kill-live-path mutations that reuse `chainsApi.deactivate(...)`, apply optimistic live-chain removal, invalidate `['chains']`, and surface path-specific success/failure toasts.
+  - Added focused regression coverage in `web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` and `web/src/app/pages/AudioTablePage.test.tsx` to lock the new selection gating and API dispatch behavior in place.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/modals/LiveRuntimePathsModal.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched modal/page/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T574
 Status: [✓] Done

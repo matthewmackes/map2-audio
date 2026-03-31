@@ -9,9 +9,10 @@ existing clients can keep operating while the frontend migrates.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 from uuid import uuid4
 
@@ -92,6 +93,57 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
     return fallback
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+_CANONICAL_TRANSIENT_KEYS = {
+    "id",
+    "source_key",
+    "chain_ref",
+    "created_at",
+    "updated_at",
+    "activated_at",
+    "runtime_chain_id",
+    "runtime_chain_name",
+    "snapshot_chain_id",
+    "snapshot_id",
+    "activation_status",
+    "request_id",
+    "last_successful_request_id",
+    "seq",
+    "timestamp",
+    "emitted_at",
+    "last_runtime_event_at",
+    "last_transition_at",
+}
+
+_CANONICAL_EFFECTS_LOOP_KEYS = {
+    "loop_id",
+    "name",
+    "channels",
+    "topology",
+    "tesira_device_id",
+    "template_id",
+    "send_endpoint_id",
+    "return_endpoint_id",
+    "target_added_latency_ms",
+    "compensation_samples",
+}
+
+
+def _canonicalize_json_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _canonicalize_json_value(subvalue)
+            for key, subvalue in sorted(value.items(), key=lambda item: str(item[0]))
+            if str(key) not in _CANONICAL_TRANSIENT_KEYS
+        }
+    if isinstance(value, list):
+        return [_canonicalize_json_value(item) for item in value]
+    return value
+
+
 def _plugin_available(plugin_uri: str) -> bool:
     if plugin_uri.startswith("map2://juce/"):
         return True
@@ -149,6 +201,13 @@ class SnapshotService:
         return await self._serialize_snapshot_detail(snapshot)
 
     async def get_live_snapshot(self) -> Optional[dict[str, Any]]:
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        runtime_payload = runtime_state.get("live_snapshot_payload")
+        if runtime_state.get("state") == "live" and isinstance(runtime_payload, dict):
+            return runtime_payload
+
         result = await self.session.execute(
             select(Snapshot)
             .options(
@@ -256,7 +315,7 @@ class SnapshotService:
             snapshot.is_favorite = bool(is_favorite)
         if display_order is not UNSET:
             snapshot.display_order = int(display_order)
-        snapshot.updated_at = datetime.utcnow()
+        snapshot.updated_at = _utcnow()
 
         if detail_payload is not UNSET:
             normalized = self._normalize_detail_payload(detail_payload)
@@ -318,47 +377,81 @@ class SnapshotService:
         *,
         triggered_by: str = "ui",
     ) -> Optional[dict[str, Any]]:
-        await self.session.execute(
-            update(Snapshot).values(
-                is_active=False,
-                live_state_payload={},
-                activated_at=None,
-            )
-        )
-        await self._clear_materialized_runtime_chains()
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
             return None
-        snapshot.is_active = True
-        snapshot.updated_at = datetime.utcnow()
-        snapshot.activated_at = datetime.utcnow()
+
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        normalized = await self._snapshot_to_normalized(snapshot)
+        snapshot_revision = self._snapshot_revision_from_normalized(normalized)
+        runtime_state_service = SnapshotRuntimeStateService(self.session)
+        intent = await runtime_state_service.create_activation_intent(
+            snapshot_id=snapshot.id,
+            snapshot_name=snapshot.name,
+            snapshot_revision=snapshot_revision,
+            normalized_snapshot_payload=self._canonicalize_snapshot_normalized(normalized),
+            triggered_by=triggered_by,
+        )
 
         detail = await self.get_snapshot(snapshot_id)
         if detail is None:
             return None
 
-        live_state_payload = await self._materialize_live_state(snapshot, detail)
-        snapshot.live_state_payload = live_state_payload
-        await self.session.flush()
-
-        refreshed_detail = await self.get_snapshot(snapshot_id)
-        if refreshed_detail is None:
-            return None
-
         params_applied = 0
         bypass_applied = 0
-        legacy_payload = self.to_legacy_snapshot_data(refreshed_detail)
         try:
+            await self._clear_materialized_runtime_chains()
+            live_state_payload = await self._materialize_live_state(snapshot, detail)
+            snapshot.live_state_payload = live_state_payload
+            await self.session.flush()
+
+            refreshed_detail = await self.get_snapshot(snapshot_id)
+            if refreshed_detail is None:
+                return None
+
+            legacy_payload = self.to_legacy_snapshot_data(refreshed_detail)
             params_applied, bypass_applied = await snapshot_runtime_service.apply_snapshot_to_engine(
                 copy.deepcopy(legacy_payload)
             )
+
+            activated_at = _utcnow()
+            await self._clear_compatibility_live_projections()
+            snapshot.is_active = True
+            snapshot.updated_at = activated_at
+            snapshot.activated_at = activated_at
+            snapshot.live_state_payload = live_state_payload
+            await self.session.flush()
+
+            refreshed_detail = await self.get_snapshot(snapshot_id)
+            if refreshed_detail is None:
+                return None
+            refreshed_detail["snapshot_revision"] = snapshot_revision
+
+            runtime_metrics = {
+                "params_applied": params_applied,
+                "bypass_applied": bypass_applied,
+                "runtime_chain_count": len(refreshed_detail.get("live_state", {}).get("runtime_chains", [])),
+            }
+            live_runtime_state = await runtime_state_service.confirm_live_intent(
+                intent=intent,
+                live_snapshot_payload=refreshed_detail,
+                runtime_metrics=runtime_metrics,
+            )
         except Exception as exc:
-            logger.debug("Snapshot activation skipped runtime apply: %s", exc)
+            await self._clear_compatibility_live_projections()
+            await self.session.flush()
+            await runtime_state_service.fail_intent(
+                intent=intent,
+                failure_reason=str(exc),
+                runtime_metrics={},
+            )
+            raise
 
         try:
             from app.services.websocket_manager import ws_manager
 
-            timestamp = datetime.utcnow().isoformat()
+            timestamp = _utcnow().isoformat()
             await ws_manager.broadcast_json(
                 {
                     "type": "snapshot_loaded",
@@ -397,6 +490,9 @@ class SnapshotService:
             "snapshot_id": snapshot.id,
             "name": snapshot.name,
             "snapshot_data": refreshed_detail,
+            "snapshot_revision": snapshot_revision,
+            "activation_intent": intent,
+            "runtime_live_state": live_runtime_state,
             "params_applied": params_applied,
             "bypass_applied": bypass_applied,
         }
@@ -472,7 +568,7 @@ class SnapshotService:
         if "order_index" in payload or "order" in payload:
             channel.order_index = _safe_int(payload.get("order_index", payload.get("order"))) or channel.order_index
 
-        channel.updated_at = datetime.utcnow()
+        channel.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -500,7 +596,7 @@ class SnapshotService:
         if chain is None:
             return None
         chain.name = name.strip() or chain.name
-        chain.updated_at = datetime.utcnow()
+        chain.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -575,7 +671,7 @@ class SnapshotService:
         if plugin is None:
             return None
         plugin.bypass = bool(bypass)
-        plugin.updated_at = datetime.utcnow()
+        plugin.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -596,7 +692,7 @@ class SnapshotService:
             except (TypeError, ValueError):
                 continue
         plugin.parameters = next_parameters
-        plugin.updated_at = datetime.utcnow()
+        plugin.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -642,7 +738,7 @@ class SnapshotService:
         if "series_order" in payload or "seriesOrder" in payload:
             series_order = payload.get("series_order", payload.get("seriesOrder")) or []
             routing.series_order = list(series_order) if isinstance(series_order, list) else []
-        routing.updated_at = datetime.utcnow()
+        routing.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -661,7 +757,7 @@ class SnapshotService:
             await self.session.flush()
 
         midi_map.entries = [dict(entry) for entry in entries]
-        midi_map.updated_at = datetime.utcnow()
+        midi_map.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -671,7 +767,7 @@ class SnapshotService:
             return None
         return {
             "version": 1,
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": _utcnow().isoformat(),
             "snapshot": detail,
             "asset_manifest": self._build_asset_manifest(detail),
         }
@@ -709,7 +805,7 @@ class SnapshotService:
         snapshot.community_author = author_name.strip() or "Anonymous"
         if not snapshot.community_uuid:
             snapshot.community_uuid = uuid4().hex
-        snapshot.updated_at = datetime.utcnow()
+        snapshot.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_summary(snapshot.id)
 
@@ -754,7 +850,7 @@ class SnapshotService:
         rating = max(1, min(5, int(rating)))
         snapshot.community_rating_sum = float(snapshot.community_rating_sum or 0.0) + rating
         snapshot.community_rating_count = int(snapshot.community_rating_count or 0) + 1
-        snapshot.updated_at = datetime.utcnow()
+        snapshot.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_summary(snapshot.id)
 
@@ -765,7 +861,7 @@ class SnapshotService:
             return None
         snapshot_id = snapshot.id
         snapshot.community_download_count = int(snapshot.community_download_count or 0) + 1
-        snapshot.updated_at = datetime.utcnow()
+        snapshot.updated_at = _utcnow()
         await self.session.flush()
         self.session.expire_all()
         export_payload = await self.export_snapshot(snapshot_id)
@@ -1293,7 +1389,9 @@ class SnapshotService:
             return normalized
 
     async def _serialize_snapshot_detail(self, snapshot: Snapshot) -> dict[str, Any]:
-        detail = self._normalized_to_detail(await self._snapshot_to_normalized(snapshot), snapshot)
+        normalized = await self._snapshot_to_normalized(snapshot)
+        detail = self._normalized_to_detail(normalized, snapshot)
+        detail["snapshot_revision"] = self._snapshot_revision_from_normalized(normalized)
         detail["io_bindings"] = {
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
@@ -1352,6 +1450,30 @@ class SnapshotService:
         return paths
 
     async def _build_live_state(self, snapshot: Snapshot) -> dict[str, Any]:
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        runtime_payload = runtime_state.get("live_snapshot_payload")
+        if (
+            runtime_state.get("state") == "live"
+            and int(runtime_state.get("snapshot_id") or 0) == int(snapshot.id)
+            and isinstance(runtime_payload, dict)
+        ):
+            live_state_payload = runtime_payload.get("live_state")
+            if isinstance(live_state_payload, dict):
+                return {
+                    "is_live": not bool(runtime_state.get("is_offline", False)),
+                    "activated_at": live_state_payload.get("activated_at") or runtime_state.get("emitted_at"),
+                    "paths": [dict(item) for item in live_state_payload.get("paths", []) if isinstance(item, dict)],
+                    "runtime_chains": [dict(item) for item in live_state_payload.get("runtime_chains", []) if isinstance(item, dict)],
+                    "display_state": runtime_state.get("display_state"),
+                    "display_label": runtime_state.get("display_label"),
+                    "is_warning": bool(runtime_state.get("is_warning", False)),
+                    "is_offline": bool(runtime_state.get("is_offline", False)),
+                    "last_runtime_event_at": runtime_state.get("emitted_at"),
+                    "node_id": runtime_state.get("node_id"),
+                }
+
         payload = dict(snapshot.live_state_payload or {}) if isinstance(snapshot.live_state_payload, dict) else {}
         runtime_paths = [dict(item) for item in payload.get("paths", []) if isinstance(item, dict)]
         runtime_chain_ids = [
@@ -1369,7 +1491,22 @@ class SnapshotService:
             "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
             "paths": runtime_paths,
             "runtime_chains": runtime_chains,
+            "display_state": "live" if snapshot.is_active else "stopped",
+            "display_label": "Live" if snapshot.is_active else "Stopped",
+            "is_warning": False,
+            "is_offline": False,
+            "last_runtime_event_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
         }
+
+    async def _clear_compatibility_live_projections(self) -> None:
+        await self.session.execute(
+            update(Snapshot).values(
+                is_active=False,
+                live_state_payload={},
+                activated_at=None,
+            )
+        )
+        await self.session.flush()
 
     async def _clear_materialized_runtime_chains(self) -> None:
         result = await self.session.execute(select(Chain))
@@ -1469,7 +1606,7 @@ class SnapshotService:
             )
 
         return {
-            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else datetime.utcnow().isoformat(),
+            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else _utcnow().isoformat(),
             "paths": runtime_paths,
             "active_runtime_chain_ids": activated_runtime_chain_ids,
         }
@@ -1565,6 +1702,98 @@ class SnapshotService:
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
         }
+
+    def _canonicalize_snapshot_normalized(self, normalized: dict[str, Any]) -> dict[str, Any]:
+        chain_index_by_source_key = {
+            str(chain.get("source_key") or index): index
+            for index, chain in enumerate(normalized.get("chains", []))
+        }
+
+        canonical_chains: list[dict[str, Any]] = []
+        for chain in normalized.get("chains", []):
+            plugins = []
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                plugins.append(
+                    {
+                        "uri": str(plugin.get("uri") or ""),
+                        "name": plugin.get("name"),
+                        "position": int(plugin.get("position", 0)),
+                        "bypass": bool(plugin.get("bypass", False)),
+                        "parameters": _canonicalize_json_value(plugin.get("parameters") or {}),
+                        "loader_state": _canonicalize_json_value(plugin.get("loader_state") or {}),
+                        "is_placeholder": bool(plugin.get("is_placeholder", False)),
+                    }
+                )
+
+            loop_insertions = []
+            for loop in chain.get("loop_insertions", []):
+                if not isinstance(loop, dict):
+                    continue
+                loop_insertions.append(
+                    {
+                        key: _canonicalize_json_value(value)
+                        for key, value in sorted(loop.items())
+                        if key not in (_CANONICAL_TRANSIENT_KEYS | {"insertion_id"})
+                    }
+                )
+
+            effects_loops = []
+            for loop in chain.get("effects_loops", []):
+                if not isinstance(loop, dict):
+                    continue
+                effects_loops.append(
+                    {
+                        key: _canonicalize_json_value(loop.get(key))
+                        for key in sorted(_CANONICAL_EFFECTS_LOOP_KEYS)
+                        if key in loop
+                    }
+                )
+
+            canonical_chains.append(
+                {
+                    "name": chain.get("name"),
+                    "plugins": plugins,
+                    "loop_insertions": loop_insertions,
+                    "effects_loops": effects_loops,
+                }
+            )
+
+        canonical_channels = []
+        for index, channel in enumerate(normalized.get("channels", [])):
+            if not isinstance(channel, dict):
+                continue
+            canonical_channels.append(
+                {
+                    "channel_key": channel.get("channel_key"),
+                    "label": channel.get("label"),
+                    "color": channel.get("color"),
+                    "muted": bool(channel.get("muted", False)),
+                    "solo": bool(channel.get("solo", False)),
+                    "dry_wet_mix": _safe_float(channel.get("dry_wet_mix"), DEFAULT_DRY_WET_MIX),
+                    "order_index": int(channel.get("order_index", index)),
+                    "chain_index": (
+                        chain_index_by_source_key.get(str(channel.get("chain_ref")))
+                        if channel.get("chain_ref") is not None
+                        else None
+                    ),
+                }
+            )
+
+        return {
+            "channels": canonical_channels,
+            "chains": canonical_chains,
+            "routing": _canonicalize_json_value(normalized.get("routing") or {}),
+            "midi_map": _canonicalize_json_value(normalized.get("midi_map") or []),
+            "input_device": normalized.get("input_device"),
+            "output_device": normalized.get("output_device"),
+        }
+
+    def _snapshot_revision_from_normalized(self, normalized: dict[str, Any]) -> str:
+        canonical = self._canonicalize_snapshot_normalized(normalized)
+        encoded = json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        return hashlib.sha256(encoded.encode("ascii")).hexdigest()
 
     def _normalized_to_detail(
         self,

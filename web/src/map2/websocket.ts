@@ -55,7 +55,9 @@ export type WebSocketTopic =
   // Effects loops (Tesira AVB external send/return)
   | 'effects_loop_state'
   | 'effects_loop_metrics'
-  | 'effects_loop_calibration_progress';
+  | 'effects_loop_calibration_progress'
+  | 'snapshot_runtime_live_state'
+  | 'snapshot_activation_events';
 
 export type ConnectionStatus =
   | 'disconnected'

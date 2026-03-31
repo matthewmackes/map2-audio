@@ -3,6 +3,7 @@ import asyncio
 from app import database as database_module
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
+from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotService
 from sqlalchemy import select
 
@@ -123,12 +124,23 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated is not None
             assert activated["params_applied"] == 3
             assert activated["bypass_applied"] == 2
+            assert activated["snapshot_revision"]
+            assert activated["runtime_live_state"]["snapshot_id"] == created["id"]
             assert activated["snapshot_data"]["live_state"]["is_live"] is True
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None
             assert live_snapshot["id"] == created["id"]
             assert live_snapshot["live_state"]["is_live"] is True
+            assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
+
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            runtime_live_state = await runtime_state_service.get_live_state()
+            assert runtime_live_state["snapshot_id"] == created["id"]
+            assert runtime_live_state["display_state"] == "live"
+            activation_events = await runtime_state_service.list_activation_events(limit=10)
+            assert activation_events[0]["snapshot_id"] == created["id"]
+            assert activation_events[0]["outcome"] == "success"
 
             saved_as_new = await service.save_snapshot_as_new(created["id"], name="Unified Snapshot v2")
             assert saved_as_new is not None
@@ -203,4 +215,85 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert by_program["input_device"] == "Capture 2"
             assert by_program["output_device"] is None
 
+    asyncio.run(_run())
+
+
+def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _run():
+        async with database_module.get_session() as session:
+            snapshot_service = SnapshotService(session)
+            chain_service = ChainService(session)
+
+            created = await snapshot_service.create_snapshot(
+                name="Killable Snapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+            )
+
+            activated = await snapshot_service.activate_snapshot(created["id"])
+            assert activated is not None
+            runtime_chain_id = activated["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"]
+            assert runtime_chain_id is not None
+
+            deactivated = await chain_service.deactivate_chain(runtime_chain_id)
+            assert deactivated is True
+
+            live_snapshot = await snapshot_service.get_live_snapshot()
+            assert live_snapshot is not None
+            assert live_snapshot["live_state"]["paths"] == []
+            assert live_snapshot["live_state"]["runtime_chains"] == []
+            assert live_snapshot["paths"][0]["runtime_chain_id"] is None
+
+            runtime_chain = await chain_service.get_chain(runtime_chain_id)
+            assert runtime_chain is not None
+            assert runtime_chain["is_active"] is False
+            assert runtime_chain["runtime_sync"]["status"] == "inactive"
+
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
     asyncio.run(_run())

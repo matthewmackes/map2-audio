@@ -2048,6 +2048,75 @@ export interface SnapshotLiveState {
   activated_at?: string | null;
   paths: SnapshotLivePathState[];
   runtime_chains: Chain[];
+  display_state?: 'live' | 'live_warning' | 'stopped' | 'offline';
+  display_label?: string;
+  is_warning?: boolean;
+  is_offline?: boolean;
+  last_runtime_event_at?: string | null;
+  node_id?: string | null;
+}
+
+export type SnapshotRuntimeDisplayState = 'live' | 'live_warning' | 'stopped' | 'offline';
+
+export interface SnapshotRuntimeLiveState {
+  node_id: string;
+  seq: number;
+  emitted_at: string | null;
+  state: 'live' | 'stopped';
+  snapshot_id: number | null;
+  snapshot_revision: string | null;
+  snapshot_name?: string | null;
+  triggered_by?: string | null;
+  live_snapshot_payload?: SnapshotDetail | null;
+  last_successful_request_id?: string | null;
+  failure_reason?: string | null;
+  runtime_metrics: Record<string, unknown>;
+  warning_threshold_seconds: number;
+  offline_threshold_seconds: number;
+  age_seconds: number | null;
+  is_warning: boolean;
+  is_offline: boolean;
+  display_state: SnapshotRuntimeDisplayState;
+  display_label: string;
+}
+
+export interface SnapshotRuntimeClusterLiveStateResponse {
+  local_node_id: string;
+  generated_at: string;
+  count: number;
+  nodes: SnapshotRuntimeLiveState[];
+}
+
+export interface SnapshotActivationAuditEvent {
+  id: number;
+  node_id: string;
+  request_id: string;
+  snapshot_id: number | null;
+  snapshot_name?: string | null;
+  snapshot_revision?: string | null;
+  triggered_by?: string | null;
+  requested_at: string | null;
+  confirmed_live_at?: string | null;
+  outcome: string;
+  failure_reason?: string | null;
+  activation_latency_ms?: number | null;
+  runtime_metrics: Record<string, unknown>;
+}
+
+export interface SnapshotActivationEventsResponse {
+  node_id: string;
+  count: number;
+  events: SnapshotActivationAuditEvent[];
+}
+
+export interface SnapshotActivationIntent {
+  request_id: string;
+  node_id: string;
+  snapshot_id: number;
+  snapshot_revision: string;
+  triggered_by: string;
+  requested_at: string;
+  normalized_snapshot_payload: Record<string, unknown>;
 }
 
 export interface SnapshotAssetRef {
@@ -2107,6 +2176,7 @@ export interface SnapshotSummary {
   community_rating_count: number;
   io_bindings?: SnapshotIOBindings;
   lineage?: SnapshotLineage;
+  snapshot_revision?: string;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -2124,6 +2194,7 @@ export interface SnapshotDetail extends SnapshotSummary {
   lineage: SnapshotLineage;
   active_channel_index: number;
   deployments: SnapshotDeployment[];
+  snapshot_revision?: string;
 }
 
 export interface SnapshotExport {

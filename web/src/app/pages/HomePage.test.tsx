@@ -6,6 +6,8 @@ import { HomePage } from './HomePage'
 
 const originalFetch = global.fetch
 
+jest.mock('../../assets/map2-landing-bg.png', () => 'map2-landing-bg.png')
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}

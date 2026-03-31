@@ -86,4 +86,27 @@ describe('LiveRuntimePathsModal', () => {
 
     expect(await screen.findByText('No backend-live paths currently reported.')).toBeInTheDocument()
   })
+
+  it('requires selecting a live path before kill is enabled', async () => {
+    const onKillLivePath = jest.fn()
+
+    render(
+      <LiveRuntimePathsModal
+        open
+        onClose={jest.fn()}
+        projections={[buildProjection()]}
+        onKillLivePath={onKillLivePath}
+      />,
+    )
+
+    const killButton = screen.getByText('Kill Live Path').closest('button') as HTMLButtonElement
+    expect(killButton).toBeDisabled()
+    expect(screen.getByText(/Select one live path, then use Kill Live Path/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Select Main Runtime' }))
+
+    expect(killButton).toBeEnabled()
+    fireEvent.click(killButton)
+    expect(onKillLivePath).toHaveBeenCalledWith(1)
+  })
 })
