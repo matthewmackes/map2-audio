@@ -1,4 +1,4 @@
-import './LabsPage.css'
+import './PushSurfacePage.css'
 
 import {
   Add,
@@ -328,6 +328,18 @@ function RoutineExamples({ routines }: { routines: PushSurfaceWelcomeRoutine[] }
   )
 }
 
+function SurfaceSkeleton() {
+  return (
+    <div className="push-surface-page__surface-skeleton" aria-hidden="true">
+      <div className="push-surface-page__skeleton push-surface-page__skeleton--surface-title" />
+      <div className="push-surface-page__skeleton push-surface-page__skeleton--surface-line" />
+      <div className="push-surface-page__skeleton push-surface-page__skeleton--surface-line" />
+      <div className="push-surface-page__skeleton push-surface-page__skeleton--surface-line" />
+      <div className="push-surface-page__skeleton push-surface-page__skeleton--surface-line push-surface-page__skeleton--surface-line-short" />
+    </div>
+  )
+}
+
 function ControlPopoverForm({
   hotspot,
   assignments,
@@ -474,6 +486,8 @@ export function PushSurfacePage() {
   const editorQuery = useQuery({
     queryKey: ['push-surface', 'labs-editor-state', viewedNodeId ?? 'local'],
     queryFn: () => pushSurfaceApi.getLabsEditorState(viewedNodeId),
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
     staleTime: 1_500,
     refetchInterval: 5_000,
   })
@@ -481,6 +495,8 @@ export function PushSurfacePage() {
   const runtimeQuery = useQuery({
     queryKey: ['push-surface', 'runtime-state', viewedNodeId ?? 'local'],
     queryFn: () => pushSurfaceApi.getState(viewedNodeId),
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
     staleTime: 1_500,
     refetchInterval: 4_000,
   })
@@ -497,8 +513,10 @@ export function PushSurfacePage() {
   const [paintPulse, setPaintPulse] = useState(true)
   const [paintBlink, setPaintBlink] = useState(false)
   const [controlDraft, setControlDraft] = useState<ControlAssignmentDraft | null>(null)
+  const [controlDraftDirty, setControlDraftDirty] = useState(false)
   const [controlDraftError, setControlDraftError] = useState<string | null>(null)
   const deferredSearchTerm = useDeferredValue(searchTerm)
+  const effectiveEditorState = editorState ?? editorQuery.data?.editor_state ?? null
 
   useEffect(() => {
     if (!editorQuery.data?.editor_state) {
@@ -515,6 +533,7 @@ export function PushSurfacePage() {
       queryClient.setQueryData(['push-surface', 'labs-editor-state', viewedNodeId ?? 'local'], response)
       setEditorState(response.editor_state)
       setIsDirty(false)
+      setControlDraftDirty(false)
     },
   })
 
@@ -536,10 +555,10 @@ export function PushSurfacePage() {
   )
 
   const quickAssignments = useMemo(() => {
-    if (!editorState) {
+    if (!effectiveEditorState) {
       return []
     }
-    const ordered = sortQuickAssignments(editorState.assignments)
+    const ordered = sortQuickAssignments(effectiveEditorState.assignments)
     if (!deferredSearchTerm.trim()) {
       return ordered
     }
@@ -553,16 +572,16 @@ export function PushSurfacePage() {
         assignment.interaction,
       ].some((value) => value.toLowerCase().includes(query))
     })
-  }, [deferredSearchTerm, editorState])
+  }, [deferredSearchTerm, effectiveEditorState])
 
   const selectedRoutine = useMemo(() => {
-    if (!editorState) {
+    if (!effectiveEditorState) {
       return null
     }
-    return editorState.welcome_routines.find(
-      (routine) => routine.id === editorState.selected_welcome_routine_id,
-    ) ?? editorState.welcome_routines[0] ?? null
-  }, [editorState])
+    return effectiveEditorState.welcome_routines.find(
+      (routine) => routine.id === effectiveEditorState.selected_welcome_routine_id,
+    ) ?? effectiveEditorState.welcome_routines[0] ?? null
+  }, [effectiveEditorState])
 
   useEffect(() => {
     if (!selectedRoutine) {
@@ -612,15 +631,20 @@ export function PushSurfacePage() {
   )
 
   const hotspotAssignments = useMemo(() => {
-    if (!editorState || !selectedHotspot) {
+    if (!effectiveEditorState || !selectedHotspot) {
       return []
     }
-    return editorState.assignments.filter((assignment) => hotspotMatchesAssignment(assignment, selectedHotspot))
-  }, [editorState, selectedHotspot])
+    return effectiveEditorState.assignments.filter((assignment) => hotspotMatchesAssignment(assignment, selectedHotspot))
+  }, [effectiveEditorState, selectedHotspot])
 
   useEffect(() => {
     if (!selectedHotspot) {
       setControlDraft(null)
+      setControlDraftDirty(false)
+      setControlDraftError(null)
+      return
+    }
+    if (controlDraftDirty && controlDraft?.controlId === selectedHotspot.id) {
       return
     }
     const existingAssignment = hotspotAssignments[0]
@@ -629,8 +653,9 @@ export function PushSurfacePage() {
         ? draftFromAssignment(existingAssignment, selectedHotspot)
         : defaultAssignmentDraft(selectedHotspot, viewedNodeId),
     )
+    setControlDraftDirty(false)
     setControlDraftError(null)
-  }, [hotspotAssignments, selectedHotspot, viewedNodeId])
+  }, [controlDraft?.controlId, controlDraftDirty, hotspotAssignments, selectedHotspot, viewedNodeId])
 
   const previewDisplayTitle = resolveTemplate(previewRoutineStep?.display?.title ?? selectedRoutine?.name ?? 'WELCOME', statsContext)
   const previewDisplayLines = coerceLines(previewRoutineStep).map((line) => resolveTemplate(line, statsContext))
@@ -639,10 +664,11 @@ export function PushSurfacePage() {
 
   const updateEditorState = (updater: (current: PushSurfaceLabsEditorState) => PushSurfaceLabsEditorState) => {
     setEditorState((current) => {
-      if (!current) {
+      const baseState = current ?? effectiveEditorState
+      if (!baseState) {
         return current
       }
-      const nextState = updater(current)
+      const nextState = updater(baseState)
       setIsDirty(true)
       return nextState
     })
@@ -743,6 +769,7 @@ export function PushSurfacePage() {
           assignments: [assignment, ...remainder],
         }
       })
+      setControlDraftDirty(false)
       setControlDraftError(null)
     } catch (error) {
       setControlDraftError(error instanceof Error ? error.message : 'Invalid payload JSON.')
@@ -760,22 +787,23 @@ export function PushSurfacePage() {
     if (selectedHotspot) {
       setControlDraft(defaultAssignmentDraft(selectedHotspot, viewedNodeId))
     }
+    setControlDraftDirty(false)
     setControlDraftError(null)
   }
 
   const handleSaveAll = async () => {
-    if (!editorState) {
+    const stateToSave = editorState ?? effectiveEditorState
+    if (!stateToSave) {
       return
     }
-    await saveMutation.mutateAsync(editorState)
+    await saveMutation.mutateAsync(stateToSave)
   }
 
   const handleReload = async () => {
-    const response = await editorQuery.refetch()
+    const [response] = await Promise.all([editorQuery.refetch(), runtimeQuery.refetch()])
     if (response.data?.editor_state) {
       setEditorState(response.data.editor_state)
       setIsDirty(false)
-      setOpenControlId(null)
     }
   }
 
@@ -834,17 +862,11 @@ export function PushSurfacePage() {
     || (runtimeQuery.error instanceof Error && runtimeQuery.error.message)
     || (saveMutation.error instanceof Error && saveMutation.error.message)
     || null
-
-  if (!editorState && (editorQuery.isLoading || runtimeQuery.isLoading)) {
-    return (
-      <div className="labs-page labs-page--loading">
-        <InlineLoading description="Loading Labs Push editor" />
-      </div>
-    )
-  }
+  const isInitialLoading = !effectiveEditorState && (editorQuery.isLoading || runtimeQuery.isLoading)
+  const isRefreshing = editorQuery.isFetching || runtimeQuery.isFetching
 
   return (
-    <div className="labs-page">
+    <div className="push-surface-page">
       <PageHeader
         title="Push Surface"
         subtitle="Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management."
@@ -877,6 +899,31 @@ export function PushSurfacePage() {
         )}
       />
 
+      <Tile className="push-surface-page__refresh-rail">
+        <div className="push-surface-page__refresh-copy">
+          <p className="push-surface-page__eyebrow">Refresh status</p>
+          <h2>Keep the surface stable while runtime data updates</h2>
+          <p>
+            Editor state polls every 5 seconds and runtime state every 4 seconds. Refreshes now stay
+            in-place instead of blanking the full route or discarding an open control draft.
+          </p>
+        </div>
+        <div className="push-surface-page__refresh-meta">
+          {isRefreshing ? <InlineLoading description="Refreshing Push state" /> : null}
+          <div className="push-surface-page__tag-row">
+            <Tag type={isRefreshing ? 'blue' : 'green'}>
+              {isRefreshing ? 'Refreshing' : 'In sync'}
+            </Tag>
+            <Tag type={controlDraftDirty ? 'warm-gray' : isDirty ? 'purple' : 'cool-gray'}>
+              {controlDraftDirty ? 'Mapping draft open' : isDirty ? 'Surface changes pending save' : 'No pending changes'}
+            </Tag>
+            <Tag type={runtimeSnapshot?.running ? 'green' : 'cool-gray'}>
+              {runtimeSnapshot?.running ? 'Runtime active' : 'Runtime idle'}
+            </Tag>
+          </div>
+        </div>
+      </Tile>
+
       {errorMessage ? (
         <InlineNotification
           kind="error"
@@ -888,7 +935,20 @@ export function PushSurfacePage() {
       ) : null}
 
       <div className="labs-page__status-grid">
-        <Tile className="labs-page__status-card">
+        {isInitialLoading ? (
+          <>
+            {Array.from({ length: 4 }, (_unused, index) => (
+              <Tile key={`status-skeleton-${index}`} className="labs-page__status-card push-surface-page__panel push-surface-page__panel--skeleton">
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--eyebrow" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--title" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--line" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--line push-surface-page__skeleton--line-short" />
+              </Tile>
+            ))}
+          </>
+        ) : (
+          <>
+            <Tile className="labs-page__status-card push-surface-page__panel">
           <p className="labs-page__eyebrow">Connection</p>
           <h3>{activeDevice?.profile?.display_name ?? 'Offline editor'}</h3>
           <p>{activeDevice?.input_port_name ?? 'No Push connected. Editing stays available offline.'}</p>
@@ -907,7 +967,7 @@ export function PushSurfacePage() {
           </div>
         </Tile>
 
-        <Tile className="labs-page__status-card">
+        <Tile className="labs-page__status-card push-surface-page__panel">
           <p className="labs-page__eyebrow">Node Scope</p>
           <h3>{viewedNode ? formatNodeDisplayName(viewedNode) : 'Local node'}</h3>
           <p>{viewedNode ? `${getNodeRoleLabel(viewedNode.role)} · ${getNodeStatusLabel(viewedNode.status)}` : 'Editing local scope'}</p>
@@ -919,7 +979,7 @@ export function PushSurfacePage() {
           </div>
         </Tile>
 
-        <Tile className="labs-page__status-card">
+        <Tile className="labs-page__status-card push-surface-page__panel">
           <p className="labs-page__eyebrow">Health Score</p>
           <h3>{latencyPressure.scoreDisplay}/10</h3>
           <p>{latencyPressure.helperText}</p>
@@ -931,7 +991,7 @@ export function PushSurfacePage() {
           </div>
         </Tile>
 
-        <Tile className="labs-page__status-card">
+        <Tile className="labs-page__status-card push-surface-page__panel">
           <p className="labs-page__eyebrow">Welcome Handoff</p>
           <h3>{selectedRoutine?.handoff_page ?? 'home'}</h3>
           <p>
@@ -944,9 +1004,11 @@ export function PushSurfacePage() {
             <Tag type="cool-gray">{selectedRoutine?.steps.length ?? 0} steps</Tag>
           </div>
         </Tile>
+          </>
+        )}
       </div>
 
-      <Tile className="labs-page__quick-panel">
+      <Tile className="labs-page__quick-panel push-surface-page__panel">
         <div className="labs-page__section-heading">
           <div>
             <p className="labs-page__eyebrow">Quick Assignments</p>
@@ -962,7 +1024,12 @@ export function PushSurfacePage() {
           />
         </div>
         <div className="labs-page__quick-assignment-list">
-          {quickAssignments.length > 0 ? quickAssignments.map((assignment) => {
+          {isInitialLoading ? Array.from({ length: 3 }, (_unused, index) => (
+            <div key={`assignment-skeleton-${index}`} className="push-surface-page__quick-assignment-skeleton">
+              <div className="push-surface-page__skeleton push-surface-page__skeleton--line" />
+              <div className="push-surface-page__skeleton push-surface-page__skeleton--line push-surface-page__skeleton--line-short" />
+            </div>
+          )) : quickAssignments.length > 0 ? quickAssignments.map((assignment) => {
             const linkedHotspot = findHotspotForControlId(assignment.control_id)
             return (
               <button
@@ -1001,7 +1068,7 @@ export function PushSurfacePage() {
 
       <div className="labs-page__workspace">
         <div className="labs-page__surface-column">
-          <Tile className="labs-page__surface-panel">
+          <Tile className="labs-page__surface-panel push-surface-page__panel">
             <div className="labs-page__section-heading">
               <div>
                 <p className="labs-page__eyebrow">Push Surface</p>
@@ -1012,6 +1079,7 @@ export function PushSurfacePage() {
                   size="sm"
                   kind={surfaceMode === 'mapping' ? 'primary' : 'tertiary'}
                   renderIcon={Edit}
+                  disabled={isInitialLoading}
                   onClick={() => {
                     setSurfaceMode('mapping')
                   }}
@@ -1022,6 +1090,7 @@ export function PushSurfacePage() {
                   size="sm"
                   kind={surfaceMode === 'routine' ? 'primary' : 'tertiary'}
                   renderIcon={PlayFilledAlt}
+                  disabled={isInitialLoading}
                   onClick={() => {
                     setSurfaceMode('routine')
                     setOpenControlId(null)
@@ -1034,101 +1103,108 @@ export function PushSurfacePage() {
                   kind="ghost"
                   renderIcon={PlayFilledAlt}
                   onClick={handlePlayPreview}
-                  disabled={!selectedRoutine}
+                  disabled={!selectedRoutine || isInitialLoading}
                 >
                   Preview routine
                 </Button>
               </div>
             </div>
 
-            <div className="labs-page__surface-toolbar">
-              <Tag type={surfaceMode === 'routine' ? 'purple' : 'blue'}>
-                {surfaceMode === 'routine' ? 'Routine paint mode' : 'Mapping edit mode'}
-              </Tag>
-              <Tag type="cool-gray">
-                {isPreviewPlaying ? `Previewing step ${previewStepIndex + 1}` : `Step ${selectedStepIndex + 1}`}
-              </Tag>
-              <Tag type="cool-gray">{selectedRoutine?.name ?? 'No routine selected'}</Tag>
-            </div>
+            {!isInitialLoading ? (
+              <>
+                <div className="labs-page__surface-toolbar">
+                  <Tag type={surfaceMode === 'routine' ? 'purple' : 'blue'}>
+                    {surfaceMode === 'routine' ? 'Routine paint mode' : 'Mapping edit mode'}
+                  </Tag>
+                  <Tag type="cool-gray">
+                    {isPreviewPlaying ? `Previewing step ${previewStepIndex + 1}` : `Step ${selectedStepIndex + 1}`}
+                  </Tag>
+                  <Tag type="cool-gray">{selectedRoutine?.name ?? 'No routine selected'}</Tag>
+                </div>
 
-            {surfaceMode === 'routine' ? (
-              <div className="labs-page__paint-toolbar">
-                <Select
-                  id="labs-paint-color"
-                  labelText="Paint color"
-                  value={paintColor}
-                  onChange={(event) => setPaintColor(event.currentTarget.value)}
-                >
-                  {COLOR_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option} text={option} />
-                  ))}
-                </Select>
-                <Checkbox
-                  id="labs-paint-pulse"
-                  labelText="Pulse"
-                  checked={paintPulse}
-                  onChange={(_event, data) => setPaintPulse(data.checked)}
-                />
-                <Checkbox
-                  id="labs-paint-blink"
-                  labelText="Blink"
-                  checked={paintBlink}
-                  onChange={(_event, data) => setPaintBlink(data.checked)}
-                />
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  onClick={() => {
-                    updateSelectedStep((step) => ({
-                      ...step,
-                      pad_lights: buildCrossOutlineLights(),
-                    }))
-                  }}
-                  disabled={!selectedRoutine}
-                >
-                  Apply blue cross
-                </Button>
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  onClick={() => {
-                    updateSelectedStep((step) => ({
-                      ...step,
-                      pad_lights: {},
-                      button_lights: {},
-                    }))
-                  }}
-                  disabled={!selectedRoutine}
-                >
-                  Clear lights
-                </Button>
-              </div>
+                {surfaceMode === 'routine' ? (
+                  <div className="labs-page__paint-toolbar">
+                    <Select
+                      id="labs-paint-color"
+                      labelText="Paint color"
+                      value={paintColor}
+                      onChange={(event) => setPaintColor(event.currentTarget.value)}
+                    >
+                      {COLOR_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option} text={option} />
+                      ))}
+                    </Select>
+                    <Checkbox
+                      id="labs-paint-pulse"
+                      labelText="Pulse"
+                      checked={paintPulse}
+                      onChange={(_event, data) => setPaintPulse(data.checked)}
+                    />
+                    <Checkbox
+                      id="labs-paint-blink"
+                      labelText="Blink"
+                      checked={paintBlink}
+                      onChange={(_event, data) => setPaintBlink(data.checked)}
+                    />
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={() => {
+                        updateSelectedStep((step) => ({
+                          ...step,
+                          pad_lights: buildCrossOutlineLights(),
+                        }))
+                      }}
+                      disabled={!selectedRoutine}
+                    >
+                      Apply blue cross
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={() => {
+                        updateSelectedStep((step) => ({
+                          ...step,
+                          pad_lights: {},
+                          button_lights: {},
+                        }))
+                      }}
+                      disabled={!selectedRoutine}
+                    >
+                      Clear lights
+                    </Button>
+                  </div>
+                ) : null}
+              </>
             ) : null}
 
-            <div className="labs-page__surface-frame">
+            <div className={`labs-page__surface-frame${isInitialLoading ? ' push-surface-page__surface-frame--loading' : ''}`}>
+              {isInitialLoading ? <SurfaceSkeleton /> : null}
               <img
                 src={pushRenderImage}
                 alt="Ableton Push WYSIWYG render"
                 className="labs-page__surface-image"
               />
               <div className="labs-page__surface-overlay">
-                <div className="labs-page__surface-display">
-                  <span className="labs-page__surface-display-title">{surfaceDisplayTitle}</span>
-                  {surfaceDisplayLines.map((line, index) => (
-                    <span key={`${line}-${index}`} className="labs-page__surface-display-line">
-                      {line || ' '}
-                    </span>
-                  ))}
-                </div>
+                {!isInitialLoading ? (
+                  <>
+                    <div className="labs-page__surface-display">
+                      <span className="labs-page__surface-display-title">{surfaceDisplayTitle}</span>
+                      {surfaceDisplayLines.map((line, index) => (
+                        <span key={`${line}-${index}`} className="labs-page__surface-display-line">
+                          {line || ' '}
+                        </span>
+                      ))}
+                    </div>
 
-                {PUSH_HOTSPOTS.map((hotspot) => {
+                    {PUSH_HOTSPOTS.map((hotspot) => {
                   const lightState = lightMatchesHotspot(
                     hotspot.kind === 'pad'
                       ? (activeWelcomeRuntime?.frame?.pad_lights ?? previewRoutineStep?.pad_lights)
                       : (activeWelcomeRuntime?.frame?.button_lights ?? previewRoutineStep?.button_lights),
                     hotspot,
                   )
-                  const assignmentCount = editorState?.assignments.filter((assignment) => hotspotMatchesAssignment(assignment, hotspot)).length ?? 0
+                  const assignmentCount = effectiveEditorState?.assignments.filter((assignment) => hotspotMatchesAssignment(assignment, hotspot)).length ?? 0
                   const style = {
                     left: `${(hotspot.x / PUSH_RENDER_WIDTH) * 100}%`,
                     top: `${(hotspot.y / PUSH_RENDER_HEIGHT) * 100}%`,
@@ -1181,10 +1257,12 @@ export function PushSurfacePage() {
                           errorMessage={controlDraftError}
                           onSelectAssignment={(assignment) => {
                             setControlDraft(draftFromAssignment(assignment, hotspot))
+                            setControlDraftDirty(false)
                             setControlDraftError(null)
                           }}
                           onDraftChange={(updates) => {
                             setControlDraft((current) => current ? { ...current, ...updates } : current)
+                            setControlDraftDirty(true)
                             setControlDraftError(null)
                           }}
                           onSave={handleSaveDraft}
@@ -1193,14 +1271,16 @@ export function PushSurfacePage() {
                       </PopoverContent>
                     </Popover>
                   )
-                })}
+                    })}
+                  </>
+                ) : null}
               </div>
             </div>
           </Tile>
         </div>
 
         <div className="labs-page__editor-column">
-          <Tile className="labs-page__editor-panel">
+          <Tile className="labs-page__editor-panel push-surface-page__panel">
             <div className="labs-page__section-heading">
               <div>
                 <p className="labs-page__eyebrow">Welcome Routine Studio</p>
@@ -1210,19 +1290,28 @@ export function PushSurfacePage() {
                 <Button size="sm" kind="ghost" renderIcon={Add} onClick={handleCreateRoutine}>
                   New routine
                 </Button>
-                <Button size="sm" kind="ghost" renderIcon={Copy} onClick={handleDuplicateRoutine} disabled={!selectedRoutine}>
+                <Button size="sm" kind="ghost" renderIcon={Copy} onClick={handleDuplicateRoutine} disabled={!selectedRoutine || isInitialLoading}>
                   Duplicate
                 </Button>
               </div>
             </div>
 
+            {isInitialLoading ? (
+              <div className="push-surface-page__editor-skeleton" aria-hidden="true">
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--input" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--input" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--input" />
+                <div className="push-surface-page__skeleton push-surface-page__skeleton--input push-surface-page__skeleton--input-tall" />
+              </div>
+            ) : (
+              <>
             <Select
               id="labs-selected-routine"
               labelText="Loaded routine"
               value={selectedRoutine?.id ?? ''}
               onChange={(event) => selectRoutine(event.currentTarget.value)}
             >
-              {(editorState?.welcome_routines ?? []).map((routine) => (
+              {(effectiveEditorState?.welcome_routines ?? []).map((routine) => (
                 <SelectItem key={routine.id} value={routine.id} text={routine.name} />
               ))}
             </Select>
@@ -1434,7 +1523,9 @@ export function PushSurfacePage() {
               </>
             ) : null}
 
-            <RoutineExamples routines={editorState?.welcome_routines ?? []} />
+            <RoutineExamples routines={effectiveEditorState?.welcome_routines ?? []} />
+              </>
+            )}
           </Tile>
         </div>
       </div>

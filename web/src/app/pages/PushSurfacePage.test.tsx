@@ -239,10 +239,10 @@ describe('PushSurfacePage', () => {
     renderPage()
 
     expect(await screen.findByText('Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management.')).toBeTruthy()
-    expect(screen.getByText('Tap Tempo CC')).toBeTruthy()
-    expect(screen.getByText('Snapshot Program Change')).toBeTruthy()
-    expect(screen.getByText('10 seeded')).toBeTruthy()
-    expect(screen.getAllByText('MAP2-A (Main Rig)').length).toBeGreaterThan(0)
+    expect(await screen.findByText('Tap Tempo CC')).toBeTruthy()
+    expect(await screen.findByText('Snapshot Program Change')).toBeTruthy()
+    expect(await screen.findByText('10 seeded')).toBeTruthy()
+    await waitFor(() => expect(screen.getAllByText('MAP2-A (Main Rig)').length).toBeGreaterThan(0))
   })
 
   it('opens the inline hotspot popover editor for a mapped control', async () => {
@@ -258,11 +258,70 @@ describe('PushSurfacePage', () => {
   it('lets operators switch into routine paint mode', async () => {
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Paint routine' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Paint routine' })).not.toBeDisabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Paint routine' }))
 
     expect(await screen.findByText('Apply blue cross')).toBeTruthy()
     expect(screen.getByText('Clear lights')).toBeTruthy()
     expect(screen.getByTestId('labs-step-list')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Back to Labs' })).toBeTruthy()
+  })
+
+  it('keeps the current surface content visible during reload', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Tap Tempo CC')).toBeTruthy()
+    expect(screen.getByText('Snapshot Program Change')).toBeTruthy()
+
+    let resolveReload: ((value: Awaited<ReturnType<typeof pushSurfaceApi.getLabsEditorState>>) => void) | null = null
+    pushSurfaceApi.getLabsEditorState.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveReload = resolve
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }))
+
+    expect(screen.getByText('Tap Tempo CC')).toBeTruthy()
+    expect(screen.getByText('Snapshot Program Change')).toBeTruthy()
+    expect(screen.queryByText('Loading Labs Push editor')).toBeNull()
+
+    resolveReload?.({
+      status: 'ok',
+      editor_state: {
+        schema_version: 1,
+        assignments: [
+          {
+            id: 'qa-1',
+            control_id: 'btn_01',
+            control_label: 'Tap Tempo',
+            interaction: 'tap',
+            assignment_type: 'cc',
+            label: 'Tap Tempo CC',
+            device_scope: 'device:auto',
+            cluster_scope: 'node-a',
+            payload: { midi_channel: 1, cc: 64, value: 127 },
+            enabled: true,
+            safe_mode_confirm: true,
+          },
+        ],
+        welcome_routines: welcomeRoutines,
+        selected_welcome_routine_id: 'map2-blue-cross',
+      },
+      quick_assignments: [],
+      selected_welcome_routine: welcomeRoutines[0],
+      active_device: {
+        device_id: 'push2-001',
+        input_port_name: 'Ableton Push 2 Input',
+        output_port_name: 'Ableton Push 2 Output',
+        profile: {
+          profile_id: 'push2',
+          display_name: 'Ableton Push 2',
+        },
+      },
+      manager_running: true,
+    })
+
+    await waitFor(() => expect(screen.getByText('Tap Tempo CC')).toBeTruthy())
   })
 })
