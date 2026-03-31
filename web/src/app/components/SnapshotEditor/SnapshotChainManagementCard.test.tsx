@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
-import type { SnapshotDetail } from '../../../map2/types'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import type { SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { SnapshotChainManagementCard } from './SnapshotChainManagementCard'
 
 function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail {
@@ -50,7 +50,17 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
         order_index: 0,
         snapshot_chain_id: 201,
         runtime_chain_id: 301,
-        plugins: [],
+        plugins: [
+          {
+            uri: 'plugin://drive',
+            name: 'Drive',
+            position: 0,
+            bypass: false,
+            parameters: {},
+            loader_state: null,
+            is_placeholder: false,
+          },
+        ],
         loop_insertions: [],
         effects_loops: [],
       },
@@ -65,7 +75,53 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
         order_index: 1,
         snapshot_chain_id: 202,
         runtime_chain_id: 302,
-        plugins: [],
+        plugins: [
+          {
+            uri: 'plugin://echo',
+            name: 'Echo',
+            position: 0,
+            bypass: false,
+            parameters: {},
+            loader_state: null,
+            is_placeholder: false,
+          },
+        ],
+        loop_insertions: [],
+        effects_loops: [],
+      },
+    ],
+    chains: [
+      {
+        id: 201,
+        name: 'Drive',
+        plugins: [
+          {
+            uri: 'plugin://drive',
+            name: 'Drive',
+            position: 0,
+            bypass: false,
+            parameters: {},
+            loader_state: null,
+            is_placeholder: false,
+          },
+        ],
+        loop_insertions: [],
+        effects_loops: [],
+      },
+      {
+        id: 202,
+        name: 'Echo',
+        plugins: [
+          {
+            uri: 'plugin://echo',
+            name: 'Echo',
+            position: 0,
+            bypass: false,
+            parameters: {},
+            loader_state: null,
+            is_placeholder: false,
+          },
+        ],
         loop_insertions: [],
         effects_loops: [],
       },
@@ -101,7 +157,12 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
 
 function renderCard(
   liveSnapshot: SnapshotDetail | null = buildLiveSnapshot(),
-  options: { onRenameSnapshot?: jest.Mock; snapshotRenamePending?: boolean } = {},
+  options: {
+    editorSnapshotDraft?: SnapshotDraftData | null
+    onRenameSnapshot?: jest.Mock
+    runtimeLiveState?: SnapshotRuntimeLiveState | null
+    snapshotRenamePending?: boolean
+  } = {},
 ) {
   return render(
     <SnapshotChainManagementCard
@@ -109,6 +170,8 @@ function renderCard(
       onDuplicateChain={jest.fn()}
       onRenameChain={jest.fn()}
       liveSnapshot={liveSnapshot}
+      editorSnapshotDraft={options.editorSnapshotDraft}
+      runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
       detailsAction={<button type="button">Details</button>}
@@ -116,33 +179,74 @@ function renderCard(
   )
 }
 
+function buildRuntimeLiveState(overrides: Partial<SnapshotRuntimeLiveState> = {}): SnapshotRuntimeLiveState {
+  return {
+    node_id: 'local-node',
+    seq: 1,
+    emitted_at: '2026-03-29T18:10:00Z',
+    state: 'live',
+    snapshot_id: 42,
+    snapshot_revision: 'rev-42',
+    snapshot_name: 'Friday Night Drive',
+    triggered_by: 'ui',
+    live_snapshot_payload: null,
+    last_successful_request_id: 'request-1',
+    failure_reason: null,
+    runtime_metrics: {},
+    warning_threshold_seconds: 10,
+    offline_threshold_seconds: 15,
+    age_seconds: 0.2,
+    is_warning: false,
+    is_offline: false,
+    display_state: 'live',
+    display_label: 'Live',
+    ...overrides,
+  }
+}
+
 describe('SnapshotChainManagementCard', () => {
-  it('renders the unified live snapshot hero with title, details trigger, LCD readout, and summary row', () => {
-    const { container } = renderCard()
-    const summaryRow = container.querySelector('.juce-grid-page__snapshot-status-summary-row')
+  it('renders the unified live snapshot hero with title, details trigger, LCD readout, and right-side metadata table', () => {
+    const { container } = renderCard(buildLiveSnapshot(), {
+      runtimeLiveState: buildRuntimeLiveState(),
+    })
+    const metadataTable = screen.getByRole('table', { name: 'Live snapshot metadata' })
+    const metadataRows = metadataTable.querySelectorAll('tbody tr')
+    const topRow = container.querySelector('.juce-grid-page__snapshot-status-top-row')
+    const contentRow = container.querySelector('.juce-grid-page__snapshot-status-content-row')
+    const midiReadout = container.querySelector('[aria-label="PC 023  CH 01/05"]')
 
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
-    expect(screen.getByText('Live')).toBeInTheDocument()
+    expect(screen.getByText('LIVE')).toBeInTheDocument()
     expect(screen.getByText('Details')).toBeInTheDocument()
-    expect(container.querySelector('[aria-label="PC 023  CH 01/05"]')).toBeInTheDocument()
+    expect(midiReadout).toBeInTheDocument()
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
     expect(screen.queryByText('Lead-ready snapshot for the main performance set.')).not.toBeInTheDocument()
-    expect(screen.getByText('Input device')).toBeInTheDocument()
+    expect(screen.getByText('Input Device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
-    expect(screen.getByText('Output device')).toBeInTheDocument()
+    expect(screen.getByText('Output Device')).toBeInTheDocument()
     expect(screen.getByText('House Left/Right')).toBeInTheDocument()
-    expect(screen.getByText('Routing mode')).toBeInTheDocument()
+    expect(screen.getByText('Number of Blocks involved')).toBeInTheDocument()
+    expect(screen.getByText('2 blocks')).toBeInTheDocument()
+    expect(screen.getByText('Routing Mode')).toBeInTheDocument()
     expect(screen.getByText('Parallel')).toBeInTheDocument()
-    expect(screen.getByText('Path count')).toBeInTheDocument()
-    expect(screen.getByText('2 paths')).toBeInTheDocument()
-    expect(screen.getByText('Derived from snapshot')).toBeInTheDocument()
-    expect(screen.getByText('Snapshot #7')).toBeInTheDocument()
+    expect(screen.getByText('Number of Channels')).toBeInTheDocument()
+    expect(screen.getByText('2 channels')).toBeInTheDocument()
+    expect(screen.getByText('Last Updated')).toBeInTheDocument()
+    expect(screen.getByText('Node Sync Status')).toBeInTheDocument()
+    expect(screen.getByText('Local live only')).toBeInTheDocument()
     expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
-    expect(summaryRow).toBeInTheDocument()
-    expect(summaryRow).toContainElement(screen.getByText('Details'))
+    expect(metadataTable).toBeInTheDocument()
+    expect(metadataRows).toHaveLength(3)
+    expect(within(metadataRows[2] as HTMLTableRowElement).getByRole('button', { name: 'Details' })).toBeInTheDocument()
+    expect(metadataTable).toContainElement(screen.getByText('Local live only'))
+    expect(topRow).toContainElement(screen.getByText('Audio Grid'))
+    expect(topRow).toContainElement(midiReadout as Element)
+    expect(contentRow).toContainElement(screen.getByText('Friday Night Drive'))
+    expect(contentRow).toContainElement(metadataTable)
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
+    expect(screen.queryByText('Live now')).not.toBeInTheDocument()
     expect(screen.queryByRole('toolbar', { name: 'Snapshot hero actions' })).not.toBeInTheDocument()
   })
 
@@ -164,9 +268,93 @@ describe('SnapshotChainManagementCard', () => {
 
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('No live snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Stopped')).toBeInTheDocument()
     expect(screen.getByText('Recall or create a snapshot to populate live snapshot status here.')).toBeInTheDocument()
     expect(screen.getByText('Details')).toBeInTheDocument()
     expect(container.querySelector('[aria-label="PC --  CH --"]')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Rename snapshot/i })).not.toBeInTheDocument()
+  })
+
+  it('shows the alternate live snapshot name when another known snapshot is live on the host', () => {
+    renderCard(buildLiveSnapshot(), {
+      runtimeLiveState: buildRuntimeLiveState({
+        snapshot_id: 84,
+        snapshot_name: 'Clean Intro',
+      }),
+    })
+
+    expect(screen.getByText('LIVE: Clean Intro')).toBeInTheDocument()
+  })
+
+  it('uses the current editor snapshot draft for block count, routing mode, and channel count metadata', () => {
+    renderCard(buildLiveSnapshot(), {
+      editorSnapshotDraft: {
+        flowSlots: [
+          {
+            id: 'ch_a',
+            chainId: 301,
+            label: 'A',
+            color: '#2563eb',
+            muted: false,
+            solo: false,
+            dryWetMix: 100,
+          },
+          {
+            id: 'ch_b',
+            chainId: 302,
+            label: 'B',
+            color: '#22c55e',
+            muted: false,
+            solo: false,
+            dryWetMix: 100,
+          },
+          {
+            id: 'ch_c',
+            chainId: 303,
+            label: 'C',
+            color: '#ff832b',
+            muted: false,
+            solo: false,
+            dryWetMix: 100,
+          },
+        ],
+        routing: {
+          mode: 'parameter_morph',
+          activeSlotId: 'ch_a',
+          blendPositions: { ch_a: 100, ch_b: 50, ch_c: 50 },
+          morphProgress: 0.5,
+          morphSourceSlotId: 'ch_a',
+          morphTargetSlotId: 'ch_b',
+          seriesOrder: ['ch_a', 'ch_b', 'ch_c'],
+        },
+        activeFlowIndex: 0,
+        chains: {
+          '301': {
+            name: 'Drive',
+            plugins: [
+              { uri: 'plugin://drive', position: 0, bypass: false, parameters: {} },
+              { uri: 'plugin://compressor', position: 1, bypass: false, parameters: {} },
+            ],
+          },
+          '302': {
+            name: 'Echo',
+            plugins: [
+              { uri: 'plugin://echo', position: 0, bypass: false, parameters: {} },
+            ],
+          },
+          '303': {
+            name: 'Shimmer',
+            plugins: [
+              { uri: 'plugin://reverb', position: 0, bypass: false, parameters: {} },
+              { uri: 'plugin://widener', position: 1, bypass: false, parameters: {} },
+            ],
+          },
+        },
+      },
+    })
+
+    expect(screen.getByText('5 blocks')).toBeInTheDocument()
+    expect(screen.getByText('Morph')).toBeInTheDocument()
+    expect(screen.getByText('3 channels')).toBeInTheDocument()
   })
 })

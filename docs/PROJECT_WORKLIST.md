@@ -6,7 +6,102 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-31 14:27 EDT - T585 Push Surface Labs workflow completed, including standalone routing and connect-time welcome playback
+Last updated: 2026-03-31 16:19 EDT - T590 Publish current Snapshot Editor work and restart the port 3000 web server completed
+
+ID: T590
+Status: [✓] Done
+Title: Publish the current Snapshot Editor worktree and restart the production web server on port 3000
+Description:
+- Goal / acceptance criteria: Commit the full current worktree, push `master` to both `origin` and `gitlab`, run the authoritative frontend production build, and restart the production web server bound to port `3000` so it serves the rebuilt bundle.
+- Why it matters: The user requested the current Snapshot Editor changes be published and the local production web server refreshed so the updated UI is immediately available.
+- Dependencies: T589
+- Estimated effort: Low
+- Required outputs: git commit, dual-remote push, successful production build, restarted `serve_web_dist.mjs` listener on port `3000`, and verification evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 16:19 EDT - Codex
+- Completion notes:
+  - Ran the authoritative frontend production build before publish/restart to confirm the current Snapshot Editor changes were deployable.
+  - Restarted the production web server on port `3000`; the listener is now `/usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000` and `curl http://localhost:3000/` returned `200`.
+  - Prepared the full verified worktree for a mirrored `master` publish to both `origin` and `gitlab`.
+- Validation: `npm --prefix web run build` -> PASS; `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/` -> `200`; `lsof -iTCP:3000 -sTCP:LISTEN -n -P` -> listener present.
+
+ID: T589
+Status: [✓] Done
+Title: Restore live Snapshot Editor detail-grid responsiveness after signal-chain edits
+Description:
+- Goal / acceptance criteria: Review and fix the Snapshot Editor so signal-chain edits no longer leave the interface feeling unresponsive and the Snapshot Detail Grid refreshes immediately when chain structure or related snapshot metadata changes.
+- Why it matters: Operators depend on the Snapshot Editor to reflect live chain edits in real time; stale detail-grid data undermines trust in the editor and can hide configuration drift.
+- Dependencies: T588
+- Estimated effort: Medium
+- Required outputs: root-cause analysis, Snapshot Editor refresh fix, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 16:06 EDT - Codex
+- Completion notes:
+  - Identified that the Snapshot Detail Grid was still reading raw `['snapshots','live']` data while most editor interactions update the mutable chain/editor draft state first. That made the grid appear frozen during signal-chain edits even though the rest of the editor was changing.
+  - Fixed `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the metadata grid accepts the current editor snapshot draft and uses it for block count, routing mode, and channel count, while also correcting `Number of Blocks involved` to count actual plugins/blocks instead of chain count.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` to pass `currentSnapshotDraft` into the card and expanded `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` with a regression that proves the grid reacts immediately to editor-draft changes.
+- Validation: `npm --prefix web test -- --runInBand /home/mm/map2-audio/web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T588
+Status: [✓] Done
+Title: Align the Snapshot Editor hero brand block to the top-left band beside the MIDI readout
+Description:
+- Goal / acceptance criteria: Refactor the Snapshot Editor hero so the `Audio Grid` icon/title/subtitle block moves to the top-left edge of its containing frame and sits horizontally in the same top band as the MIDI readout square on the right, while preserving the current live-status block, metadata table, and responsive behavior below that band.
+- Why it matters: The current nesting keeps the brand block vertically centered with the larger live-status column, which prevents the requested top-left placement and makes the hero feel visually off-balance against the MIDI readout.
+- Dependencies: T587
+- Estimated effort: Medium
+- Required outputs: Snapshot Editor hero component/CSS refactor, focused regression updates if needed, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 15:54 EDT - Codex
+- Completion notes:
+  - Refactored `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the `Audio Grid` icon/title/subtitle block now occupies its own top-left hero band while the MIDI readout sits in the same horizontal band on the right; the live-status/title block and metadata table remain paired in a second row below.
+  - Updated `web/src/app/pages/SnapshotEditorPage.css` so the desktop hero now top-aligns the brand row, keeps the lower live/title block vertically centered against the right-side metadata grid, and preserves the existing tablet/mobile stack behavior through the breakpoint overrides.
+  - Expanded `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` to assert that the top hero row now contains both the `Audio Grid` brand block and the MIDI readout while the lower row contains the snapshot title and metadata table.
+- Validation: `npm --prefix web test -- --runInBand /home/mm/map2-audio/web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T587
+Status: [✓] Done
+Title: Refine Snapshot Editor hero live-status treatment and third-row action placement
+Description:
+- Goal / acceptance criteria: Update the Snapshot Editor hero so `Details` becomes the last cell in metadata row 3 with Carbon blue trigger styling, increase the live snapshot title by about 15% on desktop only, vertically center the title/status block against the right-side metadata grid, remove the green `Live now` pill, and replace the old static `Live` eyebrow with runtime-driven text. The runtime-driven label must show `LIVE` when the displayed snapshot is the active local runtime snapshot, `LIVE: Snapshot Name` when a different known snapshot is live locally, `LIVE: OTHER` when the local runtime is live but not attributable to the displayed snapshot, and `Stopped` when no live runtime snapshot is active; `LIVE*` variants must slow-blink in the requested Carbon red/fuchsia tones and `Stopped` must remain static red.
+- Why it matters: The previous table refactor improved information density, but the operator wants the action placement and live-state hierarchy tightened further so the top hero communicates runtime truth more clearly.
+- Dependencies: T586
+- Estimated effort: Medium
+- Required outputs: Snapshot Editor hero/page wiring refactor, focused regression updates, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 15:45 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the third metadata row now reserves its last cell for the `Details` action, the green live tag is gone, and the live eyebrow is replaced with runtime-aware `LIVE` / `LIVE: Snapshot Name` / `LIVE: OTHER` / `Stopped` status text driven by the local `SnapshotRuntimeLiveState`.
+  - Wired `web/src/app/pages/SnapshotEditorPageContent.tsx` to pass the authoritative local runtime snapshot state into the hero card and switched the `Details` menu trigger to a primary Carbon-blue presentation so the in-table action cell reads as an intentional control.
+  - Updated `web/src/app/pages/SnapshotEditorPage.css` to center the hero block against the right-side grid, enlarge the snapshot title on desktop, add the slow-blink Carbon red/fuchsia status treatment, and style the in-table action cell/button appropriately.
+  - Expanded `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` so the focused regression coverage now asserts the row-three `Details` placement, the removed live pill, the new `Stopped` empty-state label, and the `LIVE: Snapshot Name` alternate-runtime case.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T586
+Status: [✓] Done
+Title: Rebuild the Snapshot Editor hero metadata row into a compact right-aligned table
+Description:
+- Goal / acceptance criteria: Replace the current live snapshot metadata summary row in `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` with a compact three-row metadata table positioned on the hero’s right side directly below the `PC / CH` readout, aligned to that readout, using small-font Carbon-aligned styling with no title row/column. The table must include `Input Device`, `Output Device`, `Number of Blocks involved`, `Routing Mode`, `Number of Channels`, `Last Updated`, and `Node Sync Status`; each cell must show a tiny title chip above the value with distinct Carbon-color backgrounds and white text; and the existing `Details` control must move under the table.
+- Why it matters: The current horizontal summary row consumes too much width beneath the hero and no longer matches the requested right-side information hierarchy anchored to the MIDI readout.
+- Dependencies: T580
+- Estimated effort: Medium
+- Required outputs: Snapshot Editor hero component/CSS refactor, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 15:22 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the old horizontal summary row is now a true three-row metadata table in the hero’s right rail, directly below the `PC / CH` readout, with the requested field set and a moved `Details` control under the table.
+  - Added compact Carbon-aligned table styling in `web/src/app/pages/SnapshotEditorPage.css`, including small-font value treatment, tiny label chips with distinct Carbon-color backgrounds and white text, and right-rail alignment that keeps the readout, table, and `Details` dropdown on one vertical axis.
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` so the focused regression coverage now asserts the right-side metadata table semantics and the new `Node Sync Status` / block-count content instead of the removed summary row.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T585
 Status: [✓] Done
@@ -11134,3 +11229,219 @@ Last updated: 2026-03-30 09:14 EDT - Codex
 - Blocked notes:
   - The remaining acceptance criteria require a physical Voodoo Lab Ground Control Pro and live MIDI hardware-in-the-loop verification for backup capture, unchanged retransmit, post-power-cycle re-dump identity, and controlled single-field confirmation against real hardware dumps.
   - The repo now contains the complete software path and deterministic synthetic fixtures, but the hardware-qualified acceptance gate cannot be closed from this environment without the actual device.
+
+---
+
+## Latency Pressure Audit — 2026-03-31
+
+**Source:** Fresh forensic audit of all polling loops, blocking I/O, mutex usage, and resource contention that could cause xruns or audio dropouts. Audio system: 64 samples @ 48kHz = 1.33ms/callback, JUCE on isolated CPUs 4,5, SCHED_FIFO.
+
+---
+
+ID: T590
+Status: [~] On Hold
+Title: [CRITICAL] Remove mutex lock from ParallelMixerProcessor::processBlock()
+Description:
+- Goal / acceptance criteria: Eliminate `std::lock_guard<std::mutex>` at line 60 of `juce-engine/Source/ParallelMixerProcessor.cpp` from the audio callback path. Replace with a lock-free mechanism (atomic flag or JUCE AbstractFifo).
+- Why it matters: Any mutex contention in `processBlock()` directly stalls the SCHED_FIFO RT audio thread. With a 1.33ms budget, even a 100µs mutex wait causes an xrun.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Lock-free replacement verified; no audio thread blocking under load.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T591
+Status: [~] On Hold
+Title: [CRITICAL] Audit ConvolutionProcessor IR swap for audio-thread blocking
+Description:
+- Goal / acceptance criteria: Audit `juce-engine/Source/ConvolutionProcessor.cpp` IR load/swap path. Confirm IR changes are never applied from inside the audio callback. Any `irMutex_` lock reachable from `processBlock()` must be replaced with a double-buffer or message-thread handoff pattern.
+- Why it matters: Loading/swapping a convolution IR from the audio callback blocks for milliseconds — guaranteed xrun.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Verified lock-free IR swap path, documented handoff mechanism.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T592
+Status: [~] On Hold
+Title: [CRITICAL] Reduce SQLite busy_timeout from 5000ms to 100ms
+Description:
+- Goal / acceptance criteria: Change `busy_timeout` in `app/database.py:33` from `5000` to `100`. Verify all DB code handles `OperationalError: database is locked` gracefully with a fast retry rather than blocking for 5 seconds.
+- Why it matters: A 5-second DB busy-wait on the Python event loop starves ALL async services including the metering broadcast and RT parameter bridge, causing audio control lag and potential xruns.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated timeout, tested lock-contention handling.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T593
+Status: [~] On Hold
+Title: [CRITICAL] Raise MIDI Hub minimum poll interval from 500us to 2ms
+Description:
+- Goal / acceptance criteria: In `app/services/midi_hub/hub.py:57`, change `max(0.0005, ...)` floor to `max(0.002, ...)`. Audit all callers to ensure none pass sub-2ms values.
+- Why it matters: A 500us Python polling loop on CPUs 4,5 creates a busy-spin competing with the JUCE SCHED_FIFO callback for cache lines and TLB entries, causing micro-jitter even though JUCE has higher RT priority.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated floor, verified no callers override below 2ms.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T594
+Status: [~] On Hold
+Title: [CRITICAL] Disable or defer WAL auto-checkpoint during active playback
+Description:
+- Goal / acceptance criteria: In `app/database.py`, either disable WAL auto-checkpoint (`wal_autocheckpoint=0`) and schedule explicit checkpoints on safe system events (engine stopped, idle), or raise the page threshold to 10000+. Document the RT rationale in a comment.
+- Why it matters: WAL checkpoints at 4000 pages flush dirty pages to disk. Under sustained operation (metering writes, parameter logs) this can fire mid-performance causing disk I/O spikes and latency.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated checkpoint policy, documented safe-checkpoint trigger.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T595
+Status: [~] On Hold
+Title: [HIGH] Move Python backend off audio CPUs 4,5 — fix CPU affinity architecture
+Description:
+- Goal / acceptance criteria: Re-evaluate `CPUAffinity=4 5` in `systemd/map2-backend.service` and drop-ins. The Python uvicorn process should run on CPUs 0-3. Options: (a) remove `CPUAffinity` from the backend service entirely so the kernel schedules it freely on 0-3; or (b) set `AllowedCPUs=0-3` explicitly. JUCE audio thread self-elevates via SCHED_FIFO and does not need the Python process on its cores.
+- Why it matters: Pinning the entire Python backend (40+ polling loops, download managers, cluster services, health monitors) to the RT-isolated audio cores causes cache thrashing and TLB pressure that degrades audio performance even though JUCE has priority.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated CPU affinity policy in systemd unit and drop-ins, measured before/after jitter if possible.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T596
+Status: [~] On Hold
+Title: [HIGH] Reduce or batch 30fps metering WebSocket broadcasts
+Description:
+- Goal / acceptance criteria: In `app/services/metering_broadcast.py:38-46`, reduce spectrum and dynamics to 15fps, keeping meters at 30fps. Alternatively batch all three into a single combined JSON push per tick. Make rate configurable via config.json.
+- Why it matters: Three concurrent 30fps WebSocket broadcast tasks serialize and push JSON every 33ms. Cumulative CPU cost plus any blocking in the broadcast loop can delay RT parameter delivery.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Reduced/batched broadcast, configurable rate.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T597
+Status: [~] On Hold
+Title: [HIGH] Pin all device IRQs away from CPUs 4,5 in irq-affinity script
+Description:
+- Goal / acceptance criteria: Extend `systemd/map2-irq-affinity.sh` to pin ALL device IRQs (network, NVMe/disk, USB hubs, PCIe) to CPUs 0-3, not just xhci_hcd. Add a loop setting `/proc/irq/*/smp_affinity_list` to `0-3` for all IRQs except the UA-1000 audio IRQ. Verify with `cat /proc/interrupts` that no unexpected IRQs fire on cores 4,5 during playback.
+- Why it matters: `isolcpus=4,5` prevents the scheduler from placing threads there but does NOT prevent IRQs from firing on those cores unless explicitly pinned. Any disk, network, or USB IRQ on core 4 or 5 during an audio callback causes a hard interrupt stalling the RT thread.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated IRQ affinity script, verified IRQ map.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T598
+Status: [~] On Hold
+Title: [HIGH] Defer AVB discovery and Tesira fleet init to background tasks at startup
+Description:
+- Goal / acceptance criteria: In `app/main.py` lifespan startup (lines 521-556), move AVB router discovery and Tesira fleet initialization to background `asyncio.create_task()` calls that run after the audio engine is online, rather than blocking the startup sequence.
+- Why it matters: AVB/mDNS discovery and Tesira TCP connection setup involve network I/O that can take seconds, delaying the audio engine startup and starving other services if recovery is triggered at runtime.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Background-deferred discovery; audio engine starts independently of network discovery.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T599
+Status: [~] On Hold
+Title: [MEDIUM] Tune Python GC thresholds for RT workload
+Description:
+- Goal / acceptance criteria: In `app/main.py` startup, add `import gc; gc.set_threshold(3500, 10, 10)` to raise the generation-0 threshold and reduce GC frequency. Document the setting in CLAUDE.md under Performance & Latency.
+- Why it matters: Python's default gen-0 GC threshold triggers frequent collections. During heavy service operation (MIDI routing, metering, parameter updates) GC pauses of 1-5ms can stall the async event loop including RT parameter delivery.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: GC tuning applied at startup, documented in CLAUDE.md.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T600
+Status: [~] On Hold
+Title: [MEDIUM] Replace 1ms MIDI engine poll loop with event-driven pattern
+Description:
+- Goal / acceptance criteria: In `app/services/midi_engine.py:467`, replace `asyncio.sleep(0.001)` polling with an `asyncio.Event` or `asyncio.Queue.get(timeout=...)` pattern that only wakes when data is available.
+- Why it matters: A 1ms polling loop generates 1000 wakeups/second, burning CPU and creating scheduler noise on the RT cores.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Event-driven MIDI engine loop.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T601
+Status: [~] On Hold
+Title: [MEDIUM] Audit and cap tight polling intervals in MPX1, IntelFX, and Push Surface services
+Description:
+- Goal / acceptance criteria: Audit `app/services/mpx1_service.py`, `app/services/intelfx_service.py`, and `app/services/push_surface/manager.py`. Establish a minimum floor of 5ms for all MIDI device polling loops. Replace tight spin-loops with event-driven or bounded-poll patterns where possible.
+- Why it matters: MPX1 at 2ms and IntelFX at 2ms add 500+ wakeups/second per device competing on the same event loop as RT parameter delivery.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Audited and updated polling intervals across all three services.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T602
+Status: [~] On Hold
+Title: [MEDIUM] Document RT-safe service rules in CLAUDE.md Performance section
+Description:
+- Goal / acceptance criteria: Expand the "Performance & Latency" section in `docs/CLAUDE.md` with: (1) table of all known polling loops and intervals; (2) rules for new background services (minimum sleep interval, no blocking I/O on RT cores); (3) CPU affinity policy; (4) an RT-safe checklist for any new service running on the same host as the audio engine.
+- Why it matters: Without documented rules, new services are added without RT awareness and each one incrementally increases latency pressure without any single obviously-breaking change.
+- Dependencies: T595, T596, T597
+- Estimated effort: Low
+- Required outputs: Updated CLAUDE.md Performance section, RT-safe service checklist.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31
+
+---
+
+ID: T603
+Status: [~] On Hold
+Title: [LOW] Add CI test rejecting new services with sub-5ms polling intervals
+Description:
+- Goal / acceptance criteria: Add `tests/test_rt_latency_policy.py` that statically scans `app/services/` for `asyncio.sleep()` calls with values below `0.005` and fails with a descriptive error listing the offending file, line, and value. Allowlist explicitly exempted paths (RT parameter bridge, metering broadcast) with comments explaining why.
+- Why it matters: Without enforcement, new services will reintroduce sub-5ms polling over time, incrementally degrading RT performance without any single obviously-breaking change.
+- Dependencies: T593, T600, T601
+- Estimated effort: Low
+- Required outputs: Passing CI test, allowlist with documented exemptions.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-31

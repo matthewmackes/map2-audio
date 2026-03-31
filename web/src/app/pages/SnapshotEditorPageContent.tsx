@@ -4745,7 +4745,7 @@ export function SnapshotEditorPage() {
     <MenuButton
       label="Details"
       size="sm"
-      kind="tertiary"
+      kind="primary"
       menuAlignment="bottom-end"
       menuBorder
       className="juce-grid-page__snapshot-status-details-menu"
@@ -4841,6 +4841,8 @@ export function SnapshotEditorPage() {
               handlePluginSelect(pluginUri, pluginPosition)
             }}
             liveSnapshot={activeSnapshot}
+            editorSnapshotDraft={currentSnapshotDraft}
+            runtimeLiveState={runtimeStateQuery.data ?? null}
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
