@@ -40,17 +40,18 @@ function renderPage() {
 }
 
 describe('LabsPage', () => {
-  it('renders the standalone Labs landing page with Push Surface in the Labs catalog', () => {
+  it('renders the Labs feature-card catalog with Push Surface in the list', () => {
     renderPage()
 
-    expect(screen.getByText('Standalone Carbon landing page for MAP2’s advanced, experimental, and hardware-sensitive routes.')).toBeTruthy()
-    expect(screen.getByText('Independent from Platforms')).toBeTruthy()
+    expect(screen.getByText('Browse Labs as a uniform catalog of feature cards, each representing a different MAP2 page, service, or hardware workflow.')).toBeTruthy()
+    expect(screen.getByText('Every Labs route now lives in one consistent card grid.')).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Labs feature cards' })).toBeTruthy()
     expect(screen.getAllByText('Push Surface').length).toBeGreaterThan(0)
-    expect(screen.getByText('Top-level Labs page')).toBeTruthy()
+    expect(screen.getByText('Featured route')).toBeTruthy()
     expect(screen.getByText('On MAP2-A')).toBeTruthy()
   })
 
-  it('filters the Labs catalog using the search field', () => {
+  it('filters the Labs feature-card catalog using the search field', () => {
     renderPage()
 
     fireEvent.change(screen.getByLabelText('Search Labs entries'), { target: { value: 'push surface' } })

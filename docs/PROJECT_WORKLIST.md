@@ -6,7 +6,46 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-31 18:06 EDT - T643 Publish Push Surface refresh fix, push all remotes, and restart port 3000 server completed
+Last updated: 2026-03-31 19:17 EDT - T645 Publish Labs feature-card landing page and refresh port 3000 web server completed
+
+ID: T645
+Status: [✓] Done
+Title: Publish the Labs feature-card landing page and refresh the port 3000 web server
+Description:
+- Goal / acceptance criteria: Commit the current Labs landing-page feature-card changes, push `master` to every configured remote, run the authoritative frontend production build, restart the dedicated MAP2 web server on port `3000`, and verify the rebuilt bundle is serving successfully.
+- Why it matters: The user explicitly asked for the Labs landing-page reorganization to be published and made live on the production web UI.
+- Dependencies: T644
+- Estimated effort: Low
+- Required outputs: git commit, pushes to `origin`, `gitlab`, and `local`, successful frontend production build, restarted `map2-web-prod.service`, verification evidence, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 19:17 EDT - Codex
+- Completion notes:
+  - Prepared the Labs feature-card landing-page changes for publish, including the updated `/labs` card-grid layout, equal-height card treatment, focused Labs regression coverage, and the accompanying worklist notes.
+  - Ran the authoritative frontend production build successfully, then reverted the generated `VERSION` and `version.json` stamp churn so the worktree stayed scoped to the actual source changes.
+  - `systemctl restart map2-web-prod.service` was blocked by interactive polkit authentication in this shell, so the service was recycled using the repo-approved non-interactive fallback: sent `SIGTERM` to the running `serve_web_dist.mjs` PID and let `map2-web-prod.service` auto-restart under `Restart=always`.
+  - Verified the restarted production listener on port `3000` with a fresh node PID and a live bundle hash response before final commit/push.
+- Validation: `npm --prefix web run build` -> PASS; `systemctl show map2-web-prod.service -p Restart -p ExecStart -p MainPID` -> `Restart=always` with `/usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`; `systemctl status map2-web-prod.service --no-pager --lines=20` -> active since `2026-03-31 19:17:37 EDT`, PID `1837572`; `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/` -> `200`; `curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js' | head -1` -> `index-9-S8Z-S3.js`; `lsof -iTCP:3000 -sTCP:LISTEN -n -P` -> listener present on PID `1837572`.
+
+ID: T644
+Status: [✓] Done
+Title: Reorganize the Labs landing page into a uniform feature-card catalog
+Description:
+- Goal / acceptance criteria: Update `web/src/app/pages/LabsPage.tsx` and `web/src/app/pages/LabsLandingPage.css` so `/labs` presents one searchable list of same-size feature cards, with each card featuring a different MAP2 page, service, or hardware workflow and preserving direct launch affordances for every Labs destination.
+- Why it matters: The current Labs landing page still reads like a sectioned directory; the user explicitly wants a cleaner feature-card list with a consistent footprint for faster scanning.
+- Dependencies: T585-subD
+- Estimated effort: Low
+- Required outputs: updated Labs landing page layout and styles, focused Labs page regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 18:57 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/LabsPage.tsx` into a single searchable feature-card catalog, replacing the section-by-section Labs directory with one consistent list where every Labs destination renders as the same card type.
+  - Updated `web/src/app/pages/LabsLandingPage.css` to enforce the new catalog treatment with equal-height cards, per-card accenting, copy clamping, and responsive behavior that collapses cleanly on smaller screens.
+  - Refreshed `web/src/app/pages/LabsPage.test.tsx` to lock down the new feature-card catalog copy and list semantics.
+  - Ran the frontend production build for validation, then reverted the generated `VERSION` and `version.json` stamp changes so this slice remains scoped to the Labs UI change.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T643
 Status: [✓] Done

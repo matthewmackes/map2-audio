@@ -2,7 +2,7 @@ import './LabsLandingPage.css'
 
 import { ArrowRight } from '@carbon/icons-react'
 import { Button, Tag, TextInput, Tile } from '@carbon/react'
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState, type CSSProperties } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { PageHeader } from '../components/PageHeader'
@@ -19,8 +19,6 @@ import { isBlockedAdvancedMenuItem } from '../layout/advancedMenuState'
 
 type LabsMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
-const LABS_SECTION_ORDER = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware', 'Blocked / Lab'] as const
-
 function routeItemKey(item: LabsMenuItem): string {
   return `${item.to}::${item.label}`
 }
@@ -33,7 +31,7 @@ function isBlockedOrLabItem(item: LabsMenuItem): boolean {
   return isBlockedAdvancedMenuItem(item) || item.maturity === 'experimental'
 }
 
-function getLabsSectionTitle(item: LabsMenuItem): typeof LABS_SECTION_ORDER[number] {
+function getLabsSectionTitle(item: LabsMenuItem): 'Audio Grid' | 'AVB' | 'MIDI' | 'System' | 'Hardware' | 'Blocked / Lab' {
   return isBlockedOrLabItem(item) ? 'Blocked / Lab' : item.homeSection
 }
 
@@ -109,29 +107,14 @@ export function LabsPage() {
     })
   }, [deferredSearch, labsItems])
 
-  const sections = useMemo(() => {
-    const grouped = new Map<string, LabsMenuItem[]>()
-    for (const item of filteredItems) {
-      const sectionTitle = getLabsSectionTitle(item)
-      const existing = grouped.get(sectionTitle) ?? []
-      existing.push(item)
-      grouped.set(sectionTitle, existing)
-    }
-
-    return LABS_SECTION_ORDER
-      .map((sectionTitle) => [sectionTitle, grouped.get(sectionTitle) ?? []] as const)
-      .filter(([, items]) => items.length > 0)
-  }, [filteredItems])
-
   const blockedCount = labsItems.filter((item) => isBlockedOrLabItem(item)).length
   const pushSurfaceItem = labsItems.find((item) => item.to === '/labs/push-surface') ?? null
-  const pushSurfaceProfile = pushSurfaceItem ? resolveHomeCardProfile(pushSurfaceItem) : null
 
   return (
     <div className="labs-landing">
       <PageHeader
         title="Labs"
-        subtitle="Standalone Carbon landing page for MAP2’s advanced, experimental, and hardware-sensitive routes."
+        subtitle="Browse Labs as a uniform catalog of feature cards, each representing a different MAP2 page, service, or hardware workflow."
         actions={pushSurfaceItem ? (
           <Button size="sm" renderIcon={ArrowRight} onClick={() => navigate(pushSurfaceItem.to)}>
             Open Push Surface
@@ -139,118 +122,102 @@ export function LabsPage() {
         ) : null}
       />
 
-      <div className="labs-landing__hero">
-        <Tile className="labs-landing__hero-card labs-landing__hero-card--intro">
-          <p className="labs-landing__eyebrow">Labs Directory</p>
-          <h2>Independent from Platforms</h2>
+      <Tile className="labs-landing__directory-card">
+        <div className="labs-landing__directory-copy">
+          <p className="labs-landing__eyebrow">Feature Catalog</p>
+          <h2>Every Labs route now lives in one consistent card grid.</h2>
           <p>
-            Labs is now its own landing page. Use it to launch advanced workflows without replacing the
-            main Labs index or folding these tools into the Platforms workspace.
+            Scan advanced, experimental, and hardware-sensitive routes as one list of same-size cards,
+            then jump directly into the page or service you need.
           </p>
-          {pushSurfaceProfile ? (
-            <div className="labs-landing__hero-callout">
-              <p className="labs-landing__hero-label">Featured route</p>
-              <h3>{pushSurfaceItem?.label}</h3>
-              <p>{pushSurfaceProfile.summary}</p>
-            </div>
-          ) : null}
-        </Tile>
-
-        <div className="labs-landing__hero-stats">
-          <Tile className="labs-landing__hero-card">
-            <p className="labs-landing__eyebrow">Catalog</p>
-            <h3>{labsItems.length}</h3>
-            <p>Labs entries available from this landing page.</p>
-          </Tile>
-          <Tile className="labs-landing__hero-card">
-            <p className="labs-landing__eyebrow">Sections</p>
-            <h3>{sections.length}</h3>
-            <p>Grouped by workflow domain for faster scanning.</p>
-          </Tile>
-          <Tile className="labs-landing__hero-card">
-            <p className="labs-landing__eyebrow">Blocked / Lab</p>
-            <h3>{blockedCount}</h3>
-            <p>Entries carrying experimental or hardware-blocked posture.</p>
-          </Tile>
         </div>
-      </div>
 
-      <Tile className="labs-landing__search-card">
-        <TextInput
-          id="labs-directory-search"
-          labelText="Search Labs entries"
-          placeholder="Search routes, capabilities, or workflow notes"
-          value={searchValue}
-          onChange={(event) => setSearchValue(event.currentTarget.value)}
-        />
+        <div className="labs-landing__directory-controls">
+          <TextInput
+            id="labs-directory-search"
+            labelText="Search Labs entries"
+            placeholder="Search routes, capabilities, or workflow notes"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+          />
+          <div className="labs-landing__tag-row labs-landing__tag-row--summary">
+            <Tag type="cool-gray">{filteredItems.length} feature cards</Tag>
+            <Tag type="blue">{labsItems.length} total routes</Tag>
+            {blockedCount > 0 ? <Tag type="red">{blockedCount} blocked / lab</Tag> : null}
+          </div>
+        </div>
       </Tile>
 
-      <div className="labs-landing__sections">
-        {sections.length === 0 ? (
+      <div className="labs-landing__results">
+        <div className="labs-landing__results-heading">
+          <div>
+            <p className="labs-landing__section-label">Labs Features</p>
+            <h2>Feature cards</h2>
+          </div>
+          <Tag type="cool-gray">{filteredItems.length} showing</Tag>
+        </div>
+
+        {filteredItems.length === 0 ? (
           <Tile className="labs-landing__empty">
-            <h2>No Labs entries match that search.</h2>
-            <p>Clear the filter to see the full directory again.</p>
+            <h2>No feature cards match that search.</h2>
+            <p>Clear the filter to restore the full Labs catalog.</p>
           </Tile>
-        ) : sections.map(([sectionTitle, items]) => (
-          <section key={sectionTitle} className="labs-landing__section" aria-labelledby={`labs-section-${sectionTitle}`}>
-            <div className="labs-landing__section-heading">
-              <div>
-                <p className="labs-landing__section-label">Labs Section</p>
-                <h2 id={`labs-section-${sectionTitle}`}>{sectionTitle}</h2>
-              </div>
-              <Tag type="cool-gray">{items.length} entries</Tag>
-            </div>
+        ) : (
+          <div className="labs-landing__grid" role="list" aria-label="Labs feature cards">
+            {filteredItems.map((item) => {
+              const Icon = item.icon
+              const profile = resolveHomeCardProfile(item)
+              const sectionTitle = getLabsSectionTitle(item)
+              const hardwareLocation = locationsByRoute[item.to]
+              const isCurrentRoute = isRouteMatch(location.pathname, item.to)
+              const cardStyle = { '--labs-card-accent': item.color } as CSSProperties
 
-            <div className="labs-landing__grid">
-              {items.map((item) => {
-                const Icon = item.icon
-                const profile = resolveHomeCardProfile(item)
-                const hardwareLocation = locationsByRoute[item.to]
-                const isCurrentRoute = isRouteMatch(location.pathname, item.to)
-
-                return (
-                  <Tile key={routeItemKey(item)} className="labs-landing__card">
-                    <div className="labs-landing__card-header">
-                      <div className="labs-landing__icon-wrap" aria-hidden="true">
-                        <Icon size={20} />
-                      </div>
-                      <div className="labs-landing__card-copy">
-                        <p className="labs-landing__card-section">{sectionTitle}</p>
-                        <h3>{item.label}</h3>
-                      </div>
+              return (
+                <Tile key={routeItemKey(item)} className="labs-landing__card" role="listitem" style={cardStyle}>
+                  <div className="labs-landing__card-header">
+                    <div className="labs-landing__icon-wrap" aria-hidden="true">
+                      <Icon size={20} />
                     </div>
-
-                    <div className="labs-landing__tag-row">
-                      <Tag type={maturityTagType(item.maturity)}>{maturityTagLabel(item.maturity)}</Tag>
-                      {item.to === '/labs/push-surface' ? <Tag type="blue">Top-level Labs page</Tag> : null}
-                      {isCurrentRoute ? <Tag type="cool-gray">Current route</Tag> : null}
-                      {hardwareLocation ? <Tag type="green">On {hardwareLocation.hostname}</Tag> : null}
+                    <div className="labs-landing__card-copy">
+                      <p className="labs-landing__card-section">{sectionTitle}</p>
+                      <h3>{item.label}</h3>
+                      <p className="labs-landing__card-route">{item.to}</p>
                     </div>
+                  </div>
 
-                    <p className="labs-landing__card-summary">{profile.summary}</p>
-                    <p className="labs-landing__card-description">{item.description}</p>
+                  <div className="labs-landing__tag-row">
+                    <Tag type={maturityTagType(item.maturity)}>{maturityTagLabel(item.maturity)}</Tag>
+                    {item.to === '/labs/push-surface' ? <Tag type="blue">Featured route</Tag> : null}
+                    {isCurrentRoute ? <Tag type="cool-gray">Current route</Tag> : null}
+                    {hardwareLocation ? <Tag type="green">On {hardwareLocation.hostname}</Tag> : null}
+                  </div>
+
+                  <p className="labs-landing__card-summary">{profile.summary}</p>
+
+                  <div className="labs-landing__card-body">
+                    <div className="labs-landing__card-focus">
+                      <p className="labs-landing__card-footer-label">Best for</p>
+                      <p className="labs-landing__card-footer-value">{profile.bestFor}</p>
+                    </div>
 
                     <ul className="labs-landing__capabilities">
-                      {profile.capabilities.slice(0, 3).map((capability) => (
+                      {profile.capabilities.slice(0, 2).map((capability) => (
                         <li key={`${item.to}-${capability}`}>{capability}</li>
                       ))}
                     </ul>
+                  </div>
 
-                    <div className="labs-landing__card-footer">
-                      <div>
-                        <p className="labs-landing__card-footer-label">Best for</p>
-                        <p className="labs-landing__card-footer-value">{profile.bestFor}</p>
-                      </div>
-                      <Button kind="tertiary" size="sm" renderIcon={ArrowRight} onClick={() => navigate(item.to)}>
-                        Open
-                      </Button>
-                    </div>
-                  </Tile>
-                )
-              })}
-            </div>
-          </section>
-        ))}
+                  <div className="labs-landing__card-footer">
+                    <p className="labs-landing__card-description">{item.description}</p>
+                    <Button kind="tertiary" size="sm" renderIcon={ArrowRight} onClick={() => navigate(item.to)}>
+                      Open
+                    </Button>
+                  </div>
+                </Tile>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
