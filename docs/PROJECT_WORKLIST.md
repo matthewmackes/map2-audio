@@ -6,7 +6,146 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-30 21:23 EDT - T582 completed snapshot runtime UTC cleanup
+Last updated: 2026-03-31 14:27 EDT - T585 Push Surface Labs workflow completed, including standalone routing and connect-time welcome playback
+
+ID: T585
+Status: [✓] Done
+Title: Define the Labs Push WYSIWYG control-surface editor around the Ableton Push render
+Description:
+- Goal / acceptance criteria: Add a new frontend Labs page centered around `web/src/assets/Abiliton-Push-Render.png` that presents a first-class Push management/editor experience, mirrors the rendered hardware controls one-for-one as a WYSIWYG programming surface, exposes broad advanced MIDI programming capabilities, shows currently assigned MIDI mappings (CC/PC) at the top as `Quick Assignments`, works fully offline as a programmable simulator/editor, reflects live surface state bidirectionally when hardware is attached, and can run a control-surface `Welcome` routine every time a Push connects to the platform. The welcome routine is explicitly a device-side Push connect routine, not a React GUI welcome state, but the Labs page should mirror that routine live on the PNG when hardware is connected. The Labs page must also include an editor for creating new welcome routines and saving/loading them. That editor must support accurate LED-layout authoring and animation creation where the hardware supports it. The implementation must research the web for real-world examples of Push capabilities and add 10 example automations/routines to the platform as reference content. The device-side welcome routine must support a blue cross plus outline pad-LED animation resembling the platform logo image, along with a `Welcome` and stats message on the device output surface, run for 7 seconds, be skippable by any control press, and hand off to the Push home surface page when it ends. The captured welcome stats payload now includes node name, firmware/profile, current preset/snapshot, CPU/load, node score out of 10, cluster role/status, and current snapshot identity. The `Node Score` should reuse the shared audio-engine latency-pressure scoring path referenced from the audio-engine page entry point rather than introducing a separate scoring formula. Control mappings must support layered assignments across tap/hold/double-tap/shift/page-bank/velocity/pressure/encoder-touch interactions, use inline hotspot editors instead of a persistent side inspector, support per-device and per-cluster-node scoping, and default safe-mode confirmations on for routing, cluster, and destructive live-affecting actions.
+- Why it matters: The backend Push subsystem now has device/state/config foundations, but operators still need a visual editing/programming surface that makes the control layout legible, editable, and consistent with the hardware itself.
+- Dependencies: T584
+- Estimated effort: High
+- Required outputs: clarified requirements, worklist-tracked implementation plan, new Labs page, WYSIWYG Push image/control wiring, Quick Assignments section, advanced MIDI programming options, focused frontend/backend validation, and licensing review notes.
+Subtasks:
+  ID: T585-subA
+  Status: [✓] Done
+  Title: Build the top-level Labs Push editor surface and routing integration
+  Description:
+  - Goal / acceptance criteria: Turn the `/labs` route into a first-class Push-focused surface that centers `Abiliton-Push-Render.png`, overlays one-for-one hotspots for the full control set, mirrors live state when available, and preserves any existing Labs utility access needed elsewhere in the platform.
+  - Why it matters: The new Push workflow needs a real home in the frontend route tree instead of a hidden or secondary launcher.
+  - Dependencies: T584
+  - Estimated effort: High
+  - Required outputs: Labs page implementation, hotspot layout/preview state, route/shell updates, and focused frontend coverage.
+  Subtasks: None
+  Assigned to: Codex
+  Last updated: 2026-03-31 13:27 EDT - Codex
+  - Completion notes:
+    - Replaced the old `/labs` route wrapper with a first-class Push-focused page in `web/src/app/pages/LabsPage.tsx`, centered on `web/src/assets/Abiliton-Push-Render.png` with one-for-one hotspot overlays across pads, encoders, soft keys, touch strip, screen, and major button groups.
+    - Added `web/src/app/pages/labsPushLayout.ts` to keep the hotspot geometry and inferred logical alias mapping isolated from the page component, so the WYSIWYG overlay is maintainable and future protocol-confirmed mappings can tighten the control map without rewriting the editor.
+    - Preserved access to the former route-driven Labs catalog by embedding the existing `LabsWorkspace` inside a `Legacy Labs Catalog` accordion on the new page instead of deleting that navigation surface.
+    - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx web/src/map2/clientExports.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  ID: T585-subB
+  Status: [✓] Done
+  Title: Add mapping editors, Quick Assignments, and persistence APIs for Push controls
+  Description:
+  - Goal / acceptance criteria: Expose flat global Quick Assignments with CC/PC priority, inline hotspot editors for layered mappings, save/load flows scoped per cluster node and per device, and backend contracts for editing/querying assignments offline or against live hardware. Live-affecting routing, cluster, and destructive graph actions must default to safe-mode confirmations.
+  - Why it matters: The page only becomes operationally useful when mappings are actually inspectable and editable.
+  - Dependencies: T585-subA
+  - Estimated effort: High
+  - Required outputs: frontend editors, backend API/storage support, focused tests, and validation evidence.
+  Subtasks: None
+  Assigned to: Codex
+  Last updated: 2026-03-31 13:27 EDT - Codex
+  - Completion notes:
+    - Added `app/services/push_surface/labs_store.py` as file-backed Labs editor persistence with seeded assignments and welcome routines, plus new backend routes in `app/routes/push_surface.py` for `GET/PUT /api/push-surface/labs/editor-state`.
+    - Added `web/src/map2/clients/pushSurface.ts` and exported it through `web/src/map2/api.ts`, giving the frontend a node-aware client for querying and saving Labs editor state and fetching Push runtime state.
+    - Implemented flat global `Quick Assignments`, inline hotspot popover editors, layered interaction/type fields, per-device/per-node scope fields, JSON payload editing, and safe-mode confirmation defaults in the new Labs page.
+    - Validation: `pytest -q tests/push_surface/test_routes.py` -> PASS; `pytest -q tests/push_surface` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx web/src/map2/clientExports.test.ts` -> PASS.
+  ID: T585-subC
+  Status: [✓] Done
+  Title: Add welcome-routine authoring, research-backed examples, and live preview
+  Description:
+  - Goal / acceptance criteria: Implement the step-based welcome-routine editor with accurate LED/display preview, mirrored live hardware playback, per-connect welcome execution, save/load support, and 10 reference automations informed by current Push capability research.
+  - Why it matters: Welcome-routine authoring and reference content are explicit requirements and the main proof that the Labs editor handles animation-grade behavior.
+  - Dependencies: T585-subA
+  - Estimated effort: High
+  - Required outputs: routine editor, example routine library, backend contracts/playback wiring, documented research references, and focused validation evidence.
+  Subtasks: None
+  Assigned to: Codex
+  Last updated: 2026-03-31 14:27 EDT - Codex
+  - Completion notes:
+    - Added step-based welcome-routine authoring, save/load support, PNG-based preview, paint-mode LED editing, and 10 seeded example automations/routines surfaced through the dedicated Push Surface page.
+    - Wired the selected saved welcome routine into `app/services/push_surface/manager.py` so a connected Push now runs the chosen routine automatically on connect, supports skip on first control input, hands off to the configured page, and exposes live welcome-frame state through the runtime snapshot for frontend mirroring.
+    - Added `app/services/push_surface/welcome_runtime.py` to isolate welcome-step to render-frame translation, keeping the display/LED playback path modular for future Push protocol refinement.
+    - Extended the frontend runtime contract in `web/src/map2/clients/pushSurface.ts` and the Push Surface page in `web/src/app/pages/PushSurfacePage.tsx` so the PNG mirrors real manager-driven welcome playback when hardware is connected instead of showing only local editor preview state.
+    - Validation: `pytest -q tests/push_surface/test_manager.py tests/push_surface/test_routes.py` -> PASS; `pytest -q tests/push_surface` -> PASS (`20 passed`, warnings unchanged in existing bridge coverage); `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx web/src/app/pages/PushSurfacePage.test.tsx web/src/map2/clientExports.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  ID: T585-subD
+  Status: [✓] Done
+  Title: Restore a standalone Labs landing page and move Push Surface to its own Labs route
+  Description:
+  - Goal / acceptance criteria: Revert `/labs` back to a standalone Carbon-built Labs landing page that lists all Labs entries, add `Push Surface` as its own top-level Labs destination, and ensure Labs is no longer treated as part of the Platforms integrated workspace group. The Push editor itself must remain available on its own route and no longer replace the Labs landing page.
+  - Why it matters: The current implementation incorrectly replaced the Labs landing page with the Push editor and blended Labs route behavior into the Platforms group, which conflicts with the requested navigation model.
+  - Dependencies: T585-subA, T585-subB
+  - Estimated effort: Medium
+  - Required outputs: new standalone Labs landing page, standalone Push Surface route, menu/catalog updates, route-group cleanup, focused validation, and updated worklist notes.
+  Subtasks: None
+  Assigned to: Codex
+  Last updated: 2026-03-31 14:19 EDT - Codex
+  - Completion notes:
+    - Restored `/labs` as a standalone Carbon-built Labs landing page in `web/src/app/pages/LabsPage.tsx`, with its own styling in `web/src/app/pages/LabsLandingPage.css`, a full Labs-entry directory, search, grouped sections, and a top-level `Push Surface` entry.
+    - Split the former Labs Push editor into its own dedicated route page in `web/src/app/pages/PushSurfacePage.tsx` and `web/src/app/pages/PushSurfacePage.test.tsx`, with `/labs/push-surface` added to `web/src/app/App.tsx`.
+    - Added `Push Surface` to the shared Labs/navigation catalog in `web/src/app/data/advancedMenuItems.ts`, added route-specific home-card profiles in `web/src/app/data/homeCardProfiles.ts`, and added Push hardware search terms in `web/src/app/hooks/useDeviceLocation.ts`.
+    - Removed `/labs` from the route-group code that treated it like part of the Platforms integrated workspace in `web/src/app/layout/AppShell.tsx`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/hooks/useNodeOperations.ts`, `web/src/app/hooks/useMidiCluster.ts`, `web/src/app/components/PlatformCapabilities.tsx`, and split route prefetching in `web/src/app/routePrefetch.ts`.
+    - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx web/src/app/pages/PushSurfacePage.test.tsx web/src/map2/clientExports.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+Assigned to: Codex
+Last updated: 2026-03-31 14:27 EDT - Codex
+- Completion notes:
+  - The Labs flow now matches the requested architecture: `/labs` is a standalone Carbon landing page, `Push Surface` is its own top-level Labs route, the Push editor remains fully offline-capable, and live connected-hardware welcome playback is mirrored back into the WYSIWYG surface.
+  - Licensing review: touched frontend/backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no new third-party code or notice files were introduced by this completion slice.
+
+ID: T584
+Status: [✓] Done
+Title: Expose Push surface runtime control APIs and align central config coverage
+Description:
+- Goal / acceptance criteria: Add a dedicated backend route surface for `push_surface` health/state/diagnostics and controlled start-stop/config updates, register it in the main app, and add central `push_surface.*` config schema entries so runtime config inspection and updates expose documented defaults instead of relying on unknown-key behavior. The slice is complete when operators or tests can query manager health, fetch the current page/state snapshot, trigger diagnostics actions, update persisted Push config safely, and see the relevant config keys in the shared config manager contract.
+- Why it matters: The foundation subsystem exists, but it is still effectively headless from the backend API and partially hidden from MAP2’s normal config/observability paths, which makes verification and operations harder than the rest of the platform.
+- Dependencies: T583
+- Estimated effort: Medium
+- Required outputs: new Push surface API route(s), any manager/config support needed, route/config tests, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 10:20 EDT - Codex
+- Completion notes:
+  - Added `app/routes/push_surface.py` and registered it from `app/main.py`, exposing backend endpoints for Push surface health, controller state snapshots, persisted/shared config inspection and updates, lifecycle start-stop control, and diagnostics actions for test pattern, export, and capability dump flows.
+  - Extended `app/services/push_surface/manager.py` with public config-apply, state snapshot, diagnostics export, capability dump, and test-pattern methods so the new API uses stable manager seams rather than reaching into parser/renderer internals.
+  - Extended `app/services/push_surface/config.py` with documented shared-runtime field coverage, runtime-config payload helpers, and non-default shared-config override merging so central `push_surface.*` settings can influence the subsystem without overwriting device-local persisted state blindly.
+  - Added central `push_surface.*` schema coverage to `app/config.py`, which makes shared runtime config inspection and updates explicit for the Push subsystem instead of relying on unknown-key passthrough behavior.
+  - Added focused regression coverage in `tests/push_surface/test_config.py` and `tests/push_surface/test_routes.py`, preserving the existing Push suite and config API route behavior while locking down the new route/config contract.
+  - Validation: `pytest -q tests/push_surface/test_config.py tests/push_surface/test_routes.py` -> PASS (`5 passed`); `pytest -q tests/push_surface` -> PASS (`17 passed`); `pytest -q tests/test_snapshot_routes.py tests/push_surface` -> PASS (`18 passed`); `pytest -q tests/test_config_api_runtime.py` -> PASS (`3 passed`); AST parse of `app/routes/push_surface.py`, `app/services/push_surface/config.py`, `app/services/push_surface/manager.py`, `app/config.py`, and the new tests -> PASS.
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no new third-party code or notice files were introduced by this slice, and the existing repository license scan remains sufficient.
+
+ID: T583
+Status: [✓] Done
+Title: Build the Push surface subsystem for MAP2 hardware control and diagnostics
+Description:
+- Goal / acceptance criteria: Create a new `push_surface` subsystem under the backend service layer with modular manager/profile/parser/renderer/page/bridge/config/diagnostics/simulator/protocol-capture components plus focused tests. The first completed slice must discover or accept configured MIDI ports, normalize generic Push-style MIDI input, render diff-based LED feedback, navigate home/chains/parameters/presets/routing/cluster/diagnostics pages, bridge to MAP2 snapshot/runtime/cluster/AVB data, persist config, expose diagnostics and replay tooling, and degrade safely for unverified Push 2/3 protocol elements.
+- Why it matters: MAP2 needs a first-class hardware control surface path that does not depend on Ableton Live, can keep development moving without hardware, and can grow from generic MIDI control into richer Push-specific protocol support without coupling uncertain reverse-engineered details into core MAP2 state.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: new `app/services/push_surface/` package with typed modules and tests, any required startup integration, worklist progress notes, validation evidence, and licensing review notes.
+Subtasks:
+  ID: T583-subA
+  Status: [✓] Done
+  Title: Ship the foundation slice with manager, profiles, parser, renderer, simulator, bridge, and tests
+  Description:
+  - Goal / acceptance criteria: Land the architectural base for generic MIDI Push control, including page/state models, mockable bridge contracts, diagnostics capture, simulator-backed testing, and replay-safe parser/renderer coverage.
+  - Why it matters: The subsystem needs stable seams before richer MAP2 page logic or protocol experiments are added.
+  - Dependencies: None
+  - Estimated effort: High
+  - Required outputs: base package structure, unit/integration tests, and milestone-1/2 ready implementation notes.
+  Subtasks: None
+  Assigned to: Codex
+  Last updated: 2026-03-31 11:02 EDT - Codex
+- Completion notes:
+  - Added the new `app/services/push_surface/` subsystem with typed models, persistent config, device profiles for Push 1/2/3 plus generic fallback, raw MIDI parsing, diff-based LED rendering, page controller/page renderers, direct and REST/WebSocket MAP2 bridges, diagnostics/export helpers, simulator support, and Linux-first protocol capture/replay tooling.
+  - Added focused tests under `tests/push_surface/` covering profile detection, parser normalization, renderer diffing, page/controller transitions, direct/mock bridge behavior, and simulator-backed manager/device I/O; the new bridge coverage runs against the real unified snapshot service contract using a temp database.
+  - Wired optional lifecycle startup into `app/main.py` behind `push_surface.enabled`, `PushSurfaceConfig.load().enabled`, or `MAP2_PUSH_SURFACE_ENABLED=true`, so the subsystem can run as part of the backend without forcing it on by default.
+  - Advanced Push 2/3 display transport remains intentionally isolated behind protocol helpers with `UNVERIFIED` comments and no hard-coded SysEx assumptions, which satisfies the current architecture goal while keeping reverse-engineering work restartable.
+  - Validation: `pytest -q tests/push_surface` -> PASS (`12 passed`); `pytest -q tests/test_snapshot_routes.py tests/push_surface` -> PASS (`13 passed`); `python3 -c "import ast, pathlib; ast.parse(pathlib.Path('app/main.py').read_text(encoding='utf-8'))"` -> PASS. A direct `compileall app/main.py` write failed because this repo’s `app/__pycache__` path is not writable in the current environment.
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'` and found no new notice or ownership gaps requiring follow-up work.
+Assigned to: Codex
+Last updated: 2026-03-31 11:02 EDT - Codex
 
 ID: T581
 Status: [✓] Done

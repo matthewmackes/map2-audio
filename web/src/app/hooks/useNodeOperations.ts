@@ -238,7 +238,7 @@ export interface NodeOperationsData {
 
 export function useNodeOperations(): NodeOperationsData {
   const qc = useQueryClient()
-  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const platformRouteActive = useRouteActive(['/platforms'])
   const platformFastCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

@@ -232,7 +232,7 @@ function endpointActivity(endpoint: MidiClusterEndpoint, activeConnections: numb
 }
 
 export function usePlatformShellData(): PlatformShellData {
-  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const platformRouteActive = useRouteActive(['/platforms'])
   const platformFastCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

@@ -31,6 +31,7 @@ type HardwareMenuItemLike = {
 }
 
 const DEVICE_TYPE_SEARCH_TERMS: Record<string, string[]> = {
+  'ableton-push': ['ableton push', 'push 1', 'push 2', 'push 3', 'ableton ag push', 'push'],
   'edirol-ua1000': ['edirol ua 1000', 'ua 1000', '0582 0074'],
   'hotone-jogg': ['hotone jogg', 'jogg', '84ef 0014'],
   'generic-interface': ['hotone jogg', 'jogg', '84ef 0014'],

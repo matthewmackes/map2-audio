@@ -9,6 +9,7 @@ export const NODE_PAGE_KEYS = {
   dsp: 'dsp',
   chains: 'chains',
   midiHub: 'midi-hub',
+  labs: 'labs',
   platform: 'nodes',
   nodes: 'nodes',
 } as const
@@ -151,8 +152,11 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname.startsWith('/platform')) {
     return NODE_PAGE_KEYS.platform
   }
-  if (pathname.startsWith('/platforms') || pathname.startsWith('/labs')) {
+  if (pathname.startsWith('/platforms')) {
     return NODE_PAGE_KEYS.platform
+  }
+  if (pathname.startsWith('/labs')) {
+    return NODE_PAGE_KEYS.labs
   }
   if (pathname.startsWith('/nodes')) {
     return NODE_PAGE_KEYS.nodes

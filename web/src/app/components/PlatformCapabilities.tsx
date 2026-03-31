@@ -91,7 +91,7 @@ export function PlatformCapabilities() {
   const [_loading, setLoading] = useState(true)
   const [runningTest, setRunningTest] = useState(false)
   const queryClient = useQueryClient()
-  const platformRouteActive = useRouteActive(['/platforms', '/labs'])
+  const platformRouteActive = useRouteActive(['/platforms'])
   const servicesCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

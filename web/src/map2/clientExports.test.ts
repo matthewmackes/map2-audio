@@ -29,6 +29,7 @@ import {
   pipewireApi,
   pluginAppearancesApi,
   pluginsApi,
+  pushSurfaceApi,
   servicesApi,
   sessionsApi,
   snapshotsApi,
@@ -53,6 +54,7 @@ import { chainsApi as splitChainsApi } from './clients/chains'
 import { drumsApi as splitDrumsApi } from './clients/drums'
 import { midiApi as splitMidiApi, midiApiV2 as splitMidiApiV2 } from './clients/midi'
 import { midiClusterApi as splitMidiClusterApi, midiHubApi as splitMidiHubApi } from './clients/midiHub'
+import { pushSurfaceApi as splitPushSurfaceApi } from './clients/pushSurface'
 import {
   getNodeHealth as splitGetNodeHealth,
   getNodeIdentity as splitGetNodeIdentity,
@@ -124,6 +126,7 @@ describe('map2 api compatibility barrel', () => {
     expect(midiApiV2).toBe(splitMidiApiV2)
     expect(midiClusterApi).toBe(splitMidiClusterApi)
     expect(midiHubApi).toBe(splitMidiHubApi)
+    expect(pushSurfaceApi).toBe(splitPushSurfaceApi)
     expect(healthApi).toBe(splitHealthApi)
     expect(wwwApi).toBe(splitWwwApi)
     expect(PLUGIN_INVENTORY_CHANGED_EVENT).toBe('map2:plugins-changed')

@@ -303,6 +303,7 @@ async def lifespan(app):
         config_reloader = None
         openapi_schema_sync = None
         avb_event_sync = None
+        push_surface_manager = None
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -437,6 +438,23 @@ async def lifespan(app):
             logger.info("MIDI v2 service attached to MidiHub")
         except Exception as exc:
             logger.warning(f"Failed to attach MIDI v2 service to MidiHub: {exc}")
+
+        try:
+            from app.config import config_get as _config_get
+            from app.services.push_surface import PushSurfaceConfig, get_push_surface_manager
+
+            push_surface_enabled = (
+                bool(_config_get("push_surface.enabled", False))
+                or bool(PushSurfaceConfig.load().enabled)
+                or os.getenv("MAP2_PUSH_SURFACE_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+            )
+            if push_surface_enabled:
+                push_surface_manager = get_push_surface_manager()
+                await safe_start_service(logger, "Push surface manager", push_surface_manager.start)
+            else:
+                logger.debug("Push surface manager disabled (push_surface.enabled=false)")
+        except Exception as exc:
+            logger.warning(f"Failed to initialize Push surface manager: {exc}")
 
         # Start PipeWire crash recovery watchdog (opt-in only).
         # In current production builds this path can trigger unsafe low-level
@@ -599,6 +617,8 @@ async def lifespan(app):
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Snapshot runtime heartbeat", stop_snapshot_runtime_heartbeat)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
+        if push_surface_manager is not None:
+            await safe_stop_service(logger, "Push surface manager", push_surface_manager.stop)
         try:
             from app.services.midi_service import midi_service
 
@@ -689,7 +709,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'plugin_appearances', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes']
+        route_modules = ['services', 'audio', 'plugins', 'plugin_appearances', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes']
         route_load_failures = []
 
         for route_name in route_modules:

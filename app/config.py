@@ -52,6 +52,7 @@ class ConfigSection(Enum):
     NODE = "node"
     AUDIO = "audio"
     MIDI = "midi"
+    PUSH_SURFACE = "push_surface"
     LCD = "lcd"
     BACKEND = "backend"
     DATABASE = "database"
@@ -363,6 +364,111 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         env_var="MAP2_CLUSTER_PROXY_MAX_CONNECTIONS_PER_NODE",
         min_value=1,
         max_value=50,
+    ),
+
+    # Push surface settings
+    "push_surface.enabled": ConfigOption(
+        key="push_surface.enabled",
+        default=False,
+        description="Enable the Ableton Push hardware surface subsystem",
+        value_type=bool,
+        env_var="MAP2_PUSH_SURFACE_ENABLED",
+    ),
+    "push_surface.preferred_profile": ConfigOption(
+        key="push_surface.preferred_profile",
+        default=None,
+        description="Preferred Push device profile identifier",
+        value_type=str,
+    ),
+    "push_surface.input_port_name": ConfigOption(
+        key="push_surface.input_port_name",
+        default=None,
+        description="Preferred MIDI input port name for the Push surface",
+        value_type=str,
+    ),
+    "push_surface.output_port_name": ConfigOption(
+        key="push_surface.output_port_name",
+        default=None,
+        description="Preferred MIDI output port name for the Push surface",
+        value_type=str,
+    ),
+    "push_surface.bank_size": ConfigOption(
+        key="push_surface.bank_size",
+        default=8,
+        description="Number of parameters exposed in one Push encoder bank",
+        value_type=int,
+        min_value=1,
+        max_value=8,
+    ),
+    "push_surface.encoder_acceleration": ConfigOption(
+        key="push_surface.encoder_acceleration",
+        default=1.0,
+        description="Acceleration multiplier for Push encoder deltas",
+        value_type=float,
+        min_value=0.1,
+        max_value=8.0,
+    ),
+    "push_surface.selection_behavior": ConfigOption(
+        key="push_surface.selection_behavior",
+        default="press_select_press_open",
+        description="Selection/open behavior for Push pad navigation",
+        value_type=str,
+        choices=["press_select_press_open"],
+    ),
+    "push_surface.safe_mode": ConfigOption(
+        key="push_surface.safe_mode",
+        default=True,
+        description="Require confirmations for sensitive Push surface actions",
+        value_type=bool,
+    ),
+    "push_surface.routing_write_permissions": ConfigOption(
+        key="push_surface.routing_write_permissions",
+        default="confirm",
+        description="Routing write policy for Push surface actions",
+        value_type=str,
+        choices=["confirm", "direct", "disabled"],
+    ),
+    "push_surface.experimental_protocol": ConfigOption(
+        key="push_surface.experimental_protocol",
+        default=False,
+        description="Allow experimental Push protocol output paths",
+        value_type=bool,
+    ),
+    "push_surface.diagnostics_directory": ConfigOption(
+        key="push_surface.diagnostics_directory",
+        default=str(Path.home() / ".map2" / "push_surface" / "diagnostics"),
+        description="Directory for Push surface diagnostics exports",
+        value_type=str,
+    ),
+    "push_surface.auto_reconnect_interval_s": ConfigOption(
+        key="push_surface.auto_reconnect_interval_s",
+        default=1.0,
+        description="Seconds between Push surface hotplug scans",
+        value_type=float,
+        min_value=0.25,
+        max_value=30.0,
+    ),
+    "push_surface.rest_base_url": ConfigOption(
+        key="push_surface.rest_base_url",
+        default="http://127.0.0.1:8080",
+        description="REST base URL for external Push surface bridge mode",
+        value_type=str,
+        env_var="MAP2_PUSH_SURFACE_REST_BASE_URL",
+    ),
+    "push_surface.websocket_url": ConfigOption(
+        key="push_surface.websocket_url",
+        default="ws://127.0.0.1:8080/ws/events",
+        description="WebSocket URL for external Push surface bridge mode",
+        value_type=str,
+        env_var="MAP2_PUSH_SURFACE_WEBSOCKET_URL",
+    ),
+    "push_surface.default_bridge": ConfigOption(
+        key="push_surface.default_bridge",
+        default="direct",
+        description="Backend bridge mode for the Push surface",
+        value_type=str,
+        env_var="MAP2_PUSH_SURFACE_DEFAULT_BRIDGE",
+        choices=["direct", "rest", "rest_ws", "websocket"],
     ),
 
     # LCD settings

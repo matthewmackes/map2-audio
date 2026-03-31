@@ -166,6 +166,7 @@ import {
   midiClusterApi as splitMidiClusterApi,
   midiHubApi as splitMidiHubApi,
 } from './clients/midiHub';
+import { pushSurfaceApi } from './clients/pushSurface';
 import {
   getNodeHealth,
   getNodeIdentity,
@@ -216,6 +217,7 @@ export { chainsApi } from './clients/chains';
 export { drumsApi } from './clients/drums';
 export { midiApi, midiApiV2 } from './clients/midi';
 export { midiClusterApi, midiHubApi } from './clients/midiHub';
+export { pushSurfaceApi } from './clients/pushSurface';
 export {
   foldersApi,
   irApi,
@@ -2228,6 +2230,7 @@ export const map2Api = {
   midi: midiApi,
   midiV2: midiApiV2,
   midiHub: midiHubApi,
+  pushSurface: pushSurfaceApi,
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,

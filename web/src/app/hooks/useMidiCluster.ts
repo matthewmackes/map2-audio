@@ -7,7 +7,7 @@ import { useRouteActive } from './useRouteActive'
 import useMidiClusterEvents from './useMidiClusterEvents'
 
 const QUERY_BASE = ['midi-cluster'] as const
-const MIDI_CLUSTER_ROUTE_PATTERNS = ['/platforms', '/labs']
+const MIDI_CLUSTER_ROUTE_PATTERNS = ['/platforms']
 
 function useMidiClusterCadence(visibleMs: number, hiddenMs: number, inactiveMs: number | false = false) {
   const routeActive = useRouteActive(MIDI_CLUSTER_ROUTE_PATTERNS)

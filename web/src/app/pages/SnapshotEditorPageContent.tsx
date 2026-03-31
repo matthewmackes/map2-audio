@@ -34,11 +34,9 @@ import {
   Recording,
   Renew,
   Stop,
-  Timer,
   TrashCan,
   VolumeMute,
   VolumeUp,
-  WarningAlt,
   ArrowsHorizontal,
   Close,
   Edit,
@@ -850,9 +848,7 @@ export function SnapshotEditorPage() {
 
   // Automation Timeline State
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
-  const [footerHeight, setFooterHeight] = useState(56)
   const [automationPanelHeight, setAutomationPanelHeight] = useState(0)
-  const footerRef = useRef<HTMLElement | null>(null)
   const automationPanelRef = useRef<HTMLDivElement | null>(null)
 
   // Flow Snapshots Panel State
@@ -937,27 +933,6 @@ export function SnapshotEditorPage() {
       localStorage.setItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY, effectModalOpen ? 'true' : 'false')
     } catch {}
   }, [effectModalOpen])
-
-  useEffect(() => {
-    const footerNode = footerRef.current
-    if (!footerNode) {
-      return
-    }
-
-    const updateFooterHeight = () => {
-      setFooterHeight(Math.ceil(footerNode.getBoundingClientRect().height))
-    }
-
-    updateFooterHeight()
-
-    if (typeof ResizeObserver !== 'function') {
-      return
-    }
-
-    const observer = new ResizeObserver(() => updateFooterHeight())
-    observer.observe(footerNode)
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     if (!automationTimelineExpanded) {
@@ -1236,7 +1211,7 @@ export function SnapshotEditorPage() {
   }, [assignmentAnalysis, assignmentNodes, isSuitableAssignmentNode])
 
   // CPU metrics hook
-  const { metrics: cpuMetrics, status: cpuStatus, hasXruns, getPluginCpu } = useCPUMetrics({
+  const { getPluginCpu } = useCPUMetrics({
     useWebSocket: true,
     pollingInterval: 500,
   })
@@ -4097,8 +4072,8 @@ export function SnapshotEditorPage() {
   )
 
   const automationToggleBottomOffset = useMemo(() => (
-    footerHeight + 12 + (automationTimelineExpanded ? automationPanelHeight + 12 : 0)
-  ), [automationPanelHeight, automationTimelineExpanded, footerHeight])
+    12 + (automationTimelineExpanded ? automationPanelHeight + 12 : 0)
+  ), [automationPanelHeight, automationTimelineExpanded])
 
   const automationFloatingToggleStyle = useMemo<CSSProperties>(() => ({
     bottom: `calc(${automationToggleBottomOffset}px + env(safe-area-inset-bottom))`,
@@ -4908,7 +4883,7 @@ export function SnapshotEditorPage() {
             ) : (
               <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
                 {livePathLayout.groups.map((group, groupIndex) => (
-                  <Layer
+                  <div
                     key={group.id}
                     className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
                   >
@@ -4946,7 +4921,7 @@ export function SnapshotEditorPage() {
                         )
                       })}
                     </div>
-                  </Layer>
+                  </div>
                 ))}
               </section>
             )}
@@ -6137,39 +6112,6 @@ export function SnapshotEditorPage() {
           pushToast(`Flow ${label} port routing updated`, 'success')
         }}
       />
-
-      {/* Footer Status Bar */}
-      <footer ref={footerRef} className="juce-grid-page__footer">
-        <div
-          className={`juce-grid-page__status-chip ${cpuStatus}`}
-          title={`CPU: ${cpuMetrics.totalCpuPercent.toFixed(1)}%`}
-        >
-          <Meter size={14} />
-          <span>CPU {cpuMetrics.totalCpuPercent.toFixed(0)}%</span>
-        </div>
-
-        {jackMetrics && (
-          <div
-            className="juce-grid-page__status-chip"
-            title={`Buffer: ${jackMetrics.buffer_size} @ ${jackMetrics.sample_rate}Hz`}
-          >
-            <Timer size={14} />
-            <span>{((jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000).toFixed(1)}ms</span>
-          </div>
-        )}
-
-        {hasXruns && (
-          <div className="juce-grid-page__status-chip juce-grid-page__status-chip--warning" title={`${cpuMetrics.xrunCount} XRuns`}>
-            <WarningAlt size={14} />
-            <span>{cpuMetrics.xrunCount} xruns</span>
-          </div>
-        )}
-
-        <div className="juce-grid-page__status-chip">
-          <Flow size={14} />
-          <span>{flowSlots.length} flows</span>
-        </div>
-      </footer>
 
       {/* Perform Full-Screen Modal */}
       {showPerformModal && (

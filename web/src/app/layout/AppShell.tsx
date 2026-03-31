@@ -211,7 +211,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isIntegratedWorkspaceRoute = location.pathname.startsWith('/platforms') || location.pathname === '/labs'
+  const isIntegratedWorkspaceRoute = location.pathname.startsWith('/platforms')
   const isFullBleedRoute = location.pathname === '/' || location.pathname === '/juce-grid' || isIntegratedWorkspaceRoute
   const showMobileBottomTabbar = !isIntegratedWorkspaceRoute
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
