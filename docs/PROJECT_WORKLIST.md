@@ -6,7 +6,118 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T666 Maschine MK1 Integration Epic planned
+Last updated: 2026-04-01 EDT - T667 launcher placement epic added
+
+ID: T667
+Status: [ ] Todo
+Title: System-wide launcher placement and promotion
+Description:
+- Goal / acceptance criteria: Implement a unified launcher-placement system backed by `special_settings`; support ordered landing-page tiles with `small|medium|large` sizes, ordered global-nav pins capped at 4, type-bound Labs/Platforms membership, and an organizer-only management UI at `/platforms/launchers`. Existing installs keep the current home layout and start with an empty landing board. Route-backed launchers from core, Labs, and Platforms participate; nav-only submenu triggers remain nav-only.
+- Why it matters: The current shell has one-off pinning and a hard-coded home layout, which prevents system-wide launcher management and makes promotion inconsistent across Home, Labs, and Platforms.
+- Dependencies: Existing `special_settings` persistence and routed shell navigation
+- Estimated effort: High
+- Required outputs: Extended `special_settings` contract with `landing_tiles`; unified launcher catalog and placement helpers; new `/platforms/launchers` organizer; landing-page tile board; removal of inline placement controls outside the organizer; tests for backend normalization, organizer behavior, landing rendering, and top-nav cap/order.
+Subtasks:
+  - T667-subA: Add unified route-backed launcher catalog and directory classification
+  - T667-subB: Extend `special_settings` schema, models, routes, and Raft sync with `landing_tiles`
+  - T667-subC: Add frontend launcher-layout normalization and persistence plumbing
+  - T667-subD: Build the Platforms launcher organizer at `/platforms/launchers`
+  - T667-subE: Add the landing-page launcher tile board above the existing home layout
+  - T667-subF: Update Labs, Platforms, and AppShell to consume the new model and make placement controls organizer-only
+  - T667-subG: Add regression tests and documentation updates
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subA
+Status: [ ] Todo
+Title: Add unified route-backed launcher catalog and directory classification
+Description:
+- Goal / acceptance criteria: Introduce a single frontend launcher catalog that merges eligible core routes, Labs routes, and Platforms routes; classify each item as `core`, `labs`, `platforms`, or `nav-only`; exclude `/` and other non-launcher affordances from landing-tile eligibility.
+- Why it matters: The new placement system needs one canonical source of truth for what can be promoted and where each launcher naturally belongs.
+- Dependencies: Existing route metadata in `advancedMenuItems`, `platformMenuItems`, and routed page inventory
+- Estimated effort: Medium
+- Required outputs: shared launcher catalog module/types, directory/eligibility metadata, helpers for route lookup and placement validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subB
+Status: [ ] Todo
+Title: Extend `special_settings` schema, models, routes, and Raft sync with `landing_tiles`
+Description:
+- Goal / acceptance criteria: Add ordered `landing_tiles` persistence to the backend special-settings model and cluster replication path; support entries shaped as `{route, size}` with `size` limited to `small|medium|large`; preserve backward compatibility for installs that only have `pinned_routes`.
+- Why it matters: Landing-page promotion must persist globally and replicate with the same guarantees as existing nav pinning.
+- Dependencies: Existing `special_settings` schema, routes, tests, and Raft sync
+- Estimated effort: Medium
+- Required outputs: DB schema upgrade, Pydantic model updates, route normalization/validation, Raft/state-manager propagation, focused backend tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subC
+Status: [ ] Todo
+Title: Add frontend launcher-layout normalization and persistence plumbing
+Description:
+- Goal / acceptance criteria: Extend the frontend special-settings client/hook/types so `landing_tiles` is loaded, normalized, and saved together with `pinned_routes`; provide helper functions for ordering, tile-size updates, add/remove operations, and eligibility filtering.
+- Why it matters: The organizer, home page, and shell must share the same placement behavior rather than each mutating raw settings differently.
+- Dependencies: T667-subA, T667-subB
+- Estimated effort: Medium
+- Required outputs: frontend type additions, normalization helpers, `useSpecialSettings` contract updates, targeted tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subD
+Status: [ ] Todo
+Title: Build the Platforms launcher organizer at `/platforms/launchers`
+Description:
+- Goal / acceptance criteria: Add a dedicated Platforms organizer route that lists the unified launcher catalog and lets operators add/remove landing tiles, choose tile size, reorder landing tiles, pin/unpin global-nav items, and reorder nav pins with explicit controls only.
+- Why it matters: The approved product decision is organizer-only management rather than inline promotion controls scattered across the shell.
+- Dependencies: T667-subA, T667-subC
+- Estimated effort: High
+- Required outputs: new Platforms organizer page/panel, route wiring, save flows through `useSpecialSettings`, UX states for nav-cap enforcement and empty placement sets, focused UI tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subE
+Status: [ ] Todo
+Title: Add the landing-page launcher tile board above the existing home layout
+Description:
+- Goal / acceptance criteria: Render a responsive launcher board above the current home-page cards using 4/2/1 columns across desktop/tablet/mobile and `small=1x1`, `medium=2x1`, `large=2x2` tile spans; keep the existing home content intact below the board; show a clear empty state when no landing tiles are configured.
+- Why it matters: The user wants Windows-style promoted launcher tiles without losing the curated home surface already on `/`.
+- Dependencies: T667-subA, T667-subC
+- Estimated effort: Medium
+- Required outputs: home-page tile-board component/layout styling, route launches, responsive span behavior, focused tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subF
+Status: [ ] Todo
+Title: Update Labs, Platforms, and AppShell to consume the new model and make placement controls organizer-only
+Description:
+- Goal / acceptance criteria: Remove inline placement controls from AppShell advanced/mobile menus and Platforms side-nav; keep Labs and Platforms read-only with placement status where useful; continue to render pinned top-nav items from ordered `pinned_routes` with the existing max of 4.
+- Why it matters: The new model should centralize management in one organizer while preserving consistent launcher visibility elsewhere.
+- Dependencies: T667-subA, T667-subC, T667-subD
+- Estimated effort: Medium
+- Required outputs: AppShell/Labs/Platforms updates, removal of inline pin buttons, read-only status treatment, regression coverage.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
+
+ID: T667-subG
+Status: [ ] Todo
+Title: Add regression tests and documentation updates
+Description:
+- Goal / acceptance criteria: Cover backend `landing_tiles` normalization and round-trip persistence, organizer behaviors, home-page tile rendering, pinned-nav ordering/cap rules, and any required operator/developer docs updates for the new launcher system.
+- Why it matters: This feature crosses backend persistence, replicated settings, shell navigation, and the landing page; without regression coverage it will be fragile.
+- Dependencies: T667-subA through T667-subF
+- Estimated effort: Medium
+- Required outputs: backend/frontend tests, worklist updates, concise documentation where needed.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:10 - Codex
 
 ID: T666
 Status: [ ] Todo
@@ -223,7 +334,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 09:20 - Codex
 
 ID: T666-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Maschine MK1 summary card in MIDI Hub Connections page
 Description:
 - Edit: web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx
@@ -232,7 +343,8 @@ Description:
 - Polls GET /api/maschine/status at same 2s interval as other connection cards
 - Follows existing card layout pattern
 Dependencies: T666-subD, T666-subI
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 09:25 - Codex
 
 ID: T666-subK
 Status: [ ] Todo

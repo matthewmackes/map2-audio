@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { InlineNotification, Tab, TabList, Tabs, Tag } from '@carbon/react'
+import { Button, InlineNotification, Layer, Tab, TabList, Tabs, Tag } from '@carbon/react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { MidiHubConnectedDevicesReport } from '../../components/MidiHub/MidiHubConnectedDevicesReport'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiPatchbay } from '../../components/MidiHub/MidiPatchbay'
@@ -8,6 +10,7 @@ import { MidiRoutingMatrix } from '../../components/MidiHub/MidiRoutingMatrix'
 import { MidiTrafficMonitor } from '../../components/MidiHub/MidiTrafficMonitor'
 import { useMidiHubOverview } from '../../components/MidiHub/useMidiHubOverview'
 import { useMidiHubNodeScope } from '../../components/MidiHub/MidiHubNodeScope'
+import { maschineApi } from '../../../map2/clients/maschine'
 import { MidiHubAreaLayout } from './MidiHubAreaLayout'
 import './MidiHubConnectionsPage.css'
 
@@ -15,8 +18,17 @@ type RoutingWorkspaceMode = 'matrix' | 'patchbay'
 
 export function MidiHubConnectionsPage() {
   const [mode, setMode] = useState<RoutingWorkspaceMode>('matrix')
+  const navigate = useNavigate()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
   const { ports, routes, clockStatus } = useMidiHubOverview(nodeId, scopeKey)
+  const maschineStatusQuery = useQuery({
+    queryKey: ['maschine', 'status', 'midi-hub-card'],
+    queryFn: () => maschineApi.getStatus(),
+    refetchInterval: 2000,
+  })
+  const maschineState = maschineStatusQuery.data?.state ?? null
+  const maschineTagType: 'green' | 'red' | 'warm-gray' =
+    maschineState?.connected ? 'green' : maschineStatusQuery.isError ? 'red' : 'warm-gray'
 
   return (
     <MidiHubAreaLayout
@@ -74,6 +86,25 @@ export function MidiHubConnectionsPage() {
       </section>
 
       <section className="midi-hub-connections-band midi-hub-connections-page__device-report">
+        <Layer className="midi-hub-connections-page__maschine-card" data-testid="maschine-summary-card">
+          <div className="midi-hub-connections-page__maschine-head">
+            <div>
+              <h3>Maschine MK1</h3>
+              <p>Dedicated MK1 daemon and HID surface summary, surfaced alongside the rest of the live MIDI connection inventory.</p>
+            </div>
+            <Tag type={maschineTagType}>
+              {maschineState?.connected ? 'online' : maschineStatusQuery.isError ? 'offline' : 'probing'}
+            </Tag>
+          </div>
+          <div className="midi-hub-connections-page__maschine-meta">
+            <span>HID {maschineState?.hid_device && Object.keys(maschineState.hid_device).length > 0 ? 'ready' : 'missing'}</span>
+            <span>{maschineState?.virtual_port_name ?? 'MAP2:Maschine-MK1'}</span>
+            <span>{maschineState?.status ?? 'unknown'}</span>
+          </div>
+          <Button kind="tertiary" size="sm" onClick={() => navigate('/maschine')}>
+            Configure →
+          </Button>
+        </Layer>
         <MidiHubConnectedDevicesReport
           ports={ports}
           routes={routes}

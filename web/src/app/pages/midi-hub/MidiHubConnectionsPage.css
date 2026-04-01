@@ -13,6 +13,37 @@
   background: transparent;
 }
 
+.midi-hub-connections-page__maschine-card {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-05);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-01) 82%, var(--cds-support-success) 18%), var(--cds-layer-01));
+}
+
+.midi-hub-connections-page__maschine-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--cds-spacing-04);
+  align-items: start;
+}
+
+.midi-hub-connections-page__maschine-head h3,
+.midi-hub-connections-page__maschine-head p {
+  margin: 0;
+}
+
+.midi-hub-connections-page__maschine-head p,
+.midi-hub-connections-page__maschine-meta span {
+  color: var(--cds-text-secondary);
+}
+
+.midi-hub-connections-page__maschine-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+}
+
 .midi-hub-connections-page__workspace-header,
 .midi-hub-connections-surface__header,
 .midi-hub-connections-toolbar,

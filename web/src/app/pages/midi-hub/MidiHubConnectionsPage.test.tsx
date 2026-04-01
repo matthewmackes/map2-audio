@@ -1,6 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { NotificationProvider } from '../../components/Toasts'
 import { MidiHubNodeScopeProvider } from '../../components/MidiHub/MidiHubNodeScope'
 
@@ -58,8 +59,31 @@ const mockMidiHubApi = {
   exportTraffic: jest.fn(async () => ({ path: '/tmp/traffic.csv', count: 1 })),
 }
 
+const mockMaschineApi = {
+  getStatus: jest.fn(async () => ({
+    status: 'ok',
+    state: {
+      connected: true,
+      status: 'connected',
+      virtual_port_name: 'MAP2:Maschine-MK1',
+      hid_device: { vendor_id: '17cc', product_id: '0808' },
+      websocket_connected: true,
+      daemon_version: '0.1.0',
+      firmware_info: {},
+      capabilities: {},
+      lcd: { left: { width: 128, height: 64, format: 'xbm', data: '' }, right: { width: 128, height: 64, format: 'xbm', data: '' } },
+      led_state: { pads: [] },
+      audio_grid: { blocks: [], selected_block_id: null, page_index: 0 },
+    },
+  })),
+}
+
 jest.mock('../../../map2/api', () => ({
   midiHubApi: mockMidiHubApi,
+}))
+
+jest.mock('../../../map2/clients/maschine', () => ({
+  maschineApi: mockMaschineApi,
 }))
 
 jest.mock('./MidiHubAreaLayout', () => ({
@@ -130,11 +154,18 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <MidiHubNodeScopeProvider nodeId={null} scopeKey="local">
-          <MidiHubConnectionsPage />
-        </MidiHubNodeScopeProvider>
-      </NotificationProvider>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <NotificationProvider>
+          <MidiHubNodeScopeProvider nodeId={null} scopeKey="local">
+            <MidiHubConnectionsPage />
+          </MidiHubNodeScopeProvider>
+        </NotificationProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -176,6 +207,9 @@ describe('MidiHubConnectionsPage', () => {
     expect(screen.getByText('USB In')).toBeTruthy()
     expect(screen.getAllByText('DIN Out').length).toBeGreaterThan(0)
     expect(screen.getByRole('heading', { name: 'Connected MIDI devices' })).toBeTruthy()
+    expect(await screen.findByText('Maschine MK1')).toBeTruthy()
+    expect(screen.getByText('MAP2:Maschine-MK1')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Configure →' })).toBeTruthy()
     expect(screen.getByText('Sends to DIN Out')).toBeTruthy()
     expect(screen.getByText(/Receives from USB In/)).toBeTruthy()
     expect(screen.getByText(/Clock output enabled/)).toBeTruthy()
