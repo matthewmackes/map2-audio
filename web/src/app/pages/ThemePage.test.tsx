@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
 import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
@@ -34,6 +35,7 @@ jest.mock('../hooks/useSpecialSettings', () => ({
       hiddenPlugins: ['map2://native/hidden'],
       menuLocation: 'hidden',
       pinnedRoutes: [],
+      landingTiles: [],
     },
     isLoading: false,
     error: null,
@@ -48,7 +50,7 @@ jest.mock('../components/SpecialSettingsDialog', () => ({
 }))
 
 describe('ThemePage', () => {
-  function renderThemePage() {
+  function renderThemePage(initialEntries: string[] = ['/platforms/theme']) {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -57,9 +59,17 @@ describe('ThemePage', () => {
     })
 
     return render(
-      <QueryClientProvider client={queryClient}>
-        <ThemePage />
-      </QueryClientProvider>,
+      <MemoryRouter
+        initialEntries={initialEntries}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <ThemePage />
+        </QueryClientProvider>
+      </MemoryRouter>,
     )
   }
 
@@ -166,7 +176,19 @@ describe('ThemePage', () => {
     expect(screen.getByRole('button', { name: /open directions/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /open theme studio/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /open font modal/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open launcher organizer/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /open category modal/i })).toBeTruthy()
+  })
+
+  it('opens the launcher organizer from the Theme workspace and lists the catalog in a table', () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('button', { name: /open launcher organizer/i }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Configure MIDI Hub' })).toBeInTheDocument()
   })
 
   it('opens the special settings menu from the motion section', () => {

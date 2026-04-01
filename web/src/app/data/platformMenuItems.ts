@@ -103,15 +103,6 @@ const STANDALONE_PANEL_ITEMS: Array<{
     icon: SettingsAdjust,
     pinnable: true,
   },
-  {
-    id: 'launchers',
-    label: 'Launchers',
-    shortLabel: 'Launchers',
-    description: 'Manage landing-page tiles, global navigation pins, and shared launcher promotion from one organizer.',
-    color: 'var(--cds-support-info)',
-    icon: SettingsAdjust,
-    pinnable: false,
-  },
 ]
 
 function buildPlatformLayerPinnedRoute(layerId: PlatformLayerId): string {

@@ -3,28 +3,21 @@
   gap: 1rem;
 }
 
-.platform-launchers__summary,
-.platform-launchers__section {
+.platform-launchers__summary {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
   padding: 1rem;
   background: var(--cds-layer-01);
 }
 
-.platform-launchers__summary {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-}
-
 .platform-launchers__summary h3,
-.platform-launchers__section h3,
-.platform-launchers__item h4 {
+.platform-launchers__configure-card h4 {
   margin: 0;
 }
 
 .platform-launchers__summary p,
-.platform-launchers__section p,
-.platform-launchers__item p {
+.platform-launchers__configure-card p {
   margin: 0;
 }
 
@@ -38,112 +31,92 @@
 }
 
 .platform-launchers__summary-tags,
-.platform-launchers__item-tags {
+.platform-launchers__toolbar-tags,
+.platform-launchers__status-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.platform-launchers__columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.platform-launchers__table-container {
+  background: var(--cds-layer-01);
+}
+
+.platform-launchers__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
 }
 
-.platform-launchers__section-head {
+.platform-launchers__cell-copy {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.platform-launchers__cell-copy p {
+  margin: 0;
+  color: var(--cds-text-secondary);
+}
+
+.platform-launchers__cell-copy code,
+.platform-launchers__configure-card code {
+  overflow-wrap: anywhere;
+  color: var(--cds-text-helper, var(--cds-text-secondary));
+  font-size: 0.78rem;
+}
+
+.platform-launchers__cell-head,
+.platform-launchers__configure-head {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+.platform-launchers__actions,
+.platform-launchers__configure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .platform-launchers__empty {
   display: grid;
   gap: 0.35rem;
   padding: 1rem;
-  border: 1px dashed var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
   color: var(--cds-text-secondary);
 }
 
-.platform-launchers__list {
+.platform-launchers__configure-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.platform-launchers__item {
+.platform-launchers__configure-card {
   display: grid;
   gap: 0.9rem;
-  padding: 0.95rem 1rem;
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
-}
-
-.platform-launchers__item-copy {
-  display: grid;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.platform-launchers__item-title-row {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.platform-launchers__item-copy code {
-  overflow-wrap: anywhere;
-  color: var(--cds-text-helper, var(--cds-text-secondary));
-  font-size: 0.78rem;
-}
-
-.platform-launchers__item-controls {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.platform-launchers__size-row,
-.platform-launchers__action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.platform-launchers__size-btn,
-.platform-launchers__action-row button {
+  padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-01);
-  color: var(--cds-text-primary);
-  padding: 0.4rem 0.65rem;
-  font: inherit;
-  cursor: pointer;
 }
 
-.platform-launchers__size-btn.is-selected {
-  border-color: var(--cds-border-interactive);
-  background: var(--cds-layer-selected-01);
+.platform-launchers__configure-section {
+  display: grid;
+  gap: 0.5rem;
 }
 
-.platform-launchers__size-btn:disabled,
-.platform-launchers__action-row button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.platform-launchers__configure-label {
+  color: var(--cds-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
-.platform-launchers__size-btn:not(:disabled):hover,
-.platform-launchers__action-row button:not(:disabled):hover {
-  background: var(--cds-layer-hover-01);
-}
-
-.platform-launchers__catalog .cds--text-input {
-  max-width: 28rem;
-}
-
-@media (max-width: 900px) {
-  .platform-launchers__columns {
-    grid-template-columns: 1fr;
-  }
+.platform-launchers__configure-note {
+  color: var(--cds-text-secondary);
 }
 
 @media (max-width: 720px) {
@@ -151,7 +124,10 @@
     grid-template-columns: 1fr;
   }
 
-  .platform-launchers__item-title-row {
+  .platform-launchers__toolbar,
+  .platform-launchers__cell-head,
+  .platform-launchers__configure-head {
     flex-direction: column;
+    align-items: start;
   }
 }

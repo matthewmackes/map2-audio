@@ -171,7 +171,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(screen.getByText('Promoted launchers')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Open launcher organizer' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open launcher organizer in Theme' })).toBeTruthy()
     expect(await screen.findByText('Platforms')).toBeTruthy()
     expect(screen.getByText('Audio Grid')).toBeTruthy()
     expect(screen.getByText('Labs')).toBeTruthy()
@@ -181,6 +181,14 @@ describe('HomePage landing', () => {
     expect(screen.getByText('No Active Flow')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
+  })
+
+  it('routes the empty launcher CTA into the Theme workspace organizer modal', async () => {
+    renderHome()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open launcher organizer in Theme' }))
+
+    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme?themeModal=launchers')
   })
 
   it('opens Platforms from the landing tile using the canonical route', async () => {

@@ -262,7 +262,7 @@ export function HomePage() {
                 <h2 className="hp2-launchers__title">Promoted launchers</h2>
               </div>
               <p className="hp2-launchers__summary">
-                Shared launcher placements live in Platforms and render here as Windows-style tiles above the existing home surface.
+                Shared launcher placements now live in Theme and render here as Windows-style tiles above the existing home surface.
               </p>
             </div>
 
@@ -304,15 +304,15 @@ export function HomePage() {
                   <p className="hp2-launchers__eyebrow">No Tiles Yet</p>
                   <h3 className="hp2-launchers__empty-title">Landing-page launchers are not configured.</h3>
                   <p className="hp2-launchers__empty-copy">
-                    Open the Platforms launcher organizer to add tiles, choose sizes, and order them.
+                    Open the Theme launcher organizer to add tiles, choose sizes, and order them.
                   </p>
                 </div>
                 <button
                   type="button"
                   className="hp2-launchers__empty-button"
-                  onClick={() => navigate('/platforms/launchers')}
+                  onClick={() => navigate('/platforms/theme?themeModal=launchers')}
                 >
-                  Open launcher organizer
+                  Open launcher organizer in Theme
                 </button>
               </div>
             )}

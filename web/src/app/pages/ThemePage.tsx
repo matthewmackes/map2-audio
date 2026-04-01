@@ -14,6 +14,7 @@ import {
   Toggle,
 } from '@carbon/react'
 import { type CSSProperties, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { pluginsApi } from '@/map2/api'
 import type { Plugin, PluginAppearanceOverride } from '@/map2/types'
@@ -47,6 +48,7 @@ import {
   useTheme,
 } from '../theme'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
+import { PlatformLaunchersWorkspace } from '../components/Platform/PlatformLaunchersWorkspace'
 import { IconPickerModal } from '../components/pluginAppearance/IconPickerModal'
 import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppearanceIcon'
 import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
@@ -268,6 +270,7 @@ type ThemeWorkspaceModal =
   | 'studio'
   | 'typography'
   | 'motion'
+  | 'launchers'
   | 'category'
 
 type PluginAppearanceEditorMode = 'categories' | 'plugins'
@@ -345,7 +348,8 @@ function ThemeWorkspaceLauncher({
   )
 }
 
-export function ThemePage() {
+export function ThemePage({ initialModal = null }: { initialModal?: ThemeWorkspaceModal | null } = {}) {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { theme, themeId, setTheme } = useTheme()
   const { fontPreset, fontPresetId, fontPresets, setFontPreset } = usePlatformFontPreference()
   const {
@@ -406,6 +410,8 @@ export function ThemePage() {
     [specialSettings?.hiddenPlugins],
   )
   const hiddenPluginCount = specialSettingsHiddenPlugins.length
+  const landingTileCount = specialSettings?.landingTiles.length ?? 0
+  const pinnedRouteCount = specialSettings?.pinnedRoutes.length ?? 0
   const previewTheme = useMemo(() => resolvePreviewTheme(themeId, theme), [theme, themeId])
   const draftTheme = useMemo(
     () =>
@@ -422,6 +428,26 @@ export function ThemePage() {
   const totalThemeCount = themeOrder.length + customThemeEntries.length
   const draftOverrideCount = Object.keys(draftOverrides).length
   const pluginOverrideCount = Object.keys(appearances).length
+
+  useEffect(() => {
+    if (!initialModal) {
+      return
+    }
+
+    setActiveModal((current) => current ?? initialModal)
+  }, [initialModal])
+
+  useEffect(() => {
+    if (searchParams.get('themeModal') !== 'launchers') {
+      return
+    }
+
+    setActiveModal((current) => current ?? 'launchers')
+
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.delete('themeModal')
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     if (activeModal !== 'category' || pluginInventory.length > 0) {
@@ -596,10 +622,12 @@ export function ThemePage() {
         ? 'Suggested directions'
         : activeModal === 'studio'
           ? 'Theme studio'
-          : activeModal === 'typography'
+        : activeModal === 'typography'
             ? 'Platform GUI font'
             : activeModal === 'motion'
               ? 'Motion & effects'
+              : activeModal === 'launchers'
+                ? 'Launcher organizer'
               : activeModal === 'category'
                 ? 'Category color theming'
                 : ''
@@ -1142,6 +1170,12 @@ export function ThemePage() {
           />
         ) : null}
       </section>
+    ) : activeModal === 'launchers' ? (
+      <PlatformLaunchersWorkspace
+        settings={specialSettings}
+        isLoading={specialSettingsLoading}
+        updateSettings={updateSpecialSettings}
+      />
     ) : activeModal === 'category' ? (
       <section className="theme-page__panel">
         <div className="theme-page__section-head">
@@ -1666,6 +1700,13 @@ export function ThemePage() {
           tag={pageTransitionPresetLabel(pageTransitionPreset)}
           buttonLabel="Open motion modal"
           onOpen={() => setActiveModal('motion')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Launcher organizer"
+          description="Use a Carbon-style launcher table to open workspaces and configure Home or nav placement from Theme."
+          tag={specialSettingsLoading ? 'Loading' : `${landingTileCount} home · ${pinnedRouteCount} nav`}
+          buttonLabel="Open launcher organizer"
+          onOpen={() => setActiveModal('launchers')}
         />
         <ThemeWorkspaceLauncher
           title="Category color theming"

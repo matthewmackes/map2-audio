@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T638 snapshot version history completed; T659/T656 completed
+Last updated: 2026-04-01 EDT - T668 launcher organizer moved into Theme workspace [completed]; T638 snapshot version history completed; T659/T656 completed
+
+ID: T668
+Status: [✓] Done
+Title: Relocate launcher organizer from the Platforms rail into the Theme workspace
+Description:
+- Goal / acceptance criteria: Remove the dedicated `Launchers` entry from the Platforms left navigation, add a new Theme workspace launcher card that opens the organizer in a modal, restyle the organizer around a clean Carbon data-table flow with row-level `Launch` and `Configure` actions plus per-launcher sub-modals, keep multi-launch use inside the modal, and repoint related copy/entry paths that still describe the organizer as a Platforms-only surface.
+- Why it matters: The user wants launcher management to live under Theme instead of the Platforms rail, and the organizer now needs a more structured Carbon-style table interaction model.
+- Dependencies: T667
+- Estimated effort: Medium
+- Required outputs: Theme modal launcher wiring, organizer table/sub-modal redesign, removal of the Platforms rail entry, updated Home/route copy, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 12:20 - Codex
+- Completion notes:
+  - Removed the dedicated `Launchers` entry from the Platforms left rail, kept the hidden route wiring for compatibility, and redirected that legacy path into the Theme workspace modal flow.
+  - Added a new Theme launcher card and modal state so the organizer opens from Theme directly or via `?themeModal=launchers`, then rebuilt the organizer around a Carbon-style data table with direct `Launch` actions plus row-level `Configure` sub-modals.
+  - Repointed Home-page launcher copy and entry links to Theme, refreshed the organizer styling, and added focused UI regression coverage for the new Theme entry point, table behavior, and Platforms rail removal.
+- Validation: `npm --prefix web test -- --runInBand src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx src/app/pages/ThemePage.test.tsx src/app/pages/HomePage.test.tsx src/app/components/Platform/PlatformModal.test.tsx` -> PASS
 
 ID: T667
 Status: [✓] Done

@@ -290,7 +290,7 @@ describe('PlatformModalContent', () => {
     })
   })
 
-  it('pins platform control-panel items into the main navigation settings', () => {
+  it('renders the primary platform control-panel entries in the rail', () => {
     render(
       <MemoryRouter
         future={{
@@ -302,11 +302,9 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin Overview' }))
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({
-      pinnedRoutes: ['/platforms/overview'],
-    })
+    expect(screen.getByRole('link', { name: 'Open Overview' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Open Theme' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open Labs workspace' })).toBeInTheDocument()
   })
 
   it('shows the former advanced launcher set inside the Labs workspace', () => {
@@ -327,6 +325,21 @@ describe('PlatformModalContent', () => {
     expect(screen.getByText('MIDI Hub')).toBeTruthy()
     expect(screen.getByText('Tesira AVB')).toBeTruthy()
     expect(screen.getByText('Blocked / Lab')).toBeTruthy()
+  })
+
+  it('removes the launcher organizer entry from the Platforms rail', () => {
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} />
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByRole('link', { name: 'Open Launchers' })).not.toBeInTheDocument()
   })
 
   it('delegates Labs route launches to the modal host callback', () => {

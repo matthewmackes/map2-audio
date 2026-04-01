@@ -56,7 +56,6 @@ import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { LabsWorkspace } from './LabsWorkspace'
-import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -114,7 +113,7 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
-  'launchers':    { label: 'Launchers',      eyebrow: 'Platform', icon: SettingsAdjust },
+  'launchers':    { label: 'Launcher Organizer', eyebrow: 'Theme', icon: SettingsAdjust },
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -491,6 +490,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
         {panel === 'host-machine' && <HostMachinePage />}
         {panel === 'audio-engine' && <AudioEnginePage />}
         {panel === 'theme'        && <ThemePage />}
+        {panel === 'launchers'    && <ThemePage initialModal="launchers" />}
         {panel === 'about'        && <AboutPage />}
         {panel === 'adoption'     && <PlatformAdoptionPage />}
       </Suspense>
@@ -935,7 +935,7 @@ export function PlatformModalContent({
   onClose,
 }: PlatformModalContentProps) {
   const navigate = useNavigate()
-  const { settings: specialSettings, isLoading: specialSettingsLoading, updateSettings } = useSpecialSettings()
+  const { settings: specialSettings } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
   const activeLayerId = usePlatformActiveLayer()
   const alerts = usePlatformAlerts()
@@ -1034,9 +1034,8 @@ export function PlatformModalContent({
     onClose()
   }
 
-  const showLaunchers = activePanel === 'launchers'
-  const showStandalone = activePanel !== null && activePanel !== 'launchers'
-  const showLayer = !activeLabs && !showStandalone && !showLaunchers && activeLayer !== null
+  const showStandalone = activePanel !== null
+  const showLayer = !activeLabs && !showStandalone && activeLayer !== null
   const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
@@ -1056,14 +1055,6 @@ export function PlatformModalContent({
                   pinnedRouteSet={pinnedRouteSet}
                   landingTileRouteSet={landingTileRouteSet}
                   onLaunchRoute={handleLaunchRoute}
-                />
-              )}
-              {showLaunchers && (
-                <PlatformLaunchersWorkspace
-                  key="launchers"
-                  settings={specialSettings}
-                  isLoading={specialSettingsLoading}
-                  updateSettings={updateSettings}
                 />
               )}
               {showStandalone && activePanel && (

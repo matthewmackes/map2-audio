@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import type { SpecialSettings } from '../../hooks/useSpecialSettings'
@@ -16,7 +16,40 @@ function buildSettings(overrides: Partial<SpecialSettings> = {}): SpecialSetting
 }
 
 describe('PlatformLaunchersWorkspace', () => {
-  it('adds launchers to the landing board and global nav through the catalog', async () => {
+  const originalWindowOpen = window.open
+
+  beforeAll(() => {
+    class ResizeObserverMock {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+
+    Object.defineProperty(window, 'ResizeObserver', {
+      writable: true,
+      value: ResizeObserverMock,
+    })
+    Object.defineProperty(global, 'ResizeObserver', {
+      writable: true,
+      value: ResizeObserverMock,
+    })
+  })
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'open', {
+      writable: true,
+      value: jest.fn(),
+    })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'open', {
+      writable: true,
+      value: originalWindowOpen,
+    })
+  })
+
+  it('launches rows directly from the table and configures placement in a sub-modal', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
     render(
@@ -27,32 +60,30 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    const catalogList = screen.getByRole('list', { name: 'Launcher catalog' })
-    const midiHubCatalogItem = within(catalogList).getByText('MIDI Hub').closest('.platform-launchers__item') as HTMLElement
+    fireEvent.click(screen.getByRole('button', { name: 'Launch MIDI Hub' }))
 
-    fireEvent.click(within(midiHubCatalogItem).getByRole('button', { name: 'Add to landing' }))
+    expect(window.open).toHaveBeenCalledWith('/midi-hub', '_blank', 'noopener,noreferrer')
+    expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
+
+    expect(screen.getByText('Landing tile')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       landingTiles: [{ route: '/midi-hub', size: 'medium' }],
     }))
 
-    updateSettings.mockClear()
-    await waitFor(() => {
-      const refreshedCatalogList = screen.getByRole('list', { name: 'Launcher catalog' })
-      const refreshedMidiHubCatalogItem = within(refreshedCatalogList).getByText('MIDI Hub').closest('.platform-launchers__item') as HTMLElement
-      expect(within(refreshedMidiHubCatalogItem).getByRole('button', { name: 'Pin to nav' })).toBeEnabled()
-    })
-
-    const refreshedCatalogList = screen.getByRole('list', { name: 'Launcher catalog' })
-    const refreshedMidiHubCatalogItem = within(refreshedCatalogList).getByText('MIDI Hub').closest('.platform-launchers__item') as HTMLElement
-    fireEvent.click(within(refreshedMidiHubCatalogItem).getByRole('button', { name: 'Pin to nav' }))
+    const pinToNavButton = screen.getByRole('button', { name: 'Pin to nav' })
+    await waitFor(() => expect(pinToNavButton).toBeEnabled())
+    fireEvent.click(pinToNavButton)
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       pinnedRoutes: ['/artifacts', '/midi-hub'],
     }))
   })
 
-  it('updates tile sizing and enforces the pinned-nav cap in the organizer', async () => {
+  it('updates tile sizing and enforces the pinned-nav cap inside the configure modal', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
     render(
@@ -60,7 +91,6 @@ describe('PlatformLaunchersWorkspace', () => {
         settings={buildSettings({
           pinnedRoutes: ['/artifacts', '/juce-grid', '/intelfx', '/perform'],
           landingTiles: [
-            { route: '/labs', size: 'medium' },
             { route: '/midi-hub', size: 'large' },
           ],
         })}
@@ -69,20 +99,13 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    const landingList = screen.getByRole('list', { name: 'Landing-page tiles' })
-    const labsLandingTile = within(landingList).getByRole('heading', { name: 'Labs' }).closest('.platform-launchers__item') as HTMLElement
-
-    fireEvent.click(within(labsLandingTile).getByRole('button', { name: 'small' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
+    fireEvent.click(screen.getByRole('button', { name: 'small' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [
-        { route: '/labs', size: 'small' },
-        { route: '/midi-hub', size: 'large' },
-      ],
+      landingTiles: [{ route: '/midi-hub', size: 'small' }],
     }))
 
-    const catalogList = screen.getByRole('list', { name: 'Launcher catalog' })
-    const midiHubCatalogItem = within(catalogList).getByText('MIDI Hub').closest('.platform-launchers__item') as HTMLElement
-    expect(within(midiHubCatalogItem).getByRole('button', { name: 'Nav full' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Nav full' })).toBeDisabled()
   })
 })

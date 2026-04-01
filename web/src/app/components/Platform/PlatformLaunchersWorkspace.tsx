@@ -1,5 +1,24 @@
 import { useMemo, useState } from 'react'
-import { TextInput, Tile, Tag } from '@carbon/react'
+import {
+  Button,
+  ComposedModal,
+  DataTable,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
+  Tag,
+  Tile,
+} from '@carbon/react'
 
 import './PlatformLaunchersWorkspace.css'
 
@@ -22,6 +41,12 @@ const DIRECTORY_LABELS: Record<LauncherCatalogItem['directory'], string> = {
 }
 
 const SIZE_OPTIONS: LandingTileSize[] = ['small', 'medium', 'large']
+
+const LAUNCHER_TABLE_HEADERS = [
+  { key: 'name', header: 'Launcher' },
+  { key: 'category', header: 'Category' },
+  { key: 'status', header: 'Status' },
+] as const
 
 function maturityTagType(maturity: LauncherCatalogItem['maturity']): 'green' | 'cyan' | 'purple' | 'warm-gray' | 'red' {
   switch (maturity) {
@@ -51,25 +76,44 @@ function moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
   return next
 }
 
+function summarizeLauncherStatus(
+  item: LauncherCatalogItem,
+  landingTile: LandingTilePlacement | null,
+  navIndex: number,
+): string {
+  const parts = [item.maturity, DIRECTORY_LABELS[item.directory]]
+
+  if (landingTile) {
+    parts.push(`Home ${landingTile.size}`)
+  }
+
+  if (navIndex >= 0) {
+    parts.push(`Nav ${navIndex + 1}`)
+  }
+
+  return parts.join(' · ')
+}
+
 interface PlatformLaunchersWorkspaceProps {
   settings: SpecialSettings | null
   isLoading: boolean
   updateSettings: (newSettings: Partial<SpecialSettings>) => Promise<void>
+  onLaunchRoute?: (route: string) => void
 }
 
 export function PlatformLaunchersWorkspace({
   settings,
   isLoading,
   updateSettings,
+  onLaunchRoute,
 }: PlatformLaunchersWorkspaceProps) {
   const [searchValue, setSearchValue] = useState('')
   const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [configureRoute, setConfigureRoute] = useState<string | null>(null)
   const controlsDisabled = isLoading || !settings || Boolean(pendingAction)
 
   const landingTiles = settings?.landingTiles ?? []
   const pinnedRoutes = settings?.pinnedRoutes ?? []
-  const landingTileRouteSet = useMemo(() => new Set(landingTiles.map((tile) => tile.route)), [landingTiles])
-  const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
   const catalogItems = useMemo(() => {
     const needle = searchValue.trim().toLowerCase()
@@ -78,6 +122,7 @@ export function PlatformLaunchersWorkspace({
       if (directoryCompare !== 0) {
         return directoryCompare
       }
+
       return left.label.localeCompare(right.label)
     })
 
@@ -91,8 +136,29 @@ export function PlatformLaunchersWorkspace({
       item.description,
       item.route,
       DIRECTORY_LABELS[item.directory],
+      item.maturity,
     ].filter(Boolean).join(' ').toLowerCase().includes(needle))
   }, [searchValue])
+
+  const tableRows = useMemo(() => {
+    return catalogItems.map((item) => {
+      const landingTile = landingTiles.find((tile) => tile.route === item.route) ?? null
+      const navIndex = pinnedRoutes.findIndex((route) => route === item.route)
+
+      return {
+        id: item.route,
+        name: item.label,
+        category: DIRECTORY_LABELS[item.directory],
+        status: summarizeLauncherStatus(item, landingTile, navIndex),
+      }
+    })
+  }, [catalogItems, landingTiles, pinnedRoutes])
+
+  const configureItem = getLauncherCatalogItem(configureRoute)
+  const configureLandingIndex = configureItem ? landingTiles.findIndex((tile) => tile.route === configureItem.route) : -1
+  const configureLandingTile = configureLandingIndex >= 0 ? landingTiles[configureLandingIndex] : null
+  const configureNavIndex = configureItem ? pinnedRoutes.findIndex((route) => route === configureItem.route) : -1
+  const navFull = pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
 
   const runAction = async (key: string, fn: () => Promise<void>) => {
     setPendingAction(key)
@@ -111,284 +177,365 @@ export function PlatformLaunchersWorkspace({
     await updateSettings({ pinnedRoutes: normalizePinnedRoutes(nextRoutes).slice(0, MAX_PINNED_NAV_ITEMS) })
   }
 
+  const launchRoute = (route: string) => {
+    if (onLaunchRoute) {
+      onLaunchRoute(route)
+      return
+    }
+
+    if (typeof window !== 'undefined') {
+      window.open(route, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
-    <section className="platform-shell__workspace platform-shell__workspace--launchers">
-      <div className="platform-shell__ws-header">
-        <div className="platform-shell__ws-header-copy">
-          <span className="platform-shell__ws-header-eyebrow">Organizer</span>
-          <h2 className="platform-shell__ws-header-title">Launchers</h2>
-          <p className="platform-shell__ws-header-summary">
-            Manage landing-page tiles and global navigation pins from one place. Labs and Platforms stay read-only elsewhere.
+    <section className="platform-launchers">
+      <Tile className="platform-launchers__summary">
+        <div>
+          <p className="platform-launchers__eyebrow">Theme workspace</p>
+          <h3>Launcher organizer</h3>
+          <p>
+            Use one Carbon-style table to browse every launcher, open routes, and configure Home or nav promotion.
+            Launch opens a workspace in a new tab so this organizer can stay open for multi-launch use.
           </p>
         </div>
-      </div>
+        <div className="platform-launchers__summary-tags">
+          <Tag type="cool-gray">{landingTiles.length} landing tiles</Tag>
+          <Tag type="cool-gray">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS} nav pins</Tag>
+          {controlsDisabled ? <Tag type="blue">{isLoading ? 'Loading state' : 'Saving state'}</Tag> : null}
+        </div>
+      </Tile>
 
-      <div className="platform-launchers">
-        <Tile className="platform-launchers__summary">
-          <div>
-            <p className="platform-launchers__eyebrow">Placement Summary</p>
-            <h3>One organizer, shared shell state.</h3>
-            <p>
-              Landing tiles are Windows-style size slots on the home page. Nav pins stay capped at {MAX_PINNED_NAV_ITEMS}.
-            </p>
-          </div>
-          <div className="platform-launchers__summary-tags">
-            <Tag type="cool-gray">{landingTiles.length} landing tiles</Tag>
-            <Tag type="cool-gray">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS} nav pins</Tag>
-            {controlsDisabled ? <Tag type="blue">{isLoading ? 'Loading state' : 'Saving state'}</Tag> : null}
-          </div>
-        </Tile>
+      <DataTable rows={tableRows} headers={[...LAUNCHER_TABLE_HEADERS]} useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="Launcher catalog"
+            description="List route-backed launchers, then launch or configure each workspace from one modal."
+            className="platform-launchers__table-container"
+          >
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent className="platform-launchers__toolbar">
+                <TableToolbarSearch
+                  persistent
+                  value={searchValue}
+                  placeholder="Search launchers"
+                  onChange={(_event, value) => setSearchValue(value ?? '')}
+                />
+                <div className="platform-launchers__toolbar-tags">
+                  <Tag type="cool-gray">{catalogItems.length} visible</Tag>
+                  <Tag type="cool-gray">Configure per launcher</Tag>
+                </div>
+              </TableToolbarContent>
+            </TableToolbar>
 
-        <div className="platform-launchers__columns">
-          <Tile className="platform-launchers__section">
-            <div className="platform-launchers__section-head">
-              <div>
-                <p className="platform-launchers__eyebrow">Home</p>
-                <h3>Landing-page tiles</h3>
-              </div>
-              <Tag type="cool-gray">{landingTiles.length}</Tag>
-            </div>
-
-            {landingTiles.length === 0 ? (
-              <div className="platform-launchers__empty">
-                <strong>No landing tiles configured.</strong>
-                <p>Add launchers from the catalog below.</p>
-              </div>
-            ) : (
-              <div className="platform-launchers__list" role="list" aria-label="Landing-page tiles">
-                {landingTiles.map((tile, index) => {
-                  const launcher = getLauncherCatalogItem(tile.route)
-                  if (!launcher) {
+            <Table {...getTableProps()} aria-label="Launcher catalog">
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+                    return (
+                      <TableHeader key={header.key} {...headerProps}>
+                        {header.header}
+                      </TableHeader>
+                    )
+                  })}
+                  <TableHeader>Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={headers.length + 1}>
+                      <div className="platform-launchers__empty">
+                        <strong>No launchers match that filter.</strong>
+                        <p>Clear the search to restore the full launcher catalog.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : rows.map((row) => {
+                  const item = getLauncherCatalogItem(row.id)
+                  if (!item) {
                     return null
                   }
 
+                  const landingTile = landingTiles.find((tile) => tile.route === item.route) ?? null
+                  const navIndex = pinnedRoutes.findIndex((route) => route === item.route)
+                  const { key: _rowKey, ...rowProps } = getRowProps({ row })
+
                   return (
-                    <article key={`landing-${tile.route}`} className="platform-launchers__item" role="listitem">
-                      <div className="platform-launchers__item-copy">
-                        <div className="platform-launchers__item-title-row">
-                          <h4>{launcher.label}</h4>
-                          <div className="platform-launchers__item-tags">
-                            <Tag type="blue">{DIRECTORY_LABELS[launcher.directory]}</Tag>
-                            <Tag type={maturityTagType(launcher.maturity)}>{launcher.maturity}</Tag>
+                    <TableRow key={row.id} {...rowProps}>
+                      {row.cells.map((cell) => {
+                        if (cell.info.header === 'name') {
+                          return (
+                            <TableCell key={cell.id}>
+                              <div className="platform-launchers__cell-copy">
+                                <div className="platform-launchers__cell-head">
+                                  <strong>{item.label}</strong>
+                                  <Tag type={maturityTagType(item.maturity)} size="sm">{item.maturity}</Tag>
+                                </div>
+                                <p>{item.description}</p>
+                                <code>{item.route}</code>
+                              </div>
+                            </TableCell>
+                          )
+                        }
+
+                        if (cell.info.header === 'category') {
+                          return (
+                            <TableCell key={cell.id}>
+                              <div className="platform-launchers__status-tags">
+                                <Tag type="blue" size="sm">{DIRECTORY_LABELS[item.directory]}</Tag>
+                                {!item.landingEligible ? <Tag type="purple" size="sm">Nav only</Tag> : null}
+                              </div>
+                            </TableCell>
+                          )
+                        }
+
+                        return (
+                          <TableCell key={cell.id}>
+                            <div className="platform-launchers__status-tags">
+                              {landingTile ? <Tag type="green" size="sm">{`Home ${landingTile.size}`}</Tag> : <Tag type="cool-gray" size="sm">Home off</Tag>}
+                              {navIndex >= 0 ? <Tag type="cyan" size="sm">{`Nav ${navIndex + 1}`}</Tag> : <Tag type="cool-gray" size="sm">Nav off</Tag>}
+                            </div>
+                          </TableCell>
+                        )
+                      })}
+                      <TableCell>
+                        <div className="platform-launchers__actions">
+                          <Button
+                            size="sm"
+                            kind="ghost"
+                            aria-label={`Launch ${item.label}`}
+                            onClick={() => launchRoute(item.route)}
+                          >
+                            Launch
+                          </Button>
+                          <Button
+                            size="sm"
+                            kind="secondary"
+                            aria-label={`Configure ${item.label}`}
+                            onClick={() => setConfigureRoute(item.route)}
+                          >
+                            Configure
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
+
+      {configureItem ? (
+        <ComposedModal open size="md" onClose={() => setConfigureRoute(null)}>
+          <ModalHeader
+            title={configureItem.label}
+            label="Launcher configuration"
+            closeModal={() => setConfigureRoute(null)}
+          />
+          <ModalBody hasScrollingContent>
+            <div className="platform-launchers__configure-grid">
+              <section className="platform-launchers__configure-card">
+                <div className="platform-launchers__configure-head">
+                  <div>
+                    <p className="platform-launchers__eyebrow">Workspace</p>
+                    <h4>{configureItem.label}</h4>
+                  </div>
+                  <div className="platform-launchers__status-tags">
+                    <Tag type="blue" size="sm">{DIRECTORY_LABELS[configureItem.directory]}</Tag>
+                    <Tag type={maturityTagType(configureItem.maturity)} size="sm">{configureItem.maturity}</Tag>
+                  </div>
+                </div>
+                <p>{configureItem.description}</p>
+                <code>{configureItem.route}</code>
+              </section>
+
+              <section className="platform-launchers__configure-card">
+                <div className="platform-launchers__configure-head">
+                  <div>
+                    <p className="platform-launchers__eyebrow">Home</p>
+                    <h4>Landing tile</h4>
+                  </div>
+                  <Tag type={configureLandingTile ? 'green' : 'cool-gray'} size="sm">
+                    {configureLandingTile ? configureLandingTile.size : 'Not on Home'}
+                  </Tag>
+                </div>
+
+                {configureItem.landingEligible ? (
+                  <>
+                    <p>Promote this launcher onto the landing page and set its tile size or order.</p>
+                    <div className="platform-launchers__configure-actions">
+                      <Button
+                        size="sm"
+                        kind={configureLandingTile ? 'secondary' : 'primary'}
+                        disabled={controlsDisabled}
+                        onClick={() => {
+                          void runAction(`landing-toggle-${configureItem.route}`, async () => {
+                            if (configureLandingTile) {
+                              await saveLandingTiles(landingTiles.filter((tile) => tile.route !== configureItem.route))
+                              return
+                            }
+
+                            await saveLandingTiles([...landingTiles, { route: configureItem.route, size: 'medium' }])
+                          })
+                        }}
+                      >
+                        {configureLandingTile ? 'Remove from landing' : 'Add to landing'}
+                      </Button>
+                    </div>
+
+                    {configureLandingTile ? (
+                      <>
+                        <div className="platform-launchers__configure-section">
+                          <span className="platform-launchers__configure-label">Tile size</span>
+                          <div className="platform-launchers__configure-actions">
+                            {SIZE_OPTIONS.map((size) => (
+                              <Button
+                                key={`${configureItem.route}-${size}`}
+                                size="sm"
+                                kind={configureLandingTile.size === size ? 'primary' : 'tertiary'}
+                                disabled={controlsDisabled || configureLandingTile.size === size}
+                                onClick={() => {
+                                  void runAction(`landing-size-${configureItem.route}-${size}`, async () => {
+                                    const nextTiles = landingTiles.map((tile) => (
+                                      tile.route === configureItem.route ? { ...tile, size } : tile
+                                    ))
+                                    await saveLandingTiles(nextTiles)
+                                  })
+                                }}
+                              >
+                                {size}
+                              </Button>
+                            ))}
                           </div>
                         </div>
-                        <p>{launcher.description}</p>
-                        <code>{tile.route}</code>
-                      </div>
 
-                      <div className="platform-launchers__item-controls">
-                        <div className="platform-launchers__size-row" role="group" aria-label={`Tile size for ${launcher.label}`}>
-                          {SIZE_OPTIONS.map((size) => (
-                            <button
-                              key={`${tile.route}-${size}`}
-                              type="button"
-                              className={`platform-launchers__size-btn${tile.size === size ? ' is-selected' : ''}`}
-                              disabled={controlsDisabled || tile.size === size}
+                        <div className="platform-launchers__configure-section">
+                          <span className="platform-launchers__configure-label">Home order</span>
+                          <div className="platform-launchers__configure-actions">
+                            <Button
+                              size="sm"
+                              kind="tertiary"
+                              disabled={controlsDisabled || configureLandingIndex <= 0}
                               onClick={() => {
-                                void runAction(`landing-size-${tile.route}-${size}`, async () => {
-                                  const nextTiles = landingTiles.map((current) => (
-                                    current.route === tile.route ? { ...current, size } : current
-                                  ))
-                                  await saveLandingTiles(nextTiles)
+                                void runAction(`landing-up-${configureItem.route}`, async () => {
+                                  await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, configureLandingIndex - 1))
                                 })
                               }}
                             >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="platform-launchers__action-row">
-                          <button
-                            type="button"
-                            disabled={controlsDisabled || index === 0}
-                            onClick={() => {
-                              void runAction(`landing-up-${tile.route}`, async () => {
-                                await saveLandingTiles(moveItem(landingTiles, index, index - 1))
-                              })
-                            }}
-                          >
-                            Up
-                          </button>
-                          <button
-                            type="button"
-                            disabled={controlsDisabled || index === landingTiles.length - 1}
-                            onClick={() => {
-                              void runAction(`landing-down-${tile.route}`, async () => {
-                                await saveLandingTiles(moveItem(landingTiles, index, index + 1))
-                              })
-                            }}
-                          >
-                            Down
-                          </button>
-                          <button
-                            type="button"
-                            disabled={controlsDisabled}
-                            onClick={() => {
-                              void runAction(`landing-remove-${tile.route}`, async () => {
-                                await saveLandingTiles(landingTiles.filter((current) => current.route !== tile.route))
-                              })
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            )}
-          </Tile>
-
-          <Tile className="platform-launchers__section">
-            <div className="platform-launchers__section-head">
-              <div>
-                <p className="platform-launchers__eyebrow">Shell</p>
-                <h3>Global navigation pins</h3>
-              </div>
-              <Tag type="cool-gray">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS}</Tag>
-            </div>
-
-            {pinnedRoutes.length === 0 ? (
-              <div className="platform-launchers__empty">
-                <strong>No global nav pins configured.</strong>
-                <p>Add route-backed launchers or nav-only submenu entries from the catalog below.</p>
-              </div>
-            ) : (
-              <div className="platform-launchers__list" role="list" aria-label="Global navigation pins">
-                {pinnedRoutes.map((route, index) => {
-                  const launcher = getLauncherCatalogItem(route)
-                  if (!launcher) {
-                    return null
-                  }
-
-                  return (
-                    <article key={`nav-${route}`} className="platform-launchers__item" role="listitem">
-                      <div className="platform-launchers__item-copy">
-                        <div className="platform-launchers__item-title-row">
-                          <h4>{launcher.label}</h4>
-                          <div className="platform-launchers__item-tags">
-                            <Tag type="cool-gray">{DIRECTORY_LABELS[launcher.directory]}</Tag>
-                            {!launcher.landingEligible ? <Tag type="purple">Nav only</Tag> : null}
+                              Move up
+                            </Button>
+                            <Button
+                              size="sm"
+                              kind="tertiary"
+                              disabled={controlsDisabled || configureLandingIndex === landingTiles.length - 1}
+                              onClick={() => {
+                                void runAction(`landing-down-${configureItem.route}`, async () => {
+                                  await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, configureLandingIndex + 1))
+                                })
+                              }}
+                            >
+                              Move down
+                            </Button>
                           </div>
                         </div>
-                        <p>{launcher.description}</p>
-                        <code>{route}</code>
-                      </div>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>This launcher is nav-only and cannot appear on the landing page.</p>
+                )}
+              </section>
 
-                      <div className="platform-launchers__action-row">
-                        <button
-                          type="button"
-                          disabled={controlsDisabled || index === 0}
-                          onClick={() => {
-                            void runAction(`nav-up-${route}`, async () => {
-                              await savePinnedRoutes(moveItem(pinnedRoutes, index, index - 1))
-                            })
-                          }}
-                        >
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          disabled={controlsDisabled || index === pinnedRoutes.length - 1}
-                          onClick={() => {
-                            void runAction(`nav-down-${route}`, async () => {
-                              await savePinnedRoutes(moveItem(pinnedRoutes, index, index + 1))
-                            })
-                          }}
-                        >
-                          Down
-                        </button>
-                        <button
-                          type="button"
-                          disabled={controlsDisabled}
-                          onClick={() => {
-                            void runAction(`nav-remove-${route}`, async () => {
-                              await savePinnedRoutes(pinnedRoutes.filter((current) => current !== route))
-                            })
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            )}
-          </Tile>
-        </div>
+              <section className="platform-launchers__configure-card">
+                <div className="platform-launchers__configure-head">
+                  <div>
+                    <p className="platform-launchers__eyebrow">Shell</p>
+                    <h4>Global nav pin</h4>
+                  </div>
+                  <Tag type={configureNavIndex >= 0 ? 'cyan' : 'cool-gray'} size="sm">
+                    {configureNavIndex >= 0 ? `Pinned ${configureNavIndex + 1}` : 'Not pinned'}
+                  </Tag>
+                </div>
 
-        <Tile className="platform-launchers__section platform-launchers__catalog">
-          <div className="platform-launchers__section-head">
-            <div>
-              <p className="platform-launchers__eyebrow">Catalog</p>
-              <h3>Available launchers</h3>
-            </div>
-            <Tag type="cool-gray">{catalogItems.length}</Tag>
-          </div>
+                {configureItem.navEligible ? (
+                  <>
+                    <p>Pin this launcher into the ordered global navigation list shared by the shell.</p>
+                    <div className="platform-launchers__configure-actions">
+                      <Button
+                        size="sm"
+                        kind={configureNavIndex >= 0 ? 'secondary' : 'primary'}
+                        disabled={controlsDisabled || (navFull && configureNavIndex < 0)}
+                        onClick={() => {
+                          void runAction(`nav-toggle-${configureItem.route}`, async () => {
+                            if (configureNavIndex >= 0) {
+                              await savePinnedRoutes(pinnedRoutes.filter((route) => route !== configureItem.route))
+                              return
+                            }
 
-          <TextInput
-            id="platform-launchers-search"
-            labelText="Search launchers"
-            placeholder="Search labels, routes, or directories"
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
-          />
-
-          <div className="platform-launchers__list" role="list" aria-label="Launcher catalog">
-            {catalogItems.map((item) => {
-              const onLanding = landingTileRouteSet.has(item.route)
-              const onNav = pinnedRouteSet.has(item.route)
-              const navFull = pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-
-              return (
-                <article key={item.route} className="platform-launchers__item" role="listitem">
-                  <div className="platform-launchers__item-copy">
-                    <div className="platform-launchers__item-title-row">
-                      <h4>{item.label}</h4>
-                      <div className="platform-launchers__item-tags">
-                        <Tag type="blue">{DIRECTORY_LABELS[item.directory]}</Tag>
-                        <Tag type={maturityTagType(item.maturity)}>{item.maturity}</Tag>
-                        {onLanding ? <Tag type="green">Landing</Tag> : null}
-                        {onNav ? <Tag type="green">Pinned nav</Tag> : null}
-                      </div>
+                            await savePinnedRoutes([...pinnedRoutes, configureItem.route])
+                          })
+                        }}
+                      >
+                        {configureNavIndex >= 0 ? 'Remove from nav' : navFull ? 'Nav full' : 'Pin to nav'}
+                      </Button>
                     </div>
-                    <p>{item.description}</p>
-                    <code>{item.route}</code>
-                  </div>
 
-                  <div className="platform-launchers__action-row">
-                    <button
-                      type="button"
-                      disabled={controlsDisabled || !item.landingEligible || onLanding}
-                      onClick={() => {
-                        void runAction(`catalog-landing-${item.route}`, async () => {
-                          await saveLandingTiles([...landingTiles, { route: item.route, size: 'medium' }])
-                        })
-                      }}
-                    >
-                      {item.landingEligible ? (onLanding ? 'On landing' : 'Add to landing') : 'Landing unavailable'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={controlsDisabled || !item.navEligible || onNav || (navFull && !onNav)}
-                      onClick={() => {
-                        void runAction(`catalog-nav-${item.route}`, async () => {
-                          await savePinnedRoutes([...pinnedRoutes, item.route])
-                        })
-                      }}
-                    >
-                      {item.navEligible ? (onNav ? 'Pinned nav' : navFull ? 'Nav full' : 'Pin to nav') : 'Nav unavailable'}
-                    </button>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </Tile>
-      </div>
+                    {configureNavIndex >= 0 ? (
+                      <div className="platform-launchers__configure-section">
+                        <span className="platform-launchers__configure-label">Nav order</span>
+                        <div className="platform-launchers__configure-actions">
+                          <Button
+                            size="sm"
+                            kind="tertiary"
+                            disabled={controlsDisabled || configureNavIndex <= 0}
+                            onClick={() => {
+                              void runAction(`nav-up-${configureItem.route}`, async () => {
+                                await savePinnedRoutes(moveItem(pinnedRoutes, configureNavIndex, configureNavIndex - 1))
+                              })
+                            }}
+                          >
+                            Move up
+                          </Button>
+                          <Button
+                            size="sm"
+                            kind="tertiary"
+                            disabled={controlsDisabled || configureNavIndex === pinnedRoutes.length - 1}
+                            onClick={() => {
+                              void runAction(`nav-down-${configureItem.route}`, async () => {
+                                await savePinnedRoutes(moveItem(pinnedRoutes, configureNavIndex, configureNavIndex + 1))
+                              })
+                            }}
+                          >
+                            Move down
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {navFull && configureNavIndex < 0 ? (
+                      <p className="platform-launchers__configure-note">
+                        The global nav is already at its {MAX_PINNED_NAV_ITEMS}-item cap. Remove or reorder an existing pin first.
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>This launcher cannot be pinned into the global nav.</p>
+                )}
+              </section>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button kind="secondary" onClick={() => setConfigureRoute(null)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ComposedModal>
+      ) : null}
     </section>
   )
 }
