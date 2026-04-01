@@ -132,7 +132,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 14:43 - Codex
 
 ID: T666-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audio Grid signal-flow pad/encoder chain block mapping
 Description:
 - Daemon queries GET /api/audio/chain/blocks on Audio Grid mode entry
@@ -147,7 +147,8 @@ Description:
 - User encoder reassignment: hold Group A + twist encoder → left LCD param browser for that block → push to assign → POST /api/maschine/encoder-map
 - WebSocket subscription to audio:chain topic for real-time block bypass/active state → immediate LED update
 Dependencies: T666-subA, T666-subE, Audio Grid chain API
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 14:51 - Codex
 
 ID: T666-subG
 Status: [ ] Todo

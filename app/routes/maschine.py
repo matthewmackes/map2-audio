@@ -37,6 +37,12 @@ class MaschineLcdRequest(BaseModel):
     bitmap: dict[str, Any] = Field(default_factory=dict)
 
 
+class MaschineAudioGridSelectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str
+
+
 @router.post("/register")
 async def register_maschine_daemon(request: MaschineRegisterRequest) -> dict[str, Any]:
     service = get_maschine_service()
@@ -91,6 +97,36 @@ async def get_maschine_led_state() -> dict[str, Any]:
     }
 
 
+@router.get("/audio-grid")
+async def get_maschine_audio_grid() -> dict[str, Any]:
+    async with get_session() as session:
+        audio_grid = await get_maschine_service().get_audio_grid_projection(session)
+    return {
+        "status": "ok",
+        "audio_grid": audio_grid,
+    }
+
+
+@router.post("/audio-grid/select")
+async def select_maschine_audio_grid_block(request: MaschineAudioGridSelectRequest) -> dict[str, Any]:
+    async with get_session() as session:
+        audio_grid = await get_maschine_service().select_audio_grid_block(session, request.block_id)
+    return {
+        "status": "ok",
+        "audio_grid": audio_grid,
+    }
+
+
+@router.post("/audio-grid/bypass")
+async def toggle_maschine_audio_grid_block_bypass(request: MaschineAudioGridSelectRequest) -> dict[str, Any]:
+    async with get_session() as session:
+        audio_grid = await get_maschine_service().toggle_audio_grid_block_bypass(session, request.block_id)
+    return {
+        "status": "ok",
+        "audio_grid": audio_grid,
+    }
+
+
 @router.post("/lcd")
 async def update_maschine_lcd(request: MaschineLcdRequest) -> dict[str, Any]:
     lcd_state = await get_maschine_service().update_lcd(side=request.side, bitmap=request.bitmap)
@@ -114,6 +150,7 @@ async def maschine_websocket(websocket: WebSocket) -> None:
                     "data": {
                         "state": service.get_status(),
                         "encoder_map": await service.get_encoder_map(session),
+                        "audio_grid": await service.get_audio_grid_projection(session),
                         "hid_history": service.get_hid_history(limit=50),
                     },
                 },
