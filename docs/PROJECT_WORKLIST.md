@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]; T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]; T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]
+Last updated: 2026-04-01 EDT - T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]; T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]; T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]
+
+ID: T674
+Status: [✓] Done
+Title: Move and restyle the Snapshot Editor Stored BPM panel
+Description:
+- Goal / acceptance criteria: In the Snapshot Editor hero, the `Stored BPM` entry box and its status/controls must sit immediately to the left of the MIDI control box, not above it. The BPM entry field must adopt the same theme language as the MIDI control box, using the same display-oriented layout and font direction while rendering Carbon bright green text on a black background.
+- Why it matters: The current BPM panel reads like a separate form control instead of part of the live snapshot display cluster, which weakens the visual hierarchy and wastes horizontal alignment with the MIDI readout.
+- Dependencies: T669
+- Estimated effort: Low
+- Required outputs: Snapshot hero layout update, BPM control restyle to align with the MIDI panel, focused regression coverage for placement, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 17:10 - Codex
+- Completion notes:
+  - Reworked the hero top-tools cluster so the Stored BPM panel now sits directly to the left of the MIDI readout instead of stacking above it on desktop layouts.
+  - Restyled the BPM entry control to use the same display-panel language as the MIDI box, including a segmented LED-style value overlay, square readout framing, Carbon bright green text, and a black control background.
+  - Added focused regression coverage proving the BPM panel remains in the top readout cluster ahead of the MIDI panel, while preserving stored-tempo editing and existing status text behavior.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
+
+ID: T673
+Status: [✓] Done
+Title: Move Snapshot Editor Favorite and Lock controls below the notes copy
+Description:
+- Goal / acceptance criteria: In the Snapshot Editor hero, the `Favorite` and `Lock` buttons must render directly below the snapshot notes/description copy (`Created from Snapshot Editor` in the current example) instead of in the title row. They must be removed from their prior top-row location and preserve existing toggle behavior and pending/locked states.
+- Why it matters: The current hero header spreads action buttons across the title line, which makes the notes area feel visually disconnected and pushes core controls away from the snapshot context they modify.
+- Dependencies: T669
+- Estimated effort: Low
+- Required outputs: hero-layout update in `SnapshotChainManagementCard`, focused regression coverage for button placement/order, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 17:05 - Codex
+- Completion notes:
+  - Removed the hero-row `Favorite` and `Lock` buttons from the snapshot title line so the header now only carries the title rename affordance and Prev/Next navigation.
+  - Added a dedicated snapshot action row directly below the notes/description area, keeping the existing favorite, lock, pending, and locked-tag behaviors while placing the controls next to the content they affect.
+  - Added focused regression coverage that proves the controls render inside the new action group after the notes copy and no longer live inside the title row.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T672
 Status: [✓] Done

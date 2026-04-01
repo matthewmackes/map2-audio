@@ -248,8 +248,11 @@ describe('SnapshotChainManagementCard', () => {
     const metadataTable = screen.getByRole('table', { name: 'Live snapshot metadata' })
     const metadataRows = metadataTable.querySelectorAll('tbody tr')
     const topRow = container.querySelector('.juce-grid-page__snapshot-status-top-row')
+    const topTools = container.querySelector('.juce-grid-page__snapshot-status-top-tools')
+    const bpmStack = container.querySelector('.juce-grid-page__snapshot-status-bpm-stack')
     const contentRow = container.querySelector('.juce-grid-page__snapshot-status-content-row')
     const midiReadout = container.querySelector('[aria-label="PC 023  CH 01/05"]')
+    const midiPanel = container.querySelector('.juce-grid-page__snapshot-status-midi')
 
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
@@ -283,7 +286,11 @@ describe('SnapshotChainManagementCard', () => {
     expect(within(metadataRows[2] as HTMLTableRowElement).getByRole('button', { name: 'Details' })).toBeInTheDocument()
     expect(metadataTable).toContainElement(screen.getByText('Local live only'))
     expect(topRow).toContainElement(screen.getByText('Audio Grid'))
+    expect(topTools).toContainElement(bpmStack as Element)
+    expect(topTools).toContainElement(midiPanel as Element)
     expect(topRow).toContainElement(midiReadout as Element)
+    expect(bpmStack?.compareDocumentPosition(midiPanel as Element) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(contentRow).toContainElement(screen.getByText('Friday Night Drive'))
     expect(contentRow).toContainElement(metadataTable)
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
@@ -354,6 +361,32 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(favoriteButton)
 
     expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
+  })
+
+  it('places favorite and lock controls below the snapshot description instead of in the title row', () => {
+    const onToggleSnapshotFavorite = jest.fn()
+    const onToggleSnapshotLock = jest.fn()
+    const { container } = renderCard(
+      buildLiveSnapshot({ description: 'Created from Snapshot Editor', is_favorite: false }),
+      {
+        onToggleSnapshotFavorite,
+        onToggleSnapshotLock,
+        onSubmitSnapshotDescription: jest.fn(),
+      },
+    )
+
+    const descriptionButton = screen.getByText('Created from Snapshot Editor')
+    const actionGroup = screen.getByRole('group', { name: 'Snapshot actions' })
+    const favoriteButton = screen.getByRole('button', { name: 'Favorite' })
+    const lockButton = screen.getByRole('button', { name: 'Lock' })
+    const liveRow = container.querySelector('.juce-grid-page__snapshot-status-live-row')
+
+    expect(actionGroup).toContainElement(favoriteButton)
+    expect(actionGroup).toContainElement(lockButton)
+    expect(liveRow).not.toContainElement(favoriteButton)
+    expect(liveRow).not.toContainElement(lockButton)
+    expect(descriptionButton.compareDocumentPosition(actionGroup) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
   it('renders previous and next snapshot buttons and disables them with the provided reasons', () => {

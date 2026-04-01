@@ -453,10 +453,16 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
   const [tempoDraftValue, setTempoDraftValue] = useState(liveSnapshot?.tempo_bpm ?? 120)
   const storedTempoBpm = liveSnapshot?.tempo_bpm ?? 120
+  const storedTempoDisplay = storedTempoBpm.toFixed(1)
   const activeTempoBpm = liveSnapshot?.active_tempo_bpm ?? storedTempoBpm
   const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
   const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
   const snapshotLocked = Boolean(liveSnapshot?.is_locked)
+  const showSnapshotActionRow = Boolean(
+    (liveSnapshot && onToggleSnapshotFavorite)
+    || (liveSnapshot && onToggleSnapshotLock)
+    || snapshotLocked,
+  )
   const tempoStatusText = liveTapOverrideActive
     ? `Active ${formatTempoBpm(activeTempoBpm)} via MIDI tap`
     : `Active ${formatTempoBpm(activeTempoBpm)} • Stored tempo`
@@ -525,6 +531,14 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     showBounds={false}
                     accentColor="#42be65"
                     className="juce-grid-page__snapshot-status-bpm-input"
+                    displayOverlay={(
+                      <SegmentedLedText
+                        value={storedTempoDisplay}
+                        size="md"
+                        color="#42be65"
+                        className="juce-grid-page__snapshot-status-bpm-overlay"
+                      />
+                    )}
                   />
                   <span className="juce-grid-page__snapshot-status-bpm-status">
                     {tempoStatusText}
@@ -594,33 +608,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     </Button>
                   </div>
                 ) : null}
-                {liveSnapshot && onToggleSnapshotFavorite ? (
-                  <Button
-                    size="sm"
-                    kind={liveSnapshot.is_favorite ? 'secondary' : 'ghost'}
-                    renderIcon={liveSnapshot.is_favorite ? FavoriteFilled : Favorite}
-                    onClick={onToggleSnapshotFavorite}
-                    disabled={snapshotFavoritePending}
-                  >
-                    {snapshotFavoritePending
-                      ? (liveSnapshot.is_favorite ? 'Updating…' : 'Saving…')
-                      : (liveSnapshot.is_favorite ? 'Favorited' : 'Favorite')}
-                  </Button>
-                ) : null}
-                {liveSnapshot && onToggleSnapshotLock ? (
-                  <Button
-                    size="sm"
-                    kind={snapshotLocked ? 'secondary' : 'ghost'}
-                    onClick={onToggleSnapshotLock}
-                    disabled={snapshotLockPending}
-                  >
-                    {snapshotLockPending
-                      ? (snapshotLocked ? 'Unlocking…' : 'Locking…')
-                      : (snapshotLocked ? 'Locked' : 'Lock')}
-                  </Button>
-                ) : null}
               </div>
-              {snapshotLocked ? <Tag type="warm-gray">Locked</Tag> : null}
               {liveSnapshot && onSubmitSnapshotDescription ? (
                 editingDescription ? (
                   <textarea
@@ -646,6 +634,36 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     {liveSnapshot.description?.trim() || 'Add rig notes...'}
                   </button>
                 )
+              ) : null}
+              {showSnapshotActionRow ? (
+                <div className="juce-grid-page__snapshot-status-secondary-actions" role="group" aria-label="Snapshot actions">
+                  {liveSnapshot && onToggleSnapshotFavorite ? (
+                    <Button
+                      size="sm"
+                      kind={liveSnapshot.is_favorite ? 'secondary' : 'ghost'}
+                      renderIcon={liveSnapshot.is_favorite ? FavoriteFilled : Favorite}
+                      onClick={onToggleSnapshotFavorite}
+                      disabled={snapshotFavoritePending}
+                    >
+                      {snapshotFavoritePending
+                        ? (liveSnapshot.is_favorite ? 'Updating…' : 'Saving…')
+                        : (liveSnapshot.is_favorite ? 'Favorited' : 'Favorite')}
+                    </Button>
+                  ) : null}
+                  {liveSnapshot && onToggleSnapshotLock ? (
+                    <Button
+                      size="sm"
+                      kind={snapshotLocked ? 'secondary' : 'ghost'}
+                      onClick={onToggleSnapshotLock}
+                      disabled={snapshotLockPending}
+                    >
+                      {snapshotLockPending
+                        ? (snapshotLocked ? 'Unlocking…' : 'Locking…')
+                        : (snapshotLocked ? 'Locked' : 'Lock')}
+                    </Button>
+                  ) : null}
+                  {snapshotLocked ? <Tag type="warm-gray">Locked</Tag> : null}
+                </div>
               ) : null}
               {!liveSnapshot && (
                 <p className="juce-grid-page__snapshot-status-empty-copy">

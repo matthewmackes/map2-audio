@@ -1093,7 +1093,9 @@
 }
 
 .juce-grid-page__snapshot-status-top-tools {
+  flex-direction: row;
   align-items: flex-end;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -1276,35 +1278,70 @@
   outline-offset: 0.1rem;
 }
 
+.juce-grid-page__snapshot-status-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+
 .juce-grid-page__snapshot-status-bpm-stack {
   display: flex;
   flex: 0 1 auto;
   flex-direction: column;
   align-items: stretch;
   gap: 0.4rem;
-  min-width: 11rem;
+  min-width: 16rem;
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__label {
-  color: color-mix(in srgb, #42be65 78%, var(--cds-text-secondary, var(--text-secondary)));
+  color: #42be65;
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__control {
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
   background: #000000;
-  border-color: color-mix(in srgb, #42be65 44%, var(--cds-border-subtle, var(--border)));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #42be65 16%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #42be65 20%, transparent);
+  border: 1px solid color-mix(in srgb, #42be65 52%, var(--cds-border-subtle, var(--border)));
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__control:hover,
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__control:focus-within {
   border-color: #42be65;
+  box-shadow: none;
+}
+
+.juce-grid-page__snapshot-status-bpm-input .numeric-input__track {
+  display: none;
+}
+
+.juce-grid-page__snapshot-status-bpm-input .numeric-input__display-overlay {
+  justify-content: flex-start;
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__field,
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__unit {
   color: #42be65;
+}
+
+.juce-grid-page__snapshot-status-bpm-input .numeric-input__field {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.juce-grid-page__snapshot-status-bpm-overlay {
+  font-size: clamp(1.45rem, 2vw, 2.5rem);
+  letter-spacing: 0.02em;
+}
+
+.juce-grid-page__snapshot-status-bpm-input .numeric-input__unit {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__field::selection {
