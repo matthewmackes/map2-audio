@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**916** Python | **1013** TypeScript | **131** C++/H | **129** Docs | **1136** total commits | **3** stars | **0** forks | **0** open issues
+**916** Python | **1013** TypeScript | **131** C++/H | **129** Docs | **1138** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fb511f42`](https://github.com/matthewmackes/map2-audio/commit/fb511f428a24e50061f8479d46eb5ece38ccb892) | Add inline channel label rename | Map2 Audio | 2026-04-01 |
+| [`0bcd0b96`](https://github.com/matthewmackes/map2-audio/commit/0bcd0b969bbb08e3b13dbbb9e5c486e0a7d44f63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`b3c44b2d`](https://github.com/matthewmackes/map2-audio/commit/b3c44b2d8a28ac52b7eb05ab4ce5a9cf2dc2d26a) | Add inline snapshot rig notes | Map2 Audio | 2026-04-01 |
 | [`7d6706f3`](https://github.com/matthewmackes/map2-audio/commit/7d6706f343c716a66f4ed5d98ff989b8aaf9a369) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`71123e4c`](https://github.com/matthewmackes/map2-audio/commit/71123e4c66147f6db06660dbb704b2cf533dce79) | Map snapshot block colors to Carbon accents | Map2 Audio | 2026-04-01 |
 | [`ec5f0756`](https://github.com/matthewmackes/map2-audio/commit/ec5f0756da88a8aaa5cb227d50a270baf0462901) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`4e091996`](https://github.com/matthewmackes/map2-audio/commit/4e0919964123675f910c40676995d376ddee64c9) | Add signal canvas bypass coverage | Map2 Audio | 2026-04-01 |
 | [`052d3ca6`](https://github.com/matthewmackes/map2-audio/commit/052d3ca6b9acc9477b78e5ef0d0d544d7f69d791) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`be06a0e5`](https://github.com/matthewmackes/map2-audio/commit/be06a0e5b37f1b55ad0bc8a0e2112ed651290ed3) | Add flow clip indicators | Map2 Audio | 2026-04-01 |
-| [`9d66dfee`](https://github.com/matthewmackes/map2-audio/commit/9d66dfeee38c46f686fa3128f8d83566db63cd3b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
