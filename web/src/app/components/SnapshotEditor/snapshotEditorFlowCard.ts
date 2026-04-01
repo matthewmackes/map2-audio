@@ -34,7 +34,10 @@ export interface SnapshotEditorFlowClipPeakEntry {
   uri: string
   pluginPosition?: number | null
   isClipping: boolean
+  portSymbol?: string | null
 }
+
+export type SnapshotEditorFlowClipEdge = 'input' | 'output'
 
 export const FLOW_CARD_SLOT_COLORS: SnapshotEditorFlowCardPaletteEntry[] = [
   {
@@ -184,6 +187,59 @@ export function resolveFlowClipTimestamp(
         || entry.pluginPosition === plugin.position
       )
   )))
+
+  if (clipped) {
+    return now
+  }
+
+  if (typeof previousTimestamp === 'number' && now - previousTimestamp < holdMs) {
+    return previousTimestamp
+  }
+
+  return null
+}
+
+function matchesFlowClipEdgePortSymbol(
+  portSymbol: string | null | undefined,
+  edge: SnapshotEditorFlowClipEdge,
+): boolean {
+  const token = portSymbol?.trim().toLowerCase()
+  if (!token) {
+    return false
+  }
+
+  if (edge === 'input') {
+    return token.includes('input') || token.startsWith('in_') || token === 'in'
+  }
+
+  return token.includes('output') || token.startsWith('out_') || token === 'out'
+}
+
+export function resolveFlowEdgeClipTimestamp(
+  plugins: readonly SnapshotEditorFlowClipPluginRef[],
+  peakEntries: readonly SnapshotEditorFlowClipPeakEntry[],
+  edge: SnapshotEditorFlowClipEdge,
+  previousTimestamp: number | null | undefined,
+  now: number,
+  holdMs: number = FLOW_CARD_CLIP_HOLD_MS,
+): number | null {
+  const plugin = edge === 'input' ? plugins[0] : plugins[plugins.length - 1]
+
+  if (!plugin) {
+    return null
+  }
+
+  const matchingEntries = peakEntries.filter((entry) => (
+    entry.uri === plugin.uri
+      && (
+        entry.pluginPosition == null
+        || plugin.position == null
+        || entry.pluginPosition === plugin.position
+      )
+  ))
+  const edgeEntries = matchingEntries.filter((entry) => matchesFlowClipEdgePortSymbol(entry.portSymbol, edge))
+  const entriesToCheck = edgeEntries.length > 0 ? edgeEntries : matchingEntries
+  const clipped = entriesToCheck.some((entry) => entry.isClipping)
 
   if (clipped) {
     return now

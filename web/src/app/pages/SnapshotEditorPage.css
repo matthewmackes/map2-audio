@@ -2287,12 +2287,18 @@
   letter-spacing: 0.04em;
 }
 
+.juce-grid-page__flow-card-clip-bank {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .juce-grid-page__flow-card-clip-readout {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 3.5rem;
-  padding: 0.2rem 0.45rem;
+  min-width: 2.75rem;
+  padding: 0.2rem 0.4rem;
   border: 1px solid color-mix(in srgb, var(--cds-support-warning, #ff832b) 28%, var(--cds-border-subtle, var(--border)));
   background: color-mix(in srgb, var(--cds-support-warning, #ff832b) 10%, var(--cds-layer-01, var(--surface-secondary)));
   opacity: 0.32;

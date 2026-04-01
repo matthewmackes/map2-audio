@@ -6,6 +6,7 @@ import {
   buildFlowCardMetadataItems,
   buildFlowCardMetadataLine,
   normalizeFlowCardLabel,
+  resolveFlowEdgeClipTimestamp,
   resolveFlowClipTimestamp,
   validateFlowCardLabel,
 } from './snapshotEditorFlowCard'
@@ -75,6 +76,29 @@ describe('snapshotEditorFlowCard helpers', () => {
 
     expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 1_500)).toBe(1_000)
     expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 2_100)).toBeNull()
+  })
+
+  it('tracks separate input and output clip hold state using edge-aware port symbols', () => {
+    const plugins = [
+      { uri: 'urn:test:drive', position: 0 },
+      { uri: 'urn:test:delay', position: 1 },
+    ]
+    const inputPeaks = [
+      { uri: 'urn:test:drive', pluginPosition: 0, portSymbol: 'input_left', isClipping: true },
+      { uri: 'urn:test:delay', pluginPosition: 1, portSymbol: 'output_left', isClipping: false },
+    ]
+    const outputPeaks = [
+      { uri: 'urn:test:drive', pluginPosition: 0, portSymbol: 'input_left', isClipping: false },
+      { uri: 'urn:test:delay', pluginPosition: 1, portSymbol: 'output_left', isClipping: true },
+    ]
+
+    const inputClippedAt = resolveFlowEdgeClipTimestamp(plugins, inputPeaks, 'input', null, 2_000)
+    const outputClippedAt = resolveFlowEdgeClipTimestamp(plugins, outputPeaks, 'output', null, 2_000)
+
+    expect(inputClippedAt).toBe(2_000)
+    expect(outputClippedAt).toBe(2_000)
+    expect(resolveFlowEdgeClipTimestamp(plugins, outputPeaks, 'input', inputClippedAt, 2_300)).toBe(2_000)
+    expect(resolveFlowEdgeClipTimestamp(plugins, inputPeaks, 'output', outputClippedAt, 3_200)).toBeNull()
   })
 
   it('trims channel labels and rejects sibling collisions', () => {

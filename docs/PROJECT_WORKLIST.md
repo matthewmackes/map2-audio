@@ -6,7 +6,247 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 06:15 EDT - T663 Restack Labs feature cards into a full-width vertical list completed
+Last updated: 2026-04-01 EDT - T666 Maschine MK1 Integration Epic planned
+
+ID: T666
+Status: [ ] Todo
+Title: Maschine MK1 Primary Control Surface Integration (Epic)
+Description:
+- Goal / acceptance criteria: Integrate the Native Instruments Maschine MK1 as a primary hardware control surface for the MAP2 Audio Platform. Full bidirectional integration: USB HID input → virtual ALSA MIDI port → MidiHub → platform control, plus LED pad feedback and dual LCD display driven by platform state.
+- Why it matters: The MK1 provides a physical, low-latency operator interface for the signal chain (Audio Grid) and sequencer transport, replacing mouse/web UI interaction for live performance workflows.
+- Dependencies: Existing MidiHub infrastructure (ports.py, device_registry.py, hub.py), MidiTransformEngine, snapshot system, Audio Grid chain API
+- Estimated effort: High — 11 subtasks spanning daemon, backend, frontend, systemd
+- Required outputs: See subtasks T666-subA through T666-subK
+Subtasks:
+  - T666-subA: Standalone HID daemon (maschine_mk1_daemon.py)
+  - T666-subB: Systemd service (map2-maschine.service)
+  - T666-subC: MidiHub device profile + VID/PID registration
+  - T666-subD: Backend registration API (/api/maschine/* routes)
+  - T666-subE: Encoder map persistence via snapshot system
+  - T666-subF: Audio Grid signal-flow pad/encoder mapping
+  - T666-subG: LCD rendering engine (WebSocket + 2Hz REST hybrid)
+  - T666-subH: Sequencer transport button mapping + TransportOwner interface
+  - T666-subI: Web UI /maschine dedicated page (Carbon, 6 panels)
+  - T666-subJ: MIDI Hub Connections summary card + deep-link
+  - T666-subK: End-to-end integration tests
+Assigned to: Unassigned
+Last updated: 2026-04-01 EDT
+
+ID: T666-subA
+Status: [ ] Todo
+Title: Standalone HID daemon (maschine_mk1_daemon.py)
+Description:
+- New file: app/services/maschine/maschine_mk1_daemon.py
+- USB HID device: VID 0x17cc PID 0x0808 (Maschine MK1)
+- Dependencies: python-hid (hidapi), rtmidi
+- Three threads:
+  1. HID read thread — SCHED_FIFO priority 55 (matches data-loop.0 in platform RT hierarchy), 2ms poll interval
+  2. Display render thread — SCHED_OTHER, 30Hz cap, WebSocket events + 2Hz REST poll for Stats metrics
+  3. LED feedback thread — SCHED_OTHER, writes HID output reports on platform state change
+- HID-to-MIDI translation:
+  - 16 pads → Note On/Off notes 36-51, velocity from HID report, channel 1
+  - 8 encoders → CC 1-8 absolute position, channel 1
+  - 3 master knobs → CC 9 (Volume/master gain fixed), CC 10 (Tempo/BPM fixed), CC 11 (Swing/user-assignable)
+  - Transport buttons → Note On/Off channel 2 (Play=C3/60, Stop=C#3/61, Record=D3/62, Restart=D#3/63, Erase=E3/64)
+  - Group buttons A-H → CC 20-27, channel 1
+- Virtual ALSA MIDI port named "MAP2:Maschine-MK1" via rtmidi.MidiOut()
+- Registers with MAP2 backend on startup via POST /api/maschine/register (WebSocket upgrade)
+- Full resilience: internal HID reconnect loop, WebSocket reconnect with exponential backoff, LCD shows "RECONNECTING" during reconnect attempts, After=map2-backend.service in systemd
+- Pad LED states: OFF=empty slot, DIM=bypassed block, BRIGHT=active block, PULSING=selected/focused block
+- Left LCD: menu navigation (encoder 1 scrolls, push=select, long-press=back)
+  - Top level: "Audio Grid" | "Stats" | three reserved placeholder slots
+  - Audio Grid: signal flow order (Input → blocks → Output), encoders 2-8 map to focused block top 7 params
+  - Stats: dynamic, auto-discovers /api/health, /api/audio/status, /api/midi/hub/status numeric fields
+- Right LCD: name + current value + min/max + progress bar for last-touched encoder (always)
+- Master knobs: CC9=fixed master gain, CC10=fixed MIDI clock BPM, CC11=user-assignable (persists to snapshot encoder map)
+- TransportOwner interface: transport buttons route to active TransportOwner (v1 placeholder = MidiHub recorder)
+Dependencies: T666-subD (backend registration API)
+Assigned to: Unassigned
+
+ID: T666-subB
+Status: [ ] Todo
+Title: map2-maschine.service systemd unit
+Description:
+- New file: systemd/map2-maschine.service
+- After=map2-backend.service network.target
+- Restart=always, RestartSec=3s (exponential backoff handled internally by daemon)
+- ExecStart=/usr/bin/python3 /home/mm/map2-audio/app/services/maschine/maschine_mk1_daemon.py
+- LimitRTPRIO=60 (slots below audio callbacks FF/80 and matches data-loop.0 FF/55 ceiling)
+- Nice=-5
+- CPUAffinity NOT set (cores 4,5 reserved exclusively for audio)
+- Environment=MAP2_BACKEND_URL=http://localhost:8080
+- Install to /etc/systemd/system/map2-maschine.service; synced from repo same pattern as map2-backend.service
+Dependencies: T666-subA
+Assigned to: Unassigned
+
+ID: T666-subC
+Status: [ ] Todo
+Title: MidiHub VID/PID device profile for Maschine MK1
+Description:
+- Edit: app/services/midi_hub/device_registry.py
+- Add built-in profile "maschine_mk1": usb_vid_pid ["17cc:0808"], name_pattern "MAP2:Maschine-MK1", role "control_surface", channels [1, 2]
+- Dual-match: VID/PID for robustness + name pattern for operator clarity in aconnect -l and hub UI
+- Registry auto-assigns within 1.5s of daemon creating virtual port (existing hotplug loop)
+- Emits midi:device_online WebSocket event with profile_id "maschine_mk1" on connect
+- Add MidiTransformEngine route: pad Note On/Off → chain block select/bypass CC transforms
+Dependencies: T666-subA
+Assigned to: Unassigned
+
+ID: T666-subD
+Status: [ ] Todo
+Title: /api/maschine/* backend routes + daemon registration
+Description:
+- New file: app/routes/maschine.py
+- New file: app/services/maschine_service.py
+- Routes:
+  - POST /api/maschine/register — WebSocket upgrade, daemon heartbeat + state push
+  - GET /api/maschine/status — connection state, daemon version, HID device info, virtual port name
+  - GET /api/maschine/encoder-map — current encoder assignments (from snapshot system)
+  - POST /api/maschine/encoder-map — update encoder assignments
+  - GET /api/maschine/led-state — current 16-pad LED state snapshot
+  - POST /api/maschine/lcd — write raw bitmap to left or right display (debug/override)
+  - WS /api/maschine/ws — bidirectional: backend pushes param updates, daemon pushes HID events
+- New WebSocket topics: maschine:hid_traffic (raw HID reports for monitor panel), maschine:status (heartbeat + state)
+- MaschineService: maintains in-memory daemon state (connected/disconnected, firmware info, last-seen timestamp)
+- Register router in app/main.py
+Dependencies: Existing FastAPI infrastructure, T666-subA
+Assigned to: Unassigned
+
+ID: T666-subE
+Status: [ ] Todo
+Title: Encoder map persistence via snapshot system
+Description:
+- New file: app/services/maschine_encoder_map_service.py
+- Extend snapshot schema: add maschine_encoder_map field to snapshot payload
+- Encoder map shape: {"enc1": null, "enc2": {"block_id": "...", "param_id": "...", "label": "..."}, ..., "enc8": {...}, "vol": {"fixed": true, "label": "Master Gain"}, "tempo": {"fixed": true, "label": "MIDI Clock BPM"}, "swing": {"block_id": "...", "param_id": "..."}}
+- enc1 always null (menu navigation, not reassignable)
+- vol and tempo always fixed (not user-reassignable per design)
+- swing defaults to master reverb mix, user-assignable
+- On snapshot recall: daemon fetches updated map via GET /api/maschine/encoder-map, re-maps encoders within 50ms
+- On snapshot save: current encoder map auto-included in snapshot payload
+- Hardware reassignment flow: hold Group A + twist encoder → left LCD shows scrollable param browser → push to confirm → POST /api/maschine/encoder-map → persisted to active snapshot
+Dependencies: T666-subD, app/services/snapshot_service.py
+Assigned to: Unassigned
+
+ID: T666-subF
+Status: [ ] Todo
+Title: Audio Grid signal-flow pad/encoder chain block mapping
+Description:
+- Daemon queries GET /api/audio/chain/blocks on Audio Grid mode entry
+- Blocks ordered by signal flow position: Input → NAM → EQ → Gate → Compressor → Limiter → Reverb → Output
+- Up to 16 blocks map to pads 1-16 left-to-right, top row then bottom row
+- Pad LED states: OFF=empty slot, DIM=bypassed, BRIGHT=active, PULSING=selected (focused for encoder editing)
+- Pad press: selects block (LED pulses), encoders 2-8 immediately map to block top 7 params
+- Pad hold (>500ms): toggles bypass state (DIM <-> BRIGHT)
+- Left LCD: scrollable signal flow block list with cursor
+- Right LCD: focused block name + last-touched encoder value + progress bar
+- Parameter pages: when block has >7 params, encoder 1 push (in block-focused mode) cycles pages; left LCD shows page indicator (e.g. "EQ Params 2/3")
+- User encoder reassignment: hold Group A + twist encoder → left LCD param browser for that block → push to assign → POST /api/maschine/encoder-map
+- WebSocket subscription to audio:chain topic for real-time block bypass/active state → immediate LED update
+Dependencies: T666-subA, T666-subE, Audio Grid chain API
+Assigned to: Unassigned
+
+ID: T666-subG
+Status: [ ] Todo
+Title: Dual LCD rendering engine (WebSocket + 2Hz REST hybrid)
+Description:
+- Left LCD renderer (128x64 XBM bitmap, sent via HID output report):
+  - 5x7 pixel bitmap font, custom-rendered
+  - Menu cursor: inverted pixel block on selected item
+  - Breadcrumb at bottom: "> Audio Grid > EQ" (small font)
+  - Top level items: "Audio Grid", "Stats", "---", "---", "---" (3 reserved separator slots)
+- Right LCD renderer (128x64 XBM bitmap):
+  - Large 3x scaled font for parameter value (e.g. "+3.5 dB")
+  - Parameter name in small font at top
+  - Min/max labels at bottom corners
+  - 1px full-width progress bar between name and value
+- Stats renderer:
+  - On entry: GET /api/health, /api/audio/status, /api/midi/hub/status
+  - Auto-parse all numeric fields, render as scrollable key/value list on left LCD
+  - Right LCD: 32-sample bar-graph history sparkline for focused metric
+  - 2Hz REST poll for Stats metric updates
+- WebSocket subscriptions for reactive updates: audio:chain, midi:devices, maschine:status
+- HID display output: XBM bitmap → packed 1bpp bytearray → HID output report (open-maschine protocol, VID 17cc PID 0808)
+- Display update cap: 30Hz, skip frame if buffer unchanged (dirty flag per display)
+Dependencies: T666-subA, T666-subD
+Assigned to: Unassigned
+
+ID: T666-subH
+Status: [ ] Todo
+Title: Sequencer transport mapping + TransportOwner interface
+Description:
+- New file: app/services/transport_owner.py — abstract base class TransportOwner with methods: play(), stop(), record(), restart(), erase()
+- New file: app/services/transport_service.py — register_transport_owner(name, owner), get_active_transport_owner(), transfer_ownership(name)
+- V1 implementation: MidiHubRecorderTransportOwner wraps existing MidiRecorder (app/services/midi_hub/recorder.py)
+  - play() = start recording, stop() = stop, record() = new layer, restart() = restart from bar 1, erase() = clear buffer
+- Sequencer stub: when Sequencer engine is built it calls register_transport_owner("sequencer", ...) and takes priority
+- Transport routes: POST /api/transport/{action} (play|stop|record|restart|erase) → routes to active TransportOwner
+- Daemon maps transport Note On messages → POST /api/transport/{action}
+- Left LCD shows active owner name in transport context (e.g. "Owner: MIDI Rec")
+- Transport LED feedback: Play button pad LED on while transport running (HID output report)
+Dependencies: T666-subA, T666-subD, app/services/midi_hub/recorder.py
+Assigned to: Unassigned
+
+ID: T666-subI
+Status: [ ] Todo
+Title: /maschine dedicated Carbon page (6 panels)
+Description:
+- New files:
+  - web/src/app/pages/MaschinePage.tsx
+  - web/src/app/pages/MaschinePage.css
+  - web/src/app/components/Maschine/MaschineConnectionPanel.tsx
+  - web/src/app/components/Maschine/MaschineEncoderMapPanel.tsx
+  - web/src/app/components/Maschine/MaschineLedPreviewPanel.tsx
+  - web/src/app/components/Maschine/MaschineLcdSimulatorPanel.tsx
+  - web/src/app/components/Maschine/MaschineHidTrafficPanel.tsx
+  - web/src/app/components/Maschine/MaschineFirmwarePanel.tsx
+  - web/src/map2/clients/maschine.ts
+- Edit: web/src/app/routes.tsx (add /maschine route)
+- Edit: web/src/app/data/advancedMenuItems.ts (add Maschine MK1 entry)
+- Page header: Carbon Tag (green=connected, red=disconnected, amber=reconnecting) next to h1 "Maschine MK1"
+- Panel 1 — Connection: Carbon Tag trio for HID/daemon/ALSA port status; Layer wrapper; 2s polling GET /api/maschine/status
+- Panel 2 — Encoder Map: Carbon DataTable rows Enc1-8 + Vol/Tempo/Swing; columns: Encoder, Parameter, Current Value, Actions; Enc1/Vol/Tempo rows read-only with "Fixed" gray Tag
+- Panel 3 — LED Preview: 4x4 CSS grid of 16 Carbon Tile components; Gray-90=empty, Gray-60=bypassed, Green-40=active, CSS pulse animation=selected; live via WebSocket maschine:status
+- Panel 4 — LCD Simulator: two <canvas> 128x64 scaled 3x; Carbon Gray-100 bg, Green-40 on-pixels, Gray-80 off-pixels; 30Hz requestAnimationFrame; bitmap payloads from WebSocket maschine:status; Carbon Tag labels "LEFT DISPLAY" / "RIGHT DISPLAY"
+- Panel 5 — HID Traffic: Carbon DataTable ring buffer 200 rows; columns Timestamp/Direction Tag/Report ID/Decoded Type/Raw Hex; WebSocket maschine:hid_traffic; pause/resume Toggle; type filter Dropdown; JSON export Button
+- Panel 6 — Firmware Info: Carbon StructuredList two-column key/value: MK1 Firmware Version, USB VID:PID, NHL Protocol Version, Daemon Version, Virtual Port Name, Last Seen; refresh IconButton
+- Full Carbon conformance: @carbon/react only, no MUI, no Phosphor Icons, Layer wrappers, Carbon tokens throughout
+- Tests: web/src/app/pages/MaschinePage.test.tsx (renders without crash, connection tag states, all 6 panels present)
+Dependencies: T666-subD, Carbon design system (@carbon/react)
+Assigned to: Unassigned
+
+ID: T666-subJ
+Status: [ ] Todo
+Title: Maschine MK1 summary card in MIDI Hub Connections page
+Description:
+- Edit: web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx
+- Add Carbon Tile card for Maschine MK1 in connected devices section
+- Card: device name "Maschine MK1", online/offline Carbon Tag, HID status string, virtual port name "MAP2:Maschine-MK1", "Configure →" Button navigating to /maschine
+- Polls GET /api/maschine/status at same 2s interval as other connection cards
+- Follows existing card layout pattern
+Dependencies: T666-subD, T666-subI
+Assigned to: Unassigned
+
+ID: T666-subK
+Status: [ ] Todo
+Title: End-to-end integration test suite
+Description:
+- New file: tests/test_maschine_mk1.py
+- Uses mock HID device pattern from tests/mpx1_simulator.py
+- 10 tests:
+  1. HID pad report parsing → correct Note On (note 36+pad_index, velocity from report)
+  2. HID encoder report parsing → correct CC (CC 1-8, absolute value)
+  3. HID transport report parsing → correct Note On channel 2
+  4. Virtual ALSA port creation and MidiHub registration
+  5. Device profile VID/PID match: 17cc:0808 → maschine_mk1 profile
+  6. Daemon registration: POST /api/maschine/register → GET /api/maschine/status returns connected
+  7. Encoder map round-trip: save assignment → recall snapshot → encoder map restored
+  8. LED feedback: block bypass state change → correct HID output report generated
+  9. Stats page dynamic discovery: all numeric fields returned from health/audio/midi endpoints
+  10. TransportOwner: MidiHubRecorderTransportOwner play/stop/record/restart/erase routes correctly
+- Frontend tests in MaschinePage.test.tsx (see T666-subI)
+Dependencies: T666-subA through T666-subJ
+Assigned to: Unassigned
 
 ID: T663
 Status: [✓] Done
@@ -118,7 +358,7 @@ Last updated: 2026-03-31 18:06 EDT - Codex
 - Validation: `npm --prefix web run build` -> PASS; `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/` -> `200`; `lsof -iTCP:3000 -sTCP:LISTEN -n -P` -> listener present.
 
 ID: T658
-Status: [ ] Todo
+Status: [✓] Done
 Title: Input + Output Clipping Indicators Per Channel — LED clip lights on channel card
 Description:
 - Goal / acceptance criteria: Each channel card displays an input clipping light AND an output clipping light using the existing LED widget style (orange numerals on black background). Clip lights flash when the signal at that point is hitting too hot. They do not display level numbers — only a binary clip state (clean / clipping). Input clip = signal hitting the first plugin in the chain too hard. Output clip = signal leaving the channel's last plugin clipping. Both lights are always visible on the card, not hidden in a detail panel.
@@ -127,7 +367,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: input and output clip detection in the audio callback per channel, WebSocket or shared-memory bridge to push clip events to the frontend, clip light widget reusing existing LED style on each channel card, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 12:51 - Codex
+- Completion notes:
+  - Extended the Snapshot Editor flow-card helpers to distinguish first-plugin input clipping from last-plugin output clipping, using existing plugin-output port symbols when present and preserving the one-second hold behavior already used by the channel clip light.
+  - Updated both desktop and tablet flow cards to show always-visible `IN`, `OUT`, and aggregate `CLIP` LED readouts on each channel card, all using the existing segmented LED treatment and warning palette.
+  - Added focused regression coverage for the new edge-aware clip-state helper logic and revalidated the production bundle after the flow-card UI update.
+- Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T657
 Status: [ ] Todo

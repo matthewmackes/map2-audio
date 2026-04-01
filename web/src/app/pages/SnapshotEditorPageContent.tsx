@@ -132,6 +132,7 @@ import {
   FLOW_CARD_SLOT_COLORS,
   buildFlowCardMetadataLines,
   normalizeFlowCardLabel,
+  resolveFlowEdgeClipTimestamp,
   resolveFlowClipTimestamp,
   validateFlowCardLabel,
 } from '../components/SnapshotEditor/snapshotEditorFlowCard'
@@ -873,6 +874,8 @@ export function SnapshotEditorPage() {
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
+  const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
+  const [flowOutputClipTimestamps, setFlowOutputClipTimestamps] = useState<Record<string, number>>({})
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
@@ -1323,6 +1326,7 @@ export function SnapshotEditorPage() {
       uri: peak.uri,
       pluginPosition: peak.plugin_position ?? null,
       isClipping: Boolean(peak.is_clipping),
+      portSymbol: peak.port_symbol ?? null,
     })),
     [pluginPeaks],
   )
@@ -1361,6 +1365,46 @@ export function SnapshotEditorPage() {
   }, [chainsQuery.data, flowClipPeakEntries, flowSlots, liveSnapshotQuery.data])
 
   useEffect(() => {
+    const now = Date.now()
+    const clipSourceChains = liveSnapshotQuery.data
+      ? buildEffectiveLiveSnapshotChains(liveSnapshotQuery.data, chainsQuery.data).chains
+      : (chainsQuery.data?.chains ?? [])
+    const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
+
+    const updateEdgeClipTimestamps = (
+      previous: Record<string, number>,
+      edge: 'input' | 'output',
+    ): Record<string, number> => {
+      const next: Record<string, number> = {}
+
+      flowSlots.forEach((flow) => {
+        const chain = flow.chainId != null ? clipSourceChainById.get(flow.chainId) : undefined
+        const nextTimestamp = resolveFlowEdgeClipTimestamp(
+          chain?.plugins ?? [],
+          flowClipPeakEntries,
+          edge,
+          previous[flow.id],
+          now,
+          FLOW_CARD_CLIP_HOLD_MS,
+        )
+        if (typeof nextTimestamp === 'number') {
+          next[flow.id] = nextTimestamp
+        }
+      })
+
+      const previousKeys = Object.keys(previous)
+      const nextKeys = Object.keys(next)
+      const changed = previousKeys.length !== nextKeys.length
+        || nextKeys.some((key) => previous[key] !== next[key])
+
+      return changed ? next : previous
+    }
+
+    setFlowInputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'input'))
+    setFlowOutputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'output'))
+  }, [chainsQuery.data, flowClipPeakEntries, flowSlots, liveSnapshotQuery.data])
+
+  useEffect(() => {
     const expiryDelays = Object.values(flowClipTimestamps)
       .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
       .filter((delay) => delay > 0)
@@ -1384,6 +1428,56 @@ export function SnapshotEditorPage() {
       window.clearTimeout(timeoutId)
     }
   }, [flowClipTimestamps])
+
+  useEffect(() => {
+    const expiryDelays = Object.values(flowInputClipTimestamps)
+      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
+      .filter((delay) => delay > 0)
+
+    if (expiryDelays.length === 0) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const now = Date.now()
+      setFlowInputClipTimestamps((previous) => {
+        const next = Object.fromEntries(
+          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
+        )
+        const changed = Object.keys(next).length !== Object.keys(previous).length
+        return changed ? next : previous
+      })
+    }, Math.max(50, Math.min(...expiryDelays)))
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [flowInputClipTimestamps])
+
+  useEffect(() => {
+    const expiryDelays = Object.values(flowOutputClipTimestamps)
+      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
+      .filter((delay) => delay > 0)
+
+    if (expiryDelays.length === 0) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const now = Date.now()
+      setFlowOutputClipTimestamps((previous) => {
+        const next = Object.fromEntries(
+          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
+        )
+        const changed = Object.keys(next).length !== Object.keys(previous).length
+        return changed ? next : previous
+      })
+    }, Math.max(50, Math.min(...expiryDelays)))
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [flowOutputClipTimestamps])
 
 
   // ============================================================================
@@ -4430,6 +4524,8 @@ export function SnapshotEditorPage() {
     const flowCurrentPage = branchPageByFlowId[flow.id] ?? 0
     const flowPageCount = Math.max(1, Math.ceil((flowChain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE))
     const flowClipActive = typeof flowClipTimestamps[flow.id] === 'number'
+    const flowInputClipActive = typeof flowInputClipTimestamps[flow.id] === 'number'
+    const flowOutputClipActive = typeof flowOutputClipTimestamps[flow.id] === 'number'
     const isTabletBranchExpanded = expandedTabletBranchId === flow.id
     const tabletSummaryPills = [
       isActive ? 'Selected' : null,
@@ -4721,11 +4817,25 @@ export function SnapshotEditorPage() {
                         <SegmentedLedText value={`CPU ${pluginCpuSum.toFixed(0)}%`} size="xs" color={FLOW_CARD_LED_COLOR} />
                       </Tag>
                     )}
-                    <div
-                      className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
-                      title={flowClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
-                    >
-                      <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                    <div className="juce-grid-page__flow-card-clip-bank" aria-label={`${flowLabel} clipping status`}>
+                      <div
+                        className={`juce-grid-page__flow-card-clip-readout ${flowInputClipActive ? 'is-active' : ''}`}
+                        title={flowInputClipActive ? `Flow ${flowLabel} input clipping detected` : `Flow ${flowLabel} input is clean`}
+                      >
+                        <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                      </div>
+                      <div
+                        className={`juce-grid-page__flow-card-clip-readout ${flowOutputClipActive ? 'is-active' : ''}`}
+                        title={flowOutputClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
+                      >
+                        <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                      </div>
+                      <div
+                        className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
+                        title={flowClipActive ? `Flow ${flowLabel} channel clipping detected` : `Flow ${flowLabel} channel is clean`}
+                      >
+                        <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                      </div>
                     </div>
                     {flow.solo && <Tag type="warm-gray">Solo</Tag>}
                     {flow.muted && <Tag type="red">Muted</Tag>}
@@ -4821,11 +4931,25 @@ export function SnapshotEditorPage() {
                         </span>
                       </button>
 
-                      <div
-                        className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
-                        title={flowClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
-                      >
-                        <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                      <div className="juce-grid-page__flow-card-clip-bank" aria-label={`${flowLabel} clipping status`}>
+                        <div
+                          className={`juce-grid-page__flow-card-clip-readout ${flowInputClipActive ? 'is-active' : ''}`}
+                          title={flowInputClipActive ? `Flow ${flowLabel} input clipping detected` : `Flow ${flowLabel} input is clean`}
+                        >
+                          <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                        </div>
+                        <div
+                          className={`juce-grid-page__flow-card-clip-readout ${flowOutputClipActive ? 'is-active' : ''}`}
+                          title={flowOutputClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
+                        >
+                          <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                        </div>
+                        <div
+                          className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
+                          title={flowClipActive ? `Flow ${flowLabel} channel clipping detected` : `Flow ${flowLabel} channel is clean`}
+                        >
+                          <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                        </div>
                       </div>
 
                       <button
