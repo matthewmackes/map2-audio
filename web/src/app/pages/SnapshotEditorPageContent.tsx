@@ -1534,6 +1534,20 @@ export function SnapshotEditorPage() {
   )
   const audioStatus = audioQuery.data
   const audioLevels = audioLevelsQuery.data
+  const currentOutputLevelDbfs = useMemo(() => {
+    if (!audioLevels) {
+      return null
+    }
+    return Math.max(audioLevels.output_left ?? -60, audioLevels.output_right ?? -60)
+  }, [audioLevels])
+  const outputLevelReferenceDeltaDb = activeSnapshot?.output_level_reference_dbfs != null && currentOutputLevelDbfs != null
+    ? currentOutputLevelDbfs - activeSnapshot.output_level_reference_dbfs
+    : null
+  const outputLevelWarningThresholdDb = activeSnapshot?.output_level_warning_threshold_db ?? 3
+  const outputLevelWarningMessage = outputLevelReferenceDeltaDb != null
+    && Math.abs(outputLevelReferenceDeltaDb) > outputLevelWarningThresholdDb
+    ? `Output is ${Math.abs(outputLevelReferenceDeltaDb).toFixed(1)} dB ${outputLevelReferenceDeltaDb > 0 ? 'above' : 'below'} reference level.`
+    : null
   const jackMetrics = jackQuery.data
 
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
@@ -1654,6 +1668,29 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot notes', 'error')
+    },
+  })
+
+  const updateActiveSnapshotOutputReferenceMutation = useMutation({
+    mutationFn: async ({
+      snapshotId,
+      outputLevelReferenceDbfs,
+      outputLevelWarningThresholdDb,
+    }: {
+      snapshotId: number
+      outputLevelReferenceDbfs?: number | null
+      outputLevelWarningThresholdDb?: number | null
+    }) => snapshotsApi.update(snapshotId, {
+      output_level_reference_dbfs: outputLevelReferenceDbfs,
+      output_level_warning_threshold_db: outputLevelWarningThresholdDb,
+    }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Snapshot output reference updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update output reference', 'error')
     },
   })
 
@@ -5223,6 +5260,29 @@ export function SnapshotEditorPage() {
               updateActiveSnapshotDescriptionMutation.mutate({ snapshotId: activeSnapshot.id, description })
             }}
             snapshotDescriptionPending={updateActiveSnapshotDescriptionMutation.isPending}
+            currentOutputLevelDbfs={currentOutputLevelDbfs}
+            onSetOutputLevelReference={() => {
+              if (!activeSnapshot || currentOutputLevelDbfs == null) {
+                return
+              }
+              updateActiveSnapshotOutputReferenceMutation.mutate({
+                snapshotId: activeSnapshot.id,
+                outputLevelReferenceDbfs: currentOutputLevelDbfs,
+                outputLevelWarningThresholdDb: activeSnapshot.output_level_warning_threshold_db ?? 3,
+              })
+            }}
+            onSubmitOutputLevelWarningThreshold={(thresholdDb) => {
+              if (!activeSnapshot) {
+                return
+              }
+              updateActiveSnapshotOutputReferenceMutation.mutate({
+                snapshotId: activeSnapshot.id,
+                outputLevelReferenceDbfs: activeSnapshot.output_level_reference_dbfs ?? null,
+                outputLevelWarningThresholdDb: thresholdDb,
+              })
+            }}
+            outputLevelReferencePending={updateActiveSnapshotOutputReferenceMutation.isPending}
+            outputLevelWarningMessage={outputLevelWarningMessage}
           />
         </div>
       </section>

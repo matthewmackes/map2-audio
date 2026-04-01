@@ -1,6 +1,6 @@
 import { Edit } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { Layer, Table, TableBody, TableCell, TableRow } from '@carbon/react'
+import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../icons/map'
@@ -31,6 +31,11 @@ interface SnapshotChainManagementCardProps {
   snapshotRenamePending?: boolean
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
+  currentOutputLevelDbfs?: number | null
+  onSetOutputLevelReference?: () => void
+  onSubmitOutputLevelWarningThreshold?: (thresholdDb: number) => void
+  outputLevelReferencePending?: boolean
+  outputLevelWarningMessage?: string | null
 }
 
 interface SnapshotMetadataCell {
@@ -382,6 +387,11 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotRenamePending = false,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
+    currentOutputLevelDbfs = null,
+    onSetOutputLevelReference,
+    onSubmitOutputLevelWarningThreshold,
+    outputLevelReferencePending = false,
+    outputLevelWarningMessage = null,
   } = props
 
   const metadataTableRows = useMemo(
@@ -399,12 +409,19 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
+  const [outputThresholdDraft, setOutputThresholdDraft] = useState(
+    liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0',
+  )
 
   useEffect(() => {
     if (!editingDescription) {
       setDescriptionDraft(liveSnapshot?.description ?? '')
     }
   }, [editingDescription, liveSnapshot?.description])
+
+  useEffect(() => {
+    setOutputThresholdDraft(liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0')
+  }, [liveSnapshot?.output_level_warning_threshold_db])
 
   const submitDescription = () => {
     setEditingDescription(false)
@@ -419,6 +436,20 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
       event.preventDefault()
       submitDescription()
     }
+  }
+
+  const submitOutputThreshold = () => {
+    if (!liveSnapshot || !onSubmitOutputLevelWarningThreshold) {
+      return
+    }
+
+    const parsed = Number.parseFloat(outputThresholdDraft)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setOutputThresholdDraft(liveSnapshot.output_level_warning_threshold_db?.toFixed(1) ?? '3.0')
+      return
+    }
+
+    onSubmitOutputLevelWarningThreshold(parsed)
   }
 
   return (
@@ -504,6 +535,56 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                 <p className="juce-grid-page__snapshot-status-empty-copy">
                   Recall or create a snapshot to populate live snapshot status here.
                 </p>
+              )}
+              {liveSnapshot && (
+                <div className="juce-grid-page__snapshot-status-output-reference">
+                  <div className="juce-grid-page__snapshot-status-output-reference-copy">
+                    <span className="juce-grid-page__snapshot-status-output-reference-kicker">Output Reference</span>
+                    <strong>
+                      {liveSnapshot.output_level_reference_dbfs != null
+                        ? `${liveSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS`
+                        : 'Unset'}
+                    </strong>
+                    <span>
+                      Current {currentOutputLevelDbfs != null ? `${currentOutputLevelDbfs.toFixed(1)} dBFS` : 'Unavailable'}
+                      {' • '}
+                      Threshold ±{(liveSnapshot.output_level_warning_threshold_db ?? 3).toFixed(1)} dB
+                    </span>
+                  </div>
+                  <div className="juce-grid-page__snapshot-status-output-reference-actions">
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={onSetOutputLevelReference}
+                      disabled={!onSetOutputLevelReference || outputLevelReferencePending || currentOutputLevelDbfs == null}
+                    >
+                      {outputLevelReferencePending ? 'Saving…' : 'Set Reference Level'}
+                    </Button>
+                    <label className="juce-grid-page__snapshot-status-output-threshold-field">
+                      <span>Warn at ± dB</span>
+                      <input
+                        aria-label="Output reference warning threshold"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={outputThresholdDraft}
+                        onChange={(event) => setOutputThresholdDraft(event.target.value)}
+                        onBlur={submitOutputThreshold}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            submitOutputThreshold()
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {outputLevelWarningMessage ? (
+                    <Tag type="warm-gray" className="juce-grid-page__snapshot-status-output-warning">
+                      {outputLevelWarningMessage}
+                    </Tag>
+                  ) : null}
+                </div>
               )}
             </div>
 

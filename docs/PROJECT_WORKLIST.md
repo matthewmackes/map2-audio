@@ -481,7 +481,7 @@ Last updated: 2026-04-01 11:42 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/data/categoryStyles.test.tsx web/src/app/utils/pluginAccent.test.ts web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T649
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Snapshot Output Level Reference — Warning Indicator if Measured Output Diverges
 Description:
 - Goal / acceptance criteria: Each snapshot stores an optional output level reference value (in dBFS), set by the player during soundcheck by pressing a "Set Reference Level" button that captures the current measured output. After that, whenever the snapshot is live, the measured output is compared to the reference. If the difference exceeds a configurable threshold (default ±3 dB), a warning indicator appears in the editor hero — using a Carbon warning Tag or amber clip light — without auto-correcting the level. The warning is informational only: "Output is 5 dB above reference level." The reference value and threshold are visible and editable per-snapshot.
@@ -490,7 +490,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: output_level_reference field in snapshot data model, "Set Reference Level" button in editor, real-time comparison logic using existing metering data, warning indicator in hero using Carbon amber Tag, configurable dB threshold, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 13:17 - Codex
+- Completion notes:
+  - Added per-snapshot `output_level_reference_dbfs` and `output_level_warning_threshold_db` persistence through the snapshot database model, service serialization, route contracts, and TypeScript client/types.
+  - Extended the Snapshot Editor hero card with a dedicated output-reference panel that shows the stored reference, current measured output, threshold control, a “Set Reference Level” action, and a warning tag when the live output diverges beyond the configured window.
+  - Added focused backend and frontend regression coverage for the new snapshot fields and hero-warning rendering, then revalidated the production frontend build.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T648
 Status: [ ] Todo

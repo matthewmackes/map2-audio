@@ -237,6 +237,8 @@ class SnapshotService:
         tags: Optional[list[str]] = None,
         program_number: Optional[int] = None,
         derived_from_snapshot_id: Optional[int] = None,
+        output_level_reference_dbfs: Optional[float] = None,
+        output_level_warning_threshold_db: Optional[float] = 3.0,
         input_device: Optional[str] = None,
         output_device: Optional[str] = None,
         controls_payload: Optional[dict[str, Any]] = None,
@@ -254,6 +256,12 @@ class SnapshotService:
             is_favorite=is_favorite,
             display_order=max_order + 1,
             derived_from_snapshot_id=derived_from_snapshot_id,
+            output_level_reference_dbfs=output_level_reference_dbfs,
+            output_level_warning_threshold_db=(
+                float(output_level_warning_threshold_db)
+                if output_level_warning_threshold_db is not None
+                else 3.0
+            ),
             input_device=input_device,
             output_device=output_device,
             controls_payload=self._normalize_controls_payload(controls_payload, detail_payload),
@@ -280,6 +288,8 @@ class SnapshotService:
         tags: Any = UNSET,
         program_number: Any = UNSET,
         derived_from_snapshot_id: Any = UNSET,
+        output_level_reference_dbfs: Any = UNSET,
+        output_level_warning_threshold_db: Any = UNSET,
         input_device: Any = UNSET,
         output_device: Any = UNSET,
         controls_payload: Any = UNSET,
@@ -304,6 +314,16 @@ class SnapshotService:
             snapshot.program_number = program_number
         if derived_from_snapshot_id is not UNSET:
             snapshot.derived_from_snapshot_id = derived_from_snapshot_id
+        if output_level_reference_dbfs is not UNSET:
+            snapshot.output_level_reference_dbfs = (
+                None if output_level_reference_dbfs is None else float(output_level_reference_dbfs)
+            )
+        if output_level_warning_threshold_db is not UNSET:
+            snapshot.output_level_warning_threshold_db = (
+                float(output_level_warning_threshold_db)
+                if output_level_warning_threshold_db is not None
+                else 3.0
+            )
         if input_device is not UNSET:
             snapshot.input_device = input_device
         if output_device is not UNSET:
@@ -1902,6 +1922,16 @@ class SnapshotService:
             "description": snapshot_row.description if snapshot_row is not None else "",
             "tags": list(snapshot_row.tags or []) if snapshot_row is not None else [],
             "program_number": snapshot_row.program_number if snapshot_row is not None else None,
+            "output_level_reference_dbfs": (
+                float(snapshot_row.output_level_reference_dbfs)
+                if snapshot_row is not None and snapshot_row.output_level_reference_dbfs is not None
+                else None
+            ),
+            "output_level_warning_threshold_db": (
+                float(snapshot_row.output_level_warning_threshold_db)
+                if snapshot_row is not None and snapshot_row.output_level_warning_threshold_db is not None
+                else 3.0
+            ),
             "input_device": snapshot_row.input_device if snapshot_row is not None else None,
             "output_device": snapshot_row.output_device if snapshot_row is not None else None,
             "is_active": bool(snapshot_row.is_active) if snapshot_row is not None else False,
@@ -1954,6 +1984,16 @@ class SnapshotService:
             "description": snapshot.description or "",
             "tags": list(snapshot.tags or []),
             "program_number": snapshot.program_number,
+            "output_level_reference_dbfs": (
+                float(snapshot.output_level_reference_dbfs)
+                if snapshot.output_level_reference_dbfs is not None
+                else None
+            ),
+            "output_level_warning_threshold_db": (
+                float(snapshot.output_level_warning_threshold_db)
+                if snapshot.output_level_warning_threshold_db is not None
+                else 3.0
+            ),
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
             "io_bindings": {

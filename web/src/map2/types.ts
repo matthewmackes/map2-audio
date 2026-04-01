@@ -2176,6 +2176,8 @@ export interface SnapshotSummary {
   description: string;
   tags: string[];
   program_number: number | null;
+  output_level_reference_dbfs?: number | null;
+  output_level_warning_threshold_db?: number;
   input_device: string | null;
   output_device: string | null;
   is_active: boolean;

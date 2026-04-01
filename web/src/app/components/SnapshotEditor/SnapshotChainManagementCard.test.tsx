@@ -11,6 +11,8 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
     description: 'Lead-ready snapshot for the main performance set.',
     tags: [],
     program_number: 23,
+    output_level_reference_dbfs: null,
+    output_level_warning_threshold_db: 3,
     input_device: 'Stage Input',
     output_device: 'House Left/Right',
     is_active: true,
@@ -176,8 +178,11 @@ function renderCard(
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
-      onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
-      snapshotDescriptionPending={options.snapshotDescriptionPending}
+    onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
+    snapshotDescriptionPending={options.snapshotDescriptionPending}
+      currentOutputLevelDbfs={-9.5}
+      onSetOutputLevelReference={jest.fn()}
+      onSubmitOutputLevelWarningThreshold={jest.fn()}
       detailsAction={<button type="button">Details</button>}
     />,
   )
@@ -253,6 +258,32 @@ describe('SnapshotChainManagementCard', () => {
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
     expect(screen.queryByText('Live now')).not.toBeInTheDocument()
     expect(screen.queryByRole('toolbar', { name: 'Snapshot hero actions' })).not.toBeInTheDocument()
+  })
+
+  it('renders output reference controls and warning messaging in the hero card', () => {
+    render(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot({
+          output_level_reference_dbfs: -15,
+          output_level_warning_threshold_db: 3,
+        })}
+        currentOutputLevelDbfs={-9.5}
+        onSetOutputLevelReference={jest.fn()}
+        onSubmitOutputLevelWarningThreshold={jest.fn()}
+        outputLevelWarningMessage="Output is 5.5 dB above reference level."
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    expect(screen.getByText('Output Reference')).toBeInTheDocument()
+    expect(screen.getByText('-15.0 dBFS')).toBeInTheDocument()
+    expect(screen.getByText('Current -9.5 dBFS • Threshold ±3.0 dB')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Set Reference Level' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Output reference warning threshold')).toHaveValue(3)
+    expect(screen.getByText('Output is 5.5 dB above reference level.')).toBeInTheDocument()
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {

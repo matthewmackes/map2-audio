@@ -45,6 +45,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 description="Service test",
                 tags=["service"],
                 program_number=10,
+                output_level_reference_dbfs=-12.5,
+                output_level_warning_threshold_db=2.5,
                 input_device="Capture 1",
                 output_device="Playback 1",
                 detail_payload={
@@ -91,6 +93,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["chain_count"] == 1
             assert created["routing"]["mode"] == "parallel_blend"
             assert created["midi_map"][0]["program_number"] == 10
+            assert created["output_level_reference_dbfs"] == -12.5
+            assert created["output_level_warning_threshold_db"] == 2.5
             assert created["input_device"] == "Capture 1"
             assert created["output_device"] == "Playback 1"
             assert created["io_bindings"]["input_device"] == "Capture 1"
@@ -128,10 +132,14 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
 
             renamed = await service.update_snapshot(
                 created["id"],
+                output_level_reference_dbfs=-9.0,
+                output_level_warning_threshold_db=4.0,
                 input_device="Capture 2",
                 output_device=None,
             )
             assert renamed is not None
+            assert renamed["output_level_reference_dbfs"] == -9.0
+            assert renamed["output_level_warning_threshold_db"] == 4.0
             assert renamed["input_device"] == "Capture 2"
             assert renamed["output_device"] is None
 

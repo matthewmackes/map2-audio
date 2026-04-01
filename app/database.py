@@ -276,6 +276,8 @@ def _ensure_snapshot_device_schema_sync() -> None:
         _add_sqlite_column_if_missing(conn, "snapshots", "controls_payload", "JSON")
         _add_sqlite_column_if_missing(conn, "snapshots", "live_state_payload", "JSON")
         _add_sqlite_column_if_missing(conn, "snapshots", "activated_at", "DATETIME")
+        _add_sqlite_column_if_missing(conn, "snapshots", "output_level_reference_dbfs", "FLOAT")
+        _add_sqlite_column_if_missing(conn, "snapshots", "output_level_warning_threshold_db", "FLOAT DEFAULT 3.0")
         conn.execute(
             text(
                 "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
@@ -401,6 +403,8 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "controls_payload", "JSON")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "live_state_payload", "JSON")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "activated_at", "DATETIME")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_level_reference_dbfs", "FLOAT")
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_level_warning_threshold_db", "FLOAT DEFAULT 3.0")
     await conn.execute(
         text(
             "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
@@ -838,6 +842,8 @@ class Snapshot(Base):
     controls_payload = Column(JSON, default=dict)
     live_state_payload = Column(JSON, default=dict)
     activated_at = Column(DateTime, nullable=True)
+    output_level_reference_dbfs = Column(Float, nullable=True)
+    output_level_warning_threshold_db = Column(Float, default=3.0)
 
     community_uuid = Column(String(64), nullable=True, unique=True, index=True)
     community_shared = Column(Boolean, default=False)

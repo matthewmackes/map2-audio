@@ -40,6 +40,8 @@ export interface SnapshotCreateRequest {
   tags?: string[]
   program_number?: number | null
   derived_from_snapshot_id?: number | null
+  output_level_reference_dbfs?: number | null
+  output_level_warning_threshold_db?: number
   input_device?: string | null
   output_device?: string | null
   io_bindings?: SnapshotIOBindings
@@ -57,6 +59,8 @@ export interface SnapshotUpdateRequest {
   tags?: string[]
   program_number?: number | null
   derived_from_snapshot_id?: number | null
+  output_level_reference_dbfs?: number | null
+  output_level_warning_threshold_db?: number | null
   input_device?: string | null
   output_device?: string | null
   io_bindings?: SnapshotIOBindings

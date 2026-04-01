@@ -67,6 +67,8 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
             routes.SnapshotCreateRequest(
                 name="Route Snapshot",
                 description="Created through route",
+                output_level_reference_dbfs=-14.0,
+                output_level_warning_threshold_db=2.0,
                 io_bindings=routes.SnapshotIOBindingsInput(
                     input_device="Route In",
                     output_device="Route Out",
@@ -106,12 +108,16 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert listed["snapshots"][0]["name"] == "Route Snapshot"
         assert listed["snapshots"][0]["input_device"] == "Route In"
         assert listed["snapshots"][0]["output_device"] == "Route Out"
+        assert listed["snapshots"][0]["output_level_reference_dbfs"] == -14.0
+        assert listed["snapshots"][0]["output_level_warning_threshold_db"] == 2.0
         assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
 
         fetched = await routes.get_snapshot(snapshot_id)
         assert fetched["channels"][0]["label"] == "A"
         assert fetched["input_device"] == "Route In"
         assert fetched["output_device"] == "Route Out"
+        assert fetched["output_level_reference_dbfs"] == -14.0
+        assert fetched["output_level_warning_threshold_db"] == 2.0
         assert fetched["paths"][0]["id"] == "path-a"
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
         assert fetched["session_notes"] == []
@@ -131,9 +137,13 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         patched = await routes.update_snapshot(
             snapshot_id,
             routes.SnapshotUpdateRequest(
+                output_level_reference_dbfs=-10.0,
+                output_level_warning_threshold_db=3.5,
                 io_bindings=routes.SnapshotIOBindingsInput(input_device="Route In 2", output_device=None),
             ),
         )
+        assert patched["snapshot"]["output_level_reference_dbfs"] == -10.0
+        assert patched["snapshot"]["output_level_warning_threshold_db"] == 3.5
         assert patched["snapshot"]["input_device"] == "Route In 2"
         assert patched["snapshot"]["output_device"] is None
 

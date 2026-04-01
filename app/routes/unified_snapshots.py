@@ -101,6 +101,8 @@ class SnapshotCreateRequest(BaseModel):
     tags: list[str] = Field(default_factory=list)
     program_number: Optional[int] = None
     derived_from_snapshot_id: Optional[int] = None
+    output_level_reference_dbfs: Optional[float] = None
+    output_level_warning_threshold_db: Optional[float] = 3.0
     input_device: Optional[str] = None
     output_device: Optional[str] = None
     io_bindings: Optional[SnapshotIOBindingsInput] = None
@@ -119,6 +121,8 @@ class SnapshotUpdateRequest(BaseModel):
     tags: Optional[list[str]] = None
     program_number: Optional[int] = None
     derived_from_snapshot_id: Optional[int] = None
+    output_level_reference_dbfs: Optional[float] = None
+    output_level_warning_threshold_db: Optional[float] = None
     input_device: Optional[str] = None
     output_device: Optional[str] = None
     io_bindings: Optional[SnapshotIOBindingsInput] = None
@@ -507,6 +511,8 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
                 tags=request.tags,
                 program_number=request.program_number,
                 derived_from_snapshot_id=request.derived_from_snapshot_id,
+                output_level_reference_dbfs=request.output_level_reference_dbfs,
+                output_level_warning_threshold_db=request.output_level_warning_threshold_db,
                 input_device=_resolve_input_device(request),
                 output_device=_resolve_output_device(request),
                 controls_payload=_controls_payload_from_request(request),
@@ -539,6 +545,8 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 tags=request.tags if "tags" in provided else UNSET,
                 program_number=request.program_number if "program_number" in provided else UNSET,
                 derived_from_snapshot_id=request.derived_from_snapshot_id if "derived_from_snapshot_id" in provided else UNSET,
+                output_level_reference_dbfs=request.output_level_reference_dbfs if "output_level_reference_dbfs" in provided else UNSET,
+                output_level_warning_threshold_db=request.output_level_warning_threshold_db if "output_level_warning_threshold_db" in provided else UNSET,
                 input_device=_resolve_input_device(request) if "input_device" in provided or "io_bindings" in provided else UNSET,
                 output_device=_resolve_output_device(request) if "output_device" in provided or "io_bindings" in provided else UNSET,
                 controls_payload=_controls_payload_from_request(request) if "controls" in provided else UNSET,
