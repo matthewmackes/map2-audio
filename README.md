@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**934** Python | **1029** TypeScript | **131** C++/H | **129** Docs | **1172** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1029** TypeScript | **131** C++/H | **129** Docs | **1174** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fa7937ef`](https://github.com/matthewmackes/map2-audio/commit/fa7937ef0683bca99fabceabbdaea44e4830c67b) | Move launcher organizer into Theme workspace | Map2 Audio | 2026-04-01 |
+| [`581a4157`](https://github.com/matthewmackes/map2-audio/commit/581a41572ebac495c6335d28473b16248e046249) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`d4d518ae`](https://github.com/matthewmackes/map2-audio/commit/d4d518ae5a05685811d3ab06dd34674dd8da9b49) | Add platform launchers, snapshot history, and Maschine su... | Map2 Audio | 2026-04-01 |
 | [`b3d36637`](https://github.com/matthewmackes/map2-audio/commit/b3d36637db513b86a8aa94f585c2de2cfb14764e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`b6496880`](https://github.com/matthewmackes/map2-audio/commit/b649688033f275d313f7ce3daeb10ec960f8023e) | Add Maschine MK1 integration coverage | Map2 Audio | 2026-04-01 |
 | [`a0c3722c`](https://github.com/matthewmackes/map2-audio/commit/a0c3722c59746d0cde2f218d7bb6806362a04be2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`94f12cb8`](https://github.com/matthewmackes/map2-audio/commit/94f12cb8c31300aeffa49b850d133358b29f605d) | Add Maschine summary card to MIDI Hub | Map2 Audio | 2026-04-01 |
 | [`5ca11432`](https://github.com/matthewmackes/map2-audio/commit/5ca11432d5df2c8f1154b4a8f2a67165110b3b30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`cbc99d1f`](https://github.com/matthewmackes/map2-audio/commit/cbc99d1fb186222cb18a54e7241f9b0947060e47) | Add Maschine MK1 control page | Map2 Audio | 2026-04-01 |
-| [`37992afd`](https://github.com/matthewmackes/map2-audio/commit/37992afd4ebe52689762cb0ab0131482990c840d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
