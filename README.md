@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**916** Python | **1010** TypeScript | **131** C++/H | **129** Docs | **1128** total commits | **3** stars | **0** forks | **0** open issues
+**916** Python | **1010** TypeScript | **131** C++/H | **129** Docs | **1130** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`be06a0e5`](https://github.com/matthewmackes/map2-audio/commit/be06a0e5b37f1b55ad0bc8a0e2112ed651290ed3) | Add flow clip indicators | Map2 Audio | 2026-04-01 |
+| [`9d66dfee`](https://github.com/matthewmackes/map2-audio/commit/9d66dfeee38c46f686fa3128f8d83566db63cd3b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`1c4af003`](https://github.com/matthewmackes/map2-audio/commit/1c4af003535e6a3402d0255cca111d6d18b686aa) | Add snapshot session notes | Map2 Audio | 2026-04-01 |
 | [`1ad24c31`](https://github.com/matthewmackes/map2-audio/commit/1ad24c318b94ca1fdc56589d868e29a069288e0f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`3b4994da`](https://github.com/matthewmackes/map2-audio/commit/3b4994dae5e7b6e699d93839785004951174bc9f) | Add Push drum-machine backend registry and contract | Map2 Audio | 2026-03-31 |
 | [`a42d51e4`](https://github.com/matthewmackes/map2-audio/commit/a42d51e40cdf39608ef5436b06a2188dfebd8fe0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-31 |
 | [`c9bb3b7d`](https://github.com/matthewmackes/map2-audio/commit/c9bb3b7d3855bf5f82f7bff04b046c6cbbf04c2b) | Publish Labs feature-card landing page | Map2 Audio | 2026-03-31 |
 | [`40642b24`](https://github.com/matthewmackes/map2-audio/commit/40642b242be009e5ffddd515462760a04b37fb7a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-31 |
-| [`4338d0db`](https://github.com/matthewmackes/map2-audio/commit/4338d0db88a5522a7ee1ca4b4a76ed5dc57d5fe7) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-31 |
-| [`954fe833`](https://github.com/matthewmackes/map2-audio/commit/954fe833683f11a74fa68f45fd182fd1e0898104) | Stabilize Push Surface refresh UX | Map2 Audio | 2026-03-31 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
