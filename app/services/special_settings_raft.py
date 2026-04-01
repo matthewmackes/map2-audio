@@ -9,6 +9,7 @@ have synchronized special settings.
 import logging
 import asyncio
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -17,12 +18,18 @@ from app.services.special_settings_normalization import (
     DEFAULT_LANDING_TILES,
     DEFAULT_MENU_LOCATION,
     DEFAULT_PINNED_ROUTES,
+    DEFAULT_SNAPSHOT_SETLIST_MODE,
+    DEFAULT_SNAPSHOT_SETLIST_ORDER,
     normalize_landing_tiles,
     normalize_last_active_node,
     normalize_menu_location,
     normalize_pinned_routes,
+    normalize_snapshot_setlist_mode,
+    normalize_snapshot_setlist_order,
     resolve_landing_tiles_from_settings,
     resolve_pinned_routes_from_settings,
+    resolve_snapshot_setlist_mode_from_settings,
+    resolve_snapshot_setlist_order_from_settings,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +40,10 @@ _resolve_pinned_routes = resolve_pinned_routes_from_settings
 _resolve_landing_tiles = resolve_landing_tiles_from_settings
 _normalize_last_active_node = normalize_last_active_node
 _normalize_menu_location = normalize_menu_location
+_normalize_snapshot_setlist_mode = normalize_snapshot_setlist_mode
+_normalize_snapshot_setlist_order = normalize_snapshot_setlist_order
+_resolve_snapshot_setlist_mode = resolve_snapshot_setlist_mode_from_settings
+_resolve_snapshot_setlist_order = resolve_snapshot_setlist_order_from_settings
 
 
 class SpecialSettingsStateManager:
@@ -77,6 +88,8 @@ class SpecialSettingsStateManager:
                         menu_location=DEFAULT_MENU_LOCATION,
                         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
                         landing_tiles=DEFAULT_LANDING_TILES.copy(),
+                        snapshot_setlist_mode=DEFAULT_SNAPSHOT_SETLIST_MODE,
+                        snapshot_setlist_order=DEFAULT_SNAPSHOT_SETLIST_ORDER.copy(),
                         last_active_node=None,
                         version=1
                     )
@@ -98,6 +111,12 @@ class SpecialSettingsStateManager:
                 settings.landing_tiles = _normalize_landing_tiles(
                     entry_data.get("landing_tiles", _resolve_landing_tiles(settings))
                 )
+                settings.snapshot_setlist_mode = _normalize_snapshot_setlist_mode(
+                    entry_data.get("snapshot_setlist_mode", _resolve_snapshot_setlist_mode(settings))
+                )
+                settings.snapshot_setlist_order = _normalize_snapshot_setlist_order(
+                    entry_data.get("snapshot_setlist_order", _resolve_snapshot_setlist_order(settings))
+                )
                 settings.last_active_node = _normalize_last_active_node(
                     entry_data.get("last_active_node")
                 )
@@ -113,6 +132,8 @@ class SpecialSettingsStateManager:
                     f"location={settings.menu_location}, "
                     f"pinned={len(settings.pinned_routes or [])}, "
                     f"landing_tiles={len(settings.landing_tiles or [])}, "
+                    f"snapshot_setlist_mode={settings.snapshot_setlist_mode}, "
+                    f"snapshot_setlist_order={len(settings.snapshot_setlist_order or [])}, "
                     f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
@@ -140,6 +161,8 @@ class SpecialSettingsStateManager:
                     "menu_location": _normalize_menu_location(settings.menu_location),
                     "pinned_routes": _resolve_pinned_routes(settings),
                     "landing_tiles": _resolve_landing_tiles(settings),
+                    "snapshot_setlist_mode": _resolve_snapshot_setlist_mode(settings),
+                    "snapshot_setlist_order": _resolve_snapshot_setlist_order(settings),
                     "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
@@ -158,6 +181,8 @@ async def replicate_special_settings_to_raft(
     menu_location: str,
     pinned_routes: list,
     landing_tiles: list,
+    snapshot_setlist_mode: bool,
+    snapshot_setlist_order: list,
     last_active_node,
     node_id: str
 ) -> int:
@@ -187,6 +212,8 @@ async def replicate_special_settings_to_raft(
             "menu_location": _normalize_menu_location(menu_location),
             "pinned_routes": _normalize_pinned_routes(pinned_routes),
             "landing_tiles": _normalize_landing_tiles(landing_tiles),
+            "snapshot_setlist_mode": _normalize_snapshot_setlist_mode(snapshot_setlist_mode),
+            "snapshot_setlist_order": _normalize_snapshot_setlist_order(snapshot_setlist_order),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
             "timestamp": datetime.utcnow().isoformat(),
@@ -205,6 +232,8 @@ async def replicate_special_settings_to_raft(
             f"enabled={enabled}, hidden={len(hidden_plugins)}, "
             f"location={entry_data['menu_location']}, pinned={len(entry_data['pinned_routes'])}, "
             f"landing_tiles={len(entry_data['landing_tiles'])}, "
+            f"snapshot_setlist_mode={entry_data['snapshot_setlist_mode']}, "
+            f"snapshot_setlist_order={len(entry_data['snapshot_setlist_order'])}, "
             f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         

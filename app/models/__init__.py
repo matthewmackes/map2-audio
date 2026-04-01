@@ -78,6 +78,8 @@ class SpecialSettingsResponse(BaseModel):
     menu_location: str = "hidden"
     pinned_routes: List[str] = Field(default_factory=list)
     landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
+    snapshot_setlist_mode: bool = False
+    snapshot_setlist_order: List[int] = Field(default_factory=list)
     last_active_node: Optional[str] = None
     version: int = 1
     last_updated: Optional[str] = None
@@ -102,6 +104,8 @@ class SpecialSettingsUpdateRequest(BaseModel):
     menu_location: str
     pinned_routes: List[str] = Field(default_factory=list)
     landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
+    snapshot_setlist_mode: bool = False
+    snapshot_setlist_order: List[int] = Field(default_factory=list)
     last_active_node: Optional[str] = None
 
     @model_validator(mode="before")

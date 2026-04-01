@@ -25,6 +25,8 @@ export interface SpecialSettings {
   menuLocation: 'mobile-only' | 'hidden'
   pinnedRoutes: string[]
   landingTiles: LandingTilePlacement[]
+  snapshotSetlistMode: boolean
+  snapshotSetlistOrder: number[]
   lastActiveNode?: string | null
   version?: number
   lastUpdated?: string
@@ -64,6 +66,31 @@ function resolveLandingTiles(data: Record<string, unknown>): LandingTilePlacemen
   return []
 }
 
+function resolveSnapshotSetlistMode(data: Record<string, unknown>): boolean {
+  return Boolean(data.snapshot_setlist_mode)
+}
+
+function resolveSnapshotSetlistOrder(data: Record<string, unknown>): number[] {
+  const rawOrder = data.snapshot_setlist_order
+  if (!Array.isArray(rawOrder)) {
+    return []
+  }
+
+  const normalized: number[] = []
+  const seen = new Set<number>()
+
+  rawOrder.forEach((value) => {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || seen.has(value)) {
+      return
+    }
+
+    seen.add(value)
+    normalized.push(value)
+  })
+
+  return normalized
+}
+
 function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
   return {
     enabled: Boolean(data.enabled),
@@ -73,6 +100,8 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
     menuLocation: data.menu_location === 'mobile-only' ? 'mobile-only' : 'hidden',
     pinnedRoutes: resolvePinnedRoutes(data),
     landingTiles: resolveLandingTiles(data),
+    snapshotSetlistMode: resolveSnapshotSetlistMode(data),
+    snapshotSetlistOrder: resolveSnapshotSetlistOrder(data),
     lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
     version: typeof data.version === 'number' ? data.version : undefined,
     lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
@@ -90,6 +119,8 @@ function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettin
     menu_location: newSettings.menuLocation ?? currentSettings?.menuLocation ?? 'hidden',
     pinned_routes: pinnedRoutes,
     landing_tiles: landingTiles,
+    snapshot_setlist_mode: newSettings.snapshotSetlistMode ?? currentSettings?.snapshotSetlistMode ?? false,
+    snapshot_setlist_order: newSettings.snapshotSetlistOrder ?? currentSettings?.snapshotSetlistOrder ?? [],
     promoted_advanced_routes: pinnedRoutes,
     last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,
   }

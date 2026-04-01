@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Add, ChevronRight, Draggable, Renew } from '@carbon/icons-react'
+import { Add, ChevronDown, ChevronRight, ChevronUp, Draggable, Renew } from '@carbon/icons-react'
 import {
   Button,
   InlineLoading,
@@ -15,6 +15,12 @@ import {
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
+import { useSpecialSettings } from '../../hooks/useSpecialSettings'
+import {
+  buildSnapshotSetlistOrder,
+  moveSnapshotInSetlist,
+  sortFavoriteSnapshotsForSetlist,
+} from '../../utils/snapshotSetlist'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotSummary } from '../../../map2/types'
 import {
   buildSnapshotComparisonSummary,
@@ -66,6 +72,7 @@ export function SnapshotModalContent({
 }: SnapshotModalContentProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
   const safeTab = activeTab === 'library' ? activeTab : 'library'
   const handleTabChange = useCallback((nextTab: string) => {
     onTabChange?.(nextTab)
@@ -115,9 +122,17 @@ export function SnapshotModalContent({
     () => savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active) ?? null,
     [activeSnapshotId, savedSnapshots],
   )
-  const favoriteSnapshots = useMemo(
+  const rawFavoriteSnapshots = useMemo(
     () => savedSnapshots.filter((snapshot) => snapshot.is_favorite),
     [savedSnapshots],
+  )
+  const favoriteSetlistOrder = useMemo(
+    () => buildSnapshotSetlistOrder(rawFavoriteSnapshots, specialSettings?.snapshotSetlistOrder),
+    [rawFavoriteSnapshots, specialSettings?.snapshotSetlistOrder],
+  )
+  const favoriteSnapshots = useMemo(
+    () => sortFavoriteSnapshotsForSetlist(rawFavoriteSnapshots, favoriteSetlistOrder),
+    [favoriteSetlistOrder, rawFavoriteSnapshots],
   )
   const librarySnapshots = useMemo(
     () => savedSnapshots.filter((snapshot) => !snapshot.is_favorite),
@@ -423,12 +438,50 @@ export function SnapshotModalContent({
     setFlowSnapshotProgramMutation.mutate({ id: snapshot.id, programNumber: null })
   }, [setFlowSnapshotProgramMutation])
 
-  const handleSnapshotFavoriteToggle = useCallback((snapshot: SnapshotSummary) => {
-    updateFlowSnapshotMutation.mutate({
-      id: snapshot.id,
-      updates: { is_favorite: !snapshot.is_favorite },
-    })
-  }, [updateFlowSnapshotMutation])
+  const persistSnapshotSetlistOrder = useCallback(async (nextOrder: number[]) => {
+    setSnapshotSetlistPending(true)
+    try {
+      await updateSpecialSettings({ snapshotSetlistOrder: nextOrder })
+    } finally {
+      setSnapshotSetlistPending(false)
+    }
+  }, [updateSpecialSettings])
+
+  const handleSnapshotFavoriteToggle = useCallback(async (snapshot: SnapshotSummary) => {
+    try {
+      await updateFlowSnapshotMutation.mutateAsync({
+        id: snapshot.id,
+        updates: { is_favorite: !snapshot.is_favorite },
+      })
+    } catch {
+      return
+    }
+
+    try {
+      if (snapshot.is_favorite) {
+        await persistSnapshotSetlistOrder(favoriteSetlistOrder.filter((snapshotId) => snapshotId !== snapshot.id))
+        return
+      }
+
+      await persistSnapshotSetlistOrder([...favoriteSetlistOrder, snapshot.id])
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Failed to update gig setlist order', 'error')
+    }
+  }, [favoriteSetlistOrder, persistSnapshotSetlistOrder, pushToast, updateFlowSnapshotMutation])
+
+  const handleSnapshotSetlistMove = useCallback(async (snapshotId: number, direction: 'earlier' | 'later') => {
+    const nextOrder = moveSnapshotInSetlist(favoriteSetlistOrder, snapshotId, direction)
+    if (!nextOrder) {
+      return
+    }
+
+    try {
+      await persistSnapshotSetlistOrder(nextOrder)
+      pushToast('Gig setlist order updated', 'success')
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Failed to update gig setlist order', 'error')
+    }
+  }, [favoriteSetlistOrder, persistSnapshotSetlistOrder, pushToast])
 
   const handleSnapshotDuplicate = useCallback((snapshot: SnapshotSummary) => {
     duplicateFlowSnapshotMutation.mutate(snapshot.id)
@@ -618,6 +671,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
   }, [draggedSnapshotId, savedSnapshots, handleSnapshotDragEnd, reorderFlowSnapshotsMutation])
 
   const [showImportDialog, setShowImportDialog] = useState(false)
+  const [snapshotSetlistPending, setSnapshotSetlistPending] = useState(false)
   const isLoading = snapshotsQuery.isLoading
   const activeSnapshotDisplayName = activeSnapshot?.name || 'Live Workspace'
   const activeSnapshotDisplayNumber = activeSnapshot ? String(activeSnapshot.id).padStart(2, '0') : 'LIVE'
@@ -891,6 +945,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                                 {isActiveSnapshot && <Tag type="blue">Active</Tag>}
                                 {isActiveSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
                                 <Tag type="cool-gray">Favorite</Tag>
+                                <Tag type="green">Set {index + 1}</Tag>
                                 {snapshot.program_number !== null && <Tag type="purple">PC {snapshot.program_number}</Tag>}
                               </div>
                             </div>
@@ -919,6 +974,28 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                           </div>
 
                           <div className="juce-grid-page__snapshot-actions" onClick={(event) => event.stopPropagation()}>
+                            <div className="juce-grid-page__snapshot-setlist-actions" role="group" aria-label={`Gig order controls for ${snapshot.name}`}>
+                              <Button
+                                hasIconOnly
+                                size="sm"
+                                kind="ghost"
+                                renderIcon={ChevronUp}
+                                iconDescription={`Move ${snapshot.name} earlier in the gig setlist`}
+                                aria-label={`Move ${snapshot.name} earlier in the gig setlist`}
+                                onClick={() => { void handleSnapshotSetlistMove(snapshot.id, 'earlier') }}
+                                disabled={snapshotSetlistPending || index === 0}
+                              />
+                              <Button
+                                hasIconOnly
+                                size="sm"
+                                kind="ghost"
+                                renderIcon={ChevronDown}
+                                iconDescription={`Move ${snapshot.name} later in the gig setlist`}
+                                aria-label={`Move ${snapshot.name} later in the gig setlist`}
+                                onClick={() => { void handleSnapshotSetlistMove(snapshot.id, 'later') }}
+                                disabled={snapshotSetlistPending || index === favoriteSnapshots.length - 1}
+                              />
+                            </div>
                             <Button
                               size="sm"
                               kind="primary"
@@ -949,7 +1026,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                             <Button
                               size="sm"
                               kind="secondary"
-                              onClick={() => handleSnapshotFavoriteToggle(snapshot)}
+                              onClick={() => { void handleSnapshotFavoriteToggle(snapshot) }}
                             >
                               Favorited
                             </Button>
@@ -1105,7 +1182,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                                   {momentarySnapshotId === snapshot.id ? 'Previewing...' : 'Hold to preview'}
                                 </Button>
                               )}
-                              <Button size="sm" kind="ghost" onClick={() => handleSnapshotFavoriteToggle(snapshot)}>
+                              <Button size="sm" kind="ghost" onClick={() => { void handleSnapshotFavoriteToggle(snapshot) }}>
                                 Favorite
                               </Button>
                               <OverflowMenu

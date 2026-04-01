@@ -869,8 +869,8 @@ export function SnapshotEditorPage() {
     navigate(`/platforms/about?${params.toString()}`)
   }, [navigate])
 
-  // Special settings for plugin filtering
-  const { settings: specialSettings } = useSpecialSettings()
+  // Special settings for plugin filtering and snapshot editor setlist mode
+  const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
 
   // Category Filtering State
   const [selectedCategory, setSelectedCategory] = useState<string>(() => {
@@ -900,6 +900,7 @@ export function SnapshotEditorPage() {
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
+  const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
@@ -4024,12 +4025,28 @@ export function SnapshotEditorPage() {
   const snapshotWorkspaceTitle = snapshotCount > 0
     ? `${snapshotCountLabel} saved snapshots`
     : 'Open snapshots workspace'
+  const snapshotSetlistMode = specialSettings?.snapshotSetlistMode ?? false
+  const snapshotSetlistModeTitle = snapshotSetlistMode
+    ? 'Setlist mode is active: snapshot stepping follows starred snapshots in gig order.'
+    : 'Program mode is active: snapshot stepping follows all snapshots by MIDI program number.'
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return false
     }
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
+
+  const toggleSnapshotSetlistMode = useCallback(async () => {
+    setSnapshotSetlistModePending(true)
+    try {
+      await updateSpecialSettings({ snapshotSetlistMode: !snapshotSetlistMode })
+      pushToast(snapshotSetlistMode ? 'Setlist mode disabled' : 'Setlist mode enabled', 'success')
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Failed to update setlist mode', 'error')
+    } finally {
+      setSnapshotSetlistModePending(false)
+    }
+  }, [pushToast, snapshotSetlistMode, updateSpecialSettings])
 
   const renderSnapshotsToolbar = () => (
     <div className={`snapshot-toolbar ${snapshotsDirty ? 'is-dirty' : ''}`} role="toolbar" aria-label="Snapshots toolbar">
@@ -4102,6 +4119,17 @@ export function SnapshotEditorPage() {
                 : 'Favorite'}
           </Button>
         ) : null}
+        <Button
+          size="sm"
+          kind={snapshotSetlistMode ? 'secondary' : 'ghost'}
+          className="snapshot-toolbar__button snapshot-toolbar__button--setlist"
+          aria-pressed={snapshotSetlistMode}
+          onClick={() => { void toggleSnapshotSetlistMode() }}
+          disabled={snapshotSetlistModePending}
+          title={snapshotSetlistModeTitle}
+        >
+          {snapshotSetlistModePending ? 'Saving…' : 'Setlist'}
+        </Button>
         <Button
           size="sm"
           kind="secondary"
@@ -5933,6 +5961,17 @@ export function SnapshotEditorPage() {
                 disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
               >
                 {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
+              </Button>
+              <Button
+                size="md"
+                kind={snapshotSetlistMode ? 'secondary' : 'ghost'}
+                className="juce-grid-page__tablet-launcher-utility"
+                aria-pressed={snapshotSetlistMode}
+                onClick={() => { void toggleSnapshotSetlistMode() }}
+                disabled={snapshotSetlistModePending}
+                title={snapshotSetlistModeTitle}
+              >
+                {snapshotSetlistModePending ? 'Saving…' : 'Setlist'}
               </Button>
               {renderTabletLoadButton()}
             </div>

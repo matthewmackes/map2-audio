@@ -7,6 +7,8 @@ from typing import Optional
 DEFAULT_PINNED_ROUTES: list[str] = []
 DEFAULT_LANDING_TILES: list[dict[str, str]] = []
 DEFAULT_MENU_LOCATION = "hidden"
+DEFAULT_SNAPSHOT_SETLIST_MODE = False
+DEFAULT_SNAPSHOT_SETLIST_ORDER: list[int] = []
 LANDING_TILE_SIZES = {"small", "medium", "large"}
 
 
@@ -81,6 +83,55 @@ def resolve_pinned_routes_from_settings(settings) -> list[str]:
 
 def resolve_landing_tiles_from_settings(settings) -> list[dict[str, str]]:
     return normalize_landing_tiles(getattr(settings, "landing_tiles", DEFAULT_LANDING_TILES))
+
+
+def normalize_snapshot_setlist_mode(enabled: object) -> bool:
+    return bool(enabled)
+
+
+def normalize_snapshot_setlist_order(order: Optional[list]) -> list[int]:
+    if not order:
+        return []
+
+    normalized: list[int] = []
+    seen: set[int] = set()
+
+    for raw_snapshot_id in order:
+        if isinstance(raw_snapshot_id, bool):
+            continue
+
+        if isinstance(raw_snapshot_id, int):
+            snapshot_id = raw_snapshot_id
+        elif isinstance(raw_snapshot_id, str):
+            raw_value = raw_snapshot_id.strip()
+            if not raw_value:
+                continue
+            try:
+                snapshot_id = int(raw_value, 10)
+            except ValueError:
+                continue
+        else:
+            continue
+
+        if snapshot_id < 1 or snapshot_id in seen:
+            continue
+
+        seen.add(snapshot_id)
+        normalized.append(snapshot_id)
+
+    return normalized
+
+
+def resolve_snapshot_setlist_mode_from_settings(settings) -> bool:
+    return normalize_snapshot_setlist_mode(
+        getattr(settings, "snapshot_setlist_mode", DEFAULT_SNAPSHOT_SETLIST_MODE)
+    )
+
+
+def resolve_snapshot_setlist_order_from_settings(settings) -> list[int]:
+    return normalize_snapshot_setlist_order(
+        getattr(settings, "snapshot_setlist_order", DEFAULT_SNAPSHOT_SETLIST_ORDER)
+    )
 
 
 def normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:

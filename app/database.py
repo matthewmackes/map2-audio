@@ -169,6 +169,10 @@ def _special_settings_default_landing_tiles_json() -> str:
     return "[]"
 
 
+def _special_settings_default_snapshot_setlist_order_json() -> str:
+    return "[]"
+
+
 def _ensure_special_settings_schema_sync() -> None:
     """Apply additive schema upgrades for special_settings in existing SQLite DBs."""
     if _engine is None or _engine.dialect.name != "sqlite":
@@ -215,6 +219,29 @@ def _ensure_special_settings_schema_sync() -> None:
                 {"tiles": _special_settings_default_landing_tiles_json()},
             )
             logger.info("Added special_settings.landing_tiles schema upgrade")
+
+        if columns and "snapshot_setlist_mode" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_setlist_mode BOOLEAN"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_setlist_mode = 0 "
+                    "WHERE snapshot_setlist_mode IS NULL"
+                )
+            )
+            logger.info("Added special_settings.snapshot_setlist_mode schema upgrade")
+
+        if columns and "snapshot_setlist_order" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_setlist_order JSON"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_setlist_order = :setlist_order "
+                    "WHERE snapshot_setlist_order IS NULL"
+                ),
+                {"setlist_order": _special_settings_default_snapshot_setlist_order_json()},
+            )
+            logger.info("Added special_settings.snapshot_setlist_order schema upgrade")
 
 
 def _sqlite_columns(conn, table_name: str) -> set[str]:
@@ -391,6 +418,29 @@ async def _ensure_special_settings_schema_async(conn) -> None:
             {"tiles": _special_settings_default_landing_tiles_json()},
         )
         logger.info("Added async special_settings.landing_tiles schema upgrade")
+
+    if columns and "snapshot_setlist_mode" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_setlist_mode BOOLEAN"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_setlist_mode = 0 "
+                "WHERE snapshot_setlist_mode IS NULL"
+            )
+        )
+        logger.info("Added async special_settings.snapshot_setlist_mode schema upgrade")
+
+    if columns and "snapshot_setlist_order" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_setlist_order JSON"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_setlist_order = :setlist_order "
+                "WHERE snapshot_setlist_order IS NULL"
+            ),
+            {"setlist_order": _special_settings_default_snapshot_setlist_order_json()},
+        )
+        logger.info("Added async special_settings.snapshot_setlist_order schema upgrade")
 
 
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
@@ -2061,6 +2111,8 @@ class SpecialSettings(Base):
     menu_location = Column(String(20), default="hidden")  # "hidden" | "mobile-only" (legacy "top-nav" coerced to hidden)
     pinned_routes = Column(JSON, default=list)
     landing_tiles = Column(JSON, default=list)
+    snapshot_setlist_mode = Column(Boolean, nullable=False, default=False)
+    snapshot_setlist_order = Column(JSON, default=list)
     last_active_node = Column(String(128), nullable=True)
     
     # Cluster replication metadata

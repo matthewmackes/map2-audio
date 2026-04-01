@@ -4366,6 +4366,23 @@
   justify-content: space-between;
 }
 
+.juce-grid-page__snapshot-setlist-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cds-layer-hover, rgba(255, 255, 255, 0.03)) 72%, transparent);
+}
+
+.juce-grid-page__snapshot-setlist-actions .cds--btn--icon-only.cds--btn--sm {
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
+}
+
 .juce-grid-page__browser-accordion .cds--accordion__content {
   padding-right: 0;
 }

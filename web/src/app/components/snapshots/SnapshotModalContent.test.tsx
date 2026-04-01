@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockPushToast = jest.fn()
@@ -7,9 +7,30 @@ const mockSnapshotsList = jest.fn()
 const mockSnapshotsCreate = jest.fn()
 const mockSnapshotsActivate = jest.fn()
 const mockGetDevices = jest.fn()
+const mockUpdateSpecialSettings = jest.fn()
+let mockSpecialSettings = {
+  enabled: false,
+  hiddenPlugins: [],
+  menuLocation: 'hidden' as const,
+  pinnedRoutes: [],
+  landingTiles: [],
+  snapshotSetlistMode: false,
+  snapshotSetlistOrder: [] as number[],
+  lastActiveNode: null,
+}
 
 jest.mock('../Toasts', () => ({
   useToasts: () => ({ pushToast: mockPushToast }),
+}))
+
+jest.mock('../../hooks/useSpecialSettings', () => ({
+  useSpecialSettings: () => ({
+    settings: mockSpecialSettings,
+    isLoading: false,
+    error: null,
+    updateSettings: (...args: unknown[]) => mockUpdateSpecialSettings(...args),
+    reload: jest.fn(),
+  }),
 }))
 
 jest.mock('../../../map2/api', () => ({
@@ -82,6 +103,17 @@ function renderContent(props: Partial<React.ComponentProps<typeof SnapshotModalC
 describe('SnapshotModalContent', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockUpdateSpecialSettings.mockResolvedValue(undefined)
+    mockSpecialSettings = {
+      enabled: false,
+      hiddenPlugins: [],
+      menuLocation: 'hidden',
+      pinnedRoutes: [],
+      landingTiles: [],
+      snapshotSetlistMode: false,
+      snapshotSetlistOrder: [],
+      lastActiveNode: null,
+    }
 
     class ResizeObserverMock {
       observe() {}
@@ -164,10 +196,10 @@ describe('SnapshotModalContent', () => {
     mockSnapshotsActivate.mockResolvedValue({
       status: 'success',
       snapshot_id: 101,
-      name: 'Fresh Snapshot',
+      name: 'FreshSnapshot',
       snapshot_data: {
         id: 101,
-        name: 'Fresh Snapshot',
+        name: 'FreshSnapshot',
         description: '',
         tags: [],
         program_number: null,
@@ -181,8 +213,8 @@ describe('SnapshotModalContent', () => {
           { id: 12, snapshot_id: 101, channel_key: 'ch_b', label: 'B', color: '#22c55e', muted: false, solo: false, dry_wet_mix: 100, order_index: 1, chain_id: 202 },
         ],
         chains: [
-          { id: 201, name: 'Fresh Snapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
-          { id: 202, name: 'Fresh Snapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
+          { id: 201, name: 'FreshSnapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
+          { id: 202, name: 'FreshSnapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
         ],
         routing: {
           mode: 'series',
@@ -197,7 +229,7 @@ describe('SnapshotModalContent', () => {
         paths: [
           {
             id: 'ch_a',
-            name: 'Fresh Snapshot Path A',
+            name: 'FreshSnapshot Path A',
             label: 'A',
             color: '#2563eb',
             muted: false,
@@ -212,7 +244,7 @@ describe('SnapshotModalContent', () => {
           },
           {
             id: 'ch_b',
-            name: 'Fresh Snapshot Path B',
+            name: 'FreshSnapshot Path B',
             label: 'B',
             color: '#22c55e',
             muted: false,
@@ -247,7 +279,7 @@ describe('SnapshotModalContent', () => {
           runtime_chains: [
             {
               id: 301,
-              name: 'Fresh Snapshot Path A (A)',
+              name: 'FreshSnapshot Path A (A)',
               is_active: true,
               created_at: '2026-03-29T12:00:00Z',
               updated_at: '2026-03-29T12:00:00Z',
@@ -258,7 +290,7 @@ describe('SnapshotModalContent', () => {
             },
             {
               id: 302,
-              name: 'Fresh Snapshot Path B (B)',
+              name: 'FreshSnapshot Path B (B)',
               is_active: true,
               created_at: '2026-03-29T12:00:00Z',
               updated_at: '2026-03-29T12:00:00Z',
@@ -288,7 +320,7 @@ describe('SnapshotModalContent', () => {
     const { applySnapshotData, onRecall, queryClient } = renderContent()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Create New' }))
-    fireEvent.change(await screen.findByLabelText('Snapshot name'), { target: { value: 'Fresh Snapshot' } })
+    fireEvent.change(await screen.findByLabelText('Snapshot name'), { target: { value: 'FreshSnapshot' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.click(screen.getByLabelText('Series'))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
@@ -300,7 +332,7 @@ describe('SnapshotModalContent', () => {
     await waitFor(() => expect(mockSnapshotsActivate).toHaveBeenCalledWith(101))
 
     expect(mockSnapshotsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'Fresh Snapshot',
+      name: 'FreshSnapshot',
       io_bindings: expect.objectContaining({
         input_device: 'Input Alpha',
         output_device: 'Output Beta',
@@ -320,11 +352,11 @@ describe('SnapshotModalContent', () => {
       chains: [
         expect.objectContaining({
           id: 1,
-          name: 'Fresh Snapshot Path A',
+          name: 'FreshSnapshot Path A',
         }),
         expect.objectContaining({
           id: 2,
-          name: 'Fresh Snapshot Path B',
+          name: 'FreshSnapshot Path B',
         }),
       ],
       routing: expect.objectContaining({
@@ -346,15 +378,15 @@ describe('SnapshotModalContent', () => {
     expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
       expect.objectContaining({
         id: 101,
-        name: 'Fresh Snapshot',
+        name: 'FreshSnapshot',
       }),
     )
     expect(queryClient.getQueryData(['chains'])).toEqual(
       expect.objectContaining({
         count: 2,
         chains: expect.arrayContaining([
-          expect.objectContaining({ id: 301, name: 'Fresh Snapshot Path A (A)' }),
-          expect.objectContaining({ id: 302, name: 'Fresh Snapshot Path B (B)' }),
+          expect.objectContaining({ id: 301, name: 'FreshSnapshot Path A (A)' }),
+          expect.objectContaining({ id: 302, name: 'FreshSnapshot Path B (B)' }),
         ]),
       }),
     )
@@ -528,5 +560,103 @@ describe('SnapshotModalContent', () => {
     const deleteButton = deleteAction.closest('button') as HTMLButtonElement | null
     expect(deleteButton).not.toBeNull()
     expect(deleteButton?.disabled).toBe(true)
+  })
+
+  it('orders favorites by the persisted gig setlist and saves up/down reorders', async () => {
+    mockSpecialSettings = {
+      ...mockSpecialSettings,
+      snapshotSetlistMode: true,
+      snapshotSetlistOrder: [7, 5],
+    }
+    mockSnapshotsList.mockResolvedValueOnce({
+      snapshots: [
+        {
+          id: 5,
+          name: 'Intro',
+          description: '',
+          tags: [],
+          program_number: 10,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: true,
+          display_order: 0,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+        {
+          id: 7,
+          name: 'Solo',
+          description: '',
+          tags: [],
+          program_number: 20,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: true,
+          display_order: 1,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+        {
+          id: 9,
+          name: 'Outro',
+          description: '',
+          tags: [],
+          program_number: 30,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: true,
+          display_order: 2,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+      ],
+      count: 3,
+      active_id: null,
+    })
+
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot Library/i }))
+
+    const favoritesHeader = await screen.findByText('Favorites')
+    const favoritesSection = favoritesHeader.closest('section')
+    expect(favoritesSection).not.toBeNull()
+
+    const orderedNames = within(favoritesSection as HTMLElement)
+      .getAllByText(/^(Solo|Intro|Outro)$/)
+      .map((element) => element.textContent)
+    expect(orderedNames).toEqual(['Solo', 'Intro', 'Outro'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move Intro later in the gig setlist' }))
+
+    await waitFor(() => expect(mockUpdateSpecialSettings).toHaveBeenCalledWith({
+      snapshotSetlistOrder: [7, 9, 5],
+    }))
+    expect(mockPushToast).toHaveBeenCalledWith('Gig setlist order updated', 'success')
   })
 })

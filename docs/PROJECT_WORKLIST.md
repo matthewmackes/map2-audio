@@ -640,7 +640,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T654
-Status: [ ] Todo
+Status: [✓] Done
 Title: Gig Setlist — Ordered Favorites List for Live Sequencing
 Description:
 - Goal / acceptance criteria: The existing snapshot favorites/star system (T622) is extended to support a manually-ordered sequence. Starred snapshots can be reordered within the favorites list by the player before a gig. During the show, the Prev/Next arrows (T624) and MIDI PC up/down step through the favorites list in the player's chosen order rather than by global program number. A "Setlist mode" toggle switches between "all snapshots ordered by program number" and "starred snapshots in gig order". The setlist order is persisted per-node in the database.
@@ -649,7 +649,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: ordered favorites list with drag-free button-based reordering (up/down arrows), setlist mode toggle in editor, Prev/Next respects setlist order when mode is active, persistence in database, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 16:45 - Codex
+- Completion notes:
+  - Extended per-node `special_settings` persistence with `snapshot_setlist_mode` and `snapshot_setlist_order`, including schema upgrades, API normalization, cluster/Raft replication, and hook contract updates so the editor can keep gig-order state outside the snapshot records themselves.
+  - Added a reusable snapshot-setlist ordering helper and updated the snapshot library favorites section to render starred snapshots in persisted gig order with explicit up/down controls, while still appending newly starred snapshots automatically.
+  - Added a Setlist toggle to the Snapshot Editor desktop and tablet action surfaces so the next prev/next navigation slice can switch cleanly between program order and starred gig order.
+- Validation: `pytest -q tests/test_special_settings_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/utils/snapshotSetlist.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T653
 Status: [ ] Todo

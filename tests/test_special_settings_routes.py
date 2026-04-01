@@ -49,6 +49,12 @@ def test_normalize_menu_location_hides_legacy_top_nav_values():
     assert special_settings._normalize_menu_location("unexpected") == "hidden"
 
 
+def test_normalize_snapshot_setlist_order_filters_invalid_values():
+    normalized = special_settings._normalize_snapshot_setlist_order([9, " 7 ", 0, -2, True, "bad", 9, 11])
+
+    assert normalized == [9, 7, 11]
+
+
 def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch):
     @asynccontextmanager
     async def _fake_session_ctx():
@@ -60,6 +66,8 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
         menu_location="top-nav",
         pinned_routes=None,
         landing_tiles=[{"route": "/labs", "size": "medium"}],
+        snapshot_setlist_mode=True,
+        snapshot_setlist_order=[12, "15", 12, 0],
         promoted_advanced_routes=["/welcome", "/grid"],
         last_active_node="node-b",
         version=3,
@@ -77,6 +85,8 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
 
     assert response.pinned_routes == ["/welcome", "/grid"]
     assert [tile.model_dump() for tile in response.landing_tiles] == [{"route": "/labs", "size": "medium"}]
+    assert response.snapshot_setlist_mode is True
+    assert response.snapshot_setlist_order == [12, 15]
     assert response.menu_location == "hidden"
     assert response.last_active_node == "node-b"
     assert response.version == 3
@@ -99,6 +109,8 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
         menu_location="hidden",
         pinned_routes=[],
         landing_tiles=[],
+        snapshot_setlist_mode=False,
+        snapshot_setlist_order=[],
         last_active_node=None,
         version=1,
         last_updated=datetime.now(timezone.utc),
@@ -125,6 +137,8 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
                     {"route": "/platforms/overview", "size": "medium"},
                     {"route": "/", "size": "large"},
                 ],
+                snapshot_setlist_mode=True,
+                snapshot_setlist_order=[5, "7", 5, 0],
                 last_active_node=" node-b ",
             )
         )
@@ -135,6 +149,8 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
         {"route": "/labs", "size": "large"},
         {"route": "/platforms/overview", "size": "medium"},
     ]
+    assert settings.snapshot_setlist_mode is True
+    assert settings.snapshot_setlist_order == [5, 7]
     assert settings.menu_location == "hidden"
     assert settings.last_active_node == "node-b"
     assert response.menu_location == "hidden"
@@ -143,6 +159,8 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
         {"route": "/labs", "size": "large"},
         {"route": "/platforms/overview", "size": "medium"},
     ]
+    assert response.snapshot_setlist_mode is True
+    assert response.snapshot_setlist_order == [5, 7]
     assert response.last_active_node == "node-b"
     assert response.enabled is True
 
