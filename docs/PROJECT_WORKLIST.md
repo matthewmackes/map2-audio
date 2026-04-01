@@ -27,6 +27,35 @@ Last updated: 2026-04-01 06:15 EDT - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx` -> PASS; `npm --prefix web run build` -> FAIL due unrelated existing frontend compile errors in `src/app/components/SnapshotEditor/snapshotEditorState.ts` (`SnapshotDetail.session_notes` missing) and `src/app/pages/SnapshotEditorPageContent.tsx` (`effectiveChainById` used before declaration).
 - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
+ID: T665
+Status: [ ] Todo
+Title: Repair Snapshot Editor build blocker — `effectiveChainById` initialization order
+Description:
+- Goal / acceptance criteria: Rework `web/src/app/pages/SnapshotEditorPageContent.tsx` so the flow clip effect no longer references `effectiveChainById` before its declaration, restoring `tsc -b` / production build success without changing runtime flow-clip behavior.
+- Why it matters: The current production build is blocked even though local typecheck passes, preventing clean frontend publish validation.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: adjusted derived-state/effect ordering in `SnapshotEditorPageContent.tsx`, focused validation evidence, and worklist notes.
+Subtasks: None
+Last updated: 2026-04-01 12:20 - Codex
+
+ID: T664
+Status: [✓] Done
+Title: Repair Snapshot Editor build blocker — include `session_notes` in detail hydration
+Description:
+- Goal / acceptance criteria: Update `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` so `snapshotEditorStateToDetail` satisfies the current `SnapshotDetail` contract by preserving `session_notes`, restoring `tsc -b` / production build success without regressing snapshot hydration behavior.
+- Why it matters: The current production build fails because the synthesized snapshot detail omits a required field introduced by session notes work.
+- Dependencies: T640
+- Estimated effort: Low
+- Required outputs: `session_notes` carried through the synthesized detail object, focused validation evidence, and worklist notes.
+Subtasks: None
+Last updated: 2026-04-01 12:24 - Codex
+- Completion notes:
+  - Updated `snapshotEditorStateToDetail` to preserve `session_notes` when synthesizing a `SnapshotDetail` from editor state, matching the post-T640 detail contract.
+  - Extended the existing round-trip editor-state test to assert `session_notes` are retained in the synthesized detail payload.
+  - Re-ran the frontend production build and confirmed the previous `SnapshotDetail.session_notes` contract error is resolved; the only remaining blocker is `T665`.
+- Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS; `npm --prefix web run build` -> FAIL only on remaining `T665` (`effectiveChainById` used before declaration).
+
 ID: T645
 Status: [✓] Done
 Title: Publish the Labs feature-card landing page and refresh the port 3000 web server

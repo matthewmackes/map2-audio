@@ -531,6 +531,7 @@ export function snapshotEditorStateToDetail(
     lineage: base?.lineage ?? {
       derived_from_snapshot_id: null,
     },
+    session_notes: base?.session_notes ?? [],
     active_channel_index: state.activeChannelIndex,
     channel_count: payload.channels.length,
     chain_count: payload.chains.length,
