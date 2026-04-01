@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**925** Python | **1014** TypeScript | **131** C++/H | **129** Docs | **1162** total commits | **3** stars | **0** forks | **0** open issues
+**927** Python | **1014** TypeScript | **131** C++/H | **129** Docs | **1164** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`207e4e63`](https://github.com/matthewmackes/map2-audio/commit/207e4e63a63a83953fe5bb2f6a3fb264c7639121) | Add Maschine LCD render service | Map2 Audio | 2026-04-01 |
+| [`10fc40ad`](https://github.com/matthewmackes/map2-audio/commit/10fc40adaea089b19f2c463b77e28d8108a37f3d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`d1c3831b`](https://github.com/matthewmackes/map2-audio/commit/d1c3831b9456347a689b27763a28c6022c6bf2d7) | Add transport owner service for Maschine | Map2 Audio | 2026-04-01 |
 | [`d9b06686`](https://github.com/matthewmackes/map2-audio/commit/d9b0668661ac24b6fcd0bbac44d8c63df5d83dc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`962262c8`](https://github.com/matthewmackes/map2-audio/commit/962262c8b2987235fe0956067ff101842a813196) | Add Maschine audio grid projection support | Map2 Audio | 2026-04-01 |
 | [`3dad08d7`](https://github.com/matthewmackes/map2-audio/commit/3dad08d7d680580db58fd14096dfe5bd621144a5) | Fix snapshot control defaults for Maschine encoder maps | Map2 Audio | 2026-04-01 |
 | [`03f0c8a3`](https://github.com/matthewmackes/map2-audio/commit/03f0c8a350e83b2bb2782089b8936a06976d47c1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`97e84c5a`](https://github.com/matthewmackes/map2-audio/commit/97e84c5a132d2e89e868d11b4253c703136144f1) | Persist Maschine encoder maps in snapshots | Map2 Audio | 2026-04-01 |
-| [`ab0d81c7`](https://github.com/matthewmackes/map2-audio/commit/ab0d81c72be8cf5c1f52f08acf52766be77099a7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`0fe622dc`](https://github.com/matthewmackes/map2-audio/commit/0fe622dc72a7f2c72fa70a9546842a7cf76ee596) | Add Maschine MK1 MIDI Hub profile | Map2 Audio | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
