@@ -193,6 +193,22 @@ function normalizeSnapshotPlugin(plugin: SnapshotPlugin): SnapshotPlugin {
   }
 }
 
+function defaultMaschineEncoderMap() {
+  return {
+    enc1: null,
+    enc2: null,
+    enc3: null,
+    enc4: null,
+    enc5: null,
+    enc6: null,
+    enc7: null,
+    enc8: null,
+    vol: { fixed: true, label: 'Master Gain' },
+    tempo: { fixed: true, label: 'MIDI Clock BPM' },
+    swing: { label: 'Swing' },
+  }
+}
+
 export function snapshotDetailToDraftData(detail: SnapshotDetail): SnapshotDraftData {
   const detailPaths = Array.isArray(detail.paths) ? detail.paths : []
   const paths = detailPaths.length > 0
@@ -344,6 +360,7 @@ export function flowSnapshotDataToSnapshotPayload(
       midi_map: [],
       automation_lanes: [],
       expression_mappings: [],
+      maschine_encoder_map: defaultMaschineEncoderMap(),
     },
   }
 }

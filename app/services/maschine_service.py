@@ -15,6 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Snapshot
+from app.services.maschine_encoder_map_service import (
+    default_maschine_encoder_map,
+    normalize_maschine_encoder_map,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,21 +35,6 @@ _DEFAULT_LCD_BITMAP = {
     "format": "xbm",
     "data": "",
 }
-_DEFAULT_ENCODER_MAP = {
-    "enc1": None,
-    "enc2": None,
-    "enc3": None,
-    "enc4": None,
-    "enc5": None,
-    "enc6": None,
-    "enc7": None,
-    "enc8": None,
-    "vol": {"fixed": True, "label": "Master Gain"},
-    "tempo": {"fixed": True, "label": "MIDI Clock BPM"},
-    "swing": {"label": "Swing"},
-}
-
-
 def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -99,7 +88,7 @@ class MaschineDaemonState:
 class MaschineService:
     def __init__(self) -> None:
         self._state = MaschineDaemonState()
-        self._encoder_map_fallback = copy.deepcopy(_DEFAULT_ENCODER_MAP)
+        self._encoder_map_fallback = default_maschine_encoder_map()
         self._clients: set[WebSocket] = set()
         self._lock = asyncio.Lock()
         self._hid_history: list[dict[str, Any]] = []
@@ -165,11 +154,11 @@ class MaschineService:
         payload = dict(snapshot.controls_payload or {})
         stored_map = payload.get("maschine_encoder_map")
         if isinstance(stored_map, dict):
-            return self._normalize_encoder_map(stored_map)
+            return normalize_maschine_encoder_map(stored_map)
         return copy.deepcopy(self._encoder_map_fallback)
 
     async def update_encoder_map(self, session: AsyncSession, encoder_map: dict[str, Any]) -> dict[str, Any]:
-        normalized = self._normalize_encoder_map(encoder_map)
+        normalized = normalize_maschine_encoder_map(encoder_map)
         snapshot = await self._get_active_snapshot(session)
         self._encoder_map_fallback = copy.deepcopy(normalized)
         if snapshot is not None:
@@ -343,21 +332,6 @@ class MaschineService:
             async with self._lock:
                 for websocket in stale_clients:
                     self._clients.discard(websocket)
-
-    @staticmethod
-    def _normalize_encoder_map(encoder_map: dict[str, Any]) -> dict[str, Any]:
-        normalized = copy.deepcopy(_DEFAULT_ENCODER_MAP)
-        for key, value in encoder_map.items():
-            if key not in normalized:
-                continue
-            if key in {"enc1", "vol", "tempo"}:
-                continue
-            if value is None:
-                normalized[key] = None
-                continue
-            if isinstance(value, dict):
-                normalized[key] = copy.deepcopy(value)
-        return normalized
 
     async def _get_active_snapshot(self, session: AsyncSession) -> Snapshot | None:
         result = await session.execute(

@@ -49,6 +49,11 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 output_level_warning_threshold_db=2.5,
                 input_device="Capture 1",
                 output_device="Playback 1",
+                controls_payload={
+                    "maschine_encoder_map": {
+                        "enc2": {"block_id": "block-1", "param_id": "gain", "label": "Gain"},
+                    }
+                },
                 detail_payload={
                     "channels": [
                         {
@@ -99,6 +104,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["output_device"] == "Playback 1"
             assert created["io_bindings"]["input_device"] == "Capture 1"
             assert created["controls"]["midi_map"][0]["program_number"] == 10
+            assert created["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "gain"
             assert created["lineage"]["derived_from_snapshot_id"] is None
             assert created["paths"][0]["id"] == "channel-0"
             assert created["paths"][0]["label"] == "A"
@@ -136,12 +142,19 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 output_level_warning_threshold_db=4.0,
                 input_device="Capture 2",
                 output_device=None,
+                controls_payload={
+                    "maschine_encoder_map": {
+                        "enc3": {"block_id": "block-2", "param_id": "mix", "label": "Mix"},
+                    }
+                },
             )
             assert renamed is not None
             assert renamed["output_level_reference_dbfs"] == -9.0
             assert renamed["output_level_warning_threshold_db"] == 4.0
             assert renamed["input_device"] == "Capture 2"
             assert renamed["output_device"] is None
+            assert renamed["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
+            assert renamed["controls"]["maschine_encoder_map"]["enc1"] is None
 
             updated = await service.add_channel(
                 created["id"],
@@ -183,6 +196,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert saved_as_new["program_number"] is None
             assert saved_as_new["lineage"]["derived_from_snapshot_id"] == created["id"]
             assert saved_as_new["controls"]["midi_map"][0]["program_number"] == 10
+            assert saved_as_new["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
 
             exported = await service.export_snapshot(created["id"])
             assert exported is not None

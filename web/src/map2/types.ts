@@ -2036,6 +2036,23 @@ export interface SnapshotControls {
   midi_map: SnapshotMidiMapEntry[];
   automation_lanes: Array<Record<string, unknown>>;
   expression_mappings: Array<Record<string, unknown>>;
+  maschine_encoder_map: SnapshotMaschineEncoderMap;
+}
+
+export type SnapshotMaschineEncoderAssignment = Record<string, unknown> | null;
+
+export interface SnapshotMaschineEncoderMap {
+  enc1: SnapshotMaschineEncoderAssignment;
+  enc2: SnapshotMaschineEncoderAssignment;
+  enc3: SnapshotMaschineEncoderAssignment;
+  enc4: SnapshotMaschineEncoderAssignment;
+  enc5: SnapshotMaschineEncoderAssignment;
+  enc6: SnapshotMaschineEncoderAssignment;
+  enc7: SnapshotMaschineEncoderAssignment;
+  enc8: SnapshotMaschineEncoderAssignment;
+  vol: Record<string, unknown>;
+  tempo: Record<string, unknown>;
+  swing: SnapshotMaschineEncoderAssignment | Record<string, unknown>;
 }
 
 export interface SnapshotLineage {

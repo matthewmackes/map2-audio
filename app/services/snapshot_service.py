@@ -36,6 +36,7 @@ from app.database import (
     SnapshotRouting,
     SnapshotSessionNote,
 )
+from app.services.maschine_encoder_map_service import normalize_maschine_encoder_map
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
 from app.services.plugin_loader_unified import get_plugin_loader
@@ -193,6 +194,7 @@ class SnapshotService:
         payload["midi_map"] = [dict(entry) for entry in midi_map if isinstance(entry, dict)]
         payload["automation_lanes"] = [dict(entry) for entry in payload.get("automation_lanes", []) if isinstance(entry, dict)]
         payload["expression_mappings"] = [dict(entry) for entry in payload.get("expression_mappings", []) if isinstance(entry, dict)]
+        payload["maschine_encoder_map"] = normalize_maschine_encoder_map(payload.get("maschine_encoder_map"))
         return payload
 
     async def get_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
@@ -329,8 +331,10 @@ class SnapshotService:
         if output_device is not UNSET:
             snapshot.output_device = output_device
         if controls_payload is not UNSET:
+            merged_controls_payload = dict(snapshot.controls_payload or {})
+            merged_controls_payload.update(dict(controls_payload or {}))
             snapshot.controls_payload = self._normalize_controls_payload(
-                controls_payload,
+                merged_controls_payload,
                 detail_payload if detail_payload is not UNSET else None,
             )
         if is_favorite is not UNSET:

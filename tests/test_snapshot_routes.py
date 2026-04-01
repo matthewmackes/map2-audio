@@ -75,6 +75,9 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                 ),
                 controls=routes.SnapshotControlsInput(
                     midi_map=[{"action": "load_snapshot", "program_number": 12}],
+                    maschine_encoder_map={
+                        "enc2": {"block_id": "block-1", "param_id": "mix", "label": "Mix"},
+                    },
                 ),
                 paths=[
                     routes.SnapshotPathInput(
@@ -120,6 +123,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["output_level_warning_threshold_db"] == 2.0
         assert fetched["paths"][0]["id"] == "path-a"
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
+        assert fetched["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "mix"
         assert fetched["session_notes"] == []
 
         added_note = await routes.add_snapshot_session_note(
@@ -140,12 +144,19 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                 output_level_reference_dbfs=-10.0,
                 output_level_warning_threshold_db=3.5,
                 io_bindings=routes.SnapshotIOBindingsInput(input_device="Route In 2", output_device=None),
+                controls=routes.SnapshotControlsInput(
+                    midi_map=[{"action": "load_snapshot", "program_number": 12}],
+                    maschine_encoder_map={
+                        "enc4": {"block_id": "block-2", "param_id": "gain", "label": "Gain"},
+                    },
+                ),
             ),
         )
         assert patched["snapshot"]["output_level_reference_dbfs"] == -10.0
         assert patched["snapshot"]["output_level_warning_threshold_db"] == 3.5
         assert patched["snapshot"]["input_device"] == "Route In 2"
         assert patched["snapshot"]["output_device"] is None
+        assert patched["snapshot"]["controls"]["maschine_encoder_map"]["enc4"]["param_id"] == "gain"
 
         replaced_midi_map = await routes.replace_midi_map(
             snapshot_id,

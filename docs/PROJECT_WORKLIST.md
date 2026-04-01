@@ -115,7 +115,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 14:02 - Codex
 
 ID: T666-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Encoder map persistence via snapshot system
 Description:
 - New file: app/services/maschine_encoder_map_service.py
@@ -128,7 +128,8 @@ Description:
 - On snapshot save: current encoder map auto-included in snapshot payload
 - Hardware reassignment flow: hold Group A + twist encoder → left LCD shows scrollable param browser → push to confirm → POST /api/maschine/encoder-map → persisted to active snapshot
 Dependencies: T666-subD, app/services/snapshot_service.py
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 14:43 - Codex
 
 ID: T666-subF
 Status: [ ] Todo

@@ -93,6 +93,7 @@ class SnapshotControlsInput(BaseModel):
     midi_map: list[dict[str, Any]] = Field(default_factory=list)
     automation_lanes: list[dict[str, Any]] = Field(default_factory=list)
     expression_mappings: list[dict[str, Any]] = Field(default_factory=list)
+    maschine_encoder_map: dict[str, Any] = Field(default_factory=dict)
 
 
 class SnapshotCreateRequest(BaseModel):
