@@ -1,5 +1,5 @@
 import { Edit } from '@carbon/icons-react'
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Layer, Table, TableBody, TableCell, TableRow } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
@@ -29,6 +29,8 @@ interface SnapshotChainManagementCardProps {
   detailsAction?: ReactNode
   onRenameSnapshot?: () => void
   snapshotRenamePending?: boolean
+  onSubmitSnapshotDescription?: (description: string) => void
+  snapshotDescriptionPending?: boolean
 }
 
 interface SnapshotMetadataCell {
@@ -378,6 +380,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     detailsAction,
     onRenameSnapshot,
     snapshotRenamePending = false,
+    onSubmitSnapshotDescription,
+    snapshotDescriptionPending = false,
   } = props
 
   const metadataTableRows = useMemo(
@@ -393,6 +397,29 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     [liveSnapshot, runtimeLiveState],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
+  const [editingDescription, setEditingDescription] = useState(false)
+  const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
+
+  useEffect(() => {
+    if (!editingDescription) {
+      setDescriptionDraft(liveSnapshot?.description ?? '')
+    }
+  }, [editingDescription, liveSnapshot?.description])
+
+  const submitDescription = () => {
+    setEditingDescription(false)
+    if (!liveSnapshot || !onSubmitSnapshotDescription) {
+      return
+    }
+    onSubmitSnapshotDescription(descriptionDraft)
+  }
+
+  const handleDescriptionKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      submitDescription()
+    }
+  }
 
   return (
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
@@ -447,6 +474,32 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   ) : snapshotTitle}
                 </h2>
               </div>
+              {liveSnapshot && onSubmitSnapshotDescription ? (
+                editingDescription ? (
+                  <textarea
+                    className="juce-grid-page__snapshot-status-description-input"
+                    aria-label="Snapshot description"
+                    value={descriptionDraft}
+                    onChange={(event) => setDescriptionDraft(event.target.value)}
+                    onBlur={submitDescription}
+                    onKeyDown={handleDescriptionKeyDown}
+                    disabled={snapshotDescriptionPending}
+                    placeholder="Add rig notes..."
+                    rows={3}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className={`juce-grid-page__snapshot-status-description-button ${liveSnapshot.description?.trim() ? '' : 'is-placeholder'}`}
+                    onClick={() => setEditingDescription(true)}
+                    disabled={snapshotDescriptionPending}
+                    aria-label={liveSnapshot.description?.trim() ? 'Edit snapshot description' : 'Add snapshot description'}
+                  >
+                    {liveSnapshot.description?.trim() || 'Add rig notes...'}
+                  </button>
+                )
+              ) : null}
               {!liveSnapshot && (
                 <p className="juce-grid-page__snapshot-status-empty-copy">
                   Recall or create a snapshot to populate live snapshot status here.

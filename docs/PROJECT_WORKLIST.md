@@ -367,7 +367,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T631
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Description Field — Inline Editable Rig Notes
 Description:
 - Goal / acceptance criteria: The snapshot's existing description field is displayed directly beneath the snapshot name in the editor hero, always visible (not collapsed behind a Details dropdown). Clicking the description text turns it into an inline textarea; the player types their notes and saves on Enter or click-away. If no description has been set, a subtle placeholder text appears ("Add rig notes..."). The description supports plain text only — no Markdown, no formatting. It is not a log (that is T640 Session Notes); it is the player's single persistent note about this snapshot: what guitar, what pickup, when to use it.
@@ -376,7 +376,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: description field displayed inline in editor hero below snapshot name, click-to-edit inline textarea, placeholder text when empty, PATCH /api/snapshots/{id} wiring for description update, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 11:54 - Codex
+- Completion notes:
+  - Added the persistent snapshot description directly beneath the live snapshot name in the editor hero, with the requested placeholder copy and inline textarea editing.
+  - Wired the hero editor to the existing snapshot PATCH update path so Enter and click-away persist plain-text rig notes without introducing a separate API route.
+  - Added focused hero regression coverage for rendering, placeholder behavior, and inline save-on-enter interaction.
+- Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T630
 Status: [ ] Todo

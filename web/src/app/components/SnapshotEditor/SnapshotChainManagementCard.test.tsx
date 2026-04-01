@@ -160,8 +160,10 @@ function renderCard(
   options: {
     editorSnapshotDraft?: SnapshotDraftData | null
     onRenameSnapshot?: jest.Mock
+    onSubmitSnapshotDescription?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
+    snapshotDescriptionPending?: boolean
   } = {},
 ) {
   return render(
@@ -174,6 +176,8 @@ function renderCard(
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
+      onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
+      snapshotDescriptionPending={options.snapshotDescriptionPending}
       detailsAction={<button type="button">Details</button>}
     />,
   )
@@ -207,6 +211,7 @@ function buildRuntimeLiveState(overrides: Partial<SnapshotRuntimeLiveState> = {}
 describe('SnapshotChainManagementCard', () => {
   it('renders the unified live snapshot hero with title, details trigger, LCD readout, and right-side metadata table', () => {
     const { container } = renderCard(buildLiveSnapshot(), {
+      onSubmitSnapshotDescription: jest.fn(),
       runtimeLiveState: buildRuntimeLiveState(),
     })
     const metadataTable = screen.getByRole('table', { name: 'Live snapshot metadata' })
@@ -222,7 +227,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(midiReadout).toBeInTheDocument()
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
-    expect(screen.queryByText('Lead-ready snapshot for the main performance set.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit snapshot description' })).toHaveTextContent('Lead-ready snapshot for the main performance set.')
     expect(screen.getByText('Input Device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
     expect(screen.getByText('Output Device')).toBeInTheDocument()
@@ -261,6 +266,28 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(renameButton)
 
     expect(onRenameSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('edits the snapshot description inline and saves on enter', () => {
+    const onSubmitSnapshotDescription = jest.fn()
+
+    renderCard(buildLiveSnapshot(), { onSubmitSnapshotDescription })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit snapshot description' }))
+
+    const textarea = screen.getByRole('textbox', { name: 'Snapshot description' })
+    fireEvent.change(textarea, { target: { value: 'Bridge pickup only' } })
+    fireEvent.keyDown(textarea, { key: 'Enter' })
+
+    expect(onSubmitSnapshotDescription).toHaveBeenCalledWith('Bridge pickup only')
+  })
+
+  it('shows the inline placeholder when no description has been stored yet', () => {
+    renderCard(buildLiveSnapshot({ description: '' }), {
+      onSubmitSnapshotDescription: jest.fn(),
+    })
+
+    expect(screen.getByRole('button', { name: 'Add snapshot description' })).toHaveTextContent('Add rig notes...')
   })
 
   it('renders a clear empty state inside the same unified hero when no live snapshot is active', () => {

@@ -1540,6 +1540,19 @@ export function SnapshotEditorPage() {
     },
   })
 
+  const updateActiveSnapshotDescriptionMutation = useMutation({
+    mutationFn: async ({ snapshotId, description }: { snapshotId: number; description: string }) =>
+      snapshotsApi.update(snapshotId, { description }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Snapshot notes updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot notes', 'error')
+    },
+  })
+
   const addSessionNoteMutation = useMutation({
     mutationFn: async ({ snapshotId, text }: { snapshotId: number; text: string }) =>
       snapshotsApi.addSessionNote(snapshotId, text),
@@ -4962,6 +4975,13 @@ export function SnapshotEditorPage() {
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
+            onSubmitSnapshotDescription={(description) => {
+              if (!activeSnapshot) {
+                return
+              }
+              updateActiveSnapshotDescriptionMutation.mutate({ snapshotId: activeSnapshot.id, description })
+            }}
+            snapshotDescriptionPending={updateActiveSnapshotDescriptionMutation.isPending}
           />
         </div>
       </section>
