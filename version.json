@@ -1,11 +1,11 @@
 {
   "product": "MAP2 Audio Platform",
-  "version": "2026040117093401",
+  "version": "2026040119575101",
   "build_date": "20260401",
-  "build_time": "170934",
+  "build_time": "195751",
   "build_channel": "01",
-  "build_timestamp": "2026-04-01T17:09:34-04:00",
-  "fallback_version": "2026040117093401",
+  "build_timestamp": "2026-04-01T19:57:51-04:00",
+  "fallback_version": "2026040119575101",
   "version_source": "scripts/generate_platform_version.py",
   "api_version": "v1"
 }

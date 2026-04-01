@@ -122,6 +122,22 @@ def sanitize_snapshot_name_seed(value: Any, *, fallback: str = "Snapshot") -> st
     return sanitized or fallback
 
 
+def _clear_snapshot_program_assignments(payload: Any) -> Any:
+    if isinstance(payload, dict):
+        normalized: dict[str, Any] = {}
+        action = payload.get("action")
+        is_snapshot_recall_entry = action in {None, "load_snapshot"}
+        for key, value in payload.items():
+            if key == "program_number" and is_snapshot_recall_entry:
+                normalized[key] = None
+            else:
+                normalized[key] = _clear_snapshot_program_assignments(value)
+        return normalized
+    if isinstance(payload, list):
+        return [_clear_snapshot_program_assignments(item) for item in payload]
+    return payload
+
+
 _CANONICAL_TRANSIENT_KEYS = {
     "id",
     "source_key",
@@ -533,16 +549,20 @@ class SnapshotService:
         if snapshot is None:
             return None
         duplicate_name = await self._build_duplicate_snapshot_name(snapshot.get("name"))
+        duplicate_controls_payload = _clear_snapshot_program_assignments(copy.deepcopy(snapshot.get("controls") or {}))
+        duplicate_detail_payload = _clear_snapshot_program_assignments(copy.deepcopy(snapshot))
         return await self.create_snapshot(
             name=duplicate_name,
             description=snapshot.get("description", ""),
             tags=list(snapshot.get("tags", [])),
+            program_number=None,
             tempo_bpm=_safe_float(snapshot.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
             derived_from_snapshot_id=snapshot_id,
             input_device=snapshot.get("input_device"),
             output_device=snapshot.get("output_device"),
-            controls_payload=snapshot.get("controls"),
-            detail_payload=snapshot,
+            controls_payload=duplicate_controls_payload,
+            detail_payload=duplicate_detail_payload,
+            is_favorite=bool(snapshot.get("is_favorite", False)),
             is_locked=False,
         )
 
@@ -1643,7 +1663,7 @@ class SnapshotService:
         *,
         exclude_snapshot_id: Optional[int] = None,
     ) -> str:
-        base_name = f"{sanitize_snapshot_name_seed(source_name)}Copy"
+        base_name = f"{sanitize_snapshot_name_seed(source_name)}copy"
         candidate = base_name
         suffix = 2
         while await self._snapshot_name_exists(candidate, exclude_snapshot_id=exclude_snapshot_id):

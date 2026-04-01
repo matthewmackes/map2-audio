@@ -213,8 +213,13 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
 
             duplicate = await service.duplicate_snapshot(created["id"])
             assert duplicate is not None
-            assert duplicate["name"] == "UnifiedSnapshotCopy"
+            assert duplicate["name"] == "UnifiedSnapshotcopy"
+            assert duplicate["program_number"] is None
             assert duplicate["is_locked"] is False
+            assert duplicate["is_favorite"] is False
+            assert duplicate["lineage"]["derived_from_snapshot_id"] == created["id"]
+            assert duplicate["controls"]["midi_map"][0]["program_number"] is None
+            assert duplicate["midi_map"][0]["program_number"] is None
 
             saved_as_new = await service.save_snapshot_as_new(created["id"], name="UnifiedSnapshotV2")
             assert saved_as_new is not None
@@ -281,7 +286,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 "UnifiedSnapshotV2",
                 "ImportedPlaceholderSnapshot",
                 "UnifiedSnapshot",
-                "UnifiedSnapshotCopy",
+                "UnifiedSnapshotcopy",
             ]
             assert listed[0]["is_favorite"] is True
             assert listed[1]["is_favorite"] is True

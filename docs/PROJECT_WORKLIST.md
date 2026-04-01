@@ -1043,7 +1043,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T625
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Duplicate — One Click, Opens in Editor Ready to Modify
 Description:
 - Goal / acceptance criteria: A Duplicate action is available on any snapshot (in the Details dropdown and in the floating toolbar T642). One click creates an exact copy of the snapshot with: (A) name set to "{OriginalName}copy" (no program number suffix, no spaces, obeying T636 naming rules), (B) no program number assigned (so the duplicate does not respond to MIDI PC until the player explicitly sets one), (C) derived_from_snapshot_id set to the original's ID for lineage tracking, (D) is_locked = false regardless of the original's lock state. The duplicate opens immediately in the editor, ready to modify. A toast confirms "Duplicated: OriginalName → OriginalNamecopy".
@@ -1052,7 +1052,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: POST /api/snapshots/{id}/duplicate endpoint, name generation with collision handling (append "2", "3" etc. if "copy" already exists), no program number on duplicate, derived_from_snapshot_id set, editor navigation to duplicate on creation, confirmation toast, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 20:01 - Codex
+- Completion notes:
+  - Updated snapshot duplication so copies are named with the lowercase `copy` suffix, remain unlocked, preserve lineage, and clear both the top-level MIDI program number and embedded `load_snapshot` recall assignments from copied payloads.
+  - Added Snapshot Editor duplicate actions to the floating toolbar and Details menu, with the duplicate opening immediately in the editor override state and confirming via the required `Duplicated: OriginalName → OriginalNamecopy` toast.
+  - Extended snapshot service and route regressions to cover the new duplicate naming and MIDI-clearing behavior for both the root snapshot program assignment and copied MIDI-map entries.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T624
 Status: [✓] Done

@@ -265,8 +265,12 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         duplicated = await routes.duplicate_snapshot(snapshot_id)
         assert duplicated["status"] == "success"
-        assert duplicated["snapshot"]["name"] == "RouteSnapshotCopy"
+        assert duplicated["snapshot"]["name"] == "RouteSnapshotcopy"
+        assert duplicated["snapshot"]["program_number"] is None
         assert duplicated["snapshot"]["is_locked"] is False
+        assert duplicated["snapshot"]["lineage"]["derived_from_snapshot_id"] == snapshot_id
+        assert duplicated["snapshot"]["controls"]["midi_map"][0]["program_number"] is None
+        assert duplicated["snapshot"]["midi_map"][0]["program_number"] is None
 
         try:
             await routes.create_snapshot(routes.SnapshotCreateRequest(name="Route Snapshot"))

@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Download,
   Favorite,
   FavoriteFilled,
@@ -1854,6 +1855,29 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot favorite', 'error')
+    },
+  })
+
+  const duplicateActiveSnapshotMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) {
+        throw new Error('No active snapshot to duplicate')
+      }
+      return {
+        sourceName: activeSnapshot.name,
+        response: await snapshotsApi.duplicate(activeSnapshot.id),
+      }
+    },
+    onSuccess: ({ sourceName, response }) => {
+      setEditorSnapshotOverride(response.snapshot)
+      hydrateEditorFromSnapshot(response.snapshot, {
+        toastMessage: `Duplicated: ${sourceName} → ${response.snapshot.name}`,
+        resetSelectedBlock: true,
+        invalidateSnapshots: true,
+      })
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to duplicate snapshot', 'error')
     },
   })
 
@@ -4219,6 +4243,16 @@ export function SnapshotEditorPage() {
         >
           Next
         </Button>
+        <Button
+          size="sm"
+          kind="ghost"
+          className="snapshot-toolbar__button snapshot-toolbar__button--duplicate"
+          renderIcon={Copy}
+          onClick={() => duplicateActiveSnapshotMutation.mutate()}
+          disabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
+        >
+          {duplicateActiveSnapshotMutation.isPending ? 'Duplicating…' : 'Duplicate'}
+        </Button>
         {activeSnapshot ? (
           <Button
             size="sm"
@@ -5668,6 +5702,13 @@ export function SnapshotEditorPage() {
         className="juce-grid-page__snapshot-status-details-item"
         disabled={!activeSnapshot}
         onClick={() => setShowOutputReferenceModal(true)}
+      />
+      <MenuItem
+        label={duplicateActiveSnapshotMutation.isPending ? 'Duplicating…' : 'Duplicate'}
+        renderIcon={Copy}
+        className="juce-grid-page__snapshot-status-details-item"
+        disabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
+        onClick={() => duplicateActiveSnapshotMutation.mutate()}
       />
       <MenuItem
         label="Perform"
