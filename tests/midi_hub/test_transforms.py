@@ -12,6 +12,7 @@ def test_transform_registry_has_expected_surface():
     assert "nrpn_pack" in kinds
     assert "mpe_zone" in kinds
     assert "value_scale" in kinds
+    assert "maschine_pad_to_chain_cc" in kinds
 
 
 def test_cc_scale_and_translation_transforms():
@@ -177,3 +178,22 @@ def test_nrpn_mpe_and_legacy_transforms():
 
     value_scale = _apply(engine, b"\xB0\x07\x64", [{"type": "value_scale", "scale": 0.5}])
     assert value_scale and value_scale[0].data[2] == 50
+
+
+def test_maschine_pad_to_chain_cc_transform():
+    engine = MidiTransformEngine()
+
+    note_on = _apply(
+        engine,
+        b"\x90\x24\x64",
+        [{"type": "maschine_pad_to_chain_cc", "select_cc": 110, "bypass_cc": 111, "base_note": 36}],
+    )
+    assert note_on and note_on[0].data == bytes([0xB0, 110, 0])
+    assert note_on[0].metadata["pad_index"] == 0
+
+    note_off = _apply(
+        engine,
+        b"\x80\x27\x00",
+        [{"type": "maschine_pad_to_chain_cc", "select_cc": 110, "bypass_cc": 111, "base_note": 36}],
+    )
+    assert note_off and note_off[0].data == bytes([0xB0, 111, 3])

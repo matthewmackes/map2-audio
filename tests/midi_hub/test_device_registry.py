@@ -152,6 +152,40 @@ def test_registry_builtin_midisport_profile_matches_name(tmp_path):
     asyncio.run(_run())
 
 
+def test_registry_builtin_maschine_profile_matches_name_and_vid_pid(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+        hub.register_port(VirtualMidiPort(port_id="p1", name="MAP2:Maschine-MK1"))
+
+        with patch(
+            "app.services.midi_hub.device_registry.discover_alsa_port_descriptors",
+            return_value=[
+                {
+                    "name": "MAP2:Maschine-MK1",
+                    "direction": "duplex",
+                    "vendor_id": "17cc",
+                    "product_id": "0808",
+                }
+            ],
+        ):
+            refreshed = await registry.refresh()
+
+        assert refreshed["count"] == 1
+        device = refreshed["devices"][0]
+        assert device["profile_id"] == "maschine_mk1"
+
+        profile = registry.get_profile("maschine_mk1")
+        assert profile is not None
+        assert profile["channels"] == [1, 2]
+        assert profile["metadata"]["role"] == "control_surface"
+        assert profile["metadata"]["virtual_port_name"] == "MAP2:Maschine-MK1"
+
+    asyncio.run(_run())
+
+
 def test_registry_merge_remote_devices_and_global_snapshot(tmp_path):
     _init_temp_db(tmp_path)
 

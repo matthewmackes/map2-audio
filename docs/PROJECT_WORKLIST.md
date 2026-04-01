@@ -80,7 +80,7 @@ Dependencies: T666-subA
 Assigned to: Unassigned
 
 ID: T666-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: MidiHub VID/PID device profile for Maschine MK1
 Description:
 - Edit: app/services/midi_hub/device_registry.py
@@ -90,7 +90,8 @@ Description:
 - Emits midi:device_online WebSocket event with profile_id "maschine_mk1" on connect
 - Add MidiTransformEngine route: pad Note On/Off → chain block select/bypass CC transforms
 Dependencies: T666-subA
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 14:32 - Codex
 
 ID: T666-subD
 Status: [✓] Done

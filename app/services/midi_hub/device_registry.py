@@ -64,6 +64,7 @@ class MidiDeviceProfile:
     match_patterns: List[str]
     default_channel: int = 0
     supports_sysex: bool = False
+    channels: List[int] = field(default_factory=list)
     usb_vid_pid: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -136,8 +137,33 @@ class MidiDeviceRegistry:
                 match_patterns=["midisport 4x4", "midisport"],
                 default_channel=0,
                 supports_sysex=True,
+                channels=[],
                 usb_vid_pid=["0763:1020"],
                 metadata={"vendor": "M-Audio", "device_type": "adapter", "ports": 4},
+            ),
+            "maschine_mk1": MidiDeviceProfile(
+                profile_id="maschine_mk1",
+                name="Maschine MK1",
+                match_patterns=["map2:maschine-mk1", "maschine-mk1", "maschine mk1"],
+                default_channel=1,
+                supports_sysex=False,
+                channels=[1, 2],
+                usb_vid_pid=["17cc:0808"],
+                metadata={
+                    "vendor": "Native Instruments",
+                    "device_type": "control_surface",
+                    "role": "control_surface",
+                    "virtual_port_name": "MAP2:Maschine-MK1",
+                    "suggested_transform_chain": [
+                        {
+                            "type": "maschine_pad_to_chain_cc",
+                            "base_note": 36,
+                            "select_cc": 110,
+                            "bypass_cc": 111,
+                            "value_mode": "index",
+                        }
+                    ],
+                },
             ),
             "usb_din_adapter": MidiDeviceProfile(
                 profile_id="usb_din_adapter",
@@ -176,6 +202,7 @@ class MidiDeviceRegistry:
             "match_patterns": list(profile.match_patterns),
             "default_channel": profile.default_channel,
             "supports_sysex": profile.supports_sysex,
+            "channels": list(profile.channels),
             "usb_vid_pid": list(profile.usb_vid_pid),
             "metadata": dict(profile.metadata),
             "is_custom": is_custom,
@@ -208,6 +235,7 @@ class MidiDeviceRegistry:
         default_channel: int = 0,
         supports_sysex: bool = False,
         usb_vid_pid: Optional[List[str]] = None,
+        channels: Optional[List[int]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> MidiDeviceProfile:
         profile = MidiDeviceProfile(
@@ -216,6 +244,7 @@ class MidiDeviceRegistry:
             match_patterns=[p for p in match_patterns if str(p).strip()],
             default_channel=int(default_channel),
             supports_sysex=bool(supports_sysex),
+            channels=[int(channel) for channel in (channels or []) if int(channel) >= 1],
             usb_vid_pid=[str(v).strip().lower() for v in (usb_vid_pid or []) if str(v).strip()],
             metadata=dict(metadata or {}),
         )
@@ -364,6 +393,7 @@ class MidiDeviceRegistry:
                 match_patterns=[str(item) for item in payload.get("match_patterns", []) if str(item).strip()],
                 default_channel=int(payload.get("default_channel", 0)),
                 supports_sysex=bool(payload.get("supports_sysex", False)),
+                channels=[int(item) for item in payload.get("channels", []) if int(item) >= 1],
                 usb_vid_pid=[str(item).strip().lower() for item in payload.get("usb_vid_pid", []) if str(item).strip()],
                 metadata=dict(payload.get("metadata") or {}),
             )
@@ -394,6 +424,7 @@ class MidiDeviceRegistry:
                     "match_patterns": list(profile.match_patterns),
                     "default_channel": profile.default_channel,
                     "supports_sysex": profile.supports_sysex,
+                    "channels": list(profile.channels),
                     "usb_vid_pid": list(profile.usb_vid_pid),
                     "metadata": dict(profile.metadata),
                 }

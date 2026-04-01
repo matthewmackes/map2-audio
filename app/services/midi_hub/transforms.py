@@ -120,6 +120,11 @@ class MidiTransformEngine:
         {"type": "channel_remap", "family": "legacy", "description": "Remap channel to fixed target"},
         {"type": "cc_remap", "family": "legacy", "description": "Remap CC number table"},
         {"type": "value_scale", "family": "legacy", "description": "Scale 7-bit data2 value"},
+        {
+            "type": "maschine_pad_to_chain_cc",
+            "family": "surface",
+            "description": "Translate Maschine pad note on/off into chain select/bypass CC events",
+        },
     ]
 
     def __init__(self) -> None:
@@ -247,6 +252,49 @@ class MidiTransformEngine:
             value = _clamp_midi(velocity if mode == "velocity" else int(step.get("on_value", 127)))
         cc_msg = bytes([0xB0 | ((channel - 1) & 0x0F), cc, value])
         return [TransformedMidiEvent(data=cc_msg, delay_ms=event.delay_ms, metadata=dict(event.metadata))]
+
+    def _transform_maschine_pad_to_chain_cc(
+        self,
+        event: TransformedMidiEvent,
+        step: Dict[str, Any],
+        *,
+        route_id: str,
+    ) -> List[TransformedMidiEvent]:
+        msg = _parse_message(event.data)
+        if msg["message_type"] not in {"note_on", "note_off"} or msg["data1"] is None:
+            return [event]
+
+        base_note = _clamp_midi(int(step.get("base_note", 36)))
+        note = int(msg["data1"])
+        pad_index = note - base_note
+        if pad_index < 0 or pad_index > 15:
+            return [event]
+
+        value_mode = str(step.get("value_mode", "index")).strip().lower()
+        velocity = _clamp_midi(int(msg.get("data2") or 0))
+        if value_mode == "one_based":
+            value = _clamp_midi(pad_index + 1)
+        elif value_mode == "velocity":
+            value = velocity
+        else:
+            value = _clamp_midi(pad_index)
+
+        if msg["message_type"] == "note_off":
+            cc = _clamp_midi(int(step.get("bypass_cc", 111)))
+            value = _clamp_midi(int(step.get("off_value", value)))
+        else:
+            cc = _clamp_midi(int(step.get("select_cc", 110)))
+            value = _clamp_midi(int(step.get("on_value", value)))
+
+        channel = int(step.get("channel", msg["channel"] or 1))
+        cc_msg = bytes([0xB0 | ((channel - 1) & 0x0F), cc, value])
+        metadata = {
+            **event.metadata,
+            "pad_index": pad_index,
+            "pad_note": note,
+            "surface_profile": "maschine_mk1",
+        }
+        return [TransformedMidiEvent(data=cc_msg, delay_ms=event.delay_ms, metadata=metadata)]
 
     def _transform_cc_to_program_change(self, event: TransformedMidiEvent, step: Dict[str, Any], *, route_id: str) -> List[TransformedMidiEvent]:
         msg = _parse_message(event.data)
