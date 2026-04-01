@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
 import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import type { SpecialSettings } from '../../hooks/useSpecialSettings'
@@ -52,7 +52,7 @@ describe('PlatformLaunchersWorkspace', () => {
   it('launches rows directly from the table and configures placement in a sub-modal', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
-    render(
+    const { container } = render(
       <PlatformLaunchersWorkspace
         settings={buildSettings({ pinnedRoutes: ['/artifacts'] })}
         isLoading={false}
@@ -68,6 +68,7 @@ describe('PlatformLaunchersWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
 
     expect(screen.getByText('Landing tile')).toBeInTheDocument()
+    expect(within(container).queryByText('Landing tile')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({

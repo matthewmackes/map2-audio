@@ -176,8 +176,8 @@ describe('HomePage landing', () => {
     expect(screen.getByText('Audio Grid')).toBeTruthy()
     expect(screen.getByText('Labs')).toBeTruthy()
     expect(screen.getByText('Audio Artifacts')).toBeTruthy()
-    expect(screen.getByText('Drum Machine')).toBeTruthy()
-    expect(screen.getByText('SynthForge')).toBeTruthy()
+    expect(screen.queryByText('Drum Machine')).toBeNull()
+    expect(screen.queryByText('SynthForge')).toBeNull()
     expect(screen.getByText('No Active Flow')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
@@ -202,13 +202,15 @@ describe('HomePage landing', () => {
 
   it('renders promoted landing tiles above the home grid and launches the configured route', async () => {
     mockSpecialSettingsState.settings.landingTiles = [
+      { route: '/drums', size: 'small' },
       { route: '/midi-hub', size: 'small' },
       { route: '/platforms/overview', size: 'large' },
     ]
 
     renderHome()
 
-    const landingTile = await screen.findByText('MIDI Hub')
+    expect((await screen.findByText('Drum Machine')).closest('.hp2-launchers__tile--small')).toBeTruthy()
+    const landingTile = screen.getByText('MIDI Hub')
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
     expect(screen.getByText('Overview').closest('.hp2-launchers__tile--large')).toBeTruthy()
 

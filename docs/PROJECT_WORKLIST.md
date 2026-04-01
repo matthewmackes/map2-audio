@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]; T623 live snapshot delete guard across UI and API [completed]; T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]
+Last updated: 2026-04-01 EDT - T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]; T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]; T623 live snapshot delete guard across UI and API [completed]
+
+ID: T671
+Status: [✓] Done
+Title: Remove Drum Machine and SynthForge from the Home landing page default tiles
+Description:
+- Goal / acceptance criteria: The Home landing page must no longer show `Drum Machine` and `SynthForge` inside the built-in default tile layout. Those routes should remain available through the launcher organizer and promoted-launcher system, but they must not appear as always-on default cards on first load.
+- Why it matters: The user wants the landing page defaults pared back so those two launchers are opt-in instead of permanently occupying the home surface.
+- Dependencies: T667
+- Estimated effort: Low
+- Required outputs: Home default-card removal, layout adjustment so the hero column does not leave an empty gap, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:02 - Codex
+- Completion notes:
+  - Removed the hard-coded `Drum Machine` and `SynthForge` cards from the Home page default left-column subgrid so they no longer appear on first load.
+  - Kept both routes available through the launcher catalog and promoted-launcher board, making them opt-in launchers instead of always-on landing defaults.
+  - Adjusted the left-column layout so the hero card no longer reserves an empty second row when no default subgrid cards are configured.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
+
+ID: T670
+Status: [✓] Done
+Title: Keep launcher configuration modal fully in frame inside Theme organizer
+Description:
+- Goal / acceptance criteria: Opening `Configure` for any launcher from the Theme workspace organizer must show the launcher-configuration dialog fully within the viewport. The dialog must not be clipped by the parent Theme modal, its header/close control must remain visible, and Home/nav controls must stay usable on desktop and smaller laptop widths. Existing launcher configuration behavior must remain unchanged.
+- Why it matters: The current nested popup can render out of frame, which blocks launcher placement changes and makes the organizer unreliable.
+- Dependencies: T668
+- Estimated effort: Low
+- Required outputs: launcher configuration modal rendering/layout fix, focused regression coverage for the nested modal behavior, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 15:57 - Codex
+- Completion notes:
+  - Moved the launcher configuration sub-modal onto a `document.body` portal so it no longer inherits clipping or overflow constraints from the parent Theme organizer modal.
+  - Kept the existing launcher Home and global-nav configuration content unchanged while making the nested configure dialog fully visible and usable within the viewport.
+  - Added focused regression coverage that proves the configure dialog renders outside the organizer container instead of nesting inside the clipped modal tree.
+- Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T669
 Status: [✓] Done

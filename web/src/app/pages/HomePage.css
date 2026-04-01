@@ -181,7 +181,7 @@
   min-height: 0;
 }
 
-.hp2-column--left {
+.hp2-column--left-with-subgrid {
   display: grid;
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
 }

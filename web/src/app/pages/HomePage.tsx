@@ -1,8 +1,7 @@
 import { type ComponentType, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BareMetalServer, Package, Waveform } from '@carbon/icons-react'
+import { ArrowRight, BareMetalServer, Package } from '@carbon/icons-react'
 import { Beaker } from 'lucide-react'
-import { FxDrums } from '../components/icons/effectIcons'
 import { ClickableTile, Tag } from '@carbon/react'
 import {
   MAP2_PLATFORM_VERSION,
@@ -174,22 +173,7 @@ const RIGHT_COLUMN_CARDS: WorkspaceCard[] = [
   },
 ]
 
-const LEFT_COLUMN_CARDS: WorkspaceCard[] = [
-  {
-    id: 'drums',
-    to: '/drums',
-    icon: ({ size = 20 }: { size?: number }) => <FxDrums width={size} height={size} />,
-    title: 'Drum Machine',
-    description: 'Patterns, kits, and sequencing',
-  },
-  {
-    id: 'synth-forge',
-    to: '/synth-forge',
-    icon: Waveform,
-    title: 'SynthForge',
-    description: 'Sampler, soundfonts, and synthesis',
-  },
-]
+const LEFT_COLUMN_CARDS: WorkspaceCard[] = []
 
 const LANDING_DIRECTORY_LABELS = {
   core: 'Core',
@@ -218,6 +202,7 @@ export function HomePage() {
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
   const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
+  const hasDefaultSubgridCards = LEFT_COLUMN_CARDS.length > 0
   const landingTileLaunchers = useMemo(() => {
     return (specialSettings?.landingTiles ?? [])
       .map((tile) => {
@@ -319,7 +304,7 @@ export function HomePage() {
           </section>
         ) : null}
         <nav className="hp2-layout" aria-label="Workspaces">
-          <div className="hp2-column hp2-column--left">
+          <div className={`hp2-column hp2-column--left${hasDefaultSubgridCards ? ' hp2-column--left-with-subgrid' : ''}`}>
             <ClickableTile
               className="hp2-card hp2-card--hero"
               onClick={() => navigate(HERO_CARD.to)}
@@ -351,22 +336,24 @@ export function HomePage() {
               <ArrowRight size={20} className="hp2-card__arrow" />
             </ClickableTile>
 
-            <div className="hp2-subgrid" aria-label="Performance workspaces">
-              {LEFT_COLUMN_CARDS.map((card) => (
-                <ClickableTile
-                  key={card.id}
-                  className="hp2-card hp2-card--subgrid"
-                  onClick={() => navigate(card.to)}
-                >
-                  <div className="hp2-card__body">
-                    <card.icon size={20} />
-                    <h2 className="hp2-card__title">{card.title}</h2>
-                    <p className="hp2-card__desc">{card.description}</p>
-                  </div>
-                  <ArrowRight size={16} className="hp2-card__arrow" />
-                </ClickableTile>
-              ))}
-            </div>
+            {hasDefaultSubgridCards ? (
+              <div className="hp2-subgrid" aria-label="Performance workspaces">
+                {LEFT_COLUMN_CARDS.map((card) => (
+                  <ClickableTile
+                    key={card.id}
+                    className="hp2-card hp2-card--subgrid"
+                    onClick={() => navigate(card.to)}
+                  >
+                    <div className="hp2-card__body">
+                      <card.icon size={20} />
+                      <h2 className="hp2-card__title">{card.title}</h2>
+                      <p className="hp2-card__desc">{card.description}</p>
+                    </div>
+                    <ArrowRight size={16} className="hp2-card__arrow" />
+                  </ClickableTile>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="hp2-column hp2-column--right">
             {RIGHT_COLUMN_CARDS.map((card) => {
