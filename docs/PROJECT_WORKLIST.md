@@ -150,7 +150,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T651
-Status: [ ] Todo
+Status: [✓] Done
 Title: Bypassed Blocks Dim to 30% Opacity in Signal Canvas
 Description:
 - Goal / acceptance criteria: In the Snapshot Editor signal canvas, any plugin block that is currently bypassed renders at approximately 30% opacity compared to active blocks. Active blocks render at full opacity. The dimming is applied in real-time as bypass state changes — when a player taps the bypass button on a selected block (T626), the block visually dims immediately in the canvas. This gives the player a complete at-a-glance picture of which effects are active in their signal chain without reading individual block bypass toggles.
@@ -159,7 +159,7 @@ Description:
 - Estimated effort: Low
 - Required outputs: CSS/style update to signal canvas block rendering (opacity driven by bypass state), real-time update when bypass toggles, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 11:01 - Codex
 
 ID: T650
 Status: [ ] Todo
