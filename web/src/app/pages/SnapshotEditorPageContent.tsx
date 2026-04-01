@@ -23,6 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Favorite,
+  FavoriteFilled,
   Flow,
   Headphones,
   Launch,
@@ -1730,6 +1732,19 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to rename snapshot', 'error')
+    },
+  })
+
+  const toggleActiveSnapshotFavoriteMutation = useMutation({
+    mutationFn: async ({ snapshotId, isFavorite }: { snapshotId: number; isFavorite: boolean }) =>
+      snapshotsApi.update(snapshotId, { is_favorite: isFavorite }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast(response.snapshot.is_favorite ? 'Snapshot marked as favorite' : 'Snapshot removed from favorites', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot favorite', 'error')
     },
   })
 
@@ -3978,6 +3993,27 @@ export function SnapshotEditorPage() {
         >
           {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update'}
         </Button>
+        {activeSnapshot ? (
+          <Button
+            size="sm"
+            kind={activeSnapshot.is_favorite ? 'secondary' : 'ghost'}
+            className="snapshot-toolbar__button snapshot-toolbar__button--favorite"
+            renderIcon={activeSnapshot.is_favorite ? FavoriteFilled : Favorite}
+            onClick={() => {
+              toggleActiveSnapshotFavoriteMutation.mutate({
+                snapshotId: activeSnapshot.id,
+                isFavorite: !activeSnapshot.is_favorite,
+              })
+            }}
+            disabled={toggleActiveSnapshotFavoriteMutation.isPending}
+          >
+            {toggleActiveSnapshotFavoriteMutation.isPending
+              ? 'Saving…'
+              : activeSnapshot.is_favorite
+                ? 'Favorited'
+                : 'Favorite'}
+          </Button>
+        ) : null}
         <Button
           size="sm"
           kind="secondary"
@@ -5395,6 +5431,16 @@ export function SnapshotEditorPage() {
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
+            onToggleSnapshotFavorite={() => {
+              if (!activeSnapshot) {
+                return
+              }
+              toggleActiveSnapshotFavoriteMutation.mutate({
+                snapshotId: activeSnapshot.id,
+                isFavorite: !activeSnapshot.is_favorite,
+              })
+            }}
+            snapshotFavoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
             onSubmitSnapshotDescription={(description) => {
               if (!activeSnapshot) {
                 return

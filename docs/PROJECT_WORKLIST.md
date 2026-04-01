@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T668 launcher organizer moved into Theme workspace [completed]; T638 snapshot version history completed; T659/T656 completed
+Last updated: 2026-04-01 EDT - T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]; T638 snapshot version history completed
 
 ID: T668
 Status: [✓] Done
@@ -955,7 +955,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T622
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Favorite / Star — Floats to Top of All Lists
 Description:
 - Goal / acceptance criteria: Any snapshot can be starred as a favorite via a star icon in the editor hero and in the floating toolbar (T642). Starred snapshots sort to the top of all snapshot list views (ordered among themselves by program_number or display_order, then non-favorites follow). The star state uses the existing is_favorite field in the Snapshot data model. A starred snapshot remains starred across activations and edits until manually unstarred. In the editor hero, the star icon reflects the current snapshot's favorite state and toggles it on click. Starred snapshots are the source list for Setlist mode (T654).
@@ -964,7 +964,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: star toggle in editor hero (wired to PATCH /api/snapshots/{id} is_favorite), star toggle in snapshot list rows, sort-starred-first in GET /api/snapshots list query, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 12:29 - Codex
+- Completion notes:
+  - Updated the canonical snapshot list ordering so favorites sort ahead of non-favorites at the service layer, then aligned the Audio Artifacts snapshot workspace to keep favorite-first ordering while preserving active-state cues.
+  - Added favorite toggles to the Snapshot Editor hero and floating toolbar, backed by snapshot update mutations that refresh the live snapshot cache and the shared snapshot list.
+  - Added favorite actions and favorite status tags to the Audio Artifacts snapshot cards/detail surface so operators can promote snapshots from the main library view instead of only inside the legacy snapshots modal.
+- Validation: `pytest -q tests/test_snapshot_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T621
 Status: [ ] Todo

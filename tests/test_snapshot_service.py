@@ -262,13 +262,19 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert imported["input_device"] is None
             assert imported["output_device"] is None
 
+            await service.update_snapshot(saved_as_new["id"], is_favorite=True, display_order=2)
+            await service.update_snapshot(imported["id"], is_favorite=True, display_order=5)
+
             listed = await service.list_snapshots()
             assert len(listed) == 3
-            assert {item["name"] for item in listed} == {
-                "Unified Snapshot",
+            assert [item["name"] for item in listed] == [
                 "Unified Snapshot v2",
                 "Imported Placeholder Snapshot",
-            }
+                "Unified Snapshot",
+            ]
+            assert listed[0]["is_favorite"] is True
+            assert listed[1]["is_favorite"] is True
+            assert listed[2]["is_favorite"] is False
             summary = next(item for item in listed if item["name"] == "Unified Snapshot")
             assert summary["input_device"] == "Capture 2"
             assert summary["output_device"] is None

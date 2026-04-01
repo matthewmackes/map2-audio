@@ -243,6 +243,8 @@ export function SnapshotArtifactsWorkspace({
   const filteredSnapshots = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     const list = [...snapshots].sort((a, b) => {
+      if (a.is_favorite && !b.is_favorite) return -1
+      if (!a.is_favorite && b.is_favorite) return 1
       if (a.is_active && !b.is_active) return -1
       if (!a.is_active && b.is_active) return 1
       return a.display_order - b.display_order
@@ -284,6 +286,17 @@ export function SnapshotArtifactsWorkspace({
       onToast('success', 'Snapshot duplicated', result.snapshot.name)
     },
     onError: (error: Error) => onToast('error', 'Failed to duplicate snapshot', error.message),
+  })
+
+  const favoriteMutation = useMutation({
+    mutationFn: ({ snapshotId, isFavorite }: { snapshotId: number; isFavorite: boolean }) =>
+      snapshotsApi.update(snapshotId, { is_favorite: isFavorite }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      await queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', result.snapshot.id] })
+      onToast('success', result.snapshot.is_favorite ? 'Snapshot marked as favorite' : 'Snapshot removed from favorites', result.snapshot.name)
+    },
+    onError: (error: Error) => onToast('error', 'Failed to update snapshot favorite', error.message),
   })
 
   const deleteMutation = useMutation({
@@ -479,6 +492,10 @@ export function SnapshotArtifactsWorkspace({
                       <div className="aap-snapshots__card-actions">
                         <OverflowMenu ariaLabel={`Snapshot actions for ${snapshot.name}`} onClick={(event) => event.stopPropagation()}>
                           <OverflowMenuItem itemText="Make Live" onClick={() => activateMutation.mutate(snapshot.id)} />
+                          <OverflowMenuItem
+                            itemText={snapshot.is_favorite ? 'Remove favorite' : 'Mark favorite'}
+                            onClick={() => favoriteMutation.mutate({ snapshotId: snapshot.id, isFavorite: !snapshot.is_favorite })}
+                          />
                           <OverflowMenuItem itemText="Duplicate snapshot" onClick={() => duplicateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem itemText="Export snapshot" onClick={() => exportMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem isDelete itemText="Delete snapshot" onClick={() => deleteMutation.mutate(snapshot.id)} />
@@ -503,6 +520,7 @@ export function SnapshotArtifactsWorkspace({
                             : runtimeState.display_label
                           : 'Saved'}
                       </Tag>
+                      {snapshot.is_favorite ? <Tag type="purple">Favorite</Tag> : null}
                       <Tag type={isDirty ? 'purple' : 'warm-gray'}>{isDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
                       {snapshot.program_number !== null ? <Tag type="blue">MIDI PC {snapshot.program_number}</Tag> : null}
                     </div>
@@ -531,6 +549,15 @@ export function SnapshotArtifactsWorkspace({
                   <p className="aap-snapshots__detail-subtitle">{selectedSnapshot.description || 'No description provided.'}</p>
                 </div>
                 <OverflowMenu ariaLabel="Snapshot cluster and sync operations">
+                  <OverflowMenuItem
+                    itemText={selectedSnapshot.is_favorite ? 'Remove favorite' : 'Mark favorite'}
+                    onClick={() => {
+                      if (!selectedId) {
+                        return
+                      }
+                      favoriteMutation.mutate({ snapshotId: selectedId, isFavorite: !selectedSnapshot.is_favorite })
+                    }}
+                  />
                   <OverflowMenuItem itemText="Publish to cluster" onClick={() => {
                     if (!selectedId || !targetNodeId) {
                       onToast('warning', 'Choose a target node first')
@@ -586,6 +613,7 @@ export function SnapshotArtifactsWorkspace({
                 >
                   {selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Saved'}
                 </Tag>
+                {selectedSnapshot.is_favorite ? <Tag type="purple">Favorite</Tag> : null}
                 <Tag type={selectedSnapshotDirty ? 'purple' : 'warm-gray'}>{selectedSnapshotDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
                 <Tag type="blue">MIDI PC {selectedSnapshot.program_number === null ? '—' : selectedSnapshot.program_number}</Tag>
                 <Tag type="cool-gray">Routing {selectedSnapshot.routing.mode}</Tag>

@@ -175,7 +175,7 @@ class SnapshotService:
         stmt = (
             select(Snapshot)
             .options(selectinload(Snapshot.channels), selectinload(Snapshot.chains))
-            .order_by(Snapshot.display_order.asc(), Snapshot.created_at.asc())
+            .order_by(Snapshot.is_favorite.desc(), Snapshot.display_order.asc(), Snapshot.created_at.asc())
         )
         if include_shared_only:
             stmt = stmt.where(Snapshot.community_shared.is_(True))

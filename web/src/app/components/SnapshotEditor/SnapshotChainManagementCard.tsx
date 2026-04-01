@@ -1,4 +1,4 @@
-import { Edit } from '@carbon/icons-react'
+import { Edit, Favorite, FavoriteFilled } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -29,6 +29,8 @@ interface SnapshotChainManagementCardProps {
   detailsAction?: ReactNode
   onRenameSnapshot?: () => void
   snapshotRenamePending?: boolean
+  onToggleSnapshotFavorite?: () => void
+  snapshotFavoritePending?: boolean
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
@@ -397,6 +399,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     detailsAction,
     onRenameSnapshot,
     snapshotRenamePending = false,
+    onToggleSnapshotFavorite,
+    snapshotFavoritePending = false,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
@@ -544,6 +548,19 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     </button>
                   ) : snapshotTitle}
                 </h2>
+                {liveSnapshot && onToggleSnapshotFavorite ? (
+                  <Button
+                    size="sm"
+                    kind={liveSnapshot.is_favorite ? 'secondary' : 'ghost'}
+                    renderIcon={liveSnapshot.is_favorite ? FavoriteFilled : Favorite}
+                    onClick={onToggleSnapshotFavorite}
+                    disabled={snapshotFavoritePending}
+                  >
+                    {snapshotFavoritePending
+                      ? (liveSnapshot.is_favorite ? 'Updating…' : 'Saving…')
+                      : (liveSnapshot.is_favorite ? 'Favorited' : 'Favorite')}
+                  </Button>
+                ) : null}
               </div>
               {liveSnapshot && onSubmitSnapshotDescription ? (
                 editingDescription ? (

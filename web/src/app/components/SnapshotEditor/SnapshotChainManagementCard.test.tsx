@@ -167,12 +167,14 @@ function renderCard(
   options: {
     editorSnapshotDraft?: SnapshotDraftData | null
     onRenameSnapshot?: jest.Mock
+    onToggleSnapshotFavorite?: jest.Mock
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     onTapTempo?: jest.Mock
     onResetTempo?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
+    snapshotFavoritePending?: boolean
     snapshotDescriptionPending?: boolean
     tempoPending?: boolean
     tapTempoPending?: boolean
@@ -188,6 +190,8 @@ function renderCard(
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
+      onToggleSnapshotFavorite={options.onToggleSnapshotFavorite}
+      snapshotFavoritePending={options.snapshotFavoritePending}
       onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
@@ -342,6 +346,19 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(renameButton)
 
     expect(onRenameSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders a snapshot favorite toggle and calls through when pressed', () => {
+    const onToggleSnapshotFavorite = jest.fn()
+
+    renderCard(buildLiveSnapshot({ is_favorite: false }), { onToggleSnapshotFavorite })
+
+    const favoriteButton = screen.getByRole('button', { name: 'Favorite' })
+    expect(favoriteButton).toBeInTheDocument()
+
+    fireEvent.click(favoriteButton)
+
+    expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
   })
 
   it('edits the snapshot description inline and saves on enter', () => {
