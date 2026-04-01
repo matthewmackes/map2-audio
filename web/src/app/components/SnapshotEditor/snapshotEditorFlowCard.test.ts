@@ -1,8 +1,11 @@
 import {
+  FLOW_CARD_CLIP_HOLD_MS,
+  FLOW_CARD_CLIP_LED_COLOR,
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
   buildFlowCardMetadataItems,
   buildFlowCardMetadataLine,
+  resolveFlowClipTimestamp,
 } from './snapshotEditorFlowCard'
 
 describe('snapshotEditorFlowCard helpers', () => {
@@ -46,6 +49,8 @@ describe('snapshotEditorFlowCard helpers', () => {
 
   it('keeps the flow-card LED and slot palette theme-driven', () => {
     expect(FLOW_CARD_LED_COLOR).toBe('var(--cds-link-primary)')
+    expect(FLOW_CARD_CLIP_LED_COLOR).toBe('var(--cds-support-warning)')
+    expect(FLOW_CARD_CLIP_HOLD_MS).toBe(1000)
 
     expect(FLOW_CARD_SLOT_COLORS).toHaveLength(6)
     expect(
@@ -56,5 +61,17 @@ describe('snapshotEditorFlowCard helpers', () => {
     expect(
       FLOW_CARD_SLOT_COLORS.every((entry) => entry.bg.includes('color-mix(')),
     ).toBe(true)
+  })
+
+  it('holds flow clip state for one second after the clipping peak clears', () => {
+    const plugins = [{ uri: 'urn:test:drive', position: 2 }]
+    const clippingPeaks = [{ uri: 'urn:test:drive', pluginPosition: 2, isClipping: true }]
+    const quietPeaks = [{ uri: 'urn:test:drive', pluginPosition: 2, isClipping: false }]
+
+    const clippedAt = resolveFlowClipTimestamp(plugins, clippingPeaks, null, 1_000)
+    expect(clippedAt).toBe(1_000)
+
+    expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 1_500)).toBe(1_000)
+    expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 2_100)).toBeNull()
   })
 })

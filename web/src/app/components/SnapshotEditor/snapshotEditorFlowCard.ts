@@ -17,6 +17,19 @@ export interface SnapshotEditorFlowCardMetadataOptions {
 }
 
 export const FLOW_CARD_LED_COLOR = 'var(--cds-link-primary)'
+export const FLOW_CARD_CLIP_LED_COLOR = 'var(--cds-support-warning)'
+export const FLOW_CARD_CLIP_HOLD_MS = 1000
+
+export interface SnapshotEditorFlowClipPluginRef {
+  uri: string
+  position?: number | null
+}
+
+export interface SnapshotEditorFlowClipPeakEntry {
+  uri: string
+  pluginPosition?: number | null
+  isClipping: boolean
+}
 
 export const FLOW_CARD_SLOT_COLORS: SnapshotEditorFlowCardPaletteEntry[] = [
   {
@@ -124,4 +137,32 @@ export function buildFlowCardMetadataLines({
   ].filter((item): item is string => Boolean(item?.trim()))
 
   return [primaryItems.join(' / '), secondaryItems.join(' / ')]
+}
+
+export function resolveFlowClipTimestamp(
+  plugins: readonly SnapshotEditorFlowClipPluginRef[],
+  peakEntries: readonly SnapshotEditorFlowClipPeakEntry[],
+  previousTimestamp: number | null | undefined,
+  now: number,
+  holdMs: number = FLOW_CARD_CLIP_HOLD_MS,
+): number | null {
+  const clipped = plugins.some((plugin) => peakEntries.some((entry) => (
+    entry.isClipping
+      && entry.uri === plugin.uri
+      && (
+        entry.pluginPosition == null
+        || plugin.position == null
+        || entry.pluginPosition === plugin.position
+      )
+  )))
+
+  if (clipped) {
+    return now
+  }
+
+  if (typeof previousTimestamp === 'number' && now - previousTimestamp < holdMs) {
+    return previousTimestamp
+  }
+
+  return null
 }

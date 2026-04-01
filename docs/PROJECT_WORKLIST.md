@@ -269,7 +269,7 @@ Subtasks: None
 Last updated: 2026-04-01 10:37 - Codex
 
 ID: T639
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Channel Output Clipping Indicator — LED Widget Style (Orange on Black)
 Description:
 - Goal / acceptance criteria: Each channel card displays a live output clip indicator using the existing LED number widget style (orange on black). The indicator shows "CLIP" or lights a clip LED when the channel's output signal exceeds 0 dBFS (or a configurable near-clip threshold). It does not display a numeric level — binary only: clean or clipping. The clip state is fed from the RT-safe metering ring buffer already present in the audioCallback signal chain. The indicator resets after a configurable hold time (default 1 second) to ensure brief clips are visible. This is the output-side indicator; input clipping is covered by T658.
@@ -277,7 +277,7 @@ Description:
 - Estimated effort: Low
 - Required outputs: clip detection logic in audioCallback metering path, WebSocket or shared memory bridge to push clip events to frontend, output clip indicator widget on channel card reusing existing LED style, configurable hold time, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 10:53 - Codex
 
 ID: T638
 Status: [ ] Todo

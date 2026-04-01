@@ -2187,6 +2187,25 @@
   letter-spacing: 0.04em;
 }
 
+.juce-grid-page__flow-card-clip-readout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--cds-support-warning, #ff832b) 28%, var(--cds-border-subtle, var(--border)));
+  background: color-mix(in srgb, var(--cds-support-warning, #ff832b) 10%, var(--cds-layer-01, var(--surface-secondary)));
+  opacity: 0.32;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.juce-grid-page__flow-card-clip-readout.is-active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--cds-support-warning, #ff832b) 18%, var(--cds-layer-hover, rgba(255, 255, 255, 0.03)));
+  border-color: color-mix(in srgb, var(--cds-support-warning, #ff832b) 52%, var(--cds-border-subtle, var(--border)));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cds-support-warning, #ff832b) 22%, transparent);
+}
+
 .juce-grid-page__editor-tags {
   display: flex;
   flex-wrap: wrap;

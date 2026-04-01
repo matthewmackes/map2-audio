@@ -126,9 +126,12 @@ import {
 } from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
 import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
 import {
+  FLOW_CARD_CLIP_HOLD_MS,
+  FLOW_CARD_CLIP_LED_COLOR,
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
   buildFlowCardMetadataLines,
+  resolveFlowClipTimestamp,
 } from '../components/SnapshotEditor/snapshotEditorFlowCard'
 import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
@@ -864,6 +867,7 @@ export function SnapshotEditorPage() {
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
+  const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
@@ -1308,6 +1312,68 @@ export function SnapshotEditorPage() {
       setPluginLevels(levels)
     }
   }, [pluginPeaks, outputsConnected])
+
+  const flowClipPeakEntries = useMemo(
+    () => Object.values(pluginPeaks ?? {}).flatMap((ports) => Object.values(ports)).map((peak) => ({
+      uri: peak.uri,
+      pluginPosition: peak.plugin_position ?? null,
+      isClipping: Boolean(peak.is_clipping),
+    })),
+    [pluginPeaks],
+  )
+
+  useEffect(() => {
+    const now = Date.now()
+    setFlowClipTimestamps((previous) => {
+      const next: Record<string, number> = {}
+
+      flowSlots.forEach((flow) => {
+        const chain = flow.chainId != null ? effectiveChainById.get(flow.chainId) : undefined
+        const nextTimestamp = resolveFlowClipTimestamp(
+          chain?.plugins ?? [],
+          flowClipPeakEntries,
+          previous[flow.id],
+          now,
+          FLOW_CARD_CLIP_HOLD_MS,
+        )
+        if (typeof nextTimestamp === 'number') {
+          next[flow.id] = nextTimestamp
+        }
+      })
+
+      const previousKeys = Object.keys(previous)
+      const nextKeys = Object.keys(next)
+      const changed = previousKeys.length !== nextKeys.length
+        || nextKeys.some((key) => previous[key] !== next[key])
+
+      return changed ? next : previous
+    })
+  }, [effectiveChainById, flowClipPeakEntries, flowSlots])
+
+  useEffect(() => {
+    const expiryDelays = Object.values(flowClipTimestamps)
+      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
+      .filter((delay) => delay > 0)
+
+    if (expiryDelays.length === 0) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const now = Date.now()
+      setFlowClipTimestamps((previous) => {
+        const next = Object.fromEntries(
+          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
+        )
+        const changed = Object.keys(next).length !== Object.keys(previous).length
+        return changed ? next : previous
+      })
+    }, Math.max(50, Math.min(...expiryDelays)))
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [flowClipTimestamps])
 
 
   // ============================================================================
@@ -4314,6 +4380,7 @@ export function SnapshotEditorPage() {
     const tabletStatusLabel = flowState?.activeAudio ? 'Live' : isActive ? 'Active' : 'Inactive'
     const flowCurrentPage = branchPageByFlowId[flow.id] ?? 0
     const flowPageCount = Math.max(1, Math.ceil((flowChain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE))
+    const flowClipActive = typeof flowClipTimestamps[flow.id] === 'number'
     const isTabletBranchExpanded = expandedTabletBranchId === flow.id
     const tabletSummaryPills = [
       isActive ? 'Selected' : null,
@@ -4567,6 +4634,12 @@ export function SnapshotEditorPage() {
                         <SegmentedLedText value={`CPU ${pluginCpuSum.toFixed(0)}%`} size="xs" color={FLOW_CARD_LED_COLOR} />
                       </Tag>
                     )}
+                    <div
+                      className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
+                      title={flowClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
+                    >
+                      <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                    </div>
                     {flow.solo && <Tag type="warm-gray">Solo</Tag>}
                     {flow.muted && <Tag type="red">Muted</Tag>}
                   </div>
@@ -4617,6 +4690,13 @@ export function SnapshotEditorPage() {
                           {desktopFlowMetaLineSecondary}
                         </span>
                       </button>
+
+                      <div
+                        className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
+                        title={flowClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
+                      >
+                        <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                      </div>
 
                       <button
                         type="button"
