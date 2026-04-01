@@ -5,7 +5,9 @@ import {
   FLOW_CARD_SLOT_COLORS,
   buildFlowCardMetadataItems,
   buildFlowCardMetadataLine,
+  normalizeFlowCardLabel,
   resolveFlowClipTimestamp,
+  validateFlowCardLabel,
 } from './snapshotEditorFlowCard'
 
 describe('snapshotEditorFlowCard helpers', () => {
@@ -73,5 +75,18 @@ describe('snapshotEditorFlowCard helpers', () => {
 
     expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 1_500)).toBe(1_000)
     expect(resolveFlowClipTimestamp(plugins, quietPeaks, clippedAt, 2_100)).toBeNull()
+  })
+
+  it('trims channel labels and rejects sibling collisions', () => {
+    expect(normalizeFlowCardLabel('  Lead  ')).toBe('Lead')
+    expect(validateFlowCardLabel('  ', 'flow-a', [{ id: 'flow-a', label: 'A' }])).toBe('Channel name is required.')
+    expect(validateFlowCardLabel('Lead', 'flow-a', [
+      { id: 'flow-a', label: 'A' },
+      { id: 'flow-b', label: 'Lead' },
+    ])).toBe('Channel names must be unique within this snapshot.')
+    expect(validateFlowCardLabel('Clean', 'flow-a', [
+      { id: 'flow-a', label: 'A' },
+      { id: 'flow-b', label: 'Lead' },
+    ])).toBeNull()
   })
 })

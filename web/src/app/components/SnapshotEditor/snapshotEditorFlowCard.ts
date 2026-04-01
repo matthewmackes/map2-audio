@@ -4,6 +4,11 @@ export interface SnapshotEditorFlowCardPaletteEntry {
   bg: string
 }
 
+export interface SnapshotEditorFlowLabelRef {
+  id: string
+  label: string
+}
+
 export interface SnapshotEditorFlowCardMetadataOptions {
   flowSummary: string
   isActive: boolean
@@ -137,6 +142,30 @@ export function buildFlowCardMetadataLines({
   ].filter((item): item is string => Boolean(item?.trim()))
 
   return [primaryItems.join(' / '), secondaryItems.join(' / ')]
+}
+
+export function normalizeFlowCardLabel(value: string): string {
+  return value.trim()
+}
+
+export function validateFlowCardLabel(
+  value: string,
+  flowId: string,
+  flowSlots: readonly SnapshotEditorFlowLabelRef[],
+): string | null {
+  const normalized = normalizeFlowCardLabel(value)
+  if (!normalized) {
+    return 'Channel name is required.'
+  }
+
+  const duplicate = flowSlots.some((flow) => (
+    flow.id !== flowId && normalizeFlowCardLabel(flow.label).toLowerCase() === normalized.toLowerCase()
+  ))
+  if (duplicate) {
+    return 'Channel names must be unique within this snapshot.'
+  }
+
+  return null
 }
 
 export function resolveFlowClipTimestamp(

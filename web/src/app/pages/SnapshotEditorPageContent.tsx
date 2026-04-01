@@ -131,7 +131,9 @@ import {
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
   buildFlowCardMetadataLines,
+  normalizeFlowCardLabel,
   resolveFlowClipTimestamp,
+  validateFlowCardLabel,
 } from '../components/SnapshotEditor/snapshotEditorFlowCard'
 import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
@@ -798,6 +800,9 @@ export function SnapshotEditorPage() {
   const [renameSnapshotName, setRenameSnapshotName] = useState('')
   const [showRenameChainModal, setShowRenameChainModal] = useState(false)
   const [renameChainName, setRenameChainName] = useState('')
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null)
+  const [editingFlowLabel, setEditingFlowLabel] = useState('')
+  const [editingFlowError, setEditingFlowError] = useState<string | null>(null)
   const [presetPendingDelete, setPresetPendingDelete] = useState<Snapshot | null>(null)
   const [showClearFlowsModal, setShowClearFlowsModal] = useState(false)
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false)
@@ -2980,6 +2985,31 @@ export function SnapshotEditorPage() {
     setFlowSlots(prev => prev.map(f => f.id === flowId ? { ...f, ...updates } : f))
   }, [])
 
+  const beginFlowRename = useCallback((flowId: string, currentLabel: string) => {
+    setEditingFlowId(flowId)
+    setEditingFlowLabel(currentLabel)
+    setEditingFlowError(null)
+  }, [])
+
+  const cancelFlowRename = useCallback(() => {
+    setEditingFlowId(null)
+    setEditingFlowLabel('')
+    setEditingFlowError(null)
+  }, [])
+
+  const commitFlowRename = useCallback((flowId: string) => {
+    const validationError = validateFlowCardLabel(editingFlowLabel, flowId, flowSlots)
+    if (validationError) {
+      setEditingFlowError(validationError)
+      return false
+    }
+
+    updateFlow(flowId, { label: normalizeFlowCardLabel(editingFlowLabel) })
+    markSnapshotsDirty()
+    cancelFlowRename()
+    return true
+  }, [cancelFlowRename, editingFlowLabel, flowSlots, markSnapshotsDirty, updateFlow])
+
   const selectFlowIndex = useCallback((index: number) => {
     const slot = flowSlots[index]
     if (!slot) {
@@ -4382,6 +4412,7 @@ export function SnapshotEditorPage() {
     const pluginCpuSum = flowChain?.plugins.reduce((sum, plugin) => sum + (getPluginCpu(plugin.uri) || 0), 0) || 0
     const flowLabel = flow.label || SLOT_COLORS[index]?.label || String.fromCharCode(65 + index)
     const flowTitle = flowChain?.name || `Flow ${flowLabel}`
+    const isEditingFlow = editingFlowId === flow.id
     const flowSummary = flowChain
       ? `${flowChain.plugins.length} loaded ${flowChain.plugins.length === 1 ? 'block' : 'blocks'}`
       : 'Assign a chain to start editing'
@@ -4544,7 +4575,45 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__tablet-flow-summary-main">
                   <div className="juce-grid-page__tablet-flow-summary-copy">
                     <p className="juce-grid-page__dense-card-kicker">{flowLabel}</p>
-                    <h3 className="juce-grid-page__flow-card-title-heading">{flowTitle}</h3>
+                    {isEditingFlow ? (
+                      <input
+                        className="juce-grid-page__flow-card-title-input"
+                        aria-label={`Rename flow ${flowLabel}`}
+                        value={editingFlowLabel}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => {
+                          setEditingFlowLabel(event.target.value)
+                          setEditingFlowError(null)
+                        }}
+                        onBlur={() => { void commitFlowRename(flow.id) }}
+                        onKeyDown={(event) => {
+                          event.stopPropagation()
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            void commitFlowRename(flow.id)
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault()
+                            cancelFlowRename()
+                          }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className="juce-grid-page__flow-card-title-button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          beginFlowRename(flow.id, flowLabel)
+                        }}
+                      >
+                        <h3 className="juce-grid-page__flow-card-title-heading">{flowLabel}</h3>
+                      </button>
+                    )}
+                    {isEditingFlow && editingFlowError ? (
+                      <p className="juce-grid-page__flow-card-error">{editingFlowError}</p>
+                    ) : null}
                     <p>
                       <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
                     </p>
@@ -4672,6 +4741,49 @@ export function SnapshotEditorPage() {
                       <span className="juce-grid-page__flow-card-label" title={flowTitle}>
                         <span className="juce-grid-page__flow-card-label-text">{flowLabel}</span>
                       </span>
+
+                      <div className="juce-grid-page__flow-card-title-wrap">
+                        {isEditingFlow ? (
+                          <input
+                            className="juce-grid-page__flow-card-title-input"
+                            aria-label={`Rename flow ${flowLabel}`}
+                            value={editingFlowLabel}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) => {
+                              setEditingFlowLabel(event.target.value)
+                              setEditingFlowError(null)
+                            }}
+                            onBlur={() => { void commitFlowRename(flow.id) }}
+                            onKeyDown={(event) => {
+                              event.stopPropagation()
+                              if (event.key === 'Enter') {
+                                event.preventDefault()
+                                void commitFlowRename(flow.id)
+                              }
+                              if (event.key === 'Escape') {
+                                event.preventDefault()
+                                cancelFlowRename()
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            className="juce-grid-page__flow-card-title-button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              beginFlowRename(flow.id, flowLabel)
+                            }}
+                            title={`Rename ${flowLabel}`}
+                          >
+                            <span className="juce-grid-page__flow-card-title-heading">{flowLabel}</span>
+                          </button>
+                        )}
+                        {isEditingFlow && editingFlowError ? (
+                          <span className="juce-grid-page__flow-card-error">{editingFlowError}</span>
+                        ) : null}
+                      </div>
 
                       <div
                         className="juce-grid-page__flow-card-level"

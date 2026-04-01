@@ -2134,6 +2134,63 @@
   min-width: 0;
 }
 
+.juce-grid-page__flow-card-title-wrap {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.juce-grid-page__flow-card-title-button {
+  display: inline-flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--cds-text-primary, var(--text-primary)) 72%, var(--flow-color, var(--cds-link-primary)));
+  font: inherit;
+  text-align: left;
+  cursor: text;
+}
+
+.juce-grid-page__flow-card-title-button:hover,
+.juce-grid-page__flow-card-title-button:focus-visible {
+  color: var(--cds-text-primary, var(--text-primary));
+  outline: none;
+}
+
+.juce-grid-page__flow-card-title-heading {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.juce-grid-page__flow-card-title-input {
+  inline-size: min(100%, 16rem);
+  padding: 0.35rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 50%, var(--cds-border-subtle, rgba(255, 255, 255, 0.16)));
+  background: var(--cds-layer-01, var(--surface));
+  color: var(--cds-text-primary, var(--text-primary));
+  font: inherit;
+}
+
+.juce-grid-page__flow-card-title-input:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 1px;
+}
+
+.juce-grid-page__flow-card-error {
+  margin: 0;
+  color: var(--cds-support-error, #da1e28);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 .juce-grid-page__flow-card-label {
   position: relative;
   display: inline-flex;

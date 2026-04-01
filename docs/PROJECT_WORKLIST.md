@@ -319,7 +319,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T635
-Status: [ ] Todo
+Status: [✓] Done
 Title: Channel Rename Inline with Collision Prevention
 Description:
 - Goal / acceptance criteria: Each channel card displays the channel's label as a click-to-rename inline text field. Clicking the label turns it into an input; the player types a new name and presses Enter (or clicks away) to save. The system enforces unique channel names within a snapshot — if the player enters a name already used by another channel in the same snapshot, an inline error appears and the save is blocked. The stable internal channel_key identifier is never changed by a rename. The updated name propagates immediately everywhere the channel is referenced: routing visualizer, morph slider endpoints, mute/solo button labels, the "X of Y channels active" badge, and the A/B switch button (T630).
@@ -328,7 +328,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: inline rename input on channel card, uniqueness validation against sibling channels, name propagation to all channel-referencing UI components, optimistic UI update before API confirmation, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 12:07 - Codex
+- Completion notes:
+  - Added inline channel-label rename controls directly on the flow cards for both desktop and tablet layouts.
+  - Kept the stable flow/channel identity intact while updating only the display label in state, so renamed channels propagate anywhere that already reads `flow.label`.
+  - Added shared validation helpers that trim labels, block blank names, and reject duplicate sibling channel names within the same snapshot.
+- Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T634
 Status: [ ] Todo
