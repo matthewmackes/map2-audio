@@ -176,7 +176,7 @@ Dependencies: T666-subA, T666-subD
 Assigned to: Unassigned
 
 ID: T666-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Sequencer transport mapping + TransportOwner interface
 Description:
 - New file: app/services/transport_owner.py — abstract base class TransportOwner with methods: play(), stop(), record(), restart(), erase()
@@ -189,7 +189,8 @@ Description:
 - Left LCD shows active owner name in transport context (e.g. "Owner: MIDI Rec")
 - Transport LED feedback: Play button pad LED on while transport running (HID output report)
 Dependencies: T666-subA, T666-subD, app/services/midi_hub/recorder.py
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 08:57 - Codex
 
 ID: T666-subI
 Status: [ ] Todo
