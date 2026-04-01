@@ -4,10 +4,10 @@ import { Launch, Renew, SettingsAdjust, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from '../ParameterControl'
 import {
   generateParameterGroups,
-  getCategoryConfig,
   type StandardGroup,
 } from '../PluginCards/types'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
+import { getPluginAccentConfig } from '../../utils/pluginAccent'
 
 export interface JuceGridParameterEditorProps {
   plugin: ChainPlugin | null
@@ -231,7 +231,7 @@ export function JuceGridParameterEditor({
   }
 
   const isHardware = meta.format === 'Hardware' || meta.is_hardware || plugin.uri.startsWith('hardware://')
-  const accentColor = isHardware ? HARDWARE_ACCENT : getCategoryConfig(meta.category).color
+  const accentColor = isHardware ? HARDWARE_ACCENT : getPluginAccentConfig(meta.uri, meta.category).color
 
   if (isHardware) {
     return (

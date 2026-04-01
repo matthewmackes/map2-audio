@@ -10,9 +10,14 @@ const pluginMeta = {
     name: 'Drive',
     category: 'Drive',
   },
+  'map2://juce/nam': {
+    uri: 'map2://juce/nam',
+    name: 'Neural Amp Modeler',
+    category: 'Amplifier',
+  },
 } as any
 
-function buildChain(bypassed: boolean) {
+function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive') {
   return {
     id: 101,
     name: 'Main Chain',
@@ -21,8 +26,8 @@ function buildChain(bypassed: boolean) {
     updated_at: '2026-04-01T00:00:00Z',
     plugins: [
       {
-        uri: 'plugin://drive',
-        name: 'Drive',
+        uri,
+        name,
         position: 0,
         bypassed,
         parameters: {},
@@ -65,5 +70,21 @@ describe('SnapshotEditorSignalCanvas', () => {
     )
 
     expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).not.toHaveClass('is-bypassed')
+  })
+
+  it('applies the NAM magenta accent even when the plugin category is Amplifier', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false, 'map2://juce/nam', 'Neural Amp Modeler')}
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: #ff7eb6')
   })
 })

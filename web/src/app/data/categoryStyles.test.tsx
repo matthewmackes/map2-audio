@@ -13,7 +13,9 @@ describe('categoryStyles', () => {
   })
 
   it('returns the shared default palette for known categories', () => {
-    expect(getCategoryConfig('Dynamics').color).toBe('#22c55e')
+    expect(getCategoryConfig('Dynamics').color).toBe('#33b1ff')
+    expect(getCategoryConfig('Delay').color).toBe('#78a9ff')
+    expect(getCategoryConfig('Reverb').color).toBe('#be95ff')
     expect(getCategoryConfig('Dynamics').gradient).toContain('linear-gradient')
   })
 
@@ -30,7 +32,7 @@ describe('categoryStyles', () => {
     setCategoryColorOverride('Delay', '#abcdef')
     resetCategoryColorOverride('Delay')
 
-    expect(getCategoryConfig('Delay').color).toBe('#45b7d1')
+    expect(getCategoryConfig('Delay').color).toBe('#78a9ff')
     expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toBeNull()
   })
 })

@@ -10,11 +10,11 @@ import {
 } from '@carbon/icons-react'
 import { Button, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../../map2/api'
-import { getCategoryConfig } from '../PluginCards/types'
 import { getEffectIconSpec, type EffectIconSpec } from '../icons/effectIcons'
 import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import { buildPluginOrderRef, samePluginIdentity } from '../../../map2/utils/pluginIdentity'
+import { getPluginAccentConfig } from '../../utils/pluginAccent'
 
 export interface JuceGridAudioInterfaceStatus {
   deviceName?: string
@@ -734,7 +734,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           const meta = pluginMeta[plugin.uri]
                           const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
                           const categoryLabel = meta?.category || 'Utility'
-                          const categoryConfig = getCategoryConfig(categoryLabel)
+                          const categoryConfig = getPluginAccentConfig(plugin.uri, categoryLabel)
                           const effectIcon = getSignalCardEffectIcon(meta, plugin)
                           const EffectIcon = effectIcon.component
                           const isSelected = isSelectedPlugin(plugin)

@@ -162,7 +162,7 @@ Subtasks: None
 Last updated: 2026-04-01 11:01 - Codex
 
 ID: T650
-Status: [ ] Todo
+Status: [✓] Done
 Title: Color-by-Effect-Type as Default Block Color — Uses Existing Carbon Theme Controls
 Description:
 - Goal / acceptance criteria: When a plugin block is added to a chain, its default color is automatically assigned based on its effect type using a Carbon-themed palette: drives/distortion = Carbon Green 40, delays = Carbon Blue 40, reverbs = Carbon Purple 40, modulation (chorus/flange/phaser/tremolo) = Carbon Orange 40, amp/preamp = Carbon Red 40, cabinet IR = Carbon Teal 40, compression/dynamics = Carbon Cyan 40, utilities/EQ = Carbon Gray 40, NAM = Carbon Magenta 40. The player can override the color per-block. The type-to-color mapping uses existing Carbon `@carbon/colors` tokens — no new design tokens introduced. Color propagates through the full system per T612.
@@ -171,7 +171,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: effect-type-to-Carbon-color mapping utility (shared between frontend and any label generation), auto-color assignment on block creation, override capability retained, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 11:42 - Codex
+- Completion notes:
+  - Updated the shared snapshot-editor category palette to use Carbon color-family shade 40 tokens for the default effect-type accents, including drive, delay, reverb, modulation, amp, cabinet IR, dynamics, utility/EQ, and the NAM special case.
+  - Added a shared plugin accent resolver so the native NAM processor renders with the required magenta accent even though its discovery category is `Amplifier`.
+  - Locked the behavior with focused frontend coverage for category defaults, the NAM override, and signal-canvas accent rendering.
+- Validation: `npm test -- --runInBand --runTestsByPath web/src/app/data/categoryStyles.test.tsx web/src/app/utils/pluginAccent.test.ts web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T649
 Status: [ ] Todo
