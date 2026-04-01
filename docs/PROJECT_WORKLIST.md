@@ -347,7 +347,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 09:25 - Codex
 
 ID: T666-subK
-Status: [ ] Todo
+Status: [✓] Done
 Title: End-to-end integration test suite
 Description:
 - New file: tests/test_maschine_mk1.py
@@ -363,6 +363,8 @@ Description:
   8. LED feedback: block bypass state change → correct HID output report generated
   9. Stats page dynamic discovery: all numeric fields returned from health/audio/midi endpoints
   10. TransportOwner: MidiHubRecorderTransportOwner play/stop/record/restart/erase routes correctly
+Assigned to: Codex
+Last updated: 2026-04-01 10:02 - Codex
 - Frontend tests in MaschinePage.test.tsx (see T666-subI)
 Dependencies: T666-subA through T666-subJ
 Assigned to: Unassigned
