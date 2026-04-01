@@ -11,6 +11,11 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
     description: 'Lead-ready snapshot for the main performance set.',
     tags: [],
     program_number: 23,
+    tempo_bpm: 128,
+    live_tempo_bpm: null,
+    active_tempo_bpm: 128,
+    tempo_source: 'stored',
+    tempo_updated_at: '2026-03-29T18:05:00Z',
     output_level_reference_dbfs: null,
     output_level_warning_threshold_db: 3,
     input_device: 'Stage Input',
@@ -163,9 +168,14 @@ function renderCard(
     editorSnapshotDraft?: SnapshotDraftData | null
     onRenameSnapshot?: jest.Mock
     onSubmitSnapshotDescription?: jest.Mock
+    onSubmitTempoBpm?: jest.Mock
+    onTapTempo?: jest.Mock
+    onResetTempo?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
     snapshotDescriptionPending?: boolean
+    tempoPending?: boolean
+    tapTempoPending?: boolean
   } = {},
 ) {
   return render(
@@ -178,8 +188,13 @@ function renderCard(
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
-    onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
-    snapshotDescriptionPending={options.snapshotDescriptionPending}
+      onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
+      snapshotDescriptionPending={options.snapshotDescriptionPending}
+      onSubmitTempoBpm={options.onSubmitTempoBpm}
+      tempoPending={options.tempoPending}
+      onTapTempo={options.onTapTempo}
+      onResetTempo={options.onResetTempo}
+      tapTempoPending={options.tapTempoPending}
       currentOutputLevelDbfs={-9.5}
       onSetOutputLevelReference={jest.fn()}
       onSubmitOutputLevelWarningThreshold={jest.fn()}
@@ -233,6 +248,10 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit snapshot description' })).toHaveTextContent('Lead-ready snapshot for the main performance set.')
+    expect(screen.getByText('Snapshot Tempo')).toBeInTheDocument()
+    expect(screen.getByText('128.0 BPM')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('128.0')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tap Tempo' })).toBeInTheDocument()
     expect(screen.getByText('Input Device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
     expect(screen.getByText('Output Device')).toBeInTheDocument()
@@ -258,6 +277,32 @@ describe('SnapshotChainManagementCard', () => {
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
     expect(screen.queryByText('Live now')).not.toBeInTheDocument()
     expect(screen.queryByRole('toolbar', { name: 'Snapshot hero actions' })).not.toBeInTheDocument()
+  })
+
+  it('submits stored tempo edits and exposes live tap override controls', () => {
+    const onSubmitTempoBpm = jest.fn()
+    const onTapTempo = jest.fn()
+    const onResetTempo = jest.fn()
+    renderCard(buildLiveSnapshot({
+      live_tempo_bpm: 132,
+      active_tempo_bpm: 132,
+      tempo_source: 'tap',
+    }), {
+      onSubmitTempoBpm,
+      onTapTempo,
+      onResetTempo,
+    })
+
+    fireEvent.change(screen.getByLabelText('Stored snapshot tempo'), { target: { value: '140' } })
+    fireEvent.blur(screen.getByLabelText('Stored snapshot tempo'))
+    expect(onSubmitTempoBpm).toHaveBeenCalledWith(140)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tap Tempo' }))
+    expect(onTapTempo).toHaveBeenCalled()
+
+    expect(screen.getByText('Live tap override active')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to Stored' }))
+    expect(onResetTempo).toHaveBeenCalled()
   })
 
   it('renders output reference controls and warning messaging in the hero card', () => {

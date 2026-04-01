@@ -14,24 +14,31 @@ import {
 
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
+export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption' | 'launchers'
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
-  return value === 'host-machine' || value === 'audio-engine' || value === 'theme' || value === 'about' || value === 'adoption'
+  return value === 'host-machine'
+    || value === 'audio-engine'
+    || value === 'theme'
+    || value === 'about'
+    || value === 'adoption'
+    || value === 'launchers'
 }
 
-export interface PlatformPinnedNavItem {
+export interface PlatformPanelNavItem {
   to: string
   label: string
   shortLabel: string
   icon: CarbonIconType
   description: string
   color: string
-  pinnable: true
+  pinnable: boolean
   maturity: 'beta'
   kind: 'link'
   target: { layer?: PlatformLayerId; panel?: StandalonePanel }
 }
+
+export type PlatformPinnedNavItem = PlatformPanelNavItem & { pinnable: true }
 
 const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   overview: ChartColumn,
@@ -49,6 +56,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
   description: string
   color: string
   icon: CarbonIconType
+  pinnable: boolean
 }> = [
   {
     id: 'host-machine',
@@ -57,6 +65,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open hardware posture, services, and interface readiness for the local MAP2 host.',
     color: 'var(--cds-support-warning)',
     icon: Screen,
+    pinnable: true,
   },
   {
     id: 'audio-engine',
@@ -65,6 +74,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the audio-engine workspace for runtime, latency, and engine-state inspection.',
     color: 'var(--cds-support-error)',
     icon: Terminal,
+    pinnable: true,
   },
   {
     id: 'theme',
@@ -73,6 +83,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the appearance workspace for Carbon theme presets, GUI typography, motion reduction, and category accents.',
     color: 'var(--cds-link-primary)',
     icon: PaintBrush,
+    pinnable: true,
   },
   {
     id: 'about',
@@ -81,6 +92,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the platform guide, version context, and operational documentation surface.',
     color: 'var(--cds-support-info)',
     icon: Information,
+    pinnable: true,
   },
   {
     id: 'adoption',
@@ -89,6 +101,16 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the dedicated Platforms adoption workflow for unmanaged, blocked, or standby nodes.',
     color: 'var(--cds-support-warning)',
     icon: SettingsAdjust,
+    pinnable: true,
+  },
+  {
+    id: 'launchers',
+    label: 'Launchers',
+    shortLabel: 'Launchers',
+    description: 'Manage landing-page tiles, global navigation pins, and shared launcher promotion from one organizer.',
+    color: 'var(--cds-support-info)',
+    icon: SettingsAdjust,
+    pinnable: false,
   },
 ]
 
@@ -100,7 +122,7 @@ function buildPlatformPanelPinnedRoute(panel: StandalonePanel): string {
   return `/platforms/${panel}`
 }
 
-export const platformPinnedItems: PlatformPinnedNavItem[] = [
+export const platformPanelItems: PlatformPanelNavItem[] = [
   ...PLATFORM_LAYER_META.map((layer) => ({
     to: buildPlatformLayerPinnedRoute(layer.id),
     label: layer.label,
@@ -108,7 +130,7 @@ export const platformPinnedItems: PlatformPinnedNavItem[] = [
     icon: PLATFORM_LAYER_ICONS[layer.id],
     description: layer.description,
     color: layer.accent,
-    pinnable: true as const,
+    pinnable: true,
     maturity: 'beta' as const,
     kind: 'link' as const,
     target: { layer: layer.id },
@@ -120,12 +142,16 @@ export const platformPinnedItems: PlatformPinnedNavItem[] = [
     icon: panel.icon,
     description: panel.description,
     color: panel.color,
-    pinnable: true as const,
+    pinnable: panel.pinnable,
     maturity: 'beta' as const,
     kind: 'link' as const,
     target: { panel: panel.id },
   })),
 ]
+
+export const platformPinnedItems: PlatformPinnedNavItem[] = platformPanelItems.filter(
+  (item): item is PlatformPinnedNavItem => item.pinnable,
+)
 
 const platformPinnedRouteSet = new Set(platformPinnedItems.map((item) => item.to))
 

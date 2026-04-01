@@ -2278,12 +2278,37 @@ export interface SnapshotSessionNote {
   created_at?: string | null;
 }
 
+export interface SnapshotTempoStatus {
+  snapshot_id: number | null;
+  stored_tempo_bpm: number;
+  live_tempo_bpm?: number | null;
+  active_tempo_bpm: number;
+  tempo_source: string;
+  is_live_override_active?: boolean;
+  updated_at?: string | null;
+  tap_count?: number;
+}
+
+export interface SnapshotRevisionSummary {
+  id: number;
+  snapshot_id: number;
+  revision_number: number;
+  snapshot_revision?: string | null;
+  summary: string;
+  saved_at?: string | null;
+}
+
 export interface SnapshotSummary {
   id: number;
   name: string;
   description: string;
   tags: string[];
   program_number: number | null;
+  tempo_bpm?: number;
+  live_tempo_bpm?: number | null;
+  active_tempo_bpm?: number;
+  tempo_source?: string;
+  tempo_updated_at?: string | null;
   output_level_reference_dbfs?: number | null;
   output_level_warning_threshold_db?: number;
   input_device: string | null;

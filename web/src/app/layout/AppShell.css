@@ -203,6 +203,13 @@
   border-top: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 72%, transparent);
 }
 
+.advanced-menu-control-panel__item-state-wrap {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+  flex: 1;
+}
+
 .advanced-menu-control-panel__item-state {
   min-width: 0;
   font-size: calc(0.5rem * var(--platform-menu-scale));
@@ -213,6 +220,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.advanced-menu-control-panel__item-placement-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem;
 }
 
 .advanced-menu-control-panel__details-btn {

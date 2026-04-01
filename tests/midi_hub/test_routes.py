@@ -570,9 +570,16 @@ async def test_traffic_script_clock_network_midi2_macro_recorder_scheduler_route
     assert "running" in await midi_hub_routes.get_clock_status()
     assert (
         await midi_hub_routes.configure_clock(
-            midi_hub_routes.ClockConfigRequest(bpm=128.5, output_ports=["dstx"], divider=1.0, multiplier=1.0)
+            midi_hub_routes.ClockConfigRequest(
+                bpm=128.5,
+                output_ports=["dstx"],
+                snapshot_sync_enabled=True,
+                divider=1.0,
+                multiplier=1.0,
+            )
         )
     )["bpm"] == 128.5
+    assert (await midi_hub_routes.get_clock_status())["snapshot_sync_enabled"] is True
     assert "bpm" in await midi_hub_routes.tap_clock()
     assert (await midi_hub_routes.start_clock())["running"] is True
     assert (await midi_hub_routes.stop_clock())["running"] is False

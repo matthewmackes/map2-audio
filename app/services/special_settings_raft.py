@@ -7,66 +7,32 @@ have synchronized special settings.
 """
 
 import logging
-import os
 import asyncio
 from datetime import datetime
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import SpecialSettings
+from app.services.special_settings_normalization import (
+    DEFAULT_LANDING_TILES,
+    DEFAULT_MENU_LOCATION,
+    DEFAULT_PINNED_ROUTES,
+    normalize_landing_tiles,
+    normalize_last_active_node,
+    normalize_menu_location,
+    normalize_pinned_routes,
+    resolve_landing_tiles_from_settings,
+    resolve_pinned_routes_from_settings,
+)
 
 logger = logging.getLogger(__name__)
-DEFAULT_PINNED_ROUTES: list[str] = []
-DEFAULT_MENU_LOCATION = "hidden"
 
-
-def _is_supported_pinned_route(route: str) -> bool:
-    return route.startswith("/") or route.startswith("platform:")
-
-
-def _normalize_pinned_routes(routes: Optional[list]) -> list[str]:
-    if not routes:
-        return []
-
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for raw_route in routes:
-        if not isinstance(raw_route, str):
-            continue
-        route = raw_route.strip()
-        if not route or not _is_supported_pinned_route(route) or route in seen:
-            continue
-        seen.add(route)
-        normalized.append(route)
-
-    return normalized
-
-
-def _resolve_pinned_routes(raw_settings) -> list[str]:
-    raw_routes = getattr(raw_settings, "pinned_routes", None)
-    if raw_routes is None:
-        raw_routes = getattr(raw_settings, "promoted_advanced_routes", DEFAULT_PINNED_ROUTES)
-    return _normalize_pinned_routes(raw_routes)
-
-
-def _normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:
-    if node_id is None:
-        return None
-    if not isinstance(node_id, str):
-        return None
-
-    normalized = node_id.strip()
-    if not normalized or normalized.lower() in {"null", "local"}:
-        return None
-
-    return normalized
-
-
-def _normalize_menu_location(menu_location: Optional[str]) -> str:
-    if isinstance(menu_location, str) and menu_location.strip() == "mobile-only":
-        return "mobile-only"
-    return DEFAULT_MENU_LOCATION
+_normalize_pinned_routes = normalize_pinned_routes
+_normalize_landing_tiles = normalize_landing_tiles
+_resolve_pinned_routes = resolve_pinned_routes_from_settings
+_resolve_landing_tiles = resolve_landing_tiles_from_settings
+_normalize_last_active_node = normalize_last_active_node
+_normalize_menu_location = normalize_menu_location
 
 
 class SpecialSettingsStateManager:
@@ -90,6 +56,7 @@ class SpecialSettingsStateManager:
         - hidden_plugins: List[str]
         - menu_location: str
         - pinned_routes: List[str]
+        - landing_tiles: List[Dict[str, str]]
         - updated_by_node: str
         - timestamp: str (ISO format)
         - version: int
@@ -109,6 +76,7 @@ class SpecialSettingsStateManager:
                         hidden_plugins=[],
                         menu_location=DEFAULT_MENU_LOCATION,
                         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
+                        landing_tiles=DEFAULT_LANDING_TILES.copy(),
                         last_active_node=None,
                         version=1
                     )
@@ -127,6 +95,9 @@ class SpecialSettingsStateManager:
                         ),
                     )
                 )
+                settings.landing_tiles = _normalize_landing_tiles(
+                    entry_data.get("landing_tiles", _resolve_landing_tiles(settings))
+                )
                 settings.last_active_node = _normalize_last_active_node(
                     entry_data.get("last_active_node")
                 )
@@ -141,6 +112,7 @@ class SpecialSettingsStateManager:
                     f"hidden={len(settings.hidden_plugins)}, "
                     f"location={settings.menu_location}, "
                     f"pinned={len(settings.pinned_routes or [])}, "
+                    f"landing_tiles={len(settings.landing_tiles or [])}, "
                     f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
@@ -167,6 +139,7 @@ class SpecialSettingsStateManager:
                     "hidden_plugins": settings.hidden_plugins or [],
                     "menu_location": _normalize_menu_location(settings.menu_location),
                     "pinned_routes": _resolve_pinned_routes(settings),
+                    "landing_tiles": _resolve_landing_tiles(settings),
                     "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
@@ -184,7 +157,8 @@ async def replicate_special_settings_to_raft(
     hidden_plugins: list,
     menu_location: str,
     pinned_routes: list,
-    last_active_node: Optional[str],
+    landing_tiles: list,
+    last_active_node,
     node_id: str
 ) -> int:
     """
@@ -212,6 +186,7 @@ async def replicate_special_settings_to_raft(
             "hidden_plugins": hidden_plugins,
             "menu_location": _normalize_menu_location(menu_location),
             "pinned_routes": _normalize_pinned_routes(pinned_routes),
+            "landing_tiles": _normalize_landing_tiles(landing_tiles),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
             "timestamp": datetime.utcnow().isoformat(),
@@ -229,6 +204,7 @@ async def replicate_special_settings_to_raft(
             f"Special settings replicated to Raft log at index {log_index}: "
             f"enabled={enabled}, hidden={len(hidden_plugins)}, "
             f"location={entry_data['menu_location']}, pinned={len(entry_data['pinned_routes'])}, "
+            f"landing_tiles={len(entry_data['landing_tiles'])}, "
             f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         

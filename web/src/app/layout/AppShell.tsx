@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled } from '@carbon/icons-react'
+import { ChevronDown, ChevronRight, ChevronUp, Close, Menu } from '@carbon/icons-react'
 import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
@@ -13,10 +13,10 @@ import { LatencyPressureShellReadout } from '../components/LatencyPressureShellR
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
-  allPinnableNavigationItems,
   advancedMenuItems,
   allRouteNavigationItems,
   defaultPinnedRoutes,
+  findPinnableNavigationItem,
   hardwareInterfaceMenuItems,
   homeNavigationItem,
   homeNavigationSections,
@@ -50,7 +50,6 @@ interface TopNavItem {
 }
 
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
-
 type MobileMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
 const ADVANCED_SECTION_ORDER = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware', 'Blocked / Lab'] as const
@@ -155,25 +154,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mixMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_mix'] ?? mpx1Shadow['program.mix'] ?? 0))
   const levelMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_level'] ?? mpx1Shadow['program.level'] ?? 0))
 
-  const {
-    settings: specialSettings,
-    isLoading: specialSettingsLoading,
-    updateSettings: updateSpecialSettings,
-  } = useSpecialSettings()
+  const { settings: specialSettings } = useSpecialSettings()
 
   const requestedPinnedRoutes = useMemo(
     () => normalizePinnedRoutes(specialSettings?.pinnedRoutes ?? defaultPinnedRoutes),
     [specialSettings?.pinnedRoutes],
   )
 
-  const requestedPinnedRouteSet = useMemo(() => new Set(requestedPinnedRoutes), [requestedPinnedRoutes])
-
   const pinnedRouteKeys = useMemo(
-    () => allPinnableNavigationItems
-      .filter((item) => item.to !== '/' && requestedPinnedRouteSet.has(item.to))
-      .map((item) => item.to)
-      .slice(0, MAX_PINNED_NAV_ITEMS),
-    [requestedPinnedRouteSet],
+    () => requestedPinnedRoutes
+      .filter((route) => route !== '/')
+      .map((route) => findPinnableNavigationItem(route))
+      .filter((item): item is PinnedMenuItem => Boolean(item))
+      .slice(0, MAX_PINNED_NAV_ITEMS)
+      .map((item) => item.to),
+    [requestedPinnedRoutes],
   )
 
   const pinnedRouteSet = useMemo(() => new Set(pinnedRouteKeys), [pinnedRouteKeys])
@@ -184,10 +179,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   )
 
   const pinnedTopNavItems = useMemo<TopNavItem[]>(() => {
-    return allPinnableNavigationItems
-      .filter((item) => item.to !== '/' && pinnedRouteSet.has(item.to))
+    return pinnedRouteKeys
+      .map((route) => findPinnableNavigationItem(route))
+      .filter((item): item is PinnedMenuItem => Boolean(item))
       .map(toTopNavItem)
-  }, [pinnedRouteSet])
+  }, [pinnedRouteKeys])
 
   const mobilePinnedItems = useMemo(
     () => pinnedTopNavItems.filter((item) => item.kind !== 'hardware-submenu'),
@@ -302,69 +298,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('MPX1 disconnect failed:', err)
     }
-  }
-
-  const togglePinnedRoute = async (item: PinnedMenuItem, checked: boolean) => {
-    if (!item.pinnable) {
-      return
-    }
-
-    const currentRoutes = allPinnableNavigationItems
-      .filter((candidate) => candidate.to !== '/' && pinnedRouteSet.has(candidate.to))
-      .map((candidate) => candidate.to)
-
-    if (!checked) {
-      await updateSpecialSettings({ pinnedRoutes: currentRoutes.filter((route) => route !== item.to) })
-      return
-    }
-
-    if (pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS && !pinnedRouteSet.has(item.to)) {
-      return
-    }
-
-    const candidateRoutes = new Set([...currentRoutes, item.to])
-    const nextRoutes = allPinnableNavigationItems
-      .filter((candidate) => candidate.to !== '/' && candidateRoutes.has(candidate.to))
-      .map((candidate) => candidate.to)
-      .slice(0, MAX_PINNED_NAV_ITEMS)
-
-    await updateSpecialSettings({ pinnedRoutes: nextRoutes })
-  }
-
-  const renderPinToggle = (item: PinnedMenuItem) => {
-    if (!item.pinnable) {
-      return null
-    }
-
-    const checked = pinnedRouteSet.has(item.to)
-    const limitReached = !checked && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-    const disabled = specialSettingsLoading || limitReached
-
-    return (
-      <button
-        type="button"
-        className={`nav-advanced-promote-toggle${checked ? ' is-pinned' : ''}${disabled ? ' is-disabled' : ''}`}
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          if (!disabled) {
-            void togglePinnedRoute(item, !checked)
-          }
-        }}
-        title={
-          limitReached
-            ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-            : checked
-              ? 'Unpin from navigation bar'
-              : 'Pin to navigation bar'
-        }
-        disabled={disabled}
-        aria-label={checked ? `Unpin ${item.label}` : `Pin ${item.label}`}
-        aria-pressed={checked}
-      >
-        {checked ? <PinFilled size={12} aria-hidden /> : <Pin size={12} aria-hidden />}
-      </button>
-    )
   }
 
   const renderNavItem = (item: TopNavItem) => {
@@ -553,7 +486,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           {itemBody}
         </NavLink>
-        {renderPinToggle(item)}
       </div>
     )
   }
@@ -646,9 +578,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     const cardId = getAdvancedCardId(sectionTitle, item)
     const Icon = item.icon
     const isBlocked = isBlockedAdvancedMenuItem(item)
-    const isPinned = pinnedRouteSet.has(item.to)
-    const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-    const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
     const hardwareLocation = hardwareLocationNotes[item.to]
     const isExpanded = expandedAdvancedCardId === cardId
     const isActive = isRouteMatch(location.pathname, item.to)
@@ -667,32 +596,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         className={`platform-shell__cp-item advanced-menu-control-panel__item${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}${isExpanded ? ' is-expanded' : ''}`}
         style={{ '--advanced-menu-item-accent': item.color } as CSSProperties}
       >
-        {item.pinnable ? (
-          <button
-            type="button"
-            className={`platform-shell__cp-pin-btn advanced-menu-control-panel__pin-btn${isPinned ? ' is-pinned' : ''}`}
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              if (!pinDisabled) {
-                void togglePinnedRoute(item, !isPinned)
-              }
-            }}
-            title={
-              limitReached
-                ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                : isPinned
-                  ? 'Unpin from navigation bar'
-                  : 'Pin to navigation bar'
-            }
-            aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-            aria-pressed={isPinned}
-            disabled={pinDisabled}
-          >
-            {isPinned ? 'PINNED' : 'PIN'}
-          </button>
-        ) : null}
-
         <button
           type="button"
           className="platform-shell__cp-item-open advanced-menu-control-panel__item-open"

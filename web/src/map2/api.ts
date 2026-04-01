@@ -827,6 +827,7 @@ export interface MidiHubClockStatus {
   running: boolean;
   source_mode: string;
   output_ports: string[];
+  snapshot_sync_enabled?: boolean;
   divider: number;
   multiplier: number;
   offset_ms: number;

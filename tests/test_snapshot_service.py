@@ -5,12 +5,14 @@ from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotService
+from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from sqlalchemy import select
 
 
 def _init_temp_db(tmp_path):
     database_module._tables_created = False
     database_module._pragmas_set = False
+    reset_snapshot_tempo_service()
     database_module.init_async_db(f"sqlite+aiosqlite:///{tmp_path / 'snapshot-service.db'}")
 
 
@@ -24,8 +26,12 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         assert snapshot_data["flowSlots"][0]["label"] == "A"
         return 3, 2
 
+    async def _fake_apply_tempo(_snapshot_data, _bpm):
+        return 1
+
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
 
     async def _fake_activate_chain(self, chain_id):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
@@ -45,6 +51,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 description="Service test",
                 tags=["service"],
                 program_number=10,
+                tempo_bpm=132.0,
                 output_level_reference_dbfs=-12.5,
                 output_level_warning_threshold_db=2.5,
                 input_device="Capture 1",
@@ -98,6 +105,9 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["chain_count"] == 1
             assert created["routing"]["mode"] == "parallel_blend"
             assert created["midi_map"][0]["program_number"] == 10
+            assert created["tempo_bpm"] == 132.0
+            assert created["active_tempo_bpm"] == 132.0
+            assert created["tempo_source"] == "stored"
             assert created["output_level_reference_dbfs"] == -12.5
             assert created["output_level_warning_threshold_db"] == 2.5
             assert created["input_device"] == "Capture 1"
@@ -138,6 +148,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
 
             renamed = await service.update_snapshot(
                 created["id"],
+                tempo_bpm=140.0,
                 output_level_reference_dbfs=-9.0,
                 output_level_warning_threshold_db=4.0,
                 input_device="Capture 2",
@@ -149,6 +160,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 },
             )
             assert renamed is not None
+            assert renamed["tempo_bpm"] == 140.0
             assert renamed["output_level_reference_dbfs"] == -9.0
             assert renamed["output_level_warning_threshold_db"] == 4.0
             assert renamed["input_device"] == "Capture 2"
@@ -175,12 +187,17 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_revision"]
             assert activated["runtime_live_state"]["snapshot_id"] == created["id"]
             assert activated["snapshot_data"]["live_state"]["is_live"] is True
+            assert activated["snapshot_data"]["tempo_bpm"] == 140.0
+            assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
+            assert activated["snapshot_data"]["tempo_source"] == "stored"
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None
             assert live_snapshot["id"] == created["id"]
             assert live_snapshot["live_state"]["is_live"] is True
             assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
+            assert live_snapshot["tempo_bpm"] == 140.0
+            assert live_snapshot["active_tempo_bpm"] == 140.0
 
             runtime_state_service = SnapshotRuntimeStateService(session)
             runtime_live_state = await runtime_state_service.get_live_state()
@@ -345,4 +362,111 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
             assert runtime_chain["runtime_sync"]["status"] == "inactive"
 
     monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    asyncio.run(_run())
+
+
+def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="Revision Snapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:drive",
+                                    "name": "Drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.6},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            saved = await service.update_snapshot(
+                created["id"],
+                detail_payload={
+                    "channels": created["channels"],
+                    "chains": [
+                        {
+                            "id": created["chains"][0]["id"],
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:drive",
+                                    "name": "Drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.6},
+                                    "loader_state": {},
+                                },
+                                {
+                                    "uri": "urn:test:delay",
+                                    "name": "Delay",
+                                    "position": 1,
+                                    "bypass": False,
+                                    "parameters": {"mix": 0.4},
+                                    "loader_state": {},
+                                },
+                            ],
+                        }
+                    ],
+                    "routing": created["routing"],
+                    "midi_map": created["midi_map"],
+                },
+                create_revision=True,
+            )
+            assert saved is not None
+            assert len(saved["chains"][0]["plugins"]) == 2
+
+            revisions = await service.list_revisions(created["id"])
+            assert revisions is not None
+            assert len(revisions) == 1
+            assert revisions[0]["revision_number"] == 1
+            assert revisions[0]["summary"] == "1 block, 1 channel, parallel blend routing"
+
+            restored = await service.restore_revision(created["id"], 1)
+            assert restored is not None
+            assert len(restored["chains"][0]["plugins"]) == 1
+
+            revisions_after_restore = await service.list_revisions(created["id"])
+            assert revisions_after_restore is not None
+            assert len(revisions_after_restore) == 2
+            assert revisions_after_restore[0]["revision_number"] == 2
+            assert revisions_after_restore[0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
+
     asyncio.run(_run())

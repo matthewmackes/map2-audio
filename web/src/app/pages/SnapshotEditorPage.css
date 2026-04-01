@@ -1262,8 +1262,66 @@
 .juce-grid-page__snapshot-status-output-reference,
 .juce-grid-page__snapshot-status-output-reference-copy,
 .juce-grid-page__snapshot-status-output-reference-actions,
-.juce-grid-page__snapshot-status-output-threshold-field {
+.juce-grid-page__snapshot-status-output-threshold-field,
+.juce-grid-page__snapshot-status-tempo-panel,
+.juce-grid-page__snapshot-status-tempo-copy,
+.juce-grid-page__snapshot-status-tempo-actions,
+.juce-grid-page__snapshot-status-tempo-field {
   display: flex;
+}
+
+.juce-grid-page__snapshot-status-tempo-panel {
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  max-width: 36rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-link-primary, #0f62fe) 32%, var(--cds-border-subtle, var(--border)));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer, #161616));
+}
+
+.juce-grid-page__snapshot-status-tempo-copy {
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.juce-grid-page__snapshot-status-tempo-kicker {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.juce-grid-page__snapshot-status-tempo-copy span:last-child {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+}
+
+.juce-grid-page__snapshot-status-tempo-actions {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__snapshot-status-tempo-field {
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.75rem;
+}
+
+.juce-grid-page__snapshot-status-tempo-field input {
+  inline-size: 7rem;
+  min-block-size: 2.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer-01, #262626);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.juce-grid-page__snapshot-status-tempo-tag {
+  inline-size: fit-content;
 }
 
 .juce-grid-page__snapshot-status-output-reference {
@@ -6908,4 +6966,61 @@
 .audio-nodes-modal__done-icon {
   color: var(--cds-support-success, #24a148);
   flex-shrink: 0;
+}
+
+.juce-grid-page__version-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.juce-grid-page__version-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__version-history-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+  background: var(--cds-layer, rgba(255, 255, 255, 0.02));
+}
+
+.juce-grid-page__version-history-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.juce-grid-page__version-history-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__version-history-revision-hash {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary, #c6c6c6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.juce-grid-page__version-history-summary,
+.juce-grid-page__version-history-empty {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  line-height: 1.5;
+}
+
+@media (max-width: 672px) {
+  .juce-grid-page__version-history-item {
+    flex-direction: column;
+  }
 }

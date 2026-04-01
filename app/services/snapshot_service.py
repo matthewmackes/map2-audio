@@ -33,6 +33,7 @@ from app.database import (
     SnapshotDeploymentHistory,
     SnapshotLoopInsertion,
     SnapshotMidiMap,
+    SnapshotRevision,
     SnapshotRouting,
     SnapshotSessionNote,
 )
@@ -45,6 +46,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CHANNEL_COLOR = "#2563eb"
 DEFAULT_DRY_WET_MIX = 100.0
+DEFAULT_SNAPSHOT_TEMPO_BPM = 120.0
+MAX_SNAPSHOT_REVISIONS = 100
 UNSET = object()
 
 
@@ -209,6 +212,16 @@ class SnapshotService:
         runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
         runtime_payload = runtime_state.get("live_snapshot_payload")
         if runtime_state.get("state") == "live" and isinstance(runtime_payload, dict):
+            snapshot_id = _safe_int(runtime_payload.get("id"))
+            if snapshot_id is not None:
+                live_detail = await self.get_snapshot(snapshot_id)
+                if live_detail is not None:
+                    live_detail["snapshot_revision"] = (
+                        runtime_state.get("snapshot_revision")
+                        or runtime_payload.get("snapshot_revision")
+                        or live_detail.get("snapshot_revision")
+                    )
+                    return live_detail
             return runtime_payload
 
         result = await self.session.execute(
@@ -238,6 +251,7 @@ class SnapshotService:
         description: str = "",
         tags: Optional[list[str]] = None,
         program_number: Optional[int] = None,
+        tempo_bpm: float = DEFAULT_SNAPSHOT_TEMPO_BPM,
         derived_from_snapshot_id: Optional[int] = None,
         output_level_reference_dbfs: Optional[float] = None,
         output_level_warning_threshold_db: Optional[float] = 3.0,
@@ -257,6 +271,7 @@ class SnapshotService:
             program_number=program_number,
             is_favorite=is_favorite,
             display_order=max_order + 1,
+            tempo_bpm=_safe_float(tempo_bpm, DEFAULT_SNAPSHOT_TEMPO_BPM),
             derived_from_snapshot_id=derived_from_snapshot_id,
             output_level_reference_dbfs=output_level_reference_dbfs,
             output_level_warning_threshold_db=(
@@ -289,6 +304,7 @@ class SnapshotService:
         description: Any = UNSET,
         tags: Any = UNSET,
         program_number: Any = UNSET,
+        tempo_bpm: Any = UNSET,
         derived_from_snapshot_id: Any = UNSET,
         output_level_reference_dbfs: Any = UNSET,
         output_level_warning_threshold_db: Any = UNSET,
@@ -298,10 +314,12 @@ class SnapshotService:
         is_favorite: Any = UNSET,
         display_order: Any = UNSET,
         detail_payload: Any = UNSET,
+        create_revision: bool = False,
     ) -> Optional[dict[str, Any]]:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
             return None
+        revision_source = await self.get_snapshot(snapshot_id) if create_revision else None
 
         if program_number is not UNSET and program_number != snapshot.program_number:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
@@ -314,6 +332,8 @@ class SnapshotService:
             snapshot.tags = list(tags)
         if program_number is not UNSET:
             snapshot.program_number = program_number
+        if tempo_bpm is not UNSET:
+            snapshot.tempo_bpm = _safe_float(tempo_bpm, DEFAULT_SNAPSHOT_TEMPO_BPM)
         if derived_from_snapshot_id is not UNSET:
             snapshot.derived_from_snapshot_id = derived_from_snapshot_id
         if output_level_reference_dbfs is not UNSET:
@@ -349,7 +369,40 @@ class SnapshotService:
             await self._replace_snapshot_state(snapshot, normalized)
 
         await self.session.flush()
-        return await self.get_snapshot(snapshot.id)
+        if create_revision and revision_source is not None:
+            await self._append_snapshot_revision(snapshot_id, revision_source)
+
+        detail = await self.get_snapshot(snapshot.id)
+        if detail is None:
+            return None
+
+        if snapshot.is_active:
+            try:
+                from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+                await SnapshotRuntimeStateService(self.session).sync_live_snapshot_payload(
+                    snapshot_id=snapshot.id,
+                    live_snapshot_payload=detail,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                )
+            except Exception as exc:
+                logger.debug("Snapshot runtime live-state sync skipped for %s: %s", snapshot.id, exc)
+
+        if tempo_bpm is not UNSET:
+            try:
+                from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+                legacy_payload = None
+                if snapshot.is_active:
+                    legacy_payload = copy.deepcopy(self.to_legacy_snapshot_data(detail))
+                await get_snapshot_tempo_service().update_stored_tempo(
+                    snapshot.id,
+                    snapshot.tempo_bpm,
+                    snapshot_data=legacy_payload,
+                )
+            except Exception as exc:
+                logger.debug("Snapshot tempo runtime update skipped for %s: %s", snapshot.id, exc)
+        return detail
 
     async def delete_snapshot(self, snapshot_id: int) -> bool:
         snapshot = await self._get_snapshot_model(snapshot_id)
@@ -386,6 +439,60 @@ class SnapshotService:
         await self.session.refresh(snapshot, attribute_names=["session_notes"])
         return [self._serialize_session_note(note) for note in snapshot.session_notes]
 
+    async def list_revisions(self, snapshot_id: int) -> Optional[list[dict[str, Any]]]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return None
+
+        result = await self.session.execute(
+            select(SnapshotRevision)
+            .where(SnapshotRevision.snapshot_id == snapshot_id)
+            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
+        )
+        revisions = result.scalars().all()
+        return [self._serialize_snapshot_revision(revision) for revision in revisions]
+
+    async def restore_revision(
+        self,
+        snapshot_id: int,
+        revision_number: int,
+    ) -> Optional[dict[str, Any]]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return None
+
+        result = await self.session.execute(
+            select(SnapshotRevision).where(
+                SnapshotRevision.snapshot_id == snapshot_id,
+                SnapshotRevision.revision_number == revision_number,
+            )
+        )
+        revision = result.scalar_one_or_none()
+        if revision is None:
+            return None
+
+        payload = dict(revision.payload or {})
+        restored = await self.update_snapshot(
+            snapshot_id,
+            tempo_bpm=payload["tempo_bpm"] if "tempo_bpm" in payload else UNSET,
+            output_level_reference_dbfs=(
+                payload["output_level_reference_dbfs"]
+                if "output_level_reference_dbfs" in payload
+                else UNSET
+            ),
+            output_level_warning_threshold_db=(
+                payload["output_level_warning_threshold_db"]
+                if "output_level_warning_threshold_db" in payload
+                else UNSET
+            ),
+            input_device=payload["input_device"] if "input_device" in payload else UNSET,
+            output_device=payload["output_device"] if "output_device" in payload else UNSET,
+            controls_payload=payload["controls"] if "controls" in payload else UNSET,
+            detail_payload=payload,
+            create_revision=True,
+        )
+        return restored
+
     async def duplicate_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         snapshot = await self.get_snapshot(snapshot_id)
         if snapshot is None:
@@ -394,6 +501,7 @@ class SnapshotService:
             name=f"{snapshot['name']} (Copy)",
             description=snapshot.get("description", ""),
             tags=list(snapshot.get("tags", [])),
+            tempo_bpm=_safe_float(snapshot.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
             derived_from_snapshot_id=snapshot_id,
             input_device=snapshot.get("input_device"),
             output_device=snapshot.get("output_device"),
@@ -416,6 +524,7 @@ class SnapshotService:
             description=snapshot.get("description", "") if description is None else description,
             tags=list(snapshot.get("tags", [])),
             program_number=None,
+            tempo_bpm=_safe_float(snapshot.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
             derived_from_snapshot_id=snapshot_id,
             input_device=snapshot.get("input_device"),
             output_device=snapshot.get("output_device"),
@@ -475,6 +584,17 @@ class SnapshotService:
             snapshot.activated_at = activated_at
             snapshot.live_state_payload = live_state_payload
             await self.session.flush()
+
+            try:
+                from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+                await get_snapshot_tempo_service().activate_snapshot(
+                    snapshot.id,
+                    snapshot.tempo_bpm,
+                    snapshot_data=copy.deepcopy(legacy_payload),
+                )
+            except Exception as exc:
+                logger.debug("Snapshot tempo activation skipped for %s: %s", snapshot.id, exc)
 
             refreshed_detail = await self.get_snapshot(snapshot_id)
             if refreshed_detail is None:
@@ -836,6 +956,7 @@ class SnapshotService:
             name=name,
             description=str(detail_payload.get("description") or ""),
             tags=list(detail_payload.get("tags") or []),
+            tempo_bpm=_safe_float(detail_payload.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
             input_device=detail_payload.get("input_device"),
             output_device=detail_payload.get("output_device"),
             detail_payload=detail_payload,
@@ -1850,6 +1971,43 @@ class SnapshotService:
         encoded = json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         return hashlib.sha256(encoded.encode("ascii")).hexdigest()
 
+    def _tempo_status_for_snapshot(
+        self,
+        snapshot_row: Optional[Snapshot],
+        *,
+        snapshot_id: Optional[int] = None,
+        stored_tempo_bpm: Any = DEFAULT_SNAPSHOT_TEMPO_BPM,
+        is_active: bool = False,
+    ) -> dict[str, Any]:
+        resolved_snapshot_id = snapshot_row.id if snapshot_row is not None else snapshot_id
+        resolved_stored_bpm = (
+            snapshot_row.tempo_bpm
+            if snapshot_row is not None and snapshot_row.tempo_bpm is not None
+            else stored_tempo_bpm
+        )
+        resolved_is_active = bool(snapshot_row.is_active) if snapshot_row is not None else bool(is_active)
+        try:
+            from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+            return get_snapshot_tempo_service().get_status(
+                snapshot_id=resolved_snapshot_id,
+                stored_tempo_bpm=resolved_stored_bpm,
+                is_active=resolved_is_active,
+            )
+        except Exception as exc:
+            logger.debug("Snapshot tempo status lookup skipped for %s: %s", resolved_snapshot_id, exc)
+            fallback_bpm = _safe_float(resolved_stored_bpm, DEFAULT_SNAPSHOT_TEMPO_BPM)
+            return {
+                "snapshot_id": resolved_snapshot_id,
+                "stored_tempo_bpm": fallback_bpm,
+                "live_tempo_bpm": None,
+                "active_tempo_bpm": fallback_bpm,
+                "tempo_source": "stored",
+                "is_live_override_active": False,
+                "updated_at": None,
+                "tap_count": 0,
+            }
+
     def _normalized_to_detail(
         self,
         normalized: dict[str, Any],
@@ -1919,6 +2077,7 @@ class SnapshotService:
         average_rating = None
         if snapshot_row is not None and snapshot_row.community_rating_count:
             average_rating = float(snapshot_row.community_rating_sum or 0.0) / float(snapshot_row.community_rating_count)
+        tempo_status = self._tempo_status_for_snapshot(snapshot_row)
 
         return {
             "id": snapshot_id,
@@ -1926,6 +2085,11 @@ class SnapshotService:
             "description": snapshot_row.description if snapshot_row is not None else "",
             "tags": list(snapshot_row.tags or []) if snapshot_row is not None else [],
             "program_number": snapshot_row.program_number if snapshot_row is not None else None,
+            "tempo_bpm": tempo_status["stored_tempo_bpm"],
+            "live_tempo_bpm": tempo_status["live_tempo_bpm"],
+            "active_tempo_bpm": tempo_status["active_tempo_bpm"],
+            "tempo_source": tempo_status["tempo_source"],
+            "tempo_updated_at": tempo_status["updated_at"],
             "output_level_reference_dbfs": (
                 float(snapshot_row.output_level_reference_dbfs)
                 if snapshot_row is not None and snapshot_row.output_level_reference_dbfs is not None
@@ -1982,12 +2146,18 @@ class SnapshotService:
         average_rating = None
         if snapshot.community_rating_count:
             average_rating = float(snapshot.community_rating_sum or 0.0) / float(snapshot.community_rating_count)
+        tempo_status = self._tempo_status_for_snapshot(snapshot)
         return {
             "id": snapshot.id,
             "name": snapshot.name,
             "description": snapshot.description or "",
             "tags": list(snapshot.tags or []),
             "program_number": snapshot.program_number,
+            "tempo_bpm": tempo_status["stored_tempo_bpm"],
+            "live_tempo_bpm": tempo_status["live_tempo_bpm"],
+            "active_tempo_bpm": tempo_status["active_tempo_bpm"],
+            "tempo_source": tempo_status["tempo_source"],
+            "tempo_updated_at": tempo_status["updated_at"],
             "output_level_reference_dbfs": (
                 float(snapshot.output_level_reference_dbfs)
                 if snapshot.output_level_reference_dbfs is not None
@@ -2030,6 +2200,80 @@ class SnapshotService:
             "snapshot_id": note.snapshot_id,
             "body": note.body,
             "created_at": note.created_at.isoformat() if note.created_at else None,
+        }
+
+    async def _append_snapshot_revision(self, snapshot_id: int, detail: dict[str, Any]) -> dict[str, Any]:
+        result = await self.session.execute(
+            select(SnapshotRevision)
+            .where(SnapshotRevision.snapshot_id == snapshot_id)
+            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
+            .limit(1)
+        )
+        latest = result.scalar_one_or_none()
+        next_revision_number = int(latest.revision_number if latest is not None else 0) + 1
+        revision = SnapshotRevision(
+            snapshot_id=snapshot_id,
+            revision_number=next_revision_number,
+            snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
+            summary=self._build_snapshot_revision_summary(detail),
+            payload=self._build_snapshot_revision_payload(detail),
+            saved_at=_utcnow(),
+        )
+        self.session.add(revision)
+        await self.session.flush()
+        await self._prune_snapshot_revisions(snapshot_id)
+        return self._serialize_snapshot_revision(revision)
+
+    async def _prune_snapshot_revisions(self, snapshot_id: int) -> None:
+        result = await self.session.execute(
+            select(SnapshotRevision)
+            .where(SnapshotRevision.snapshot_id == snapshot_id)
+            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
+        )
+        revisions = result.scalars().all()
+        for revision in revisions[MAX_SNAPSHOT_REVISIONS:]:
+            await self.session.delete(revision)
+        if len(revisions) > MAX_SNAPSHOT_REVISIONS:
+            await self.session.flush()
+
+    def _build_snapshot_revision_payload(self, detail: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "tempo_bpm": _safe_float(detail.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
+            "output_level_reference_dbfs": detail.get("output_level_reference_dbfs"),
+            "output_level_warning_threshold_db": detail.get("output_level_warning_threshold_db"),
+            "input_device": detail.get("input_device"),
+            "output_device": detail.get("output_device"),
+            "controls": copy.deepcopy(detail.get("controls") or {}),
+            "channels": copy.deepcopy(detail.get("channels") or []),
+            "chains": copy.deepcopy(detail.get("chains") or []),
+            "routing": copy.deepcopy(detail.get("routing") or {}),
+            "midi_map": copy.deepcopy(detail.get("midi_map") or []),
+        }
+
+    def _build_snapshot_revision_summary(self, detail: dict[str, Any]) -> str:
+        block_count = self._count_snapshot_blocks(detail)
+        channel_count = len([item for item in detail.get("channels", []) if isinstance(item, dict)])
+        routing_mode = str((detail.get("routing") or {}).get("mode") or "parallel_blend").replace("_", " ")
+        block_label = "block" if block_count == 1 else "blocks"
+        channel_label = "channel" if channel_count == 1 else "channels"
+        return f"{block_count} {block_label}, {channel_count} {channel_label}, {routing_mode} routing"
+
+    def _count_snapshot_blocks(self, detail: dict[str, Any]) -> int:
+        chains = [item for item in detail.get("chains", []) if isinstance(item, dict)]
+        block_count = sum(len([plugin for plugin in chain.get("plugins", []) if isinstance(plugin, dict)]) for chain in chains)
+        if block_count > 0:
+            return block_count
+        paths = [item for item in detail.get("paths", []) if isinstance(item, dict)]
+        return sum(len([plugin for plugin in path.get("plugins", []) if isinstance(plugin, dict)]) for path in paths)
+
+    def _serialize_snapshot_revision(self, revision: SnapshotRevision) -> dict[str, Any]:
+        return {
+            "id": revision.id,
+            "snapshot_id": revision.snapshot_id,
+            "revision_number": int(revision.revision_number),
+            "snapshot_revision": revision.snapshot_revision,
+            "summary": revision.summary,
+            "saved_at": revision.saved_at.isoformat() if revision.saved_at else None,
         }
 
     def _serialize_deployment(self, deployment: SnapshotDeployment) -> dict[str, Any]:

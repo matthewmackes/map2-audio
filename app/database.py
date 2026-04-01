@@ -165,6 +165,10 @@ def _special_settings_default_pinned_routes_json() -> str:
     return "[]"
 
 
+def _special_settings_default_landing_tiles_json() -> str:
+    return "[]"
+
+
 def _ensure_special_settings_schema_sync() -> None:
     """Apply additive schema upgrades for special_settings in existing SQLite DBs."""
     if _engine is None or _engine.dialect.name != "sqlite":
@@ -199,6 +203,18 @@ def _ensure_special_settings_schema_sync() -> None:
         if columns and "last_active_node" not in columns:
             conn.execute(text("ALTER TABLE special_settings ADD COLUMN last_active_node VARCHAR(128)"))
             logger.info("Added special_settings.last_active_node schema upgrade")
+
+        if columns and "landing_tiles" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN landing_tiles JSON"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET landing_tiles = :tiles "
+                    "WHERE landing_tiles IS NULL"
+                ),
+                {"tiles": _special_settings_default_landing_tiles_json()},
+            )
+            logger.info("Added special_settings.landing_tiles schema upgrade")
 
 
 def _sqlite_columns(conn, table_name: str) -> set[str]:
@@ -278,6 +294,14 @@ def _ensure_snapshot_device_schema_sync() -> None:
         _add_sqlite_column_if_missing(conn, "snapshots", "activated_at", "DATETIME")
         _add_sqlite_column_if_missing(conn, "snapshots", "output_level_reference_dbfs", "FLOAT")
         _add_sqlite_column_if_missing(conn, "snapshots", "output_level_warning_threshold_db", "FLOAT DEFAULT 3.0")
+        if _add_sqlite_column_if_missing(conn, "snapshots", "tempo_bpm", "FLOAT DEFAULT 120.0"):
+            conn.execute(
+                text(
+                    "UPDATE snapshots "
+                    "SET tempo_bpm = 120.0 "
+                    "WHERE tempo_bpm IS NULL"
+                )
+            )
         conn.execute(
             text(
                 "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
@@ -292,6 +316,31 @@ def _ensure_snapshot_device_schema_sync() -> None:
             text(
                 "CREATE INDEX IF NOT EXISTS idx_snapshot_session_notes_snapshot_created "
                 "ON snapshot_session_notes (snapshot_id, created_at)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS snapshot_revisions ("
+                "id INTEGER PRIMARY KEY, "
+                "snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE, "
+                "revision_number INTEGER NOT NULL, "
+                "snapshot_revision VARCHAR(64), "
+                "summary TEXT NOT NULL, "
+                "payload JSON NOT NULL, "
+                "saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
+                "ON snapshot_revisions (snapshot_id, revision_number)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_saved_at "
+                "ON snapshot_revisions (snapshot_id, saved_at)"
             )
         )
 
@@ -329,6 +378,18 @@ async def _ensure_special_settings_schema_async(conn) -> None:
     if columns and "last_active_node" not in columns:
         await conn.execute(text("ALTER TABLE special_settings ADD COLUMN last_active_node VARCHAR(128)"))
         logger.info("Added async special_settings.last_active_node schema upgrade")
+
+    if columns and "landing_tiles" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN landing_tiles JSON"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET landing_tiles = :tiles "
+                "WHERE landing_tiles IS NULL"
+            ),
+            {"tiles": _special_settings_default_landing_tiles_json()},
+        )
+        logger.info("Added async special_settings.landing_tiles schema upgrade")
 
 
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
@@ -405,6 +466,14 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "activated_at", "DATETIME")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_level_reference_dbfs", "FLOAT")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "output_level_warning_threshold_db", "FLOAT DEFAULT 3.0")
+    if await _add_sqlite_column_if_missing_async(conn, "snapshots", "tempo_bpm", "FLOAT DEFAULT 120.0"):
+        await conn.execute(
+            text(
+                "UPDATE snapshots "
+                "SET tempo_bpm = 120.0 "
+                "WHERE tempo_bpm IS NULL"
+            )
+        )
     await conn.execute(
         text(
             "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
@@ -419,6 +488,31 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
         text(
             "CREATE INDEX IF NOT EXISTS idx_snapshot_session_notes_snapshot_created "
             "ON snapshot_session_notes (snapshot_id, created_at)"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE TABLE IF NOT EXISTS snapshot_revisions ("
+            "id INTEGER PRIMARY KEY, "
+            "snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE, "
+            "revision_number INTEGER NOT NULL, "
+            "snapshot_revision VARCHAR(64), "
+            "summary TEXT NOT NULL, "
+            "payload JSON NOT NULL, "
+            "saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            ")"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
+            "ON snapshot_revisions (snapshot_id, revision_number)"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_saved_at "
+            "ON snapshot_revisions (snapshot_id, saved_at)"
         )
     )
 
@@ -844,6 +938,7 @@ class Snapshot(Base):
     activated_at = Column(DateTime, nullable=True)
     output_level_reference_dbfs = Column(Float, nullable=True)
     output_level_warning_threshold_db = Column(Float, default=3.0)
+    tempo_bpm = Column(Float, default=120.0)
 
     community_uuid = Column(String(64), nullable=True, unique=True, index=True)
     community_shared = Column(Boolean, default=False)
@@ -889,6 +984,12 @@ class Snapshot(Base):
         back_populates="snapshot",
         cascade="all, delete-orphan",
         order_by="SnapshotSessionNote.created_at.desc(), SnapshotSessionNote.id.desc()",
+    )
+    revisions = relationship(
+        "SnapshotRevision",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc()",
     )
     derived_from_snapshot = relationship("Snapshot", remote_side=[id], uselist=False)
 
@@ -1104,6 +1205,26 @@ class SnapshotSessionNote(Base):
 
     __table_args__ = (
         Index("idx_snapshot_session_notes_snapshot_created", "snapshot_id", "created_at"),
+    )
+
+
+class SnapshotRevision(Base):
+    """Explicit-save version history entries for a snapshot."""
+    __tablename__ = "snapshot_revisions"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    revision_number = Column(Integer, nullable=False)
+    snapshot_revision = Column(String(64), nullable=True, index=True)
+    summary = Column(Text, nullable=False)
+    payload = Column(JSON, default=dict, nullable=False)
+    saved_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    snapshot = relationship("Snapshot", back_populates="revisions")
+
+    __table_args__ = (
+        Index("idx_snapshot_revisions_snapshot_revision_number", "snapshot_id", "revision_number", unique=True),
+        Index("idx_snapshot_revisions_snapshot_saved_at", "snapshot_id", "saved_at"),
     )
 
 
@@ -1924,6 +2045,7 @@ class SpecialSettings(Base):
     - List of hidden native plugins (JSON array of URIs)
     - Advanced menu location preference
     - Top navigation pinned routes
+    - Ordered landing-page launcher tile placements
     - Cluster replication metadata (version, timestamp, node_id)
     
     In cluster mode, changes replicate via Raft consensus.
@@ -1935,6 +2057,7 @@ class SpecialSettings(Base):
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
     menu_location = Column(String(20), default="hidden")  # "hidden" | "mobile-only" (legacy "top-nav" coerced to hidden)
     pinned_routes = Column(JSON, default=list)
+    landing_tiles = Column(JSON, default=list)
     last_active_node = Column(String(128), nullable=True)
     
     # Cluster replication metadata

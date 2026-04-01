@@ -160,6 +160,7 @@ class ClockConfigRequest(BaseModel):
     bpm: Optional[float] = Field(default=None, ge=20.0, le=300.0)
     source_mode: Optional[str] = Field(default=None, pattern="^(internal|external)$")
     output_ports: Optional[List[str]] = None
+    snapshot_sync_enabled: Optional[bool] = None
     divider: Optional[float] = Field(default=None, ge=0.25, le=16.0)
     multiplier: Optional[float] = Field(default=None, ge=0.25, le=16.0)
     offset_ms: Optional[float] = Field(default=None, ge=-500.0, le=500.0)

@@ -101,6 +101,7 @@ class SnapshotCreateRequest(BaseModel):
     description: str = ""
     tags: list[str] = Field(default_factory=list)
     program_number: Optional[int] = None
+    tempo_bpm: float = Field(default=120.0, ge=20.0, le=300.0)
     derived_from_snapshot_id: Optional[int] = None
     output_level_reference_dbfs: Optional[float] = None
     output_level_warning_threshold_db: Optional[float] = 3.0
@@ -121,6 +122,8 @@ class SnapshotUpdateRequest(BaseModel):
     description: Optional[str] = None
     tags: Optional[list[str]] = None
     program_number: Optional[int] = None
+    create_revision: bool = False
+    tempo_bpm: Optional[float] = Field(default=None, ge=20.0, le=300.0)
     derived_from_snapshot_id: Optional[int] = None
     output_level_reference_dbfs: Optional[float] = None
     output_level_warning_threshold_db: Optional[float] = None
@@ -201,6 +204,10 @@ class SaveAsNewRequest(BaseModel):
 
 class SnapshotSessionNoteCreateRequest(BaseModel):
     text: str = Field(min_length=1)
+
+
+class SnapshotTempoTapRequest(BaseModel):
+    timestamp_ms: Optional[float] = None
 
 
 def _detail_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
@@ -511,6 +518,7 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
                 description=request.description,
                 tags=request.tags,
                 program_number=request.program_number,
+                tempo_bpm=request.tempo_bpm,
                 derived_from_snapshot_id=request.derived_from_snapshot_id,
                 output_level_reference_dbfs=request.output_level_reference_dbfs,
                 output_level_warning_threshold_db=request.output_level_warning_threshold_db,
@@ -545,6 +553,7 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 description=request.description if "description" in provided else UNSET,
                 tags=request.tags if "tags" in provided else UNSET,
                 program_number=request.program_number if "program_number" in provided else UNSET,
+                tempo_bpm=request.tempo_bpm if "tempo_bpm" in provided else UNSET,
                 derived_from_snapshot_id=request.derived_from_snapshot_id if "derived_from_snapshot_id" in provided else UNSET,
                 output_level_reference_dbfs=request.output_level_reference_dbfs if "output_level_reference_dbfs" in provided else UNSET,
                 output_level_warning_threshold_db=request.output_level_warning_threshold_db if "output_level_warning_threshold_db" in provided else UNSET,
@@ -554,6 +563,7 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 is_favorite=request.is_favorite if "is_favorite" in provided else UNSET,
                 display_order=request.display_order if "display_order" in provided else UNSET,
                 detail_payload=detail_payload,
+                create_revision=request.create_revision,
             )
             if snapshot is None:
                 _raise_not_found("Snapshot")
@@ -568,6 +578,49 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
         raise
     except Exception as exc:
         logger.error("Error updating snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/snapshots/{snapshot_id}/revisions")
+async def list_snapshot_revisions(snapshot_id: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            revisions = await service.list_revisions(snapshot_id)
+            if revisions is None:
+                _raise_not_found("Snapshot")
+            return {
+                "snapshot_id": snapshot_id,
+                "count": len(revisions),
+                "revisions": revisions,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error listing revisions for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/revisions/{revision_number}/restore")
+async def restore_snapshot_revision(snapshot_id: int, revision_number: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            restored = await service.restore_revision(snapshot_id, revision_number)
+            if restored is None:
+                _raise_not_found("Snapshot revision")
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "restored_revision_number": revision_number,
+                "snapshot": restored,
+            }
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        _translate_value_error(exc)
+    except Exception as exc:
+        logger.error("Error restoring revision %s for snapshot %s: %s", revision_number, snapshot_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -605,6 +658,101 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error activating snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/snapshots/{snapshot_id}/tempo")
+async def get_snapshot_tempo(snapshot_id: int) -> dict[str, Any]:
+    try:
+        from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.get_snapshot(snapshot_id)
+            if snapshot is None:
+                _raise_not_found("Snapshot")
+            tempo_status = get_snapshot_tempo_service().get_status(
+                snapshot_id=snapshot_id,
+                stored_tempo_bpm=snapshot.get("tempo_bpm"),
+                is_active=bool(snapshot.get("is_active")),
+            )
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "tempo": tempo_status,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting tempo status for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/tempo/tap")
+async def tap_snapshot_tempo(
+    snapshot_id: int,
+    request: Optional[SnapshotTempoTapRequest] = Body(default=None),
+) -> dict[str, Any]:
+    try:
+        from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.get_snapshot(snapshot_id)
+            if snapshot is None:
+                _raise_not_found("Snapshot")
+            tempo_status = await get_snapshot_tempo_service().tap_tempo(
+                snapshot_id,
+                snapshot.get("tempo_bpm"),
+                snapshot_data=service.to_legacy_snapshot_data(snapshot),
+                timestamp_ms=request.timestamp_ms if request is not None else None,
+            )
+            refreshed_snapshot = await service.get_snapshot(snapshot_id)
+            if refreshed_snapshot is None:
+                _raise_not_found("Snapshot")
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "tempo": tempo_status,
+                "snapshot": refreshed_snapshot,
+            }
+    except ValueError as exc:
+        _translate_value_error(exc)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error tapping tempo for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/tempo/reset")
+async def reset_snapshot_tempo(snapshot_id: int) -> dict[str, Any]:
+    try:
+        from app.services.snapshot_tempo_service import get_snapshot_tempo_service
+
+        async with get_session() as session:
+            service = SnapshotService(session)
+            snapshot = await service.get_snapshot(snapshot_id)
+            if snapshot is None:
+                _raise_not_found("Snapshot")
+            tempo_status = await get_snapshot_tempo_service().reset_tempo(
+                snapshot_id,
+                snapshot.get("tempo_bpm"),
+                snapshot_data=service.to_legacy_snapshot_data(snapshot),
+            )
+            refreshed_snapshot = await service.get_snapshot(snapshot_id)
+            if refreshed_snapshot is None:
+                _raise_not_found("Snapshot")
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "tempo": tempo_status,
+                "snapshot": refreshed_snapshot,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error resetting tempo for snapshot %s: %s", snapshot_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

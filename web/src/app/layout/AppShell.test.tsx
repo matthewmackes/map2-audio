@@ -11,6 +11,7 @@ const mockSpecialSettings = {
   hiddenPlugins: [],
   menuLocation: 'hidden' as const,
   pinnedRoutes: [] as string[],
+  landingTiles: [] as Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
 }
 
 jest.mock('../hooks/useSpecialSettings', () => ({
@@ -56,6 +57,10 @@ jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
 
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
   NodeNavBar: () => <div data-testid="node-nav-bar" />,
+}))
+
+jest.mock('../components/PageTransition', () => ({
+  PageTransition: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 jest.mock('../components/LatencyPressureShellReadout', () => ({
@@ -163,7 +168,7 @@ describe('AppShell navigation', () => {
     expect(container.querySelector('.nav-tabs-right')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
   })
 
-  it('orders pinned routes by catalog order and caps desktop pins at four items', () => {
+  it('preserves manual pinned-route order and caps desktop pins at four items', () => {
     mockSpecialSettings.pinnedRoutes = ['/intelfx', '/juce-grid', '/midi-hub', '/perform', '/audio-artifacts', '/platform']
 
     const { container } = renderInRouter(
@@ -174,7 +179,7 @@ describe('AppShell navigation', () => {
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Stage Mode', 'Audio Artifacts', 'MIDI Hub', 'IntelFX Rack'])
+    expect(labels).toEqual(['IntelFX Rack', 'Audio Grid', 'MIDI Hub', 'Stage Mode'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

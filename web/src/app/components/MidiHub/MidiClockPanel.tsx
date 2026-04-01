@@ -22,6 +22,7 @@ export function MidiClockPanel() {
   const [bpm, setBpm] = useState('120.0')
   const [sourceMode, setSourceMode] = useState<'internal' | 'external'>('internal')
   const [outputPorts, setOutputPorts] = useState<string[]>([])
+  const [snapshotSyncEnabled, setSnapshotSyncEnabled] = useState(false)
   const [divider, setDivider] = useState(1)
   const [multiplier, setMultiplier] = useState(1)
 
@@ -31,6 +32,7 @@ export function MidiClockPanel() {
     setBpm(String(data.bpm))
     setSourceMode(data.source_mode === 'external' ? 'external' : 'internal')
     setOutputPorts(data.output_ports ?? [])
+    setSnapshotSyncEnabled(Boolean(data.snapshot_sync_enabled))
     setDivider(data.divider ?? 1)
     setMultiplier(data.multiplier ?? 1)
   }, [clockQuery.data])
@@ -44,6 +46,7 @@ export function MidiClockPanel() {
           bpm: Math.max(20, Math.min(300, Number.parseFloat(bpm) || 120)),
           source_mode: sourceMode,
           output_ports: outputPorts,
+          snapshot_sync_enabled: snapshotSyncEnabled,
           divider,
           multiplier,
         },
@@ -105,6 +108,9 @@ export function MidiClockPanel() {
             {clock?.running ? 'Running' : 'Stopped'}
           </Tag>
           <Tag type="cool-gray">{`Source ${clock?.source_mode ?? 'internal'}`}</Tag>
+          <Tag type={clock?.snapshot_sync_enabled ? 'blue' : 'warm-gray'}>
+            {clock?.snapshot_sync_enabled ? 'Snapshot Sync On' : 'Snapshot Sync Off'}
+          </Tag>
         </div>
 
         <div className="midi-hub-stat-grid">
@@ -208,6 +214,13 @@ export function MidiClockPanel() {
               ) : null}
             </div>
           </div>
+
+          <Checkbox
+            id="midi-hub-clock-snapshot-sync"
+            labelText="Auto-sync with snapshot tempo"
+            checked={snapshotSyncEnabled}
+            onChange={(_, { checked }) => setSnapshotSyncEnabled(Boolean(checked))}
+          />
         </div>
 
         <div className="midi-hub-actions">

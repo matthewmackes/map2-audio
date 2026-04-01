@@ -31,6 +31,11 @@ interface SnapshotChainManagementCardProps {
   snapshotRenamePending?: boolean
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
+  onSubmitTempoBpm?: (tempoBpm: number) => void
+  tempoPending?: boolean
+  onTapTempo?: () => void
+  onResetTempo?: () => void
+  tapTempoPending?: boolean
   currentOutputLevelDbfs?: number | null
   onSetOutputLevelReference?: () => void
   onSubmitOutputLevelWarningThreshold?: (thresholdDb: number) => void
@@ -168,6 +173,13 @@ function formatMidiReadout(snapshot: SnapshotDetail): string {
 
 function formatCount(value: number, singular: string): string {
   return `${value} ${value === 1 ? singular : `${singular}s`}`
+}
+
+function formatTempoBpm(value?: number | null): string {
+  if (value == null || !Number.isFinite(value)) {
+    return '120.0 BPM'
+  }
+  return `${value.toFixed(1)} BPM`
 }
 
 function resolveSnapshotBlockCount(snapshot: SnapshotDetail): number {
@@ -387,6 +399,11 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotRenamePending = false,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
+    onSubmitTempoBpm,
+    tempoPending = false,
+    onTapTempo,
+    onResetTempo,
+    tapTempoPending = false,
     currentOutputLevelDbfs = null,
     onSetOutputLevelReference,
     onSubmitOutputLevelWarningThreshold,
@@ -409,15 +426,24 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
+  const [tempoDraft, setTempoDraft] = useState((liveSnapshot?.tempo_bpm ?? 120).toFixed(1))
   const [outputThresholdDraft, setOutputThresholdDraft] = useState(
     liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0',
   )
+  const storedTempoBpm = liveSnapshot?.tempo_bpm ?? 120
+  const activeTempoBpm = liveSnapshot?.active_tempo_bpm ?? storedTempoBpm
+  const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
+  const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
 
   useEffect(() => {
     if (!editingDescription) {
       setDescriptionDraft(liveSnapshot?.description ?? '')
     }
   }, [editingDescription, liveSnapshot?.description])
+
+  useEffect(() => {
+    setTempoDraft((liveSnapshot?.tempo_bpm ?? 120).toFixed(1))
+  }, [liveSnapshot?.tempo_bpm])
 
   useEffect(() => {
     setOutputThresholdDraft(liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0')
@@ -450,6 +476,20 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     }
 
     onSubmitOutputLevelWarningThreshold(parsed)
+  }
+
+  const submitTempo = () => {
+    if (!liveSnapshot || !onSubmitTempoBpm) {
+      return
+    }
+
+    const parsed = Number.parseFloat(tempoDraft)
+    if (!Number.isFinite(parsed) || parsed < 20 || parsed > 300) {
+      setTempoDraft((liveSnapshot.tempo_bpm ?? 120).toFixed(1))
+      return
+    }
+
+    onSubmitTempoBpm(parsed)
   }
 
   return (
@@ -535,6 +575,65 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                 <p className="juce-grid-page__snapshot-status-empty-copy">
                   Recall or create a snapshot to populate live snapshot status here.
                 </p>
+              )}
+              {liveSnapshot && (
+                <div className="juce-grid-page__snapshot-status-tempo-panel">
+                  <div className="juce-grid-page__snapshot-status-tempo-copy">
+                    <span className="juce-grid-page__snapshot-status-tempo-kicker">Snapshot Tempo</span>
+                    <strong>{formatTempoBpm(activeTempoBpm)}</strong>
+                    <span>
+                      Stored {formatTempoBpm(storedTempoBpm)}
+                      {liveTapOverrideActive && liveTempoBpm != null
+                        ? ` • Live tap ${formatTempoBpm(liveTempoBpm)}`
+                        : ' • Stored tempo active'}
+                    </span>
+                  </div>
+                  <div className="juce-grid-page__snapshot-status-tempo-actions">
+                    <label className="juce-grid-page__snapshot-status-tempo-field">
+                      <span>Stored BPM</span>
+                      <input
+                        aria-label="Stored snapshot tempo"
+                        type="number"
+                        min="20"
+                        max="300"
+                        step="0.1"
+                        value={tempoDraft}
+                        onChange={(event) => setTempoDraft(event.target.value)}
+                        onBlur={submitTempo}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            submitTempo()
+                          }
+                        }}
+                        disabled={!onSubmitTempoBpm || tempoPending}
+                      />
+                    </label>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={onTapTempo}
+                      disabled={!onTapTempo || tapTempoPending}
+                    >
+                      {tapTempoPending ? 'Tapping…' : 'Tap Tempo'}
+                    </Button>
+                    {liveTapOverrideActive ? (
+                      <Button
+                        size="sm"
+                        kind="secondary"
+                        onClick={onResetTempo}
+                        disabled={!onResetTempo || tapTempoPending}
+                      >
+                        Reset to Stored
+                      </Button>
+                    ) : null}
+                  </div>
+                  {liveTapOverrideActive ? (
+                    <Tag type="blue" className="juce-grid-page__snapshot-status-tempo-tag">
+                      Live tap override active
+                    </Tag>
+                  ) : null}
+                </div>
               )}
               {liveSnapshot && (
                 <div className="juce-grid-page__snapshot-status-output-reference">

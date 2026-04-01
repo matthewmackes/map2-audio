@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T667 launcher placement epic added
+Last updated: 2026-04-01 EDT - T638 snapshot version history completed; T659/T656 completed
 
 ID: T667
-Status: [ ] Todo
+Status: [✓] Done
 Title: System-wide launcher placement and promotion
 Description:
 - Goal / acceptance criteria: Implement a unified launcher-placement system backed by `special_settings`; support ordered landing-page tiles with `small|medium|large` sizes, ordered global-nav pins capped at 4, type-bound Labs/Platforms membership, and an organizer-only management UI at `/platforms/launchers`. Existing installs keep the current home layout and start with an empty landing board. Route-backed launchers from core, Labs, and Platforms participate; nav-only submenu triggers remain nav-only.
@@ -26,10 +26,10 @@ Subtasks:
   - T667-subF: Update Labs, Platforms, and AppShell to consume the new model and make placement controls organizer-only
   - T667-subG: Add regression tests and documentation updates
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add unified route-backed launcher catalog and directory classification
 Description:
 - Goal / acceptance criteria: Introduce a single frontend launcher catalog that merges eligible core routes, Labs routes, and Platforms routes; classify each item as `core`, `labs`, `platforms`, or `nav-only`; exclude `/` and other non-launcher affordances from landing-tile eligibility.
@@ -39,10 +39,10 @@ Description:
 - Required outputs: shared launcher catalog module/types, directory/eligibility metadata, helpers for route lookup and placement validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extend `special_settings` schema, models, routes, and Raft sync with `landing_tiles`
 Description:
 - Goal / acceptance criteria: Add ordered `landing_tiles` persistence to the backend special-settings model and cluster replication path; support entries shaped as `{route, size}` with `size` limited to `small|medium|large`; preserve backward compatibility for installs that only have `pinned_routes`.
@@ -52,10 +52,10 @@ Description:
 - Required outputs: DB schema upgrade, Pydantic model updates, route normalization/validation, Raft/state-manager propagation, focused backend tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add frontend launcher-layout normalization and persistence plumbing
 Description:
 - Goal / acceptance criteria: Extend the frontend special-settings client/hook/types so `landing_tiles` is loaded, normalized, and saved together with `pinned_routes`; provide helper functions for ordering, tile-size updates, add/remove operations, and eligibility filtering.
@@ -65,10 +65,10 @@ Description:
 - Required outputs: frontend type additions, normalization helpers, `useSpecialSettings` contract updates, targeted tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build the Platforms launcher organizer at `/platforms/launchers`
 Description:
 - Goal / acceptance criteria: Add a dedicated Platforms organizer route that lists the unified launcher catalog and lets operators add/remove landing tiles, choose tile size, reorder landing tiles, pin/unpin global-nav items, and reorder nav pins with explicit controls only.
@@ -78,10 +78,10 @@ Description:
 - Required outputs: new Platforms organizer page/panel, route wiring, save flows through `useSpecialSettings`, UX states for nav-cap enforcement and empty placement sets, focused UI tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add the landing-page launcher tile board above the existing home layout
 Description:
 - Goal / acceptance criteria: Render a responsive launcher board above the current home-page cards using 4/2/1 columns across desktop/tablet/mobile and `small=1x1`, `medium=2x1`, `large=2x2` tile spans; keep the existing home content intact below the board; show a clear empty state when no landing tiles are configured.
@@ -91,10 +91,10 @@ Description:
 - Required outputs: home-page tile-board component/layout styling, route launches, responsive span behavior, focused tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update Labs, Platforms, and AppShell to consume the new model and make placement controls organizer-only
 Description:
 - Goal / acceptance criteria: Remove inline placement controls from AppShell advanced/mobile menus and Platforms side-nav; keep Labs and Platforms read-only with placement status where useful; continue to render pinned top-nav items from ordered `pinned_routes` with the existing max of 4.
@@ -104,10 +104,10 @@ Description:
 - Required outputs: AppShell/Labs/Platforms updates, removal of inline pin buttons, read-only status treatment, regression coverage.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T667-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add regression tests and documentation updates
 Description:
 - Goal / acceptance criteria: Cover backend `landing_tiles` normalization and round-trip persistence, organizer behaviors, home-page tile rendering, pinned-nav ordering/cap rules, and any required operator/developer docs updates for the new launcher system.
@@ -117,10 +117,10 @@ Description:
 - Required outputs: backend/frontend tests, worklist updates, concise documentation where needed.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-01 16:10 - Codex
+Last updated: 2026-04-01 09:54 - Codex
 
 ID: T666
-Status: [ ] Todo
+Status: [✓] Done
 Title: Maschine MK1 Primary Control Surface Integration (Epic)
 Description:
 - Goal / acceptance criteria: Integrate the Native Instruments Maschine MK1 as a primary hardware control surface for the MAP2 Audio Platform. Full bidirectional integration: USB HID input → virtual ALSA MIDI port → MidiHub → platform control, plus LED pad feedback and dual LCD display driven by platform state.
@@ -140,11 +140,16 @@ Subtasks:
   - T666-subI: Web UI /maschine dedicated page (Carbon, 6 panels)
   - T666-subJ: MIDI Hub Connections summary card + deep-link
   - T666-subK: End-to-end integration tests
-Assigned to: Unassigned
-Last updated: 2026-04-01 EDT
+Assigned to: Codex
+Last updated: 2026-04-01 15:18 - Codex
+- Completion notes:
+  - Added the standalone Maschine MK1 daemon package and validated HID decode, LCD/LED report generation, relative encoder navigation handling, and backend bridge assumptions with focused daemon regression tests.
+  - Added the dedicated `systemd/map2-maschine.service` unit with backend ordering, RT priority ceiling, and daemon environment wiring that matches the existing MAP2 service layout.
+  - Updated the backend runtime manifest and generated runtime contract docs to include the `websockets` and `hidapi` dependencies required by the daemon.
+- Validation: `python3 -m pytest tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_mk1.py tests/test_port80_proxy_service.py tests/test_generate_backend_contract.py` -> PASS; `python3 scripts/generate_backend_contract.py` -> PASS
 
 ID: T666-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Standalone HID daemon (maschine_mk1_daemon.py)
 Description:
 - New file: app/services/maschine/maschine_mk1_daemon.py
@@ -172,10 +177,11 @@ Description:
 - Master knobs: CC9=fixed master gain, CC10=fixed MIDI clock BPM, CC11=user-assignable (persists to snapshot encoder map)
 - TransportOwner interface: transport buttons route to active TransportOwner (v1 placeholder = MidiHub recorder)
 Dependencies: T666-subD (backend registration API)
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 15:18 - Codex
 
 ID: T666-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: map2-maschine.service systemd unit
 Description:
 - New file: systemd/map2-maschine.service
@@ -188,7 +194,8 @@ Description:
 - Environment=MAP2_BACKEND_URL=http://localhost:8080
 - Install to /etc/systemd/system/map2-maschine.service; synced from repo same pattern as map2-backend.service
 Dependencies: T666-subA
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 15:18 - Codex
 
 ID: T666-subC
 Status: [✓] Done
@@ -513,7 +520,7 @@ Last updated: 2026-04-01 13:00 - Codex
 - Validation: `pytest -q tests/test_ir_waveform_preview.py` -> PASS; `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotEditorParameterEditor.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T656
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Clock Output — Synced to Active Snapshot Tempo, Updates on Activation and Tap-Tempo
 Description:
 - Goal / acceptance criteria: When a snapshot is activated and its stored tempo is applied (T659), MAP2 simultaneously broadcasts MIDI Clock (24 ppqn) on the configured MIDI output port so external hardware pedals (delays, reverbs, loopers) lock to the same BPM automatically. When the player taps a new live tempo (T659), the MIDI Clock rate updates immediately. MIDI Clock output can be enabled/disabled globally. No per-snapshot toggle — if enabled globally, it runs whenever a tempo is set.
@@ -522,7 +529,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: MIDI Clock generator in the Python MIDI service (24 ppqn, tempo-accurate), wired to snapshot activation and live tap-tempo events, global enable/disable config, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 11:28 - Codex
+- Completion notes:
+  - Extended the MIDI clock engine and route contract with a global `snapshot_sync_enabled` flag so snapshot tempo can drive external clocking without adding per-snapshot toggles.
+  - Wired live snapshot tempo changes into the MIDI clock runtime so activation, stored-tempo edits, and tap-tempo overrides all update the clock rate immediately when snapshot sync is enabled.
+  - Added focused regression coverage for the clock config route and the tempo service path that auto-syncs external hardware to the active snapshot BPM.
+- Validation: `python3 -m pytest tests/test_snapshot_tempo_service.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS; `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
 
 ID: T655
 Status: [ ] Todo
@@ -655,7 +668,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T659
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Snapshot Stored Tempo with Live Tap-Tempo Override
 Description:
 - Goal / acceptance criteria: Each snapshot stores a BPM value (tempo field). On snapshot activation, the stored tempo is applied immediately to all time-based effects (delay time, tremolo rate, vibrato rate, LFO rate, modulation speed) that are configured to sync to tempo. The player can override the tempo live by tapping a "Tap Tempo" button in the editor UI (or via a MIDI note/CC assignment), which updates the running tempo for the current session without modifying the stored snapshot value. The live-tapped tempo resets to the snapshot's stored value when the next snapshot is activated. Tempo is displayed in BPM in the editor hero, always visible.
@@ -664,7 +677,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: tempo field in snapshot data model and API, tempo application in activation sequence (all time-synced plugins), tap-tempo UI button in editor + MIDI CC assignment, BPM display in hero, tempo reset on next snapshot load, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 11:28 - Codex
+- Completion notes:
+  - Added per-snapshot `tempo_bpm` persistence, runtime tempo status tracking, and live tap-tempo override state that resets automatically when the next snapshot is activated.
+  - Applied snapshot tempo to the automation engine, tempo-synced plugin parameters, and the editor hero so stored tempo, active tempo, and live override state are always visible and current.
+  - Added tap-tempo and reset controls in the Snapshot Editor plus performance-event polling so perform-mode tap events can drive the live snapshot tempo path.
+- Validation: `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_snapshot_tempo_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T642
 Status: [ ] Todo
@@ -713,7 +732,7 @@ Subtasks: None
 Last updated: 2026-04-01 10:53 - Codex
 
 ID: T638
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Version History — 100 Revisions Per Snapshot, Revert to Any
 Description:
 - Goal / acceptance criteria: Every time a snapshot is saved (via the explicit Save action), the previous state is stored as a numbered revision — up to 100 revisions per snapshot (oldest are dropped when the limit is reached). The player opens a Version History panel from the Details dropdown in the editor hero, sees a list of revisions with timestamps and change summaries (e.g., "Saved 2026-03-31 20:00 — 3 blocks, 2 channels, parallel routing"), and can restore any revision with one click. Restoring a revision creates a new save (does not silently overwrite the current state). The restore is undoable via T648.
@@ -721,7 +740,13 @@ Description:
 - Estimated effort: High
 - Required outputs: snapshot_revisions table (snapshot_id, revision_number, saved_at, summary, payload JSON), revision creation on every explicit save, GET /api/snapshots/{id}/revisions endpoint, POST /api/snapshots/{id}/revisions/{n}/restore endpoint, Version History panel in editor Details dropdown, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 11:28 - Codex
+- Completion notes:
+  - Added durable `snapshot_revisions` persistence with numbered revision history, summary text, and payload capture capped to the most recent 100 entries per snapshot.
+  - Scoped revision creation to the editor’s explicit save action so live tempo edits, renames, and other immediate metadata writes do not spam history.
+  - Added a new Version History modal in the Snapshot Editor Details menu with revision timestamps, summaries, and one-click restore wired through the new restore endpoint.
+- Validation: `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotVersionHistoryModal.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T637
 Status: [ ] Todo

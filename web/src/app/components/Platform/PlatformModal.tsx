@@ -12,6 +12,7 @@ import {
   Network_3,
   PaintBrush,
   Screen,
+  SettingsAdjust,
   Share,
   Terminal,
   type CarbonIconType,
@@ -47,17 +48,15 @@ import { useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
 import {
-  MAX_PINNED_NAV_ITEMS,
-  allPinnableNavigationItems,
-  type HardwareInterfaceMenuItem,
-  type ShellNavigationItem,
-} from '../../data/advancedMenuItems'
-import { platformPinnedItems, type PlatformPinnedNavItem, type StandalonePanel } from '../../data/platformMenuItems'
+  platformPanelItems,
+  type StandalonePanel,
+} from '../../data/platformMenuItems'
 import { useSpecialSettings } from '../../hooks/useSpecialSettings'
 import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { LabsWorkspace } from './LabsWorkspace'
+import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -107,7 +106,7 @@ const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   'cluster-dashboard': DataBase,
 }
 
-const PLATFORM_CONTROL_PANEL_ITEMS = platformPinnedItems
+const PLATFORM_CONTROL_PANEL_ITEMS = platformPanelItems
 
 const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: CarbonIconType }> = {
   'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: Screen },
@@ -115,9 +114,8 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
+  'launchers':    { label: 'Launchers',      eyebrow: 'Platform', icon: SettingsAdjust },
 }
-
-type PinnableNavTarget = PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -201,27 +199,18 @@ function formatIsoTimestamp(value?: string | null): string | null {
 
 function SidebarNavigation({
   activeId,
-  pinnedRouteSet,
-  pinningDisabled,
   onOpenLayer,
   onOpenStandalone,
   onOpenLabs,
-  onTogglePin,
 }: {
   activeId: string | null
-  pinnedRouteSet: Set<string>
-  pinningDisabled: boolean
   onOpenLayer: (id: PlatformLayerId) => void
   onOpenStandalone: (id: StandalonePanel) => void
   onOpenLabs: () => void
-  onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
 }) {
   const items: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
     const targetId = item.target.layer ?? item.target.panel ?? null
     const isSelected = activeId === targetId
-    const isPinned = pinnedRouteSet.has(item.to)
-    const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-    const pinDisabled = pinningDisabled || limitReached
 
     return {
       key: item.to,
@@ -239,25 +228,6 @@ function SidebarNavigation({
           onOpenStandalone(item.target.panel)
         }
       },
-      action: (
-        <button
-          type="button"
-          className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
-          onClick={() => onTogglePin(item, !isPinned)}
-          aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-          title={
-            limitReached
-              ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-              : isPinned
-                ? 'Unpin from navigation bar'
-                : 'Pin to navigation bar'
-          }
-          aria-pressed={isPinned}
-          disabled={pinDisabled}
-        >
-          {isPinned ? 'PINNED' : 'PIN'}
-        </button>
-      ),
     }
   })
 
@@ -977,6 +947,10 @@ export function PlatformModalContent({
   const [activeLabs, setActiveLabs] = useState(false)
   const pinnedRoutes = useMemo(() => specialSettings?.pinnedRoutes ?? [], [specialSettings?.pinnedRoutes])
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
+  const landingTileRouteSet = useMemo(
+    () => new Set((specialSettings?.landingTiles ?? []).map((tile) => tile.route)),
+    [specialSettings?.landingTiles],
+  )
 
   // Sync live data into store
   useEffect(() => {
@@ -1029,25 +1003,6 @@ export function PlatformModalContent({
     return alerts.filter((a) => a.layerId === activeLayer.id)
   }, [activeLayer, alerts])
 
-  const togglePinnedRoute = async (item: PinnableNavTarget, checked: boolean) => {
-    if (!checked) {
-      await updateSettings({ pinnedRoutes: pinnedRoutes.filter((route) => route !== item.to) })
-      return
-    }
-
-    if (!pinnedRouteSet.has(item.to) && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS) {
-      return
-    }
-
-    const candidateSet = new Set([...pinnedRoutes, item.to])
-    const nextRoutes = allPinnableNavigationItems
-      .filter((candidate) => candidate.to !== '/' && candidateSet.has(candidate.to))
-      .map((candidate) => candidate.to)
-      .slice(0, MAX_PINNED_NAV_ITEMS)
-
-    await updateSettings({ pinnedRoutes: nextRoutes })
-  }
-
   const handleOpenLayer = (layerId: PlatformLayerId) => {
     setActiveLabs(false)
     setActivePanel(null)
@@ -1079,8 +1034,9 @@ export function PlatformModalContent({
     onClose()
   }
 
-  const showStandalone = activePanel !== null
-  const showLayer = !activeLabs && !showStandalone && activeLayer !== null
+  const showLaunchers = activePanel === 'launchers'
+  const showStandalone = activePanel !== null && activePanel !== 'launchers'
+  const showLayer = !activeLabs && !showStandalone && !showLaunchers && activeLayer !== null
   const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
@@ -1088,12 +1044,9 @@ export function PlatformModalContent({
         <div className="platform-shell__window">
           <SidebarNavigation
             activeId={activeId}
-            pinnedRouteSet={pinnedRouteSet}
             onOpenLayer={handleOpenLayer}
             onOpenStandalone={handleOpenStandalone}
             onOpenLabs={handleOpenLabs}
-            onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
-            pinningDisabled={specialSettingsLoading}
           />
           <div className="platform-shell__panel">
             <AnimatePresence mode="wait">
@@ -1101,9 +1054,16 @@ export function PlatformModalContent({
                 <LabsWorkspace
                   key="labs"
                   pinnedRouteSet={pinnedRouteSet}
-                  pinningDisabled={specialSettingsLoading}
-                  onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
+                  landingTileRouteSet={landingTileRouteSet}
                   onLaunchRoute={handleLaunchRoute}
+                />
+              )}
+              {showLaunchers && (
+                <PlatformLaunchersWorkspace
+                  key="launchers"
+                  settings={specialSettings}
+                  isLoading={specialSettingsLoading}
+                  updateSettings={updateSettings}
                 />
               )}
               {showStandalone && activePanel && (

@@ -1,0 +1,31 @@
+[Unit]
+Description=MAP2 Maschine MK1 HID Daemon
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network.target map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio
+Environment="PYTHONPATH=/home/mm/map2-audio"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="MAP2_BACKEND_URL=http://localhost:8080"
+EnvironmentFile=-/etc/map2/environment
+ExecStart=/usr/bin/python3 /home/mm/map2-audio/app/services/maschine/maschine_mk1_daemon.py
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=15
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-maschine
+Nice=-5
+LimitRTPRIO=60
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+
+[Install]
+WantedBy=multi-user.target

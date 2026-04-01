@@ -11,6 +11,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
 import { defaultPinnedRoutes, normalizePinnedRoutes } from '../data/advancedMenuItems'
+import {
+  normalizeLandingTiles,
+  type LandingTilePlacement,
+} from '../data/launcherCatalog'
 
 const SPECIAL_SETTINGS_ENDPOINT = '/api/settings/special/'
 const SPECIAL_SETTINGS_SYNC_EVENT = 'map2:special-settings-sync'
@@ -20,6 +24,7 @@ export interface SpecialSettings {
   hiddenPlugins: string[]
   menuLocation: 'mobile-only' | 'hidden'
   pinnedRoutes: string[]
+  landingTiles: LandingTilePlacement[]
   lastActiveNode?: string | null
   version?: number
   lastUpdated?: string
@@ -48,6 +53,17 @@ function resolvePinnedRoutes(data: Record<string, unknown>): string[] {
   return normalizePinnedRoutes(defaultPinnedRoutes)
 }
 
+function resolveLandingTiles(data: Record<string, unknown>): LandingTilePlacement[] {
+  const landingTiles = data.landing_tiles
+  if (Array.isArray(landingTiles)) {
+    return normalizeLandingTiles(landingTiles.filter((tile): tile is LandingTilePlacement | { route?: string | null; size?: string | null } => (
+      typeof tile === 'object' && tile !== null
+    )))
+  }
+
+  return []
+}
+
 function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
   return {
     enabled: Boolean(data.enabled),
@@ -56,6 +72,7 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
       : [],
     menuLocation: data.menu_location === 'mobile-only' ? 'mobile-only' : 'hidden',
     pinnedRoutes: resolvePinnedRoutes(data),
+    landingTiles: resolveLandingTiles(data),
     lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
     version: typeof data.version === 'number' ? data.version : undefined,
     lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
@@ -65,12 +82,14 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
 
 function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettings: SpecialSettings | null) {
   const pinnedRoutes = normalizePinnedRoutes(newSettings.pinnedRoutes ?? currentSettings?.pinnedRoutes ?? defaultPinnedRoutes)
+  const landingTiles = normalizeLandingTiles(newSettings.landingTiles ?? currentSettings?.landingTiles ?? [])
 
   return {
     enabled: newSettings.enabled ?? currentSettings?.enabled ?? false,
     hidden_plugins: newSettings.hiddenPlugins ?? currentSettings?.hiddenPlugins ?? [],
     menu_location: newSettings.menuLocation ?? currentSettings?.menuLocation ?? 'hidden',
     pinned_routes: pinnedRoutes,
+    landing_tiles: landingTiles,
     promoted_advanced_routes: pinnedRoutes,
     last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,
   }

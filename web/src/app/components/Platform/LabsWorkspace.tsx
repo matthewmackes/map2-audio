@@ -5,7 +5,6 @@ import { Tag } from '@carbon/react'
 import { useLocation } from 'react-router-dom'
 
 import {
-  MAX_PINNED_NAV_ITEMS,
   advancedMenuItems,
   allRouteNavigationItems,
   type HardwareInterfaceMenuItem,
@@ -63,15 +62,13 @@ function maturityTagLabel(maturity: NavigationMaturityState): string {
 
 interface LabsWorkspaceProps {
   pinnedRouteSet: Set<string>
-  pinningDisabled: boolean
-  onTogglePin: (item: LabsMenuItem, checked: boolean) => void | Promise<void>
+  landingTileRouteSet: Set<string>
   onLaunchRoute: (to: string) => void
 }
 
 export function LabsWorkspace({
   pinnedRouteSet,
-  pinningDisabled,
-  onTogglePin,
+  landingTileRouteSet,
   onLaunchRoute,
 }: LabsWorkspaceProps) {
   const location = useLocation()
@@ -215,7 +212,7 @@ export function LabsWorkspace({
     const Icon = item.icon
     const isBlocked = isBlockedAdvancedMenuItem(item)
     const isPinned = pinnedRouteSet.has(item.to)
-    const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+    const isOnLanding = landingTileRouteSet.has(item.to)
     const hardwareLocation = hardwareLocationNotes[item.to]
     const isExpanded = expandedCardId === cardId
     const isActive = isRouteMatch(location.pathname, item.to)
@@ -234,32 +231,6 @@ export function LabsWorkspace({
         className={`platform-shell__cp-item advanced-menu-control-panel__item${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}${isExpanded ? ' is-expanded' : ''}`}
         style={{ '--advanced-menu-item-accent': item.color } as CSSProperties}
       >
-        {item.pinnable ? (
-          <button
-            type="button"
-            className={`platform-shell__cp-pin-btn advanced-menu-control-panel__pin-btn${isPinned ? ' is-pinned' : ''}`}
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              if (!pinningDisabled && !limitReached) {
-                void onTogglePin(item, !isPinned)
-              }
-            }}
-            title={
-              limitReached
-                ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                : isPinned
-                  ? 'Unpin from navigation bar'
-                  : 'Pin to navigation bar'
-            }
-            aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-            aria-pressed={isPinned}
-            disabled={pinningDisabled || limitReached}
-          >
-            {isPinned ? 'PINNED' : 'PIN'}
-          </button>
-        ) : null}
-
         <button
           type="button"
           className="platform-shell__cp-item-open advanced-menu-control-panel__item-open"
@@ -275,7 +246,13 @@ export function LabsWorkspace({
         </button>
 
         <div className="advanced-menu-control-panel__item-footer">
-          <span className="advanced-menu-control-panel__item-state">{statusLabel}</span>
+          <div className="advanced-menu-control-panel__item-state-wrap">
+            <span className="advanced-menu-control-panel__item-state">{statusLabel}</span>
+            <div className="advanced-menu-control-panel__item-placement-tags">
+              {isPinned ? <Tag type="green" size="sm">Pinned nav</Tag> : null}
+              {isOnLanding ? <Tag type="blue" size="sm">Landing tile</Tag> : null}
+            </div>
+          </div>
           <button
             type="button"
             className="advanced-menu-control-panel__details-btn"

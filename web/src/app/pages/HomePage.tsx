@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, BareMetalServer, Package, Waveform } from '@carbon/icons-react'
 import { Beaker } from 'lucide-react'
 import { FxDrums } from '../components/icons/effectIcons'
-import { ClickableTile } from '@carbon/react'
+import { ClickableTile, Tag } from '@carbon/react'
 import {
   MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
@@ -16,6 +16,8 @@ import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { getLauncherCatalogItem } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import type { NodeSummary, NodeTopology } from '../types/node'
 import landingBg from '../../assets/map2-landing-bg.png'
@@ -189,6 +191,13 @@ const LEFT_COLUMN_CARDS: WorkspaceCard[] = [
   },
 ]
 
+const LANDING_DIRECTORY_LABELS = {
+  core: 'Core',
+  labs: 'Labs',
+  platforms: 'Platforms',
+  'nav-only': 'Nav only',
+} as const
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function HomePage() {
@@ -197,6 +206,7 @@ export function HomePage() {
   const topology = useNodeTopology()
   const nodeStatusLabel = useNodeStatusLabel(topology.data)
   const remediationSummary = usePlatformRemediationSummary()
+  const { settings: specialSettings, isLoading: specialSettingsLoading } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
     state: string | null
@@ -208,6 +218,19 @@ export function HomePage() {
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
   const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
+  const landingTileLaunchers = useMemo(() => {
+    return (specialSettings?.landingTiles ?? [])
+      .map((tile) => {
+        const launcher = getLauncherCatalogItem(tile.route)
+        if (!launcher || !launcher.landingEligible) {
+          return null
+        }
+
+        return { ...tile, launcher }
+      })
+      .filter((tile): tile is NonNullable<typeof tile> => Boolean(tile))
+  }, [specialSettings?.landingTiles])
+  const showLandingBoard = landingTileLaunchers.length > 0 || !specialSettingsLoading
 
   const remediationPills = [
     { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
@@ -231,6 +254,70 @@ export function HomePage() {
           <img src={landingBg} alt="" className="hp2-hero__img" aria-hidden="true" />
           <div className="hp2-hero__scrim" aria-hidden="true" />
         </div>
+        {showLandingBoard ? (
+          <section className="hp2-launchers" aria-label="Promoted launchers">
+            <div className="hp2-launchers__header">
+              <div>
+                <p className="hp2-launchers__eyebrow">Landing Page</p>
+                <h2 className="hp2-launchers__title">Promoted launchers</h2>
+              </div>
+              <p className="hp2-launchers__summary">
+                Shared launcher placements live in Platforms and render here as Windows-style tiles above the existing home surface.
+              </p>
+            </div>
+
+            {landingTileLaunchers.length > 0 ? (
+              <div className="hp2-launchers__grid" role="list">
+                {landingTileLaunchers.map((tile) => {
+                  const Icon = tile.launcher.icon
+
+                  return (
+                    <ClickableTile
+                      key={tile.route}
+                      className={`hp2-launchers__tile hp2-launchers__tile--${tile.size}`}
+                      onClick={() => navigate(tile.route)}
+                      role="listitem"
+                    >
+                      <div className="hp2-launchers__tile-body">
+                        <div className="hp2-launchers__tile-meta">
+                          <Tag type="blue" size="sm">
+                            {LANDING_DIRECTORY_LABELS[tile.launcher.directory]}
+                          </Tag>
+                          <Tag type="cool-gray" size="sm">
+                            {tile.size}
+                          </Tag>
+                        </div>
+                        <div className="hp2-launchers__tile-icon" aria-hidden>
+                          <Icon size={tile.size === 'large' ? 28 : 22} />
+                        </div>
+                        <h3 className="hp2-launchers__tile-title">{tile.launcher.label}</h3>
+                        <p className="hp2-launchers__tile-desc">{tile.launcher.description}</p>
+                      </div>
+                      <ArrowRight size={18} className="hp2-card__arrow" />
+                    </ClickableTile>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="hp2-launchers__empty">
+                <div>
+                  <p className="hp2-launchers__eyebrow">No Tiles Yet</p>
+                  <h3 className="hp2-launchers__empty-title">Landing-page launchers are not configured.</h3>
+                  <p className="hp2-launchers__empty-copy">
+                    Open the Platforms launcher organizer to add tiles, choose sizes, and order them.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="hp2-launchers__empty-button"
+                  onClick={() => navigate('/platforms/launchers')}
+                >
+                  Open launcher organizer
+                </button>
+              </div>
+            )}
+          </section>
+        ) : null}
         <nav className="hp2-layout" aria-label="Workspaces">
           <div className="hp2-column hp2-column--left">
             <ClickableTile

@@ -21,6 +21,7 @@ class MidiClockConfig:
     running: bool = False
     source_mode: str = "internal"  # internal|external
     output_ports: List[str] = field(default_factory=list)
+    snapshot_sync_enabled: bool = False
     divider: float = 1.0
     multiplier: float = 1.0
     offset_ms: float = 0.0
@@ -47,6 +48,7 @@ class MidiClockEngine:
             "running": bool(self._config.running),
             "source_mode": self._config.source_mode,
             "output_ports": list(self._config.output_ports),
+            "snapshot_sync_enabled": bool(self._config.snapshot_sync_enabled),
             "divider": float(self._config.divider),
             "multiplier": float(self._config.multiplier),
             "offset_ms": float(self._config.offset_ms),
@@ -65,6 +67,8 @@ class MidiClockEngine:
         if "output_ports" in updates:
             ports = [str(port) for port in (updates["output_ports"] or []) if str(port).strip()]
             self._config.output_ports = ports
+        if "snapshot_sync_enabled" in updates:
+            self._config.snapshot_sync_enabled = bool(updates["snapshot_sync_enabled"])
         if "divider" in updates:
             self._config.divider = max(0.25, min(16.0, float(updates["divider"])))
         if "multiplier" in updates:

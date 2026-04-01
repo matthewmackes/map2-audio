@@ -24,8 +24,10 @@ import type {
   SnapshotRuntimeClusterLiveStateResponse,
   SnapshotRuntimeLiveState,
   SnapshotRouting,
+  SnapshotRevisionSummary,
   SnapshotSessionNote,
   SnapshotSummary,
+  SnapshotTempoStatus,
 } from '../types'
 
 export interface SnapshotListResponse {
@@ -39,6 +41,7 @@ export interface SnapshotCreateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  tempo_bpm?: number
   derived_from_snapshot_id?: number | null
   output_level_reference_dbfs?: number | null
   output_level_warning_threshold_db?: number
@@ -58,6 +61,8 @@ export interface SnapshotUpdateRequest {
   description?: string
   tags?: string[]
   program_number?: number | null
+  create_revision?: boolean
+  tempo_bpm?: number | null
   derived_from_snapshot_id?: number | null
   output_level_reference_dbfs?: number | null
   output_level_warning_threshold_db?: number | null
@@ -116,6 +121,26 @@ export interface SnapshotSessionNotesResponse {
   snapshot_id: number
   notes: SnapshotSessionNote[]
   count: number
+}
+
+export interface SnapshotTempoResponse {
+  status: string
+  snapshot_id: number
+  tempo: SnapshotTempoStatus
+  snapshot?: SnapshotDetail
+}
+
+export interface SnapshotRevisionListResponse {
+  snapshot_id: number
+  count: number
+  revisions: SnapshotRevisionSummary[]
+}
+
+export interface SnapshotRevisionRestoreResponse {
+  status: string
+  snapshot_id: number
+  restored_revision_number: number
+  snapshot: SnapshotDetail
 }
 
 export interface SnapshotDeleteResponse {
@@ -455,6 +480,32 @@ export const snapshotsApi = {
     fetchJson<SnapshotSessionNotesResponse>(`${API_BASE}/snapshots/${snapshotId}/notes`, {
       method: 'POST',
       body: JSON.stringify({ text }),
+    }),
+
+  getTempo: (snapshotId: number) =>
+    fetchJson<SnapshotTempoResponse>(`${API_BASE}/snapshots/${snapshotId}/tempo`, {
+      cache: 'no-store',
+    }),
+
+  tapTempo: (snapshotId: number, timestampMs?: number) =>
+    fetchJson<SnapshotTempoResponse>(`${API_BASE}/snapshots/${snapshotId}/tempo/tap`, {
+      method: 'POST',
+      body: JSON.stringify(timestampMs != null ? { timestamp_ms: timestampMs } : {}),
+    }),
+
+  resetTempo: (snapshotId: number) =>
+    fetchJson<SnapshotTempoResponse>(`${API_BASE}/snapshots/${snapshotId}/tempo/reset`, {
+      method: 'POST',
+    }),
+
+  listRevisions: (snapshotId: number) =>
+    fetchJson<SnapshotRevisionListResponse>(`${API_BASE}/snapshots/${snapshotId}/revisions`, {
+      cache: 'no-store',
+    }),
+
+  restoreRevision: (snapshotId: number, revisionNumber: number) =>
+    fetchJson<SnapshotRevisionRestoreResponse>(`${API_BASE}/snapshots/${snapshotId}/revisions/${revisionNumber}/restore`, {
+      method: 'POST',
     }),
 
   create: (request: SnapshotCreateRequest) =>

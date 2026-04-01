@@ -432,7 +432,7 @@ export const allPinnableNavigationItems: Array<ShellNavigationItem | HardwareInt
 
 const PINNABLE_ROUTE_SET = new Set(allPinnableNavigationItems.map((item) => item.to))
 
-const PINNED_ROUTE_ALIASES: Record<string, string> = {
+export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/welcome': '/platforms/about',
   '/grid': '/juce-grid',
   '/grid-3d': '/juce-grid',
@@ -464,6 +464,24 @@ const PINNED_ROUTE_ALIASES: Record<string, string> = {
   'platform:panel:about': '/platforms/about',
 }
 
+export const pinnableNavigationItemsByRoute = new Map(
+  allPinnableNavigationItems.map((item) => [item.to, item] as const),
+)
+
+export function canonicalizeNavigationRoute(route: string): string {
+  return PINNED_ROUTE_ALIASES[route] ?? route
+}
+
+export function findPinnableNavigationItem(
+  route: string | null | undefined,
+): ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem | null {
+  if (!route) {
+    return null
+  }
+
+  return pinnableNavigationItemsByRoute.get(canonicalizeNavigationRoute(route)) ?? null
+}
+
 export function normalizePinnedRoutes(routes: string[] | null | undefined): string[] {
   if (!routes || routes.length === 0) {
     return []
@@ -474,7 +492,7 @@ export function normalizePinnedRoutes(routes: string[] | null | undefined): stri
 
   for (const rawRoute of routes) {
     const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
-    const canonicalRoute = PINNED_ROUTE_ALIASES[route] ?? route
+    const canonicalRoute = canonicalizeNavigationRoute(route)
     if (!canonicalRoute || !PINNABLE_ROUTE_SET.has(canonicalRoute) || seen.has(canonicalRoute)) {
       continue
     }

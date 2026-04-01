@@ -29,7 +29,7 @@ describe('useSpecialSettings', () => {
     jest.resetAllMocks()
   })
 
-  it('normalizes legacy top-nav settings to hidden and writes both pinned route fields for backend compatibility', async () => {
+  it('normalizes legacy top-nav settings to hidden and persists landing tiles with pinned routes', async () => {
     const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>
 
     fetchMock
@@ -55,6 +55,7 @@ describe('useSpecialSettings', () => {
           hidden_plugins: [],
           menu_location: 'hidden',
           promoted_advanced_routes: ['/midi-hub'],
+          landing_tiles: [{ route: '/labs', size: 'large' }],
           last_active_node: null,
           version: 97,
         }),
@@ -64,10 +65,14 @@ describe('useSpecialSettings', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.settings?.menuLocation).toBe('hidden')
-    expect(result.current.settings?.pinnedRoutes).toEqual(['/juce-grid'])
+    expect(result.current.settings?.pinnedRoutes).toEqual(['/platforms/about', '/juce-grid'])
+    expect(result.current.settings?.landingTiles).toEqual([])
 
     await act(async () => {
-      await result.current.updateSettings({ pinnedRoutes: ['/midi-hub'] })
+      await result.current.updateSettings({
+        pinnedRoutes: ['/midi-hub'],
+        landingTiles: [{ route: '/labs', size: 'large' }],
+      })
     })
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -78,9 +83,11 @@ describe('useSpecialSettings', () => {
     const payload = JSON.parse(String(postCall?.[1]?.body))
     expect(payload.menu_location).toBe('hidden')
     expect(payload.pinned_routes).toEqual(['/midi-hub'])
+    expect(payload.landing_tiles).toEqual([{ route: '/labs', size: 'large' }])
     expect(payload.promoted_advanced_routes).toEqual(['/midi-hub'])
 
     await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/midi-hub']))
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/labs', size: 'large' }])
     expect(result.current.settings?.menuLocation).toBe('hidden')
   })
 })

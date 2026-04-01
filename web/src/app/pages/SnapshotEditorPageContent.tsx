@@ -93,6 +93,7 @@ import {
   snapshotsApi,
   flowSnapshotDataToSnapshotPayload,
 } from '../../map2/clients/snapshots'
+import { fetchJson } from '../../map2/http'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
@@ -115,6 +116,7 @@ import { canonicalizePluginUri } from '../utils/pluginUris'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
+import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
 import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
@@ -201,6 +203,20 @@ const FEATURED_NATIVE_BROWSER_GROUPS = [
     ],
   },
 ] as const
+
+interface SnapshotEditorPerformanceEvent {
+  seq: number
+  action: string
+  payload?: Record<string, unknown>
+  channel: number
+  timestamp_ns: number
+  source_port: string
+}
+
+interface SnapshotEditorPerformanceEventsResponse {
+  events: SnapshotEditorPerformanceEvent[]
+  last_seq: number
+}
 
 interface FlowLevelControlProps {
   flowId: string
@@ -828,6 +844,7 @@ export function SnapshotEditorPage() {
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
+  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
   const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
   const [branchPageByFlowId, setBranchPageByFlowId] = useState<Record<string, number>>({})
@@ -880,6 +897,7 @@ export function SnapshotEditorPage() {
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
+  const perfSeqRef = useRef(0)
   const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
@@ -1122,6 +1140,12 @@ export function SnapshotEditorPage() {
     queryFn: () => snapshotsApi.list(),
     refetchInterval: snapshotStandardCadence,
   })
+  const snapshotRevisionsQuery = useQuery({
+    queryKey: ['snapshots', 'revisions', liveSnapshotQuery.data?.id ?? null],
+    queryFn: () => snapshotsApi.listRevisions(liveSnapshotQuery.data!.id),
+    enabled: showVersionHistoryModal && liveSnapshotQuery.data?.id != null,
+    refetchOnWindowFocus: false,
+  })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
   const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
   const snapshotEntryRequired = liveSnapshotQuery.isSuccess && liveSnapshotQuery.data === null
@@ -1275,6 +1299,52 @@ export function SnapshotEditorPage() {
     void queryClient.invalidateQueries({ queryKey: ['chains'] })
     void queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
   }, [queryClient]))
+
+  useEffect(() => {
+    if (!snapshotFastCadence) {
+      return undefined
+    }
+
+    let closed = false
+    const poll = async () => {
+      try {
+        const payload = await fetchJson<SnapshotEditorPerformanceEventsResponse>(
+          `${API_BASE}/v2/expression/performance-events?after_seq=${perfSeqRef.current}&limit=256`,
+          { cache: 'no-store' },
+        )
+        if (closed) {
+          return
+        }
+        const events = Array.isArray(payload.events) ? payload.events : []
+        const liveSnapshotId = liveSnapshotQuery.data?.id ?? null
+        if (events.length > 0 && liveSnapshotId != null) {
+          for (const event of events) {
+            if (event.action === 'perform.tap_tempo') {
+              const tapped = await snapshotsApi.tapTempo(liveSnapshotId, Date.now())
+              if (tapped.snapshot) {
+                queryClient.setQueryData(['snapshots', 'live'], tapped.snapshot)
+              }
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+        }
+        const lastSeq = Number(payload.last_seq || 0)
+        const eventLastSeq = events.length > 0 ? Number(events[events.length - 1]?.seq || 0) : 0
+        perfSeqRef.current = Math.max(perfSeqRef.current, lastSeq, eventLastSeq)
+      } catch {
+        // Keep editor controls responsive if performance-event polling fails.
+      }
+    }
+
+    void poll()
+    const id = window.setInterval(() => {
+      void poll()
+    }, snapshotFastCadence)
+    return () => {
+      closed = true
+      window.clearInterval(id)
+    }
+  }, [liveSnapshotQuery.data?.id, queryClient, snapshotFastCadence])
 
   // ============================================================================
   // Effects for Enhanced Features
@@ -1607,6 +1677,7 @@ export function SnapshotEditorPage() {
       const created = await snapshotsApi.create({
         name: `Snapshot ${snapshotCount + 1}`,
         description: 'Created from Snapshot Editor',
+        tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
       })
       return snapshotsApi.activate(created.snapshot_id)
@@ -1630,11 +1701,15 @@ export function SnapshotEditorPage() {
       if (!activeSnapshot) {
         throw new Error('No active snapshot to update')
       }
-      return snapshotsApi.update(activeSnapshot.id, flowSnapshotDataToSnapshotPayload(currentSnapshotDraft))
+      return snapshotsApi.update(activeSnapshot.id, {
+        ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
+        create_revision: true,
+      })
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
       clearSnapshotsDirty()
       pushToast('Snapshot updated', 'success')
     },
@@ -1691,6 +1766,64 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update output reference', 'error')
+    },
+  })
+
+  const updateActiveSnapshotTempoMutation = useMutation({
+    mutationFn: async ({ snapshotId, tempoBpm }: { snapshotId: number; tempoBpm: number }) =>
+      snapshotsApi.update(snapshotId, { tempo_bpm: tempoBpm }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Snapshot tempo updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot tempo', 'error')
+    },
+  })
+
+  const tapSnapshotTempoMutation = useMutation({
+    mutationFn: async ({ snapshotId, timestampMs }: { snapshotId: number; timestampMs?: number }) =>
+      snapshotsApi.tapTempo(snapshotId, timestampMs),
+    onSuccess: (response) => {
+      if (response.snapshot) {
+        queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      }
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to tap snapshot tempo', 'error')
+    },
+  })
+
+  const resetSnapshotTempoMutation = useMutation({
+    mutationFn: async ({ snapshotId }: { snapshotId: number }) =>
+      snapshotsApi.resetTempo(snapshotId),
+    onSuccess: (response) => {
+      if (response.snapshot) {
+        queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      }
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Live tempo reset to the stored snapshot tempo', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to reset live tempo', 'error')
+    },
+  })
+
+  const restoreSnapshotRevisionMutation = useMutation({
+    mutationFn: async ({ snapshotId, revisionNumber }: { snapshotId: number; revisionNumber: number }) =>
+      snapshotsApi.restoreRevision(snapshotId, revisionNumber),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
+      setShowVersionHistoryModal(false)
+      clearSnapshotsDirty()
+      pushToast(`Restored revision ${response.restored_revision_number}`, 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to restore snapshot revision', 'error')
     },
   })
 
@@ -4378,15 +4511,16 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (isTextEntryTarget(e.target)) {
-          if (e.key === 'Escape') {
-            if (showSavePresetModal) setShowSavePresetModal(false)
-            else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
-            else if (showRenameChainModal) setShowRenameChainModal(false)
-            else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
-            else if (presetPendingDelete) setPresetPendingDelete(null)
-            else if (showClearFlowsModal) setShowClearFlowsModal(false)
-            else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+      if (isTextEntryTarget(e.target)) {
+        if (e.key === 'Escape') {
+          if (showSavePresetModal) setShowSavePresetModal(false)
+          else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
+          else if (showRenameChainModal) setShowRenameChainModal(false)
+          else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
+          else if (presetPendingDelete) setPresetPendingDelete(null)
+          else if (showClearFlowsModal) setShowClearFlowsModal(false)
+          else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+          else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
           else if (midiModalOpen) setMidiModalOpen(false)
           else if (routingInspectorId) setRoutingInspectorId(null)
         }
@@ -4504,6 +4638,7 @@ export function SnapshotEditorPage() {
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+        else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
         else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
         else if (showPluginBrowser) setShowPluginBrowser(false)
@@ -4523,7 +4658,7 @@ export function SnapshotEditorPage() {
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, showRenameSnapshotModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showLiveRuntimeModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, setSelectedPluginSelection,
   ])
@@ -5204,6 +5339,13 @@ export function SnapshotEditorPage() {
         onClick={() => setMidiModalOpen(true)}
       />
       <MenuItem
+        label="Version History"
+        renderIcon={Renew}
+        className="juce-grid-page__snapshot-status-details-item"
+        disabled={!activeSnapshot}
+        onClick={() => setShowVersionHistoryModal(true)}
+      />
+      <MenuItem
         label="Shortcuts"
         renderIcon={Information}
         className="juce-grid-page__snapshot-status-details-item"
@@ -5260,6 +5402,26 @@ export function SnapshotEditorPage() {
               updateActiveSnapshotDescriptionMutation.mutate({ snapshotId: activeSnapshot.id, description })
             }}
             snapshotDescriptionPending={updateActiveSnapshotDescriptionMutation.isPending}
+            onSubmitTempoBpm={(tempoBpm) => {
+              if (!activeSnapshot) {
+                return
+              }
+              updateActiveSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, tempoBpm })
+            }}
+            tempoPending={updateActiveSnapshotTempoMutation.isPending}
+            onTapTempo={() => {
+              if (!activeSnapshot) {
+                return
+              }
+              tapSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, timestampMs: Date.now() })
+            }}
+            onResetTempo={() => {
+              if (!activeSnapshot) {
+                return
+              }
+              resetSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id })
+            }}
+            tapTempoPending={tapSnapshotTempoMutation.isPending || resetSnapshotTempoMutation.isPending}
             currentOutputLevelDbfs={currentOutputLevelDbfs}
             onSetOutputLevelReference={() => {
               if (!activeSnapshot || currentOutputLevelDbfs == null) {
@@ -6500,6 +6662,33 @@ export function SnapshotEditorPage() {
           </div>
         </Modal>
       )}
+
+      <SnapshotVersionHistoryModal
+        open={showVersionHistoryModal}
+        snapshotName={activeSnapshot?.name}
+        revisions={snapshotRevisionsQuery.data?.revisions ?? []}
+        loading={snapshotRevisionsQuery.isPending}
+        errorMessage={
+          snapshotRevisionsQuery.error instanceof Error
+            ? snapshotRevisionsQuery.error.message
+            : null
+        }
+        restoringRevisionNumber={
+          restoreSnapshotRevisionMutation.isPending
+            ? (restoreSnapshotRevisionMutation.variables?.revisionNumber ?? null)
+            : null
+        }
+        onClose={() => setShowVersionHistoryModal(false)}
+        onRestore={(revision) => {
+          if (!activeSnapshot) {
+            return
+          }
+          restoreSnapshotRevisionMutation.mutate({
+            snapshotId: activeSnapshot.id,
+            revisionNumber: revision.revision_number,
+          })
+        }}
+      />
 
       {/* Lane Picker Modal */}
       {lanePickerOpen && (

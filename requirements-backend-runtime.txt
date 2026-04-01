@@ -20,6 +20,8 @@ SQLAlchemy>=2.0.45,<3.0.0
 httpx>=0.28.1,<0.29.0
 # Async HTTP clients used across discovery/scraper/integration services
 aiohttp>=3.13.3,<4.0.0
+# WebSocket client support used by hardware daemons such as Maschine MK1
+websockets>=16.0,<17.0.0
 # YAML parsing and emitted configuration artifacts
 PyYAML>=6.0.2,<7.0.0
 # System/process telemetry
@@ -32,17 +34,18 @@ zeroconf>=0.148.0,<1.0.0
 numpy>=2.3.5,<3.0.0
 # DSP/scientific utilities used by audio features
 scipy>=1.17.0,<2.0.0
-# Charting for audio evidence tooling (e.g., T099 envelope overlays)
-matplotlib>=3.10.7,<4.0.0
 # Python-side audio I/O helpers and diagnostics
 sounddevice>=0.5.3,<0.6.0
 # Audio file read/write support
 soundfile>=0.13.1,<0.14.0
 # MIDI device access
 python-rtmidi>=1.5.8,<2.0.0
+# USB HID access for hardware control surfaces such as Maschine MK1
+hidapi>=0.14.0,<1.0.0
 # Serial-connected hardware workflows
 pyserial>=3.5,<4.0.0
 
 # Content And Library Features
 # HTML parsing for library/discovery features
 beautifulsoup4>=4.14.3,<5.0.0
+

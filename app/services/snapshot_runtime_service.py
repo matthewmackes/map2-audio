@@ -9,6 +9,7 @@ depends on deprecated HTTP route files.
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Dict, Optional
 
 from app.services.chain_service import (
@@ -19,6 +20,19 @@ from app.services.chain_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+_TEMPO_PARAMETER_SYMBOLS = {
+    "tempo",
+    "tempo_bpm",
+    "bpm",
+    "host_tempo",
+}
+_SYNC_PARAMETER_HINTS = (
+    "tempo_sync",
+    "sync_to_tempo",
+    "beat_sync",
+    "host_sync",
+)
 
 
 def snapshot_plugin_position(plugin: Dict[str, Any]) -> Optional[int]:
@@ -173,3 +187,142 @@ async def apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int, 
                     logger.debug("Could not set param %s for %s: %s", idx_str, plugin_uri, exc)
 
     return params_applied, bypass_applied
+
+
+def _parameter_lookup_keys(definition: Dict[str, Any]) -> set[str]:
+    keys: set[str] = set()
+    for raw_value in (definition.get("symbol"), definition.get("name")):
+        if not isinstance(raw_value, str):
+            continue
+        normalized = raw_value.strip().lower().replace(" ", "_")
+        if normalized:
+            keys.add(normalized)
+    return keys
+
+
+def _is_tempo_parameter(definition: Dict[str, Any]) -> bool:
+    keys = _parameter_lookup_keys(definition)
+    return any(
+        key in _TEMPO_PARAMETER_SYMBOLS
+        or key.endswith("_tempo")
+        or key.endswith("_bpm")
+        for key in keys
+    )
+
+
+def _is_sync_parameter(definition: Dict[str, Any]) -> bool:
+    keys = _parameter_lookup_keys(definition)
+    return any(any(hint in key for hint in _SYNC_PARAMETER_HINTS) for key in keys)
+
+
+def _coerce_snapshot_parameter_value(value: Any) -> Optional[float]:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _snapshot_parameter_value(
+    parameters: Dict[str, Any],
+    *,
+    index: int,
+    definition: Dict[str, Any],
+) -> Optional[float]:
+    raw_candidates = [parameters.get(str(index)), parameters.get(index)]
+    raw_candidates.extend(
+        parameters.get(raw_key)
+        for raw_key in (
+            definition.get("symbol"),
+            definition.get("name"),
+        )
+        if isinstance(raw_key, str) and raw_key
+    )
+    for candidate in raw_candidates:
+        numeric = _coerce_snapshot_parameter_value(candidate)
+        if numeric is not None:
+            return numeric
+    return None
+
+
+async def apply_snapshot_tempo_to_engine(snapshot_data: Dict[str, Any], bpm: float) -> int:
+    """Apply snapshot-scoped tempo to plugins that expose a dedicated BPM parameter."""
+    from app.routes.plugins import _discovered_plugins
+    from app.services.juce_engine_service import get_audio_engine
+
+    engine = get_audio_engine()
+    if not engine.is_available or not engine.is_running:
+        return 0
+
+    params_applied = 0
+    discovered_by_uri = {
+        str(item.get("uri")): item
+        for item in _discovered_plugins
+        if isinstance(item, dict) and item.get("uri")
+    }
+
+    for chain_data in snapshot_data.get("chains", {}).values():
+        if not isinstance(chain_data, dict):
+            continue
+        for plugin in chain_data.get("plugins", []):
+            if not isinstance(plugin, dict):
+                continue
+            plugin_uri = str(plugin.get("uri") or "")
+            if not plugin_uri:
+                continue
+
+            plugin_info = discovered_by_uri.get(plugin_uri)
+            if not plugin_info:
+                continue
+
+            param_defs = plugin_info.get("parameters", [])
+            if not isinstance(param_defs, list) or len(param_defs) == 0:
+                continue
+
+            plugin_parameters = plugin.get("parameters", {})
+            if not isinstance(plugin_parameters, dict):
+                plugin_parameters = {}
+
+            sync_indexes = [
+                index
+                for index, definition in enumerate(param_defs)
+                if isinstance(definition, dict) and _is_sync_parameter(definition)
+            ]
+            sync_enabled = True
+            if sync_indexes:
+                sync_enabled = False
+                for index in sync_indexes:
+                    definition = param_defs[index]
+                    current_value = _snapshot_parameter_value(
+                        plugin_parameters,
+                        index=index,
+                        definition=definition,
+                    )
+                    if current_value is not None and current_value > 0.5:
+                        sync_enabled = True
+                        break
+
+            if not sync_enabled:
+                continue
+
+            plugin_position = snapshot_plugin_position(plugin)
+            for index, definition in enumerate(param_defs):
+                if not isinstance(definition, dict) or not _is_tempo_parameter(definition):
+                    continue
+                symbol = str(definition.get("symbol") or "").strip()
+                if not symbol:
+                    continue
+                try:
+                    applied = await engine.set_parameter(
+                        plugin_uri,
+                        symbol,
+                        float(bpm),
+                        plugin_position=plugin_position,
+                    )
+                except Exception as exc:
+                    logger.debug("Could not set tempo param %s for %s: %s", symbol, plugin_uri, exc)
+                    continue
+                if applied:
+                    params_applied += 1
+
+    return params_applied

@@ -5,7 +5,7 @@ Legacy route-facing models live directly in this package, and node-display
 schemas remain exposed from `app.models.node`.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -61,6 +61,13 @@ class SystemHealthResponse(BaseModel):
     plugins_loaded: int
 
 
+class SpecialSettingsLandingTile(BaseModel):
+    """Landing-page launcher tile placement."""
+
+    route: str
+    size: Literal["small", "medium", "large"] = "medium"
+
+
 class SpecialSettingsResponse(BaseModel):
     """Special mode settings response."""
 
@@ -70,6 +77,7 @@ class SpecialSettingsResponse(BaseModel):
     hidden_plugins: List[str] = []
     menu_location: str = "hidden"
     pinned_routes: List[str] = Field(default_factory=list)
+    landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
     last_active_node: Optional[str] = None
     version: int = 1
     last_updated: Optional[str] = None
@@ -93,6 +101,7 @@ class SpecialSettingsUpdateRequest(BaseModel):
     hidden_plugins: List[str]
     menu_location: str
     pinned_routes: List[str] = Field(default_factory=list)
+    landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
     last_active_node: Optional[str] = None
 
     @model_validator(mode="before")

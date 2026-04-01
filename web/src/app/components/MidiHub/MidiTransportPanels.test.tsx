@@ -67,6 +67,7 @@ describe('Midi transport panels', () => {
       bpm: 123.45,
       output_ports: ['din-out'],
       source_mode: 'internal',
+      snapshot_sync_enabled: false,
       divider: 2,
       multiplier: 3,
       offset_ms: 0,
@@ -107,6 +108,7 @@ describe('Midi transport panels', () => {
     await waitFor(() => expect(screen.getByRole('checkbox', { name: /din out/i })).toBeTruthy())
 
     fireEvent.click(screen.getByRole('checkbox', { name: /usb out/i }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /auto-sync with snapshot tempo/i }))
     fireEvent.change(screen.getByLabelText('BPM'), { target: { value: '140' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Clock divider' }), { target: { value: '4' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Clock multiplier' }), { target: { value: '2' } })
@@ -118,6 +120,7 @@ describe('Midi transport panels', () => {
           bpm: 140,
           source_mode: 'internal',
           output_ports: ['din-out', 'usb-out'],
+          snapshot_sync_enabled: true,
           divider: 4,
           multiplier: 2,
         },

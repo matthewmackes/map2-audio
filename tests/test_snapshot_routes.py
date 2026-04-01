@@ -7,12 +7,14 @@ from app.routes import unified_snapshots as routes
 from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services import snapshot_runtime_service
+from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from sqlalchemy import select
 
 
 def _init_temp_db(tmp_path):
     database_module._tables_created = False
     database_module._pragmas_set = False
+    reset_snapshot_tempo_service()
     database_module.init_async_db(f"sqlite+aiosqlite:///{tmp_path / 'snapshot-routes.db'}")
 
 
@@ -48,8 +50,12 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     async def _fake_apply(_snapshot_data):
         return 1, 1
 
+    async def _fake_apply_tempo(_snapshot_data, _bpm):
+        return 1
+
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
     monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
 
@@ -67,6 +73,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
             routes.SnapshotCreateRequest(
                 name="Route Snapshot",
                 description="Created through route",
+                tempo_bpm=126.0,
                 output_level_reference_dbfs=-14.0,
                 output_level_warning_threshold_db=2.0,
                 io_bindings=routes.SnapshotIOBindingsInput(
@@ -111,6 +118,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert listed["snapshots"][0]["name"] == "Route Snapshot"
         assert listed["snapshots"][0]["input_device"] == "Route In"
         assert listed["snapshots"][0]["output_device"] == "Route Out"
+        assert listed["snapshots"][0]["tempo_bpm"] == 126.0
         assert listed["snapshots"][0]["output_level_reference_dbfs"] == -14.0
         assert listed["snapshots"][0]["output_level_warning_threshold_db"] == 2.0
         assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
@@ -119,6 +127,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["channels"][0]["label"] == "A"
         assert fetched["input_device"] == "Route In"
         assert fetched["output_device"] == "Route Out"
+        assert fetched["tempo_bpm"] == 126.0
         assert fetched["output_level_reference_dbfs"] == -14.0
         assert fetched["output_level_warning_threshold_db"] == 2.0
         assert fetched["paths"][0]["id"] == "path-a"
@@ -141,6 +150,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         patched = await routes.update_snapshot(
             snapshot_id,
             routes.SnapshotUpdateRequest(
+                tempo_bpm=140.0,
                 output_level_reference_dbfs=-10.0,
                 output_level_warning_threshold_db=3.5,
                 io_bindings=routes.SnapshotIOBindingsInput(input_device="Route In 2", output_device=None),
@@ -152,6 +162,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                 ),
             ),
         )
+        assert patched["snapshot"]["tempo_bpm"] == 140.0
         assert patched["snapshot"]["output_level_reference_dbfs"] == -10.0
         assert patched["snapshot"]["output_level_warning_threshold_db"] == 3.5
         assert patched["snapshot"]["input_device"] == "Route In 2"
@@ -169,12 +180,39 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert activated["snapshot_data"]["live_state"]["is_live"] is True
         assert activated["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] is not None
         assert len(activated["snapshot_data"]["live_state"]["runtime_chains"]) == 1
+        assert activated["snapshot_data"]["tempo_bpm"] == 140.0
+        assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
+        assert activated["snapshot_data"]["tempo_source"] == "stored"
         assert cache_invalidations == ["chains"]
+
+        tempo_status = await routes.get_snapshot_tempo(snapshot_id)
+        assert tempo_status["tempo"]["stored_tempo_bpm"] == 140.0
+        assert tempo_status["tempo"]["active_tempo_bpm"] == 140.0
+
+        first_tap = await routes.tap_snapshot_tempo(
+            snapshot_id,
+            routes.SnapshotTempoTapRequest(timestamp_ms=1000.0),
+        )
+        assert first_tap["tempo"]["tempo_source"] == "stored"
+
+        second_tap = await routes.tap_snapshot_tempo(
+            snapshot_id,
+            routes.SnapshotTempoTapRequest(timestamp_ms=1500.0),
+        )
+        assert second_tap["tempo"]["tempo_source"] == "tap"
+        assert second_tap["tempo"]["active_tempo_bpm"] == 120.0
+        assert second_tap["snapshot"]["live_tempo_bpm"] == 120.0
 
         live_snapshot = await routes.get_live_snapshot()
         assert live_snapshot["id"] == snapshot_id
         assert live_snapshot["live_state"]["is_live"] is True
         assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
+        assert live_snapshot["tempo_source"] == "tap"
+        assert live_snapshot["active_tempo_bpm"] == 120.0
+
+        reset_tempo = await routes.reset_snapshot_tempo(snapshot_id)
+        assert reset_tempo["tempo"]["tempo_source"] == "stored"
+        assert reset_tempo["snapshot"]["active_tempo_bpm"] == 140.0
 
         runtime_live_state = await routes.get_runtime_live_state()
         assert runtime_live_state["snapshot_id"] == snapshot_id
@@ -296,11 +334,105 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert all(path["runtime_chain_id"] is not None for path in activated_paths_only["snapshot_data"]["live_state"]["paths"])
         assert len(activated_paths_only["snapshot_data"]["live_state"]["runtime_chains"]) == 2
 
+        revision_snapshot = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="Revision Route Snapshot",
+                snapshot_data={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:route-drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+        )
+        revision_snapshot_id = revision_snapshot["snapshot_id"]
+
+        saved_revision_snapshot = await routes.update_snapshot(
+            revision_snapshot_id,
+            routes.SnapshotUpdateRequest(
+                create_revision=True,
+                snapshot_data={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:route-drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                },
+                                {
+                                    "uri": "urn:test:route-delay",
+                                    "position": 1,
+                                    "bypass": False,
+                                    "parameters": {"mix": 0.35},
+                                },
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            ),
+        )
+        assert len(saved_revision_snapshot["snapshot"]["chains"][0]["plugins"]) == 2
+
+        revisions = await routes.list_snapshot_revisions(revision_snapshot_id)
+        assert revisions["count"] == 1
+        assert revisions["revisions"][0]["revision_number"] == 1
+        assert revisions["revisions"][0]["summary"] == "1 block, 1 channel, parallel blend routing"
+
+        restored_revision = await routes.restore_snapshot_revision(revision_snapshot_id, 1)
+        assert restored_revision["status"] == "success"
+        assert len(restored_revision["snapshot"]["chains"][0]["plugins"]) == 1
+
     asyncio.run(_run())
 
     registered_paths = {route.path for route in routes.router.routes}
     assert "/api/snapshots" in registered_paths
     assert "/api/snapshots/{snapshot_id}" in registered_paths
     assert "/api/snapshots/{snapshot_id}/notes" in registered_paths
+    assert "/api/snapshots/{snapshot_id}/revisions" in registered_paths
+    assert "/api/snapshots/{snapshot_id}/revisions/{revision_number}/restore" in registered_paths
     assert "/api/snapshots/{snapshot_id}/activate" in registered_paths
     assert not any(path.startswith("/api/flow-snapshots") for path in registered_paths)

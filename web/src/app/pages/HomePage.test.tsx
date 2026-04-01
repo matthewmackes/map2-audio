@@ -5,6 +5,19 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
 const originalFetch = global.fetch
+const mockSpecialSettingsState = {
+  settings: {
+    enabled: true,
+    hiddenPlugins: [],
+    menuLocation: 'hidden' as const,
+    pinnedRoutes: [],
+    landingTiles: [] as Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
+  },
+  isLoading: false,
+  error: null,
+  updateSettings: jest.fn(),
+  reload: jest.fn(),
+}
 
 jest.mock('../../assets/map2-landing-bg.png', () => 'map2-landing-bg.png')
 
@@ -50,6 +63,10 @@ jest.mock('../../map2/hooks/useWebSocket', () => ({
     },
   }),
   useWebSocketTopic: () => undefined,
+}))
+
+jest.mock('../hooks/useSpecialSettings', () => ({
+  useSpecialSettings: () => mockSpecialSettingsState,
 }))
 
 function makeJsonResponse(body: unknown, ok = true): Response {
@@ -136,6 +153,14 @@ describe('HomePage landing', () => {
     ;(globalThis as { fetch?: typeof fetch }).fetch = jest.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => defaultFetchResponse(input, init),
     ) as typeof fetch
+    mockSpecialSettingsState.settings = {
+      enabled: true,
+      hiddenPlugins: [],
+      menuLocation: 'hidden',
+      pinnedRoutes: [],
+      landingTiles: [],
+    }
+    mockSpecialSettingsState.isLoading = false
   })
 
   afterEach(() => {
@@ -145,6 +170,8 @@ describe('HomePage landing', () => {
   it('renders the current workspace tiles and online node summary', async () => {
     renderHome()
 
+    expect(screen.getByText('Promoted launchers')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open launcher organizer' })).toBeTruthy()
     expect(await screen.findByText('Platforms')).toBeTruthy()
     expect(screen.getByText('Audio Grid')).toBeTruthy()
     expect(screen.getByText('Labs')).toBeTruthy()
@@ -163,6 +190,23 @@ describe('HomePage landing', () => {
     fireEvent.click(platformsCard.closest('.hp2-card') as HTMLElement)
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
+  })
+
+  it('renders promoted landing tiles above the home grid and launches the configured route', async () => {
+    mockSpecialSettingsState.settings.landingTiles = [
+      { route: '/midi-hub', size: 'small' },
+      { route: '/platforms/overview', size: 'large' },
+    ]
+
+    renderHome()
+
+    const landingTile = await screen.findByText('MIDI Hub')
+    expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
+    expect(screen.getByText('Overview').closest('.hp2-launchers__tile--large')).toBeTruthy()
+
+    fireEvent.click(landingTile.closest('.hp2-launchers__tile') as HTMLElement)
+
+    expect(screen.getByTestId('location-probe').textContent).toBe('/midi-hub')
   })
 
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {

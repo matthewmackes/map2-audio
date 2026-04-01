@@ -27,6 +27,7 @@ RUNTIME_REQUIREMENT_GROUPS = {
         ("SQLAlchemy", ">=2.0.45,<3.0.0", "ORM and async database access"),
         ("httpx", ">=0.28.1,<0.29.0", "Outbound API calls for cluster and device integrations"),
         ("aiohttp", ">=3.13.3,<4.0.0", "Async HTTP clients used across discovery/scraper/integration services"),
+        ("websockets", ">=16.0,<17.0.0", "WebSocket client support used by hardware daemons such as Maschine MK1"),
         ("PyYAML", ">=6.0.2,<7.0.0", "YAML parsing and emitted configuration artifacts"),
         ("psutil", ">=7.2.1,<8.0.0", "System/process telemetry"),
         ("zeroconf", ">=0.148.0,<1.0.0", "Network discovery and advertisement"),
@@ -37,6 +38,7 @@ RUNTIME_REQUIREMENT_GROUPS = {
         ("sounddevice", ">=0.5.3,<0.6.0", "Python-side audio I/O helpers and diagnostics"),
         ("soundfile", ">=0.13.1,<0.14.0", "Audio file read/write support"),
         ("python-rtmidi", ">=1.5.8,<2.0.0", "MIDI device access"),
+        ("hidapi", ">=0.14.0,<1.0.0", "USB HID access for hardware control surfaces such as Maschine MK1"),
         ("pyserial", ">=3.5,<4.0.0", "Serial-connected hardware workflows"),
     ],
     "content_and_library_features": [
@@ -90,6 +92,10 @@ NATIVE_PREREQUISITES = [
     {
         "name": "JACK Python bindings",
         "why": "JACK/PipeWire integration helpers",
+    },
+    {
+        "name": "hidapi system library",
+        "why": "Required by the hidapi Python package for USB HID hardware surfaces",
     },
     {
         "name": "PortAudio and libsndfile system libraries",

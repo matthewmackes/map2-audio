@@ -14,75 +14,36 @@ import os
 import logging
 import asyncio
 from datetime import datetime, timezone
-from typing import Optional
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session, SpecialSettings
 from app.models import SpecialSettingsResponse, SpecialSettingsUpdateRequest
+from app.services.special_settings_normalization import (
+    DEFAULT_LANDING_TILES,
+    DEFAULT_MENU_LOCATION,
+    DEFAULT_PINNED_ROUTES,
+    normalize_landing_tiles,
+    normalize_last_active_node,
+    normalize_menu_location,
+    normalize_pinned_routes,
+    resolve_landing_tiles_from_settings,
+    resolve_pinned_routes_from_settings,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/settings/special", tags=["special"])
 
 # Detect if running in cluster mode
 CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
-DEFAULT_PINNED_ROUTES: list[str] = []
-DEFAULT_MENU_LOCATION = "hidden"
 
-
-def _is_supported_pinned_route(route: str) -> bool:
-    return route.startswith("/") or route.startswith("platform:")
-
-
-def _normalize_pinned_routes(routes: Optional[list]) -> list[str]:
-    if not routes:
-        return []
-
-    normalized: list[str] = []
-    seen: set[str] = set()
-
-    for raw_route in routes:
-        if not isinstance(raw_route, str):
-            continue
-
-        route = raw_route.strip()
-        if not route or not _is_supported_pinned_route(route):
-            continue
-
-        if route in seen:
-            continue
-
-        seen.add(route)
-        normalized.append(route)
-
-    return normalized
-
-
-def _normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:
-    if node_id is None:
-        return None
-    if not isinstance(node_id, str):
-        return None
-
-    normalized = node_id.strip()
-    if not normalized or normalized.lower() in {"null", "local"}:
-        return None
-
-    return normalized
-
-
-def _normalize_menu_location(menu_location: Optional[str]) -> str:
-    if isinstance(menu_location, str) and menu_location.strip() == "mobile-only":
-        return "mobile-only"
-    return DEFAULT_MENU_LOCATION
-
-
-def _resolve_pinned_routes_from_settings(settings) -> list[str]:
-    raw_routes = getattr(settings, "pinned_routes", None)
-    if raw_routes is None:
-        raw_routes = getattr(settings, "promoted_advanced_routes", DEFAULT_PINNED_ROUTES)
-    return _normalize_pinned_routes(raw_routes)
+_normalize_pinned_routes = normalize_pinned_routes
+_normalize_landing_tiles = normalize_landing_tiles
+_normalize_last_active_node = normalize_last_active_node
+_normalize_menu_location = normalize_menu_location
+_resolve_pinned_routes_from_settings = resolve_pinned_routes_from_settings
+_resolve_landing_tiles_from_settings = resolve_landing_tiles_from_settings
 
 
 async def get_special_settings_db(session: AsyncSession) -> Optional[SpecialSettings]:
@@ -101,6 +62,7 @@ async def create_default_special_settings(session: AsyncSession) -> SpecialSetti
         hidden_plugins=[],
         menu_location=DEFAULT_MENU_LOCATION,
         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
+        landing_tiles=DEFAULT_LANDING_TILES.copy(),
         last_active_node=None,
         version=1,
         last_updated=datetime.now(timezone.utc),
@@ -142,6 +104,7 @@ async def get_special_settings():
                 hidden_plugins=settings.hidden_plugins or [],
                 menu_location=_normalize_menu_location(settings.menu_location),
                 pinned_routes=_resolve_pinned_routes_from_settings(settings),
+                landing_tiles=_resolve_landing_tiles_from_settings(settings),
                 last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                 version=settings.version,
                 last_updated=settings.last_updated.isoformat() if settings.last_updated else None,
@@ -206,6 +169,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         hidden_plugins=request.hidden_plugins,
                         menu_location=normalized_menu_location,
                         pinned_routes=_normalize_pinned_routes(request.pinned_routes),
+                        landing_tiles=_normalize_landing_tiles([tile.model_dump() for tile in request.landing_tiles]),
                         last_active_node=_normalize_last_active_node(request.last_active_node),
                         node_id=node_id
                     )
@@ -218,6 +182,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         hidden_plugins=settings.hidden_plugins or [],
                         menu_location=_normalize_menu_location(settings.menu_location),
                         pinned_routes=_resolve_pinned_routes_from_settings(settings),
+                        landing_tiles=_resolve_landing_tiles_from_settings(settings),
                         last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                         version=settings.version,
                         last_updated=settings.last_updated.isoformat(),
@@ -235,6 +200,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                             hidden_plugins=settings.hidden_plugins or [],
                             menu_location=_normalize_menu_location(settings.menu_location),
                             pinned_routes=_resolve_pinned_routes_from_settings(settings),
+                            landing_tiles=_resolve_landing_tiles_from_settings(settings),
                             last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                             version=settings.version,
                             last_updated=settings.last_updated.isoformat(),
@@ -263,6 +229,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
             settings.hidden_plugins = request.hidden_plugins
             settings.menu_location = normalized_menu_location
             settings.pinned_routes = _normalize_pinned_routes(request.pinned_routes)
+            settings.landing_tiles = _normalize_landing_tiles([tile.model_dump() for tile in request.landing_tiles])
             settings.last_active_node = _normalize_last_active_node(request.last_active_node)
             settings.version += 1
             settings.last_updated = datetime.now(timezone.utc)
@@ -275,6 +242,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                 f"hidden_plugins={len(settings.hidden_plugins)}, "
                 f"menu_location={settings.menu_location}, "
                 f"pinned_routes={len(settings.pinned_routes or [])}, "
+                f"landing_tiles={len(settings.landing_tiles or [])}, "
                 f"last_active_node={settings.last_active_node}"
             )
             
@@ -283,6 +251,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                 hidden_plugins=settings.hidden_plugins or [],
                 menu_location=_normalize_menu_location(settings.menu_location),
                 pinned_routes=_resolve_pinned_routes_from_settings(settings),
+                landing_tiles=_resolve_landing_tiles_from_settings(settings),
                 last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                 version=settings.version,
                 last_updated=settings.last_updated.isoformat(),
@@ -310,6 +279,7 @@ async def reset_special_settings():
                 settings.hidden_plugins = []
                 settings.menu_location = DEFAULT_MENU_LOCATION
                 settings.pinned_routes = DEFAULT_PINNED_ROUTES.copy()
+                settings.landing_tiles = DEFAULT_LANDING_TILES.copy()
                 settings.last_active_node = None
                 settings.version += 1
                 settings.last_updated = datetime.now(timezone.utc)
