@@ -17,22 +17,20 @@ const pluginMeta = {
   },
 } as any
 
-function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive') {
+function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive', pluginCount = 1) {
   return {
     id: 101,
     name: 'Main Chain',
     is_active: true,
     created_at: '2026-04-01T00:00:00Z',
     updated_at: '2026-04-01T00:00:00Z',
-    plugins: [
-      {
-        uri,
-        name,
-        position: 0,
-        bypassed,
-        parameters: {},
-      },
-    ],
+    plugins: Array.from({ length: pluginCount }, (_, index) => ({
+      uri,
+      name: pluginCount > 1 ? `${name} ${index + 1}` : name,
+      position: index,
+      bypassed: index === 0 ? bypassed : false,
+      parameters: {},
+    })),
     loop_insertions: [],
     effects_loops: [],
     runtime_sync: null,
@@ -86,6 +84,48 @@ describe('SnapshotEditorSignalCanvas', () => {
     )
 
     expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: #ff7eb6')
+  })
+
+  it('renders a single forward lane with explicit input and output terminals', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false, 'plugin://drive', 'Drive', 6)}
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    const row = screen.getByTestId('juce-grid-signal-row-0')
+    const slotKinds = Array.from(row.querySelectorAll<HTMLElement>('[data-slot-kind]')).map((node) => node.dataset.slotKind)
+
+    expect(row).toHaveAttribute('data-row-direction', 'forward')
+    expect(screen.queryByTestId('juce-grid-signal-row-1')).not.toBeInTheDocument()
+    expect(screen.getByTestId('juce-grid-signal-terminal-input')).toHaveTextContent('IN')
+    expect(screen.getByTestId('juce-grid-signal-terminal-output')).toHaveTextContent('OUT')
+    expect(slotKinds[0]).toBe('terminal')
+    expect(slotKinds[slotKinds.length - 1]).toBe('terminal')
+  })
+
+  it('uses a merge terminal for parallel blend routing', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false)}
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        audioStatus={{ routingMode: 'parallel_blend' }}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-terminal-output')).toHaveTextContent('SUM')
+    expect(screen.getByLabelText('Merge bus node')).toBeInTheDocument()
   })
 
   it('hides destructive editing affordances when the canvas is read-only', () => {

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
 import {
   Add,
   AudioConsole,
+  ArrowRight,
   Link,
   SettingsAdjust,
   VolumeDown,
@@ -74,7 +75,7 @@ export interface JuceGridSignalAutomationSummary {
 
 type EndpointSide = 'input' | 'output'
 type EndpointGroupState = 'normal' | 'warning' | 'error'
-type SignalGridRowDirection = 'forward' | 'reverse'
+type SignalGridTerminalRole = 'input' | 'output'
 type ChainPlugin = Chain['plugins'][number]
 type DraggedPluginRef = PluginOrderRef | null
 
@@ -98,85 +99,47 @@ interface EndpointRailGroup {
 
 interface SignalGridSlot {
   key: string
-  kind: 'plugin' | 'add'
+  kind: 'plugin' | 'add' | 'terminal'
   plugin?: ChainPlugin
+  terminalRole?: SignalGridTerminalRole
+  terminalHeading?: string
+  terminalCaption?: string
+  terminalTitle?: string
 }
 
 interface SignalGridRow {
   key: string
-  direction: SignalGridRowDirection
   slots: SignalGridSlot[]
 }
 
-const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 10.75
-const SIGNAL_GRID_CARD_GAP_REM = 1
-const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
-const TABLET_BRANCH_PAGE_SIZE = 8
-const TABLET_BRANCH_ROW_CAPACITY = 4
-const SIGNAL_GRID_SLOT_SELECTOR = ".juce-grid-page__signal-grid-item[data-slot-kind='plugin'], .juce-grid-page__signal-grid-item[data-slot-kind='add']"
 const NERD_GLYPH_CLOSE = '\uEA76'
-
-function getSignalGridFallbackMetrics() {
-  const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
-  return {
-    cardWidth: rootFontSize * SIGNAL_GRID_CARD_MIN_WIDTH_REM,
-    gapWidth: rootFontSize * SIGNAL_GRID_CARD_GAP_REM,
-  }
-}
-
-function getSignalGridSlotMetrics(node: HTMLDivElement) {
-  const fallback = getSignalGridFallbackMetrics()
-  const firstSlot = node.querySelector<HTMLElement>(SIGNAL_GRID_SLOT_SELECTOR)
-  const row = node.querySelector<HTMLElement>('.juce-grid-page__signal-grid-row')
-  const measuredCardWidth = firstSlot?.getBoundingClientRect().width ?? 0
-
-  let measuredGapWidth = 0
-  if (row) {
-    const rowStyles = window.getComputedStyle(row)
-    const gapCandidate = Number.parseFloat(rowStyles.columnGap || rowStyles.gap || '')
-    if (Number.isFinite(gapCandidate) && gapCandidate > 0) {
-      measuredGapWidth = gapCandidate
-    }
-  }
-
-  return {
-    cardWidth: measuredCardWidth > 0 ? measuredCardWidth : fallback.cardWidth,
-    gapWidth: measuredGapWidth > 0 ? measuredGapWidth : fallback.gapWidth,
-  }
-}
-
-function measureSignalGridRowCapacity(node: HTMLDivElement) {
-  const availableWidth = node.clientWidth
-
-  if (availableWidth <= 0) {
-    return null
-  }
-
-  const { cardWidth, gapWidth } = getSignalGridSlotMetrics(node)
-  const slotWidth = cardWidth + gapWidth
-
-  return {
-    availableWidth,
-    cardWidth,
-    gapWidth,
-    capacity: Math.max(
-      SIGNAL_GRID_ROW_MIN_CAPACITY,
-      Math.floor((availableWidth + gapWidth) / slotWidth),
-    ),
-  }
-}
 
 function buildSignalGridRows(
   plugins: ChainPlugin[],
   includeAddSlot: boolean,
-  rowCapacity: number,
-  alternateDirections = true,
+  routingMode?: JuceGridAudioInterfaceStatus['routingMode'],
 ): SignalGridRow[] {
-  const slots: SignalGridSlot[] = plugins.map((plugin) => ({
-    key: `${plugin.uri}:${plugin.position}`,
-    kind: 'plugin',
-    plugin,
-  }))
+  const outputHeading = routingMode === 'parallel_blend' ? 'SUM' : 'OUT'
+  const outputCaption = routingMode === 'parallel_blend' ? 'Merge bus' : 'Output'
+  const outputTitle = routingMode === 'parallel_blend'
+    ? 'Parallel branches are summed into the output bus.'
+    : 'Signal leaves the chain at the output stage.'
+
+  const slots: SignalGridSlot[] = [
+    {
+      key: 'signal-terminal-input',
+      kind: 'terminal',
+      terminalRole: 'input',
+      terminalHeading: 'IN',
+      terminalCaption: 'Input',
+      terminalTitle: 'Signal enters the chain here.',
+    },
+    ...plugins.map((plugin) => ({
+      key: `${plugin.uri}:${plugin.position}`,
+      kind: 'plugin' as const,
+      plugin,
+    })),
+  ]
 
   if (includeAddSlot) {
     slots.push({
@@ -185,21 +148,19 @@ function buildSignalGridRows(
     })
   }
 
-  const rows: SignalGridRow[] = []
-  let cursor = 0
+  slots.push({
+    key: 'signal-terminal-output',
+    kind: 'terminal',
+    terminalRole: 'output',
+    terminalHeading: outputHeading,
+    terminalCaption: outputCaption,
+    terminalTitle: outputTitle,
+  })
 
-  while (cursor < slots.length) {
-    const rowIndex = rows.length
-    const count = Math.max(SIGNAL_GRID_ROW_MIN_CAPACITY, rowCapacity)
-    rows.push({
-      key: `row-${rowIndex}`,
-      direction: alternateDirections && rowIndex % 2 === 1 ? 'reverse' : 'forward',
-      slots: slots.slice(cursor, cursor + count),
-    })
-    cursor += count
-  }
-
-  return rows
+  return [{
+    key: 'row-0',
+    slots,
+  }]
 }
 
 const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
@@ -417,113 +378,13 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 }: JuceGridSignalCanvasProps) {
   const [draggedPlugin, setDraggedPlugin] = useState<DraggedPluginRef>(null)
   const [dragOverPlugin, setDragOverPlugin] = useState<DraggedPluginRef>(null)
-  const [rowCapacity, setRowCapacity] = useState(4)
-  const gridRef = useRef<HTMLDivElement>(null)
-  const rowCapacityRef = useRef(4)
-  const lastGridMeasurementKeyRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    const node = gridRef.current
-    if (!node) {
-      return
-    }
-
-    lastGridMeasurementKeyRef.current = null
-
-    const updateCapacity = () => {
-      const nextMeasurement = measureSignalGridRowCapacity(node)
-      if (!nextMeasurement) {
-        return
-      }
-      const measurementKey = [
-        nextMeasurement.availableWidth,
-        Math.round(nextMeasurement.cardWidth * 100) / 100,
-        Math.round(nextMeasurement.gapWidth * 100) / 100,
-      ].join(':')
-
-      if (
-        lastGridMeasurementKeyRef.current === measurementKey
-        && rowCapacityRef.current === nextMeasurement.capacity
-      ) {
-        return
-      }
-
-      lastGridMeasurementKeyRef.current = measurementKey
-      if (rowCapacityRef.current === nextMeasurement.capacity) {
-        return
-      }
-
-      rowCapacityRef.current = nextMeasurement.capacity
-      setRowCapacity(nextMeasurement.capacity)
-    }
-
-    let frameId: number | null = null
-    const scheduleCapacityUpdate = () => {
-      if (typeof window.requestAnimationFrame !== 'function') {
-        updateCapacity()
-        return
-      }
-
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId)
-      }
-
-      frameId = window.requestAnimationFrame(() => {
-        frameId = null
-        updateCapacity()
-      })
-    }
-
-    scheduleCapacityUpdate()
-    window.addEventListener('resize', scheduleCapacityUpdate)
-
-    let observer: ResizeObserver | null = null
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(scheduleCapacityUpdate)
-      observer.observe(node)
-    }
-
-    return () => {
-      if (frameId !== null && typeof window.cancelAnimationFrame === 'function') {
-        window.cancelAnimationFrame(frameId)
-      }
-      window.removeEventListener('resize', scheduleCapacityUpdate)
-      observer?.disconnect()
-    }
-  }, [chain?.id])
-
-  const totalTabletPages = tabletMode
-    ? Math.max(1, Math.ceil((chain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE))
-    : 1
-  const resolvedTabletPage = tabletMode
-    ? Math.max(0, Math.min(currentBranchPage, totalTabletPages - 1))
-    : 0
-
-  useEffect(() => {
-    if (!tabletMode || !branchId || !onBranchPageChange || resolvedTabletPage === currentBranchPage) {
-      return
-    }
-
-    onBranchPageChange(branchId, resolvedTabletPage)
-  }, [branchId, currentBranchPage, onBranchPageChange, resolvedTabletPage, tabletMode])
-
-  const pagedPlugins = useMemo(() => {
-    if (!tabletMode) {
-      return chain?.plugins ?? []
-    }
-
-    const startIndex = resolvedTabletPage * TABLET_BRANCH_PAGE_SIZE
-    return (chain?.plugins ?? []).slice(startIndex, startIndex + TABLET_BRANCH_PAGE_SIZE)
-  }, [chain?.plugins, resolvedTabletPage, tabletMode])
-
   const signalRows = useMemo(
     () => buildSignalGridRows(
-      pagedPlugins,
-      tabletMode ? false : (showAddPluginSlot ?? Boolean(onAddPlugin)) && !readOnly,
-      tabletMode ? TABLET_BRANCH_ROW_CAPACITY : rowCapacity,
-      !tabletMode,
+      chain?.plugins ?? [],
+      (showAddPluginSlot ?? Boolean(onAddPlugin)) && !readOnly,
+      audioStatus?.routingMode ?? audioOutputStatus?.routingMode,
     ),
-    [onAddPlugin, pagedPlugins, readOnly, rowCapacity, showAddPluginSlot, tabletMode],
+    [audioOutputStatus?.routingMode, audioStatus?.routingMode, chain?.plugins, onAddPlugin, readOnly, showAddPluginSlot],
   )
 
   const isSelectedPlugin = useCallback((plugin: ChainPlugin | undefined) => {
@@ -695,7 +556,6 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
       <div className="juce-grid-page__signal-path">
         <div
-          ref={gridRef}
           className={`juce-grid-page__signal-grid ${selectedPluginUri ? 'has-active-card' : ''} ${tabletMode ? 'is-tablet-mode' : ''} ${focusedBranchId && branchId === focusedBranchId ? 'is-focused-branch' : ''}`}
           data-testid="juce-grid-signal-grid"
           onClick={() => {
@@ -705,11 +565,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
           }}
         >
           {signalRows.map((row, rowIndex) => {
-            const displaySlots = row.direction === 'reverse' ? [...row.slots].reverse() : row.slots
-            const activeDisplayIndex = displaySlots.findIndex(
-              (slot) => slot.kind === 'plugin' && isSelectedPlugin(slot.plugin),
-            )
-            const activeCardShifted = activeDisplayIndex === displaySlots.length - 1
+            const displaySlots = row.slots
 
             return (
               <div
@@ -718,11 +574,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 data-testid={`juce-grid-signal-row-shell-${rowIndex}`}
               >
                 <div
-                  className={`juce-grid-page__signal-grid-row ${row.direction === 'reverse' ? 'is-reverse' : 'is-forward'}`}
+                  className="juce-grid-page__signal-grid-row is-forward"
                   data-testid={`juce-grid-signal-row-${rowIndex}`}
-                  data-row-direction={row.direction}
+                  data-row-direction="forward"
                 >
-                  {displaySlots.map((slot, displayIndex) => {
+                  {displaySlots.map((slot) => {
                     const slotSelected = slot.kind === 'plugin' && isSelectedPlugin(slot.plugin)
                     const isDimmed = Boolean(selectedPluginUri) && !slotSelected
 
@@ -732,7 +588,30 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                         className={`juce-grid-page__signal-grid-item ${isDimmed ? 'is-dimmed' : ''}`}
                         data-slot-kind={slot.kind}
                       >
-                        {slot.kind === 'plugin' && slot.plugin ? (() => {
+                        {slot.kind === 'terminal' ? (
+                          <div
+                            className={`juce-grid-page__signal-terminal juce-grid-page__signal-terminal--${slot.terminalRole}`}
+                            data-testid={`juce-grid-signal-terminal-${slot.terminalRole}`}
+                            data-terminal-role={slot.terminalRole}
+                            title={slot.terminalTitle}
+                            aria-label={`${slot.terminalCaption} node`}
+                          >
+                            <span className="juce-grid-page__signal-terminal-glyph" aria-hidden>
+                              {slot.terminalRole === 'input'
+                                ? <VolumeDown size={18} />
+                                : slot.terminalHeading === 'SUM'
+                                  ? <Link size={18} />
+                                  : <VolumeUp size={18} />}
+                            </span>
+                            <span className="juce-grid-page__signal-terminal-copy">
+                              <span className="juce-grid-page__signal-terminal-heading">{slot.terminalHeading}</span>
+                              <span className="juce-grid-page__signal-terminal-caption">{slot.terminalCaption}</span>
+                            </span>
+                            <span className="juce-grid-page__signal-terminal-arrow" aria-hidden>
+                              <ArrowRight size={16} />
+                            </span>
+                          </div>
+                        ) : slot.kind === 'plugin' && slot.plugin ? (() => {
                           const plugin = slot.plugin
                           const meta = pluginMeta[plugin.uri]
                           const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)

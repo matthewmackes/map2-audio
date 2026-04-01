@@ -180,7 +180,6 @@ const API_BASE = (() => {
   return `http://${window.location.hostname}:8080/api`
 })()
 
-const TABLET_BRANCH_PAGE_SIZE = 8
 const SESSION_NOTES_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
   month: 'short',
@@ -2012,10 +2011,8 @@ export function SnapshotEditorPage() {
       const next: Record<string, number> = {}
 
       flowSlots.forEach((flow) => {
-        const flowChain = flow.chainId !== null ? effectiveChainById.get(flow.chainId) : undefined
-        const maxPage = Math.max(0, Math.ceil((flowChain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE) - 1)
         const currentPage = previous[flow.id] ?? 0
-        const clampedPage = Math.max(0, Math.min(currentPage, maxPage))
+        const clampedPage = 0
         next[flow.id] = clampedPage
         if (clampedPage !== currentPage) {
           changed = true
@@ -2056,10 +2053,8 @@ export function SnapshotEditorPage() {
     ? (tabletFocusedFlow.chainId !== null ? effectiveChainById.get(tabletFocusedFlow.chainId) ?? null : null)
     : null
   const tabletFocusedBranchPage = tabletFocusedFlow ? branchPageByFlowId[tabletFocusedFlow.id] ?? 0 : 0
-  const tabletFocusedBranchPageCount = tabletFocusedChain
-    ? Math.max(1, Math.ceil(tabletFocusedChain.plugins.length / TABLET_BRANCH_PAGE_SIZE))
-    : 1
-  const tabletFocusedBranchPageLabel = `${Math.min(tabletFocusedBranchPage, tabletFocusedBranchPageCount - 1) + 1}/${tabletFocusedBranchPageCount}`
+  const tabletFocusedBranchPageCount = 1
+  const tabletFocusedBranchPageLabel = tabletFocusedChain ? 'Scroll lane' : 'No lane'
   const secondaryRoutingFlowId = useMemo(
     () => flowSlots.find((flow) => flow.id !== routing.activeSlotId)?.id ?? null,
     [flowSlots, routing.activeSlotId],
@@ -4842,7 +4837,7 @@ export function SnapshotEditorPage() {
     const mobileStatusLabels = [stateLabel, branchLabel].filter((label): label is string => Boolean(label))
     const tabletStatusLabel = flowState?.activeAudio ? 'Live' : isActive ? 'Active' : 'Inactive'
     const flowCurrentPage = branchPageByFlowId[flow.id] ?? 0
-    const flowPageCount = Math.max(1, Math.ceil((flowChain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE))
+    const flowPageCount = 1
     const flowClipActive = typeof flowClipTimestamps[flow.id] === 'number'
     const flowInputClipActive = typeof flowInputClipTimestamps[flow.id] === 'number'
     const flowOutputClipActive = typeof flowOutputClipTimestamps[flow.id] === 'number'

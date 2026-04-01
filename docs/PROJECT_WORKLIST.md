@@ -907,7 +907,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T628
-Status: [ ] Todo
+Status: [✓] Done
 Title: Signal Flow Always Rendered Left-to-Right in Signal Canvas
 Description:
 - Goal / acceptance criteria: The Snapshot Editor signal canvas always renders the guitar signal path as a left-to-right flow: Input node (left edge) → plugin blocks in chain order → Output node (right edge). Series routing renders as a single horizontal lane from left to right. Parallel routing renders as stacked horizontal lanes, each running left to right, with a merge/sum node at the right edge. No block wraps to a new row — the canvas scrolls horizontally if the chain is long. The spatial direction is never ambiguous: left = earlier in the signal path, right = later. Channel lane headers (if visible) are anchored to the left edge of each lane.
@@ -915,7 +915,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: signal canvas layout engine enforcing strict left-to-right block ordering with horizontal scroll on overflow, Input and Output anchor nodes at left/right extremes, parallel lane stacking with merge node at right, no block row-wrapping, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 15:48 - Codex
+- Completion notes:
+  - Reworked `JuceGridSignalCanvas` into a single non-wrapping left-to-right lane so plugin order is always rendered from `IN` to `OUT`, with the add-effect slot staying in-line before the terminal output stage.
+  - Added explicit input/output terminal nodes in the signal lane and switched the output node to `SUM` when the routing mode is `parallel_blend`, which keeps stacked parallel branches visually consistent with a right-edge merge bus.
+  - Updated Snapshot Editor tablet shell behavior and signal-canvas CSS to use horizontal scrolling instead of row wrapping or branch paging, then added focused regression coverage for the new lane contract.
+- Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T627
 Status: [ ] Todo
