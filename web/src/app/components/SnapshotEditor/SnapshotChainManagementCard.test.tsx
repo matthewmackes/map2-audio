@@ -170,14 +170,11 @@ function renderCard(
     onToggleSnapshotFavorite?: jest.Mock
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
-    onTapTempo?: jest.Mock
-    onResetTempo?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
     snapshotFavoritePending?: boolean
     snapshotDescriptionPending?: boolean
     tempoPending?: boolean
-    tapTempoPending?: boolean
   } = {},
 ) {
   return render(
@@ -196,12 +193,6 @@ function renderCard(
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
       tempoPending={options.tempoPending}
-      onTapTempo={options.onTapTempo}
-      onResetTempo={options.onResetTempo}
-      tapTempoPending={options.tapTempoPending}
-      currentOutputLevelDbfs={-9.5}
-      onSetOutputLevelReference={jest.fn()}
-      onSubmitOutputLevelWarningThreshold={jest.fn()}
       detailsAction={<button type="button">Details</button>}
     />,
   )
@@ -252,10 +243,9 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
     expect(screen.queryByText('Description')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit snapshot description' })).toHaveTextContent('Lead-ready snapshot for the main performance set.')
-    expect(screen.getByText('Snapshot Tempo')).toBeInTheDocument()
-    expect(screen.getByText('128.0 BPM')).toBeInTheDocument()
+    expect(screen.getByText('Stored BPM')).toBeInTheDocument()
     expect(screen.getByDisplayValue('128.0')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Tap Tempo' })).toBeInTheDocument()
+    expect(screen.getByText('Active 128.0 BPM • Stored tempo')).toBeInTheDocument()
     expect(screen.getByText('Input Device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
     expect(screen.getByText('Output Device')).toBeInTheDocument()
@@ -266,6 +256,8 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Parallel')).toBeInTheDocument()
     expect(screen.getByText('Number of Channels')).toBeInTheDocument()
     expect(screen.getByText('2 channels')).toBeInTheDocument()
+    expect(screen.getByText('Output Reference')).toBeInTheDocument()
+    expect(screen.getByText('Unset • ±3.0 dB')).toBeInTheDocument()
     expect(screen.getByText('Last Updated')).toBeInTheDocument()
     expect(screen.getByText('Node Sync Status')).toBeInTheDocument()
     expect(screen.getByText('Local live only')).toBeInTheDocument()
@@ -283,33 +275,25 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.queryByRole('toolbar', { name: 'Snapshot hero actions' })).not.toBeInTheDocument()
   })
 
-  it('submits stored tempo edits and exposes live tap override controls', () => {
+  it('submits stored tempo edits and shows the MIDI tap override status', () => {
     const onSubmitTempoBpm = jest.fn()
-    const onTapTempo = jest.fn()
-    const onResetTempo = jest.fn()
     renderCard(buildLiveSnapshot({
       live_tempo_bpm: 132,
       active_tempo_bpm: 132,
       tempo_source: 'tap',
     }), {
       onSubmitTempoBpm,
-      onTapTempo,
-      onResetTempo,
     })
 
-    fireEvent.change(screen.getByLabelText('Stored snapshot tempo'), { target: { value: '140' } })
-    fireEvent.blur(screen.getByLabelText('Stored snapshot tempo'))
+    fireEvent.change(screen.getByLabelText('Stored BPM'), { target: { value: '140' } })
+    fireEvent.blur(screen.getByLabelText('Stored BPM'))
     expect(onSubmitTempoBpm).toHaveBeenCalledWith(140)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tap Tempo' }))
-    expect(onTapTempo).toHaveBeenCalled()
-
-    expect(screen.getByText('Live tap override active')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Reset to Stored' }))
-    expect(onResetTempo).toHaveBeenCalled()
+    expect(screen.getByText('Active 132.0 BPM via MIDI tap')).toBeInTheDocument()
+    expect(screen.getByText('MIDI tap override active')).toBeInTheDocument()
   })
 
-  it('renders output reference controls and warning messaging in the hero card', () => {
+  it('renders output reference state in the details grid and keeps warning messaging visible', () => {
     render(
       <SnapshotChainManagementCard
         onToggleSelectedChainActive={jest.fn()}
@@ -319,19 +303,14 @@ describe('SnapshotChainManagementCard', () => {
           output_level_reference_dbfs: -15,
           output_level_warning_threshold_db: 3,
         })}
-        currentOutputLevelDbfs={-9.5}
-        onSetOutputLevelReference={jest.fn()}
-        onSubmitOutputLevelWarningThreshold={jest.fn()}
         outputLevelWarningMessage="Output is 5.5 dB above reference level."
         detailsAction={<button type="button">Details</button>}
       />,
     )
 
     expect(screen.getByText('Output Reference')).toBeInTheDocument()
-    expect(screen.getByText('-15.0 dBFS')).toBeInTheDocument()
-    expect(screen.getByText('Current -9.5 dBFS • Threshold ±3.0 dB')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Set Reference Level' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Output reference warning threshold')).toHaveValue(3)
+    expect(screen.getByText('-15.0 dBFS • ±3.0 dB')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Set Reference Level' })).not.toBeInTheDocument()
     expect(screen.getByText('Output is 5.5 dB above reference level.')).toBeInTheDocument()
   })
 

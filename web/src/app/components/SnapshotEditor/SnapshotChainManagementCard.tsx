@@ -2,6 +2,7 @@ import { Edit, Favorite, FavoriteFilled } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
+import { NumberInput } from '../ParameterControl'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../icons/map'
 
@@ -35,13 +36,6 @@ interface SnapshotChainManagementCardProps {
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
   tempoPending?: boolean
-  onTapTempo?: () => void
-  onResetTempo?: () => void
-  tapTempoPending?: boolean
-  currentOutputLevelDbfs?: number | null
-  onSetOutputLevelReference?: () => void
-  onSubmitOutputLevelWarningThreshold?: (thresholdDb: number) => void
-  outputLevelReferencePending?: boolean
   outputLevelWarningMessage?: string | null
 }
 
@@ -49,7 +43,7 @@ interface SnapshotMetadataCell {
   key: string
   label: string
   value: string
-  accent: 'input' | 'output' | 'blocks' | 'routing' | 'channels' | 'updated' | 'sync'
+  accent: 'input' | 'output' | 'blocks' | 'routing' | 'channels' | 'reference' | 'updated' | 'sync'
   colSpan: number
   muted?: boolean
 }
@@ -175,6 +169,17 @@ function formatMidiReadout(snapshot: SnapshotDetail): string {
 
 function formatCount(value: number, singular: string): string {
   return `${value} ${value === 1 ? singular : `${singular}s`}`
+}
+
+function formatOutputReferenceValue(referenceDbfs?: number | null): string {
+  if (referenceDbfs == null || !Number.isFinite(referenceDbfs)) {
+    return 'Unset'
+  }
+  return `${referenceDbfs.toFixed(1)} dBFS`
+}
+
+function formatOutputReferenceSummary(snapshot: SnapshotDetail): string {
+  return `${formatOutputReferenceValue(snapshot.output_level_reference_dbfs)} • ±${(snapshot.output_level_warning_threshold_db ?? 3).toFixed(1)} dB`
 }
 
 function formatTempoBpm(value?: number | null): string {
@@ -362,14 +367,21 @@ function buildMetadataTableRows(
         label: 'Routing Mode',
         value: formatRoutingMode(routingMode),
         accent: 'routing',
-        colSpan: 3,
+        colSpan: 2,
       },
       {
         key: 'channel-count',
         label: 'Number of Channels',
         value: formatCount(resolveChannelCount(snapshot, editorSnapshotDraft), 'channel'),
         accent: 'channels',
-        colSpan: 3,
+        colSpan: 2,
+      },
+      {
+        key: 'output-reference',
+        label: 'Output Reference',
+        value: formatOutputReferenceSummary(snapshot),
+        accent: 'reference',
+        colSpan: 2,
       },
     ],
     [
@@ -405,13 +417,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
     tempoPending = false,
-    onTapTempo,
-    onResetTempo,
-    tapTempoPending = false,
-    currentOutputLevelDbfs = null,
-    onSetOutputLevelReference,
-    onSubmitOutputLevelWarningThreshold,
-    outputLevelReferencePending = false,
     outputLevelWarningMessage = null,
   } = props
 
@@ -430,14 +435,14 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
-  const [tempoDraft, setTempoDraft] = useState((liveSnapshot?.tempo_bpm ?? 120).toFixed(1))
-  const [outputThresholdDraft, setOutputThresholdDraft] = useState(
-    liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0',
-  )
+  const [tempoDraftValue, setTempoDraftValue] = useState(liveSnapshot?.tempo_bpm ?? 120)
   const storedTempoBpm = liveSnapshot?.tempo_bpm ?? 120
   const activeTempoBpm = liveSnapshot?.active_tempo_bpm ?? storedTempoBpm
   const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
   const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
+  const tempoStatusText = liveTapOverrideActive
+    ? `Active ${formatTempoBpm(activeTempoBpm)} via MIDI tap`
+    : `Active ${formatTempoBpm(activeTempoBpm)} • Stored tempo`
 
   useEffect(() => {
     if (!editingDescription) {
@@ -446,12 +451,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   }, [editingDescription, liveSnapshot?.description])
 
   useEffect(() => {
-    setTempoDraft((liveSnapshot?.tempo_bpm ?? 120).toFixed(1))
+    setTempoDraftValue(liveSnapshot?.tempo_bpm ?? 120)
   }, [liveSnapshot?.tempo_bpm])
-
-  useEffect(() => {
-    setOutputThresholdDraft(liveSnapshot?.output_level_warning_threshold_db?.toFixed(1) ?? '3.0')
-  }, [liveSnapshot?.output_level_warning_threshold_db])
 
   const submitDescription = () => {
     setEditingDescription(false)
@@ -466,34 +467,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
       event.preventDefault()
       submitDescription()
     }
-  }
-
-  const submitOutputThreshold = () => {
-    if (!liveSnapshot || !onSubmitOutputLevelWarningThreshold) {
-      return
-    }
-
-    const parsed = Number.parseFloat(outputThresholdDraft)
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      setOutputThresholdDraft(liveSnapshot.output_level_warning_threshold_db?.toFixed(1) ?? '3.0')
-      return
-    }
-
-    onSubmitOutputLevelWarningThreshold(parsed)
-  }
-
-  const submitTempo = () => {
-    if (!liveSnapshot || !onSubmitTempoBpm) {
-      return
-    }
-
-    const parsed = Number.parseFloat(tempoDraft)
-    if (!Number.isFinite(parsed) || parsed < 20 || parsed > 300) {
-      setTempoDraft((liveSnapshot.tempo_bpm ?? 120).toFixed(1))
-      return
-    }
-
-    onSubmitTempoBpm(parsed)
   }
 
   return (
@@ -515,13 +488,45 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
               </div>
             </div>
 
-            <div className="juce-grid-page__snapshot-status-midi">
-              <SegmentedLedText
-                value={midiReadout}
-                size="md"
-                color={liveSnapshot ? '#78a9ff' : '#525252'}
-                className={`juce-grid-page__snapshot-status-midi-readout ${liveSnapshot ? '' : 'is-idle'}`}
-              />
+            <div className="juce-grid-page__snapshot-status-top-tools">
+              {liveSnapshot ? (
+                <div className="juce-grid-page__snapshot-status-bpm-stack">
+                  <NumberInput
+                    label="Stored BPM"
+                    value={tempoDraftValue}
+                    min={20}
+                    max={300}
+                    step={0.1}
+                    precision={1}
+                    unit="BPM"
+                    defaultValue={storedTempoBpm}
+                    valueFormatter={(value) => value.toFixed(1)}
+                    onChange={setTempoDraftValue}
+                    onChangeCommitted={(value) => onSubmitTempoBpm?.(value)}
+                    disabled={!onSubmitTempoBpm || tempoPending}
+                    size="small"
+                    showBounds={false}
+                    accentColor="#42be65"
+                    className="juce-grid-page__snapshot-status-bpm-input"
+                  />
+                  <span className="juce-grid-page__snapshot-status-bpm-status">
+                    {tempoStatusText}
+                  </span>
+                  {liveTapOverrideActive ? (
+                    <Tag type="green" className="juce-grid-page__snapshot-status-tempo-tag">
+                      MIDI tap override active
+                    </Tag>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="juce-grid-page__snapshot-status-midi">
+                <SegmentedLedText
+                  value={midiReadout}
+                  size="md"
+                  color={liveSnapshot ? '#78a9ff' : '#525252'}
+                  className={`juce-grid-page__snapshot-status-midi-readout ${liveSnapshot ? '' : 'is-idle'}`}
+                />
+              </div>
             </div>
           </div>
 
@@ -593,115 +598,11 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   Recall or create a snapshot to populate live snapshot status here.
                 </p>
               )}
-              {liveSnapshot && (
-                <div className="juce-grid-page__snapshot-status-tempo-panel">
-                  <div className="juce-grid-page__snapshot-status-tempo-copy">
-                    <span className="juce-grid-page__snapshot-status-tempo-kicker">Snapshot Tempo</span>
-                    <strong>{formatTempoBpm(activeTempoBpm)}</strong>
-                    <span>
-                      Stored {formatTempoBpm(storedTempoBpm)}
-                      {liveTapOverrideActive && liveTempoBpm != null
-                        ? ` • Live tap ${formatTempoBpm(liveTempoBpm)}`
-                        : ' • Stored tempo active'}
-                    </span>
-                  </div>
-                  <div className="juce-grid-page__snapshot-status-tempo-actions">
-                    <label className="juce-grid-page__snapshot-status-tempo-field">
-                      <span>Stored BPM</span>
-                      <input
-                        aria-label="Stored snapshot tempo"
-                        type="number"
-                        min="20"
-                        max="300"
-                        step="0.1"
-                        value={tempoDraft}
-                        onChange={(event) => setTempoDraft(event.target.value)}
-                        onBlur={submitTempo}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            submitTempo()
-                          }
-                        }}
-                        disabled={!onSubmitTempoBpm || tempoPending}
-                      />
-                    </label>
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      onClick={onTapTempo}
-                      disabled={!onTapTempo || tapTempoPending}
-                    >
-                      {tapTempoPending ? 'Tapping…' : 'Tap Tempo'}
-                    </Button>
-                    {liveTapOverrideActive ? (
-                      <Button
-                        size="sm"
-                        kind="secondary"
-                        onClick={onResetTempo}
-                        disabled={!onResetTempo || tapTempoPending}
-                      >
-                        Reset to Stored
-                      </Button>
-                    ) : null}
-                  </div>
-                  {liveTapOverrideActive ? (
-                    <Tag type="blue" className="juce-grid-page__snapshot-status-tempo-tag">
-                      Live tap override active
-                    </Tag>
-                  ) : null}
-                </div>
-              )}
-              {liveSnapshot && (
-                <div className="juce-grid-page__snapshot-status-output-reference">
-                  <div className="juce-grid-page__snapshot-status-output-reference-copy">
-                    <span className="juce-grid-page__snapshot-status-output-reference-kicker">Output Reference</span>
-                    <strong>
-                      {liveSnapshot.output_level_reference_dbfs != null
-                        ? `${liveSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS`
-                        : 'Unset'}
-                    </strong>
-                    <span>
-                      Current {currentOutputLevelDbfs != null ? `${currentOutputLevelDbfs.toFixed(1)} dBFS` : 'Unavailable'}
-                      {' • '}
-                      Threshold ±{(liveSnapshot.output_level_warning_threshold_db ?? 3).toFixed(1)} dB
-                    </span>
-                  </div>
-                  <div className="juce-grid-page__snapshot-status-output-reference-actions">
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      onClick={onSetOutputLevelReference}
-                      disabled={!onSetOutputLevelReference || outputLevelReferencePending || currentOutputLevelDbfs == null}
-                    >
-                      {outputLevelReferencePending ? 'Saving…' : 'Set Reference Level'}
-                    </Button>
-                    <label className="juce-grid-page__snapshot-status-output-threshold-field">
-                      <span>Warn at ± dB</span>
-                      <input
-                        aria-label="Output reference warning threshold"
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        value={outputThresholdDraft}
-                        onChange={(event) => setOutputThresholdDraft(event.target.value)}
-                        onBlur={submitOutputThreshold}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            submitOutputThreshold()
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-                  {outputLevelWarningMessage ? (
-                    <Tag type="warm-gray" className="juce-grid-page__snapshot-status-output-warning">
-                      {outputLevelWarningMessage}
-                    </Tag>
-                  ) : null}
-                </div>
-              )}
+              {outputLevelWarningMessage ? (
+                <Tag type="warm-gray" className="juce-grid-page__snapshot-status-output-warning">
+                  {outputLevelWarningMessage}
+                </Tag>
+              ) : null}
             </div>
 
             <div className="juce-grid-page__snapshot-status-aside">

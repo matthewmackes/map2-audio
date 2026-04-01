@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T623 live snapshot delete guard across UI and API [completed]; T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]
+Last updated: 2026-04-01 EDT - T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]; T623 live snapshot delete guard across UI and API [completed]; T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]
+
+ID: T669
+Status: [✓] Done
+Title: Snapshot Editor hero refactor for Output Reference and inline stored BPM
+Description:
+- Goal / acceptance criteria: Move Snapshot Editor `Output Reference` editing out of the dedicated hero panel and into the right-side `Details` menu, add a new Snapshot Details metadata cell showing the current output-reference state immediately to the right of `Number of Channels`, and replace the prior BPM dialog path with a new inline stored-BPM numeric box positioned to the left of the `PC / CH` readout. The stored-BPM box must preserve the existing stored-tempo validation range and update flow, use a carbon light green accent on a black background, and remove the React tap-tempo trigger so live tap tempo remains MIDI-only.
+- Why it matters: The user wants the hero card to surface stored tempo and output reference in the same compact operational area, while avoiding web-UI tap tempo because browser interaction latency is not acceptable for performance use.
+- Dependencies: T659
+- Estimated effort: Medium
+- Required outputs: Snapshot hero/menu component updates, metadata-grid addition for output reference, Details-menu output-reference action, inline stored-BPM numeric control with requested styling/placement, focused regression coverage, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 13:28 - Codex
+- Completion notes:
+  - Reworked `SnapshotChainManagementCard` so the stored BPM editor now lives in the top-right hero row immediately left of the `PC / CH` readout, styled with a black numeric surface and Carbon green accenting while keeping active-tempo status visible.
+  - Removed the React tap-tempo trigger and reset affordance from the hero so live tap overrides are display-only in the web UI and remain driven by MIDI/performance events.
+  - Moved output-reference editing into a new `Output Reference` item inside the Details menu, added a modal for setting the current reference level and warning threshold, and inserted a new metadata-grid cell to the right of `Number of Channels` showing the current reference summary.
+- Validation: `npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T668
 Status: [✓] Done

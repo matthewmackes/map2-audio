@@ -846,6 +846,7 @@ export function SnapshotEditorPage() {
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
+  const [showOutputReferenceModal, setShowOutputReferenceModal] = useState(false)
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
   const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
@@ -890,6 +891,7 @@ export function SnapshotEditorPage() {
   // Flow Snapshots Panel State
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
+  const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
@@ -1622,6 +1624,10 @@ export function SnapshotEditorPage() {
     : null
   const jackMetrics = jackQuery.data
 
+  useEffect(() => {
+    setOutputReferenceThresholdDraft(activeSnapshot?.output_level_warning_threshold_db ?? 3)
+  }, [activeSnapshot?.output_level_warning_threshold_db])
+
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
     return slot.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
   }, [effectiveChainById])
@@ -1794,35 +1800,6 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot tempo', 'error')
-    },
-  })
-
-  const tapSnapshotTempoMutation = useMutation({
-    mutationFn: async ({ snapshotId, timestampMs }: { snapshotId: number; timestampMs?: number }) =>
-      snapshotsApi.tapTempo(snapshotId, timestampMs),
-    onSuccess: (response) => {
-      if (response.snapshot) {
-        queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
-      }
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to tap snapshot tempo', 'error')
-    },
-  })
-
-  const resetSnapshotTempoMutation = useMutation({
-    mutationFn: async ({ snapshotId }: { snapshotId: number }) =>
-      snapshotsApi.resetTempo(snapshotId),
-    onSuccess: (response) => {
-      if (response.snapshot) {
-        queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
-      }
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Live tempo reset to the stored snapshot tempo', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to reset live tempo', 'error')
     },
   })
 
@@ -4556,6 +4533,7 @@ export function SnapshotEditorPage() {
           else if (presetPendingDelete) setPresetPendingDelete(null)
           else if (showClearFlowsModal) setShowClearFlowsModal(false)
           else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+          else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
           else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
           else if (midiModalOpen) setMidiModalOpen(false)
           else if (routingInspectorId) setRoutingInspectorId(null)
@@ -4674,6 +4652,7 @@ export function SnapshotEditorPage() {
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+        else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
         else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
         else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
@@ -4694,7 +4673,7 @@ export function SnapshotEditorPage() {
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, showRenameSnapshotModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, setSelectedPluginSelection,
   ])
@@ -5362,6 +5341,13 @@ export function SnapshotEditorPage() {
         onClick={() => setShowRoutingTopologyModal(true)}
       />
       <MenuItem
+        label="Output Reference"
+        renderIcon={Meter}
+        className="juce-grid-page__snapshot-status-details-item"
+        disabled={!activeSnapshot}
+        onClick={() => setShowOutputReferenceModal(true)}
+      />
+      <MenuItem
         label="Perform"
         renderIcon={Music}
         className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--perform"
@@ -5455,41 +5441,6 @@ export function SnapshotEditorPage() {
               updateActiveSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, tempoBpm })
             }}
             tempoPending={updateActiveSnapshotTempoMutation.isPending}
-            onTapTempo={() => {
-              if (!activeSnapshot) {
-                return
-              }
-              tapSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, timestampMs: Date.now() })
-            }}
-            onResetTempo={() => {
-              if (!activeSnapshot) {
-                return
-              }
-              resetSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id })
-            }}
-            tapTempoPending={tapSnapshotTempoMutation.isPending || resetSnapshotTempoMutation.isPending}
-            currentOutputLevelDbfs={currentOutputLevelDbfs}
-            onSetOutputLevelReference={() => {
-              if (!activeSnapshot || currentOutputLevelDbfs == null) {
-                return
-              }
-              updateActiveSnapshotOutputReferenceMutation.mutate({
-                snapshotId: activeSnapshot.id,
-                outputLevelReferenceDbfs: currentOutputLevelDbfs,
-                outputLevelWarningThresholdDb: activeSnapshot.output_level_warning_threshold_db ?? 3,
-              })
-            }}
-            onSubmitOutputLevelWarningThreshold={(thresholdDb) => {
-              if (!activeSnapshot) {
-                return
-              }
-              updateActiveSnapshotOutputReferenceMutation.mutate({
-                snapshotId: activeSnapshot.id,
-                outputLevelReferenceDbfs: activeSnapshot.output_level_reference_dbfs ?? null,
-                outputLevelWarningThresholdDb: thresholdDb,
-              })
-            }}
-            outputLevelReferencePending={updateActiveSnapshotOutputReferenceMutation.isPending}
             outputLevelWarningMessage={outputLevelWarningMessage}
           />
         </div>
@@ -6081,6 +6032,77 @@ export function SnapshotEditorPage() {
               onChange={(event) => setRenameSnapshotName(event.target.value)}
               placeholder="Snapshot name"
             />
+          </div>
+        </Modal>
+      )}
+
+      {showOutputReferenceModal && activeSnapshot && (
+        <Modal
+          open
+          size="sm"
+          modalHeading="Output Reference"
+          modalLabel={activeSnapshot.name || 'Live snapshot'}
+          primaryButtonText="Close"
+          onRequestClose={() => setShowOutputReferenceModal(false)}
+          onRequestSubmit={() => setShowOutputReferenceModal(false)}
+        >
+          <div className="juce-grid-page__form-modal-body">
+            <p className="juce-grid-page__modal-copy">
+              Set the live output reading as the snapshot reference level and adjust the warning window shown in the details grid.
+            </p>
+            <div className="juce-grid-page__compact-tags">
+              <Tag type="cool-gray">
+                Current {currentOutputLevelDbfs != null ? `${currentOutputLevelDbfs.toFixed(1)} dBFS` : 'Unavailable'}
+              </Tag>
+              <Tag type="warm-gray">
+                Reference {activeSnapshot.output_level_reference_dbfs != null ? `${activeSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS` : 'Unset'}
+              </Tag>
+            </div>
+            <Button
+              size="sm"
+              kind="secondary"
+              onClick={() => {
+                if (currentOutputLevelDbfs == null) {
+                  return
+                }
+                updateActiveSnapshotOutputReferenceMutation.mutate({
+                  snapshotId: activeSnapshot.id,
+                  outputLevelReferenceDbfs: currentOutputLevelDbfs,
+                  outputLevelWarningThresholdDb: outputReferenceThresholdDraft,
+                })
+              }}
+              disabled={updateActiveSnapshotOutputReferenceMutation.isPending || currentOutputLevelDbfs == null}
+            >
+              {updateActiveSnapshotOutputReferenceMutation.isPending ? 'Saving…' : 'Set Reference Level'}
+            </Button>
+            <NumberInput
+              label="Warning threshold"
+              value={outputReferenceThresholdDraft}
+              min={0.1}
+              max={24}
+              step={0.1}
+              precision={1}
+              unit="dB"
+              defaultValue={activeSnapshot.output_level_warning_threshold_db ?? 3}
+              valueFormatter={(value) => value.toFixed(1)}
+              onChange={setOutputReferenceThresholdDraft}
+              onChangeCommitted={(thresholdDb) => {
+                updateActiveSnapshotOutputReferenceMutation.mutate({
+                  snapshotId: activeSnapshot.id,
+                  outputLevelReferenceDbfs: activeSnapshot.output_level_reference_dbfs ?? null,
+                  outputLevelWarningThresholdDb: thresholdDb,
+                })
+              }}
+              disabled={updateActiveSnapshotOutputReferenceMutation.isPending}
+              showBounds={false}
+              accentColor="#f1c21b"
+              className="juce-grid-page__snapshot-output-reference-threshold-input"
+            />
+            {outputLevelWarningMessage ? (
+              <Tag type="warm-gray" className="juce-grid-page__snapshot-status-output-warning">
+                {outputLevelWarningMessage}
+              </Tag>
+            ) : null}
           </div>
         </Modal>
       )}
