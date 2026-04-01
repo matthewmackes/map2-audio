@@ -1329,11 +1329,16 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     const now = Date.now()
+    const clipSourceChains = liveSnapshotQuery.data
+      ? buildEffectiveLiveSnapshotChains(liveSnapshotQuery.data, chainsQuery.data).chains
+      : (chainsQuery.data?.chains ?? [])
+    const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
+
     setFlowClipTimestamps((previous) => {
       const next: Record<string, number> = {}
 
       flowSlots.forEach((flow) => {
-        const chain = flow.chainId != null ? effectiveChainById.get(flow.chainId) : undefined
+        const chain = flow.chainId != null ? clipSourceChainById.get(flow.chainId) : undefined
         const nextTimestamp = resolveFlowClipTimestamp(
           chain?.plugins ?? [],
           flowClipPeakEntries,
@@ -1353,7 +1358,7 @@ export function SnapshotEditorPage() {
 
       return changed ? next : previous
     })
-  }, [effectiveChainById, flowClipPeakEntries, flowSlots])
+  }, [chainsQuery.data, flowClipPeakEntries, flowSlots, liveSnapshotQuery.data])
 
   useEffect(() => {
     const expiryDelays = Object.values(flowClipTimestamps)

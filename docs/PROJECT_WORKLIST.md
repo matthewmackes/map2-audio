@@ -28,7 +28,7 @@ Last updated: 2026-04-01 06:15 EDT - Codex
 - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T665
-Status: [ ] Todo
+Status: [✓] Done
 Title: Repair Snapshot Editor build blocker — `effectiveChainById` initialization order
 Description:
 - Goal / acceptance criteria: Rework `web/src/app/pages/SnapshotEditorPageContent.tsx` so the flow clip effect no longer references `effectiveChainById` before its declaration, restoring `tsc -b` / production build success without changing runtime flow-clip behavior.
@@ -37,7 +37,11 @@ Description:
 - Estimated effort: Low
 - Required outputs: adjusted derived-state/effect ordering in `SnapshotEditorPageContent.tsx`, focused validation evidence, and worklist notes.
 Subtasks: None
-Last updated: 2026-04-01 12:20 - Codex
+Last updated: 2026-04-01 12:35 - Codex
+- Completion notes:
+  - Reworked the flow-card clip hold effect in `web/src/app/pages/SnapshotEditorPageContent.tsx` so it derives its own local chain lookup from the live-snapshot/chain query inputs instead of reading `effectiveChainById` before the later derived-state section initializes it.
+  - Preserved the existing held clip-indicator behavior while removing the block-scoped initialization-order error that broke the production frontend build.
+- Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T664
 Status: [✓] Done
