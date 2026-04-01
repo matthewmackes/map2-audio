@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**934** Python | **1030** TypeScript | **131** C++/H | **129** Docs | **1187** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1030** TypeScript | **131** C++/H | **129** Docs | **1190** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6e82523d`](https://github.com/matthewmackes/map2-audio/commit/6e82523da51a881473ad944ac9c9044ea91ff8b0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
+| [`dc4b4e1e`](https://github.com/matthewmackes/map2-audio/commit/dc4b4e1e810f96590f0aa9095e59b2e7e11ce532) | Keep launcher config modal in frame and trim home tiles | Map2 Audio | 2026-04-01 |
+| [`6b236889`](https://github.com/matthewmackes/map2-audio/commit/6b236889a1a89ac5a7a6d0c75f96d76d0448f203) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`e013b97c`](https://github.com/matthewmackes/map2-audio/commit/e013b97c85dc5b350b2b8d4612ea8331c3c0497f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`dff09914`](https://github.com/matthewmackes/map2-audio/commit/dff099142ac13d6f9727ecf950492bed0251511f) | Render snapshot signal flow left to right | Map2 Audio | 2026-04-01 |
 | [`b09387c5`](https://github.com/matthewmackes/map2-audio/commit/b09387c503f17df382287d7bd89235627c789c5f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`022a09bb`](https://github.com/matthewmackes/map2-audio/commit/022a09bbfc8550f98206469e8510b6e79991cd02) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`53267a96`](https://github.com/matthewmackes/map2-audio/commit/53267a969dd912863a8f9424b00289703698324e) | Add snapshot lock and alphanumeric name validation | Map2 Audio | 2026-04-01 |
-| [`7066ada1`](https://github.com/matthewmackes/map2-audio/commit/7066ada12e27d7a00f6db59e3d1fbfbd30a7150b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`7211ea1e`](https://github.com/matthewmackes/map2-audio/commit/7211ea1e9aeb564cc5b05a50512e5797bd205663) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
-| [`9f865b34`](https://github.com/matthewmackes/map2-audio/commit/9f865b346549e1e15f89dc41fa974f23c73c1b82) | Refine snapshot editor BPM and output reference controls | Map2 Audio | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
