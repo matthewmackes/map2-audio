@@ -134,10 +134,12 @@ describe('navigation catalog', () => {
     const advancedItems = advancedMenuItems
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
+      '/labs/push-surface',
       '/mpx1',
       '/intelfx',
       '/ground-control-pro',
       '/tesira',
+      '/maschine',
       '/edirol-ua1000',
       '/hotone-jogg',
     ])

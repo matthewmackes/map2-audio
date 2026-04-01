@@ -57,7 +57,9 @@ export type WebSocketTopic =
   | 'effects_loop_metrics'
   | 'effects_loop_calibration_progress'
   | 'snapshot_runtime_live_state'
-  | 'snapshot_activation_events';
+  | 'snapshot_activation_events'
+  | 'maschine:status'
+  | 'maschine:hid_traffic';
 
 export type ConnectionStatus =
   | 'disconnected'

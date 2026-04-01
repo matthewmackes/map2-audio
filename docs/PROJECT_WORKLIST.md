@@ -194,7 +194,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 08:57 - Codex
 
 ID: T666-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: /maschine dedicated Carbon page (6 panels)
 Description:
 - New files:
@@ -219,7 +219,8 @@ Description:
 - Full Carbon conformance: @carbon/react only, no MUI, no Phosphor Icons, Layer wrappers, Carbon tokens throughout
 - Tests: web/src/app/pages/MaschinePage.test.tsx (renders without crash, connection tag states, all 6 panels present)
 Dependencies: T666-subD, Carbon design system (@carbon/react)
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 09:20 - Codex
 
 ID: T666-subJ
 Status: [ ] Todo

@@ -26,6 +26,7 @@ const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').th
 const PlatformWorkspacePage = lazy(() => import('./pages/PlatformWorkspacePage').then(m => ({ default: m.PlatformWorkspacePage })))
 const LabsPage              = lazy(() => import('./pages/LabsPage').then(m => ({ default: m.LabsPage })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
+const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
@@ -205,6 +206,7 @@ export function App() {
                                 <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
                                 <Route path="/labs" element={<LabsPage />} />
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
+                                <Route path="/maschine" element={<MaschinePage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<LegacyStandalonePanelRedirect panel="about" />} />

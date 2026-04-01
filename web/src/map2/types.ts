@@ -216,6 +216,97 @@ export interface ChainTemplate {
   category?: string;
 }
 
+export interface MaschineLcdBitmap {
+  width: number;
+  height: number;
+  format: string;
+  data: string;
+  source?: string;
+  updated_at?: string;
+}
+
+export interface MaschinePadLedState {
+  index: number;
+  state: string;
+  color: string;
+  selected: boolean;
+}
+
+export interface MaschineLedState {
+  pads: MaschinePadLedState[];
+  updated_at?: string | null;
+}
+
+export interface MaschineAudioGridParameter {
+  param_id: string;
+  value: unknown;
+}
+
+export interface MaschineAudioGridBlock {
+  block_id: string;
+  pad_index: number;
+  path_id?: string | null;
+  path_label?: string | null;
+  chain_name?: string | null;
+  snapshot_chain_id?: number | null;
+  runtime_chain_id?: number | null;
+  plugin_uri?: string | null;
+  plugin_name?: string | null;
+  plugin_position?: number;
+  bypassed?: boolean;
+  page_index?: number;
+  page_count?: number;
+  top_parameters?: MaschineAudioGridParameter[];
+}
+
+export interface MaschineAudioGridProjection {
+  blocks: MaschineAudioGridBlock[];
+  selected_block_id: string | null;
+  page_index: number;
+  updated_at?: string | null;
+  snapshot_id?: number | null;
+  snapshot_name?: string | null;
+}
+
+export interface MaschineEncoderMapEntry {
+  block_id?: string | null;
+  param_id?: string | null;
+  label?: string | null;
+  fixed?: boolean;
+}
+
+export type MaschineEncoderMap = Record<string, MaschineEncoderMapEntry | null>;
+
+export interface MaschineHidEvent {
+  timestamp: string;
+  direction: string;
+  report_id?: number | string | null;
+  decoded_type: string;
+  raw_hex: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface MaschineDaemonStatus {
+  connected: boolean;
+  status: string;
+  daemon_version?: string | null;
+  websocket_connected: boolean;
+  virtual_port_name: string;
+  hid_device: Record<string, unknown>;
+  firmware_info: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
+  last_seen_at?: string | null;
+  registered_at?: string | null;
+  heartbeat_at?: string | null;
+  last_event_type?: string | null;
+  lcd: {
+    left: MaschineLcdBitmap;
+    right: MaschineLcdBitmap;
+  };
+  led_state: MaschineLedState;
+  audio_grid: MaschineAudioGridProjection;
+}
+
 // ==================== Plugin Types ====================
 
 /** Supported plugin formats (JUCE multi-format support) */

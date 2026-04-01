@@ -316,6 +316,23 @@ export const navigationCatalogItems = baseNavigationCatalog
 
 export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
   {
+    to: '/maschine',
+    label: 'Maschine MK1',
+    shortLabel: 'Maschine',
+    icon: MusicNotes,
+    description: 'Open the Maschine MK1 control page for daemon connectivity, encoder ownership, LCD simulation, LED state, HID traffic, and firmware diagnostics.',
+    color: 'var(--cds-support-success)',
+    homeSection: 'Hardware',
+    includeInAdvancedMenu: true,
+    pinnable: false,
+    maturity: 'beta',
+    kind: 'link',
+    gatedReason: 'Opens directly; live status still reflects whether the Maschine daemon and HID path are currently online.',
+    showOnHome: false,
+    showInHardwareSubmenu: false,
+    deviceType: 'maschine-mk1',
+  },
+  {
     to: '/edirol-ua1000',
     label: 'Edirol UA-1000',
     shortLabel: 'UA-1000',
