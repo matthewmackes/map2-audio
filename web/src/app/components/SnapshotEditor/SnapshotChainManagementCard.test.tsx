@@ -166,6 +166,8 @@ function renderCard(
   liveSnapshot: SnapshotDetail | null = buildLiveSnapshot(),
   options: {
     editorSnapshotDraft?: SnapshotDraftData | null
+    onLoadPreviousSnapshot?: jest.Mock
+    onLoadNextSnapshot?: jest.Mock
     onRenameSnapshot?: jest.Mock
     onToggleSnapshotFavorite?: jest.Mock
     onToggleSnapshotLock?: jest.Mock
@@ -173,6 +175,10 @@ function renderCard(
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
+    previousSnapshotDisabled?: boolean
+    nextSnapshotDisabled?: boolean
+    previousSnapshotDisabledReason?: string
+    nextSnapshotDisabledReason?: string
     snapshotFavoritePending?: boolean
     snapshotLockPending?: boolean
     snapshotDescriptionPending?: boolean
@@ -189,6 +195,12 @@ function renderCard(
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotRenamePending={options.snapshotRenamePending}
+      onLoadPreviousSnapshot={options.onLoadPreviousSnapshot}
+      onLoadNextSnapshot={options.onLoadNextSnapshot}
+      previousSnapshotDisabled={options.previousSnapshotDisabled}
+      nextSnapshotDisabled={options.nextSnapshotDisabled}
+      previousSnapshotDisabledReason={options.previousSnapshotDisabledReason}
+      nextSnapshotDisabledReason={options.nextSnapshotDisabledReason}
       onToggleSnapshotFavorite={options.onToggleSnapshotFavorite}
       snapshotFavoritePending={options.snapshotFavoritePending}
       onToggleSnapshotLock={options.onToggleSnapshotLock}
@@ -342,6 +354,28 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(favoriteButton)
 
     expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders previous and next snapshot buttons and disables them with the provided reasons', () => {
+    const onLoadPreviousSnapshot = jest.fn()
+    const onLoadNextSnapshot = jest.fn()
+
+    renderCard(buildLiveSnapshot(), {
+      onLoadPreviousSnapshot,
+      onLoadNextSnapshot,
+      previousSnapshotDisabled: true,
+      nextSnapshotDisabled: false,
+      previousSnapshotDisabledReason: 'No previous snapshot',
+      nextSnapshotDisabledReason: 'No next snapshot',
+    })
+
+    expect(screen.getByRole('button', { name: 'Prev' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Prev' })).toHaveAttribute('title', 'No previous snapshot')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    expect(onLoadPreviousSnapshot).not.toHaveBeenCalled()
+    expect(onLoadNextSnapshot).toHaveBeenCalledTimes(1)
   })
 
   it('renders a snapshot lock toggle and disables stored BPM edits while locked', () => {

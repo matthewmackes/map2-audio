@@ -110,11 +110,15 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
+import {
+  sortFavoriteSnapshotsForSetlist,
+  sortSnapshotsByProgramNumber,
+} from '../utils/snapshotSetlist'
 import {
   buildDefaultSnapshotName,
   normalizeSnapshotName,
@@ -901,6 +905,7 @@ export function SnapshotEditorPage() {
   const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
+  const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
@@ -1152,10 +1157,11 @@ export function SnapshotEditorPage() {
     queryFn: () => snapshotsApi.list(),
     refetchInterval: snapshotStandardCadence,
   })
+  const currentEditorSnapshotId = editorSnapshotOverride?.id ?? liveSnapshotQuery.data?.id ?? null
   const snapshotRevisionsQuery = useQuery({
-    queryKey: ['snapshots', 'revisions', liveSnapshotQuery.data?.id ?? null],
-    queryFn: () => snapshotsApi.listRevisions(liveSnapshotQuery.data!.id),
-    enabled: showVersionHistoryModal && liveSnapshotQuery.data?.id != null,
+    queryKey: ['snapshots', 'revisions', currentEditorSnapshotId],
+    queryFn: () => snapshotsApi.listRevisions(currentEditorSnapshotId!),
+    enabled: showVersionHistoryModal && currentEditorSnapshotId != null,
     refetchOnWindowFocus: false,
   })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
@@ -1166,7 +1172,7 @@ export function SnapshotEditorPage() {
       .filter((name): name is string => typeof name === 'string' && name.trim().length > 0),
     [snapshotsSummaryQuery.data?.snapshots],
   )
-  const snapshotEntryRequired = liveSnapshotQuery.isSuccess && liveSnapshotQuery.data === null
+  const snapshotEntryRequired = liveSnapshotQuery.isSuccess && currentEditorSnapshotId === null
 
   const openArtifactsSnapshots = useCallback(() => {
     navigate('/artifacts?category=snapshots')
@@ -1573,10 +1579,17 @@ export function SnapshotEditorPage() {
   // ============================================================================
 
   const chains = chainsQuery.data?.chains || []
+  const liveSnapshot = liveSnapshotQuery.data ?? null
   const activeSnapshot = useMemo(
-    () => liveSnapshotQuery.data ?? null,
-    [liveSnapshotQuery.data],
+    () => editorSnapshotOverride ?? liveSnapshot,
+    [editorSnapshotOverride, liveSnapshot],
   )
+  const snapshotSetlistMode = specialSettings?.snapshotSetlistMode ?? false
+  useEffect(() => {
+    if (editorSnapshotOverride && liveSnapshot && editorSnapshotOverride.id === liveSnapshot.id) {
+      setEditorSnapshotOverride(null)
+    }
+  }, [editorSnapshotOverride, liveSnapshot])
   const snapshotEditingLocked = Boolean(activeSnapshot?.is_locked)
   const sessionNotes = activeSnapshot?.session_notes ?? []
   const effectiveChainsResponse = useMemo(
@@ -1636,6 +1649,25 @@ export function SnapshotEditorPage() {
   const outputLevelWarningMessage = outputLevelReferenceDeltaDb != null
     && Math.abs(outputLevelReferenceDeltaDb) > outputLevelWarningThresholdDb
     ? `Output is ${Math.abs(outputLevelReferenceDeltaDb).toFixed(1)} dB ${outputLevelReferenceDeltaDb > 0 ? 'above' : 'below'} reference level.`
+    : null
+  const editorSnapshotSequence = useMemo<SnapshotSummary[]>(() => {
+    const snapshots = snapshotsSummaryQuery.data?.snapshots ?? []
+    if (snapshotSetlistMode) {
+      return sortFavoriteSnapshotsForSetlist(
+        snapshots.filter((snapshot) => snapshot.is_favorite),
+        specialSettings?.snapshotSetlistOrder,
+      )
+    }
+    return sortSnapshotsByProgramNumber(snapshots)
+  }, [snapshotSetlistMode, snapshotsSummaryQuery.data?.snapshots, specialSettings?.snapshotSetlistOrder])
+  const activeSnapshotSequenceIndex = activeSnapshot
+    ? editorSnapshotSequence.findIndex((snapshot) => snapshot.id === activeSnapshot.id)
+    : -1
+  const previousEditorSnapshot = activeSnapshotSequenceIndex > 0
+    ? editorSnapshotSequence[activeSnapshotSequenceIndex - 1]
+    : null
+  const nextEditorSnapshot = activeSnapshotSequenceIndex >= 0 && activeSnapshotSequenceIndex < editorSnapshotSequence.length - 1
+    ? editorSnapshotSequence[activeSnapshotSequenceIndex + 1]
     : null
   const jackMetrics = jackQuery.data
 
@@ -1716,16 +1748,39 @@ export function SnapshotEditorPage() {
       return snapshotsApi.activate(created.snapshot_id)
     },
     onSuccess: (response) => {
+      setEditorSnapshotOverride(null)
       queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
       if (response.runtime_live_state) {
         queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], response.runtime_live_state)
       }
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      clearSnapshotsDirty()
-      pushToast('Snapshot created', 'success')
+      hydrateEditorFromSnapshot(response.snapshot_data, {
+        toastMessage: 'Snapshot created',
+        resetSelectedBlock: true,
+        invalidateSnapshots: true,
+      })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
+    },
+  })
+
+  const openEditorSnapshotMutation = useMutation({
+    mutationFn: (snapshotId: number) => snapshotsApi.openDraft(snapshotId),
+    onSuccess: (response) => {
+      const detail = response.snapshot
+      if (liveSnapshot?.id === detail.id) {
+        setEditorSnapshotOverride(null)
+      } else {
+        setEditorSnapshotOverride(detail)
+      }
+      hydrateEditorFromSnapshot(detail, {
+        toastMessage: `Loaded: ${detail.name}`,
+        resetSelectedBlock: true,
+      })
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to load snapshot', 'error')
     },
   })
 
@@ -1743,11 +1798,12 @@ export function SnapshotEditorPage() {
       })
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
-      clearSnapshotsDirty()
-      pushToast('Snapshot updated', 'success')
+      hydrateEditorFromSnapshot(response.snapshot, {
+        toastMessage: 'Snapshot updated',
+        invalidateSnapshots: true,
+      })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
@@ -1764,7 +1820,7 @@ export function SnapshotEditorPage() {
       })
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast(response.snapshot.is_locked ? 'Snapshot locked' : 'Snapshot unlocked', 'success')
     },
@@ -1777,7 +1833,7 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, name }: { snapshotId: number; name: string }) =>
       snapshotsApi.update(snapshotId, { name }),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setShowRenameSnapshotModal(false)
       setRenameSnapshotName('')
@@ -1792,7 +1848,7 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, isFavorite }: { snapshotId: number; isFavorite: boolean }) =>
       snapshotsApi.update(snapshotId, { is_favorite: isFavorite }),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast(response.snapshot.is_favorite ? 'Snapshot marked as favorite' : 'Snapshot removed from favorites', 'success')
     },
@@ -1805,7 +1861,7 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, description }: { snapshotId: number; description: string }) =>
       snapshotsApi.update(snapshotId, { description }),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot notes updated', 'success')
     },
@@ -1828,7 +1884,7 @@ export function SnapshotEditorPage() {
       output_level_warning_threshold_db: outputLevelWarningThresholdDb,
     }),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot output reference updated', 'success')
     },
@@ -1841,7 +1897,7 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, tempoBpm }: { snapshotId: number; tempoBpm: number }) =>
       snapshotsApi.update(snapshotId, { tempo_bpm: tempoBpm }),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       pushToast('Snapshot tempo updated', 'success')
     },
@@ -1854,12 +1910,13 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, revisionNumber }: { snapshotId: number; revisionNumber: number }) =>
       snapshotsApi.restoreRevision(snapshotId, revisionNumber),
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
       setShowVersionHistoryModal(false)
-      clearSnapshotsDirty()
-      pushToast(`Restored revision ${response.restored_revision_number}`, 'success')
+      hydrateEditorFromSnapshot(response.snapshot, {
+        toastMessage: `Restored revision ${response.restored_revision_number}`,
+        invalidateSnapshots: true,
+      })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to restore snapshot revision', 'error')
@@ -1871,6 +1928,16 @@ export function SnapshotEditorPage() {
       snapshotsApi.addSessionNote(snapshotId, text),
     onSuccess: (response) => {
       queryClient.setQueryData<SnapshotDetail | null>(['snapshots', 'live'], (current) => (
+        current && current.id === response.snapshot_id
+          ? { ...current, session_notes: response.notes }
+          : current
+      ))
+      queryClient.setQueryData<SnapshotDetail | undefined>(['snapshots', 'detail', response.snapshot_id], (current) => (
+        current
+          ? { ...current, session_notes: response.notes }
+          : current
+      ))
+      setEditorSnapshotOverride((current) => (
         current && current.id === response.snapshot_id
           ? { ...current, session_notes: response.notes }
           : current
@@ -1895,47 +1962,70 @@ export function SnapshotEditorPage() {
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
   }, [])
 
-  const hydrateEditorFromLiveSnapshot = useCallback((
+  const syncSnapshotDetailCaches = useCallback((snapshot: SnapshotDetail) => {
+    queryClient.setQueryData(['snapshots', 'detail', snapshot.id], snapshot)
+    if (liveSnapshot?.id === snapshot.id) {
+      queryClient.setQueryData(['snapshots', 'live'], snapshot)
+      setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? null : current))
+      return
+    }
+
+    setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? snapshot : current))
+  }, [liveSnapshot?.id, queryClient])
+
+  const hydrateEditorFromSnapshot = useCallback((
     detail: SnapshotDetail,
-    options?: { toastMessage?: string | null },
+    options?: {
+      toastMessage?: string | null
+      resetSelectedBlock?: boolean
+      invalidateSnapshots?: boolean
+    },
   ) => {
     const hydration = buildSnapshotEditorLiveSnapshotHydration(
       detail,
       queryClient.getQueryData<ChainsResponse>(['chains']),
     )
     queryClient.setQueryData(['chains'], hydration.chainsResponse)
-    queryClient.setQueryData(['snapshots', 'live'], detail)
+    queryClient.setQueryData(['snapshots', 'detail', detail.id], detail)
     lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
     setEditorSnapshotState(hydration.snapshotData)
+    if (options?.resetSelectedBlock) {
+      setSelectedPluginSelection(null)
+      setDetailsPlugin(null)
+      setTabletEditorOpen(false)
+      setEffectModalOpen(false)
+    }
     clearSnapshotsDirty()
-    queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    if (options?.invalidateSnapshots) {
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    }
     if (options?.toastMessage) {
       pushToast(options.toastMessage, 'success')
     }
-  }, [clearSnapshotsDirty, pushToast, queryClient, setEditorSnapshotState])
+  }, [clearSnapshotsDirty, pushToast, queryClient, setEditorSnapshotState, setSelectedPluginSelection])
 
   useEffect(() => {
     if (!liveSnapshotQuery.isSuccess) {
       return
     }
 
-    if (liveSnapshotQuery.data === null) {
+    if (activeSnapshot === null) {
       lastHydratedLiveSnapshotFingerprintRef.current = null
       return
     }
 
     const hydration = buildSnapshotEditorLiveSnapshotHydration(
-      liveSnapshotQuery.data,
+      activeSnapshot,
       queryClient.getQueryData<ChainsResponse>(['chains']),
     )
     if (lastHydratedLiveSnapshotFingerprintRef.current === hydration.fingerprint) {
       return
     }
 
-    hydrateEditorFromLiveSnapshot(liveSnapshotQuery.data)
+    hydrateEditorFromSnapshot(activeSnapshot)
   }, [
-    hydrateEditorFromLiveSnapshot,
-    liveSnapshotQuery.data,
+    activeSnapshot,
+    hydrateEditorFromSnapshot,
     liveSnapshotQuery.isSuccess,
     queryClient,
   ])
@@ -4025,7 +4115,6 @@ export function SnapshotEditorPage() {
   const snapshotWorkspaceTitle = snapshotCount > 0
     ? `${snapshotCountLabel} saved snapshots`
     : 'Open snapshots workspace'
-  const snapshotSetlistMode = specialSettings?.snapshotSetlistMode ?? false
   const snapshotSetlistModeTitle = snapshotSetlistMode
     ? 'Setlist mode is active: snapshot stepping follows starred snapshots in gig order.'
     : 'Program mode is active: snapshot stepping follows all snapshots by MIDI program number.'
@@ -4047,6 +4136,29 @@ export function SnapshotEditorPage() {
       setSnapshotSetlistModePending(false)
     }
   }, [pushToast, snapshotSetlistMode, updateSpecialSettings])
+  const snapshotNavigationPending = openEditorSnapshotMutation.isPending
+  const previousSnapshotDisabledReason = !activeSnapshot
+    ? 'No previous snapshot'
+    : activeSnapshotSequenceIndex === -1
+      ? (snapshotSetlistMode ? 'Current snapshot is not in the setlist.' : 'No previous snapshot')
+      : (previousEditorSnapshot ? undefined : 'No previous snapshot')
+  const nextSnapshotDisabledReason = !activeSnapshot
+    ? 'No next snapshot'
+    : activeSnapshotSequenceIndex === -1
+      ? (snapshotSetlistMode ? 'Current snapshot is not in the setlist.' : 'No next snapshot')
+      : (nextEditorSnapshot ? undefined : 'No next snapshot')
+  const loadEditorSnapshot = useCallback((snapshot: SnapshotSummary | null) => {
+    if (!snapshot) {
+      return
+    }
+    openEditorSnapshotMutation.mutate(snapshot.id)
+  }, [openEditorSnapshotMutation])
+  const goToPreviousSnapshot = useCallback(() => {
+    loadEditorSnapshot(previousEditorSnapshot)
+  }, [loadEditorSnapshot, previousEditorSnapshot])
+  const goToNextSnapshot = useCallback(() => {
+    loadEditorSnapshot(nextEditorSnapshot)
+  }, [loadEditorSnapshot, nextEditorSnapshot])
 
   const renderSnapshotsToolbar = () => (
     <div className={`snapshot-toolbar ${snapshotsDirty ? 'is-dirty' : ''}`} role="toolbar" aria-label="Snapshots toolbar">
@@ -4084,6 +4196,28 @@ export function SnapshotEditorPage() {
           disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
         >
           {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update'}
+        </Button>
+        <Button
+          size="sm"
+          kind="ghost"
+          className="snapshot-toolbar__button snapshot-toolbar__button--prev"
+          renderIcon={ArrowLeft}
+          onClick={goToPreviousSnapshot}
+          disabled={snapshotNavigationPending || !previousEditorSnapshot}
+          title={previousSnapshotDisabledReason}
+        >
+          Prev
+        </Button>
+        <Button
+          size="sm"
+          kind="ghost"
+          className="snapshot-toolbar__button snapshot-toolbar__button--next"
+          renderIcon={ArrowRight}
+          onClick={goToNextSnapshot}
+          disabled={snapshotNavigationPending || !nextEditorSnapshot}
+          title={nextSnapshotDisabledReason}
+        >
+          Next
         </Button>
         {activeSnapshot ? (
           <Button
@@ -4773,6 +4907,20 @@ export function SnapshotEditorPage() {
         return
       }
 
+      const activeElement = typeof document !== 'undefined' ? document.activeElement : null
+      const snapshotCanvasFocused = activeElement instanceof HTMLElement
+        && activeElement.dataset.snapshotCanvasFocusRoot === 'true'
+
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && snapshotCanvasFocused) {
+        e.preventDefault()
+        if (e.key === 'ArrowLeft') {
+          goToPreviousSnapshot()
+        } else {
+          goToNextSnapshot()
+        }
+        return
+      }
+
       // Left/Right = Move selected plugin through the signal chain
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && currentChain) {
         e.preventDefault()
@@ -4831,6 +4979,7 @@ export function SnapshotEditorPage() {
     showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
+    goToPreviousSnapshot, goToNextSnapshot,
     snapshotEditingLocked,
   ])
 
@@ -5592,6 +5741,12 @@ export function SnapshotEditorPage() {
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
+            onLoadPreviousSnapshot={goToPreviousSnapshot}
+            onLoadNextSnapshot={goToNextSnapshot}
+            previousSnapshotDisabled={snapshotNavigationPending || !previousEditorSnapshot}
+            nextSnapshotDisabled={snapshotNavigationPending || !nextEditorSnapshot}
+            previousSnapshotDisabledReason={previousSnapshotDisabledReason}
+            nextSnapshotDisabledReason={nextSnapshotDisabledReason}
             onToggleSnapshotFavorite={() => {
               if (!activeSnapshot) {
                 return
@@ -5698,7 +5853,12 @@ export function SnapshotEditorPage() {
         </Layer>
       )}
 
-      <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--body" aria-label="Signal flow workspace">
+      <section
+        className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--body"
+        aria-label="Signal flow workspace"
+        tabIndex={0}
+        data-snapshot-canvas-focus-root="true"
+      >
 
         <div className="juce-grid-page__unified-block">
           <main className="juce-grid-page__main">

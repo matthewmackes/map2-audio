@@ -1,4 +1,4 @@
-import { Edit, Favorite, FavoriteFilled } from '@carbon/icons-react'
+import { ArrowLeft, ArrowRight, Edit, Favorite, FavoriteFilled } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -30,6 +30,12 @@ interface SnapshotChainManagementCardProps {
   detailsAction?: ReactNode
   onRenameSnapshot?: () => void
   snapshotRenamePending?: boolean
+  onLoadPreviousSnapshot?: () => void
+  onLoadNextSnapshot?: () => void
+  previousSnapshotDisabled?: boolean
+  nextSnapshotDisabled?: boolean
+  previousSnapshotDisabledReason?: string
+  nextSnapshotDisabledReason?: string
   onToggleSnapshotFavorite?: () => void
   snapshotFavoritePending?: boolean
   onToggleSnapshotLock?: () => void
@@ -413,6 +419,12 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     detailsAction,
     onRenameSnapshot,
     snapshotRenamePending = false,
+    onLoadPreviousSnapshot,
+    onLoadNextSnapshot,
+    previousSnapshotDisabled = false,
+    nextSnapshotDisabled = false,
+    previousSnapshotDisabledReason,
+    nextSnapshotDisabledReason,
     onToggleSnapshotFavorite,
     snapshotFavoritePending = false,
     onToggleSnapshotLock,
@@ -558,6 +570,30 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     </button>
                   ) : snapshotTitle}
                 </h2>
+                {(onLoadPreviousSnapshot || onLoadNextSnapshot) ? (
+                  <div className="juce-grid-page__snapshot-status-nav" role="toolbar" aria-label="Snapshot navigation">
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      renderIcon={ArrowLeft}
+                      onClick={onLoadPreviousSnapshot}
+                      disabled={previousSnapshotDisabled}
+                      title={previousSnapshotDisabledReason}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      renderIcon={ArrowRight}
+                      onClick={onLoadNextSnapshot}
+                      disabled={nextSnapshotDisabled}
+                      title={nextSnapshotDisabledReason}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
                 {liveSnapshot && onToggleSnapshotFavorite ? (
                   <Button
                     size="sm"

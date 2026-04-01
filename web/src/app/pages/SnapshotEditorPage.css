@@ -139,6 +139,11 @@
   padding-top: 0;
 }
 
+.juce-grid-page__signal-flow-shell--body:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 0.2rem;
+}
+
 .juce-grid-page__unified-block {
   margin: 0;
   border-radius: var(--cds-border-radius-large, 0.5rem);
@@ -1037,6 +1042,12 @@
 
 .juce-grid-page__snapshot-status-live-row {
   align-items: flex-start;
+}
+
+.juce-grid-page__snapshot-status-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .juce-grid-page__snapshot-status-brand,

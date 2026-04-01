@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]; T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]; T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]
+Last updated: 2026-04-01 EDT - T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]; T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]; T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]
 
 ID: T672
 Status: [✓] Done
@@ -1019,7 +1019,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T624
-Status: [ ] Todo
+Status: [✓] Done
 Title: Prev/Next Snapshot Navigation Arrows in Editor
 Description:
 - Goal / acceptance criteria: Two arrow buttons (← Prev and Next →) are displayed in the Snapshot Editor — in the editor hero and in the floating toolbar (T642). In normal mode, they step through snapshots ordered by program_number. In Setlist mode (T654), they step through the ordered starred snapshots. Pressing Next/Prev loads the adjacent snapshot into the editor (does not activate it — "Go Live" is a separate action). Keyboard shortcuts Left/Right arrow keys trigger Prev/Next when the editor canvas has focus. At the first/last snapshot in the sequence, the corresponding arrow is disabled with a tooltip "No previous snapshot" / "No next snapshot".
@@ -1028,7 +1028,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Prev/Next buttons in editor hero and floating toolbar, ordered snapshot query respecting program_number and setlist mode, keyboard shortcut handlers on canvas focus, disabled state at sequence boundaries, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 16:58 - Codex
+- Completion notes:
+  - Added Prev/Next snapshot navigation controls to both the editor hero card and the floating toolbar, wired to load adjacent snapshots into the editor without making them live.
+  - Reused the persisted setlist ordering from `special_settings` so navigation follows MIDI program order in normal mode and the starred gig sequence in Setlist mode, while disabling boundary cases with the required tooltip copy.
+  - Extended the editor canvas keyboard flow so focused workspace Left/Right arrows trigger snapshot stepping, and added focused regression coverage for the new hero controls and setlist-driven ordering behavior.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/utils/snapshotSetlist.test.ts web/src/app/hooks/useSpecialSettings.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T623
 Status: [✓] Done
