@@ -93,7 +93,7 @@ Dependencies: T666-subA
 Assigned to: Unassigned
 
 ID: T666-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: /api/maschine/* backend routes + daemon registration
 Description:
 - New file: app/routes/maschine.py
@@ -110,7 +110,8 @@ Description:
 - MaschineService: maintains in-memory daemon state (connected/disconnected, firmware info, last-seen timestamp)
 - Register router in app/main.py
 Dependencies: Existing FastAPI infrastructure, T666-subA
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 14:02 - Codex
 
 ID: T666-subE
 Status: [ ] Todo
