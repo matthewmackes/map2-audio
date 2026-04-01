@@ -283,6 +283,40 @@ class MaschineService:
         await self._broadcast_status_payload(payload)
         return copy.deepcopy(self._state.lcd)
 
+    async def update_lcd_pair(
+        self,
+        *,
+        left: dict[str, Any],
+        right: dict[str, Any],
+        source: str = "api",
+    ) -> dict[str, Any]:
+        now = _utcnow_iso()
+        normalized = {
+            "left": {
+                "width": int(left.get("width") or 128),
+                "height": int(left.get("height") or 64),
+                "format": str(left.get("format") or "xbm"),
+                "data": str(left.get("data") or ""),
+                "source": source,
+                "updated_at": now,
+            },
+            "right": {
+                "width": int(right.get("width") or 128),
+                "height": int(right.get("height") or 64),
+                "format": str(right.get("format") or "xbm"),
+                "data": str(right.get("data") or ""),
+                "source": source,
+                "updated_at": now,
+            },
+        }
+        async with self._lock:
+            self._state.lcd = normalized
+            self._state.last_seen_at = now
+            self._state.last_event_type = "lcd"
+            payload = self._status_event_payload_locked(event="lcd")
+        await self._broadcast_status_payload(payload)
+        return copy.deepcopy(self._state.lcd)
+
     async def handle_ws_message(self, session: AsyncSession, message: dict[str, Any]) -> dict[str, Any] | None:
         message_type = str(message.get("type") or "").strip().lower()
         payload = dict(message.get("payload") or {})

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.database import get_session
+from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
 
 router = APIRouter(prefix="/api/maschine", tags=["maschine"])
@@ -132,6 +133,32 @@ async def update_maschine_lcd(request: MaschineLcdRequest) -> dict[str, Any]:
     lcd_state = await get_maschine_service().update_lcd(side=request.side, bitmap=request.bitmap)
     return {
         "status": "ok",
+        "lcd": lcd_state,
+    }
+
+
+@router.get("/lcd/render")
+async def render_maschine_lcd(
+    context: Literal["audio_grid", "stats"] = Query(default="audio_grid"),
+    focus_metric: str | None = Query(default=None),
+) -> dict[str, Any]:
+    service = get_maschine_service()
+    renderer = get_maschine_lcd_render_service()
+    async with get_session(read_only=True) as session:
+        render = await renderer.render(
+            session=session,
+            maschine_service=service,
+            context=context,
+            focus_metric=focus_metric,
+        )
+    lcd_state = await service.update_lcd_pair(
+        left=render.get("left") or {},
+        right=render.get("right") or {},
+        source=f"render:{context}",
+    )
+    return {
+        "status": "ok",
+        "render": render,
         "lcd": lcd_state,
     }
 

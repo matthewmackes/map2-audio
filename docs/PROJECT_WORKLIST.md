@@ -151,7 +151,7 @@ Assigned to: Codex
 Last updated: 2026-04-01 14:51 - Codex
 
 ID: T666-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Dual LCD rendering engine (WebSocket + 2Hz REST hybrid)
 Description:
 - Left LCD renderer (128x64 XBM bitmap, sent via HID output report):
@@ -173,7 +173,8 @@ Description:
 - HID display output: XBM bitmap → packed 1bpp bytearray → HID output report (open-maschine protocol, VID 17cc PID 0808)
 - Display update cap: 30Hz, skip frame if buffer unchanged (dirty flag per display)
 Dependencies: T666-subA, T666-subD
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-04-01 09:03 - Codex
 
 ID: T666-subH
 Status: [✓] Done

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app import database as database_module
 from app.routes import maschine as maschine_routes
+from app.services.maschine_lcd_service import reset_maschine_lcd_render_service
 from app.services.maschine_service import reset_maschine_service
 
 
@@ -23,6 +24,7 @@ def _build_client() -> TestClient:
 def test_maschine_routes_rest_and_websocket(tmp_path):
     _init_temp_db(tmp_path)
     reset_maschine_service()
+    reset_maschine_lcd_render_service()
     client = _build_client()
     fake_audio_grid = {
         "blocks": [
@@ -63,6 +65,15 @@ def test_maschine_routes_rest_and_websocket(tmp_path):
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "get_audio_grid_projection", _fake_get_audio_grid_projection)
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "select_audio_grid_block", _fake_select_audio_grid_block)
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "toggle_audio_grid_block_bypass", _fake_toggle_audio_grid_block_bypass)
+    async def _fake_render(*, session, maschine_service, context="audio_grid", focus_metric=None):
+        assert context in {"audio_grid", "stats"}
+        return {
+            "context": context,
+            "left": {"width": 128, "height": 64, "format": "xbm", "data": "AA"},
+            "right": {"width": 128, "height": 64, "format": "xbm", "data": "55"},
+            "meta": {"focus_metric": focus_metric},
+        }
+    monkeypatch.setattr(maschine_routes.get_maschine_lcd_render_service(), "render", _fake_render)
 
     register_response = client.post(
         "/api/maschine/register",
@@ -112,6 +123,12 @@ def test_maschine_routes_rest_and_websocket(tmp_path):
     )
     assert lcd_response.status_code == 200
     assert lcd_response.json()["lcd"]["left"]["data"] == "AA55"
+
+    rendered_lcd_response = client.get("/api/maschine/lcd/render?context=stats&focus_metric=audio.cpu_load")
+    assert rendered_lcd_response.status_code == 200
+    assert rendered_lcd_response.json()["render"]["context"] == "stats"
+    assert rendered_lcd_response.json()["lcd"]["left"]["source"] == "render:stats"
+    assert rendered_lcd_response.json()["render"]["meta"]["focus_metric"] == "audio.cpu_load"
 
     audio_grid_response = client.get("/api/maschine/audio-grid")
     assert audio_grid_response.status_code == 200
