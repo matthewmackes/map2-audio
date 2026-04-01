@@ -408,6 +408,15 @@ class SnapshotService:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
             return False
+
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        live_snapshot_id = runtime_state.get("snapshot_id")
+        live_snapshot_payload = runtime_state.get("live_snapshot_payload") or {}
+        if live_snapshot_id == snapshot_id or live_snapshot_payload.get("id") == snapshot_id:
+            raise ValueError("Cannot delete a live snapshot.")
+
         await self.session.delete(snapshot)
         await self.session.flush()
         return True

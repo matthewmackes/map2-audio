@@ -636,6 +636,10 @@ async def delete_snapshot(snapshot_id: int) -> dict[str, Any]:
                 "status": "success",
                 "message": f"Deleted snapshot {snapshot_id}",
             }
+    except ValueError as exc:
+        if str(exc) == "Cannot delete a live snapshot.":
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        _translate_value_error(exc)
     except HTTPException:
         raise
     except Exception as exc:

@@ -488,4 +488,45 @@ describe('SnapshotModalContent', () => {
     )
     expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')
   })
+
+  it('disables delete actions for the live snapshot in the library UI', async () => {
+    mockSnapshotsList.mockResolvedValueOnce({
+      snapshots: [
+        {
+          id: 5,
+          name: 'Existing Snapshot',
+          description: '',
+          tags: [],
+          program_number: null,
+          input_device: null,
+          output_device: null,
+          is_active: true,
+          is_favorite: false,
+          display_order: 0,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+      ],
+      count: 1,
+      active_id: 5,
+    })
+
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot Library/i }))
+    fireEvent.click((await screen.findAllByLabelText('Actions for Existing Snapshot'))[0])
+
+    const deleteAction = await screen.findByText('Delete')
+    const deleteButton = deleteAction.closest('button') as HTMLButtonElement | null
+    expect(deleteButton).not.toBeNull()
+    expect(deleteButton?.disabled).toBe(true)
+  })
 })

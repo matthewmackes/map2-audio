@@ -8,6 +8,7 @@ from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services import snapshot_runtime_service
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
+from fastapi import HTTPException
 from sqlalchemy import select
 
 
@@ -226,6 +227,14 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         cluster_runtime = await routes.get_cluster_runtime_live_state()
         assert cluster_runtime["local_node_id"] == runtime_live_state["node_id"]
         assert any(node["snapshot_id"] == snapshot_id for node in cluster_runtime["nodes"])
+
+        try:
+            await routes.delete_snapshot(snapshot_id)
+        except HTTPException as exc:
+            assert exc.status_code == 409
+            assert exc.detail == "Cannot delete a live snapshot."
+        else:
+            raise AssertionError("Deleting a live snapshot should fail")
 
         program_update = await routes.set_program_number(
             snapshot_id,

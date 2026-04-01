@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]; T638 snapshot version history completed
+Last updated: 2026-04-01 EDT - T623 live snapshot delete guard across UI and API [completed]; T622 snapshot favorite/star floats to top of snapshot surfaces [completed]; T668 launcher organizer moved into Theme workspace [completed]
 
 ID: T668
 Status: [✓] Done
@@ -943,7 +943,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T623
-Status: [ ] Todo
+Status: [✓] Done
 Title: Live Snapshot Cannot Be Deleted — UI and API Enforcement
 Description:
 - Goal / acceptance criteria: If a snapshot's runtime state is "live" (state = "live" in SnapshotRuntimeLiveState), the delete action is disabled everywhere in the UI: greyed out in the Details dropdown, greyed out in any snapshot list row action, with a tooltip reading "Cannot delete a live snapshot." The DELETE /api/snapshots/{id} endpoint also enforces this server-side: if the snapshot is currently live, the endpoint returns HTTP 409 Conflict with error message "Cannot delete a live snapshot." The check uses the same SnapshotRuntimeLiveState source of truth that drives the LIVE badge in the editor hero.
@@ -952,7 +952,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: UI delete-button disabled state driven by SnapshotRuntimeLiveState.state === "live", tooltip on disabled state, server-side 409 guard in DELETE /api/snapshots/{id}, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 12:38 - Codex
+- Completion notes:
+  - Added a server-side live-snapshot delete guard in the snapshot service and mapped the API route to return HTTP 409 with `Cannot delete a live snapshot.` whenever the runtime live-state source of truth still points at the target snapshot.
+  - Disabled delete actions for live snapshots in both the snapshot library modal and the artifacts workspace, matching the existing live-state cues and surfacing the required tooltip copy on blocked row/detail actions.
+  - Added focused regression coverage for the new API conflict response and the disabled library delete affordance for the active live snapshot.
+- Validation: `pytest -q tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T622
 Status: [✓] Done

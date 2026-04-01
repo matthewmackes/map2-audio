@@ -382,9 +382,14 @@ export function SnapshotModalContent({
     if (!snapshotPendingDelete) {
       return
     }
+    if (snapshotPendingDelete.id === activeSnapshotId || snapshotPendingDelete.is_active) {
+      pushToast('Cannot delete a live snapshot.', 'error')
+      setSnapshotPendingDelete(null)
+      return
+    }
     deleteFlowSnapshotMutation.mutate(snapshotPendingDelete.id)
     setSnapshotPendingDelete(null)
-  }, [deleteFlowSnapshotMutation, snapshotPendingDelete])
+  }, [activeSnapshotId, deleteFlowSnapshotMutation, pushToast, snapshotPendingDelete])
 
   const openSnapshotProgramModal = useCallback((snapshot: SnapshotSummary) => {
     setSnapshotPendingProgram(snapshot)
@@ -978,7 +983,13 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                               {snapshot.program_number !== null && (
                                 <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
                               )}
-                              <OverflowMenuItem itemText="Delete" isDelete onClick={() => setSnapshotPendingDelete(snapshot)} />
+                              <OverflowMenuItem
+                                itemText="Delete"
+                                isDelete
+                                disabled={isActiveSnapshot}
+                                title={isActiveSnapshot ? 'Cannot delete a live snapshot.' : undefined}
+                                onClick={() => setSnapshotPendingDelete(snapshot)}
+                              />
                             </OverflowMenu>
                           </div>
                         </Tile>
@@ -1127,7 +1138,13 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                                 {snapshot.program_number !== null && (
                                   <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
                                 )}
-                                <OverflowMenuItem itemText="Delete" isDelete onClick={() => setSnapshotPendingDelete(snapshot)} />
+                                <OverflowMenuItem
+                                  itemText="Delete"
+                                  isDelete
+                                  disabled={isActiveSnapshot}
+                                  title={isActiveSnapshot ? 'Cannot delete a live snapshot.' : undefined}
+                                  onClick={() => setSnapshotPendingDelete(snapshot)}
+                                />
                               </OverflowMenu>
                             </div>
                           </Tile>

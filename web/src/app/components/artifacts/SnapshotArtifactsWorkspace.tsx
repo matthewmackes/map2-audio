@@ -468,6 +468,7 @@ export function SnapshotArtifactsWorkspace({
             <div className="aap-snapshots__list" role="list" aria-label="Snapshots library">
               {filteredSnapshots.map((snapshot) => {
                 const isSelected = snapshot.id === selectedId
+                const isLiveSnapshot = runtimeState?.snapshot_id === snapshot.id
                 const isDirty = snapshot.id === selectedId
                   ? selectedSnapshotDirty
                   : false
@@ -498,7 +499,13 @@ export function SnapshotArtifactsWorkspace({
                           />
                           <OverflowMenuItem itemText="Duplicate snapshot" onClick={() => duplicateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem itemText="Export snapshot" onClick={() => exportMutation.mutate(snapshot.id)} />
-                          <OverflowMenuItem isDelete itemText="Delete snapshot" onClick={() => deleteMutation.mutate(snapshot.id)} />
+                          <OverflowMenuItem
+                            isDelete
+                            itemText="Delete snapshot"
+                            disabled={isLiveSnapshot}
+                            title={isLiveSnapshot ? 'Cannot delete a live snapshot.' : undefined}
+                            onClick={() => deleteMutation.mutate(snapshot.id)}
+                          />
                         </OverflowMenu>
                       </div>
                     </div>
@@ -572,6 +579,18 @@ export function SnapshotArtifactsWorkspace({
                   <OverflowMenuItem itemText="Compare local vs remote" onClick={() => {
                     onToast('info', 'Compare local vs remote', selectedDeployment.length > 0 ? 'Deployment history and node status are shown below for best-effort comparison.' : 'No remote deployment recorded for this snapshot yet.')
                   }} />
+                  <OverflowMenuItem
+                    isDelete
+                    itemText="Delete snapshot"
+                    disabled={selectedSnapshotLocalRuntime != null}
+                    title={selectedSnapshotLocalRuntime ? 'Cannot delete a live snapshot.' : undefined}
+                    onClick={() => {
+                      if (!selectedId) {
+                        return
+                      }
+                      deleteMutation.mutate(selectedId)
+                    }}
+                  />
                   <OverflowMenuItem itemText="Pin to node" onClick={() => {
                     if (!selectedId || !targetNodeId) {
                       onToast('warning', 'Choose a target node first')
