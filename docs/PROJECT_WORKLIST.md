@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]; T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]; T623 live snapshot delete guard across UI and API [completed]
+Last updated: 2026-04-01 EDT - T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]; T671 removed Drum Machine and SynthForge from the Home landing page default tiles [completed]; T670 kept launcher configuration modal in frame inside Theme organizer [completed]; T669 snapshot editor moves Output Reference into Details menu and in-grid metadata while replacing the BPM dialog with inline stored-BPM entry [completed]
+
+ID: T672
+Status: [✓] Done
+Title: Remove Drum Machine and SynthForge from the shared landing launcher catalog
+Description:
+- Goal / acceptance criteria: `Drum Machine` and `SynthForge` must no longer appear as shared landing-page launcher options. They should be removed from the launcher catalog entries that make them promotable onto the Home landing board, and stale saved landing-tile settings for those routes must normalize away instead of rendering.
+- Why it matters: The prior slice removed the hard-coded Home defaults, but the user now wants those two launchers gone from the landing-page launcher set itself rather than remaining opt-in promoted tiles.
+- Dependencies: T671
+- Estimated effort: Low
+- Required outputs: launcher-catalog source update, focused normalization/regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 16:15 - Codex
+- Completion notes:
+  - Removed the `Drum Machine` and `SynthForge` entries from `HOME_ONLY_LAUNCHERS` in `web/src/app/data/launcherCatalog.tsx`, so Theme/Home launcher promotion no longer treats those routes as shared landing launchers.
+  - Tightened `launcherCatalog.test.tsx` so `/drums` and `/synth-forge` now normalize out of landing-tile state instead of remaining valid promotable routes.
+  - Replaced the stale Home landing regression case with still-supported promoted routes, preserving coverage for the landing-tile board without relying on the removed launcher entries.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T671
 Status: [✓] Done

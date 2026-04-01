@@ -202,16 +202,16 @@ describe('HomePage landing', () => {
 
   it('renders promoted landing tiles above the home grid and launches the configured route', async () => {
     mockSpecialSettingsState.settings.landingTiles = [
-      { route: '/drums', size: 'small' },
       { route: '/midi-hub', size: 'small' },
+      { route: '/audio-table', size: 'medium' },
       { route: '/platforms/overview', size: 'large' },
     ]
 
     renderHome()
 
-    expect((await screen.findByText('Drum Machine')).closest('.hp2-launchers__tile--small')).toBeTruthy()
-    const landingTile = screen.getByText('MIDI Hub')
+    const landingTile = await screen.findByText('MIDI Hub')
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
+    expect(screen.getByText('Audio Table').closest('.hp2-launchers__tile--medium')).toBeTruthy()
     expect(screen.getByText('Overview').closest('.hp2-launchers__tile--large')).toBeTruthy()
 
     fireEvent.click(landingTile.closest('.hp2-launchers__tile') as HTMLElement)

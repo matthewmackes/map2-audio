@@ -1,8 +1,6 @@
 import type { ComponentType } from 'react'
-import { Waveform } from '@carbon/icons-react'
 import { Beaker } from 'lucide-react'
 
-import { FxDrums } from '../components/icons/effectIcons'
 import {
   advancedMenuItems,
   allRouteNavigationItems,
@@ -53,34 +51,6 @@ const HOME_ONLY_LAUNCHERS: LauncherCatalogItem[] = [
     maturity: 'beta',
     directory: 'core',
     homeSection: 'System',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-  {
-    route: '/drums',
-    label: 'Drum Machine',
-    shortLabel: 'Drums',
-    icon: ({ size = 20 }: { size?: number }) => <FxDrums width={size} height={size} />,
-    description: 'Program patterns, kits, and sequencing workflows from the dedicated drum-machine route.',
-    color: 'var(--cds-support-info)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'Audio Grid',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-  {
-    route: '/synth-forge',
-    label: 'SynthForge',
-    shortLabel: 'SynthForge',
-    icon: Waveform,
-    description: 'Open the SynthForge instrument workspace for sample playback, SoundFonts, and synthesis workflows.',
-    color: 'var(--cds-link-primary)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'Audio Grid',
     kind: 'link',
     landingEligible: true,
     navEligible: false,

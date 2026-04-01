@@ -1,8 +1,10 @@
 import { getLauncherCatalogItem, normalizeLandingTiles } from './launcherCatalog'
 
 describe('launcherCatalog', () => {
-  it('keeps the organizer panel out of the launcher catalog and marks hardware submenu triggers as nav-only', () => {
+  it('keeps non-shared launchers out of the catalog and marks hardware submenu triggers as nav-only', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
+    expect(getLauncherCatalogItem('/drums')).toBeNull()
+    expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
     expect(getLauncherCatalogItem('/hardware-interfaces')).toMatchObject({
       landingEligible: false,
       navEligible: true,
@@ -16,6 +18,8 @@ describe('launcherCatalog', () => {
 
   it('normalizes landing tiles to canonical route-backed launchers only', () => {
     expect(normalizeLandingTiles([
+      { route: '/drums', size: 'small' },
+      { route: '/synth-forge', size: 'large' },
       { route: '/platform', size: 'medium' },
       { route: '/hardware-interfaces', size: 'large' },
       { route: '/labs', size: 'giant' },
