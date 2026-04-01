@@ -115,6 +115,11 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
+import {
+  buildDefaultSnapshotName,
+  normalizeSnapshotName,
+  validateSnapshotName,
+} from '../utils/snapshotNames'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
@@ -226,6 +231,7 @@ interface FlowLevelControlProps {
   value: number
   accentColor: string
   onChange: (value: number) => void
+  disabled?: boolean
 }
 
 function FlowLevelControl({
@@ -234,6 +240,7 @@ function FlowLevelControl({
   value,
   accentColor,
   onChange,
+  disabled = false,
 }: FlowLevelControlProps) {
   const clampedValue = Math.max(0, Math.min(100, Math.round(value)))
   const levelLabel = `Signal chain ${flowLabel} level`
@@ -267,6 +274,7 @@ function FlowLevelControl({
         showLabel={false}
         showBounds={false}
         accentColor={accentColor}
+        disabled={disabled}
         className="juce-grid-page__flow-level-input"
       />
     </div>
@@ -1152,6 +1160,12 @@ export function SnapshotEditorPage() {
   })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
   const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
+  const existingSnapshotNames = useMemo(
+    () => (snapshotsSummaryQuery.data?.snapshots ?? [])
+      .map((snapshot) => snapshot.name)
+      .filter((name): name is string => typeof name === 'string' && name.trim().length > 0),
+    [snapshotsSummaryQuery.data?.snapshots],
+  )
   const snapshotEntryRequired = liveSnapshotQuery.isSuccess && liveSnapshotQuery.data === null
 
   const openArtifactsSnapshots = useCallback(() => {
@@ -1563,6 +1577,7 @@ export function SnapshotEditorPage() {
     () => liveSnapshotQuery.data ?? null,
     [liveSnapshotQuery.data],
   )
+  const snapshotEditingLocked = Boolean(activeSnapshot?.is_locked)
   const sessionNotes = activeSnapshot?.session_notes ?? []
   const effectiveChainsResponse = useMemo(
     () => (
@@ -1679,11 +1694,21 @@ export function SnapshotEditorPage() {
   }, [effectiveChainById, flowSlots, routing, activeFlowIndex])
 
   const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
+  const renameSnapshotError = useMemo(() => {
+    if (!activeSnapshot) {
+      return null
+    }
+    return validateSnapshotName(
+      renameSnapshotName,
+      existingSnapshotNames,
+      { currentName: activeSnapshot.name },
+    )
+  }, [activeSnapshot, existingSnapshotNames, renameSnapshotName])
 
   const createSnapshotFromEditorMutation = useMutation({
     mutationFn: async () => {
       const created = await snapshotsApi.create({
-        name: `Snapshot ${snapshotCount + 1}`,
+        name: buildDefaultSnapshotName(snapshotCount + 1),
         description: 'Created from Snapshot Editor',
         tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
@@ -1709,6 +1734,9 @@ export function SnapshotEditorPage() {
       if (!activeSnapshot) {
         throw new Error('No active snapshot to update')
       }
+      if (activeSnapshot.is_locked) {
+        throw new Error('Unlock snapshot before updating it')
+      }
       return snapshotsApi.update(activeSnapshot.id, {
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
         create_revision: true,
@@ -1723,6 +1751,25 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
+    },
+  })
+
+  const toggleActiveSnapshotLockMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) {
+        throw new Error('No active snapshot to lock')
+      }
+      return snapshotsApi.update(activeSnapshot.id, {
+        is_locked: !Boolean(activeSnapshot.is_locked),
+      })
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast(response.snapshot.is_locked ? 'Snapshot locked' : 'Snapshot unlocked', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot lock', 'error')
     },
   })
 
@@ -3145,7 +3192,7 @@ export function SnapshotEditorPage() {
 
   // Flow management
   const addFlow = useCallback(async () => {
-    if (flowSlots.length >= MAX_FLOWS) return
+    if (snapshotEditingLocked || flowSlots.length >= MAX_FLOWS) return
 
     const nextIndex = flowSlots.length
     const colorConfig = SLOT_COLORS[nextIndex] || SLOT_COLORS[nextIndex % SLOT_COLORS.length]
@@ -3189,10 +3236,10 @@ export function SnapshotEditorPage() {
     } catch (error) {
       pushToast(`Failed to add channel: ${error}`, 'error')
     }
-  }, [activeSnapshot?.name, flowSlots.length, markSnapshotsDirty, pushToast, queryClient])
+  }, [activeSnapshot?.name, flowSlots.length, markSnapshotsDirty, pushToast, queryClient, snapshotEditingLocked])
 
   const removeFlow = useCallback((flowId: string) => {
-    if (flowSlots.length <= MIN_FLOWS) return
+    if (snapshotEditingLocked || flowSlots.length <= MIN_FLOWS) return
     const removedIndex = flowSlots.findIndex(f => f.id === flowId)
     setFlowSlots(prev => prev.filter(f => f.id !== flowId))
     setRouting(prev => ({
@@ -3202,9 +3249,12 @@ export function SnapshotEditorPage() {
     if (activeFlowIndex >= removedIndex && activeFlowIndex > 0) {
       setActiveFlowIndex(prev => prev - 1)
     }
-  }, [flowSlots, activeFlowIndex])
+  }, [flowSlots, activeFlowIndex, snapshotEditingLocked])
 
   const clearFlows = useCallback(() => {
+    if (snapshotEditingLocked) {
+      return
+    }
     // Reset to a single flow (Flow A) with no chain assigned
     const initialSlot: FlowSlot = {
       id: `flow-${Date.now()}`,
@@ -3224,7 +3274,7 @@ export function SnapshotEditorPage() {
       blendPositions: { [initialSlot.id]: 100 },
     }))
     pushToast('Flows cleared', 'info')
-  }, [pushToast])
+  }, [pushToast, snapshotEditingLocked])
 
   const handleDeletePresetRequest = useCallback((preset: Snapshot) => {
     setPresetPendingDelete(preset)
@@ -3243,20 +3293,32 @@ export function SnapshotEditorPage() {
   }, [clearFlows])
 
   const updateFlow = useCallback((flowId: string, updates: Partial<FlowSlot>) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setFlowSlots(prev => prev.map(f => f.id === flowId ? { ...f, ...updates } : f))
-  }, [])
+  }, [snapshotEditingLocked])
 
   const beginFlowRename = useCallback((flowId: string, currentLabel: string) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setEditingFlowId(flowId)
     setEditingFlowLabel(currentLabel)
     setEditingFlowError(null)
-  }, [])
+  }, [snapshotEditingLocked])
 
   const cancelFlowRename = useCallback(() => {
     setEditingFlowId(null)
     setEditingFlowLabel('')
     setEditingFlowError(null)
   }, [])
+
+  useEffect(() => {
+    if (snapshotEditingLocked) {
+      cancelFlowRename()
+    }
+  }, [cancelFlowRename, snapshotEditingLocked])
 
   const commitFlowRename = useCallback((flowId: string) => {
     const validationError = validateFlowCardLabel(editingFlowLabel, flowId, flowSlots)
@@ -3302,13 +3364,17 @@ export function SnapshotEditorPage() {
   }, [])
 
   const openAssignmentDialog = useCallback((flow: FlowSlot) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setSelectedFlowForAssignment(flow)
     setAssignmentSelectedNodeId('')
     setAssignmentRedundancyEnabled(false)
     setAssignmentDialogOpen(true)
-  }, [])
+  }, [snapshotEditingLocked])
 
   const handleAssignFlow = useCallback(async (nodeId: string, redundancyEnabled: boolean) => {
+    if (snapshotEditingLocked) return
     if (!selectedFlowForAssignment) return
     if (!selectedFlowForAssignment.chainId) {
       pushToast('Assign a chain to this flow first', 'error')
@@ -3341,10 +3407,13 @@ export function SnapshotEditorPage() {
     } finally {
       setIsAssigningFlow(false)
     }
-  }, [selectedFlowForAssignment, closeAssignmentDialog, pushToast, queryClient])
+  }, [selectedFlowForAssignment, closeAssignmentDialog, pushToast, queryClient, snapshotEditingLocked])
 
   // Routing
   const setRoutingMode = useCallback((mode: RoutingMode) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     markSnapshotsDirty()
     setRouting((previous) => {
       const fallbackActiveId = previous.activeSlotId ?? activeFlow?.id ?? flowSlots[0]?.id ?? null
@@ -3368,18 +3437,24 @@ export function SnapshotEditorPage() {
         activeSlotId: fallbackActiveId,
       }
     })
-  }, [activeFlow?.id, flowSlots, markSnapshotsDirty])
+  }, [activeFlow?.id, flowSlots, markSnapshotsDirty, snapshotEditingLocked])
 
   const setBlendPosition = useCallback((slotId: string, position: number) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setRouting(prev => ({
       ...prev,
       blendPositions: { ...prev.blendPositions, [slotId]: position },
     }))
-  }, [])
+  }, [snapshotEditingLocked])
 
   const setMorphProgress = useCallback((progress: number) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setRouting(prev => ({ ...prev, morphProgress: progress }))
-  }, [])
+  }, [snapshotEditingLocked])
 
   // Plugin operations
   const openSelectedBlockEditor = useCallback(() => {
@@ -3431,14 +3506,16 @@ export function SnapshotEditorPage() {
   }, [selectFlowIndex])
 
   const handleToggleBypass = useCallback((uri: string, bypassed: boolean, position: number) => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     bypassMutation.mutate({ chainId: currentChain.id, pluginUri: uri, bypass: bypassed, pluginPosition: position })
-  }, [currentChain, bypassMutation])
+  }, [currentChain, bypassMutation, snapshotEditingLocked])
 
   const handleDeletePlugin = useCallback((uri: string, position?: number) => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri, pluginPosition: position })
-  }, [currentChain, deleteMutation])
+  }, [currentChain, deleteMutation, snapshotEditingLocked])
 
   const handleTabletCanvasEmptyPress = useCallback((flowId: string) => {
     if (!isTabletTouchLayout) {
@@ -3484,6 +3561,9 @@ export function SnapshotEditorPage() {
   }, [tabletFocusedBranchPageCount, tabletFocusedFlow])
 
   const handleTabletAddEffect = useCallback(() => {
+    if (snapshotEditingLocked) {
+      return
+    }
     if (!tabletFocusedFlow || tabletFocusedFlowIndex < 0) {
       return
     }
@@ -3492,7 +3572,7 @@ export function SnapshotEditorPage() {
     setFocusedBranchId(tabletFocusedFlow.id)
     setTabletEditorOpen(false)
     setShowPluginBrowser(true)
-  }, [selectFlowIndex, tabletFocusedFlow, tabletFocusedFlowIndex])
+  }, [selectFlowIndex, snapshotEditingLocked, tabletFocusedFlow, tabletFocusedFlowIndex])
 
   const handleToggleTabletBranchDetails = useCallback((index: number, flowId: string) => {
     selectFlowIndex(index)
@@ -3511,11 +3591,15 @@ export function SnapshotEditorPage() {
   }, [handleDeletePlugin, pendingTabletDeletePlugin])
 
   const handleReorderPlugins = useCallback((pluginOrder: PluginOrderRef[]) => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     reorderMutation.mutate({ chainId: currentChain.id, pluginOrder })
-  }, [currentChain, reorderMutation])
+  }, [currentChain, reorderMutation, snapshotEditingLocked])
 
   const moveSelectedPlugin = useCallback((direction: ReorderDirection) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     if (!currentChain || !selectedPluginUri) {
       return
     }
@@ -3550,24 +3634,31 @@ export function SnapshotEditorPage() {
       chainId: currentChain.id,
       pluginOrder: plugins.map((plugin) => buildPluginOrderRef(plugin)),
     })
-  }, [currentChain, reorderMutation, selectedPluginPosition, selectedPluginUri])
+  }, [currentChain, reorderMutation, selectedPluginPosition, selectedPluginUri, snapshotEditingLocked])
 
   const handleAddPlugin = useCallback(() => {
+    if (snapshotEditingLocked) {
+      return
+    }
     setShowPluginBrowser(true)
-  }, [])
+  }, [snapshotEditingLocked])
 
   const handleAddPluginToCurrentChain = useCallback((pluginUri: string) => {
+    if (snapshotEditingLocked) {
+      return
+    }
     if (!currentChain) {
       pushToast('Select a chain before adding a plugin', 'warn')
       return
     }
     addPluginMutation.mutate({ chainId: currentChain.id, pluginUri })
-  }, [currentChain, addPluginMutation, pushToast])
+  }, [currentChain, addPluginMutation, pushToast, snapshotEditingLocked])
 
   const handleAddPluginDirect = useCallback((uri: string) => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     addPluginMutation.mutate({ chainId: currentChain.id, pluginUri: uri })
-  }, [currentChain, addPluginMutation])
+  }, [currentChain, addPluginMutation, snapshotEditingLocked])
 
   const handleMidiLearnToggle = useCallback(() => {
     if (midiLearnInProgress) {
@@ -3669,6 +3760,7 @@ export function SnapshotEditorPage() {
 
   // Parameter handling
   const handleParameterChange = useCallback((symbol: string, value: number) => {
+    if (snapshotEditingLocked) return
     if (!selectedPluginMeta || !selectedPluginUri) return
     const paramIndex = selectedPluginMeta.parameters.findIndex((p) => p.symbol === symbol)
     if (paramIndex === -1) return
@@ -3713,16 +3805,19 @@ export function SnapshotEditorPage() {
     selectedPluginMeta,
     selectedPluginPosition,
     selectedPluginUri,
+    snapshotEditingLocked,
     startMidiLearnMutation,
   ])
 
   const handleParameterChangeEnd = useCallback(() => {
+    if (snapshotEditingLocked) return
     pluginsApi.flushParameterBatch()
     queryClient.invalidateQueries({ queryKey: ['chains'] })
     markSnapshotsDirty()
-  }, [queryClient, markSnapshotsDirty])
+  }, [queryClient, markSnapshotsDirty, snapshotEditingLocked])
 
   const handleToggleSelectedBypass = useCallback(() => {
+    if (snapshotEditingLocked) return
     if (!selectedPlugin || !currentChain) return
     bypassMutation.mutate({
       chainId: currentChain.id,
@@ -3730,7 +3825,7 @@ export function SnapshotEditorPage() {
       bypass: !selectedPlugin.bypassed,
       pluginPosition: selectedPlugin.position,
     })
-  }, [selectedPlugin, currentChain, bypassMutation])
+  }, [selectedPlugin, currentChain, bypassMutation, snapshotEditingLocked])
 
   // Refresh plugins discovery (force refresh to pick up newly installed plugins)
   const handleRefreshPlugins = useCallback(async () => {
@@ -3792,13 +3887,14 @@ export function SnapshotEditorPage() {
   }, [killLivePathMutation])
 
   const handleToggleChainActive = useCallback(() => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     if (currentChain.is_active) {
       deactivateMutation.mutate(currentChain.id)
     } else {
       activateMutation.mutate(currentChain.id)
     }
-  }, [currentChain, activateMutation, deactivateMutation])
+  }, [currentChain, activateMutation, deactivateMutation, snapshotEditingLocked])
 
   const handleSavePreset = useCallback(() => {
     if (!currentChain) return
@@ -3815,6 +3911,7 @@ export function SnapshotEditorPage() {
   }, [currentChain, savePresetName, savePresetMutation])
 
   const handleDuplicateChain = useCallback(() => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     const newName = `${currentChain.name} Copy`
     chainsApi.create(newName)
@@ -3834,13 +3931,14 @@ export function SnapshotEditorPage() {
         pushToast(`Chain "${newName}" created`, 'success')
       })
       .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
-  }, [currentChain, queryClient, pushToast, markSnapshotsDirty])
+  }, [currentChain, queryClient, pushToast, markSnapshotsDirty, snapshotEditingLocked])
 
   const handleRenameChain = useCallback(() => {
+    if (snapshotEditingLocked) return
     if (!currentChain) return
     setRenameChainName(currentChain.name)
     setShowRenameChainModal(true)
-  }, [currentChain])
+  }, [currentChain, snapshotEditingLocked])
 
   const handleRenameSnapshot = useCallback(() => {
     if (!activeSnapshot) {
@@ -3873,12 +3971,17 @@ export function SnapshotEditorPage() {
   }, [currentChain, renameChainName, renameMutation])
 
   const submitRenameSnapshot = useCallback(() => {
-    const normalizedName = renameSnapshotName.trim()
-    if (!activeSnapshot || !normalizedName || normalizedName === activeSnapshot.name.trim()) {
+    const normalizedName = normalizeSnapshotName(renameSnapshotName)
+    if (
+      !activeSnapshot
+      || !normalizedName
+      || normalizedName === normalizeSnapshotName(activeSnapshot.name)
+      || renameSnapshotError
+    ) {
       return
     }
     renameActiveSnapshotMutation.mutate({ snapshotId: activeSnapshot.id, name: normalizedName })
-  }, [activeSnapshot, renameSnapshotName, renameActiveSnapshotMutation])
+  }, [activeSnapshot, renameSnapshotError, renameSnapshotName, renameActiveSnapshotMutation])
 
   const submitSessionNote = useCallback(() => {
     const normalizedText = sessionNoteDraft.trim()
@@ -3966,10 +4069,23 @@ export function SnapshotEditorPage() {
           kind="secondary"
           className="snapshot-toolbar__button snapshot-toolbar__button--update"
           onClick={() => updateActiveSnapshotMutation.mutate()}
-          disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
+          disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
         >
           {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update'}
         </Button>
+        {activeSnapshot ? (
+          <Button
+            size="sm"
+            kind={snapshotEditingLocked ? 'secondary' : 'ghost'}
+            className="snapshot-toolbar__button"
+            onClick={() => toggleActiveSnapshotLockMutation.mutate()}
+            disabled={toggleActiveSnapshotLockMutation.isPending}
+          >
+            {toggleActiveSnapshotLockMutation.isPending
+              ? (snapshotEditingLocked ? 'Unlocking…' : 'Locking…')
+              : (snapshotEditingLocked ? 'Locked' : 'Lock')}
+          </Button>
+        ) : null}
         {activeSnapshot ? (
           <Button
             size="sm"
@@ -4565,6 +4681,10 @@ export function SnapshotEditorPage() {
       // B = Toggle bypass on selected plugin
       if (e.key === 'b' && selectedPlugin && currentChain) {
         e.preventDefault()
+        if (snapshotEditingLocked) {
+          pushToast('Unlock snapshot before editing it', 'warn')
+          return
+        }
         bypassMutation.mutate({
           chainId: currentChain.id,
           pluginUri: selectedPlugin.uri,
@@ -4576,6 +4696,10 @@ export function SnapshotEditorPage() {
       // Delete/Backspace = Remove selected plugin
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPlugin && currentChain) {
         e.preventDefault()
+        if (snapshotEditingLocked) {
+          pushToast('Unlock snapshot before editing it', 'warn')
+          return
+        }
         deleteMutation.mutate({
           chainId: currentChain.id,
           pluginUri: selectedPlugin.uri,
@@ -4594,6 +4718,10 @@ export function SnapshotEditorPage() {
       // A = Add plugin
       if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
+        if (snapshotEditingLocked) {
+          pushToast('Unlock snapshot before editing it', 'warn')
+          return
+        }
         setShowPluginBrowser(true)
         return
       }
@@ -4639,6 +4767,10 @@ export function SnapshotEditorPage() {
           return
         }
 
+        if (snapshotEditingLocked) {
+          pushToast('Unlock snapshot before editing it', 'warn')
+          return
+        }
         moveSelectedPlugin(e.key === 'ArrowLeft' ? 'left' : 'right')
         return
       }
@@ -4675,7 +4807,8 @@ export function SnapshotEditorPage() {
     flowSlots, showSavePresetModal, showRenameSnapshotModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
     showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
-    handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, setSelectedPluginSelection,
+    handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
+    snapshotEditingLocked,
   ])
 
   // ============================================================================
@@ -4776,6 +4909,7 @@ export function SnapshotEditorPage() {
         currentBranchPage={flowCurrentPage}
         onBranchPageChange={handleTabletBranchPageChange}
         onCanvasEmptyPress={() => handleTabletCanvasEmptyPress(flow.id)}
+        readOnly={snapshotEditingLocked}
       />
     )
 
@@ -4891,6 +5025,7 @@ export function SnapshotEditorPage() {
                       <button
                         type="button"
                         className="juce-grid-page__flow-card-title-button"
+                        disabled={snapshotEditingLocked}
                         onClick={(event) => {
                           event.stopPropagation()
                           beginFlowRename(flow.id, flowLabel)
@@ -4928,6 +5063,7 @@ export function SnapshotEditorPage() {
                     <button
                       type="button"
                       className="juce-grid-page__flow-card-routing-summary"
+                      disabled={snapshotEditingLocked}
                       onClick={() => {
                         selectFlowIndex(index)
                         setPortSelectorFlowIndex(index)
@@ -4969,6 +5105,7 @@ export function SnapshotEditorPage() {
                         kind="ghost"
                         renderIcon={Network_3}
                         onClick={() => openAssignmentDialog(flow)}
+                        disabled={snapshotEditingLocked}
                       >
                         Audio nodes
                       </Button>
@@ -4977,6 +5114,7 @@ export function SnapshotEditorPage() {
                         kind={flow.solo ? 'secondary' : 'ghost'}
                         renderIcon={Headphones}
                         onClick={() => updateFlow(flow.id, { solo: !flow.solo })}
+                        disabled={snapshotEditingLocked}
                       >
                         {flow.solo ? 'Solo on' : 'Solo off'}
                       </Button>
@@ -4985,6 +5123,7 @@ export function SnapshotEditorPage() {
                         kind={flow.muted ? 'secondary' : 'ghost'}
                         renderIcon={flow.muted ? VolumeMute : VolumeUp}
                         onClick={() => updateFlow(flow.id, { muted: !flow.muted })}
+                        disabled={snapshotEditingLocked}
                       >
                         {flow.muted ? 'Muted' : 'Mute'}
                       </Button>
@@ -4998,6 +5137,7 @@ export function SnapshotEditorPage() {
                       value={flow.dryWetMix}
                       accentColor={flow.color}
                       onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
+                      disabled={snapshotEditingLocked}
                     />
                     {pluginCpuSum > 0 && (
                       <Tag type={pluginCpuSum >= 50 ? 'red' : 'blue'}>
@@ -5073,6 +5213,7 @@ export function SnapshotEditorPage() {
                           <button
                             type="button"
                             className="juce-grid-page__flow-card-title-button"
+                            disabled={snapshotEditingLocked}
                             onClick={(event) => {
                               event.stopPropagation()
                               beginFlowRename(flow.id, flowLabel)
@@ -5097,12 +5238,14 @@ export function SnapshotEditorPage() {
                           value={flow.dryWetMix}
                           accentColor={flow.color}
                           onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
+                          disabled={snapshotEditingLocked}
                         />
                       </div>
 
                       <button
                         type="button"
                         className="juce-grid-page__flow-card-meta juce-grid-page__flow-card-meta--inline"
+                        disabled={snapshotEditingLocked}
                         onClick={(event) => {
                           event.stopPropagation()
                           selectFlowIndex(index)
@@ -5142,6 +5285,7 @@ export function SnapshotEditorPage() {
                       <button
                         type="button"
                         className={`juce-grid-page__flow-card-state juce-grid-page__flow-card-state--mute ${flow.muted ? 'is-active' : ''}`}
+                        disabled={snapshotEditingLocked}
                         onClick={(event) => {
                           event.stopPropagation()
                           updateFlow(flow.id, { muted: !flow.muted })
@@ -5155,6 +5299,7 @@ export function SnapshotEditorPage() {
                       <button
                         type="button"
                         className={`juce-grid-page__flow-card-state juce-grid-page__flow-card-state--solo ${flow.solo ? 'is-active' : ''}`}
+                        disabled={snapshotEditingLocked}
                         onClick={(event) => {
                           event.stopPropagation()
                           updateFlow(flow.id, { solo: !flow.solo })
@@ -5171,6 +5316,7 @@ export function SnapshotEditorPage() {
                     <button
                       type="button"
                       className="juce-grid-page__flow-card-assign"
+                      disabled={snapshotEditingLocked}
                       onClick={(event) => {
                         event.stopPropagation()
                         openAssignmentDialog(flow)
@@ -5185,6 +5331,7 @@ export function SnapshotEditorPage() {
                       <button
                         type="button"
                         className="juce-grid-page__flow-card-delete"
+                        disabled={snapshotEditingLocked}
                         onClick={(event) => {
                           event.stopPropagation()
                           removeFlow(flow.id)
@@ -5273,6 +5420,7 @@ export function SnapshotEditorPage() {
         showAddToChain={false}
         compact={isTabletTouchLayout || Boolean(selectedPluginCardStrategy.forceCompact)}
         forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
+        disabled={snapshotEditingLocked}
       />
     ) : (
       <JuceGridParameterEditor
@@ -5284,6 +5432,7 @@ export function SnapshotEditorPage() {
         onRefreshPlugins={handleRefreshPlugins}
         isRefreshing={isRefreshingPlugins}
         touchMode={isTabletTouchLayout}
+        readOnly={snapshotEditingLocked}
       />
     )
   ) : null
@@ -5312,7 +5461,7 @@ export function SnapshotEditorPage() {
         renderIcon={Add}
         className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--add"
         onClick={addFlow}
-        disabled={flowSlots.length >= MAX_FLOWS}
+        disabled={snapshotEditingLocked || flowSlots.length >= MAX_FLOWS}
       />
       <MenuItem
         label="Reset paths"
@@ -5320,7 +5469,7 @@ export function SnapshotEditorPage() {
         renderIcon={TrashCan}
         className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowClearFlowsModal(true)}
-        disabled={flowSlots.length <= 1}
+        disabled={snapshotEditingLocked || flowSlots.length <= 1}
       />
       <MenuItem
         label="Network Routing"
@@ -5339,6 +5488,7 @@ export function SnapshotEditorPage() {
         renderIcon={Flow}
         className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowRoutingTopologyModal(true)}
+        disabled={snapshotEditingLocked}
       />
       <MenuItem
         label="Output Reference"
@@ -5397,6 +5547,7 @@ export function SnapshotEditorPage() {
             selectedChainId={activeFlow?.chainId ?? null}
             onChainSelect={(chainId) => {
               if (!activeFlow) return
+              if (snapshotEditingLocked) return
               updateFlow(activeFlow.id, { chainId })
             }}
             onSelectedChainRemoved={handleChainRemoved}
@@ -5408,6 +5559,7 @@ export function SnapshotEditorPage() {
             pluginMeta={pluginMeta}
             onPluginChipClick={(chainId, pluginUri, pluginPosition) => {
               if (!activeFlow) return
+              if (snapshotEditingLocked && activeFlow.chainId !== chainId) return
               updateFlow(activeFlow.id, { chainId })
               handlePluginSelect(pluginUri, pluginPosition)
             }}
@@ -5427,6 +5579,13 @@ export function SnapshotEditorPage() {
               })
             }}
             snapshotFavoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
+            onToggleSnapshotLock={() => {
+              if (!activeSnapshot) {
+                return
+              }
+              toggleActiveSnapshotLockMutation.mutate()
+            }}
+            snapshotLockPending={toggleActiveSnapshotLockMutation.isPending}
             onSubmitSnapshotDescription={(description) => {
               if (!activeSnapshot) {
                 return
@@ -5636,6 +5795,7 @@ export function SnapshotEditorPage() {
                     kind="tertiary"
                     renderIcon={Flow}
                     onClick={() => setShowRoutingTopologyModal(true)}
+                    disabled={snapshotEditingLocked}
                   >
                     Configure routing
                   </Button>
@@ -5695,7 +5855,7 @@ export function SnapshotEditorPage() {
                 </div>
               </div>
               <div className="juce-grid-page__bottom-editor-actions">
-                {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen })}
+                {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen || snapshotEditingLocked })}
                 <Button
                   size="sm"
                   kind="ghost"
@@ -5775,7 +5935,7 @@ export function SnapshotEditorPage() {
                 renderIcon={Renew}
                 className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--update"
                 onClick={() => updateActiveSnapshotMutation.mutate()}
-                disabled={!activeSnapshot || updateActiveSnapshotMutation.isPending}
+                disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
               >
                 {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
               </Button>
@@ -5788,7 +5948,7 @@ export function SnapshotEditorPage() {
                 kind="primary"
                 renderIcon={selectedPlugin ? Launch : Add}
                 onClick={selectedPlugin ? openSelectedBlockEditor : handleTabletAddEffect}
-                disabled={selectedPlugin ? false : !tabletFocusedFlow}
+                disabled={selectedPlugin ? false : !tabletFocusedFlow || snapshotEditingLocked}
                 aria-label={selectedPlugin ? 'Open editor' : 'Add effect'}
                 aria-controls={selectedPlugin ? 'juce-grid-tablet-editor-panel' : undefined}
                 aria-expanded={selectedPlugin ? tabletEditorVisible : undefined}
@@ -5798,7 +5958,7 @@ export function SnapshotEditorPage() {
             </div>
 
             <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--right">
-              {renderSelectedBlockNavBar({ disabled: !selectedPlugin })}
+              {renderSelectedBlockNavBar({ disabled: !selectedPlugin || snapshotEditingLocked })}
               <div className="juce-grid-page__tablet-launcher-pager" aria-label="Branch page controls">
                 <Button
                   hasIconOnly
@@ -5832,6 +5992,7 @@ export function SnapshotEditorPage() {
                   <OverflowMenuItem
                     itemText={selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
                     onClick={handleToggleSelectedBypass}
+                    disabled={snapshotEditingLocked}
                   />
                   <OverflowMenuItem
                     itemText="Clear selection"
@@ -5843,6 +6004,7 @@ export function SnapshotEditorPage() {
                   <OverflowMenuItem
                     itemText="Remove block"
                     isDelete
+                    disabled={snapshotEditingLocked}
                     onClick={() => setPendingTabletDeletePlugin({
                       uri: selectedPlugin.uri,
                       position: selectedPlugin.position,
@@ -6006,8 +6168,8 @@ export function SnapshotEditorPage() {
           secondaryButtonText="Cancel"
           primaryButtonDisabled={
             !activeSnapshot
-            || renameSnapshotName.trim().length === 0
-            || renameSnapshotName.trim() === activeSnapshot.name.trim()
+            || renameSnapshotError !== null
+            || normalizeSnapshotName(renameSnapshotName) === normalizeSnapshotName(activeSnapshot.name)
             || renameActiveSnapshotMutation.isPending
           }
           onRequestClose={() => {
@@ -6030,6 +6192,8 @@ export function SnapshotEditorPage() {
               labelText="Snapshot name"
               value={renameSnapshotName}
               onChange={(event) => setRenameSnapshotName(event.target.value)}
+              invalid={Boolean(renameSnapshotError)}
+              invalidText={renameSnapshotError ?? undefined}
               placeholder="Snapshot name"
             />
           </div>
@@ -6314,7 +6478,7 @@ export function SnapshotEditorPage() {
                                     size="sm"
                                     kind="primary"
                                     onClick={() => handleAddPluginToCurrentChain(plugin.uri)}
-                                    disabled={!currentChain}
+                                    disabled={!currentChain || snapshotEditingLocked}
                                   >
                                     Add
                                   </Button>
@@ -6367,7 +6531,7 @@ export function SnapshotEditorPage() {
                               size="sm"
                               kind="primary"
                               onClick={() => handleAddPluginToCurrentChain(plugin.uri)}
-                              disabled={!currentChain}
+                              disabled={!currentChain || snapshotEditingLocked}
                             >
                               Add
                             </Button>
@@ -6450,7 +6614,7 @@ export function SnapshotEditorPage() {
                                       size="sm"
                                       kind="primary"
                                       onClick={() => handleAddPluginToCurrentChain(plugin.uri)}
-                                      disabled={!currentChain}
+                                      disabled={!currentChain || snapshotEditingLocked}
                                     >
                                       Add
                                     </Button>
@@ -6855,6 +7019,7 @@ export function SnapshotEditorPage() {
         chainId={portSelectorFlowIndex !== null ? flowSlots[portSelectorFlowIndex]?.chainId : null}
         flowLabel={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.label || '') : undefined}
         flowColor={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#2563eb') : undefined}
+        readOnly={snapshotEditingLocked}
         onPortsChange={() => {
           queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
           const label = portSelectorFlowIndex !== null ? SLOT_COLORS[portSelectorFlowIndex]?.label : ''
@@ -6902,6 +7067,7 @@ export function SnapshotEditorPage() {
       <RoutingTopologyModal
         open={showRoutingTopologyModal}
         onClose={() => setShowRoutingTopologyModal(false)}
+        readOnly={snapshotEditingLocked}
         routingMode={routing.mode}
         morphProgress={routing.morphProgress}
         activeFlowIndex={activeFlowIndex}

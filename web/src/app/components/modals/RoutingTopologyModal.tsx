@@ -102,6 +102,7 @@ export interface RoutingTopologyModalProps {
   onOpenAssignFlow: (flowId: string) => void
   /** Active flow index so Actions panel knows which flow to target */
   activeFlowId: string | null
+  readOnly?: boolean
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -253,6 +254,7 @@ export function RoutingTopologyModal({
   onOpenPortRouting,
   onOpenAssignFlow,
   activeFlowId,
+  readOnly = false,
 }: RoutingTopologyModalProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState(0)
@@ -419,6 +421,7 @@ export function RoutingTopologyModal({
                 size="sm"
                 kind={routingMode === option.id ? 'secondary' : 'ghost'}
                 onClick={() => onSetRoutingMode(option.id)}
+                disabled={readOnly}
               >
                 {option.label}
               </Button>
@@ -438,6 +441,7 @@ export function RoutingTopologyModal({
                 kind={btn.active ? 'secondary' : 'ghost'}
                 className="rtm__focus-button"
                 onClick={() => onSelectFlowIndex(index)}
+                disabled={readOnly}
               >
                 <span className="rtm__focus-button-copy">
                   <span className="rtm__focus-button-title">{btn.title}</span>
@@ -464,6 +468,7 @@ export function RoutingTopologyModal({
                 const n = typeof value === 'number' ? value : Number(value)
                 if (!Number.isNaN(n)) onSetMorphProgress(n / 100)
               }}
+              disabled={readOnly}
             />
           </Tile>
         )}
@@ -478,6 +483,7 @@ export function RoutingTopologyModal({
               kind="ghost"
               renderIcon={Launch}
               onClick={() => onOpenPortRouting(activeFlowIndex)}
+              disabled={readOnly}
             >
               Route ports
             </Button>
@@ -485,7 +491,7 @@ export function RoutingTopologyModal({
               size="sm"
               kind="ghost"
               renderIcon={Branch}
-              disabled={!activeFlow}
+              disabled={readOnly || !activeFlow}
               onClick={() => activeFlow && onOpenAssignFlow(activeFlow.id)}
             >
               Assign flow
@@ -562,6 +568,7 @@ export function RoutingTopologyModal({
             const isDeleting = deletingIds.has(target.id)
             const isAssigned = draft.existingId !== null
             const isBusy = isSaving || isDeleting
+            const controlsDisabled = readOnly || isBusy
 
             // Build a fake MIDIMappingV2-like object for MidiCcBadge (reuse display)
             const badgeMapping: MIDIMappingV2 | null = isAssigned
@@ -616,7 +623,7 @@ export function RoutingTopologyModal({
                     size="sm"
                     value={draft.triggerType}
                     onChange={(e) => updateDraft(target.id, { triggerType: e.target.value as MIDITriggerType })}
-                    disabled={isBusy}
+                    disabled={controlsDisabled}
                   >
                     {TRIGGER_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value} text={opt.label} />
@@ -633,7 +640,7 @@ export function RoutingTopologyModal({
                     size="sm"
                     value={String(draft.channel)}
                     onChange={(e) => updateDraft(target.id, { channel: Number(e.target.value) })}
-                    disabled={isBusy}
+                    disabled={controlsDisabled}
                   >
                     {CHANNEL_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={String(opt.value)} text={opt.label} />
@@ -656,7 +663,7 @@ export function RoutingTopologyModal({
                       const n = typeof value === 'number' ? value : Number(value)
                       if (!Number.isNaN(n)) updateDraft(target.id, { data1: n })
                     }}
-                    disabled={isBusy}
+                    disabled={controlsDisabled}
                   />
                 </div>
 
@@ -669,7 +676,7 @@ export function RoutingTopologyModal({
                     size="sm"
                     toggled={draft.isEnabled}
                     onToggle={(checked) => updateDraft(target.id, { isEnabled: checked })}
-                    disabled={isBusy}
+                    disabled={controlsDisabled}
                   />
                 </div>
 
@@ -691,7 +698,7 @@ export function RoutingTopologyModal({
                   <Button
                     size="sm"
                     kind={draft.isDirty ? 'primary' : 'ghost'}
-                    disabled={isBusy || !draft.isDirty}
+                    disabled={controlsDisabled || !draft.isDirty}
                     onClick={() => saveDraft(target.id)}
                   >
                     Save
@@ -700,7 +707,7 @@ export function RoutingTopologyModal({
                     <Button
                       size="sm"
                       kind="danger--ghost"
-                      disabled={isBusy}
+                      disabled={controlsDisabled}
                       onClick={() => deleteDraft(target.id)}
                     >
                       Remove

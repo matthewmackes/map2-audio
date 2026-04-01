@@ -87,4 +87,24 @@ describe('SnapshotEditorSignalCanvas', () => {
 
     expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: #ff7eb6')
   })
+
+  it('hides destructive editing affordances when the canvas is read-only', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false)}
+        pluginMeta={pluginMeta}
+        selectedPluginUri="plugin://drive"
+        selectedPluginPosition={0}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onDeletePlugin={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        readOnly
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Add effect' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
+  })
 })

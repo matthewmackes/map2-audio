@@ -89,4 +89,43 @@ describe('SnapshotEditorParameterEditor IR waveform preview', () => {
     expect(screen.getByText('No WAV impulse loaded for this block yet.')).toBeInTheDocument()
     expect(mockGetWaveformPreview).not.toHaveBeenCalled()
   })
+
+  it('disables numeric parameter editing when read-only', () => {
+    render(
+      <JuceGridParameterEditor
+        plugin={{
+          uri: 'plugin://drive',
+          name: 'Drive',
+          position: 0,
+          parameters: {
+            drive: 0.5,
+          },
+          bypassed: false,
+        } as any}
+        meta={{
+          uri: 'plugin://drive',
+          name: 'Drive',
+          category: 'Drive',
+          format: 'LV2',
+          parameters: [
+            {
+              index: 0,
+              symbol: 'drive',
+              name: 'Drive',
+              min: 0,
+              max: 1,
+              default: 0.5,
+              value: 0.5,
+              is_log: false,
+              is_toggled: false,
+            },
+          ],
+        } as any}
+        onParameterChange={jest.fn()}
+        readOnly
+      />,
+    )
+
+    expect(screen.getByLabelText('Drive')).toBeDisabled()
+  })
 })

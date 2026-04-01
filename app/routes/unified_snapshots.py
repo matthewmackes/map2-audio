@@ -107,6 +107,7 @@ class SnapshotCreateRequest(BaseModel):
     output_level_warning_threshold_db: Optional[float] = 3.0
     input_device: Optional[str] = None
     output_device: Optional[str] = None
+    is_locked: bool = False
     io_bindings: Optional[SnapshotIOBindingsInput] = None
     controls: Optional[SnapshotControlsInput] = None
     paths: Optional[list[SnapshotPathInput]] = None
@@ -134,6 +135,7 @@ class SnapshotUpdateRequest(BaseModel):
     paths: Optional[list[SnapshotPathInput]] = None
     display_order: Optional[int] = None
     is_favorite: Optional[bool] = None
+    is_locked: Optional[bool] = None
     channels: Optional[list[SnapshotChannelInput]] = None
     chains: Optional[list[SnapshotChainInput]] = None
     routing: Optional[SnapshotRoutingInput] = None
@@ -526,6 +528,7 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
                 output_device=_resolve_output_device(request),
                 controls_payload=_controls_payload_from_request(request),
                 detail_payload=_detail_payload_from_request(request),
+                is_locked=request.is_locked,
             )
             return {
                 "status": "success",
@@ -561,6 +564,7 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 output_device=_resolve_output_device(request) if "output_device" in provided or "io_bindings" in provided else UNSET,
                 controls_payload=_controls_payload_from_request(request) if "controls" in provided else UNSET,
                 is_favorite=request.is_favorite if "is_favorite" in provided else UNSET,
+                is_locked=request.is_locked if "is_locked" in provided else UNSET,
                 display_order=request.display_order if "display_order" in provided else UNSET,
                 detail_payload=detail_payload,
                 create_revision=request.create_revision,

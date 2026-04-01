@@ -32,6 +32,8 @@ interface SnapshotChainManagementCardProps {
   snapshotRenamePending?: boolean
   onToggleSnapshotFavorite?: () => void
   snapshotFavoritePending?: boolean
+  onToggleSnapshotLock?: () => void
+  snapshotLockPending?: boolean
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
@@ -413,6 +415,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotRenamePending = false,
     onToggleSnapshotFavorite,
     snapshotFavoritePending = false,
+    onToggleSnapshotLock,
+    snapshotLockPending = false,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
@@ -440,6 +444,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const activeTempoBpm = liveSnapshot?.active_tempo_bpm ?? storedTempoBpm
   const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
   const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
+  const snapshotLocked = Boolean(liveSnapshot?.is_locked)
   const tempoStatusText = liveTapOverrideActive
     ? `Active ${formatTempoBpm(activeTempoBpm)} via MIDI tap`
     : `Active ${formatTempoBpm(activeTempoBpm)} • Stored tempo`
@@ -503,7 +508,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     valueFormatter={(value) => value.toFixed(1)}
                     onChange={setTempoDraftValue}
                     onChangeCommitted={(value) => onSubmitTempoBpm?.(value)}
-                    disabled={!onSubmitTempoBpm || tempoPending}
+                    disabled={!onSubmitTempoBpm || tempoPending || snapshotLocked}
                     size="small"
                     showBounds={false}
                     accentColor="#42be65"
@@ -566,7 +571,20 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                       : (liveSnapshot.is_favorite ? 'Favorited' : 'Favorite')}
                   </Button>
                 ) : null}
+                {liveSnapshot && onToggleSnapshotLock ? (
+                  <Button
+                    size="sm"
+                    kind={snapshotLocked ? 'secondary' : 'ghost'}
+                    onClick={onToggleSnapshotLock}
+                    disabled={snapshotLockPending}
+                  >
+                    {snapshotLockPending
+                      ? (snapshotLocked ? 'Unlocking…' : 'Locking…')
+                      : (snapshotLocked ? 'Locked' : 'Lock')}
+                  </Button>
+                ) : null}
               </div>
+              {snapshotLocked ? <Tag type="warm-gray">Locked</Tag> : null}
               {liveSnapshot && onSubmitSnapshotDescription ? (
                 editingDescription ? (
                   <textarea

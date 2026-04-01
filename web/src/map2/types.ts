@@ -2315,6 +2315,7 @@ export interface SnapshotSummary {
   output_device: string | null;
   is_active: boolean;
   is_favorite: boolean;
+  is_locked?: boolean;
   display_order: number;
   channels: Array<Pick<SnapshotChannel, 'id' | 'channel_key' | 'label' | 'color' | 'chain_id'>>;
   channel_count: number;
@@ -2439,6 +2440,7 @@ export interface FlowSnapshot {
   program_number: number | null;
   is_active: boolean;
   is_favorite: boolean;
+  is_locked?: boolean;
   display_order: number;
   flow_slots: FlowSlotSummary[];
   created_at: string;

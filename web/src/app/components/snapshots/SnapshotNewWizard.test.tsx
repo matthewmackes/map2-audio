@@ -25,8 +25,8 @@ function renderWizard(props: Partial<React.ComponentProps<typeof SnapshotNewWiza
   render(
     <QueryClientProvider client={queryClient}>
       <SnapshotNewWizard
-        existingSnapshotNames={['Existing Snapshot']}
-        initialName="Snapshot 2"
+        existingSnapshotNames={['ExistingSnapshot']}
+        initialName="Snapshot2"
         onSubmit={onSubmit}
         onCancel={onCancel}
         {...props}
@@ -56,26 +56,22 @@ describe('SnapshotNewWizard', () => {
     expect(screen.getByText('Step 1 of 4')).toBeTruthy()
   })
 
-  it('validates empty, long, special-character, and duplicate names', async () => {
+  it('validates empty, special-character, and duplicate names', async () => {
     renderWizard({ initialName: '' })
 
     expect((await screen.findByRole('button', { name: 'Next' })).hasAttribute('disabled')).toBe(true)
 
-    fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: '123456789012345678901' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(await screen.findByText('Name must be 20 characters or fewer.')).toBeTruthy()
-
     fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Bad!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(await screen.findByText('Use letters, numbers, spaces, and hyphens only.')).toBeTruthy()
+    expect(await screen.findByText('Use letters and numbers only. Spaces and special characters are not allowed.')).toBeTruthy()
 
-    fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Existing Snapshot' } })
+    fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'ExistingSnapshot' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('A snapshot with that name already exists.')).toBeTruthy()
   })
 
   it('supports back and next navigation across the four steps', async () => {
-    renderWizard({ initialName: 'Fresh Snapshot' })
+    renderWizard({ initialName: 'FreshSnapshot' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Choose a routing mode')).toBeTruthy()
@@ -89,7 +85,7 @@ describe('SnapshotNewWizard', () => {
 
   it('lets device steps continue when no devices are available', async () => {
     mockGetDevices.mockResolvedValueOnce({ devices: [] })
-    renderWizard({ initialName: 'Fresh Snapshot' })
+    renderWizard({ initialName: 'FreshSnapshot' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
@@ -100,7 +96,7 @@ describe('SnapshotNewWizard', () => {
   })
 
   it('submits the selected values after the final step', async () => {
-    const { onSubmit } = renderWizard({ initialName: 'Fresh Snapshot' })
+    const { onSubmit } = renderWizard({ initialName: 'FreshSnapshot' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
     fireEvent.click(screen.getByLabelText('Morph'))
@@ -116,7 +112,7 @@ describe('SnapshotNewWizard', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
-        name: 'Fresh Snapshot',
+        name: 'FreshSnapshot',
         routingMode: 'morph',
         inputDevice: 'Output Beta',
         outputDevice: 'Input Alpha',

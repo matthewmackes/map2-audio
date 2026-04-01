@@ -47,7 +47,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             service = SnapshotService(session)
 
             created = await service.create_snapshot(
-                name="Unified Snapshot",
+                name="UnifiedSnapshot",
                 description="Service test",
                 tags=["service"],
                 program_number=10,
@@ -100,7 +100,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 },
             )
 
-            assert created["name"] == "Unified Snapshot"
+            assert created["name"] == "UnifiedSnapshot"
             assert created["channel_count"] == 1
             assert created["chain_count"] == 1
             assert created["routing"]["mode"] == "parallel_blend"
@@ -207,22 +207,32 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activation_events[0]["snapshot_id"] == created["id"]
             assert activation_events[0]["outcome"] == "success"
 
-            saved_as_new = await service.save_snapshot_as_new(created["id"], name="Unified Snapshot v2")
+            locked = await service.update_snapshot(created["id"], is_locked=True)
+            assert locked is not None
+            assert locked["is_locked"] is True
+
+            duplicate = await service.duplicate_snapshot(created["id"])
+            assert duplicate is not None
+            assert duplicate["name"] == "UnifiedSnapshotCopy"
+            assert duplicate["is_locked"] is False
+
+            saved_as_new = await service.save_snapshot_as_new(created["id"], name="UnifiedSnapshotV2")
             assert saved_as_new is not None
-            assert saved_as_new["name"] == "Unified Snapshot v2"
+            assert saved_as_new["name"] == "UnifiedSnapshotV2"
             assert saved_as_new["program_number"] is None
             assert saved_as_new["lineage"]["derived_from_snapshot_id"] == created["id"]
             assert saved_as_new["controls"]["midi_map"][0]["program_number"] == 10
             assert saved_as_new["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
+            assert saved_as_new["is_locked"] is False
 
             exported = await service.export_snapshot(created["id"])
             assert exported is not None
-            assert exported["snapshot"]["name"] == "Unified Snapshot"
+            assert exported["snapshot"]["name"] == "UnifiedSnapshot"
 
             imported = await service.import_snapshot(
                 {
                     "snapshot": {
-                        "name": "Imported Placeholder Snapshot",
+                        "name": "ImportedPlaceholderSnapshot",
                         "description": "Import",
                         "tags": ["imported"],
                         "channels": [
@@ -266,16 +276,18 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             await service.update_snapshot(imported["id"], is_favorite=True, display_order=5)
 
             listed = await service.list_snapshots()
-            assert len(listed) == 3
+            assert len(listed) == 4
             assert [item["name"] for item in listed] == [
-                "Unified Snapshot v2",
-                "Imported Placeholder Snapshot",
-                "Unified Snapshot",
+                "UnifiedSnapshotV2",
+                "ImportedPlaceholderSnapshot",
+                "UnifiedSnapshot",
+                "UnifiedSnapshotCopy",
             ]
             assert listed[0]["is_favorite"] is True
             assert listed[1]["is_favorite"] is True
             assert listed[2]["is_favorite"] is False
-            summary = next(item for item in listed if item["name"] == "Unified Snapshot")
+            assert listed[3]["is_favorite"] is False
+            summary = next(item for item in listed if item["name"] == "UnifiedSnapshot")
             assert summary["input_device"] == "Capture 2"
             assert summary["output_device"] is None
             assert summary["io_bindings"]["input_device"] == "Capture 2"
@@ -286,6 +298,32 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert by_program["id"] == created["id"]
             assert by_program["input_device"] == "Capture 2"
             assert by_program["output_device"] is None
+
+    asyncio.run(_run())
+
+
+def test_snapshot_service_rejects_invalid_names(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            try:
+                await service.create_snapshot(name="Invalid Snapshot")
+            except ValueError as exc:
+                assert str(exc) == "Snapshot names may only contain letters and numbers, with no spaces or special characters."
+            else:
+                raise AssertionError("Invalid snapshot create name should fail")
+
+            created = await service.create_snapshot(name="ValidSnapshot")
+
+            try:
+                await service.update_snapshot(created["id"], name="Still Invalid")
+            except ValueError as exc:
+                assert str(exc) == "Snapshot names may only contain letters and numbers, with no spaces or special characters."
+            else:
+                raise AssertionError("Invalid snapshot rename should fail")
 
     asyncio.run(_run())
 
@@ -315,7 +353,7 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
             chain_service = ChainService(session)
 
             created = await snapshot_service.create_snapshot(
-                name="Killable Snapshot",
+                name="KillableSnapshot",
                 detail_payload={
                     "channels": [
                         {
@@ -384,7 +422,7 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
             service = SnapshotService(session)
 
             created = await service.create_snapshot(
-                name="Revision Snapshot",
+                name="RevisionSnapshot",
                 detail_payload={
                     "channels": [
                         {

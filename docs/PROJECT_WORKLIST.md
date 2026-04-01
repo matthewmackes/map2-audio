@@ -797,7 +797,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T636
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Lock + Name Validation (Letters and Numbers Only, No Spaces)
 Description:
 - Goal / acceptance criteria: (A) Snapshot Lock: any snapshot can be marked as "locked" via a lock/unlock toggle in the editor (also in the floating toolbar T642). While locked, all parameter controls, block cards, chain editing, and routing controls in the editor are read-only. The snapshot can still be activated (Go Live) and played normally. Unlocking requires one explicit click on the lock button — no confirmation dialog. (B) Name Validation: snapshot names accept only letters (a–z, A–Z) and numbers (0–9). No spaces, no special characters, no underscores. Enforced inline at the UI input (error shown before save attempt) and at the API level (400 response with clear error message if violated). Applied consistently everywhere snapshot names are entered: create, rename, duplicate.
@@ -805,7 +805,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: is_locked field in snapshot data model, lock/unlock toggle in editor hero and floating toolbar, read-only enforcement across all editor controls when locked, name validation regex in React form inputs and FastAPI Pydantic model, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 15:34 - Codex
+- Completion notes:
+  - Added `is_locked` persistence and additive schema migration coverage in the snapshot model/service/API contract, including duplicate/save-as-new behavior that always unlocks the derived snapshot.
+  - Wired the Snapshot Editor hero, floating toolbar, signal canvas, parameter editor, routing topology modal, audio-port modal, and custom plugin-card router to honor the live snapshot lock as a read-only gate.
+  - Centralized snapshot-name validation/defaulting in shared frontend and backend helpers, then updated create/rename/duplicate flows and regression fixtures to use the alphanumeric-only rule consistently.
+- Validation: `npm --prefix web run typecheck` -> PASS; `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py -q` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx web/src/app/components/SnapshotEditor/SnapshotEditorParameterEditor.test.tsx web/src/app/components/snapshots/SnapshotNewWizard.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T635
 Status: [✓] Done

@@ -23,6 +23,7 @@ import {
 export interface JuceGridAudioPortModalProps {
   open: boolean
   onClose: () => void
+  readOnly?: boolean
   onPortsChange?: (
     inputPorts: number[],
     outputPorts: number[],
@@ -77,6 +78,7 @@ function formatChannelSummary(ports: number[], avbEndpoints: string[]) {
 export function JuceGridAudioPortModal({
   open,
   onClose,
+  readOnly = false,
   onPortsChange,
   chainId,
   flowLabel,
@@ -206,6 +208,9 @@ export function JuceGridAudioPortModal({
   const outputGroups = useMemo(() => groupPorts(outputPorts), [outputPorts])
 
   const togglePort = useCallback((type: PortTabId, index: number) => {
+    if (readOnly) {
+      return
+    }
     const setter = type === 'input' ? setSelectedInputs : setSelectedOutputs
     const ports = type === 'input' ? inputPorts : outputPorts
 
@@ -230,9 +235,12 @@ export function JuceGridAudioPortModal({
       }
       return [...new Set(next)].sort((left, right) => left - right)
     })
-  }, [allowMultiSelect, inputPorts, linkStereo, outputPorts])
+  }, [allowMultiSelect, inputPorts, linkStereo, outputPorts, readOnly])
 
   const toggleAvbEndpoint = useCallback((type: PortTabId, endpointId: string) => {
+    if (readOnly) {
+      return
+    }
     if (type === 'input') {
       setSelectedInputAvbEndpoints((previous) => (
         previous.includes(endpointId)
@@ -247,16 +255,22 @@ export function JuceGridAudioPortModal({
         ? previous.filter((id) => id !== endpointId)
         : allowMultiSelect ? [...previous, endpointId] : [endpointId]
     ))
-  }, [allowMultiSelect])
+  }, [allowMultiSelect, readOnly])
 
   const applyPreset = useCallback((preset: AudioPortPreset) => {
+    if (readOnly) {
+      return
+    }
     setSelectedInputs(preset.input_ports)
     setSelectedOutputs(preset.output_ports)
     setSelectedInputAvbEndpoints([])
     setSelectedOutputAvbEndpoints([])
-  }, [])
+  }, [readOnly])
 
   const handleApply = useCallback(() => {
+    if (readOnly) {
+      return
+    }
     const mutation = isPerChain ? chainRoutingMutation : globalRoutingMutation
     mutation.mutate({
       inputPorts: selectedInputs,
@@ -281,9 +295,13 @@ export function JuceGridAudioPortModal({
     selectedInputs,
     selectedOutputAvbEndpoints,
     selectedOutputs,
+    readOnly,
   ])
 
   const handleRevertToGlobal = useCallback(() => {
+    if (readOnly) {
+      return
+    }
     clearChainRoutingMutation.mutate()
     if (routingQuery.data) {
       setSelectedInputs(routingQuery.data.input_ports)
@@ -291,7 +309,7 @@ export function JuceGridAudioPortModal({
       setSelectedInputAvbEndpoints(routingQuery.data.input_avb_endpoints || [])
       setSelectedOutputAvbEndpoints(routingQuery.data.output_avb_endpoints || [])
     }
-  }, [clearChainRoutingMutation, routingQuery.data])
+  }, [clearChainRoutingMutation, readOnly, routingQuery.data])
 
   const isPending = globalRoutingMutation.isPending || chainRoutingMutation.isPending
   const hasAnySelection = (
@@ -329,6 +347,7 @@ export function JuceGridAudioPortModal({
                     type="button"
                     className={`juce-grid-page__port-card ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => togglePort(type, port.index)}
+                    disabled={readOnly}
                   >
                     <span className="juce-grid-page__port-card-index">
                       {isSelected ? <CheckmarkFilled size={16} /> : port.index + 1}
@@ -384,7 +403,7 @@ export function JuceGridAudioPortModal({
                   type="button"
                   className={`juce-grid-page__port-card juce-grid-page__port-card--endpoint ${isSelected ? 'is-selected' : ''}`}
                   onClick={() => toggleAvbEndpoint(type, endpoint.endpoint_id)}
-                  disabled={!endpoint.available}
+                  disabled={readOnly || !endpoint.available}
                 >
                   <span className="juce-grid-page__port-card-index">
                     {isSelected ? <CheckmarkFilled size={16} /> : <VolumeUp size={16} />}
@@ -427,7 +446,7 @@ export function JuceGridAudioPortModal({
       modalLabel={flowLabel ? `Flow ${flowLabel}` : deviceName}
       primaryButtonText={isPending ? 'Applying...' : isPerChain ? `Apply to Flow ${flowLabel || ''}` : 'Apply'}
       secondaryButtonText="Cancel"
-      primaryButtonDisabled={!hasAnySelection || isPending || portsQuery.isLoading || routingQuery.isLoading}
+      primaryButtonDisabled={readOnly || !hasAnySelection || isPending || portsQuery.isLoading || routingQuery.isLoading}
       onRequestClose={onClose}
       onRequestSubmit={handleApply}
     >
@@ -464,16 +483,18 @@ export function JuceGridAudioPortModal({
             labelText="Multi-select assignments"
             checked={allowMultiSelect}
             onChange={(_, data) => setAllowMultiSelect(Boolean(data.checked))}
+            disabled={readOnly}
           />
           <Checkbox
             id="juce-grid-port-link-stereo"
             labelText="Link stereo pairs"
             checked={linkStereo}
             onChange={(_, data) => setLinkStereo(Boolean(data.checked))}
+            disabled={readOnly}
           />
           <div className="juce-grid-page__port-toolbar-actions">
             {hasOverride && (
-              <Button size="sm" kind="ghost" renderIcon={Renew} onClick={handleRevertToGlobal}>
+              <Button size="sm" kind="ghost" renderIcon={Renew} onClick={handleRevertToGlobal} disabled={readOnly}>
                 Revert to global
               </Button>
             )}
@@ -492,6 +513,7 @@ export function JuceGridAudioPortModal({
                   renderIcon={Flash}
                   iconDescription={preset.name}
                   onClick={() => applyPreset(preset)}
+                  disabled={readOnly}
                 >
                   {preset.name}
                 </Button>

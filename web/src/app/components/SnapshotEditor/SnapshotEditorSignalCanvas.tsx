@@ -62,6 +62,7 @@ export interface JuceGridSignalCanvasProps {
   currentBranchPage?: number
   onBranchPageChange?: (branchId: string, nextPage: number) => void
   onCanvasEmptyPress?: () => void
+  readOnly?: boolean
 }
 
 export interface JuceGridSignalAutomationSummary {
@@ -412,6 +413,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   currentBranchPage = 0,
   onBranchPageChange,
   onCanvasEmptyPress,
+  readOnly = false,
 }: JuceGridSignalCanvasProps) {
   const [draggedPlugin, setDraggedPlugin] = useState<DraggedPluginRef>(null)
   const [dragOverPlugin, setDragOverPlugin] = useState<DraggedPluginRef>(null)
@@ -517,11 +519,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   const signalRows = useMemo(
     () => buildSignalGridRows(
       pagedPlugins,
-      tabletMode ? false : (showAddPluginSlot ?? Boolean(onAddPlugin)),
+      tabletMode ? false : (showAddPluginSlot ?? Boolean(onAddPlugin)) && !readOnly,
       tabletMode ? TABLET_BRANCH_ROW_CAPACITY : rowCapacity,
       !tabletMode,
     ),
-    [onAddPlugin, pagedPlugins, rowCapacity, showAddPluginSlot, tabletMode],
+    [onAddPlugin, pagedPlugins, readOnly, rowCapacity, showAddPluginSlot, tabletMode],
   )
 
   const isSelectedPlugin = useCallback((plugin: ChainPlugin | undefined) => {
@@ -538,7 +540,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   }, [selectedPluginPosition, selectedPluginUri])
 
   const handleDrop = useCallback((targetPlugin: ChainPlugin) => {
-    if (!chain || !draggedPlugin || samePluginIdentity(draggedPlugin, targetPlugin)) {
+    if (readOnly || !chain || !draggedPlugin || samePluginIdentity(draggedPlugin, targetPlugin)) {
       setDraggedPlugin(null)
       setDragOverPlugin(null)
       return
@@ -558,7 +560,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
     onReorderPlugins(next.map((plugin) => buildPluginOrderRef(plugin)))
     setDraggedPlugin(null)
     setDragOverPlugin(null)
-  }, [chain, draggedPlugin, onReorderPlugins])
+  }, [chain, draggedPlugin, onReorderPlugins, readOnly])
 
   const stopPluginCardEvent = useCallback((event: SyntheticEvent) => {
     event.stopPropagation()
@@ -617,6 +619,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 iconDescription={`Configure ${side} routing`}
                 onClick={onSelectPorts}
                 className="juce-grid-page__signal-rail-config"
+                disabled={readOnly}
               />
             )}
           </div>
@@ -764,7 +767,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               aria-pressed={isSelected}
                               role="button"
                               tabIndex={0}
-                              draggable={!tabletMode}
+                              draggable={!tabletMode && !readOnly}
                               onClick={(event) => {
                                 event.stopPropagation()
                                 onPluginSelect(plugin.uri, plugin.position)
@@ -777,20 +780,20 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 }
                               }}
                               onDragStart={() => {
-                                if (tabletMode) {
+                                if (tabletMode || readOnly) {
                                   return
                                 }
                                 setDraggedPlugin(buildPluginOrderRef(plugin))
                               }}
                               onDragOver={(event) => {
-                                if (tabletMode) {
+                                if (tabletMode || readOnly) {
                                   return
                                 }
                                 event.preventDefault()
                                 setDragOverPlugin(buildPluginOrderRef(plugin))
                               }}
                               onDrop={() => {
-                                if (tabletMode) {
+                                if (tabletMode || readOnly) {
                                   return
                                 }
                                 handleDrop(plugin)
@@ -802,7 +805,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
                             >
                               <div className="juce-grid-page__signal-plugin-face">
-                                {isSelected && onDeletePlugin && (
+                                {isSelected && onDeletePlugin && !readOnly && (
                                   <div
                                     className="juce-grid-page__signal-plugin-actions"
                                     data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
@@ -849,6 +852,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               onAddPlugin?.()
                             }}
                             aria-label="Add effect"
+                            disabled={readOnly}
                           >
                             <span className="juce-grid-page__signal-plugin-add-hero" aria-hidden>
                               <Add size={40} />

@@ -47,6 +47,7 @@ export interface SnapshotCreateRequest {
   output_level_warning_threshold_db?: number
   input_device?: string | null
   output_device?: string | null
+  is_locked?: boolean
   io_bindings?: SnapshotIOBindings
   controls?: SnapshotControls
   paths?: SnapshotPath[]
@@ -73,6 +74,7 @@ export interface SnapshotUpdateRequest {
   paths?: SnapshotPath[]
   display_order?: number
   is_favorite?: boolean
+  is_locked?: boolean
   channels?: SnapshotChannel[]
   chains?: SnapshotDetail['chains']
   routing?: SnapshotRouting
@@ -399,6 +401,7 @@ export function snapshotSummaryToFlowSnapshot(summary: SnapshotSummary): FlowSna
     program_number: summary.program_number,
     is_active: summary.is_active,
     is_favorite: summary.is_favorite,
+    is_locked: summary.is_locked,
     display_order: summary.display_order,
     flow_slots: summary.channels.map(
       (channel): FlowSlotSummary => ({

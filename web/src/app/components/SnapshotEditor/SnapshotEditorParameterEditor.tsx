@@ -20,6 +20,7 @@ export interface JuceGridParameterEditorProps {
   onRefreshPlugins?: () => void
   isRefreshing?: boolean
   touchMode?: boolean
+  readOnly?: boolean
 }
 
 const HARDWARE_ACCENT = '#c8a951'
@@ -223,6 +224,7 @@ export function JuceGridParameterEditor({
   onRefreshPlugins,
   isRefreshing = false,
   touchMode = false,
+  readOnly = false,
 }: JuceGridParameterEditorProps) {
   const [editingParams, setEditingParams] = useState<Set<string>>(new Set())
   const [showAllParameters, setShowAllParameters] = useState(!touchMode)
@@ -231,11 +233,17 @@ export function JuceGridParameterEditor({
   const [irPreviewError, setIrPreviewError] = useState<string | null>(null)
 
   const handleParameterChange = useCallback((symbol: string, value: number) => {
+    if (readOnly) {
+      return
+    }
     setEditingParams((previous) => new Set(previous).add(symbol))
     onParameterChange(symbol, value)
-  }, [onParameterChange])
+  }, [onParameterChange, readOnly])
 
   const handleParameterChangeEnd = useCallback((symbol: string) => {
+    if (readOnly) {
+      return
+    }
     setEditingParams((previous) => {
       if (!previous.has(symbol)) {
         return previous
@@ -245,7 +253,7 @@ export function JuceGridParameterEditor({
       return next
     })
     onParameterChangeEnd?.(symbol)
-  }, [onParameterChangeEnd])
+  }, [onParameterChangeEnd, readOnly])
 
   const handleDropdownChange = useCallback((symbol: string, value: number) => {
     handleParameterChange(symbol, value)
@@ -351,7 +359,7 @@ export function JuceGridParameterEditor({
             <div className="juce-grid-page__parameter-editor-actions">
               <Tag type="warm-gray">Hardware</Tag>
               {onToggleBypass && (
-                <Button size="sm" kind={plugin.bypassed ? 'ghost' : 'secondary'} onClick={onToggleBypass}>
+                <Button size="sm" kind={plugin.bypassed ? 'ghost' : 'secondary'} onClick={onToggleBypass} disabled={readOnly}>
                   {plugin.bypassed ? 'Enable' : 'Bypass'}
                 </Button>
               )}
@@ -514,6 +522,7 @@ export function JuceGridParameterEditor({
                         selectedItem={selectedDropdownItem}
                         itemToString={(item) => item?.label ?? ''}
                         size="md"
+                        disabled={readOnly}
                         onChange={({ selectedItem }) => {
                           if (selectedItem) {
                             handleDropdownChange(parameter.symbol, selectedItem.value)
@@ -537,6 +546,7 @@ export function JuceGridParameterEditor({
                         showLabel={false}
                         inline
                         fullWidth
+                        disabled={readOnly}
                         className="juce-grid-page__parameter-control-input"
                       />
                     )}

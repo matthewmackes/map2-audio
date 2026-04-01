@@ -11,6 +11,10 @@ import {
 } from '@carbon/react'
 import { pipewireApi } from '../../../map2/api'
 import type { PipeWireDeviceInfo } from '../../../map2/types'
+import {
+  normalizeSnapshotName,
+  validateSnapshotName,
+} from '../../utils/snapshotNames'
 
 export type SnapshotNewWizardRoutingMode = 'parallel_blend' | 'series' | 'morph' | 'sidechain'
 
@@ -27,29 +31,6 @@ interface SnapshotNewWizardProps {
   isSubmitting?: boolean
   onCancel: () => void
   onSubmit: (values: SnapshotNewWizardValues) => Promise<void> | void
-}
-
-const NAME_PATTERN = /^[A-Za-z0-9 -]+$/
-
-function normalizeName(value: string): string {
-  return value.trim().replace(/\s+/g, ' ')
-}
-
-function validateSnapshotName(name: string, existingSnapshotNames: string[]): string | null {
-  const normalized = normalizeName(name)
-  if (normalized.length === 0) {
-    return 'Name is required.'
-  }
-  if (normalized.length > 20) {
-    return 'Name must be 20 characters or fewer.'
-  }
-  if (!NAME_PATTERN.test(normalized)) {
-    return 'Use letters, numbers, spaces, and hyphens only.'
-  }
-  if (existingSnapshotNames.some((entry) => normalizeName(entry).toLowerCase() === normalized.toLowerCase())) {
-    return 'A snapshot with that name already exists.'
-  }
-  return null
 }
 
 function getDeviceLabel(device: PipeWireDeviceInfo): string {
@@ -146,7 +127,7 @@ export function SnapshotNewWizard({
       return
     }
     await onSubmit({
-      name: normalizeName(name),
+      name: normalizeSnapshotName(name),
       routingMode,
       inputDevice,
       outputDevice,
@@ -179,7 +160,6 @@ export function SnapshotNewWizard({
             <TextInput
               id="snapshot-new-wizard-name"
               labelText="Snapshot name"
-              maxLength={20}
               value={name}
               onChange={(event) => {
                 const nextValue = event.target.value
@@ -191,7 +171,7 @@ export function SnapshotNewWizard({
               }}
               invalid={Boolean(nameError)}
               invalidText={nameError ?? undefined}
-              placeholder="Friday Rehearsal"
+              placeholder="FridayRehearsal"
             />
           )}
 

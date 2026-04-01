@@ -72,9 +72,10 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     async def _run():
         created = await routes.create_snapshot(
             routes.SnapshotCreateRequest(
-                name="Route Snapshot",
+                name="RouteSnapshot",
                 description="Created through route",
                 tempo_bpm=126.0,
+                is_locked=True,
                 output_level_reference_dbfs=-14.0,
                 output_level_warning_threshold_db=2.0,
                 io_bindings=routes.SnapshotIOBindingsInput(
@@ -113,10 +114,12 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         )
         snapshot_id = created["snapshot_id"]
         assert created["status"] == "success"
+        assert created["snapshot"]["is_locked"] is True
 
         listed = await routes.list_snapshots()
         assert listed["count"] == 1
-        assert listed["snapshots"][0]["name"] == "Route Snapshot"
+        assert listed["snapshots"][0]["name"] == "RouteSnapshot"
+        assert listed["snapshots"][0]["is_locked"] is True
         assert listed["snapshots"][0]["input_device"] == "Route In"
         assert listed["snapshots"][0]["output_device"] == "Route Out"
         assert listed["snapshots"][0]["tempo_bpm"] == 126.0
@@ -125,6 +128,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
 
         fetched = await routes.get_snapshot(snapshot_id)
+        assert fetched["is_locked"] is True
         assert fetched["channels"][0]["label"] == "A"
         assert fetched["input_device"] == "Route In"
         assert fetched["output_device"] == "Route Out"
@@ -253,10 +257,35 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         saved_as_new = await routes.save_snapshot_as_new(
             snapshot_id,
-            routes.SaveAsNewRequest(name="Route Snapshot v2"),
+            routes.SaveAsNewRequest(name="RouteSnapshotV2"),
         )
         assert saved_as_new["status"] == "success"
         assert saved_as_new["snapshot"]["lineage"]["derived_from_snapshot_id"] == snapshot_id
+        assert saved_as_new["snapshot"]["is_locked"] is False
+
+        duplicated = await routes.duplicate_snapshot(snapshot_id)
+        assert duplicated["status"] == "success"
+        assert duplicated["snapshot"]["name"] == "RouteSnapshotCopy"
+        assert duplicated["snapshot"]["is_locked"] is False
+
+        try:
+            await routes.create_snapshot(routes.SnapshotCreateRequest(name="Route Snapshot"))
+        except HTTPException as exc:
+            assert exc.status_code == 400
+            assert exc.detail == "Snapshot names may only contain letters and numbers, with no spaces or special characters."
+        else:
+            raise AssertionError("Invalid snapshot create name should fail")
+
+        try:
+            await routes.update_snapshot(
+                snapshot_id,
+                routes.SnapshotUpdateRequest(name="Route Snapshot"),
+            )
+        except HTTPException as exc:
+            assert exc.status_code == 400
+            assert exc.detail == "Snapshot names may only contain letters and numbers, with no spaces or special characters."
+        else:
+            raise AssertionError("Invalid snapshot rename should fail")
 
         shared = await routes.share_snapshot(snapshot_id, routes.CommunityShareRequest(author_name="Codex"))
         assert shared["snapshot"]["community_shared"] is True
@@ -269,7 +298,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert rated["snapshot"]["community_rating_count"] == 1
 
         downloaded = await routes.download_community_snapshot(community_uuid)
-        assert downloaded["snapshot"]["name"] == "Route Snapshot"
+        assert downloaded["snapshot"]["name"] == "RouteSnapshot"
 
         deployment = await cluster_routes.deploy_snapshot(
             cluster_routes.SnapshotDeployRequest(
@@ -293,7 +322,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         created_from_paths_only = await routes.create_snapshot(
             routes.SnapshotCreateRequest(
-                name="Paths Only Snapshot",
+                name="PathsOnlySnapshot",
                 snapshot_data={
                     "paths": [
                         {
@@ -345,7 +374,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         revision_snapshot = await routes.create_snapshot(
             routes.SnapshotCreateRequest(
-                name="Revision Route Snapshot",
+                name="RevisionRouteSnapshot",
                 snapshot_data={
                     "channels": [
                         {

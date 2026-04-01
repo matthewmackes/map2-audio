@@ -26,6 +26,7 @@ import {
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
 import type { SnapshotDetail, SnapshotExport, SnapshotRuntimeLiveState, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
+import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
 import {
@@ -343,7 +344,7 @@ export function SnapshotArtifactsWorkspace({
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const name = `Snapshot ${snapshots.length + 1}`
+      const name = buildDefaultSnapshotName(snapshots.length + 1)
       const created = await snapshotsApi.create({
         ...createDefaultSnapshotRequest(name),
       })

@@ -20,6 +20,7 @@ interface PluginCardRouterProps {
   onAddToChain?: (chainId: number) => void
   showAddToChain?: boolean
   compact?: boolean
+  disabled?: boolean
   /** Force use of a specific template (for testing) */
   forceTemplate?: PluginCardTemplate
   /** Chain ID for bypass toggle functionality */
@@ -39,6 +40,7 @@ export function PluginCardRouter({
   onAddToChain,
   showAddToChain = true,
   compact = false,
+  disabled = false,
   forceTemplate,
   chainId,
   pluginPosition,
@@ -77,14 +79,20 @@ export function PluginCardRouter({
 
   // Handle parameter change
   const handleParameterChange = useCallback((paramIndex: number, value: number) => {
+    if (disabled) {
+      return
+    }
     setParameterValues(prev => ({ ...prev, [paramIndex]: value }))
     setParameterMutation.mutate({ paramIndex, value })
-  }, [setParameterMutation])
+  }, [disabled, setParameterMutation])
 
   // Handle parameter change end (flush batched updates)
   const handleParameterChangeEnd = useCallback(() => {
+    if (disabled) {
+      return
+    }
     pluginsApi.flushParameterBatch()
-  }, [])
+  }, [disabled])
 
   // Bypass toggle mutation
   const bypassMutation = useMutation({
@@ -102,12 +110,15 @@ export function PluginCardRouter({
 
   // Handle bypass toggle
   const handleBypassToggle = useCallback((bypassed: boolean) => {
+    if (disabled) {
+      return
+    }
     if (chainId) {
       bypassMutation.mutate(bypassed)
     } else {
       console.warn('Bypass toggle requires chain context')
     }
-  }, [chainId, bypassMutation])
+  }, [bypassMutation, chainId, disabled])
 
   // Get real-time output data for this plugin
   const pluginOutput = usePluginOutput({
@@ -165,7 +176,7 @@ export function PluginCardRouter({
     onParameterChangeEnd: handleParameterChangeEnd,
     onBypassToggle: handleBypassToggle,
     accentColor,
-    disabled: false,
+    disabled,
     compact,
     realtimeData,
   }

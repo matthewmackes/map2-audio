@@ -25,6 +25,7 @@ import {
 import { upsertRuntimeChains } from '../SnapshotEditor/snapshotEditorLiveSnapshotHydration'
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
+import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import {
   flowSnapshotDataToSnapshotPayload,
   snapshotDetailToDraftData,
@@ -686,7 +687,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
     return (
       <SnapshotNewWizard
         existingSnapshotNames={savedSnapshots.map((snapshot) => snapshot.name)}
-        initialName={`Snapshot ${savedSnapshots.length + 1}`}
+        initialName={buildDefaultSnapshotName(savedSnapshots.length + 1)}
         isSubmitting={createFlowSnapshotMutation.isPending}
         onCancel={() => setContentView(entryPoint ? 'entry' : 'library')}
         onSubmit={async (values) => {

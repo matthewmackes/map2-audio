@@ -168,11 +168,13 @@ function renderCard(
     editorSnapshotDraft?: SnapshotDraftData | null
     onRenameSnapshot?: jest.Mock
     onToggleSnapshotFavorite?: jest.Mock
+    onToggleSnapshotLock?: jest.Mock
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
     snapshotRenamePending?: boolean
     snapshotFavoritePending?: boolean
+    snapshotLockPending?: boolean
     snapshotDescriptionPending?: boolean
     tempoPending?: boolean
   } = {},
@@ -189,6 +191,8 @@ function renderCard(
       snapshotRenamePending={options.snapshotRenamePending}
       onToggleSnapshotFavorite={options.onToggleSnapshotFavorite}
       snapshotFavoritePending={options.snapshotFavoritePending}
+      onToggleSnapshotLock={options.onToggleSnapshotLock}
+      snapshotLockPending={options.snapshotLockPending}
       onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
@@ -338,6 +342,20 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(favoriteButton)
 
     expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders a snapshot lock toggle and disables stored BPM edits while locked', () => {
+    const onToggleSnapshotLock = jest.fn()
+
+    renderCard(buildLiveSnapshot({ is_locked: true }), { onToggleSnapshotLock })
+
+    expect(screen.getAllByText('Locked').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Locked' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Stored BPM')).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Locked' }))
+
+    expect(onToggleSnapshotLock).toHaveBeenCalledTimes(1)
   })
 
   it('edits the snapshot description inline and saves on enter', () => {

@@ -12,11 +12,12 @@ import copy
 import hashlib
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
 from uuid import uuid4
 
-from sqlalchemy import delete, inspect, select, update
+from sqlalchemy import delete, func, inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -48,6 +49,7 @@ DEFAULT_CHANNEL_COLOR = "#2563eb"
 DEFAULT_DRY_WET_MIX = 100.0
 DEFAULT_SNAPSHOT_TEMPO_BPM = 120.0
 MAX_SNAPSHOT_REVISIONS = 100
+SNAPSHOT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
 UNSET = object()
 
 
@@ -100,6 +102,24 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def normalize_snapshot_name(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def validate_snapshot_name(value: Any) -> str:
+    normalized = normalize_snapshot_name(value)
+    if not normalized:
+        raise ValueError("Snapshot name is required.")
+    if not SNAPSHOT_NAME_PATTERN.fullmatch(normalized):
+        raise ValueError("Snapshot names may only contain letters and numbers, with no spaces or special characters.")
+    return normalized
+
+
+def sanitize_snapshot_name_seed(value: Any, *, fallback: str = "Snapshot") -> str:
+    sanitized = "".join(character for character in normalize_snapshot_name(value) if character.isalnum())
+    return sanitized or fallback
 
 
 _CANONICAL_TRANSIENT_KEYS = {
@@ -260,16 +280,19 @@ class SnapshotService:
         controls_payload: Optional[dict[str, Any]] = None,
         detail_payload: Optional[dict[str, Any]] = None,
         is_favorite: bool = False,
+        is_locked: bool = False,
     ) -> dict[str, Any]:
+        normalized_name = validate_snapshot_name(name)
         await self._validate_program_number(program_number)
         max_order = await self._get_max_display_order()
 
         snapshot = Snapshot(
-            name=name.strip() or "Snapshot",
+            name=normalized_name,
             description=description,
             tags=list(tags or []),
             program_number=program_number,
             is_favorite=is_favorite,
+            is_locked=bool(is_locked),
             display_order=max_order + 1,
             tempo_bpm=_safe_float(tempo_bpm, DEFAULT_SNAPSHOT_TEMPO_BPM),
             derived_from_snapshot_id=derived_from_snapshot_id,
@@ -312,6 +335,7 @@ class SnapshotService:
         output_device: Any = UNSET,
         controls_payload: Any = UNSET,
         is_favorite: Any = UNSET,
+        is_locked: Any = UNSET,
         display_order: Any = UNSET,
         detail_payload: Any = UNSET,
         create_revision: bool = False,
@@ -325,7 +349,7 @@ class SnapshotService:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
 
         if name is not UNSET:
-            snapshot.name = name.strip() or snapshot.name
+            snapshot.name = validate_snapshot_name(name)
         if description is not UNSET:
             snapshot.description = description
         if tags is not UNSET:
@@ -359,6 +383,8 @@ class SnapshotService:
             )
         if is_favorite is not UNSET:
             snapshot.is_favorite = bool(is_favorite)
+        if is_locked is not UNSET:
+            snapshot.is_locked = bool(is_locked)
         if display_order is not UNSET:
             snapshot.display_order = int(display_order)
         snapshot.updated_at = _utcnow()
@@ -506,8 +532,9 @@ class SnapshotService:
         snapshot = await self.get_snapshot(snapshot_id)
         if snapshot is None:
             return None
+        duplicate_name = await self._build_duplicate_snapshot_name(snapshot.get("name"))
         return await self.create_snapshot(
-            name=f"{snapshot['name']} (Copy)",
+            name=duplicate_name,
             description=snapshot.get("description", ""),
             tags=list(snapshot.get("tags", [])),
             tempo_bpm=_safe_float(snapshot.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
@@ -516,6 +543,7 @@ class SnapshotService:
             output_device=snapshot.get("output_device"),
             controls_payload=snapshot.get("controls"),
             detail_payload=snapshot,
+            is_locked=False,
         )
 
     async def save_snapshot_as_new(
@@ -528,8 +556,9 @@ class SnapshotService:
         snapshot = await self.get_snapshot(snapshot_id)
         if snapshot is None:
             return None
+        next_name = name if name is not None else sanitize_snapshot_name_seed(snapshot.get("name"))
         return await self.create_snapshot(
-            name=(name or snapshot.get("name") or "Snapshot").strip(),
+            name=next_name,
             description=snapshot.get("description", "") if description is None else description,
             tags=list(snapshot.get("tags", [])),
             program_number=None,
@@ -540,6 +569,7 @@ class SnapshotService:
             controls_payload=snapshot.get("controls"),
             detail_payload=snapshot,
             is_favorite=bool(snapshot.get("is_favorite", False)),
+            is_locked=False,
         )
 
     async def activate_snapshot(
@@ -1588,11 +1618,38 @@ class SnapshotService:
         detail["lineage"] = {
             "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
         }
+        detail["is_locked"] = bool(snapshot.is_locked)
         detail["session_notes"] = [self._serialize_session_note(note) for note in snapshot.session_notes]
         detail["assets"] = self._build_asset_manifest(detail)
         detail["paths"] = self._build_snapshot_paths(detail, snapshot.live_state_payload)
         detail["live_state"] = await self._build_live_state(snapshot)
         return detail
+
+    async def _snapshot_name_exists(
+        self,
+        name: str,
+        *,
+        exclude_snapshot_id: Optional[int] = None,
+    ) -> bool:
+        statement = select(Snapshot.id).where(func.lower(Snapshot.name) == name.lower())
+        if exclude_snapshot_id is not None:
+            statement = statement.where(Snapshot.id != exclude_snapshot_id)
+        result = await self.session.execute(statement.limit(1))
+        return result.scalar_one_or_none() is not None
+
+    async def _build_duplicate_snapshot_name(
+        self,
+        source_name: Any,
+        *,
+        exclude_snapshot_id: Optional[int] = None,
+    ) -> str:
+        base_name = f"{sanitize_snapshot_name_seed(source_name)}Copy"
+        candidate = base_name
+        suffix = 2
+        while await self._snapshot_name_exists(candidate, exclude_snapshot_id=exclude_snapshot_id):
+            candidate = f"{base_name}{suffix}"
+            suffix += 1
+        return candidate
 
     def _build_snapshot_paths(
         self,
@@ -2113,6 +2170,7 @@ class SnapshotService:
             "output_device": snapshot_row.output_device if snapshot_row is not None else None,
             "is_active": bool(snapshot_row.is_active) if snapshot_row is not None else False,
             "is_favorite": bool(snapshot_row.is_favorite) if snapshot_row is not None else False,
+            "is_locked": bool(snapshot_row.is_locked) if snapshot_row is not None else False,
             "display_order": int(snapshot_row.display_order) if snapshot_row is not None else 0,
             "channels": detail_channels,
             "chains": chains_payload,
@@ -2189,6 +2247,7 @@ class SnapshotService:
             },
             "is_active": bool(snapshot.is_active),
             "is_favorite": bool(snapshot.is_favorite),
+            "is_locked": bool(snapshot.is_locked),
             "display_order": int(snapshot.display_order),
             "channels": channel_summaries,
             "channel_count": len(channel_summaries),
