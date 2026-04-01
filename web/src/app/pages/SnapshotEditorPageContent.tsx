@@ -64,6 +64,7 @@ import {
   TabList,
   Tabs,
   Tag,
+  TextArea,
   TextInput,
   Tile,
 } from '@carbon/react'
@@ -165,6 +166,13 @@ const API_BASE = (() => {
 })()
 
 const TABLET_BRANCH_PAGE_SIZE = 8
+const SESSION_NOTES_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+  hour: 'numeric',
+  minute: '2-digit',
+})
 
 const FEATURED_NATIVE_BROWSER_GROUPS = [
   {
@@ -855,6 +863,7 @@ export function SnapshotEditorPage() {
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
+  const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
@@ -1310,6 +1319,7 @@ export function SnapshotEditorPage() {
     () => liveSnapshotQuery.data ?? null,
     [liveSnapshotQuery.data],
   )
+  const sessionNotes = activeSnapshot?.session_notes ?? []
   const effectiveChainsResponse = useMemo(
     () => (
       activeSnapshot
@@ -1461,6 +1471,24 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to rename snapshot', 'error')
+    },
+  })
+
+  const addSessionNoteMutation = useMutation({
+    mutationFn: async ({ snapshotId, text }: { snapshotId: number; text: string }) =>
+      snapshotsApi.addSessionNote(snapshotId, text),
+    onSuccess: (response) => {
+      queryClient.setQueryData<SnapshotDetail | null>(['snapshots', 'live'], (current) => (
+        current && current.id === response.snapshot_id
+          ? { ...current, session_notes: response.notes }
+          : current
+      ))
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      setSessionNoteDraft('')
+      pushToast('Session note added', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to add session note', 'error')
     },
   })
 
@@ -3482,6 +3510,14 @@ export function SnapshotEditorPage() {
     renameActiveSnapshotMutation.mutate({ snapshotId: activeSnapshot.id, name: normalizedName })
   }, [activeSnapshot, renameSnapshotName, renameActiveSnapshotMutation])
 
+  const submitSessionNote = useCallback(() => {
+    const normalizedText = sessionNoteDraft.trim()
+    if (!activeSnapshot || !normalizedText) {
+      return
+    }
+    addSessionNoteMutation.mutate({ snapshotId: activeSnapshot.id, text: normalizedText })
+  }, [activeSnapshot, addSessionNoteMutation, sessionNoteDraft])
+
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
     setFavoritePlugins(prev => {
@@ -4847,6 +4883,59 @@ export function SnapshotEditorPage() {
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
           />
+        </div>
+      </section>
+
+      <section className="juce-grid-page__signal-flow-shell juce-grid-page__session-notes-shell" aria-label="Snapshot session notes">
+        <div className="juce-grid-page__unified-block">
+          <Accordion align="start" className="juce-grid-page__session-notes-accordion">
+            <AccordionItem title={`Session Notes${activeSnapshot ? ` (${sessionNotes.length})` : ''}`}>
+              <div className="juce-grid-page__session-notes-panel">
+                <p className="juce-grid-page__dense-card-kicker">Append-only snapshot log</p>
+                <p className="juce-grid-page__session-notes-copy">
+                  {activeSnapshot
+                    ? 'Add dated gig or rehearsal notes to this snapshot. Entries are stored newest first and cannot be edited.'
+                    : 'Load or create a snapshot before adding session notes.'}
+                </p>
+                <TextArea
+                  id="snapshot-session-note-draft"
+                  labelText="New session note"
+                  rows={4}
+                  value={sessionNoteDraft}
+                  disabled={!activeSnapshot || addSessionNoteMutation.isPending}
+                  onChange={(event) => setSessionNoteDraft(event.currentTarget.value)}
+                  placeholder="Played the Ryman, this tone cut through perfectly at 110dB."
+                />
+                <div className="juce-grid-page__session-notes-actions">
+                  <Button
+                    size="sm"
+                    kind="primary"
+                    disabled={!activeSnapshot || !sessionNoteDraft.trim() || addSessionNoteMutation.isPending}
+                    onClick={submitSessionNote}
+                  >
+                    {addSessionNoteMutation.isPending ? 'Saving…' : 'Add note'}
+                  </Button>
+                </div>
+                <div className="juce-grid-page__session-notes-list" role="list">
+                  {sessionNotes.length > 0 ? sessionNotes.map((note) => {
+                    const formattedTimestamp = note.created_at
+                      ? SESSION_NOTES_TIMESTAMP_FORMATTER.format(new Date(note.created_at))
+                      : 'Unknown time'
+                    return (
+                      <article key={note.id} className="juce-grid-page__session-note" role="listitem">
+                        <p className="juce-grid-page__session-note-timestamp">{formattedTimestamp}</p>
+                        <p className="juce-grid-page__session-note-body">{note.body}</p>
+                      </article>
+                    )
+                  }) : (
+                    <p className="juce-grid-page__session-notes-empty">
+                      {activeSnapshot ? 'No session notes yet.' : 'No snapshot is active.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
 

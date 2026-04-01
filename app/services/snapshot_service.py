@@ -34,6 +34,7 @@ from app.database import (
     SnapshotLoopInsertion,
     SnapshotMidiMap,
     SnapshotRouting,
+    SnapshotSessionNote,
 )
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
@@ -217,6 +218,7 @@ class SnapshotService:
                 selectinload(Snapshot.routing),
                 selectinload(Snapshot.midi_map),
                 selectinload(Snapshot.deployments).selectinload(SnapshotDeployment.history),
+                selectinload(Snapshot.session_notes),
             )
             .where(Snapshot.is_active.is_(True))
             .order_by(Snapshot.updated_at.desc(), Snapshot.id.desc())
@@ -332,6 +334,33 @@ class SnapshotService:
         await self.session.delete(snapshot)
         await self.session.flush()
         return True
+
+    async def list_session_notes(self, snapshot_id: int) -> Optional[list[dict[str, Any]]]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return None
+        return [self._serialize_session_note(note) for note in snapshot.session_notes]
+
+    async def add_session_note(self, snapshot_id: int, body: str) -> Optional[list[dict[str, Any]]]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return None
+
+        normalized_body = str(body or "").strip()
+        if not normalized_body:
+            raise ValueError("Session note text is required")
+
+        self.session.add(
+            SnapshotSessionNote(
+                snapshot_id=snapshot.id,
+                body=normalized_body,
+                created_at=_utcnow(),
+            )
+        )
+        snapshot.updated_at = _utcnow()
+        await self.session.flush()
+        await self.session.refresh(snapshot, attribute_names=["session_notes"])
+        return [self._serialize_session_note(note) for note in snapshot.session_notes]
 
     async def duplicate_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         snapshot = await self.get_snapshot(snapshot_id)
@@ -994,6 +1023,7 @@ class SnapshotService:
                 selectinload(Snapshot.routing),
                 selectinload(Snapshot.midi_map),
                 selectinload(Snapshot.deployments).selectinload(SnapshotDeployment.history),
+                selectinload(Snapshot.session_notes),
             )
             .execution_options(populate_existing=True)
             .where(Snapshot.id == snapshot_id)
@@ -1404,6 +1434,7 @@ class SnapshotService:
         detail["lineage"] = {
             "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
         }
+        detail["session_notes"] = [self._serialize_session_note(note) for note in snapshot.session_notes]
         detail["assets"] = self._build_asset_manifest(detail)
         detail["paths"] = self._build_snapshot_paths(detail, snapshot.live_state_payload)
         detail["live_state"] = await self._build_live_state(snapshot)
@@ -1899,6 +1930,7 @@ class SnapshotService:
             "community_rating_count": int(snapshot_row.community_rating_count or 0) if snapshot_row is not None else 0,
             "created_at": snapshot_row.created_at.isoformat() if snapshot_row is not None and snapshot_row.created_at else None,
             "updated_at": snapshot_row.updated_at.isoformat() if snapshot_row is not None and snapshot_row.updated_at else None,
+            "session_notes": [self._serialize_session_note(item) for item in (snapshot_row.session_notes if snapshot_row is not None else [])],
             "deployments": [self._serialize_deployment(item) for item in (snapshot_row.deployments if snapshot_row is not None else [])],
         }
 
@@ -1946,6 +1978,14 @@ class SnapshotService:
             "community_rating_count": int(snapshot.community_rating_count or 0),
             "created_at": snapshot.created_at.isoformat() if snapshot.created_at else None,
             "updated_at": snapshot.updated_at.isoformat() if snapshot.updated_at else None,
+        }
+
+    def _serialize_session_note(self, note: SnapshotSessionNote) -> dict[str, Any]:
+        return {
+            "id": note.id,
+            "snapshot_id": note.snapshot_id,
+            "body": note.body,
+            "created_at": note.created_at.isoformat() if note.created_at else None,
         }
 
     def _serialize_deployment(self, deployment: SnapshotDeployment) -> dict[str, Any]:

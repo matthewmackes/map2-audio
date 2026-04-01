@@ -276,6 +276,22 @@ def _ensure_snapshot_device_schema_sync() -> None:
         _add_sqlite_column_if_missing(conn, "snapshots", "controls_payload", "JSON")
         _add_sqlite_column_if_missing(conn, "snapshots", "live_state_payload", "JSON")
         _add_sqlite_column_if_missing(conn, "snapshots", "activated_at", "DATETIME")
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
+                "id INTEGER PRIMARY KEY, "
+                "snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE, "
+                "body TEXT NOT NULL, "
+                "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_snapshot_session_notes_snapshot_created "
+                "ON snapshot_session_notes (snapshot_id, created_at)"
+            )
+        )
 
 
 async def _ensure_special_settings_schema_async(conn) -> None:
@@ -385,6 +401,22 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "controls_payload", "JSON")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "live_state_payload", "JSON")
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "activated_at", "DATETIME")
+    await conn.execute(
+        text(
+            "CREATE TABLE IF NOT EXISTS snapshot_session_notes ("
+            "id INTEGER PRIMARY KEY, "
+            "snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE, "
+            "body TEXT NOT NULL, "
+            "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            ")"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS idx_snapshot_session_notes_snapshot_created "
+            "ON snapshot_session_notes (snapshot_id, created_at)"
+        )
+    )
 
 
 async def _ensure_tables_created() -> None:
@@ -846,6 +878,12 @@ class Snapshot(Base):
         back_populates="snapshot",
         cascade="all, delete-orphan",
     )
+    session_notes = relationship(
+        "SnapshotSessionNote",
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+        order_by="SnapshotSessionNote.created_at.desc(), SnapshotSessionNote.id.desc()",
+    )
     derived_from_snapshot = relationship("Snapshot", remote_side=[id], uselist=False)
 
     __table_args__ = (
@@ -1044,6 +1082,22 @@ class SnapshotDeploymentHistory(Base):
     __table_args__ = (
         Index("idx_snapshot_deployment_history_snapshot", "snapshot_id"),
         Index("idx_snapshot_deployment_history_to_node", "to_node_id"),
+    )
+
+
+class SnapshotSessionNote(Base):
+    """Append-only session notes attached to a snapshot."""
+    __tablename__ = "snapshot_session_notes"
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    snapshot = relationship("Snapshot", back_populates="session_notes")
+
+    __table_args__ = (
+        Index("idx_snapshot_session_notes_snapshot_created", "snapshot_id", "created_at"),
     )
 
 

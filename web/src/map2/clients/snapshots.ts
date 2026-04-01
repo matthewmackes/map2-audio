@@ -24,6 +24,7 @@ import type {
   SnapshotRuntimeClusterLiveStateResponse,
   SnapshotRuntimeLiveState,
   SnapshotRouting,
+  SnapshotSessionNote,
   SnapshotSummary,
 } from '../types'
 
@@ -105,6 +106,12 @@ export interface SnapshotUpdateResponse {
 export interface SnapshotDraftResponse {
   status: string
   snapshot: SnapshotDetail
+}
+
+export interface SnapshotSessionNotesResponse {
+  snapshot_id: number
+  notes: SnapshotSessionNote[]
+  count: number
 }
 
 export interface SnapshotDeleteResponse {
@@ -416,6 +423,17 @@ export const snapshotsApi = {
   openDraft: (snapshotId: number) =>
     fetchJson<SnapshotDraftResponse>(`${API_BASE}/snapshots/${snapshotId}/draft`, {
       method: 'POST',
+    }),
+
+  listSessionNotes: (snapshotId: number) =>
+    fetchJson<SnapshotSessionNotesResponse>(`${API_BASE}/snapshots/${snapshotId}/notes`, {
+      cache: 'no-store',
+    }),
+
+  addSessionNote: (snapshotId: number, text: string) =>
+    fetchJson<SnapshotSessionNotesResponse>(`${API_BASE}/snapshots/${snapshotId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
     }),
 
   create: (request: SnapshotCreateRequest) =>

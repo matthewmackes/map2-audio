@@ -2154,6 +2154,13 @@ export interface SnapshotDeployment {
   history: SnapshotDeploymentHistory[];
 }
 
+export interface SnapshotSessionNote {
+  id: number;
+  snapshot_id: number;
+  body: string;
+  created_at?: string | null;
+}
+
 export interface SnapshotSummary {
   id: number;
   name: string;
@@ -2192,6 +2199,7 @@ export interface SnapshotDetail extends SnapshotSummary {
   assets: SnapshotAssetRef[];
   live_state: SnapshotLiveState;
   lineage: SnapshotLineage;
+  session_notes: SnapshotSessionNote[];
   active_channel_index: number;
   deployments: SnapshotDeployment[];
   snapshot_revision?: string;

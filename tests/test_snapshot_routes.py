@@ -114,6 +114,19 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["output_device"] == "Route Out"
         assert fetched["paths"][0]["id"] == "path-a"
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
+        assert fetched["session_notes"] == []
+
+        added_note = await routes.add_snapshot_session_note(
+            snapshot_id,
+            routes.SnapshotSessionNoteCreateRequest(text="Arena mix translated well"),
+        )
+        assert added_note["status"] == "success"
+        assert added_note["count"] == 1
+        assert added_note["notes"][0]["body"] == "Arena mix translated well"
+
+        listed_notes = await routes.list_snapshot_session_notes(snapshot_id)
+        assert listed_notes["count"] == 1
+        assert listed_notes["notes"][0]["body"] == "Arena mix translated well"
 
         patched = await routes.update_snapshot(
             snapshot_id,
@@ -267,5 +280,6 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     registered_paths = {route.path for route in routes.router.routes}
     assert "/api/snapshots" in registered_paths
     assert "/api/snapshots/{snapshot_id}" in registered_paths
+    assert "/api/snapshots/{snapshot_id}/notes" in registered_paths
     assert "/api/snapshots/{snapshot_id}/activate" in registered_paths
     assert not any(path.startswith("/api/flow-snapshots") for path in registered_paths)

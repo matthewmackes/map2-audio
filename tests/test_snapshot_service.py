@@ -98,6 +98,33 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["lineage"]["derived_from_snapshot_id"] is None
             assert created["paths"][0]["id"] == "channel-0"
             assert created["paths"][0]["label"] == "A"
+            assert created["session_notes"] == []
+
+            notes = await service.add_session_note(created["id"], "First rehearsal note")
+            assert notes is not None
+            assert len(notes) == 1
+            assert notes[0]["body"] == "First rehearsal note"
+
+            notes = await service.add_session_note(created["id"], "Second rehearsal note")
+            assert notes is not None
+            assert [note["body"] for note in notes] == [
+                "Second rehearsal note",
+                "First rehearsal note",
+            ]
+
+            listed_notes = await service.list_session_notes(created["id"])
+            assert listed_notes is not None
+            assert [note["body"] for note in listed_notes] == [
+                "Second rehearsal note",
+                "First rehearsal note",
+            ]
+
+            detail_with_notes = await service.get_snapshot(created["id"])
+            assert detail_with_notes is not None
+            assert [note["body"] for note in detail_with_notes["session_notes"]] == [
+                "Second rehearsal note",
+                "First rehearsal note",
+            ]
 
             renamed = await service.update_snapshot(
                 created["id"],

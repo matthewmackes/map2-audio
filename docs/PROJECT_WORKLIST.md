@@ -258,7 +258,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T640
-Status: [ ] Todo
+Status: [✓] Done
 Title: Session Notes — Timestamped Append-Only Log Per Snapshot
 Description:
 - Goal / acceptance criteria: Each snapshot has a Session Notes section accessible from the editor (below the description field or in a dedicated tab). The player appends free-text entries; each entry is automatically timestamped on save (ISO8601, displayed as human-readable date). The log is append-only — existing entries cannot be edited or deleted, only new entries added. Entries are displayed in reverse chronological order (newest first). The section is collapsed by default, expanding on click. Example entry: "2026-03-31 20:00 — Played the Ryman, this tone cut through perfectly at 110dB."
@@ -266,7 +266,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: session_notes table linked to snapshot_id (or JSON array field in snapshot model), append-only POST /api/snapshots/{id}/notes endpoint, React session notes component with timestamp display and append form, collapsed-by-default accordion in editor, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 10:37 - Codex
 
 ID: T639
 Status: [ ] Todo

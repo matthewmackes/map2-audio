@@ -86,6 +86,7 @@ const liveSnapshotFixture: SnapshotDetail = {
     expression_mappings: [],
   },
   assets: [],
+  session_notes: [],
   live_state: {
     is_live: true,
     activated_at: null,

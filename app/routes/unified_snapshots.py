@@ -194,6 +194,10 @@ class SaveAsNewRequest(BaseModel):
     description: Optional[str] = None
 
 
+class SnapshotSessionNoteCreateRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+
 def _detail_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
     if request.snapshot_data is not None:
         return request.snapshot_data
@@ -427,6 +431,49 @@ async def get_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error getting snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/snapshots/{snapshot_id}/notes")
+async def list_snapshot_session_notes(snapshot_id: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            notes = await service.list_session_notes(snapshot_id)
+            if notes is None:
+                _raise_not_found("Snapshot")
+            return {
+                "snapshot_id": snapshot_id,
+                "notes": notes,
+                "count": len(notes),
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error listing session notes for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/notes")
+async def add_snapshot_session_note(snapshot_id: int, request: SnapshotSessionNoteCreateRequest) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            notes = await service.add_session_note(snapshot_id, request.text)
+            if notes is None:
+                _raise_not_found("Snapshot")
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "notes": notes,
+                "count": len(notes),
+            }
+    except ValueError as exc:
+        _translate_value_error(exc)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error adding session note for snapshot %s: %s", snapshot_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

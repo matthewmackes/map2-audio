@@ -4062,6 +4062,54 @@
   padding-right: 0;
 }
 
+.juce-grid-page__session-notes-shell {
+  padding-top: 0;
+}
+
+.juce-grid-page__session-notes-accordion .cds--accordion__content {
+  padding-right: 0;
+}
+
+.juce-grid-page__session-notes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0 0;
+}
+
+.juce-grid-page__session-notes-copy,
+.juce-grid-page__session-notes-empty,
+.juce-grid-page__session-note-body {
+  margin: 0;
+}
+
+.juce-grid-page__session-notes-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.juce-grid-page__session-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__session-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+}
+
+.juce-grid-page__session-note-timestamp {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .juce-grid-page__browser-category-title {
   display: inline-flex;
   align-items: center;
