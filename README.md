@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**928** Python | **1023** TypeScript | **131** C++/H | **129** Docs | **1170** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1029** TypeScript | **131** C++/H | **129** Docs | **1172** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -173,11 +173,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-01 |
+| [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-01 |
 | [Ground Control Pro Reverse Engineering](https://github.com/matthewmackes/map2-audio/blob/master/docs/ground-control-pro-reverse-engineering.md) | 2026-03-30 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-29 |
 | [MAP2 Memory Index](https://github.com/matthewmackes/map2-audio/blob/master/docs/MEMORY.md) | 2026-03-29 |
 | [MAP2 Audio Platform — AVB Standards Performance & Compatibility Rating Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_STANDARDS_RATING_REPORT.md) | 2026-03-28 |
-| [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-03-28 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d4d518ae`](https://github.com/matthewmackes/map2-audio/commit/d4d518ae5a05685811d3ab06dd34674dd8da9b49) | Add platform launchers, snapshot history, and Maschine su... | Map2 Audio | 2026-04-01 |
+| [`b3d36637`](https://github.com/matthewmackes/map2-audio/commit/b3d36637db513b86a8aa94f585c2de2cfb14764e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`b6496880`](https://github.com/matthewmackes/map2-audio/commit/b649688033f275d313f7ce3daeb10ec960f8023e) | Add Maschine MK1 integration coverage | Map2 Audio | 2026-04-01 |
 | [`a0c3722c`](https://github.com/matthewmackes/map2-audio/commit/a0c3722c59746d0cde2f218d7bb6806362a04be2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`94f12cb8`](https://github.com/matthewmackes/map2-audio/commit/94f12cb8c31300aeffa49b850d133358b29f605d) | Add Maschine summary card to MIDI Hub | Map2 Audio | 2026-04-01 |
 | [`5ca11432`](https://github.com/matthewmackes/map2-audio/commit/5ca11432d5df2c8f1154b4a8f2a67165110b3b30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`cbc99d1f`](https://github.com/matthewmackes/map2-audio/commit/cbc99d1fb186222cb18a54e7241f9b0947060e47) | Add Maschine MK1 control page | Map2 Audio | 2026-04-01 |
 | [`37992afd`](https://github.com/matthewmackes/map2-audio/commit/37992afd4ebe52689762cb0ab0131482990c840d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`207e4e63`](https://github.com/matthewmackes/map2-audio/commit/207e4e63a63a83953fe5bb2f6a3fb264c7639121) | Add Maschine LCD render service | Map2 Audio | 2026-04-01 |
-| [`10fc40ad`](https://github.com/matthewmackes/map2-audio/commit/10fc40adaea089b19f2c463b77e28d8108a37f3d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -229,7 +229,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **34** more open-source packages from PyPI and npm.
+...and **35** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
