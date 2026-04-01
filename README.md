@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**916** Python | **1011** TypeScript | **131** C++/H | **129** Docs | **1132** total commits | **3** stars | **0** forks | **0** open issues
+**916** Python | **1013** TypeScript | **131** C++/H | **129** Docs | **1134** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`71123e4c`](https://github.com/matthewmackes/map2-audio/commit/71123e4c66147f6db06660dbb704b2cf533dce79) | Map snapshot block colors to Carbon accents | Map2 Audio | 2026-04-01 |
+| [`ec5f0756`](https://github.com/matthewmackes/map2-audio/commit/ec5f0756da88a8aaa5cb227d50a270baf0462901) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`4e091996`](https://github.com/matthewmackes/map2-audio/commit/4e0919964123675f910c40676995d376ddee64c9) | Add signal canvas bypass coverage | Map2 Audio | 2026-04-01 |
 | [`052d3ca6`](https://github.com/matthewmackes/map2-audio/commit/052d3ca6b9acc9477b78e5ef0d0d544d7f69d791) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`be06a0e5`](https://github.com/matthewmackes/map2-audio/commit/be06a0e5b37f1b55ad0bc8a0e2112ed651290ed3) | Add flow clip indicators | Map2 Audio | 2026-04-01 |
 | [`9d66dfee`](https://github.com/matthewmackes/map2-audio/commit/9d66dfeee38c46f686fa3128f8d83566db63cd3b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
 | [`1c4af003`](https://github.com/matthewmackes/map2-audio/commit/1c4af003535e6a3402d0255cca111d6d18b686aa) | Add snapshot session notes | Map2 Audio | 2026-04-01 |
 | [`1ad24c31`](https://github.com/matthewmackes/map2-audio/commit/1ad24c318b94ca1fdc56589d868e29a069288e0f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-01 |
-| [`3b4994da`](https://github.com/matthewmackes/map2-audio/commit/3b4994dae5e7b6e699d93839785004951174bc9f) | Add Push drum-machine backend registry and contract | Map2 Audio | 2026-03-31 |
-| [`a42d51e4`](https://github.com/matthewmackes/map2-audio/commit/a42d51e40cdf39608ef5436b06a2188dfebd8fe0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-31 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
