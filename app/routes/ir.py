@@ -5,7 +5,15 @@ Impulse Response API Routes
 import asyncio
 
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+try:
+    import soundfile as sf
+except ImportError:  # pragma: no cover - optional runtime dependency
+    sf = None
 
 try:
     from fastapi import APIRouter, File, HTTPException, Query, UploadFile
@@ -125,6 +133,37 @@ try:
             )
 
         return base_payload
+
+    def _build_ir_waveform_preview(asset_path: str, sample_count: int = 192) -> Dict[str, Any]:
+        if sf is None:
+            raise HTTPException(status_code=503, detail="soundfile dependency unavailable")
+
+        normalized_sample_count = max(32, min(int(sample_count or 192), 512))
+        resolved_path = Path(asset_path).expanduser()
+        if not resolved_path.is_file():
+            raise HTTPException(status_code=404, detail="IR asset not found")
+
+        audio_data, sample_rate = sf.read(str(resolved_path), dtype="float32", always_2d=False)
+        if getattr(audio_data, "ndim", 1) > 1:
+            audio_data = np.mean(audio_data, axis=1)
+        audio_array = np.asarray(audio_data, dtype=np.float32).reshape(-1)
+        if audio_array.size == 0:
+            raise HTTPException(status_code=404, detail="IR asset is empty")
+
+        bin_edges = np.linspace(0, audio_array.size, num=normalized_sample_count + 1, dtype=int)
+        points: List[float] = []
+        for start, end in zip(bin_edges[:-1], bin_edges[1:]):
+            segment = audio_array[start:end]
+            points.append(float(np.max(np.abs(segment))) if segment.size > 0 else 0.0)
+
+        return {
+            "assetPath": str(resolved_path),
+            "fileName": resolved_path.name,
+            "sampleRate": int(sample_rate),
+            "sampleCount": int(audio_array.size),
+            "durationMs": float(audio_array.size / float(sample_rate) * 1000.0) if sample_rate else 0.0,
+            "points": points,
+        }
 
     def _has_plugin_position(plugin_position: Optional[int]) -> bool:
         return isinstance(plugin_position, int) and plugin_position >= 0
@@ -614,6 +653,14 @@ try:
                 }
             )
         return payload
+
+    @router.get("/waveform-preview")
+    async def get_ir_waveform_preview(
+        asset_path: str = Query(..., min_length=1),
+        sample_count: int = Query(192, ge=32, le=512),
+    ):
+        """Return a downsampled waveform envelope preview for a selected IR asset."""
+        return _build_ir_waveform_preview(asset_path, sample_count)
 
     @router.get("/cabinets")
     async def list_cabinet_irs():

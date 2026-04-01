@@ -625,6 +625,15 @@ export interface IRStatus {
   error?: string;
 }
 
+export interface IRWaveformPreview {
+  assetPath: string;
+  fileName: string;
+  sampleRate: number;
+  sampleCount: number;
+  durationMs: number;
+  points: number[];
+}
+
 // ==================== NAM Types ====================
 
 export interface NAMModel {

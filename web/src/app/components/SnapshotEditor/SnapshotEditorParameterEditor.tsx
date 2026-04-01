@@ -6,7 +6,8 @@ import {
   generateParameterGroups,
   type StandardGroup,
 } from '../PluginCards/types'
-import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
+import { irApi } from '../../../map2/clients/assets'
+import type { ChainPlugin, IRWaveformPreview, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginAccentConfig } from '../../utils/pluginAccent'
 
 export interface JuceGridParameterEditorProps {
@@ -22,6 +23,7 @@ export interface JuceGridParameterEditorProps {
 }
 
 const HARDWARE_ACCENT = '#c8a951'
+const IR_PREVIEW_SAMPLE_COUNT = 192
 const DROPDOWN_HINTS = ['mode', 'type', 'style', 'program', 'pattern', 'variation', 'quality', 'algorithm', 'wave', 'transport']
 const GROUP_TITLES: Record<StandardGroup, string> = {
   INPUT: 'Input',
@@ -56,6 +58,13 @@ const SMART_CONTROL_HINTS = [
   'attack',
   'release',
 ]
+
+const IR_PREVIEW_PLUGIN_TYPES: Record<string, 'cabinet' | 'reverb'> = {
+  'map2://juce/convolution/cabinet': 'cabinet',
+  'urn:map2:ir-cabinet': 'cabinet',
+  'map2://juce/convolution/reverb': 'reverb',
+  'urn:map2:ir-reverb': 'reverb',
+}
 
 interface DropdownOption {
   id: string
@@ -155,6 +164,56 @@ function getSmartControlScore(parameter: PluginParameter): number {
   return score
 }
 
+function formatIRPreviewDuration(durationMs: number): string {
+  if (durationMs >= 1000) {
+    return `${(durationMs / 1000).toFixed(2)} s`
+  }
+
+  return `${durationMs.toFixed(0)} ms`
+}
+
+function renderIRWaveformBars(preview: IRWaveformPreview) {
+  const viewBoxWidth = 192
+  const viewBoxHeight = 72
+  const barWidth = viewBoxWidth / Math.max(preview.points.length, 1)
+
+  return (
+    <svg
+      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+      className="juce-grid-page__parameter-editor-ir-waveform"
+      aria-label={`${preview.fileName} waveform preview`}
+      role="img"
+    >
+      <rect x="0" y="0" width={viewBoxWidth} height={viewBoxHeight} rx="12" className="juce-grid-page__parameter-editor-ir-waveform-surface" />
+      <line
+        x1="0"
+        y1={viewBoxHeight / 2}
+        x2={viewBoxWidth}
+        y2={viewBoxHeight / 2}
+        className="juce-grid-page__parameter-editor-ir-waveform-axis"
+      />
+      {preview.points.map((point, index) => {
+        const normalized = Math.max(0, Math.min(1, point))
+        const height = Math.max(1.5, normalized * (viewBoxHeight - 12))
+        const x = index * barWidth
+        const y = (viewBoxHeight - height) / 2
+
+        return (
+          <rect
+            key={`${preview.assetPath}-${index}`}
+            x={x}
+            y={y}
+            width={Math.max(1, barWidth - 0.35)}
+            height={height}
+            rx="0.6"
+            className="juce-grid-page__parameter-editor-ir-waveform-bar"
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
 export function JuceGridParameterEditor({
   plugin,
   meta,
@@ -167,6 +226,9 @@ export function JuceGridParameterEditor({
 }: JuceGridParameterEditorProps) {
   const [editingParams, setEditingParams] = useState<Set<string>>(new Set())
   const [showAllParameters, setShowAllParameters] = useState(!touchMode)
+  const [irPreview, setIrPreview] = useState<IRWaveformPreview | null>(null)
+  const [irPreviewLoading, setIrPreviewLoading] = useState(false)
+  const [irPreviewError, setIrPreviewError] = useState<string | null>(null)
 
   const handleParameterChange = useCallback((symbol: string, value: number) => {
     setEditingParams((previous) => new Set(previous).add(symbol))
@@ -193,6 +255,46 @@ export function JuceGridParameterEditor({
   useEffect(() => {
     setShowAllParameters(!touchMode)
   }, [plugin?.uri, touchMode])
+
+  const irPreviewType = plugin ? IR_PREVIEW_PLUGIN_TYPES[plugin.uri] ?? null : null
+  const selectedIRAssetPath = plugin?.loader_state?.selected_asset_path ?? null
+
+  useEffect(() => {
+    if (!irPreviewType || !selectedIRAssetPath) {
+      setIrPreview(null)
+      setIrPreviewLoading(false)
+      setIrPreviewError(null)
+      return
+    }
+
+    let cancelled = false
+    setIrPreviewLoading(true)
+    setIrPreviewError(null)
+
+    void irApi.getWaveformPreview(selectedIRAssetPath, IR_PREVIEW_SAMPLE_COUNT)
+      .then((preview) => {
+        if (cancelled) {
+          return
+        }
+        setIrPreview(preview)
+      })
+      .catch(() => {
+        if (cancelled) {
+          return
+        }
+        setIrPreview(null)
+        setIrPreviewError('Unable to read the selected WAV impulse response.')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIrPreviewLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [irPreviewType, selectedIRAssetPath])
 
   if (!plugin) {
     return (
@@ -337,6 +439,46 @@ export function JuceGridParameterEditor({
             </Button>
           </div>
         </div>
+      )}
+
+      {irPreviewType && (
+        <Tile className="juce-grid-page__parameter-editor-ir-preview">
+          <div className="juce-grid-page__parameter-editor-ir-preview-header">
+            <div className="juce-grid-page__parameter-editor-copy">
+              <h3 className="juce-grid-page__parameter-editor-subheading">
+                {irPreviewType === 'cabinet' ? 'Cabinet IR waveform' : 'Reverb IR waveform'}
+              </h3>
+              <p>
+                {selectedIRAssetPath
+                  ? 'Loaded impulse response visualized from the selected WAV asset.'
+                  : 'Load a WAV impulse response to preview its shape and tail.'}
+              </p>
+            </div>
+            <Tag type={irPreviewType === 'cabinet' ? 'teal' : 'purple'} size="sm">
+              {irPreviewType === 'cabinet' ? 'Cabinet IR' : 'Reverb IR'}
+            </Tag>
+          </div>
+
+          {irPreviewLoading && (
+            <InlineLoading status="active" description="Rendering waveform preview" />
+          )}
+
+          {!irPreviewLoading && irPreview && (
+            <div className="juce-grid-page__parameter-editor-ir-preview-body">
+              {renderIRWaveformBars(irPreview)}
+              <div className="juce-grid-page__parameter-editor-ir-preview-meta">
+                <strong>{irPreview.fileName}</strong>
+                <span>{formatIRPreviewDuration(irPreview.durationMs)} • {Math.round(irPreview.sampleRate / 100) / 10} kHz • {irPreview.sampleCount.toLocaleString()} samples</span>
+              </div>
+            </div>
+          )}
+
+          {!irPreviewLoading && !irPreview && (
+            <div className="juce-grid-page__parameter-editor-ir-preview-empty">
+              <p>{selectedIRAssetPath ? (irPreviewError ?? 'Waveform preview unavailable.') : 'No WAV impulse loaded for this block yet.'}</p>
+            </div>
+          )}
+        </Tile>
       )}
 
       <div className="juce-grid-page__parameter-editor-groups">

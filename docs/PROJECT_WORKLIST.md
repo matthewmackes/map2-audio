@@ -375,7 +375,7 @@ Last updated: 2026-04-01 12:51 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T657
-Status: [ ] Todo
+Status: [✓] Done
 Title: IR Waveform Display in Parameter Editor for Cabinet IR and Reverb IR Blocks
 Description:
 - Goal / acceptance criteria: When a cabinet IR or reverb IR plugin block is open in the parameter editor panel, display a waveform thumbnail of the loaded `.wav` impulse response file — showing the file's length, shape, early reflections, and tail decay. The waveform is rendered only in the parameter editor panel, not on the block card in the signal canvas. If no file is loaded, show a placeholder. File name and duration metadata are shown alongside the waveform.
@@ -384,7 +384,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: waveform rendering utility (Web Audio API or canvas-based), integration into the parameter editor panel for cab IR and reverb IR plugin types, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-01 13:00 - Codex
+- Completion notes:
+  - Added a focused `/api/ir/waveform-preview` backend route that reads the selected WAV impulse response and returns a downsampled envelope plus file metadata for editor-side rendering.
+  - Extended the Snapshot Editor parameter panel so cabinet and reverb IR blocks now show a waveform thumbnail, file name, duration, sample rate, and sample count when a WAV asset is loaded, with a clean placeholder state when no IR is selected.
+  - Added targeted Python and React regression coverage for the waveform preview contract and parameter-editor rendering path, then revalidated the frontend production build.
+- Validation: `pytest -q tests/test_ir_waveform_preview.py` -> PASS; `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotEditorParameterEditor.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T656
 Status: [ ] Todo

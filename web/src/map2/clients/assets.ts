@@ -1,6 +1,7 @@
 import type * as Api from '../api'
 import type {
   IRStatus,
+  IRWaveformPreview,
   IRsResponse,
   NAMModelsResponse,
   NAMStatus,
@@ -46,6 +47,17 @@ export const irApi = {
   listCabinets: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/cabinets`, nodeId)),
 
   listReverbs: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/reverbs`, nodeId)),
+
+  getWaveformPreview: (assetPath: string, sampleCount = 192, nodeId?: string | null) =>
+    fetchJson<IRWaveformPreview>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/waveform-preview`, {
+          asset_path: assetPath,
+          sample_count: sampleCount,
+        }),
+        nodeId,
+      ),
+    ),
 
   loadCabinet: (irName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(

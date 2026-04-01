@@ -1,0 +1,92 @@
+import '@testing-library/jest-dom'
+import React from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
+
+import { JuceGridParameterEditor } from './SnapshotEditorParameterEditor'
+
+const mockGetWaveformPreview = jest.fn()
+
+jest.mock('../../../map2/clients/assets', () => ({
+  irApi: {
+    getWaveformPreview: (...args: unknown[]) => mockGetWaveformPreview(...args),
+  },
+}))
+
+describe('SnapshotEditorParameterEditor IR waveform preview', () => {
+  beforeEach(() => {
+    mockGetWaveformPreview.mockReset()
+  })
+
+  it('renders the loaded IR waveform and metadata in the parameter editor', async () => {
+    mockGetWaveformPreview.mockResolvedValue({
+      assetPath: '/tmp/cabs/Deluxe.wav',
+      fileName: 'Deluxe.wav',
+      sampleRate: 48_000,
+      sampleCount: 2_400,
+      durationMs: 50,
+      points: Array.from({ length: 12 }, (_, index) => (index + 1) / 12),
+    })
+
+    render(
+      <JuceGridParameterEditor
+        plugin={{
+          uri: 'map2://juce/convolution/cabinet',
+          name: 'Cabinet IR',
+          position: 0,
+          parameters: {},
+          bypassed: false,
+          loader_state: {
+            selected_asset_path: '/tmp/cabs/Deluxe.wav',
+          },
+        } as any}
+        meta={{
+          uri: 'map2://juce/convolution/cabinet',
+          name: 'Cabinet IR',
+          category: 'Convolution',
+          format: 'JUCE',
+          parameters: [],
+        } as any}
+        onParameterChange={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Cabinet IR waveform')).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByText('Deluxe.wav')).toBeInTheDocument()
+    })
+
+    expect(screen.getByLabelText('Deluxe.wav waveform preview')).toBeInTheDocument()
+    expect(screen.getByText('50 ms • 48 kHz • 2,400 samples')).toBeInTheDocument()
+    expect(mockGetWaveformPreview).toHaveBeenCalledWith('/tmp/cabs/Deluxe.wav', 192)
+  })
+
+  it('shows a placeholder when no IR asset is loaded', () => {
+    render(
+      <JuceGridParameterEditor
+        plugin={{
+          uri: 'map2://juce/convolution/reverb',
+          name: 'Reverb IR',
+          position: 0,
+          parameters: {},
+          bypassed: false,
+          loader_state: {
+            selected_asset_path: null,
+          },
+        } as any}
+        meta={{
+          uri: 'map2://juce/convolution/reverb',
+          name: 'Reverb IR',
+          category: 'Convolution',
+          format: 'JUCE',
+          parameters: [],
+        } as any}
+        onParameterChange={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Reverb IR waveform')).toBeInTheDocument()
+    expect(screen.getByText('No WAV impulse loaded for this block yet.')).toBeInTheDocument()
+    expect(mockGetWaveformPreview).not.toHaveBeenCalled()
+  })
+})

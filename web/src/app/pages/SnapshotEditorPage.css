@@ -5722,6 +5722,71 @@
   align-items: flex-start;
 }
 
+.juce-grid-page__parameter-editor-ir-preview,
+.juce-grid-page__parameter-editor-ir-preview-header,
+.juce-grid-page__parameter-editor-ir-preview-body,
+.juce-grid-page__parameter-editor-ir-preview-meta {
+  display: flex;
+}
+
+.juce-grid-page__parameter-editor-ir-preview {
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--juce-grid-parameter-accent) 28%, var(--cds-border-subtle, var(--border)));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--juce-grid-parameter-accent) 8%, var(--cds-layer, #161616)) 0%, var(--cds-layer-01, #262626) 100%);
+}
+
+.juce-grid-page__parameter-editor-ir-preview-header {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__parameter-editor-ir-preview-body {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__parameter-editor-ir-waveform {
+  inline-size: 100%;
+  block-size: auto;
+  min-block-size: 8rem;
+}
+
+.juce-grid-page__parameter-editor-ir-waveform-surface {
+  fill: color-mix(in srgb, var(--cds-layer-hover, rgba(255, 255, 255, 0.04)) 78%, black);
+  stroke: color-mix(in srgb, var(--juce-grid-parameter-accent) 24%, var(--cds-border-subtle, var(--border)));
+  stroke-width: 1;
+}
+
+.juce-grid-page__parameter-editor-ir-waveform-axis {
+  stroke: color-mix(in srgb, var(--juce-grid-parameter-accent) 25%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.juce-grid-page__parameter-editor-ir-waveform-bar {
+  fill: color-mix(in srgb, var(--juce-grid-parameter-accent) 78%, white 12%);
+}
+
+.juce-grid-page__parameter-editor-ir-preview-meta {
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.juce-grid-page__parameter-editor-ir-preview-meta span,
+.juce-grid-page__parameter-editor-ir-preview-empty p {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+}
+
+.juce-grid-page__parameter-editor-ir-preview-empty {
+  padding: 0.75rem 0;
+}
+
 .juce-grid-page__parameter-editor-knob-grid {
   display: flex;
   flex-wrap: wrap;
