@@ -6,7 +6,26 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-31 20:52 EDT - T660-T662 Push drum-machine backend spine, assignment persistence, and command contract completed
+Last updated: 2026-04-01 06:15 EDT - T663 Restack Labs feature cards into a full-width vertical list completed
+
+ID: T663
+Status: [✓] Done
+Title: Restack the Labs feature-card catalog into a full-width vertical list
+Description:
+- Goal / acceptance criteria: Update the `/labs` landing-page styling so every Labs feature card renders full width in a single vertical stack instead of a multi-column grid, while preserving the existing search/filter behavior and direct route launch actions.
+- Why it matters: The user wants the Labs catalog to read as a vertical list of full-width cards rather than a tiled gallery.
+- Dependencies: T644, T645
+- Estimated effort: Low
+- Required outputs: updated Labs landing-page layout styling, focused frontend validation, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 06:15 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/LabsLandingPage.css` so the Labs feature-card container is now a single vertical list and each card stretches to the full available content width instead of sharing a multi-column grid.
+  - Preserved the existing card content structure, search/filter behavior, and route-launch actions while changing only the catalog layout treatment.
+  - Ran the authoritative frontend build for validation, then reverted the generated `VERSION` and `version.json` stamp churn so the worktree stayed scoped to the actual source changes.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/LabsPage.test.tsx` -> PASS; `npm --prefix web run build` -> FAIL due unrelated existing frontend compile errors in `src/app/components/SnapshotEditor/snapshotEditorState.ts` (`SnapshotDetail.session_notes` missing) and `src/app/pages/SnapshotEditorPageContent.tsx` (`effectiveChainById` used before declaration).
+- Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T645
 Status: [✓] Done
