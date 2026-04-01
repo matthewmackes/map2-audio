@@ -6,12 +6,18 @@ import json
 from dataclasses import asdict
 from typing import Any, Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import get_config as get_runtime_config_manager
 from app.services.push_surface import PushSurfaceConfig, get_push_surface_manager
 from app.services.push_surface.config import RUNTIME_CONFIG_FIELDS
+from app.services.push_surface.device_assignment_service import (
+    PushDeviceDescriptor,
+    get_push_device_assignment_service,
+)
+from app.services.push_surface.drum_registry import get_drum_instance_registry
+from app.services.push_surface.drum_runtime import get_push_drum_session_service
 from app.services.push_surface.labs_store import get_push_surface_labs_store
 
 router = APIRouter(prefix="/api/push-surface", tags=["push-surface"])
@@ -52,6 +58,46 @@ class PushSurfaceLabsEditorStateRequest(BaseModel):
     """Whole-editor-state update payload for Labs Push editing."""
 
     editor_state: dict[str, Any]
+
+
+class PushSurfaceDeviceDescriptorRequest(BaseModel):
+    input_port_name: str
+    output_port_name: str
+    input_port_id: str | None = None
+    output_port_id: str | None = None
+    profile_id: str | None = None
+
+
+class PushSurfaceDeviceAssignmentRequest(PushSurfaceDeviceDescriptorRequest):
+    role: Literal[
+        "push_drum_machine",
+        "generic_push_surface",
+        "midi_hub_generic_controller",
+        "ignore_device",
+    ]
+
+
+class PushSurfaceDrumCommandRequest(BaseModel):
+    device_fingerprint: str
+    command: Literal[
+        "select_instance",
+        "confirm_instance_switch",
+        "trigger_pad",
+        "stop_pad",
+        "set_pad_velocity_mode",
+        "set_64_pad_bank",
+        "set_repeat",
+        "set_fixed_length",
+        "set_quantize",
+        "set_loop_selector",
+        "set_step",
+        "clear_step",
+        "set_step_automation",
+        "browse_pad_source",
+        "load_pad_source",
+        "request_surface_state",
+    ]
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 def _jsonable(value: Any) -> Any:
@@ -98,6 +144,16 @@ def _labs_editor_payload() -> dict[str, Any]:
         "active_device": _jsonable(asdict(manager.active_device)) if manager.active_device is not None else None,
         "manager_running": manager.running,
     }
+
+
+def _device_descriptor_from_request(request: PushSurfaceDeviceDescriptorRequest) -> PushDeviceDescriptor:
+    return PushDeviceDescriptor(
+        input_port_name=request.input_port_name,
+        output_port_name=request.output_port_name,
+        input_port_id=request.input_port_id,
+        output_port_id=request.output_port_id,
+        profile_id=request.profile_id,
+    )
 
 
 @router.get("/health")
@@ -247,3 +303,56 @@ async def update_push_surface_labs_editor_state(request: PushSurfaceLabsEditorSt
         "active_device": _jsonable(asdict(manager.active_device)) if manager.active_device is not None else None,
         "manager_running": manager.running,
     }
+
+
+@router.get("/drum-instances")
+async def list_push_surface_drum_instances() -> dict[str, Any]:
+    registry = get_drum_instance_registry()
+    instances = [instance.to_dict() for instance in await registry.list_instances()]
+    return {"status": "ok", "instances": instances}
+
+
+@router.get("/device-assignments")
+async def list_push_surface_device_assignments() -> dict[str, Any]:
+    service = get_push_device_assignment_service()
+    return {
+        "status": "ok",
+        "assignments": [assignment.to_dict() for assignment in service.list_assignments()],
+    }
+
+
+@router.post("/device-assignments")
+async def assign_push_surface_device_role(request: PushSurfaceDeviceAssignmentRequest) -> dict[str, Any]:
+    service = get_push_device_assignment_service()
+    assignment = service.assign_role(_device_descriptor_from_request(request), request.role)
+    return {
+        "status": "ok",
+        "assignment": assignment.to_dict(),
+    }
+
+
+@router.post("/device-assignments/resolve")
+async def resolve_push_surface_device_assignment(request: PushSurfaceDeviceDescriptorRequest) -> dict[str, Any]:
+    service = get_push_device_assignment_service()
+    resolution = service.resolve_device(_device_descriptor_from_request(request))
+    return {
+        "status": "ok",
+        **resolution,
+    }
+
+
+@router.get("/drum-session/state")
+async def get_push_surface_drum_session_state(device_fingerprint: str = Query(..., min_length=4)) -> dict[str, Any]:
+    service = get_push_drum_session_service()
+    state = await service.get_surface_state(device_fingerprint)
+    return {
+        "status": "ok",
+        **state,
+    }
+
+
+@router.post("/drum-session/command")
+async def dispatch_push_surface_drum_command(request: PushSurfaceDrumCommandRequest) -> dict[str, Any]:
+    service = get_push_drum_session_service()
+    payload = await service.dispatch_command(request.device_fingerprint, request.command, request.payload)
+    return payload

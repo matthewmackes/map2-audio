@@ -120,12 +120,110 @@ class _FakePushSurfaceLabsStore:
         return None
 
 
+class _FakeDrumInstance:
+    def to_dict(self):
+        return {
+            "instance_id": "inst-1",
+            "node_id": "local",
+            "node_label": "Local",
+            "snapshot_id": 42,
+            "snapshot_name": "Drum Snapshot",
+            "chain_id": 7,
+            "chain_name": "Main",
+            "plugin_id": 9,
+            "plugin_uri": "map2://juce/drums",
+            "plugin_name": "Drums",
+            "plugin_position": 0,
+            "display_name": "Drum Snapshot / Main",
+            "is_live": True,
+            "is_audible": True,
+            "source": "snapshot",
+            "capability_flags": ["transport", "pads"],
+            "last_seen_at": "2026-03-31T20:00:00+00:00",
+        }
+
+
+class _FakeDrumRegistry:
+    async def list_instances(self):
+        return [_FakeDrumInstance()]
+
+
+class _FakeAssignment:
+    def __init__(self, role: str, descriptor) -> None:
+        self.role = role
+        self.descriptor = descriptor
+
+    def to_dict(self):
+        return {
+            "fingerprint": "fp-1",
+            "role": self.role,
+            "input_port_name": self.descriptor.input_port_name,
+            "output_port_name": self.descriptor.output_port_name,
+        }
+
+
+class _FakeAssignmentService:
+    def __init__(self) -> None:
+        self.assignments = []
+
+    def list_assignments(self):
+        return self.assignments
+
+    def assign_role(self, descriptor, role):
+        assignment = _FakeAssignment(role, descriptor)
+        self.assignments = [assignment]
+        return assignment
+
+    def resolve_device(self, _descriptor):
+        return {
+            "fingerprint": "fp-1",
+            "status": "assigned",
+            "assignment": {
+                "fingerprint": "fp-1",
+                "role": "push_drum_machine",
+            },
+        }
+
+
+class _FakePushDrumSessionService:
+    async def get_surface_state(self, device_fingerprint: str):
+        return {
+            "session": {
+                "device_fingerprint": device_fingerprint,
+                "selected_instance_id": "inst-1",
+                "bank_index": 0,
+                "last_command": None,
+                "pending_confirmation": None,
+            },
+            "available_instances": [{"instance_id": "inst-1"}],
+            "selected_projection": {"instance": {"instance_id": "inst-1"}},
+        }
+
+    async def dispatch_command(self, device_fingerprint: str, command: str, payload: dict[str, object] | None = None):
+        return {
+            "status": "ok",
+            "session": {
+                "device_fingerprint": device_fingerprint,
+                "selected_instance_id": payload.get("instance_id") if payload else "inst-1",
+                "bank_index": 0,
+                "last_command": command,
+                "pending_confirmation": None,
+            },
+            "available_instances": [{"instance_id": "inst-1"}],
+            "selected_projection": {"instance": {"instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1"}},
+        }
+
+
 def _build_client(monkeypatch, *, manager: _FakePushSurfaceManager, runtime_config: _FakeRuntimeConfigManager, labs_store: _FakePushSurfaceLabsStore | None = None) -> TestClient:
     app = FastAPI()
     app.include_router(push_surface_routes.router)
+    assignment_service = _FakeAssignmentService()
     monkeypatch.setattr(push_surface_routes, "get_push_surface_manager", lambda: manager)
     monkeypatch.setattr(push_surface_routes, "get_runtime_config_manager", lambda: runtime_config)
     monkeypatch.setattr(push_surface_routes, "get_push_surface_labs_store", lambda: labs_store or _FakePushSurfaceLabsStore())
+    monkeypatch.setattr(push_surface_routes, "get_drum_instance_registry", lambda: _FakeDrumRegistry())
+    monkeypatch.setattr(push_surface_routes, "get_push_device_assignment_service", lambda: assignment_service)
+    monkeypatch.setattr(push_surface_routes, "get_push_drum_session_service", lambda: _FakePushDrumSessionService())
     monkeypatch.setattr(
         push_surface_routes.PushSurfaceConfig,
         "load",
@@ -235,3 +333,48 @@ def test_push_surface_labs_editor_state_routes(monkeypatch):
     assert put_response.json()["selected_welcome_routine"]["id"] == "alt"
     assert put_response.json()["editor_state"]["assignments"] == [{"id": "b1", "label": "Cluster CC", "assignment_type": "cc"}]
     assert manager.refresh_state_calls == 0
+
+
+def test_push_surface_drum_registry_assignment_and_session_routes(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    instances = client.get("/api/push-surface/drum-instances")
+    assign = client.post(
+        "/api/push-surface/device-assignments",
+        json={
+            "input_port_name": "Push 1 In",
+            "output_port_name": "Push 1 Out",
+            "profile_id": "push1",
+            "role": "push_drum_machine",
+        },
+    )
+    resolve = client.post(
+        "/api/push-surface/device-assignments/resolve",
+        json={
+            "input_port_name": "Push 1 In",
+            "output_port_name": "Push 1 Out",
+            "profile_id": "push1",
+        },
+    )
+    session = client.get("/api/push-surface/drum-session/state", params={"device_fingerprint": "fp-1"})
+    command = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "select_instance",
+            "payload": {"instance_id": "inst-1"},
+        },
+    )
+
+    assert instances.status_code == 200
+    assert instances.json()["instances"][0]["instance_id"] == "inst-1"
+    assert assign.status_code == 200
+    assert assign.json()["assignment"]["role"] == "push_drum_machine"
+    assert resolve.status_code == 200
+    assert resolve.json()["status"] == "assigned"
+    assert session.status_code == 200
+    assert session.json()["session"]["device_fingerprint"] == "fp-1"
+    assert command.status_code == 200
+    assert command.json()["session"]["last_command"] == "select_instance"

@@ -79,6 +79,47 @@ async def test_direct_bridge_lists_chains_and_updates_snapshot_detail(tmp_path, 
     assert any(param.id == "drive" and float(param.value) == 0.9 for param in updated_params)
 
 
+@pytest.mark.asyncio
+async def test_direct_bridge_lists_drum_instances(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+
+    await snapshot_routes.create_snapshot(
+        snapshot_routes.SnapshotCreateRequest(
+            name="Drum Snapshot",
+            snapshot_data={
+                "paths": [
+                    {
+                        "id": "path_a",
+                        "label": "A",
+                        "plugins": [
+                            {
+                                "uri": "map2://juce/drums",
+                                "name": "Drums",
+                                "position": 0,
+                                "parameters": {"bpm": 120},
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+    )
+
+    bridge = DirectMap2SurfaceBridge()
+    instances = await bridge.list_drum_instances()
+    assert len(instances) == 1
+    assert instances[0]["plugin_uri"] == "map2://juce/drums"
+
+
 def test_rest_bridge_maps_websocket_messages():
     bridge = RestWebSocketMap2SurfaceBridge()
     event = bridge._map_ws_message({"type": "snapshot_loaded", "data": {"snapshot_id": 7}})

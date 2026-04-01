@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-31 19:17 EDT - T645 Publish Labs feature-card landing page and refresh port 3000 web server completed
+Last updated: 2026-03-31 20:52 EDT - T660-T662 Push drum-machine backend spine, assignment persistence, and command contract completed
 
 ID: T645
 Status: [✓] Done
@@ -65,50 +65,228 @@ Last updated: 2026-03-31 18:06 EDT - Codex
   - Prepared the full worktree for a synchronized `master` publish to `origin`, `gitlab`, and `local`.
 - Validation: `npm --prefix web run build` -> PASS; `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/` -> `200`; `lsof -iTCP:3000 -sTCP:LISTEN -n -P` -> listener present.
 
+ID: T658
+Status: [ ] Todo
+Title: Input + Output Clipping Indicators Per Channel — LED clip lights on channel card
+Description:
+- Goal / acceptance criteria: Each channel card displays an input clipping light AND an output clipping light using the existing LED widget style (orange numerals on black background). Clip lights flash when the signal at that point is hitting too hot. They do not display level numbers — only a binary clip state (clean / clipping). Input clip = signal hitting the first plugin in the chain too hard. Output clip = signal leaving the channel's last plugin clipping. Both lights are always visible on the card, not hidden in a detail panel.
+- Why it matters: Gain staging is the most common cause of bad tone in digital rigs. A guitarist needs to know at a glance whether their guitar is hitting the NAM model too hot or whether a channel's output is clipping the mix — without adjusting any parameters or reading meters. The clip light is the simplest, most unambiguous visual signal for this.
+- Dependencies: T639, T613
+- Estimated effort: Medium
+- Required outputs: input and output clip detection in the audio callback per channel, WebSocket or shared-memory bridge to push clip events to the frontend, clip light widget reusing existing LED style on each channel card, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T657
+Status: [ ] Todo
+Title: IR Waveform Display in Parameter Editor for Cabinet IR and Reverb IR Blocks
+Description:
+- Goal / acceptance criteria: When a cabinet IR or reverb IR plugin block is open in the parameter editor panel, display a waveform thumbnail of the loaded `.wav` impulse response file — showing the file's length, shape, early reflections, and tail decay. The waveform is rendered only in the parameter editor panel, not on the block card in the signal canvas. If no file is loaded, show a placeholder. File name and duration metadata are shown alongside the waveform.
+- Why it matters: Convolution reverb and cabinet IR selection is one of the most impactful tone-shaping decisions a guitarist makes. A visual waveform makes it immediately obvious whether an IR is a short bright cab tone vs. a long ambient room — without having to audition each file. This is standard in dedicated IR loaders (Two Notes, OwnHammer) and belongs in the MAP2 parameter editor.
+- Dependencies: T626
+- Estimated effort: Medium
+- Required outputs: waveform rendering utility (Web Audio API or canvas-based), integration into the parameter editor panel for cab IR and reverb IR plugin types, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T656
+Status: [ ] Todo
+Title: MIDI Clock Output — Synced to Active Snapshot Tempo, Updates on Activation and Tap-Tempo
+Description:
+- Goal / acceptance criteria: When a snapshot is activated and its stored tempo is applied (T659), MAP2 simultaneously broadcasts MIDI Clock (24 ppqn) on the configured MIDI output port so external hardware pedals (delays, reverbs, loopers) lock to the same BPM automatically. When the player taps a new live tempo (T659), the MIDI Clock rate updates immediately. MIDI Clock output can be enabled/disabled globally. No per-snapshot toggle — if enabled globally, it runs whenever a tempo is set.
+- Why it matters: Professional guitarists use external pedals alongside their main processor — a MIDI-synced delay or looper on the pedalboard needs to receive clock from MAP2 without the player having to tap tempo on each device separately. This eliminates that manual step and keeps the whole rig in time.
+- Dependencies: T659
+- Estimated effort: Medium
+- Required outputs: MIDI Clock generator in the Python MIDI service (24 ppqn, tempo-accurate), wired to snapshot activation and live tap-tempo events, global enable/disable config, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T655
+Status: [ ] Todo
+Title: MIDI Note-On Block Focus — Any Controller Selects and Focuses Plugin Block in Editor
+Description:
+- Goal / acceptance criteria: When a MIDI note-on message is received on the configured "block focus" channel/note range, MAP2 selects and focuses the corresponding plugin block in the Snapshot Editor signal canvas. The mapping is configurable: each note or CC value maps to a block position (1–N) in the active chain. This allows any MIDI controller — pedalboard, Push, expression unit — to jump the editor's focus to a specific effect block without touching the screen, equivalent to Helix's touch-to-select footswitch shortcut. The focused block's parameter panel opens automatically.
+- Why it matters: On stage, reaching for a mouse to select a plugin block is impractical. A guitarist should be able to stomp a footswitch, have the editor jump to that block, and immediately see its parameters on screen — ready for adjustment without any navigation.
+- Dependencies: T626
+- Estimated effort: Medium
+- Required outputs: MIDI note-to-block-index mapping config (stored per snapshot or globally), MIDI listener routing in midi_service.py, WebSocket or store update that sets editor focus to the mapped block, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T654
+Status: [ ] Todo
+Title: Gig Setlist — Ordered Favorites List for Live Sequencing
+Description:
+- Goal / acceptance criteria: The existing snapshot favorites/star system (T622) is extended to support a manually-ordered sequence. Starred snapshots can be reordered within the favorites list by the player before a gig. During the show, the Prev/Next arrows (T624) and MIDI PC up/down step through the favorites list in the player's chosen order rather than by global program number. A "Setlist mode" toggle switches between "all snapshots ordered by program number" and "starred snapshots in gig order". The setlist order is persisted per-node in the database.
+- Why it matters: Kemper Performance Mode and Helix Setlists are industry benchmarks because they let a guitarist arrange their sounds in song order before a show and step through them linearly. This delivers the same workflow without a separate Setlist object — the favorites list IS the setlist.
+- Dependencies: T622, T624
+- Estimated effort: Medium
+- Required outputs: ordered favorites list with drag-free button-based reordering (up/down arrows), setlist mode toggle in editor, Prev/Next respects setlist order when mode is active, persistence in database, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T653
+Status: [ ] Todo
+Title: Global Noise Gate — Auto-Inserted as Always-First Block in Every New Snapshot Chain
+Description:
+- Goal / acceptance criteria: A global noise gate plugin block is automatically inserted at position 0 (head) of every new snapshot chain when created. It cannot be reordered to a non-first position — the UI prevents moving it past the input. It can be bypassed per-snapshot if the player does not need it. Threshold and release are configurable globally (applied as defaults for new chains) and can be overridden per-snapshot. The block is visually distinguished from user-added blocks (e.g., a lock icon or "SYS" label) so it is never confused with a manually-added gate.
+- Why it matters: Every professional guitar rig has a noise gate at the input. Building it into the platform as a guaranteed first block means guitarists never have to remember to add it, never accidentally delete it, and always have consistent hum/hiss control regardless of which snapshot is loaded.
+- Dependencies: T607, T628
+- Estimated effort: Medium
+- Required outputs: global gate config (threshold, release) in MAP2 config schema, auto-insert logic in snapshot creation path, UI visual treatment distinguishing system blocks from user blocks, bypass-only (no delete) constraint in the editor, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T652
+Status: [ ] Todo
+Title: Per-Snapshot Footswitch Labels — Pushed to Hardware and LCD via MIDI SysEx on Activation
+Description:
+- Goal / acceptance criteria: Each snapshot stores a label (max 8 characters) for each MIDI-assigned footswitch. On snapshot activation, MAP2 pushes these labels to compatible hardware controllers via MIDI SysEx (formatted for common controllers: Morningstar MC6/MC8, BeatStep Pro, and the MAP2 LCD system). The label push occurs as part of the activation sequence — after all chains are confirmed live. Labels are editable per-snapshot in the MIDI map panel. If no label is set, the controller's own default label is used (no blank push).
+- Why it matters: Helix's scribble strips are the most praised feature in the entire guitar processor category. A guitarist on a dark stage needs hardware that tells them what each switch does for THIS song, not a generic label. Pushing snapshot-specific labels to hardware is the software equivalent of scribble strips — and MAP2 can do it for any MIDI controller, not just proprietary hardware.
+- Dependencies: T615, T655
+- Estimated effort: High
+- Required outputs: per-snapshot footswitch label storage in snapshot data model (label_map field), SysEx formatting for Morningstar MC6/MC8 and BeatStep Pro, MAP2 LCD label push integration, label push step in activation sequence, label editor UI in MIDI map panel, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T651
+Status: [ ] Todo
+Title: Bypassed Blocks Dim to 30% Opacity in Signal Canvas
+Description:
+- Goal / acceptance criteria: In the Snapshot Editor signal canvas, any plugin block that is currently bypassed renders at approximately 30% opacity compared to active blocks. Active blocks render at full opacity. The dimming is applied in real-time as bypass state changes — when a player taps the bypass button on a selected block (T626), the block visually dims immediately in the canvas. This gives the player a complete at-a-glance picture of which effects are active in their signal chain without reading individual block bypass toggles.
+- Why it matters: Every top-rated signal chain editor (Helix, BIAS FX 2, Fractal Axe-Edit) uses this pattern. A guitarist looks at the canvas and immediately reads "compressor on, drive on, reverb off" from the opacity alone. Without it, bypass state is invisible at the canvas level and the player must check each block individually.
+- Dependencies: T626
+- Estimated effort: Low
+- Required outputs: CSS/style update to signal canvas block rendering (opacity driven by bypass state), real-time update when bypass toggles, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T650
+Status: [ ] Todo
+Title: Color-by-Effect-Type as Default Block Color — Uses Existing Carbon Theme Controls
+Description:
+- Goal / acceptance criteria: When a plugin block is added to a chain, its default color is automatically assigned based on its effect type using a Carbon-themed palette: drives/distortion = Carbon Green 40, delays = Carbon Blue 40, reverbs = Carbon Purple 40, modulation (chorus/flange/phaser/tremolo) = Carbon Orange 40, amp/preamp = Carbon Red 40, cabinet IR = Carbon Teal 40, compression/dynamics = Carbon Cyan 40, utilities/EQ = Carbon Gray 40, NAM = Carbon Magenta 40. The player can override the color per-block. The type-to-color mapping uses existing Carbon `@carbon/colors` tokens — no new design tokens introduced. Color propagates through the full system per T612.
+- Why it matters: Helix's color-by-effect-type system is the single most praised UI decision in the entire guitar processor category. Guitarists instantly understand the visual language. By anchoring it to Carbon's existing color tokens, MAP2 gets this for free without a custom design system.
+- Dependencies: T612
+- Estimated effort: Low
+- Required outputs: effect-type-to-Carbon-color mapping utility (shared between frontend and any label generation), auto-color assignment on block creation, override capability retained, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T649
+Status: [ ] Todo
+Title: Per-Snapshot Output Level Reference — Warning Indicator if Measured Output Diverges
+Description:
+- Goal / acceptance criteria: Each snapshot stores an optional output level reference value (in dBFS), set by the player during soundcheck by pressing a "Set Reference Level" button that captures the current measured output. After that, whenever the snapshot is live, the measured output is compared to the reference. If the difference exceeds a configurable threshold (default ±3 dB), a warning indicator appears in the editor hero — using a Carbon warning Tag or amber clip light — without auto-correcting the level. The warning is informational only: "Output is 5 dB above reference level." The reference value and threshold are visible and editable per-snapshot.
+- Why it matters: The universal complaint across ALL guitar processor reviews is that patches built at bedroom volume sound wrong at stage volume. No existing product provides even a warning about this mismatch. MAP2 can be the first to surface this as an actionable signal. A guitarist at soundcheck sets the reference, then if they accidentally bump a gain knob and the output jumps, the warning fires immediately.
+- Dependencies: T639, T658
+- Estimated effort: Medium
+- Required outputs: output_level_reference field in snapshot data model, "Set Reference Level" button in editor, real-time comparison logic using existing metering data, warning indicator in hero using Carbon amber Tag, configurable dB threshold, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T648
+Status: [ ] Todo
+Title: Unlimited Undo/Redo in Snapshot Editor (Session Memory Bounded)
+Description:
+- Goal / acceptance criteria: The Snapshot Editor supports unlimited undo and redo for all editing operations within a session: block add, block delete, bypass toggle, parameter value change, routing mode change, channel rename, channel reorder, mute/solo state, and dry/wet mix. Undo/redo history is bounded only by available session memory (no fixed step cap). Redo stack is cleared on any new edit action. Keyboard shortcuts Ctrl+Z / Ctrl+Shift+Z (or Cmd+Z / Cmd+Shift+Z on Mac) are supported. Undo/redo state is local to the editor session and is not persisted across page reloads. Uses the same pattern established in the MPX1 Flow canvas (T042) which implements 50-entry undo/redo via `useFlowUndoRedo.ts`.
+- Why it matters: The entire guitar processor category has broken or absent undo. The Quad Cortex closes the edit window on every Undo press. Most hardware units have no multi-step undo at all. This is a top complaint across all reviews. MAP2 can set the standard with deep, reliable undo that matches what guitarists expect from any modern software editor.
+- Dependencies: T626, T637
+- Estimated effort: Medium
+- Required outputs: `useSnapshotEditorUndoRedo.ts` hook following the MPX1 pattern, undo/redo wired to all editor mutations, keyboard shortcut handling, undo/redo buttons in the floating toolbar (T642), focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T647
+Status: [ ] Todo
+Title: Block Name + Key Parameter Push to Controller Displays via MIDI SysEx
+Description:
+- Goal / acceptance criteria: When MAP2 has a MIDI footswitch assignment mapping a controller button to a plugin block's bypass, it pushes the block's name and its most important current parameter value to the controller's display via MIDI SysEx — both on snapshot activation and whenever that parameter changes. Example: "Reverb — Mix: 45%" pushed to the display of the button assigned to that reverb block's bypass. Supported controllers (via SysEx): Morningstar MC6/MC8, BeatStep Pro. The "key parameter" for each plugin type is configurable (defaults to the first mapped parameter, or a plugin-type default). If the controller does not support SysEx display updates, the push is silently skipped.
+- Why it matters: Fractal's FM9 Mark II is praised specifically for its per-switch mini displays showing block name and parameter. MAP2 can deliver this for any MIDI controller that supports SysEx display updates, not just proprietary hardware. A guitarist on stage sees "Delay — Mix: 60%" on their footswitch display — no mental lookup required.
+- Dependencies: T652, T655
+- Estimated effort: High
+- Required outputs: SysEx display formatting for Morningstar MC6/MC8 and BeatStep Pro, parameter-change listener that triggers SysEx push for mapped parameters, "key parameter" config per plugin type, silent-skip when controller does not support display SysEx, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T646
+Status: [ ] Todo
+Title: Full Reverb and Delay Tail Spillover on Snapshot Switch
+Description:
+- Goal / acceptance criteria: When the player switches from Snapshot A to Snapshot B, the reverb and delay tails from Snapshot A's chains continue to ring out and decay naturally while Snapshot B's dry signal is already playing. The previous snapshot's wet tails are not cut off. This applies to all reverb and delay plugin blocks in any chain position. Spillover duration is bounded by each plugin's natural decay (not a fixed time limit). Spillover is always enabled — not a per-snapshot toggle. The implementation must not cause any audio gap or click at the transition point. This is the feature that differentiates Helix and Kemper Performance Mode from every other guitar processor on the market.
+- Why it matters: Cutting reverb/delay tails on snapshot switch is the #1 live switching complaint across Quad Cortex, Boss GT-1000, and every modeler except Helix and Kemper. A guitarist switching from a lush ambient clean tone to a dry crunch tone hears a jarring silence where the trail used to be. Full spillover makes the transition musical and professional.
+- Dependencies: T614
+- Estimated effort: High
+- Required outputs: JUCE audio engine changes to maintain a "fade-out" buffer for the previous snapshot's wet plugins during transition, snapshot activation sequence updated to start the new snapshot's dry chain before completing the old chain's teardown, no audio gap or click at transition, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
+ID: T659
+Status: [ ] Todo
+Title: Per-Snapshot Stored Tempo with Live Tap-Tempo Override
+Description:
+- Goal / acceptance criteria: Each snapshot stores a BPM value (tempo field). On snapshot activation, the stored tempo is applied immediately to all time-based effects (delay time, tremolo rate, vibrato rate, LFO rate, modulation speed) that are configured to sync to tempo. The player can override the tempo live by tapping a "Tap Tempo" button in the editor UI (or via a MIDI note/CC assignment), which updates the running tempo for the current session without modifying the stored snapshot value. The live-tapped tempo resets to the snapshot's stored value when the next snapshot is activated. Tempo is displayed in BPM in the editor hero, always visible.
+- Why it matters: Helix's per-snapshot tempo is cited as a key live workflow advantage. A guitarist builds Snapshot "VerseClean" with a 120 BPM delay and "ChorusLead" with a 140 BPM delay — activating each snapshot automatically sets the correct delay time. No manual tap-tempo between song sections.
+- Dependencies: T615
+- Estimated effort: Medium
+- Required outputs: tempo field in snapshot data model and API, tempo application in activation sequence (all time-synced plugins), tap-tempo UI button in editor + MIDI CC assignment, BPM display in hero, tempo reset on next snapshot load, focused regression coverage, validation evidence.
+Subtasks: None
+Last updated: 2026-03-31
+
 ID: T642
 Status: [ ] Todo
-Title: Floating Toolbar — Extend existing bottom bar with core snapshot actions
+Title: Floating Toolbar — Extend Existing Bottom Bar with Core Snapshot Actions
 Description:
-- Goal: Persistent floating toolbar always visible in Snapshot Editor with: New, Go Live, Prev/Next, Duplicate, Lock/Unlock, Save (dirty flag indicator). Extends current bottom bar visual language — same Carbon color coding and spacing.
-- Dependencies: T606, T607, T610, T615, T617, T618, T630
+- Goal / acceptance criteria: The Snapshot Editor's existing floating bottom toolbar is extended with all core player actions, always visible regardless of scroll position or which panel is open. Required buttons: New (T607), Go Live (T615), Prev arrow (T624), Next arrow (T624), Duplicate (T625), Lock/Unlock (T636), Save (with dirty-flag dot indicator when unsaved changes exist), Undo (T648), Redo (T648), Tap Tempo (T659). The toolbar must visually continue the existing bottom bar's color coding, Carbon spacing, and iconography — no new design language. All buttons follow Carbon icon button conventions. The toolbar is fixed-position and never scrolls out of view.
+- Why it matters: Every critical snapshot workflow action must be one click away at all times. No hunting through menus mid-performance. The bottom toolbar is already established in the editor; this extends it with the full guitarist-workflow action set.
+- Dependencies: T607, T610, T615, T617, T618, T624, T625, T630, T636, T648, T659
 - Estimated effort: Medium
+- Required outputs: updated floating toolbar component, all required buttons wired to their respective actions/hooks, dirty-flag indicator logic, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T641
 Status: [ ] Todo
-Title: Monitoring Solo Output — Dedicated solo bus to separate hardware output
+Title: Monitoring Solo Output — Dedicated Solo Bus to Separate Hardware Output
 Description:
-- Goal: When a channel is soloed, route it to a designated monitoring output (configurable per snapshot or globally). Main mix continues unaffected. Monitoring output assignment visible and editable in editor.
-- Dependencies: T619
+- Goal / acceptance criteria: When a channel is soloed (T619), its signal is routed to a designated monitoring hardware output (a specific output channel on the audio interface) rather than simply muting all other channels through the main output. The main output mix continues playing all non-soloed channels uninterrupted — the guitarist's front-of-house sound is unaffected. The monitoring output assignment is configurable per-snapshot (overriding the global default) and is visible and editable directly in the editor's I/O section. A clear indicator in the UI shows when monitoring solo is active ("Monitoring: Channel Lead → Output 3/4").
+- Why it matters: During rehearsal and soundcheck, a guitarist needs to hear a single channel in isolation in their monitor wedge or headphones without cutting the main mix to the PA. The current Solo button simply mutes other channels through the same output — this feature gives it a proper dedicated monitoring path.
+- Dependencies: T619, T632
 - Estimated effort: Medium
+- Required outputs: monitoring_output_index field in snapshot io_bindings (and global default in config), audio engine routing change to send soloed channel signal to the designated output pair, solo state indicator in editor UI, configurable per-snapshot in I/O panel, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T640
 Status: [ ] Todo
-Title: Session Notes — Timestamped append-only log per snapshot
+Title: Session Notes — Timestamped Append-Only Log Per Snapshot
 Description:
-- Goal: Each snapshot has a Session Notes area. Player appends timestamped free-text entries (e.g. "2026-03-31: Played the Ryman, tone cut through perfectly"). Read-only log, append-only, living history of gig use.
+- Goal / acceptance criteria: Each snapshot has a Session Notes section accessible from the editor (below the description field or in a dedicated tab). The player appends free-text entries; each entry is automatically timestamped on save (ISO8601, displayed as human-readable date). The log is append-only — existing entries cannot be edited or deleted, only new entries added. Entries are displayed in reverse chronological order (newest first). The section is collapsed by default, expanding on click. Example entry: "2026-03-31 20:00 — Played the Ryman, this tone cut through perfectly at 110dB."
+- Why it matters: A snapshot used over months of gigs accumulates knowledge: what worked, what didn't, what crowd/room conditions it was used in. This is the living history of a tone. No guitar processor on the market provides this — it is a MAP2-specific differentiator that treats snapshots as long-lived creative assets, not just preset files.
 - Estimated effort: Medium
+- Required outputs: session_notes table linked to snapshot_id (or JSON array field in snapshot model), append-only POST /api/snapshots/{id}/notes endpoint, React session notes component with timestamp display and append form, collapsed-by-default accordion in editor, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T639
 Status: [ ] Todo
-Title: Output Level Meter Per Channel — LED widget (orange on black)
+Title: Per-Channel Output Clipping Indicator — LED Widget Style (Orange on Black)
 Description:
-- Goal: Each channel card shows a live peak+RMS output level meter using the existing LED number widget (orange numerals on black background already on page). Uses existing RT-safe metering ring buffer from audioCallback.
+- Goal / acceptance criteria: Each channel card displays a live output clip indicator using the existing LED number widget style (orange on black). The indicator shows "CLIP" or lights a clip LED when the channel's output signal exceeds 0 dBFS (or a configurable near-clip threshold). It does not display a numeric level — binary only: clean or clipping. The clip state is fed from the RT-safe metering ring buffer already present in the audioCallback signal chain. The indicator resets after a configurable hold time (default 1 second) to ensure brief clips are visible. This is the output-side indicator; input clipping is covered by T658.
+- Why it matters: A guitarist needs to know if a channel's output is clipping the mix without reading a meter or adjusting any controls. The LED clip indicator is the simplest, most unambiguous visual confirmation — matching the physical clip LEDs on hardware mixing desks and processors.
 - Estimated effort: Low
+- Required outputs: clip detection logic in audioCallback metering path, WebSocket or shared memory bridge to push clip events to frontend, output clip indicator widget on channel card reusing existing LED style, configurable hold time, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T638
 Status: [ ] Todo
-Title: Snapshot Version History — Up to 100 revisions per snapshot, revert to any
+Title: Snapshot Version History — 100 Revisions Per Snapshot, Revert to Any
 Description:
-- Goal: Every save creates a revision (up to 100 per snapshot). Player browses version history panel and restores any prior state. Uses snapshot_revision hash as basis. Managed internally, no git required.
+- Goal / acceptance criteria: Every time a snapshot is saved (via the explicit Save action), the previous state is stored as a numbered revision — up to 100 revisions per snapshot (oldest are dropped when the limit is reached). The player opens a Version History panel from the Details dropdown in the editor hero, sees a list of revisions with timestamps and change summaries (e.g., "Saved 2026-03-31 20:00 — 3 blocks, 2 channels, parallel routing"), and can restore any revision with one click. Restoring a revision creates a new save (does not silently overwrite the current state). The restore is undoable via T648.
+- Why it matters: No guitar processor on the market provides automatic version history. A guitarist who spent hours dialing in a tone and then accidentally overwrites it has no recourse. 100 revisions means months of weekly-session history. The snapshot_revision hash field already exists in the data model — this builds the storage and UI around it.
 - Estimated effort: High
+- Required outputs: snapshot_revisions table (snapshot_id, revision_number, saved_at, summary, payload JSON), revision creation on every explicit save, GET /api/snapshots/{id}/revisions endpoint, POST /api/snapshots/{id}/revisions/{n}/restore endpoint, Version History panel in editor Details dropdown, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -116,17 +294,22 @@ ID: T637
 Status: [ ] Todo
 Title: Live Routing Mode Switch Without Snapshot Reload
 Description:
-- Goal: Player can change routing mode (parallel/series/morph/sidechain) on a live snapshot without deactivating it. Engine reconfigures signal path in-place. Routing visualizer updates immediately.
+- Goal / acceptance criteria: While a snapshot is live and making sound, the player can change the routing mode (parallel_blend → series, series → morph, etc.) directly from the routing mode selector in the Snapshot Detail Grid (T611). The audio engine reconfigures the signal path in-place without deactivating and reactivating the snapshot — no audio gap, no chain teardown, no loss of plugin state. The routing visualizer updates immediately. The new routing mode is applied to the live engine and saved to the snapshot's current state (marked dirty until explicitly saved).
+- Why it matters: Mid-session experimentation — "does this sound better in parallel or series?" — requires live switching without losing the playing context. Forcing a deactivate/reactivate cycle interrupts sound and breaks the creative flow.
+- Dependencies: T611, T614
 - Estimated effort: Medium
+- Required outputs: in-place routing reconfiguration in the JUCE audio engine (no chain teardown), API endpoint for live routing mode update on active snapshot, frontend routing mode selector wired to live update (not just draft update), routing visualizer real-time update, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T636
 Status: [ ] Todo
-Title: Snapshot Lock + Name Validation (letters/numbers only, no spaces)
+Title: Snapshot Lock + Name Validation (Letters and Numbers Only, No Spaces)
 Description:
-- Goal: Player can lock a snapshot (read-only, still activatable). Unlock requires explicit click. Snapshot names enforce letters and numbers only — no spaces, no special characters. Validated at UI input and API level.
+- Goal / acceptance criteria: (A) Snapshot Lock: any snapshot can be marked as "locked" via a lock/unlock toggle in the editor (also in the floating toolbar T642). While locked, all parameter controls, block cards, chain editing, and routing controls in the editor are read-only. The snapshot can still be activated (Go Live) and played normally. Unlocking requires one explicit click on the lock button — no confirmation dialog. (B) Name Validation: snapshot names accept only letters (a–z, A–Z) and numbers (0–9). No spaces, no special characters, no underscores. Enforced inline at the UI input (error shown before save attempt) and at the API level (400 response with clear error message if violated). Applied consistently everywhere snapshot names are entered: create, rename, duplicate.
+- Why it matters: (A) Finalized tones get accidentally broken by knob nudges. Lock prevents this with one deliberate action. (B) Clean name constraints make snapshots safe for use as filenames (T633 asset bundle), MIDI SysEx label strings (T652), and display on hardware controllers with limited character sets.
 - Estimated effort: Low
+- Required outputs: is_locked field in snapshot data model, lock/unlock toggle in editor hero and floating toolbar, read-only enforcement across all editor controls when locked, name validation regex in React form inputs and FastAPI Pydantic model, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -134,17 +317,23 @@ ID: T635
 Status: [ ] Todo
 Title: Channel Rename Inline with Collision Prevention
 Description:
-- Goal: Each channel card has click-to-rename label. System enforces unique names within a snapshot. Internally always references stable channel_key. Names appear everywhere channel is referenced (routing, morph, mute/solo).
+- Goal / acceptance criteria: Each channel card displays the channel's label as a click-to-rename inline text field. Clicking the label turns it into an input; the player types a new name and presses Enter (or clicks away) to save. The system enforces unique channel names within a snapshot — if the player enters a name already used by another channel in the same snapshot, an inline error appears and the save is blocked. The stable internal channel_key identifier is never changed by a rename. The updated name propagates immediately everywhere the channel is referenced: routing visualizer, morph slider endpoints, mute/solo button labels, the "X of Y channels active" badge, and the A/B switch button (T630).
+- Why it matters: "Channel A" and "Channel B" are meaningless in the heat of a gig. "Clean" and "Lead" are immediately actionable. Channel names must be consistent everywhere they appear — if the player renames a channel in one place and it still says "B" somewhere else, trust in the system is broken.
+- Dependencies: T612, T628
 - Estimated effort: Low
+- Required outputs: inline rename input on channel card, uniqueness validation against sibling channels, name propagation to all channel-referencing UI components, optimistic UI update before API confirmation, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T634
 Status: [ ] Todo
-Title: Next Snapshot Pre-Load in Background
+Title: Next Snapshot Pre-Load in Background — Instantaneous Live Switch
 Description:
-- Goal: While live on Snapshot A, system silently pre-loads Snapshot B (next program number) — plugins instantiated, params set, IR files loaded. Switch is instantaneous, no mid-song loading delay.
+- Goal / acceptance criteria: While Snapshot A is live and playing, MAP2 silently pre-loads Snapshot B (the next snapshot by program number or setlist order) into the audio engine — instantiating all plugins, setting all parameters, and loading all IR/NAM asset files — without making it active. When the player activates Snapshot B (via UI, MIDI PC, or footswitch), the switch is instantaneous because all assets are already loaded. The pre-load happens in a background thread/task and does not affect the audio callback performance on the real-time cores. If the player activates a snapshot other than the pre-loaded one, the pre-loaded snapshot is discarded and the correct one is loaded normally.
+- Why it matters: Loading delay mid-song is the #1 usability complaint for preset switching across Boss GT-1000 and other slower processors. Pre-loading the next snapshot eliminates this entirely. The player stomps the pedal; sound changes immediately. No waiting.
+- Dependencies: T614, T646
 - Estimated effort: High
+- Required outputs: background snapshot pre-load mechanism in snapshot_runtime_service.py, pre-load triggered on snapshot activation (load next in sequence), asset pre-loading (NAM models, IR files) in background threads, instantaneous switch when pre-loaded snapshot matches activation target, pre-load cancel/replace when target changes, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -152,9 +341,11 @@ ID: T633
 Status: [ ] Todo
 Title: Asset Bundle — True Self-Contained Snapshot Package (.map2snapshot)
 Description:
-- Goal: Snapshot export embeds actual NAM model files and IR files in a binary bundle (zip-based). Importing on any node reproduces the sound identically — no missing assets. Cluster deploy uses same bundle to push assets to target nodes automatically.
-- Dependencies: T624 (existing partial export)
+- Goal / acceptance criteria: The snapshot export format (GET /api/snapshots/{id}/export) is extended to produce a ZIP-based binary bundle (`.map2snapshot` file) that embeds the snapshot JSON definition AND all referenced asset files: NAM model files, cabinet IR .wav files, and reverb IR .wav files. The existing asset_manifest (already implemented) identifies which files to include. On import (POST /api/snapshots/import), the bundle is unpacked — assets are stored in the MAP2 asset library if not already present, and the snapshot is created referencing them. Cluster deployment (POST /api/cluster/snapshots/deploy) uses the same bundle to push assets to target nodes automatically, eliminating the current manual asset-distribution gap. A guitarist puts a `.map2snapshot` file on a USB stick, imports it on any MAP2 node, and the sound is reproduced identically with no missing assets.
+- Why it matters: Cortex Cloud lock-in and manual asset distribution are the most-criticized aspects of the Quad Cortex workflow. MAP2's self-contained bundle format is a direct response: complete portability, no cloud dependency, no manual steps. The existing export/import endpoints already exist; this upgrades them from JSON-only to full-bundle.
+- Dependencies: T636 (name validation ensures safe filenames inside the bundle)
 - Estimated effort: High
+- Required outputs: ZIP bundle creation in export_snapshot() (JSON + asset files), bundle extraction in import_snapshot() (asset registration + snapshot creation), cluster deploy updated to unpack and distribute bundle assets, .map2snapshot MIME type and Content-Disposition header for browser download, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -162,8 +353,11 @@ ID: T632
 Status: [ ] Todo
 Title: I/O Device Per Snapshot + Global Default
 Description:
-- Goal: Each snapshot stores input/output device binding (io_bindings already in model). Activation auto-routes to correct interface. Player sets global default; new snapshots inherit it. Both visible/editable in editor.
+- Goal / acceptance criteria: Each snapshot stores its input and output device assignment in the existing io_bindings field. On activation, the audio engine automatically routes to the correct hardware interface for that snapshot (e.g., Snapshot A uses Edirol UA-1000, Snapshot B uses Hotone Jogg). A global default I/O device assignment is set in MAP2 config — new snapshots inherit it automatically. Both the per-snapshot assignment and the global default are visible and editable in the editor's I/O section. If the assigned device is not available at activation time, the pre-flight safety gate (T621) blocks activation with a plain-English error: "Cannot go live — input device EdirolUA1000 is not connected."
+- Why it matters: A guitarist who gigs with one interface and records with another should not have to manually reroute every time they switch contexts. The snapshot carries the I/O context, and switching snapshots switches the routing automatically.
+- Dependencies: T621, T630
 - Estimated effort: Low
+- Required outputs: global default I/O config (input_device, output_device) in MAP2 config schema with UI in settings, per-snapshot io_bindings editor in Snapshot Editor I/O section, device availability check in pre-flight gate, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -171,8 +365,11 @@ ID: T631
 Status: [ ] Todo
 Title: Snapshot Description Field — Inline Editable Rig Notes
 Description:
-- Goal: description field displayed beneath snapshot name in editor. Click-to-edit inline (no modal). Player leaves notes on when/how to use the tone, pickup selection, etc.
+- Goal / acceptance criteria: The snapshot's existing description field is displayed directly beneath the snapshot name in the editor hero, always visible (not collapsed behind a Details dropdown). Clicking the description text turns it into an inline textarea; the player types their notes and saves on Enter or click-away. If no description has been set, a subtle placeholder text appears ("Add rig notes..."). The description supports plain text only — no Markdown, no formatting. It is not a log (that is T640 Session Notes); it is the player's single persistent note about this snapshot: what guitar, what pickup, when to use it.
+- Why it matters: A snapshot called "VerseClean" might have been built for a Les Paul on the bridge pickup. Six months later the player switches to a Strat and wonders why it sounds wrong. The description field is where that note lives — always visible, always editable, never buried.
+- Dependencies: T636
 - Estimated effort: Low
+- Required outputs: description field displayed inline in editor hero below snapshot name, click-to-edit inline textarea, placeholder text when empty, PATCH /api/snapshots/{id} wiring for description update, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -180,9 +377,11 @@ ID: T630
 Status: [ ] Todo
 Title: A/B Hard Switch with Zero-Crossing Detection
 Description:
-- Goal: Dedicated A/B switch button (also MIDI note/CC triggerable) cuts between parallel channels at nearest zero-crossing to eliminate clicks. Active channel highlighted in its Carbon bold color.
-- Dependencies: T619
+- Goal / acceptance criteria: When routing mode is parallel_blend or the snapshot has two active channels, a dedicated A/B switch button is displayed prominently in the editor (and in the floating toolbar T642). Pressing it (or triggering via MIDI note/CC assignment) immediately cuts the active channel from A to B or B to A. The switch waits for the nearest zero-crossing in the audio signal before executing — ensuring a click-free transition imperceptible to the listener. The active channel is highlighted using its Carbon bold color (T612). The A/B switch state is reflected in real-time in the routing visualizer. MIDI assignment for the A/B switch is configurable per-snapshot.
+- Why it matters: A/B switching between two signal chains (clean vs. lead, dry vs. wet, rhythm vs. lead tone) is one of the most common live guitar performance actions. Zero-crossing detection eliminates the click that would otherwise occur on a hard switch — this is an audio quality requirement, not a nice-to-have.
+- Dependencies: T612, T619
 - Estimated effort: Medium
+- Required outputs: zero-crossing detection in JUCE audio engine for channel switch timing, A/B switch command in activation API, A/B switch button in editor and floating toolbar, MIDI CC/note assignment for A/B switch per-snapshot, active channel highlight using channel color, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -190,44 +389,58 @@ ID: T629
 Status: [ ] Todo
 Title: Morph Mode — Expression Pedal (MIDI CC) Continuous Blend Between Two Channels
 Description:
-- Goal: In morph routing mode, a large morph position slider (0–100%) is the primary control, mappable to expression pedal via MIDI CC. Heel down = Channel A, toe down = Channel B. Continuous smooth blend.
+- Goal / acceptance criteria: When routing mode is set to "morph", the editor displays a large horizontal morph position slider (0–100%) as the primary performance control. The slider is mappable to a MIDI CC (e.g., expression pedal CC#11 or CC#7) via MIDI learn in the per-snapshot MIDI map. Heel down (CC value 0) = Channel A at 100%; toe down (CC value 127) = Channel B at 100%. The blend is continuous and smooth — no stepped values, no audio artifacts at the extremes. The morph position is reflected in real-time in both the slider and the routing visualizer. The MIDI CC mapping is per-snapshot and persisted.
+- Why it matters: The morph routing mode is the MAP2 equivalent of Fractal's scene morphing and provides an infinite tonal range between two fully-configured chains with one foot movement. The expression pedal is the natural hardware control for this — the mapping must be effortless to configure.
+- Dependencies: T629 (routing mode), T655 (MIDI note-on block focus)
 - Estimated effort: Medium
+- Required outputs: morph position MIDI CC listener in midi_service.py, morph position real-time update to audio engine during CC receive, MIDI learn UI for morph CC assignment in per-snapshot MIDI map, large morph slider in routing visualizer with real-time CC feedback, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T628
 Status: [ ] Todo
-Title: Signal Flow Left-to-Right Always On Screen
+Title: Signal Flow Always Rendered Left-to-Right in Signal Canvas
 Description:
-- Goal: Signal canvas always renders guitar path left-to-right: Input → blocks → Output. Series = one horizontal lane. Parallel = stacked lanes with merge point at right. Never requires mental reconstruction.
+- Goal / acceptance criteria: The Snapshot Editor signal canvas always renders the guitar signal path as a left-to-right flow: Input node (left edge) → plugin blocks in chain order → Output node (right edge). Series routing renders as a single horizontal lane from left to right. Parallel routing renders as stacked horizontal lanes, each running left to right, with a merge/sum node at the right edge. No block wraps to a new row — the canvas scrolls horizontally if the chain is long. The spatial direction is never ambiguous: left = earlier in the signal path, right = later. Channel lane headers (if visible) are anchored to the left edge of each lane.
+- Why it matters: The left-to-right signal flow matches the mental model guitarists already have from real pedalboards (input jack on the left, output jack on the right) and from every professional-grade signal chain editor (Helix HX Edit, BIAS FX 2, Neural DSP). Any deviation from this breaks the instinctive spatial understanding.
 - Estimated effort: Medium
+- Required outputs: signal canvas layout engine enforcing strict left-to-right block ordering with horizontal scroll on overflow, Input and Output anchor nodes at left/right extremes, parallel lane stacking with merge node at right, no block row-wrapping, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T627
 Status: [ ] Todo
-Title: Auto-Tags from Effects in Chain
+Title: Auto-Tags from Plugin Types in Chain
 Description:
-- Goal: Snapshot tags auto-generated from plugin types in chain (e.g. reverb, nam, compressor, cabinet-ir). Applied on snapshot creation and updated when chain changes. No free-form text entry — chain-derived only.
+- Goal / acceptance criteria: When a snapshot is created or its chain is modified, the snapshot's tags array is automatically rebuilt from the plugin types present in all chains. Tag values are derived from the plugin URI or plugin category: e.g., a NAM plugin adds "nam", a cabinet IR adds "cabinet-ir", a reverb adds "reverb", a delay adds "delay", a compressor adds "compressor", a distortion/overdrive adds "drive", a chorus/flange/phaser adds "modulation". No free-form tag entry — tags are chain-derived only, ensuring consistent vocabulary across the library. Auto-tags are recalculated on every save. Players can filter the snapshot list by tag.
+- Why it matters: A guitarist with 30 snapshots needs to find "all my reverb tones" or "everything with NAM" instantly. Auto-generated tags from the actual chain contents are always accurate and require zero manual curation — they update automatically as the chain changes.
+- Dependencies: T607, T625
 - Estimated effort: Low
+- Required outputs: plugin-type-to-tag mapping utility (Python backend), auto-tag generation in snapshot create/update paths, tag filtering in GET /api/snapshots query params, tag display in snapshot list rows, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T626
 Status: [ ] Todo
-Title: Per-Plugin Bypass + Delete X on Block Card (visible only when selected)
+Title: Per-Plugin Bypass and Delete Controls on Block Card — Visible Only When Selected
 Description:
-- Goal: When a plugin block is selected, Bypass button and Delete X appear on the card. Bypass dims the block and hits live engine immediately. Delete removes from chain immediately. Both hidden when block is not selected.
+- Goal / acceptance criteria: When a plugin block card in the signal canvas is in the unselected state, it shows only its name, type color, and status (bypassed = 30% opacity per T651). When the block is selected (clicked), two additional controls appear on the card: (A) a Bypass toggle button — one click bypasses the plugin in the live engine immediately, block dims to 30% opacity; (B) a Delete (×) button — one click removes the plugin from the chain immediately in the live engine, with no confirmation dialog. Both actions hit the live audio engine instantly (not queued to a save). The controls disappear again when the block is deselected. No context menus, no submenus — the controls appear directly on the card surface.
+- Why it matters: A guitarist mid-session needs to kill a reverb or remove a plugin with a single click. Burying bypass and delete in menus requires multi-step navigation that breaks creative flow. The select-to-reveal pattern keeps the canvas clean when not editing but gives instant access when needed.
+- Dependencies: T651, T612
 - Estimated effort: Low
+- Required outputs: selected/unselected state management on block cards, Bypass and Delete buttons rendered only in selected state, live engine API calls on both actions, bypass state change triggers T651 opacity update, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T625
 Status: [ ] Todo
-Title: Snapshot Duplicate — One Click, Opens in Editor
+Title: Snapshot Duplicate — One Click, Opens in Editor Ready to Modify
 Description:
-- Goal: Duplicate action creates exact copy named "{Name}copy" (no spaces per naming rule), no program number assigned, derived_from_snapshot_id set. Opens immediately in editor ready to modify.
+- Goal / acceptance criteria: A Duplicate action is available on any snapshot (in the Details dropdown and in the floating toolbar T642). One click creates an exact copy of the snapshot with: (A) name set to "{OriginalName}copy" (no program number suffix, no spaces, obeying T636 naming rules), (B) no program number assigned (so the duplicate does not respond to MIDI PC until the player explicitly sets one), (C) derived_from_snapshot_id set to the original's ID for lineage tracking, (D) is_locked = false regardless of the original's lock state. The duplicate opens immediately in the editor, ready to modify. A toast confirms "Duplicated: OriginalName → OriginalNamecopy".
+- Why it matters: Creating a variation on an existing tone — "same rig but with more drive" — should not require rebuilding from scratch. Duplicate gives the player a safe copy to experiment with while the original remains untouched. The lineage field preserves the creative history.
+- Dependencies: T636, T620
 - Estimated effort: Low
+- Required outputs: POST /api/snapshots/{id}/duplicate endpoint, name generation with collision handling (append "2", "3" etc. if "copy" already exists), no program number on duplicate, derived_from_snapshot_id set, editor navigation to duplicate on creation, confirmation toast, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -235,45 +448,59 @@ ID: T624
 Status: [ ] Todo
 Title: Prev/Next Snapshot Navigation Arrows in Editor
 Description:
-- Goal: Two arrow buttons (Prev/Next) in Snapshot Editor step through snapshots by program_number or display_order. Mirrors MIDI PC up/down on pedalboard. No library panel required.
+- Goal / acceptance criteria: Two arrow buttons (← Prev and Next →) are displayed in the Snapshot Editor — in the editor hero and in the floating toolbar (T642). In normal mode, they step through snapshots ordered by program_number. In Setlist mode (T654), they step through the ordered starred snapshots. Pressing Next/Prev loads the adjacent snapshot into the editor (does not activate it — "Go Live" is a separate action). Keyboard shortcuts Left/Right arrow keys trigger Prev/Next when the editor canvas has focus. At the first/last snapshot in the sequence, the corresponding arrow is disabled with a tooltip "No previous snapshot" / "No next snapshot".
+- Why it matters: During soundcheck, a guitarist steps through their snapshots in order to confirm each one sounds correct. Prev/Next arrows with keyboard support make this fast and hands-free. It mirrors exactly what MIDI PC up/down does on a pedalboard — keeping hardware and software navigation in sync.
+- Dependencies: T615, T654
 - Estimated effort: Low
+- Required outputs: Prev/Next buttons in editor hero and floating toolbar, ordered snapshot query respecting program_number and setlist mode, keyboard shortcut handlers on canvas focus, disabled state at sequence boundaries, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T623
 Status: [ ] Todo
-Title: Live Snapshot Cannot Be Deleted
+Title: Live Snapshot Cannot Be Deleted — UI and API Enforcement
 Description:
-- Goal: If snapshot state = live in SnapshotRuntimeLiveState, delete action is disabled in UI — greyed out, tooltip "Cannot delete a live snapshot". Enforced at UI and API.
+- Goal / acceptance criteria: If a snapshot's runtime state is "live" (state = "live" in SnapshotRuntimeLiveState), the delete action is disabled everywhere in the UI: greyed out in the Details dropdown, greyed out in any snapshot list row action, with a tooltip reading "Cannot delete a live snapshot." The DELETE /api/snapshots/{id} endpoint also enforces this server-side: if the snapshot is currently live, the endpoint returns HTTP 409 Conflict with error message "Cannot delete a live snapshot." The check uses the same SnapshotRuntimeLiveState source of truth that drives the LIVE badge in the editor hero.
+- Why it matters: Deleting the snapshot that is currently making sound mid-performance is catastrophic. Audio would continue from the engine but the snapshot would be gone from the database — leaving the rig in an unrecoverable orphaned state. This constraint must be enforced at both the UI and API layers with no exception.
+- Dependencies: T615, T613
 - Estimated effort: Low
+- Required outputs: UI delete-button disabled state driven by SnapshotRuntimeLiveState.state === "live", tooltip on disabled state, server-side 409 guard in DELETE /api/snapshots/{id}, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T622
 Status: [ ] Todo
-Title: Snapshot Favorite/Star — Floats to Top of Lists
+Title: Snapshot Favorite / Star — Floats to Top of All Lists
 Description:
-- Goal: Player stars any snapshot as favorite. Starred snapshots float to top of all list/picker views. Uses existing is_favorite field. Gig-prep: star the 5 snapshots you'll use, rest stay out of the way.
+- Goal / acceptance criteria: Any snapshot can be starred as a favorite via a star icon in the editor hero and in the floating toolbar (T642). Starred snapshots sort to the top of all snapshot list views (ordered among themselves by program_number or display_order, then non-favorites follow). The star state uses the existing is_favorite field in the Snapshot data model. A starred snapshot remains starred across activations and edits until manually unstarred. In the editor hero, the star icon reflects the current snapshot's favorite state and toggles it on click. Starred snapshots are the source list for Setlist mode (T654).
+- Why it matters: A guitarist with 50 snapshots should be able to flag the 6 they'll use tonight and have those float to the top without deleting or reordering the rest. is_favorite already exists in the model — this delivers the UX on top of it.
+- Dependencies: T615
 - Estimated effort: Low
+- Required outputs: star toggle in editor hero (wired to PATCH /api/snapshots/{id} is_favorite), star toggle in snapshot list rows, sort-starred-first in GET /api/snapshots list query, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T621
 Status: [ ] Todo
-Title: Snapshot Pre-Flight Safety Gate — Block Activation if Any Channel Fails
+Title: Snapshot Pre-Flight Safety Gate — Block Activation If Any Channel Fails to Load
 Description:
-- Goal: Before going live, system verifies all defined channels can be loaded and are active. If any channel fails (missing plugin/NAM/IR), activation is blocked with plain-English error: "Cannot go live — Channel Lead is missing its amp model". No partial rigs silently going live.
-- Dependencies: T613
+- Goal / acceptance criteria: Before a snapshot is allowed to go live (either via Go Live button or MIDI PC), MAP2 performs a pre-flight check verifying that every channel defined in the snapshot can be loaded and is active: (1) all plugin URIs resolve to installed plugins, (2) all NAM model files referenced in the chain are present on disk, (3) all IR files (cabinet, reverb) referenced in the chain are present on disk, (4) the assigned audio interface (T632) is available. If any check fails, activation is blocked — POST /api/snapshots/{id}/activate returns 422 with a plain-English error list: "Cannot go live: Channel Lead — NAM model CleanTone.nam not found on this node." The Go Live button shows this error inline (not as a modal). Partial activation (some channels active, some not) is never silently permitted.
+- Why it matters: A guitarist stepping on the "Go Live" pedal must either get a fully working rig or a clear explanation of what is wrong. A silent partial activation where Channel B has no sound is the worst possible outcome — the player discovers it mid-song when it matters most. The pre-flight gate is the first layer of the triple-check system (T613).
+- Dependencies: T613, T615
 - Estimated effort: Medium
+- Required outputs: pre-flight validation in activate_snapshot() before any engine changes, per-channel resolution checks (plugins, NAM files, IR files, I/O device), 422 error response with structured failure list, inline error display on Go Live button, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T620
 Status: [ ] Todo
-Title: Activation Toast — Name + Channel Count + Block Count
+Title: Activation Toast — Snapshot Name + Channel Count + Block Count
 Description:
-- Goal: On snapshot activation (UI or MIDI PC), brief toast appears: "Live: SnapshotName — 2 channels, 7 blocks". Auto-dismisses after 3 seconds. Musically meaningful content, not just snapshot name.
+- Goal / acceptance criteria: When a snapshot is activated (via Go Live button, MIDI PC, or any other trigger), a brief toast notification appears confirming activation with musically meaningful content: "Live: SnapshotName — 2 channels, 7 blocks". The channel count is the number of active (not inactive/offline) channels. The block count is the total number of non-bypassed plugin blocks across all active chains. The toast auto-dismisses after 3 seconds. If activation was triggered by MIDI PC, the toast also shows the program number: "Live: VerseClean — 2 channels, 7 blocks (PC 1)". If activation fails, the toast shows the failure reason in amber: "Failed: VerseClean — Channel Lead not loaded." No action buttons on the toast — it is informational only.
+- Why it matters: After a snapshot switch, the player needs immediate confirmation that the right sound loaded with the expected configuration — especially in a MIDI-driven live rig where the player is not looking at the screen. The toast provides that confirmation in human terms, not just a status code.
+- Dependencies: T615, T621, T613
 - Estimated effort: Low
+- Required outputs: activation toast component using Carbon ToastNotification, content populated from activation response (name, active channel count, non-bypassed block count, program number if MIDI PC), auto-dismiss after 3 seconds, failure toast in amber on activation error, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -281,45 +508,59 @@ ID: T619
 Status: [ ] Todo
 Title: Mute/Solo Per Channel — Large and Obvious on Channel Card
 Description:
-- Goal: Mute and Solo buttons directly on each channel card, large and obvious, no submenus. Immediate engine reflection, persisted to snapshot on save. Solo routes to designated monitoring output (T641).
+- Goal / acceptance criteria: Each channel card displays a Mute button and a Solo button directly on the card surface — large, obvious, and always visible (not revealed on hover or selection). Mute immediately silences that channel in the live audio engine (the chain continues processing but its output is zeroed). Solo routes that channel to the designated monitoring output (T641) and does not mute the main mix. Both states are reflected immediately in the engine and persisted to the snapshot on the next explicit save. Muted channels are visually distinct from active channels (e.g., Carbon Warm Gray background on the muted card). Solo channels show a distinct indicator (e.g., Carbon Green border). Multiple channels can be muted simultaneously; only one channel can be soloed at a time.
+- Why it matters: Mute and Solo are the two most frequently used real-time performance controls on any mixing or processing surface. Burying them behind clicks or menus is unacceptable for live use. Large, always-visible buttons mean the guitarist can reach them without looking closely.
+- Dependencies: T612, T641
 - Estimated effort: Medium
+- Required outputs: Mute and Solo buttons on channel card (always visible, not hover-dependent), mute/unmute in live audio engine via API, solo routing to monitoring output via T641, visual muted/solo state on card, single-solo enforcement, state persisted on save, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T618
 Status: [ ] Todo
-Title: Snapshot Last-Used Timestamp ("Last used: N days ago")
+Title: Snapshot Last-Used Timestamp — "Last Used: N Days Ago"
 Description:
-- Goal: Each snapshot displays when it was last activated (activated_at field). Shown as relative time "Last used: 2 days ago". Helps identify active rotation vs. stale snapshots.
+- Goal / acceptance criteria: Each snapshot in the editor hero and any snapshot list row displays its last activated timestamp as a human-readable relative time: "Last used: 2 days ago", "Last used: 3 hours ago", "Last used: Never". The timestamp uses the existing activated_at field in the Snapshot data model. Relative time is recalculated on render (not stored as a string). Timestamps older than 30 days show as an absolute date: "Last used: Feb 28, 2026". The display updates when the snapshot is activated (activated_at is refreshed).
+- Why it matters: A guitarist returning after weeks away from the platform needs to know which snapshots are in active rotation and which are stale experiments. "Last used: 6 months ago" is an immediate signal to review or discard that snapshot. No existing guitar processor provides this.
+- Dependencies: T615
 - Estimated effort: Low
+- Required outputs: relative-time formatting utility (e.g., using date-fns or native Intl.RelativeTimeFormat), last-used display in editor hero and snapshot list rows, threshold logic for switching to absolute date at >30 days, activated_at field refresh on activation confirmed, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T617
 Status: [ ] Todo
-Title: "X of Y Channels Active" Badge in Editor Hero
+Title: "X of Y Channels Active" Real-Time Badge in Editor Hero
 Description:
-- Goal: Hero always shows real-time count of active channels (e.g. "2 of 3 channels active"). Updates via WebSocket when channel drops. Plain language only — no "degraded", no "missing". Inactive = "not loaded" or "offline".
-- Dependencies: T613
+- Goal / acceptance criteria: The Snapshot Editor hero displays a real-time badge showing the count of active channels out of total defined channels: e.g., "2 of 3 channels active". This badge updates via WebSocket whenever a channel's runtime state changes — including after initial activation, after the post-activation heartbeat check (T613), and during continuous runtime monitoring (T613). When all channels are active, the badge uses a Carbon Green Tag. When fewer than all channels are active, the badge uses a Carbon Amber Tag. Plain language only — no technical terms like "degraded", "missing", or "runtime chain". Inactive channels are described as "not loaded" or "offline" in the tooltip.
+- Why it matters: A guitarist must know at a glance whether their full rig is running. "2 of 3 channels active" is immediately actionable — someone or something is wrong. The badge uses the same WebSocket live state that already drives the LIVE/Stopped indicator, requiring no new data infrastructure.
+- Dependencies: T613, T615
 - Estimated effort: Low
+- Required outputs: active channel count derivation from SnapshotRuntimeLiveState (channels with runtime_sync.status "active" vs. total defined channels), badge Carbon Tag component in editor hero, real-time WebSocket update on state change, tooltip describing inactive channel(s) in plain language, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T616
 Status: [ ] Todo
-Title: Snapshot Diff View Before Going Live
+Title: Snapshot Diff View — Before/After Summary Before Going Live
 Description:
-- Goal: Optional before/after summary before activation — plain-English list of what changes vs. current live snapshot: plugin additions/removals/param changes. e.g. "NAM model: CleanTone → Crunch", "Reverb: bypassed → active".
+- Goal / acceptance criteria: When the player presses Go Live (T615), if the snapshot-to-be-activated differs from the currently live snapshot, an optional diff summary is shown inline below the Go Live button (not as a blocking modal). The diff lists changes in plain English: plugin additions ("+ Reverb added to Channel Clean"), removals ("− Chorus removed from Channel Lead"), parameter changes ("NAM model: CleanTone → Crunch"), and bypass state changes ("Reverb: bypassed → active"). The diff is computed client-side by comparing the current live snapshot payload (from SnapshotRuntimeLiveState.live_snapshot_payload) against the to-be-activated snapshot. The diff is collapsed by default with a "Show changes (5)" expander. The player can dismiss the diff and proceed immediately — it is never a blocking gate.
+- Why it matters: A guitarist activating an unfamiliar or recently-edited snapshot mid-song needs confidence that the change is intentional and correct. A compact before/after diff gives that confidence in 3 seconds. This is a feature no hardware processor offers — MAP2 can do it because it has the full snapshot data on both sides of the switch.
+- Dependencies: T615, T613
 - Estimated effort: Medium
+- Required outputs: client-side snapshot diff utility (compare two SnapshotDetail objects, produce human-readable change list), diff display below Go Live button (collapsed by default, expandable), diff computed only when both live snapshot and target snapshot are available, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T615
 Status: [ ] Todo
-Title: "Go Live" Button in Snapshot Editor
+Title: "Go Live" Button in Snapshot Editor — State Machine
 Description:
-- Goal: Single prominent Go Live button in Snapshot Editor. One click calls POST /api/snapshots/{id}/activate. Button becomes non-interactive Live indicator once activation confirms via WebSocket. No confirmation dialog.
+- Goal / acceptance criteria: A prominent "Go Live" button is displayed in the Snapshot Editor (in the editor hero area and in the floating toolbar T642). One click triggers POST /api/snapshots/{id}/activate with no confirmation dialog. The button follows a strict state machine: (1) Idle — button active, labeled "Go Live" with a Carbon primary style; (2) Activating — button disabled with a loading spinner and label "Activating..."; (3) Live — button replaced by a non-interactive "LIVE" indicator badge (matching the hero's existing LIVE treatment, slow red/fuchsia blink) — cannot be clicked again while live; (4) Error — button returns to clickable state with a Carbon danger style, error label "Activation failed — retry", and the pre-flight failure reason shown inline. Transitions between states are driven by WebSocket SnapshotRuntimeLiveState updates.
+- Why it matters: The Go Live button is the most critical action in the entire Snapshot Editor. Its state must be unambiguous: a player who already stomped Go Live should never be able to double-tap it. The state machine prevents duplicate activations and communicates exactly what the system is doing.
+- Dependencies: T621, T613
 - Estimated effort: Low
+- Required outputs: Go Live button component with 4-state machine (idle/activating/live/error), WebSocket state transition handling, error message inline display, button placement in editor hero and floating toolbar, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -327,30 +568,35 @@ ID: T614
 Status: [ ] Todo
 Title: Live-Safe Snapshot Switching — No Audio Gap, Parameter Crossfade
 Description:
-- Goal: Snapshot switches apply params to running plugins without stopping audio stream. Gradual parameter ramp/crossfade where values change drastically. No chain teardown unless plugin topology actually changed. No dropouts, clicks, or silence.
+- Goal / acceptance criteria: When a snapshot is activated while audio is running, the engine applies the new snapshot's plugin parameters WITHOUT stopping or restarting the audio stream. For parameters that change value significantly (e.g., gain drops from 80% to 20%), values are ramped smoothly over a short crossfade window (target: ≤20ms ramp, imperceptible to the listener) rather than jumping instantly. If the new snapshot's plugin topology is identical to the current live topology (same plugin URIs in the same chain order), no plugin teardown or re-instantiation occurs — only parameter values change. If the topology differs (plugins added, removed, or reordered), a minimal teardown occurs but the audio stream itself must not stop. No audible dropout, click, or silence is acceptable during any snapshot switch.
+- Why it matters: Preset switching audio gaps are the #1 complaint across the entire guitar processor category. Every product except Helix (snapshot mode) and Kemper (Performance Mode) has this problem. MAP2 must equal or exceed these benchmarks. A live guitarist cannot have silence mid-song.
+- Dependencies: T613
 - Estimated effort: High
+- Required outputs: parameter ramping in JUCE audio engine (per-parameter ramp time, applied in audioCallback), topology-change detection in snapshot activation (compare plugin URIs and order before teardown), stream-safe chain reconfiguration (no audio thread stop), focused regression coverage including soak tests at 48kHz/64-sample buffer, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T613
 Status: [ ] Todo
-Title: Dead Channel / Zombie Path Detection — Triple Check Method
+Title: Dead Channel / Zombie Path Detection — Triple-Check Method
 Description:
-- Goal: Three-layer check for channels that are defined but not making sound:
-  1. At activation: engine confirms each channel has a live runtime chain before reporting success
-  2. Post-activation heartbeat (2–3s later): re-checks all channel runtime states
-  3. Continuous runtime watch: WebSocket monitors for any channel dropping from active during live session
-  All three feed a warning indicator on the channel card using plain language ("not loaded", "offline").
+- Goal / acceptance criteria: Three independent verification layers ensure no channel is defined in a snapshot but silently producing no sound: (1) At-Activation Check — immediately after POST /api/snapshots/{id}/activate, the engine confirms each defined channel has a live runtime chain with status "active" before the activation response is returned as successful. If any channel is not active, activation fails with a 422 and a plain-English error per T621. (2) Post-Activation Heartbeat — 2–3 seconds after a successful activation, a background task re-queries all channel runtime states and flags any channel that degraded since the initial confirmation. If any channel is now inactive, a WebSocket event updates the UI immediately. (3) Continuous Runtime Watch — a persistent WebSocket subscription monitors all channel runtime states during a live session. If any channel drops from "active" to "not loaded" or "offline" at any time during playback, the channel card shows a warning indicator in plain language ("Channel Lead — not loaded") and the "X of Y channels active" badge (T617) updates immediately.
+- Why it matters: "No zombie channels" is a core product requirement. A guitarist cannot discover mid-song that Channel B has been silent for the last 10 minutes. Three independent checks — at activation, shortly after, and continuously — ensure no degradation goes undetected.
+- Dependencies: T612, T615
 - Estimated effort: Medium
+- Required outputs: at-activation channel status check in activate_snapshot(), post-activation background heartbeat task (asyncio.create_task, 2–3s delay), continuous WebSocket monitoring via existing snapshot_runtime_live_state topic, channel card warning indicator for inactive channels (plain-English label, Carbon Amber Tag), T617 badge update wired to all three check layers, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T612
 Status: [ ] Todo
-Title: Channel Color Coding — Carbon Bold, Consistent Everywhere
+Title: Channel Color Coding — Carbon Bold Palette, Consistent Everywhere
 Description:
-- Goal: Each channel's color field rendered as Carbon-themed bold color consistently across: signal canvas, routing visualizer, live path indicator, parameter editor, morph slider endpoints, mute/solo buttons. Player learns "green = clean, red = lead" and it never breaks.
+- Goal / acceptance criteria: Each channel's color (stored in SnapshotChannel.color) is rendered as a Carbon-themed bold color token consistently across every surface where that channel appears: (1) signal canvas lane background/accent, (2) routing visualizer channel node, (3) live path indicator, (4) parameter editor channel context header, (5) morph slider endpoint labels (A side / B side), (6) mute/solo button accent color, (7) A/B switch button (T630) active state. The color assignment for new channels uses Carbon bold color tokens (Carbon Green 50, Red 50, Blue 50, Purple 50, Teal 50, Orange 50) assigned in round-robin order. A player builds the association "green = clean, red = lead" and it never breaks across any view.
+- Why it matters: Consistent spatial-color language is the foundation of all other visual communication in the editor. Helix's color system is the industry benchmark. If a channel appears green in the canvas but gray in the routing visualizer, the visual language is broken and the player cannot trust the UI.
+- Dependencies: T650
 - Estimated effort: Medium
+- Required outputs: channel color token utility mapping SnapshotChannel.color to Carbon token, color application in signal canvas, routing visualizer, live path, parameter editor, morph slider, mute/solo buttons, A/B switch — all reading from the same utility, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
@@ -358,47 +604,54 @@ ID: T611
 Status: [ ] Todo
 Title: Routing Mode Always Visible in Snapshot Detail Grid
 Description:
-- Goal: Active routing mode (parallel_blend, series, morph, sidechain) always visible as persistent status in the Snapshot Detail Grid metadata table area (SnapshotChainManagementCard row 2). Never buried in a dropdown.
+- Goal / acceptance criteria: The active routing mode of the current snapshot (parallel_blend, series, morph, or sidechain) is always displayed as a persistent, readable field in the Snapshot Detail Grid metadata table area in SnapshotChainManagementCard (metadata row 2, which already shows Routing Mode per the T586 implementation). The field must update immediately when the routing mode is changed (T637) — it reads from currentSnapshotDraft (already wired in T589) rather than a stale API query. The routing mode value is displayed in human-readable form: "Parallel Blend", "Series", "Morph", "Sidechain" — not the raw enum value. It is never hidden in a dropdown or behind a Details click.
+- Why it matters: A guitarist mid-session must be able to glance at the hero and know instantly whether their rig is running parallel or series — especially when auditioning routing mode changes (T637). The field already exists in the metadata table; this ensures it is always current and human-readable.
+- Dependencies: T637
 - Estimated effort: Low
+- Required outputs: human-readable routing mode label mapping in SnapshotChainManagementCard, confirmed it reads from currentSnapshotDraft (verify T589 wiring is correct for this field), real-time update when T637 routing mode change fires, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T610
 Status: [ ] Todo
-Title: Snapshot "Go Live" Safety: Activate Button State Machine
+Title: Go Live Button State Machine — Idle / Activating / Live / Error
 Description:
-- Goal: Go Live button follows strict state machine: idle → activating (spinner) → live (indicator, not clickable) → error (retry available). Prevents double-tap. Error state shows plain-English failure reason.
+- Goal / acceptance criteria: The Go Live button (T615) follows a strict 4-state machine that prevents double-tap and communicates system state clearly: (1) Idle: Carbon primary button, "Go Live" label, clickable; (2) Activating: disabled, loading spinner, "Activating..." label — from click until WebSocket confirms live or error; (3) Live: replaced by non-interactive LIVE indicator badge (matching hero treatment — slow red/fuchsia blink), not clickable; (4) Error: Carbon danger button style, "Activation failed — retry" label, pre-flight failure reason shown inline below the button. State transitions are driven exclusively by WebSocket SnapshotRuntimeLiveState events — no polling, no timeout-based transitions. The button returns to Idle only when the snapshot is no longer live (e.g., a different snapshot goes live).
+- Why it matters: Double-tapping Go Live could trigger duplicate activations with unpredictable engine behavior. The state machine eliminates that risk. The error state gives the guitarist a clear signal that something went wrong and what to do next — rather than a silent failure.
 - Dependencies: T615, T621
 - Estimated effort: Low
+- Required outputs: 4-state button component (or state machine hook), WebSocket transition logic, error inline display, Idle transition on snapshot becoming non-live, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T607
 Status: [ ] Todo
-Title: "Capture Current State as New Snapshot" — Floating Toolbar New Button
+Title: "Capture Current State as New Snapshot" — New Button on Floating Toolbar
 Description:
-- Goal: Single button in floating toolbar reads live audio engine state, creates new snapshot named with timestamp default (e.g. "Rig20260331"), saves immediately. Name editable inline after capture. No wizard, no multi-step form. Uses existing POST /api/snapshots with live_state_payload.
-- Dependencies: T642
+- Goal / acceptance criteria: The floating toolbar (T642) contains a "New" button that, when pressed, reads the current live audio engine state via the existing live_state_payload mechanism and immediately creates a new snapshot via POST /api/snapshots with that payload. The snapshot is named with a timestamp default: "Rig" + YYYYMMDD (e.g., "Rig20260331"). If a snapshot with that name already exists, a numeric suffix is appended: "Rig20260331b", "Rig20260331c". The new snapshot is immediately opened in the editor with its name in inline-edit mode, so the player can rename it before doing anything else. No wizard, no multi-step form, no modal — one button press captures the rig, one inline edit names it.
+- Why it matters: A guitarist who has been jamming and found a great tone should be able to capture it in one action without stopping to fill out a form. The timestamp default ensures the name is always valid (letters/numbers only per T636) and unique by default. This is the "instant capture" moment that every guitarist needs.
+- Dependencies: T636, T642, T615
 - Estimated effort: Low
+- Required outputs: New button in floating toolbar, POST /api/snapshots with live_state_payload, timestamp-based name generation with collision suffix, immediate editor navigation to new snapshot, name field in inline-edit mode on load, focused regression coverage, validation evidence.
 Subtasks: None
 Last updated: 2026-03-31
 
 ID: T606
 Status: [ ] Todo
-Title: EPIC — Guitar Player Snapshot Workflow
+Title: EPIC — Guitar Player Snapshot Workflow (Phases 1–3)
 Description:
-- Goal: Implement the full dream workflow for a guitar player using the MAP2 Snapshot Editor:
-  (A) Create a new snapshot from current rig state
-  (B) Load and play an existing snapshot
-  (C) Switch between snapshots live with zero audio gap and no zombie channels
-  (D) React GUI always reflects what is live and making sound
-- Subtasks: T607, T610–T642 (36 tasks)
-- Why it matters: Defines the canonical guitarist UX for the MAP2 platform — the product's core value proposition.
-- Estimated effort: Epic (phased delivery)
+- Goal / acceptance criteria: Implement the complete dream workflow for a guitar player using the MAP2 Snapshot Editor across three delivery phases:
+  Phase 1 — Foundation (safety, live state, navigation): T611, T612, T613, T615, T617, T618, T620, T621, T622, T623, T624, T625, T626, T627, T631, T636
+  Phase 2 — Performance (audio quality, switching, channel control): T610, T614, T616, T619, T628, T629, T630, T632, T633, T635, T637, T639, T641, T642, T646, T648, T651
+  Phase 3 — Advanced (deep features, hardware integration): T634, T638, T640, T647, T649, T650, T652, T653, T654, T655, T656, T657, T658, T659, T607
+- Why it matters: This epic defines the canonical guitarist UX for the MAP2 platform — the core product value proposition. Every sub-task was validated by the platform owner through a 75-question product design session informed by competitive research across Fractal Audio, Line 6 Helix, Neural DSP Quad Cortex, Kemper Profiler, and Boss GT-1000.
+- Estimated effort: Epic (phased delivery — Phase 1 ~8 weeks, Phase 2 ~10 weeks, Phase 3 ~12 weeks)
+- Required outputs: All subtask acceptance criteria met, full audio regression suite passing, production build passing, dual-remote push on each phase completion.
+Subtasks: T607, T610–T659 (50 tasks across 3 phases)
 Last updated: 2026-03-31
 
 ID: T605
-Status: [>] In Progress
+Status: [✓] Done
 Title: Research and plan full Push 1 drum-machine parity backend architecture
 Description:
 - Goal / acceptance criteria: Review the current MAP2 Push surface subsystem, drum machine/drum sequencer backend, Labs placement, and Snapshot Editor card patterns; research the target Ableton Push 1 capability surface and relevant Push 1 user-mode/protocol behavior; then produce a phased implementation plan for a new Push-driven drum machine experience that targets 1:1 behavioral parity where feasible within MAP2, explicitly identifies reuse vs extension vs net-new backend work, and frames the follow-up discovery questions needed before implementation starts.
@@ -408,7 +661,7 @@ Description:
 - Required outputs: codebase-grounded architecture review, research-backed feature/capability matrix, phased backend implementation plan, identified risks/gaps, and question-driven follow-up sequence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-31 17:34 EDT - Codex
+Last updated: 2026-03-31 20:26 EDT - Codex
 - Progress notes:
   - Confirmed the repo already contains an operator-facing Push surface subsystem (`app/services/push_surface/**`, `app/routes/push_surface.py`, `web/src/app/pages/PushSurfacePage.tsx`) plus a typed drum-machine/drum-sequencer backend (`app/services/drum_machine_service.py`, `app/services/drum_sequencer_service.py`, `app/routes/drums.py`) and a registered `map2://juce/drums` effect card routed through the active Snapshot Editor plugin-card path.
   - Confirmed the current Push subsystem is snapshot/chain oriented today and still treats Push 1 hardware-specific protocol details such as display transport as unverified, which is the main backend delta between the current system and true Push 1 parity.
@@ -432,6 +685,66 @@ Last updated: 2026-03-31 17:34 EDT - Codex
   - Drum-sound browsing/loading scope fixed: Push-side browsing should target MAP2's own drum kit/pad/sample library only, not all cluster-visible user content or generated packs broadly.
   - Snapshot Editor integration scope fixed: the new drum-machine effect card should remain compact and expose transport/status plus `Open Full Editor`, not meaningful in-card drum editing.
   - The 15-question intake for this planning task is now complete; the next output should be the final architecture/implementation plan constrained by these decisions.
+- Completion notes:
+  - Wrote the codebase-grounded implementation plan in [docs/plans/PUSH1_DRUM_MACHINE_PARITY_PLAN_2026-03-31.md](/home/mm/map2-audio/docs/plans/PUSH1_DRUM_MACHINE_PARITY_PLAN_2026-03-31.md), covering the current MAP2 baseline, the orchestration gap between the existing Push and drum subsystems, the required instance-safe backend model, assignment/collision policy, cluster-wide banking, and the phased rollout needed to reach Push 1 Drum Rack parity.
+  - Locked the recommended backend shape around a new Push drum session runtime plus a cluster-visible drum instance registry, keeping device I/O inside the existing Push surface manager while moving instance targeting and confirmation state into explicit typed orchestration seams.
+  - Explicitly split the work into reuse, extension, and net-new backend modules so follow-on execution can start with the instance registry and command/state contract rather than mixing those structural tasks into later UI work.
+  - Captured the key implementation risks directly from the current repo state: singleton-oriented drum service behavior, unverified Push 1 display transport, and the need for hardware-satisfiable confirmation flows whenever Push selection would change a remote or already-audible target.
+- Validation: `python3 -m compileall app/services/push_surface app/services/drum_machine_service.py` -> PASS; `python3 - <<'PY'\nfrom pathlib import Path\nfor path in [Path('docs/plans/PUSH1_DRUM_MACHINE_PARITY_PLAN_2026-03-31.md'), Path('docs/PROJECT_WORKLIST.md')]:\n    text = path.read_text(encoding='utf-8')\n    assert 'T605' in text\nprint('ok')\nPY` -> PASS.
+
+ID: T660
+Status: [✓] Done
+Title: Build the drum instance registry and per-instance runtime facade for Push-targetable drum-machine control
+Description:
+- Goal / acceptance criteria: Replace the current service-global drum targeting assumption with a backend instance registry plus per-instance runtime facade that can enumerate every drum-machine plugin instance across snapshots/chains/nodes, expose stable instance descriptors, and support isolation-safe control of multiple concurrent drum-machine instances.
+- Why it matters: This is the structural prerequisite for every Push 1 parity feature beyond a single global drum machine. Without it, cluster banking, auto-live selection, and guarded remote switching remain impossible.
+- Dependencies: T605
+- Estimated effort: High
+- Required outputs: backend instance registry, per-instance runtime facade, stable descriptor contract, focused regression coverage, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 20:52 EDT - Codex
+- Completion notes:
+  - Added [app/services/push_surface/drum_registry.py](/home/mm/map2-audio/app/services/push_surface/drum_registry.py), which scans snapshot detail payloads for `map2://juce/drums` plugin instances and emits stable instance descriptors keyed by node/snapshot/chain/plugin identity.
+  - Added [app/services/push_surface/drum_runtime.py](/home/mm/map2-audio/app/services/push_surface/drum_runtime.py), introducing a per-instance runtime facade and Push drum session state layer so the Push subsystem no longer has to assume one global drum target forever.
+  - Extended the direct and REST Push bridge contract in [app/services/push_surface/map2_bridge.py](/home/mm/map2-audio/app/services/push_surface/map2_bridge.py) so drum-instance discovery is a first-class backend capability rather than an ad hoc route call.
+- Validation: `pytest -q tests/push_surface/test_bridge.py tests/push_surface/test_routes.py` -> PASS; `python3 -m compileall app/services/push_surface app/routes/push_surface.py` -> PASS.
+
+ID: T661
+Status: [✓] Done
+Title: Persist Push device role assignments cluster-wide with fingerprint collision handling
+Description:
+- Goal / acceptance criteria: Implement cluster-wide persistence for Push-like device role assignments keyed by descriptor fingerprint, surface the four approved first-detect roles, and enforce the agreed collision rule that indistinguishable second devices remain disabled with an operator-visible warning rather than receiving ambiguous ownership.
+- Why it matters: The user explicitly rejected auto-binding and alias-based guessing. Safe operator assignment is required before any Push device can control the drum-machine path predictably across nodes.
+- Dependencies: T605
+- Estimated effort: Medium
+- Required outputs: assignment persistence model, first-detect role flow, collision handling, focused regression coverage, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 20:52 EDT - Codex
+- Completion notes:
+  - Added [app/services/push_surface/device_assignment_service.py](/home/mm/map2-audio/app/services/push_surface/device_assignment_service.py), which persists Push device role assignments by normalized descriptor fingerprint and returns explicit `unassigned`, `assigned`, or `collision` resolution states.
+  - Added Push device assignment API routes in [app/routes/push_surface.py](/home/mm/map2-audio/app/routes/push_surface.py) for listing assignments, saving an approved role, and resolving a live descriptor against the stored fingerprint table.
+  - Encoded the agreed collision behavior directly in the resolver: if a matching fingerprint is encountered with conflicting concrete port ids, the response marks the device as a collision instead of assigning ambiguous shared ownership.
+- Validation: `pytest -q tests/push_surface/test_routes.py` -> PASS; `python3 -m compileall app/services/push_surface app/routes/push_surface.py` -> PASS.
+
+ID: T662
+Status: [✓] Done
+Title: Add the typed Push drum command/state contract for banking, confirmation, and live pad control
+Description:
+- Goal / acceptance criteria: Introduce the explicit backend contract for Push-driven drum-machine control, including typed commands for instance selection, guarded confirmation, transport/pad actions, parity-mode toggles, and the normalized state projection consumed by the Push surface manager and diagnostics UI.
+- Why it matters: The current Push and drum systems can only evolve safely if controller intent and drum runtime state meet through a stable contract instead of ad hoc service calls.
+- Dependencies: T605, T660, T661
+- Estimated effort: High
+- Required outputs: typed command/state API contract, bridge wiring, simulator coverage, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-31 20:52 EDT - Codex
+- Completion notes:
+  - Added typed Push drum session command/state request models and new routes in [app/routes/push_surface.py](/home/mm/map2-audio/app/routes/push_surface.py) for drum session state reads and command dispatch.
+  - Wired the new contract into [app/services/push_surface/map2_bridge.py](/home/mm/map2-audio/app/services/push_surface/map2_bridge.py) for both direct and REST/WebSocket bridge modes, so Push-facing consumers can use one normalized backend seam.
+  - Added focused regression coverage in [tests/push_surface/test_routes.py](/home/mm/map2-audio/tests/push_surface/test_routes.py) and [tests/push_surface/test_bridge.py](/home/mm/map2-audio/tests/push_surface/test_bridge.py) covering the new registry, assignment, session, and bridge behavior.
+- Validation: `pytest -q tests/push_surface/test_bridge.py tests/push_surface/test_routes.py` -> PASS; `python3 -m compileall app/services/push_surface app/routes/push_surface.py` -> PASS.
 
 ID: T604
 Status: [✓] Done

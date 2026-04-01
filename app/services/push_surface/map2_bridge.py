@@ -264,6 +264,15 @@ class Map2SurfaceAPI(Protocol):
     async def get_health(self) -> dict[str, Any]:
         ...
 
+    async def list_drum_instances(self) -> list[dict[str, Any]]:
+        ...
+
+    async def get_drum_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
+        ...
+
+    async def dispatch_drum_command(self, device_fingerprint: str, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        ...
+
 
 class DirectMap2SurfaceBridge:
     """In-process bridge that talks directly to MAP2 services/routes."""
@@ -527,6 +536,21 @@ class DirectMap2SurfaceBridge:
             "cached_snapshots": sorted(self._detail_cache.keys()),
         }
 
+    async def list_drum_instances(self) -> list[dict[str, Any]]:
+        from app.services.push_surface.drum_registry import get_drum_instance_registry
+
+        return [item.to_dict() for item in await get_drum_instance_registry().list_instances()]
+
+    async def get_drum_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
+        from app.services.push_surface.drum_runtime import get_push_drum_session_service
+
+        return await get_push_drum_session_service().get_surface_state(device_fingerprint)
+
+    async def dispatch_drum_command(self, device_fingerprint: str, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        from app.services.push_surface.drum_runtime import get_push_drum_session_service
+
+        return await get_push_drum_session_service().dispatch_command(device_fingerprint, command, payload)
+
 
 class RestWebSocketMap2SurfaceBridge:
     """REST/WebSocket bridge for an external or loopback MAP2 backend."""
@@ -781,6 +805,24 @@ class RestWebSocketMap2SurfaceBridge:
             "selected_snapshot_id": self._selected_snapshot_id,
         }
 
+    async def list_drum_instances(self) -> list[dict[str, Any]]:
+        payload = await self._request("GET", "/api/push-surface/drum-instances")
+        return list(payload.get("instances", []))
+
+    async def get_drum_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
+        return await self._request("GET", f"/api/push-surface/drum-session/state?device_fingerprint={device_fingerprint}")
+
+    async def dispatch_drum_command(self, device_fingerprint: str, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/api/push-surface/drum-session/command",
+            json_payload={
+                "device_fingerprint": device_fingerprint,
+                "command": command,
+                "payload": payload or {},
+            },
+        )
+
 
 class MockMap2SurfaceBridge:
     """In-memory bridge for tests and simulator-only workflows."""
@@ -967,3 +1009,33 @@ class MockMap2SurfaceBridge:
 
     async def get_health(self) -> dict[str, Any]:
         return {"bridge": "mock", "selected_preset_id": self._selected_preset_id}
+
+    async def list_drum_instances(self) -> list[dict[str, Any]]:
+        return []
+
+    async def get_drum_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
+        return {
+            "session": {
+                "device_fingerprint": device_fingerprint,
+                "selected_instance_id": None,
+                "bank_index": 0,
+                "last_command": None,
+                "pending_confirmation": None,
+            },
+            "available_instances": [],
+            "selected_projection": None,
+        }
+
+    async def dispatch_drum_command(self, device_fingerprint: str, command: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "session": {
+                "device_fingerprint": device_fingerprint,
+                "selected_instance_id": payload.get("instance_id") if payload else None,
+                "bank_index": 0,
+                "last_command": command,
+                "pending_confirmation": None,
+            },
+            "available_instances": [],
+            "selected_projection": None,
+        }
