@@ -10,7 +10,7 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.database import get_session
-from app.services.snapshot_service import SnapshotService, UNSET
+from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService, UNSET
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["snapshots"])
@@ -285,6 +285,12 @@ def _raise_not_found(entity: str) -> None:
 
 def _translate_value_error(exc: ValueError) -> None:
     raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _activation_error_detail(exc: ValueError) -> Any:
+    if isinstance(exc, SnapshotActivationPreflightError):
+        return exc.failures[0] if len(exc.failures) == 1 else list(exc.failures)
+    return str(exc)
 
 
 def _normalize_optional_query_string(value: Any) -> Optional[str]:
@@ -675,7 +681,7 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
         _invalidate_chain_list_cache()
         return payload
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
@@ -888,7 +894,7 @@ async def activate_snapshot_by_program(program_number: int) -> dict[str, Any]:
         _invalidate_chain_list_cache()
         return payload
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:

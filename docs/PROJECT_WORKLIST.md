@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]
+Last updated: 2026-04-01 EDT - T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1151,7 +1151,7 @@ Last updated: 2026-04-01 12:29 - Codex
 - Validation: `pytest -q tests/test_snapshot_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T621
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Pre-Flight Safety Gate — Block Activation If Any Channel Fails to Load
 Description:
 - Goal / acceptance criteria: Before a snapshot is allowed to go live (either via Go Live button or MIDI PC), MAP2 performs a pre-flight check verifying that every channel defined in the snapshot can be loaded and is active: (1) all plugin URIs resolve to installed plugins, (2) all NAM model files referenced in the chain are present on disk, (3) all IR files (cabinet, reverb) referenced in the chain are present on disk, (4) the assigned audio interface (T632) is available. If any check fails, activation is blocked — POST /api/snapshots/{id}/activate returns 422 with a plain-English error list: "Cannot go live: Channel Lead — NAM model CleanTone.nam not found on this node." The Go Live button shows this error inline (not as a modal). Partial activation (some channels active, some not) is never silently permitted.
@@ -1160,7 +1160,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: pre-flight validation in activate_snapshot() before any engine changes, per-channel resolution checks (plugins, NAM files, IR files, I/O device), 422 error response with structured failure list, inline error display on Go Live button, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 23:54 - Codex
+- Completion notes:
+  - Added a dedicated pre-flight validation pass to snapshot activation so unresolved plugins, missing NAM/IR assets, and unavailable assigned audio devices now fail before any live runtime chains are torn down.
+  - Returned structured `422` activation failures from both direct snapshot activation and MIDI program-change activation routes, preserving the previously live snapshot when the new candidate fails pre-flight.
+  - Updated the Snapshot Editor Go Live failure UI so multiple pre-flight issues render inline as multi-line copy while the toast surface still summarizes them cleanly in a single message.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotActivationToast.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T620
 Status: [✓] Done

@@ -1445,6 +1445,7 @@
   color: var(--cds-support-error, #fa4d56);
   font-size: 0.8125rem;
   line-height: 1.45;
+  white-space: pre-line;
 }
 
 .juce-grid-page__snapshot-status-go-live-diff {

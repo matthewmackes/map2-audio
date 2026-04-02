@@ -12,6 +12,7 @@ import copy
 import hashlib
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
@@ -59,6 +60,9 @@ SNAPSHOT_AUTO_TAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("drive", ("distortion", "overdrive", " drive", "fuzz", "saturation")),
     ("modulation", ("modulation", "chorus", "flanger", "flange", "phaser", "vibrato", "tremolo")),
 )
+_NAM_PLUGIN_URIS = {"map2://juce/nam", "urn:map2:nam-player"}
+_CABINET_IR_PLUGIN_URIS = {"map2://juce/convolution/cabinet", "urn:map2:ir-cabinet"}
+_REVERB_IR_PLUGIN_URIS = {"map2://juce/convolution/reverb", "urn:map2:ir-reverb"}
 UNSET = object()
 
 
@@ -221,6 +225,21 @@ def _plugin_tag_haystack(plugin_uri: Any, plugin_name: Any = None, loader_state:
     )
 
 
+class SnapshotActivationPreflightError(ValueError):
+    """Activation failed before any runtime mutation because the snapshot is incomplete."""
+
+    def __init__(self, failures: Iterable[str]):
+        normalized_failures = [
+            str(failure).strip()
+            for failure in failures
+            if str(failure).strip()
+        ]
+        if not normalized_failures:
+            normalized_failures = ["Cannot go live: Snapshot pre-flight validation failed."]
+        self.failures = normalized_failures
+        super().__init__("\n".join(normalized_failures))
+
+
 class SnapshotService:
     """CRUD and workflow service for unified snapshots."""
 
@@ -297,6 +316,213 @@ class SnapshotService:
             return
         snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
         await self.session.flush()
+
+    @staticmethod
+    def _collect_device_name_candidates(value: Any) -> set[str]:
+        names: set[str] = set()
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed:
+                names.add(trimmed)
+            return names
+        if isinstance(value, dict):
+            for key in (
+                "name",
+                "device",
+                "device_name",
+                "audio_device",
+                "alsa_device",
+                "input_device",
+                "output_device",
+            ):
+                names.update(SnapshotService._collect_device_name_candidates(value.get(key)))
+            return names
+        if isinstance(value, (list, tuple, set)):
+            for item in value:
+                names.update(SnapshotService._collect_device_name_candidates(item))
+        return names
+
+    def _get_audio_device_inventory(self) -> dict[str, Any]:
+        try:
+            from app.services.engine_runtime_facade import get_engine_service
+
+            service = get_engine_service()
+        except Exception:
+            return {
+                "current_aliases": set(),
+                "input_names": set(),
+                "output_names": set(),
+                "has_explicit_input_inventory": False,
+                "has_explicit_output_inventory": False,
+            }
+
+        if service is None or not getattr(service, "is_available", False):
+            return {
+                "current_aliases": set(),
+                "input_names": set(),
+                "output_names": set(),
+                "has_explicit_input_inventory": False,
+                "has_explicit_output_inventory": False,
+            }
+
+        try:
+            info = dict(service.get_system_info() or {})
+        except Exception:
+            info = {}
+
+        current_aliases: set[str] = set()
+        for key in ("audio_device", "alsa_device", "input_device", "output_device", "device"):
+            current_aliases.update(self._collect_device_name_candidates(info.get(key)))
+
+        explicit_input_names: set[str] = set()
+        for key in (
+            "available_input_devices",
+            "input_devices",
+            "input_device_names",
+            "inputs",
+            "input_ports",
+            "audio_inputs",
+        ):
+            explicit_input_names.update(self._collect_device_name_candidates(info.get(key)))
+
+        explicit_output_names: set[str] = set()
+        for key in (
+            "available_output_devices",
+            "output_devices",
+            "output_device_names",
+            "outputs",
+            "output_ports",
+            "audio_outputs",
+        ):
+            explicit_output_names.update(self._collect_device_name_candidates(info.get(key)))
+
+        generic_inventory: set[str] = set()
+        for key in ("available_devices", "devices", "audio_interfaces"):
+            generic_inventory.update(self._collect_device_name_candidates(info.get(key)))
+
+        if not explicit_input_names and generic_inventory:
+            explicit_input_names = set(generic_inventory)
+        if not explicit_output_names and generic_inventory:
+            explicit_output_names = set(generic_inventory)
+
+        return {
+            "current_aliases": current_aliases,
+            "input_names": explicit_input_names,
+            "output_names": explicit_output_names,
+            "has_explicit_input_inventory": bool(explicit_input_names),
+            "has_explicit_output_inventory": bool(explicit_output_names),
+        }
+
+    @staticmethod
+    def _preflight_asset_label(
+        loader_state: dict[str, Any],
+        asset_path: str,
+        *,
+        fallback: str,
+    ) -> str:
+        return str(
+            loader_state.get("selected_asset_name")
+            or loader_state.get("selected_model")
+            or loader_state.get("selected_ir")
+            or os.path.basename(asset_path)
+            or fallback
+        ).strip() or fallback
+
+    async def _validate_snapshot_activation_preflight(self, detail: dict[str, Any]) -> None:
+        chain_by_id = {
+            chain.get("id"): chain
+            for chain in detail.get("chains", [])
+            if isinstance(chain, dict) and chain.get("id") is not None
+        }
+        failures: list[str] = []
+
+        for channel_index, channel in enumerate(detail.get("channels", [])):
+            if not isinstance(channel, dict):
+                continue
+
+            channel_label = str(
+                channel.get("label")
+                or channel.get("channel_key")
+                or _stable_channel_label(channel_index)
+            ).strip() or _stable_channel_label(channel_index)
+            chain_id = channel.get("chain_id")
+            source_chain = chain_by_id.get(chain_id) if chain_id is not None else None
+            if not isinstance(source_chain, dict):
+                continue
+
+            for plugin in source_chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+
+                plugin_uri = str(plugin.get("uri") or "").strip()
+                if not plugin_uri:
+                    continue
+
+                plugin_name = str(plugin.get("name") or plugin_uri).strip() or plugin_uri
+                plugin_missing = bool(plugin.get("is_placeholder", False)) or not _plugin_available(plugin_uri)
+                if plugin_missing:
+                    failures.append(
+                        f"Cannot go live: Channel {channel_label} - plugin {plugin_name} is not installed on this node."
+                    )
+                    continue
+
+                loader_state = plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else {}
+                asset_path = str(loader_state.get("selected_asset_path") or "").strip()
+                if not asset_path:
+                    continue
+                if os.path.isfile(asset_path):
+                    continue
+
+                if plugin_uri in _NAM_PLUGIN_URIS:
+                    asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="NAM model")
+                    failures.append(
+                        f"Cannot go live: Channel {channel_label} - NAM model {asset_name} not found on this node."
+                    )
+                    continue
+
+                if plugin_uri in _CABINET_IR_PLUGIN_URIS:
+                    asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="cabinet IR")
+                    failures.append(
+                        f"Cannot go live: Channel {channel_label} - cabinet IR {asset_name} not found on this node."
+                    )
+                    continue
+
+                if plugin_uri in _REVERB_IR_PLUGIN_URIS:
+                    asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="reverb IR")
+                    failures.append(
+                        f"Cannot go live: Channel {channel_label} - reverb IR {asset_name} not found on this node."
+                    )
+                    continue
+
+                asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="plugin asset")
+                failures.append(
+                    f"Cannot go live: Channel {channel_label} - plugin asset {asset_name} not found on this node."
+                )
+
+        inventory = self._get_audio_device_inventory()
+        input_device = str(detail.get("input_device") or "").strip()
+        output_device = str(detail.get("output_device") or "").strip()
+
+        if (
+            input_device
+            and inventory["has_explicit_input_inventory"]
+            and input_device not in inventory["input_names"]
+        ):
+            failures.append(
+                f"Cannot go live: Input device {input_device} is not available on this node."
+            )
+
+        if (
+            output_device
+            and inventory["has_explicit_output_inventory"]
+            and output_device not in inventory["output_names"]
+        ):
+            failures.append(
+                f"Cannot go live: Output device {output_device} is not available on this node."
+            )
+
+        if failures:
+            raise SnapshotActivationPreflightError(failures)
 
     def _normalize_controls_payload(
         self,
@@ -701,6 +927,16 @@ class SnapshotService:
 
         params_applied = 0
         bypass_applied = 0
+        try:
+            await self._validate_snapshot_activation_preflight(detail)
+        except Exception as exc:
+            await runtime_state_service.fail_intent(
+                intent=intent,
+                failure_reason=str(exc),
+                runtime_metrics={},
+            )
+            raise
+
         try:
             await self._clear_materialized_runtime_chains()
             live_state_payload = await self._materialize_live_state(snapshot, detail)

@@ -3,6 +3,10 @@ import type { Chain, SnapshotChain, SnapshotDetail, SnapshotLivePathState, Snaps
 
 export const SNAPSHOT_ACTIVATION_TOAST_DURATION_MS = 3000
 
+interface ExtractSnapshotActivationFailureReasonOptions {
+  separator?: string
+}
+
 type SnapshotActivationToastSource = Pick<
   SnapshotDetail,
   'name' | 'channel_count' | 'channels' | 'chains' | 'paths' | 'live_state'
@@ -72,7 +76,12 @@ function countPluginsInPaths(paths: PathLike[]): number {
   return paths.reduce((total, path) => total + countNonBypassedPlugins(path.plugins), 0)
 }
 
-export function extractSnapshotActivationFailureReason(error: unknown): string | null {
+export function extractSnapshotActivationFailureReason(
+  error: unknown,
+  options: ExtractSnapshotActivationFailureReasonOptions = {},
+): string | null {
+  const separator = options.separator ?? ' '
+
   if (error instanceof ApiError) {
     const detail =
       typeof error.body === 'object' && error.body !== null && 'detail' in error.body
@@ -95,7 +104,7 @@ export function extractSnapshotActivationFailureReason(error: unknown): string |
           return ''
         })
         .filter((entry) => entry.length > 0)
-        .join(' ')
+        .join(separator)
       if (joined.length > 0) {
         return joined
       }
@@ -212,6 +221,6 @@ export function buildSnapshotActivationToastMessage(
 }
 
 export function buildSnapshotActivationFailureToastMessage(snapshotName: string, error: unknown): string {
-  const reason = extractSnapshotActivationFailureReason(error) ?? 'Activation failed.'
+  const reason = extractSnapshotActivationFailureReason(error, { separator: ' • ' }) ?? 'Activation failed.'
   return `Failed: ${snapshotName} - ${reason}`
 }

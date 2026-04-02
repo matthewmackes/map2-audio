@@ -6,6 +6,7 @@ import {
   buildSnapshotActivationToastMessage,
   countActiveSnapshotBlocks,
   countActiveSnapshotChannels,
+  extractSnapshotActivationFailureReason,
 } from './snapshotActivationToast'
 
 function buildSnapshotFixture(): SnapshotDetail {
@@ -133,6 +134,22 @@ describe('snapshotActivationToast', () => {
 
     expect(buildSnapshotActivationFailureToastMessage('VerseClean', error)).toBe(
       'Failed: VerseClean - Channel Lead not loaded.',
+    )
+  })
+
+  it('joins structured activation failure lists for inline and toast rendering', () => {
+    const error = new ApiError(422, 'Unprocessable Entity', {
+      detail: [
+        'Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node.',
+        'Cannot go live: Input device Tour Rack is not available on this node.',
+      ],
+    })
+
+    expect(extractSnapshotActivationFailureReason(error, { separator: '\n' })).toBe(
+      'Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node.\nCannot go live: Input device Tour Rack is not available on this node.',
+    )
+    expect(buildSnapshotActivationFailureToastMessage('VerseClean', error)).toBe(
+      'Failed: VerseClean - Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node. • Cannot go live: Input device Tour Rack is not available on this node.',
     )
   })
 })

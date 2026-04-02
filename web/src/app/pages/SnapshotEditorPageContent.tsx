@@ -1928,7 +1928,7 @@ export function SnapshotEditorPage() {
       })
     },
     onError: (error, snapshotId) => {
-      const failureReason = extractSnapshotActivationFailureReason(error) ?? 'Activation failed.'
+      const failureReason = extractSnapshotActivationFailureReason(error, { separator: '\n' }) ?? 'Activation failed.'
       const snapshotName = activeSnapshot?.id === snapshotId
         ? activeSnapshot.name
         : snapshotsSummaryQuery.data?.snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
