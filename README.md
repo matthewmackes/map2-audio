@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**934** Python | **1040** TypeScript | **131** C++/H | **129** Docs | **1241** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1042** TypeScript | **131** C++/H | **129** Docs | **1244** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bc451e1a`](https://github.com/matthewmackes/map2-audio/commit/bc451e1aa9d6eb997ac39dad4675bf3cfa7299fc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
+| [`7675468c`](https://github.com/matthewmackes/map2-audio/commit/7675468cd49731dee00b8512948b07fee6a38fed) | Extend snapshot editor floating toolbar | Map2 Audio | 2026-04-01 |
+| [`2a8981d0`](https://github.com/matthewmackes/map2-audio/commit/2a8981d03432b94827629339227039500b46b1aa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`c209d367`](https://github.com/matthewmackes/map2-audio/commit/c209d36791b25bc69b4f1ab7034858c357e7e79b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`2381fc9a`](https://github.com/matthewmackes/map2-audio/commit/2381fc9aa2178806f2b6a07385ec5796f50b2a44) | Capture current rig into dated snapshots | Map2 Audio | 2026-04-01 |
 | [`1b3472c3`](https://github.com/matthewmackes/map2-audio/commit/1b3472c3fb9d9c5714fb05c59cc7d5c3120ae0eb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`a6ee1a65`](https://github.com/matthewmackes/map2-audio/commit/a6ee1a655f2e43e3eec515e8e217afdecf0e2d22) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`cf0bb181`](https://github.com/matthewmackes/map2-audio/commit/cf0bb181c8dc20508991b529f6c5b6f42105f9e5) | Add snapshot runtime dead-channel detection | Map2 Audio | 2026-04-01 |
-| [`ac8ae367`](https://github.com/matthewmackes/map2-audio/commit/ac8ae36737f6622e17c55d84383947e4c8f21947) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`3ee21164`](https://github.com/matthewmackes/map2-audio/commit/3ee2116483faf1f47f01fc0e31bf34a44d08c17a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
-| [`4bff0e6f`](https://github.com/matthewmackes/map2-audio/commit/4bff0e6f3b6717ca9c97b70bd901cc6b971a3abe) | Unify snapshot editor channel color coding | Map2 Audio | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
