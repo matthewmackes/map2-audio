@@ -22,6 +22,7 @@ from sqlalchemy import delete, func, inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import get_config
 from app.database import (
     Chain,
     ChainPlugin,
@@ -39,6 +40,7 @@ from app.database import (
     SnapshotRouting,
     SnapshotSessionNote,
 )
+from app.services.juce_engine_service import get_audio_engine
 from app.services.maschine_encoder_map_service import normalize_maschine_encoder_map
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
@@ -71,6 +73,8 @@ _NAM_PLUGIN_URIS = {"map2://juce/nam", "urn:map2:nam-player"}
 _CABINET_IR_PLUGIN_URIS = {"map2://juce/convolution/cabinet", "urn:map2:ir-cabinet"}
 _REVERB_IR_PLUGIN_URIS = {"map2://juce/convolution/reverb", "urn:map2:ir-reverb"}
 UNSET = object()
+SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = "snapshots.default_input_device"
+SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = "snapshots.default_output_device"
 
 
 def _stable_channel_label(index: int) -> str:
@@ -118,6 +122,13 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return fallback
+
+
+def _normalize_device_name(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _utcnow() -> datetime:
@@ -448,6 +459,73 @@ class SnapshotService:
             "has_explicit_output_inventory": bool(explicit_output_names),
         }
 
+    def _get_snapshot_io_defaults(self) -> dict[str, Optional[str]]:
+        manager = get_config()
+        return {
+            "input_device": _normalize_device_name(manager.get(SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY)),
+            "output_device": _normalize_device_name(manager.get(SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY)),
+        }
+
+    def _resolve_snapshot_io_bindings(
+        self,
+        *,
+        input_device: Any,
+        output_device: Any,
+        use_defaults: bool = True,
+    ) -> tuple[Optional[str], Optional[str]]:
+        resolved_input = _normalize_device_name(input_device)
+        resolved_output = _normalize_device_name(output_device)
+        if not use_defaults:
+            return resolved_input, resolved_output
+
+        defaults = self._get_snapshot_io_defaults()
+        return (
+            resolved_input or defaults["input_device"],
+            resolved_output or defaults["output_device"],
+        )
+
+    async def _apply_snapshot_audio_device_bindings(self, detail: dict[str, Any]) -> dict[str, Any]:
+        resolved_input, resolved_output = self._resolve_snapshot_io_bindings(
+            input_device=detail.get("input_device"),
+            output_device=detail.get("output_device"),
+        )
+        requested_device = resolved_output or resolved_input
+        if not requested_device:
+            return {
+                "requested_input_device": resolved_input,
+                "requested_output_device": resolved_output,
+                "applied_audio_device": None,
+                "applied": False,
+                "reason": "not_configured",
+            }
+
+        service = get_audio_engine()
+        if service is None:
+            return {
+                "requested_input_device": resolved_input,
+                "requested_output_device": resolved_output,
+                "applied_audio_device": None,
+                "applied": False,
+                "reason": "engine_unavailable",
+            }
+
+        if resolved_input and resolved_output and resolved_input != resolved_output:
+            logger.info(
+                "Snapshot requested distinct input/output devices (%s, %s); applying shared engine device %s",
+                resolved_input,
+                resolved_output,
+                requested_device,
+            )
+
+        applied = await service.set_audio_device(requested_device)
+        return {
+            "requested_input_device": resolved_input,
+            "requested_output_device": resolved_output,
+            "applied_audio_device": requested_device if applied else None,
+            "applied": bool(applied),
+            "reason": "applied" if applied else "set_audio_device_failed",
+        }
+
     @staticmethod
     def _preflight_asset_label(
         loader_state: dict[str, Any],
@@ -535,8 +613,10 @@ class SnapshotService:
                 )
 
         inventory = self._get_audio_device_inventory()
-        input_device = str(detail.get("input_device") or "").strip()
-        output_device = str(detail.get("output_device") or "").strip()
+        input_device, output_device = self._resolve_snapshot_io_bindings(
+            input_device=detail.get("input_device"),
+            output_device=detail.get("output_device"),
+        )
 
         if (
             input_device
@@ -641,6 +721,10 @@ class SnapshotService:
         normalized_name = validate_snapshot_name(name)
         await self._validate_program_number(program_number)
         max_order = await self._get_max_display_order()
+        resolved_input_device, resolved_output_device = self._resolve_snapshot_io_bindings(
+            input_device=input_device,
+            output_device=output_device,
+        )
 
         snapshot = Snapshot(
             name=normalized_name,
@@ -658,8 +742,8 @@ class SnapshotService:
                 if output_level_warning_threshold_db is not None
                 else 3.0
             ),
-            input_device=input_device,
-            output_device=output_device,
+            input_device=resolved_input_device,
+            output_device=resolved_output_device,
             controls_payload=self._normalize_controls_payload(controls_payload, detail_payload),
             live_state_payload={},
         )
@@ -969,6 +1053,7 @@ class SnapshotService:
 
         params_applied = 0
         bypass_applied = 0
+        audio_device_binding_result: dict[str, Any] | None = None
         try:
             await self._validate_snapshot_activation_preflight(detail)
         except Exception as exc:
@@ -980,6 +1065,7 @@ class SnapshotService:
             raise
 
         try:
+            audio_device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
             await self._clear_materialized_runtime_chains()
             live_state_payload = await self._materialize_live_state(snapshot, detail)
             snapshot.live_state_payload = live_state_payload
@@ -1032,6 +1118,7 @@ class SnapshotService:
                     "total_count": channel_health["total_count"],
                     "inactive_channels": channel_health["inactive_channels"],
                 },
+                "audio_device_binding": audio_device_binding_result or {},
             }
             live_runtime_state = await runtime_state_service.confirm_live_intent(
                 intent=intent,

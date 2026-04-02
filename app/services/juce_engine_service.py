@@ -185,6 +185,32 @@ class JuceEngineService(Singleton):
             return False
         # FIX #7: Wrap blocking audio stop in asyncio.to_thread()
         return await asyncio.to_thread(self._engine.stop_audio)
+
+    async def set_audio_device(self, device_name: str) -> bool:
+        """Switch the engine to a different audio device name."""
+        normalized_device = str(device_name or "").strip()
+        if not normalized_device:
+            return False
+
+        self.config.audio_device = normalized_device
+        if not self._engine:
+            return True
+
+        def _apply() -> bool:
+            result = self._engine.set_audio_device(normalized_device)
+            return True if result is None else bool(result)
+
+        try:
+            success = await asyncio.to_thread(_apply)
+        except Exception as exc:
+            logger.error("Failed to set audio device %s: %s", normalized_device, exc)
+            return False
+
+        if success:
+            logger.info("JUCE audio device set to %s", normalized_device)
+        else:
+            logger.warning("JUCE engine rejected audio device %s", normalized_device)
+        return success
     
     def is_audio_running(self) -> bool:
         """Check if audio is running.

@@ -999,7 +999,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T632
-Status: [ ] Todo
+Status: [✓] Done
 Title: I/O Device Per Snapshot + Global Default
 Description:
 - Goal / acceptance criteria: Each snapshot stores its input and output device assignment in the existing io_bindings field. On activation, the audio engine automatically routes to the correct hardware interface for that snapshot (e.g., Snapshot A uses Edirol UA-1000, Snapshot B uses Hotone Jogg). A global default I/O device assignment is set in MAP2 config — new snapshots inherit it automatically. Both the per-snapshot assignment and the global default are visible and editable in the editor's I/O section. If the assigned device is not available at activation time, the pre-flight safety gate (T621) blocks activation with a plain-English error: "Cannot go live — input device EdirolUA1000 is not connected."
@@ -1008,7 +1008,12 @@ Description:
 - Estimated effort: Low
 - Required outputs: global default I/O config (input_device, output_device) in MAP2 config schema with UI in settings, per-snapshot io_bindings editor in Snapshot Editor I/O section, device availability check in pre-flight gate, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 02:10 EDT - Codex
+- Completion notes:
+  - Added snapshot-level I/O default inheritance and activation-time device binding in the snapshot service, backed by new runtime config keys for `snapshots.default_input_device` and `snapshots.default_output_device`.
+  - Extended `/api/audio/status` with current and available input/output device inventory, then added a new Snapshot Editor `Details -> I/O Devices` modal that edits both per-snapshot bindings and the cluster default bindings from one editor surface.
+  - Added focused regression coverage for inherited/default binding normalization and activation application in the backend plus a frontend utility test covering modal-state hydration, default-option normalization, and device-option synthesis.
+- Validation: `python3 -m pytest -q tests/test_snapshot_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotIoBindings.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T631
 Status: [✓] Done

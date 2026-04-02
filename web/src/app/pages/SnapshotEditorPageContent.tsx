@@ -151,6 +151,15 @@ import {
   isSnapshotCurrentRuntimeLive,
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
+import {
+  SNAPSHOT_IO_USE_DEFAULT_OPTION,
+  buildSnapshotIoDefaultsUpdate,
+  buildSnapshotIoModalState,
+  buildSnapshotIoUpdateRequest,
+  collectSnapshotIoDeviceOptions,
+  type SnapshotIoDefaults,
+  type SnapshotIoModalState,
+} from '../utils/snapshotIoBindings'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
@@ -219,6 +228,8 @@ const API_BASE = (() => {
 
 const NOISE_GATE_THRESHOLD_CONFIG_KEY = 'snapshots.global_noise_gate_threshold_db'
 const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
+const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device'
+const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
 const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
   thresholdDb: -40,
   releaseMs: 100,
@@ -1004,6 +1015,7 @@ export function SnapshotEditorPage() {
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
+  const [showSnapshotIoModal, setShowSnapshotIoModal] = useState(false)
   const [showOutputReferenceModal, setShowOutputReferenceModal] = useState(false)
   const [showNoiseGateDefaultsModal, setShowNoiseGateDefaultsModal] = useState(false)
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
@@ -1050,6 +1062,9 @@ export function SnapshotEditorPage() {
   // Flow Snapshots Panel State
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
+  const [snapshotIoModalState, setSnapshotIoModalState] = useState<SnapshotIoModalState>(() => (
+    buildSnapshotIoModalState(null, null)
+  ))
   const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
   const [noiseGateThresholdDraft, setNoiseGateThresholdDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb)
   const [noiseGateReleaseDraft, setNoiseGateReleaseDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs)
@@ -1337,6 +1352,29 @@ export function SnapshotEditorPage() {
         releaseMs: typeof snapshotsConfig.global_noise_gate_release_ms === 'number'
           ? snapshotsConfig.global_noise_gate_release_ms
           : DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+      }
+    },
+    refetchOnWindowFocus: false,
+  })
+  const snapshotIoDefaultsQuery = useQuery({
+    queryKey: ['config', 'snapshot-io-defaults'],
+    queryFn: async (): Promise<SnapshotIoDefaults> => {
+      const response = await fetchJson<{
+        config?: {
+          snapshots?: {
+            default_input_device?: string | null
+            default_output_device?: string | null
+          }
+        }
+      }>('/api/cluster/config/runtime')
+      const snapshotsConfig = response.config?.snapshots ?? {}
+      return {
+        input_device: typeof snapshotsConfig.default_input_device === 'string'
+          ? snapshotsConfig.default_input_device
+          : null,
+        output_device: typeof snapshotsConfig.default_output_device === 'string'
+          ? snapshotsConfig.default_output_device
+          : null,
       }
     },
     refetchOnWindowFocus: false,
@@ -1880,6 +1918,30 @@ export function SnapshotEditorPage() {
     ? editorSnapshotSequence[activeSnapshotSequenceIndex + 1]
     : null
   const jackMetrics = jackQuery.data
+  const snapshotIoDeviceOptions = useMemo(() => collectSnapshotIoDeviceOptions(audioQuery.data, {
+    input: [
+      activeSnapshot?.io_bindings?.input_device ?? activeSnapshot?.input_device ?? null,
+      snapshotIoDefaultsQuery.data?.input_device ?? null,
+      snapshotIoModalState.defaultInputValue,
+    ],
+    output: [
+      activeSnapshot?.io_bindings?.output_device ?? activeSnapshot?.output_device ?? null,
+      snapshotIoDefaultsQuery.data?.output_device ?? null,
+      snapshotIoModalState.defaultOutputValue,
+    ],
+  }), [
+    activeSnapshot?.input_device,
+    activeSnapshot?.io_bindings?.input_device,
+    activeSnapshot?.io_bindings?.output_device,
+    activeSnapshot?.output_device,
+    audioQuery.data,
+    snapshotIoDefaultsQuery.data?.input_device,
+    snapshotIoDefaultsQuery.data?.output_device,
+    snapshotIoModalState.defaultInputValue,
+    snapshotIoModalState.defaultOutputValue,
+  ])
+  const snapshotIoDefaultInputSelectValue = snapshotIoModalState.defaultInputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
+  const snapshotIoDefaultOutputSelectValue = snapshotIoModalState.defaultOutputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
 
   useEffect(() => {
     setOutputReferenceThresholdDraft(activeSnapshot?.output_level_warning_threshold_db ?? 3)
@@ -1894,6 +1956,17 @@ export function SnapshotEditorPage() {
   }, [
     systemNoiseGateDefaultsQuery.data?.releaseMs,
     systemNoiseGateDefaultsQuery.data?.thresholdDb,
+  ])
+
+  useEffect(() => {
+    if (showSnapshotIoModal) {
+      return
+    }
+    setSnapshotIoModalState(buildSnapshotIoModalState(activeSnapshot, snapshotIoDefaultsQuery.data))
+  }, [
+    activeSnapshot,
+    showSnapshotIoModal,
+    snapshotIoDefaultsQuery.data,
   ])
 
   useEffect(() => {
@@ -2292,6 +2365,65 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update noise gate defaults', 'error')
+    },
+  })
+
+  const updateSnapshotIoBindingsMutation = useMutation({
+    mutationFn: async ({
+      snapshotId,
+      state,
+      currentDefaults,
+    }: {
+      snapshotId: number | null
+      state: SnapshotIoModalState
+      currentDefaults: SnapshotIoDefaults | null | undefined
+    }) => {
+      const nextDefaults = buildSnapshotIoDefaultsUpdate(state)
+      const previousDefaults = {
+        input_device: currentDefaults?.input_device ?? null,
+        output_device: currentDefaults?.output_device ?? null,
+      }
+
+      if (nextDefaults.input_device !== previousDefaults.input_device) {
+        await fetchJson('/api/cluster/config/runtime', {
+          method: 'PUT',
+          body: JSON.stringify({
+            key: SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY,
+            value: nextDefaults.input_device,
+            scope: 'cluster',
+          }),
+        })
+      }
+
+      if (nextDefaults.output_device !== previousDefaults.output_device) {
+        await fetchJson('/api/cluster/config/runtime', {
+          method: 'PUT',
+          body: JSON.stringify({
+            key: SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY,
+            value: nextDefaults.output_device,
+            scope: 'cluster',
+          }),
+        })
+      }
+
+      const snapshot = snapshotId != null
+        ? (await snapshotsApi.update(snapshotId, buildSnapshotIoUpdateRequest(state))).snapshot
+        : null
+
+      return { defaults: nextDefaults, snapshot }
+    },
+    onSuccess: ({ defaults, snapshot }) => {
+      queryClient.setQueryData(['config', 'snapshot-io-defaults'], defaults)
+      queryClient.invalidateQueries({ queryKey: ['config', 'snapshot-io-defaults'] })
+      if (snapshot) {
+        syncSnapshotDetailCaches(snapshot)
+        queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      }
+      setShowSnapshotIoModal(false)
+      pushToast(snapshot ? 'Snapshot I/O devices updated' : 'Default I/O devices updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update I/O devices', 'error')
     },
   })
 
@@ -5856,20 +5988,21 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isTextEntryTarget(e.target)) {
-        if (e.key === 'Escape') {
-          if (showSavePresetModal) setShowSavePresetModal(false)
-          else if (editingSnapshotName) cancelRenameSnapshot()
-          else if (showRenameChainModal) setShowRenameChainModal(false)
-          else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
-          else if (presetPendingDelete) setPresetPendingDelete(null)
-          else if (showClearFlowsModal) setShowClearFlowsModal(false)
-          else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
-          else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
-          else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
-          else if (midiModalOpen) setMidiModalOpen(false)
-          else if (routingInspectorId) setRoutingInspectorId(null)
-        }
+        if (isTextEntryTarget(e.target)) {
+          if (e.key === 'Escape') {
+            if (showSavePresetModal) setShowSavePresetModal(false)
+            else if (editingSnapshotName) cancelRenameSnapshot()
+            else if (showRenameChainModal) setShowRenameChainModal(false)
+            else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
+            else if (presetPendingDelete) setPresetPendingDelete(null)
+            else if (showClearFlowsModal) setShowClearFlowsModal(false)
+            else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+            else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
+            else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
+            else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
+            else if (midiModalOpen) setMidiModalOpen(false)
+            else if (routingInspectorId) setRoutingInspectorId(null)
+          }
         return
       }
 
@@ -6006,6 +6139,7 @@ export function SnapshotEditorPage() {
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
+        else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
         else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
         else if (showNoiseGateDefaultsModal) setShowNoiseGateDefaultsModal(false)
         else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
@@ -6028,7 +6162,7 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
     deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showLiveRuntimeModal, showSnapshotIoModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot,
@@ -6784,6 +6918,12 @@ export function SnapshotEditorPage() {
         className="juce-grid-page__snapshot-status-details-item"
         onClick={() => setShowRoutingTopologyModal(true)}
         disabled={snapshotEditingLocked}
+      />
+      <MenuItem
+        label="I/O Devices"
+        renderIcon={Headphones}
+        className="juce-grid-page__snapshot-status-details-item"
+        onClick={() => setShowSnapshotIoModal(true)}
       />
       <MenuItem
         label="Output Reference"
@@ -7573,6 +7713,137 @@ export function SnapshotEditorPage() {
                 {outputLevelWarningMessage}
               </Tag>
             ) : null}
+          </div>
+        </Modal>
+      )}
+
+      {showSnapshotIoModal && (
+        <Modal
+          open
+          size="sm"
+          modalHeading="I/O Devices"
+          modalLabel={activeSnapshot?.name || 'Global defaults'}
+          primaryButtonText={updateSnapshotIoBindingsMutation.isPending ? 'Saving…' : 'Save devices'}
+          secondaryButtonText="Cancel"
+          primaryButtonDisabled={
+            updateSnapshotIoBindingsMutation.isPending
+            || snapshotIoDefaultsQuery.isPending
+            || snapshotIoDefaultsQuery.isError
+          }
+          onRequestClose={() => setShowSnapshotIoModal(false)}
+          onSecondarySubmit={() => setShowSnapshotIoModal(false)}
+          onRequestSubmit={() => {
+            updateSnapshotIoBindingsMutation.mutate({
+              snapshotId: activeSnapshot?.id ?? null,
+              state: snapshotIoModalState,
+              currentDefaults: snapshotIoDefaultsQuery.data,
+            })
+          }}
+          selectorPrimaryFocus={activeSnapshot ? '#juce-grid-snapshot-io-input' : '#juce-grid-default-io-input'}
+        >
+          <div className="juce-grid-page__form-modal-body">
+            <p className="juce-grid-page__modal-copy">
+              Store per-snapshot interface overrides and the cluster-wide defaults inherited by new snapshots. Snapshot overrides fall back to the global default when set to <span className="juce-grid-page__modal-copy-emphasis">Use global default</span>.
+            </p>
+            <div className="juce-grid-page__compact-tags">
+              <Tag type="cool-gray">Runtime input {audioQuery.data?.input_device ?? 'Unavailable'}</Tag>
+              <Tag type="cool-gray">Runtime output {audioQuery.data?.output_device ?? 'Unavailable'}</Tag>
+              {!snapshotIoDeviceOptions.inputOptions.length || !snapshotIoDeviceOptions.outputOptions.length ? (
+                <Tag type="warm-gray">Device inventory unavailable</Tag>
+              ) : null}
+            </div>
+            {snapshotIoDefaultsQuery.isPending ? (
+              <InlineLoading description="Loading I/O defaults" status="active" />
+            ) : null}
+            <div className="juce-grid-page__snapshot-io-grid">
+              <div className="juce-grid-page__snapshot-io-section">
+                <p className="juce-grid-page__assignment-section-kicker">This snapshot</p>
+                {activeSnapshot ? (
+                  <>
+                    <Select
+                      id="juce-grid-snapshot-io-input"
+                      labelText="Input device"
+                      value={snapshotIoModalState.snapshotInputValue}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setSnapshotIoModalState((current) => ({ ...current, snapshotInputValue: value }))
+                      }}
+                      disabled={updateSnapshotIoBindingsMutation.isPending}
+                    >
+                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default input" />
+                      {snapshotIoDeviceOptions.inputOptions.map((deviceName) => (
+                        <SelectItem key={`snapshot-io-input-${deviceName}`} value={deviceName} text={deviceName} />
+                      ))}
+                    </Select>
+                    <Select
+                      id="juce-grid-snapshot-io-output"
+                      labelText="Output device"
+                      value={snapshotIoModalState.snapshotOutputValue}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setSnapshotIoModalState((current) => ({ ...current, snapshotOutputValue: value }))
+                      }}
+                      disabled={updateSnapshotIoBindingsMutation.isPending}
+                    >
+                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default output" />
+                      {snapshotIoDeviceOptions.outputOptions.map((deviceName) => (
+                        <SelectItem key={`snapshot-io-output-${deviceName}`} value={deviceName} text={deviceName} />
+                      ))}
+                    </Select>
+                    <p className="juce-grid-page__modal-copy">
+                      Stored in this snapshot and checked during go-live preflight.
+                    </p>
+                  </>
+                ) : (
+                  <p className="juce-grid-page__modal-copy">
+                    Load or create a snapshot to store a per-snapshot I/O override. Global defaults stay editable below.
+                  </p>
+                )}
+              </div>
+
+              <div className="juce-grid-page__snapshot-io-section">
+                <p className="juce-grid-page__assignment-section-kicker">Global defaults</p>
+                <Select
+                  id="juce-grid-default-io-input"
+                  labelText="Default input device"
+                  value={snapshotIoDefaultInputSelectValue}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setSnapshotIoModalState((current) => ({
+                      ...current,
+                      defaultInputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
+                    }))
+                  }}
+                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
+                >
+                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default input" />
+                  {snapshotIoDeviceOptions.inputOptions.map((deviceName) => (
+                    <SelectItem key={`default-io-input-${deviceName}`} value={deviceName} text={deviceName} />
+                  ))}
+                </Select>
+                <Select
+                  id="juce-grid-default-io-output"
+                  labelText="Default output device"
+                  value={snapshotIoDefaultOutputSelectValue}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setSnapshotIoModalState((current) => ({
+                      ...current,
+                      defaultOutputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
+                    }))
+                  }}
+                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
+                >
+                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default output" />
+                  {snapshotIoDeviceOptions.outputOptions.map((deviceName) => (
+                    <SelectItem key={`default-io-output-${deviceName}`} value={deviceName} text={deviceName} />
+                  ))}
+                </Select>
+                <p className="juce-grid-page__modal-copy">
+                  New snapshots inherit these bindings until a snapshot-specific override is saved.
+                </p>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

@@ -14,6 +14,10 @@ export interface AudioStatus {
   version?: string;
   plugin_count?: number;
   active_pedalboard?: string;
+  input_device?: string | null;
+  output_device?: string | null;
+  available_input_devices?: string[];
+  available_output_devices?: string[];
   available: boolean;
   error?: string;
 }

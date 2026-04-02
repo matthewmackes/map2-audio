@@ -227,6 +227,18 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         min_value=10.0,
         max_value=5000.0,
     ),
+    "snapshots.default_input_device": ConfigOption(
+        key="snapshots.default_input_device",
+        default=None,
+        description="Default input device name inherited by new snapshots when no per-snapshot input binding is set",
+        value_type=str,
+    ),
+    "snapshots.default_output_device": ConfigOption(
+        key="snapshots.default_output_device",
+        default=None,
+        description="Default output device name inherited by new snapshots when no per-snapshot output binding is set",
+        value_type=str,
+    ),
 
     # MIDI settings
     "midi.enabled": ConfigOption(

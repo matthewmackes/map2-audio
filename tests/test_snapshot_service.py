@@ -420,6 +420,76 @@ def test_snapshot_service_rejects_invalid_names(tmp_path):
     asyncio.run(_run())
 
 
+def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    applied_devices: list[str] = []
+
+    class _FakeConfig:
+        def get(self, key, default=None):
+            if key == snapshot_service_module.SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY:
+                return "Default Input"
+            if key == snapshot_service_module.SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY:
+                return "Default Output"
+            return default
+
+    class _AudioInventoryStub:
+        is_available = True
+
+        def get_system_info(self):
+            return {
+                "available_input_devices": ["Default Input"],
+                "available_output_devices": ["Default Output"],
+            }
+
+    class _AudioEngineStub:
+        async def set_audio_device(self, device_name):
+            applied_devices.append(device_name)
+            return True
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_config", lambda: _FakeConfig())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: _AudioEngineStub())
+    monkeypatch.setattr("app.services.engine_runtime_facade.get_engine_service", lambda: _AudioInventoryStub())
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(
+        runtime_state_service_module,
+        "schedule_post_activation_health_check",
+        lambda **kwargs: None,
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(name="DefaultsSnapshot")
+            assert created["input_device"] == "Default Input"
+            assert created["output_device"] == "Default Output"
+            assert created["io_bindings"]["input_device"] == "Default Input"
+            assert created["io_bindings"]["output_device"] == "Default Output"
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert applied_devices == ["Default Output"]
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_auto_tags_filtering_and_plugin_mutations(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 
