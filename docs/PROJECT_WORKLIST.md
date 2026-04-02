@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 05:52 EDT - T676 completed the duplicate-safe MIDI command-target-position prerequisite across SQLite schema upgrades, MIDI v2 command routes, MIDI service sync payloads, JUCE command-trigger wrappers, and focused regression coverage; T677 and T678 remain queued as the next controller-display preparation slices for blocked `T647`; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 05:58 EDT - T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T678 remains queued as the next controller-display preparation slice for blocked `T647`; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
 
 ID: T678
 Status: [ ] Todo
@@ -22,7 +22,7 @@ Assigned to: Codex
 Last updated: 2026-04-02 05:45 EDT - Codex
 
 ID: T677
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add explicit controller-display capability metadata for MIDI device profiles
 Description:
 - Goal / acceptance criteria: Extend the MIDI device-profile/registry model so controller display capabilities are represented explicitly rather than inferred from ad hoc profile IDs. Capability metadata must distinguish supported per-switch text transports from controllers that only support generic SysEx or have no text-display path, and existing footswitch-label push code must consume that metadata.
@@ -32,7 +32,12 @@ Description:
 - Required outputs: profile metadata contract, registry/service updates, focused regression coverage, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 05:45 EDT - Codex
+Last updated: 2026-04-02 05:58 EDT - Codex
+- Completion notes:
+  - Added explicit `display_capabilities` metadata to built-in controller profiles so Morningstar MC6/MC8 now declare their per-switch short-name transport and BeatStep Pro explicitly declares that it does not support per-switch text labels.
+  - Refactored `snapshot_footswitch_label_service` to read controller display support from the registry capability contract instead of inferring support from hard-coded profile IDs.
+  - Added focused regression coverage proving Morningstar profiles expose the new capability metadata and that unsupported profiles are skipped cleanly by the snapshot label-push path while LCD notifications still publish.
+- Validation: `python3 -m pytest -q tests/test_snapshot_footswitch_label_service.py tests/midi_hub/test_device_registry.py` -> PASS
 
 ID: T676
 Status: [✓] Done

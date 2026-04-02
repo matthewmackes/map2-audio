@@ -20,20 +20,6 @@ SNAPSHOT_FOOTSWITCH_LABEL_ACTION = "footswitch_label_map"
 SNAPSHOT_FOOTSWITCH_LABEL_MAX_LENGTH = 8
 SNAPSHOT_FOOTSWITCH_LABEL_COUNT = 8
 
-_MORNINGSTAR_PROFILE_CONFIG: dict[str, dict[str, int]] = {
-    "morningstar_mc6": {
-        "model_id": 0x03,
-        "preset_count": 6,
-        "short_name_length": 8,
-    },
-    "morningstar_mc8": {
-        "model_id": 0x04,
-        "preset_count": 8,
-        "short_name_length": 10,
-    },
-}
-
-
 def sanitize_footswitch_label(value: Any) -> str:
     """Normalize a hardware-friendly footswitch label."""
 
@@ -102,18 +88,18 @@ def replace_snapshot_footswitch_label_map(
 
 def build_morningstar_preset_short_name_sysex(
     *,
-    profile_id: str,
+    model_id: int,
+    label_length: int,
     preset_index: int,
     label: str,
 ) -> bytes:
-    profile = _MORNINGSTAR_PROFILE_CONFIG[profile_id]
-    payload_length = int(profile["short_name_length"])
+    payload_length = int(label_length)
     payload_text = sanitize_footswitch_label(label).ljust(payload_length)[:payload_length]
     payload_bytes = [ord(character) & 0x7F for character in payload_text]
     message_body = [
         0x00,
         0x39,
-        int(profile["model_id"]) & 0x7F,
+        int(model_id) & 0x7F,
         0x7F,
         0x0B,
         0x01,
@@ -134,11 +120,45 @@ def _resolve_device_output_port_id(device: dict[str, Any]) -> Optional[str]:
     return None
 
 
-def _build_device_packets(profile_id: str, label_map: dict[str, str]) -> list[bytes]:
-    if profile_id not in _MORNINGSTAR_PROFILE_CONFIG:
+def _get_display_capabilities(
+    registry: Any,
+    profile_id: str,
+) -> dict[str, Any]:
+    if hasattr(registry, "get_display_capabilities"):
+        capabilities = registry.get_display_capabilities(profile_id)
+        if isinstance(capabilities, dict):
+            return dict(capabilities)
+
+    profile = registry.get_profile(profile_id) if hasattr(registry, "get_profile") else None
+    if not isinstance(profile, dict):
+        return {}
+    metadata = profile.get("metadata")
+    if not isinstance(metadata, dict):
+        return {}
+    capabilities = metadata.get("display_capabilities")
+    if isinstance(capabilities, dict):
+        return dict(capabilities)
+    return {}
+
+
+def _build_device_packets(
+    *,
+    registry: Any,
+    profile_id: str,
+    label_map: dict[str, str],
+) -> list[bytes]:
+    capabilities = _get_display_capabilities(registry, profile_id)
+    if capabilities.get("transport") != "morningstar_short_name":
+        return []
+    if not capabilities.get("supports_per_switch_labels"):
         return []
 
-    preset_count = int(_MORNINGSTAR_PROFILE_CONFIG[profile_id]["preset_count"])
+    preset_count = int(capabilities.get("switch_count") or 0)
+    model_id = int(capabilities.get("model_id") or -1)
+    label_length = int(capabilities.get("label_max_length") or 0)
+    if preset_count <= 0 or model_id < 0 or label_length <= 0:
+        return []
+
     packets: list[bytes] = []
     for preset_index in range(preset_count):
         label = label_map.get(str(preset_index + 1))
@@ -146,7 +166,8 @@ def _build_device_packets(profile_id: str, label_map: dict[str, str]) -> list[by
             continue
         packets.append(
             build_morningstar_preset_short_name_sysex(
-                profile_id=profile_id,
+                model_id=model_id,
+                label_length=label_length,
                 preset_index=preset_index,
                 label=label,
             )
@@ -220,7 +241,11 @@ async def push_snapshot_footswitch_labels(
 
     for device in devices:
         profile_id = str(device.get("profile_id") or "").strip()
-        packets = _build_device_packets(profile_id, label_map)
+        packets = _build_device_packets(
+            registry=registry,
+            profile_id=profile_id,
+            label_map=label_map,
+        )
         if not packets:
             continue
 

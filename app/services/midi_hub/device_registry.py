@@ -142,6 +142,13 @@ class MidiDeviceRegistry:
                     "device_type": "controller",
                     "switch_count": 6,
                     "display_transport": "morningstar_short_name",
+                    "display_capabilities": {
+                        "transport": "morningstar_short_name",
+                        "supports_per_switch_labels": True,
+                        "switch_count": 6,
+                        "label_max_length": 8,
+                        "model_id": 0x03,
+                    },
                 },
             ),
             "morningstar_mc8": MidiDeviceProfile(
@@ -155,6 +162,13 @@ class MidiDeviceRegistry:
                     "device_type": "controller",
                     "switch_count": 8,
                     "display_transport": "morningstar_short_name",
+                    "display_capabilities": {
+                        "transport": "morningstar_short_name",
+                        "supports_per_switch_labels": True,
+                        "switch_count": 8,
+                        "label_max_length": 10,
+                        "model_id": 0x04,
+                    },
                 },
             ),
             "beatstep_pro": MidiDeviceProfile(
@@ -167,6 +181,11 @@ class MidiDeviceRegistry:
                     "vendor": "Arturia",
                     "device_type": "controller",
                     "switch_count": 8,
+                    "display_capabilities": {
+                        "transport": "none",
+                        "supports_per_switch_labels": False,
+                        "reason": "BeatStep Pro exposes a shared project/value display, not per-switch text labels.",
+                    },
                 },
             ),
             "m_audio_midisport_4x4": MidiDeviceProfile(
@@ -257,6 +276,15 @@ class MidiDeviceRegistry:
         if profile is None:
             return None
         return self._profile_payload(profile, is_custom=(profile_id in self._custom_profiles))
+
+    def get_display_capabilities(self, profile_id: str) -> Dict[str, Any]:
+        profile = self._custom_profiles.get(profile_id) or self._builtins.get(profile_id)
+        if profile is None:
+            return {}
+        raw_capabilities = profile.metadata.get("display_capabilities")
+        if isinstance(raw_capabilities, dict):
+            return dict(raw_capabilities)
+        return {}
 
     def add_custom_profile(self, profile: MidiDeviceProfile, *, replace: bool = True) -> None:
         if not replace and profile.profile_id in self._custom_profiles:

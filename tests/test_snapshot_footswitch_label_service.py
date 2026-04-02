@@ -47,6 +47,43 @@ class _FakeRegistry:
         self.refresh_calls += 1
         return self.snapshot()
 
+    def get_display_capabilities(self, profile_id: str):
+        if profile_id == "morningstar_mc6":
+            return {
+                "transport": "morningstar_short_name",
+                "supports_per_switch_labels": True,
+                "switch_count": 6,
+                "label_max_length": 8,
+                "model_id": 0x03,
+            }
+        return {}
+
+
+class _UnsupportedDisplayRegistry:
+    def snapshot(self):
+        return {
+            "devices": [
+                {
+                    "device_id": "beatstep_pro:main",
+                    "profile_id": "beatstep_pro",
+                    "port_ids": ["beatstep-out"],
+                    "connected": True,
+                }
+            ]
+        }
+
+    async def refresh(self):
+        return self.snapshot()
+
+    def get_display_capabilities(self, profile_id: str):
+        if profile_id == "beatstep_pro":
+            return {
+                "transport": "none",
+                "supports_per_switch_labels": False,
+                "reason": "Shared project/value display only",
+            }
+        return {}
+
 
 class _FakeLCDManager:
     def __init__(self):
@@ -74,7 +111,8 @@ def test_extract_and_replace_snapshot_footswitch_label_map():
 
 def test_build_morningstar_preset_short_name_sysex_matches_documented_layout():
     packet = service.build_morningstar_preset_short_name_sysex(
-        profile_id="morningstar_mc6",
+        model_id=0x03,
+        label_length=8,
         preset_index=1,
         label="Lead",
     )
@@ -118,5 +156,38 @@ def test_push_snapshot_footswitch_labels_sends_to_morningstar_and_lcd(monkeypatc
         assert [payload["destination_port"] for payload in fake_hub.sent] == ["mc6-out", "mc6-out"]
         assert fake_hub.sent[0]["metadata"]["profile_id"] == "morningstar_mc6"
         assert fake_lcd.events[0].title == "LeadScene labels"
+
+    asyncio.run(_run())
+
+
+def test_push_snapshot_footswitch_labels_skips_profiles_without_per_switch_text_support(monkeypatch):
+    async def _run():
+        fake_hub = _FakeHub()
+        fake_lcd = _FakeLCDManager()
+
+        monkeypatch.setattr(service, "get_midi_hub", lambda: fake_hub)
+        monkeypatch.setattr(service, "get_midi_device_registry", lambda: _UnsupportedDisplayRegistry())
+        monkeypatch.setattr(service, "get_lcd_manager", lambda: fake_lcd)
+
+        result = await service.push_snapshot_footswitch_labels(
+            snapshot_id=99,
+            snapshot_name="AmbientScene",
+            midi_map_entries=[
+                {
+                    "action": service.SNAPSHOT_FOOTSWITCH_LABEL_ACTION,
+                    "label_map": {"1": "Wash"},
+                }
+            ],
+        )
+
+        assert result == {
+            "snapshot_id": 99,
+            "labels_pushed": 0,
+            "device_count": 0,
+            "devices": [],
+            "lcd_updated": True,
+        }
+        assert fake_hub.sent == []
+        assert fake_lcd.events[0].title == "AmbientScene labels"
 
     asyncio.run(_run())

@@ -172,6 +172,17 @@ def test_registry_builtin_morningstar_and_beatstep_profiles_match_name(tmp_path)
         assert morningstar_profile is not None
         assert morningstar_profile["supports_sysex"] is True
         assert morningstar_profile["metadata"]["display_transport"] == "morningstar_short_name"
+        assert morningstar_profile["metadata"]["display_capabilities"]["transport"] == "morningstar_short_name"
+        assert morningstar_profile["metadata"]["display_capabilities"]["supports_per_switch_labels"] is True
+        assert morningstar_profile["metadata"]["display_capabilities"]["label_max_length"] == 10
+
+        beatstep_profile = registry.get_profile("beatstep_pro")
+        assert beatstep_profile is not None
+        assert beatstep_profile["metadata"]["display_capabilities"]["transport"] == "none"
+        assert beatstep_profile["metadata"]["display_capabilities"]["supports_per_switch_labels"] is False
+
+        assert registry.get_display_capabilities("morningstar_mc8")["model_id"] == 0x04
+        assert registry.get_display_capabilities("beatstep_pro")["transport"] == "none"
 
     asyncio.run(_run())
 
