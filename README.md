@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**934** Python | **1036** TypeScript | **131** C++/H | **129** Docs | **1226** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1038** TypeScript | **131** C++/H | **129** Docs | **1229** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fff62082`](https://github.com/matthewmackes/map2-audio/commit/fff6208227c67bc8c45088b41e290147a3f75bd6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
+| [`77182f55`](https://github.com/matthewmackes/map2-audio/commit/77182f557a4402e2fa6d7eb8691dc3ed14ca812f) | Add snapshot editor Go Live state machine | Map2 Audio | 2026-04-01 |
+| [`f7e55e6a`](https://github.com/matthewmackes/map2-audio/commit/f7e55e6a59a896650c4abdb0e2e4e93aa6b6eb77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`1b75ed04`](https://github.com/matthewmackes/map2-audio/commit/1b75ed04c329eeda2486d561b345ef2a4838234d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`a105160e`](https://github.com/matthewmackes/map2-audio/commit/a105160ea34f167319d9c3da8ef2276470207646) | Add snapshot activation feedback toasts | Map2 Audio | 2026-04-01 |
 | [`b4a64670`](https://github.com/matthewmackes/map2-audio/commit/b4a64670fe089b6070c4108e5fec55ea2118805b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`406e3416`](https://github.com/matthewmackes/map2-audio/commit/406e341629683af9a4eda462715e5f48d63c1cf9) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`7e7702b8`](https://github.com/matthewmackes/map2-audio/commit/7e7702b858904a67b07137af04a01d11a4ef74c6) | Refine snapshot routing mode labels | Map2 Audio | 2026-04-01 |
-| [`036a3ed3`](https://github.com/matthewmackes/map2-audio/commit/036a3ed31cf72bc8124a6ff484c61528830acd65) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`cd735b16`](https://github.com/matthewmackes/map2-audio/commit/cd735b167be373523937fb1b351856823b496728) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
-| [`213e6172`](https://github.com/matthewmackes/map2-audio/commit/213e61724320be74bf5fad2a50baad2b37daf408) | Add snapshot channel activity badge | Map2 Audio | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
