@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**938** Python | **1055** TypeScript | **131** C++/H | **129** Docs | **1274** total commits | **3** stars | **0** forks | **0** open issues
+**940** Python | **1055** TypeScript | **131** C++/H | **129** Docs | **1277** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e70c75a0`](https://github.com/matthewmackes/map2-audio/commit/e70c75a0e54eafbd77fb18d0b317268815009f70) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
+| [`85901850`](https://github.com/matthewmackes/map2-audio/commit/85901850606de2cbcc11a25ad06be03b59aafbd9) | Harden RT service polling policy | Map2 Audio | 2026-04-02 |
+| [`80e9fa92`](https://github.com/matthewmackes/map2-audio/commit/80e9fa9243d9a02b4df57f77cdf9233723203b52) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`8637af16`](https://github.com/matthewmackes/map2-audio/commit/8637af16f76bf291938362768bc8f790ca67470e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
 | [`29d23a40`](https://github.com/matthewmackes/map2-audio/commit/29d23a40dc83ef588f599f257d27aa41e8ebac2d) | Tune RT polling checkpoint and GC defaults | Map2 Audio | 2026-04-02 |
 | [`1957df23`](https://github.com/matthewmackes/map2-audio/commit/1957df234ef90a2ea5edcae945c1cda69078551e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`163994eb`](https://github.com/matthewmackes/map2-audio/commit/163994eba8f070f85261b47110c25cf33bef95e2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
 | [`487d71b1`](https://github.com/matthewmackes/map2-audio/commit/487d71b157dcf62cb4b483fbf1d083e797b83cdc) | Block remaining snapshot runtime epic tasks | Map2 Audio | 2026-04-02 |
-| [`48962363`](https://github.com/matthewmackes/map2-audio/commit/48962363abf59f92adfb53f2709d2f83e662f809) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`2e065f2c`](https://github.com/matthewmackes/map2-audio/commit/2e065f2ce48fab990031414c64f84277631fee4e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
-| [`01e2a035`](https://github.com/matthewmackes/map2-audio/commit/01e2a03581a612927494f8a5565d02c88fa42f82) | Block unsupported controller display task | Map2 Audio | 2026-04-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
