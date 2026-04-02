@@ -142,12 +142,20 @@ import {
   resolveSnapshotBlockFocusIndex,
 } from '../utils/snapshotBlockFocus'
 import {
+  createEmptyFootswitchLabelDrafts,
+  getSnapshotFootswitchLabelMap,
+  normalizeSnapshotFootswitchLabelSnapshot,
+  replaceSnapshotFootswitchLabelMap,
+  sanitizeFootswitchLabel,
+} from '../utils/snapshotFootswitchLabels'
+import {
   isSnapshotCurrentRuntimeLive,
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
+import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { SnapshotEditorToolbar } from '../components/SnapshotEditor/SnapshotEditorToolbar'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
@@ -964,6 +972,7 @@ export function SnapshotEditorPage() {
   const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
   const [blockFocusMidiChannelDraft, setBlockFocusMidiChannelDraft] = useState<string>('omni')
   const [blockFocusStartNoteDraft, setBlockFocusStartNoteDraft] = useState<number>(60)
+  const [footswitchLabelDrafts, setFootswitchLabelDrafts] = useState(createEmptyFootswitchLabelDrafts)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
@@ -1686,6 +1695,10 @@ export function SnapshotEditorPage() {
     () => getSnapshotBlockFocusRange(snapshotMidiEntries),
     [snapshotMidiEntries],
   )
+  const snapshotFootswitchLabelMap = useMemo(
+    () => getSnapshotFootswitchLabelMap(snapshotMidiEntries),
+    [snapshotMidiEntries],
+  )
   const effectiveChainsResponse = useMemo(
     () => (
       activeSnapshot
@@ -2367,11 +2380,20 @@ export function SnapshotEditorPage() {
     || blockFocusPlugins.length === 0
     || blockFocusStartNoteOverflow
   )
+  const footswitchLabelsSaveDisabled = (
+    snapshotEditingLocked
+    || !activeSnapshot
+    || JSON.stringify(footswitchLabelDrafts) === JSON.stringify(snapshotFootswitchLabelMap)
+  )
 
   useEffect(() => {
     setBlockFocusMidiChannelDraft(snapshotBlockFocusRange?.midiChannel == null ? 'omni' : String(snapshotBlockFocusRange.midiChannel))
     setBlockFocusStartNoteDraft(snapshotBlockFocusRange?.startNote ?? 60)
   }, [snapshotBlockFocusRange?.midiChannel, snapshotBlockFocusRange?.startNote, activeSnapshot?.id])
+
+  useEffect(() => {
+    setFootswitchLabelDrafts(snapshotFootswitchLabelMap)
+  }, [activeSnapshot?.id, snapshotFootswitchLabelMap])
 
   useEffect(() => {
     if (!isTabletTouchLayout) {
@@ -3214,7 +3236,7 @@ export function SnapshotEditorPage() {
     void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
   }, [queryClient])
 
-  const replaceSnapshotBlockFocusMutation = useMutation({
+  const replaceSnapshotMidiMapMutation = useMutation({
     mutationFn: async ({
       snapshotId,
       entries,
@@ -3223,15 +3245,18 @@ export function SnapshotEditorPage() {
       entries: SnapshotMidiMapEntry[]
     }) => {
       const response = await snapshotsApi.replaceMidiMap(snapshotId, entries)
-      return normalizeSnapshotBlockFocusSnapshot(response, entries)
+      return normalizeSnapshotFootswitchLabelSnapshot(
+        normalizeSnapshotBlockFocusSnapshot(response, entries),
+        entries,
+      )
     },
     onSuccess: (snapshot) => {
       syncSnapshotDetailCaches(snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot block-focus mapping updated', 'success')
+      pushToast('Snapshot MIDI map updated', 'success')
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot block-focus mapping', 'error')
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot MIDI map', 'error')
     },
   })
 
@@ -4541,7 +4566,7 @@ export function SnapshotEditorPage() {
       startNote: blockFocusStartNote,
     }
 
-    replaceSnapshotBlockFocusMutation.mutate({
+    replaceSnapshotMidiMapMutation.mutate({
       snapshotId: activeSnapshot.id,
       entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, nextRange),
     })
@@ -4550,7 +4575,7 @@ export function SnapshotEditorPage() {
     blockFocusMidiChannelDraft,
     blockFocusSaveDisabled,
     blockFocusStartNote,
-    replaceSnapshotBlockFocusMutation,
+    replaceSnapshotMidiMapMutation,
     snapshotMidiEntries,
   ])
 
@@ -4559,11 +4584,48 @@ export function SnapshotEditorPage() {
       return
     }
 
-    replaceSnapshotBlockFocusMutation.mutate({
+    replaceSnapshotMidiMapMutation.mutate({
       snapshotId: activeSnapshot.id,
       entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, null),
     })
-  }, [activeSnapshot, replaceSnapshotBlockFocusMutation, snapshotMidiEntries])
+  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
+
+  const updateFootswitchLabelDraft = useCallback((switchNumber: number, value: string) => {
+    setFootswitchLabelDrafts((current) => ({
+      ...current,
+      [String(switchNumber)]: sanitizeFootswitchLabel(value),
+    }))
+  }, [])
+
+  const saveSnapshotFootswitchLabels = useCallback(() => {
+    if (!activeSnapshot || footswitchLabelsSaveDisabled) {
+      return
+    }
+
+    replaceSnapshotMidiMapMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotFootswitchLabelMap(snapshotMidiEntries, footswitchLabelDrafts),
+    })
+  }, [
+    activeSnapshot,
+    footswitchLabelDrafts,
+    footswitchLabelsSaveDisabled,
+    replaceSnapshotMidiMapMutation,
+    snapshotMidiEntries,
+  ])
+
+  const clearSnapshotFootswitchLabels = useCallback(() => {
+    if (!activeSnapshot) {
+      return
+    }
+
+    const emptyDrafts = createEmptyFootswitchLabelDrafts()
+    setFootswitchLabelDrafts(emptyDrafts)
+    replaceSnapshotMidiMapMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotFootswitchLabelMap(snapshotMidiEntries, emptyDrafts),
+    })
+  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -4912,7 +4974,7 @@ export function SnapshotEditorPage() {
               size="sm"
               kind="ghost"
               onClick={clearSnapshotBlockFocusRange}
-              disabled={!activeSnapshot || replaceSnapshotBlockFocusMutation.isPending || !snapshotBlockFocusRange}
+              disabled={!activeSnapshot || replaceSnapshotMidiMapMutation.isPending || !snapshotBlockFocusRange}
             >
               Clear
             </Button>
@@ -4920,9 +4982,9 @@ export function SnapshotEditorPage() {
               size="sm"
               kind="secondary"
               onClick={saveSnapshotBlockFocusRange}
-              disabled={blockFocusSaveDisabled || replaceSnapshotBlockFocusMutation.isPending}
+              disabled={blockFocusSaveDisabled || replaceSnapshotMidiMapMutation.isPending}
             >
-              {replaceSnapshotBlockFocusMutation.isPending ? 'Saving...' : 'Save'}
+              {replaceSnapshotMidiMapMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>
@@ -4954,6 +5016,17 @@ export function SnapshotEditorPage() {
           </div>
         )}
       </Tile>
+
+      <SnapshotFootswitchLabelCard
+        hasActiveSnapshot={Boolean(activeSnapshot)}
+        disabled={!activeSnapshot || snapshotEditingLocked}
+        isPending={replaceSnapshotMidiMapMutation.isPending}
+        labelMap={footswitchLabelDrafts}
+        onChange={updateFootswitchLabelDraft}
+        onSave={saveSnapshotFootswitchLabels}
+        onClear={clearSnapshotFootswitchLabels}
+        saveDisabled={footswitchLabelsSaveDisabled}
+      />
 
       {midiMappingsQuery.isLoading ? (
         <div className="juce-grid-page__empty-state">

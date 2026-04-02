@@ -152,6 +152,30 @@ def test_registry_builtin_midisport_profile_matches_name(tmp_path):
     asyncio.run(_run())
 
 
+def test_registry_builtin_morningstar_and_beatstep_profiles_match_name(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+        hub.register_port(VirtualMidiPort(port_id="p1", name="Morningstar MC8"))
+        hub.register_port(VirtualMidiPort(port_id="p2", name="Arturia BeatStep Pro"))
+
+        refreshed = await registry.refresh()
+
+        assert refreshed["count"] == 2
+        by_profile = {device["profile_id"]: device for device in refreshed["devices"]}
+        assert by_profile["morningstar_mc8"]["profile_name"] == "Morningstar MC8"
+        assert by_profile["beatstep_pro"]["profile_name"] == "Arturia BeatStep Pro"
+
+        morningstar_profile = registry.get_profile("morningstar_mc8")
+        assert morningstar_profile is not None
+        assert morningstar_profile["supports_sysex"] is True
+        assert morningstar_profile["metadata"]["display_transport"] == "morningstar_short_name"
+
+    asyncio.run(_run())
+
+
 def test_registry_builtin_maschine_profile_matches_name_and_vid_pid(tmp_path):
     _init_temp_db(tmp_path)
 

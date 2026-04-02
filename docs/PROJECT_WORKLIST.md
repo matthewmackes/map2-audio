@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 EDT - T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]
+Last updated: 2026-04-02 EDT - T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]
 
 ID: T675
 Status: [✓] Done
@@ -736,7 +736,7 @@ Last updated: 2026-04-02 00:39 - Codex
 - Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T652
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Snapshot Footswitch Labels — Pushed to Hardware and LCD via MIDI SysEx on Activation
 Description:
 - Goal / acceptance criteria: Each snapshot stores a label (max 8 characters) for each MIDI-assigned footswitch. On snapshot activation, MAP2 pushes these labels to compatible hardware controllers via MIDI SysEx (formatted for common controllers: Morningstar MC6/MC8, BeatStep Pro, and the MAP2 LCD system). The label push occurs as part of the activation sequence — after all chains are confirmed live. Labels are editable per-snapshot in the MIDI map panel. If no label is set, the controller's own default label is used (no blank push).
@@ -745,7 +745,13 @@ Description:
 - Estimated effort: High
 - Required outputs: per-snapshot footswitch label storage in snapshot data model (label_map field), SysEx formatting for Morningstar MC6/MC8 and BeatStep Pro, MAP2 LCD label push integration, label push step in activation sequence, label editor UI in MIDI map panel, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 01:02 - Codex
+- Completion notes:
+  - Added a dedicated per-snapshot `footswitch_label_map` MIDI-map entry with shared frontend/backend helpers so label maps round-trip through the existing `/api/snapshots/{id}/midi-map` surface and stay mirrored in both `midi_map` and `controls.midi_map`.
+  - Added a new Snapshot Editor MIDI-modal card for eight footswitch labels with 8-character sanitization, save/clear flows, preview tags, and focused regression coverage.
+  - Snapshot activation now pushes Morningstar MC6/MC8 preset short-name SysEx packets after live confirmation and publishes a matching MAP2 LCD event summary; MIDI Hub device registry built-ins now recognize Morningstar MC6/MC8 and BeatStep Pro controllers for compatible inventory matching.
+- Validation: `pytest -q tests/test_snapshot_footswitch_label_service.py tests/test_snapshot_service.py tests/midi_hub/test_device_registry.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotFootswitchLabels.test.ts web/src/app/components/SnapshotEditor/SnapshotFootswitchLabelCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T651
 Status: [✓] Done

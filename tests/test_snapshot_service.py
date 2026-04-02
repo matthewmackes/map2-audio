@@ -45,6 +45,7 @@ def _count_system_noise_gates(snapshot_detail: dict[str, object]) -> int:
 def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     scheduled_health_checks: list[dict[str, object]] = []
+    footswitch_pushes: list[dict[str, object]] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
@@ -56,10 +57,15 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     async def _fake_apply_tempo(_snapshot_data, _bpm):
         return 1
 
+    async def _fake_push_footswitch_labels(**kwargs):
+        footswitch_pushes.append(dict(kwargs))
+        return {"labels_pushed": 2, "device_count": 1, "devices": ["morningstar_mc6:main"], "lcd_updated": True}
+
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
     monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
     monkeypatch.setattr(
         runtime_state_service_module,
         "schedule_post_activation_health_check",
@@ -129,7 +135,10 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                         "morph_position": 0.5,
                         "series_order": ["channel-0"],
                     },
-                    "midi_map": [{"action": "load_snapshot", "program_number": 10}],
+                    "midi_map": [
+                        {"action": "load_snapshot", "program_number": 10},
+                        {"action": "footswitch_label_map", "label_map": {"1": "Clean", "2": "Lead"}},
+                    ],
                 },
             )
 
@@ -236,6 +245,16 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_data"]["tempo_source"] == "stored"
             assert scheduled_health_checks[0]["snapshot_id"] == created["id"]
             assert scheduled_health_checks[0]["request_id"] == activated["activation_intent"]["request_id"]
+            assert footswitch_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
+                    "midi_map_entries": [
+                        {"action": "load_snapshot", "program_number": 10},
+                        {"action": "footswitch_label_map", "label_map": {"1": "Clean", "2": "Lead"}},
+                    ],
+                }
+            ]
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None

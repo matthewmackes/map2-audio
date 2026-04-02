@@ -49,6 +49,7 @@ from app.services.snapshot_system_blocks import (
     extract_chain_system_blocks,
     is_system_noise_gate_loader_state,
 )
+from app.services.snapshot_footswitch_label_service import push_snapshot_footswitch_labels
 
 logger = logging.getLogger(__name__)
 
@@ -1046,6 +1047,19 @@ class SnapshotService:
                 )
             except Exception as exc:
                 logger.debug("Post-activation health check scheduling skipped for %s: %s", snapshot.id, exc)
+
+            try:
+                await push_snapshot_footswitch_labels(
+                    snapshot_id=snapshot.id,
+                    snapshot_name=snapshot.name,
+                    midi_map_entries=[
+                        dict(entry)
+                        for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
+                        if isinstance(entry, dict)
+                    ],
+                )
+            except Exception as exc:
+                logger.debug("Snapshot footswitch label push skipped for %s: %s", snapshot.id, exc)
         except Exception as exc:
             await self._clear_compatibility_live_projections()
             await self.session.flush()
