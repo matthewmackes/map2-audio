@@ -53,6 +53,9 @@ from app.services.plugin_loader_unified import get_plugin_loader
 from app.services.snapshot_controller_display_preview_service import (
     build_snapshot_controller_display_preview,
 )
+from app.services.snapshot_controller_display_push_service import (
+    push_snapshot_controller_display_preview,
+)
 from app.services.snapshot_system_blocks import (
     build_system_noise_gate_plugin,
     ensure_system_noise_gate_at_chain_head,
@@ -1194,6 +1197,15 @@ class SnapshotService:
                 )
             except Exception as exc:
                 logger.debug("Snapshot footswitch label push skipped for %s: %s", snapshot.id, exc)
+
+            try:
+                await push_snapshot_controller_display_preview(
+                    snapshot_id=snapshot.id,
+                    snapshot_name=snapshot.name,
+                    preview_payload=refreshed_detail.get("controller_display_preview"),
+                )
+            except Exception as exc:
+                logger.debug("Snapshot controller-display push skipped for %s: %s", snapshot.id, exc)
         except Exception as exc:
             await self._clear_compatibility_live_projections()
             await self.session.flush()

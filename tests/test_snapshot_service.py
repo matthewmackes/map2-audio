@@ -51,6 +51,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     scheduled_health_checks: list[dict[str, object]] = []
     footswitch_pushes: list[dict[str, object]] = []
+    controller_display_pushes: list[dict[str, object]] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
@@ -66,11 +67,16 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         footswitch_pushes.append(dict(kwargs))
         return {"labels_pushed": 2, "device_count": 1, "devices": ["morningstar_mc6:main"], "lcd_updated": True}
 
+    async def _fake_push_controller_display(**kwargs):
+        controller_display_pushes.append(dict(kwargs))
+        return {"slots_pushed": 1, "device_count": 1, "devices": ["morningstar_mc6:main"]}
+
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
     monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
     monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
     monkeypatch.setattr(
         runtime_state_service_module,
         "schedule_post_activation_health_check",
@@ -280,6 +286,10 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     ],
                 }
             ]
+            assert controller_display_pushes[0]["snapshot_id"] == created["id"]
+            assert controller_display_pushes[0]["snapshot_name"] == "UnifiedSnapshot"
+            assert controller_display_pushes[0]["preview_payload"]["slots"][0]["display_label"] == "Clean"
+            assert controller_display_pushes[0]["preview_payload"]["slots"][0]["key_parameter"]["formatted_value"] == "0.5"
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None

@@ -35,6 +35,45 @@ def _normalize_parameter_unit(value: Any) -> str:
     return str(value or "").strip()
 
 
+async def _refresh_live_snapshot_controller_display(
+    parameter_updates: list[dict[str, Any]] | None,
+) -> dict[str, Any] | None:
+    normalized_updates: list[dict[str, Any]] = []
+    for update in parameter_updates or []:
+        if not isinstance(update, dict):
+            continue
+        plugin_uri = str(update.get("plugin_uri") or "").strip()
+        parameter_symbol = str(update.get("parameter_symbol") or "").strip()
+        if not plugin_uri or not parameter_symbol:
+            continue
+        normalized_updates.append(
+            {
+                "plugin_uri": plugin_uri,
+                "parameter_symbol": parameter_symbol,
+                "value": update.get("value"),
+                "plugin_position": update.get("plugin_position"),
+            }
+        )
+
+    if not normalized_updates:
+        return None
+
+    try:
+        from app.database import get_session
+        from app.services.snapshot_controller_display_push_service import (
+            refresh_live_snapshot_controller_display_for_parameter_updates,
+        )
+
+        async with get_session() as session:
+            return await refresh_live_snapshot_controller_display_for_parameter_updates(
+                session=session,
+                parameter_updates=normalized_updates,
+            )
+    except Exception as exc:
+        logger.debug("Live controller-display refresh skipped: %s", exc)
+        return None
+
+
 def _normalize_juce_parameter_definition(
     definition: Dict[str, Any],
     index: int,
@@ -1677,6 +1716,16 @@ try:
             EventType.PLUGIN_PARAMETER_CHANGED,
             event_payload
         )
+        await _refresh_live_snapshot_controller_display(
+            [
+                {
+                    "plugin_uri": uri,
+                    "parameter_symbol": symbol,
+                    "value": value,
+                    "plugin_position": normalized_plugin_position,
+                }
+            ]
+        )
 
         return {
             "uri": uri,
@@ -1778,6 +1827,7 @@ try:
         instance_id_cache: Dict[tuple[str, int], Optional[int]] = {}
         sync_engine_updates: List[tuple[int, str, float]] = []
         deferred_engine_updates: List[Dict[str, Any]] = []
+        controller_display_updates: List[Dict[str, Any]] = []
         if sync_engine_ops:
             try:
                 from app.services.juce_engine_service import get_audio_engine
@@ -1852,6 +1902,15 @@ try:
                 if plugin_position is not None:
                     result_payload["plugin_position"] = plugin_position
                 results.append(result_payload)
+                if symbol:
+                    controller_display_updates.append(
+                        {
+                            "plugin_uri": plugin_uri,
+                            "parameter_symbol": symbol,
+                            "value": value,
+                            "plugin_position": plugin_position,
+                        }
+                    )
 
             except Exception as e:
                 error_payload: Dict[str, Any] = {
@@ -1905,6 +1964,7 @@ try:
                     pass
 
             asyncio.create_task(_publish_batch_event(list(results)))
+            await _refresh_live_snapshot_controller_display(controller_display_updates)
 
         return {
             "status": "batch_complete",

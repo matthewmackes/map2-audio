@@ -20,12 +20,21 @@ SNAPSHOT_FOOTSWITCH_LABEL_ACTION = "footswitch_label_map"
 SNAPSHOT_FOOTSWITCH_LABEL_MAX_LENGTH = 8
 SNAPSHOT_FOOTSWITCH_LABEL_COUNT = 8
 
-def sanitize_footswitch_label(value: Any) -> str:
-    """Normalize a hardware-friendly footswitch label."""
+def sanitize_controller_display_text(value: Any, *, max_length: int) -> str:
+    """Normalize a printable controller-display label to the requested length."""
 
     text = re.sub(r"\s+", " ", str(value or "").strip())
     text = re.sub(r"[^\x20-\x7E]", "", text)
-    return text[:SNAPSHOT_FOOTSWITCH_LABEL_MAX_LENGTH].strip()
+    return text[: max(0, int(max_length))].strip()
+
+
+def sanitize_footswitch_label(value: Any) -> str:
+    """Normalize a hardware-friendly footswitch label."""
+
+    return sanitize_controller_display_text(
+        value,
+        max_length=SNAPSHOT_FOOTSWITCH_LABEL_MAX_LENGTH,
+    )
 
 
 def normalize_footswitch_label_map(
@@ -94,7 +103,10 @@ def build_morningstar_preset_short_name_sysex(
     label: str,
 ) -> bytes:
     payload_length = int(label_length)
-    payload_text = sanitize_footswitch_label(label).ljust(payload_length)[:payload_length]
+    payload_text = sanitize_controller_display_text(
+        label,
+        max_length=payload_length,
+    ).ljust(payload_length)[:payload_length]
     payload_bytes = [ord(character) & 0x7F for character in payload_text]
     message_body = [
         0x00,
@@ -111,7 +123,7 @@ def build_morningstar_preset_short_name_sysex(
     return bytes([0xF0, *message_body, checksum, 0xF7])
 
 
-def _resolve_device_output_port_id(device: dict[str, Any]) -> Optional[str]:
+def resolve_controller_display_output_port_id(device: dict[str, Any]) -> Optional[str]:
     hub = get_midi_hub()
     for port_id in device.get("port_ids", []):
         port = hub.resolve_port(str(port_id))
@@ -120,7 +132,7 @@ def _resolve_device_output_port_id(device: dict[str, Any]) -> Optional[str]:
     return None
 
 
-def _get_display_capabilities(
+def get_controller_display_capabilities(
     registry: Any,
     profile_id: str,
 ) -> dict[str, Any]:
@@ -147,7 +159,7 @@ def _build_device_packets(
     profile_id: str,
     label_map: dict[str, str],
 ) -> list[bytes]:
-    capabilities = _get_display_capabilities(registry, profile_id)
+    capabilities = get_controller_display_capabilities(registry, profile_id)
     if capabilities.get("transport") != "morningstar_short_name":
         return []
     if not capabilities.get("supports_per_switch_labels"):
@@ -249,7 +261,7 @@ async def push_snapshot_footswitch_labels(
         if not packets:
             continue
 
-        destination_port = _resolve_device_output_port_id(device)
+        destination_port = resolve_controller_display_output_port_id(device)
         if not destination_port:
             continue
 

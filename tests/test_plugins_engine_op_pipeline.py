@@ -77,11 +77,15 @@ async def _await_worker() -> None:
 @pytest.fixture(autouse=True)
 async def _reset_plugin_routes_state(monkeypatch):
     # Isolate module globals used by route-level worker tests.
+    async def _noop_refresh(_updates):
+        return None
+
     monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
     monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
     monkeypatch.setattr(plugins_routes, "_loaded_plugins", {})
     monkeypatch.setattr(plugins_routes, "_engine_op_queue", None)
     monkeypatch.setattr(plugins_routes, "_engine_op_worker_task", None)
+    monkeypatch.setattr(plugins_routes, "_refresh_live_snapshot_controller_display", _noop_refresh)
     monkeypatch.setattr(
         plugins_routes,
         "_engine_op_stats",
@@ -231,9 +235,15 @@ async def test_batch_parameters_sync_mode_applies_inline(monkeypatch):
     uri = "urn:test:plugin:batch-sync"
     fake_engine = _FakeEngine()
     fake_engine._uri_to_instance[uri] = 777
+    refresh_calls = []
+
+    async def _fake_refresh(updates):
+        refresh_calls.append(list(updates))
+        return {"updated": True}
 
     monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
     monkeypatch.setattr(plugins_routes, "_ENABLE_SYNC_ENGINE_PLUGIN_OPS", True)
+    monkeypatch.setattr(plugins_routes, "_refresh_live_snapshot_controller_display", _fake_refresh)
     monkeypatch.setattr(
         plugins_routes,
         "_loaded_plugins",
@@ -256,6 +266,14 @@ async def test_batch_parameters_sync_mode_applies_inline(monkeypatch):
     assert payload["engine_deferred"] is False
     assert payload["engine_applied"] == 1
     assert fake_engine.parameter_batches == [[(777, "gain", 0.9)]]
+    assert refresh_calls == [[
+        {
+            "plugin_uri": uri,
+            "parameter_symbol": "gain",
+            "value": 0.9,
+            "plugin_position": None,
+        }
+    ]]
 
 
 @pytest.mark.asyncio
@@ -300,10 +318,16 @@ async def test_batch_parameters_keeps_duplicate_uri_instances_separate(monkeypat
 async def test_single_parameter_write_supports_discovered_plugin_with_position(monkeypatch):
     uri = "urn:test:plugin:discovered-only"
     fake_engine = _FakeEngine()
+    refresh_calls = []
+
+    async def _fake_refresh(updates):
+        refresh_calls.append(list(updates))
+        return {"updated": True}
 
     monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
     monkeypatch.setattr(plugins_routes, "_loaded_plugins", {})
     monkeypatch.setattr(plugins_routes, "_discovered_plugins", [_plugin_definition(uri)])
+    monkeypatch.setattr(plugins_routes, "_refresh_live_snapshot_controller_display", _fake_refresh)
 
     payload = await plugins_routes.set_parameter(
         uri=uri,
@@ -315,3 +339,11 @@ async def test_single_parameter_write_supports_discovered_plugin_with_position(m
     assert payload["engine_set"] is True
     assert payload["plugin_position"] == 3
     assert fake_engine.parameter_sets == [(uri, "gain", 0.67, None, 3)]
+    assert refresh_calls == [[
+        {
+            "plugin_uri": uri,
+            "parameter_symbol": "gain",
+            "value": 0.67,
+            "plugin_position": 3,
+        }
+    ]]
