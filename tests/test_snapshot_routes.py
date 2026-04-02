@@ -96,7 +96,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                         color="#2563eb",
                         plugins=[
                             routes.SnapshotPluginInput(
-                                uri="urn:test:route-plugin",
+                                uri="map2://juce/delay",
                                 name="Route Plugin",
                                 parameters={"drive": 0.75},
                             )
@@ -115,17 +115,25 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         snapshot_id = created["snapshot_id"]
         assert created["status"] == "success"
         assert created["snapshot"]["is_locked"] is True
+        assert created["snapshot"]["tags"] == ["delay"]
 
         listed = await routes.list_snapshots()
         assert listed["count"] == 1
         assert listed["snapshots"][0]["name"] == "RouteSnapshot"
         assert listed["snapshots"][0]["is_locked"] is True
+        assert listed["snapshots"][0]["tags"] == ["delay"]
+        assert listed["available_tags"] == ["delay"]
         assert listed["snapshots"][0]["input_device"] == "Route In"
         assert listed["snapshots"][0]["output_device"] == "Route Out"
         assert listed["snapshots"][0]["tempo_bpm"] == 126.0
         assert listed["snapshots"][0]["output_level_reference_dbfs"] == -14.0
         assert listed["snapshots"][0]["output_level_warning_threshold_db"] == 2.0
         assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
+
+        filtered = await routes.list_snapshots(tags="delay")
+        assert filtered["count"] == 1
+        assert filtered["snapshots"][0]["id"] == snapshot_id
+        assert filtered["available_tags"] == ["delay"]
 
         fetched = await routes.get_snapshot(snapshot_id)
         assert fetched["is_locked"] is True

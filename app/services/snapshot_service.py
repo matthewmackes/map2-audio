@@ -50,6 +50,15 @@ DEFAULT_DRY_WET_MIX = 100.0
 DEFAULT_SNAPSHOT_TEMPO_BPM = 120.0
 MAX_SNAPSHOT_REVISIONS = 100
 SNAPSHOT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
+SNAPSHOT_AUTO_TAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("nam", ("map2://juce/nam", "urn:map2:nam-player", " neural amp")),
+    ("cabinet-ir", ("map2://juce/convolution/cabinet", "urn:map2:ir-cabinet", "\"ir_type\": \"cabinet\"", "cabinet ir", "cabinet-ir")),
+    ("reverb", ("map2://juce/convolution/reverb", "urn:map2:ir-reverb", "\"ir_type\": \"reverb\"", "reverb ir", "reverb-ir", "reverb")),
+    ("delay", ("delay", "echo")),
+    ("compressor", ("compressor", "compression", "limiter")),
+    ("drive", ("distortion", "overdrive", " drive", "fuzz", "saturation")),
+    ("modulation", ("modulation", "chorus", "flanger", "flange", "phaser", "vibrato", "tremolo")),
+)
 UNSET = object()
 
 
@@ -200,6 +209,18 @@ def _plugin_available(plugin_uri: str) -> bool:
         return False
 
 
+def _plugin_tag_haystack(plugin_uri: Any, plugin_name: Any = None, loader_state: Optional[dict[str, Any]] = None) -> str:
+    try:
+        serialized_loader_state = json.dumps(loader_state or {}, sort_keys=True)
+    except TypeError:
+        serialized_loader_state = str(loader_state or {})
+    return " ".join(
+        part.strip().lower()
+        for part in (str(plugin_uri or ""), str(plugin_name or ""), serialized_loader_state)
+        if part and str(part).strip()
+    )
+
+
 class SnapshotService:
     """CRUD and workflow service for unified snapshots."""
 
@@ -207,7 +228,12 @@ class SnapshotService:
         self.session = session
         self.chain_service = ChainService(session)
 
-    async def list_snapshots(self, *, include_shared_only: bool = False) -> list[dict[str, Any]]:
+    async def list_snapshots(
+        self,
+        *,
+        include_shared_only: bool = False,
+        tags: Optional[Iterable[str]] = None,
+    ) -> list[dict[str, Any]]:
         stmt = (
             select(Snapshot)
             .options(selectinload(Snapshot.channels), selectinload(Snapshot.chains))
@@ -218,7 +244,59 @@ class SnapshotService:
 
         result = await self.session.execute(stmt)
         snapshots = result.scalars().all()
-        return [self._serialize_snapshot_summary(snapshot) for snapshot in snapshots]
+        summaries = [self._serialize_snapshot_summary(snapshot) for snapshot in snapshots]
+        tag_set = {str(tag).strip().lower() for tag in (tags or []) if str(tag).strip()}
+        if not tag_set:
+            return summaries
+        return [
+            summary
+            for summary in summaries
+            if tag_set.issubset({tag.lower() for tag in summary.get("tags", [])})
+        ]
+
+    def _derive_snapshot_tags_from_plugins(self, plugins: Iterable[dict[str, Any]]) -> list[str]:
+        haystacks = [
+            _plugin_tag_haystack(
+                plugin.get("uri"),
+                plugin.get("name"),
+                plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else {},
+            )
+            for plugin in plugins
+        ]
+        return [
+            tag
+            for tag, patterns in SNAPSHOT_AUTO_TAG_RULES
+            if any(haystack and any(pattern in haystack for pattern in patterns) for haystack in haystacks)
+        ]
+
+    def _derive_snapshot_tags_from_normalized(self, normalized: dict[str, Any]) -> list[str]:
+        plugins: list[dict[str, Any]] = []
+        for chain in normalized.get("chains", []):
+            if isinstance(chain, dict):
+                plugins.extend(
+                    plugin for plugin in chain.get("plugins", []) or []
+                    if isinstance(plugin, dict)
+                )
+        return self._derive_snapshot_tags_from_plugins(plugins)
+
+    def _derive_snapshot_tags_from_snapshot(self, snapshot: Snapshot) -> list[str]:
+        plugins = [
+            {
+                "uri": plugin.plugin_uri,
+                "name": plugin.plugin_name,
+                "loader_state": dict(plugin.loader_state or {}),
+            }
+            for chain in snapshot.chains
+            for plugin in sorted(chain.plugins, key=lambda item: int(item.position))
+        ]
+        return self._derive_snapshot_tags_from_plugins(plugins)
+
+    async def _sync_snapshot_tags(self, snapshot_id: int) -> None:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return
+        snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
+        await self.session.flush()
 
     def _normalize_controls_payload(
         self,
@@ -305,7 +383,7 @@ class SnapshotService:
         snapshot = Snapshot(
             name=normalized_name,
             description=description,
-            tags=list(tags or []),
+            tags=[],
             program_number=program_number,
             is_favorite=is_favorite,
             is_locked=bool(is_locked),
@@ -329,6 +407,7 @@ class SnapshotService:
         normalized = self._normalize_detail_payload(detail_payload or {})
         normalized = await self._enrich_normalized_payload(normalized)
         await self._replace_snapshot_state(snapshot, normalized)
+        snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
         await self.session.flush()
 
         detail = await self.get_snapshot(snapshot.id)
@@ -368,8 +447,6 @@ class SnapshotService:
             snapshot.name = validate_snapshot_name(name)
         if description is not UNSET:
             snapshot.description = description
-        if tags is not UNSET:
-            snapshot.tags = list(tags)
         if program_number is not UNSET:
             snapshot.program_number = program_number
         if tempo_bpm is not UNSET:
@@ -409,6 +486,9 @@ class SnapshotService:
             normalized = self._normalize_detail_payload(detail_payload)
             normalized = await self._enrich_normalized_payload(normalized)
             await self._replace_snapshot_state(snapshot, normalized)
+            snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
+        else:
+            snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
 
         await self.session.flush()
         if create_revision and revision_source is not None:
@@ -821,6 +901,7 @@ class SnapshotService:
         chain = SnapshotChain(snapshot_id=snapshot.id, name=name.strip() or f"Chain {next_index + 1}", order_index=next_index)
         self.session.add(chain)
         await self.session.flush()
+        await self._sync_snapshot_tags(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def rename_chain(self, snapshot_id: int, chain_id: int, name: str) -> Optional[dict[str, Any]]:
@@ -858,6 +939,7 @@ class SnapshotService:
         )
         self.session.add(plugin)
         await self.session.flush()
+        await self._sync_snapshot_tags(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def remove_plugin(
@@ -872,6 +954,7 @@ class SnapshotService:
         await self.session.delete(plugin)
         await self.session.flush()
         await self._resequence_plugins(chain_id)
+        await self._sync_snapshot_tags(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def reorder_plugins(

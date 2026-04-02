@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]; T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]
+Last updated: 2026-04-01 EDT - T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1037,7 +1037,7 @@ Last updated: 2026-04-01 15:48 - Codex
 - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T627
-Status: [ ] Todo
+Status: [✓] Done
 Title: Auto-Tags from Plugin Types in Chain
 Description:
 - Goal / acceptance criteria: When a snapshot is created or its chain is modified, the snapshot's tags array is automatically rebuilt from the plugin types present in all chains. Tag values are derived from the plugin URI or plugin category: e.g., a NAM plugin adds "nam", a cabinet IR adds "cabinet-ir", a reverb adds "reverb", a delay adds "delay", a compressor adds "compressor", a distortion/overdrive adds "drive", a chorus/flange/phaser adds "modulation". No free-form tag entry — tags are chain-derived only, ensuring consistent vocabulary across the library. Auto-tags are recalculated on every save. Players can filter the snapshot list by tag.
@@ -1046,7 +1046,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: plugin-type-to-tag mapping utility (Python backend), auto-tag generation in snapshot create/update paths, tag filtering in GET /api/snapshots query params, tag display in snapshot list rows, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 20:49 - Codex
+- Completion notes:
+  - Added deterministic backend auto-tag derivation from snapshot chain plugin types so saved snapshots now rebuild `tags` from the actual plugin inventory on create, save, and immediate add/remove-plugin mutations instead of preserving stale manual values.
+  - Extended `GET /api/snapshots` with comma-separated tag filtering and available-tag metadata, then wired the Snapshot library UI to expose a tag-filter strip and render the derived tag chips directly on active and library snapshot rows.
+  - Added focused backend and frontend regressions covering tag derivation order, route filtering, tag refresh on plugin mutations, and snapshot-library filter behavior.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T626
 Status: [✓] Done

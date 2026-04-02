@@ -162,6 +162,7 @@ describe('SnapshotModalContent', () => {
       ],
       count: 1,
       active_id: null,
+      available_tags: [],
     })
     mockGetDevices.mockResolvedValue({
       devices: [
@@ -184,6 +185,77 @@ describe('SnapshotModalContent', () => {
 
     expect(await screen.findByText('Snapshots')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: 'Create New' }).length).toBeGreaterThan(0)
+  })
+
+  it('filters library snapshots by derived tag and shows tag chips on rows', async () => {
+    mockSnapshotsList.mockImplementation((options?: { tags?: string[] }) => {
+      const snapshots = [
+        {
+          id: 5,
+          name: 'DelaySnapshot',
+          description: 'Echo rig',
+          tags: ['delay'],
+          program_number: null,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: false,
+          display_order: 0,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 1,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+        {
+          id: 7,
+          name: 'ReverbSnapshot',
+          description: 'Wet rig',
+          tags: ['reverb'],
+          program_number: null,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: false,
+          display_order: 1,
+          channels: [],
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 1,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+      ]
+      const tag = options?.tags?.[0]
+      return Promise.resolve({
+        snapshots: tag ? snapshots.filter((snapshot) => snapshot.tags.includes(tag)) : snapshots,
+        count: tag ? 1 : 2,
+        active_id: null,
+        available_tags: ['delay', 'reverb'],
+      })
+    })
+
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot Library/i }))
+
+    const delayTile = await screen.findByText('DelaySnapshot')
+    expect(within(delayTile.closest('[role="button"]') as HTMLElement).getByText('delay')).toBeTruthy()
+    expect(screen.getByText('ReverbSnapshot')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'delay' }))
+
+    await waitFor(() => expect(mockSnapshotsList).toHaveBeenCalledWith({ tags: ['delay'] }))
+    expect(await screen.findByText('DelaySnapshot')).toBeTruthy()
+    expect(screen.queryByText('ReverbSnapshot')).toBeNull()
   })
 
   it('creates and activates a new snapshot from the wizard using snapshot paths', async () => {

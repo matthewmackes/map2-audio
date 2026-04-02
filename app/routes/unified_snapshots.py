@@ -332,16 +332,28 @@ async def _proxy_runtime_read(node_id: str, path: str, *, params: Optional[dict[
 
 
 @router.get("/api/snapshots")
-async def list_snapshots() -> dict[str, Any]:
+async def list_snapshots(tags: Optional[str] = Query(default=None)) -> dict[str, Any]:
     try:
+        tags_value = _normalize_optional_query_string(tags)
+        tag_list = [item.strip() for item in str(tags_value or "").split(",") if item.strip()]
         async with get_session() as session:
             service = SnapshotService(session)
-            snapshots = await service.list_snapshots()
-            active_id = next((item["id"] for item in snapshots if item.get("is_active")), None)
+            all_snapshots = await service.list_snapshots()
+            snapshots = all_snapshots if not tag_list else await service.list_snapshots(tags=tag_list)
+            active_id = next((item["id"] for item in all_snapshots if item.get("is_active")), None)
+            available_tags = sorted(
+                {
+                    str(tag).strip()
+                    for snapshot in all_snapshots
+                    for tag in snapshot.get("tags", [])
+                    if str(tag).strip()
+                }
+            )
             return {
                 "snapshots": snapshots,
                 "count": len(snapshots),
                 "active_id": active_id,
+                "available_tags": available_tags,
             }
     except Exception as exc:
         logger.error("Error listing snapshots: %s", exc)

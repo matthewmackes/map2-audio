@@ -333,6 +333,111 @@ def test_snapshot_service_rejects_invalid_names(tmp_path):
     asyncio.run(_run())
 
 
+def test_snapshot_service_auto_tags_filtering_and_plugin_mutations(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="AutoTaggedSnapshot",
+                tags=["manual"],
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {"uri": "map2://juce/nam", "position": 0, "bypass": False, "parameters": {}},
+                                {"uri": "map2://juce/convolution/cabinet", "position": 1, "bypass": False, "parameters": {}, "loader_state": {"ir_type": "cabinet"}},
+                                {"uri": "map2://juce/delay", "position": 2, "bypass": False, "parameters": {}},
+                                {"uri": "map2://juce/modulation/chorus", "position": 3, "bypass": False, "parameters": {}},
+                                {"uri": "map2://juce/dynamics/compressor", "position": 4, "bypass": False, "parameters": {}},
+                                {"uri": "urn:test:overdrive", "name": "Overdrive", "position": 5, "bypass": False, "parameters": {}},
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+            assert created["tags"] == ["nam", "cabinet-ir", "delay", "compressor", "drive", "modulation"]
+
+            filtered = await service.list_snapshots(tags=["delay", "modulation"])
+            assert [snapshot["id"] for snapshot in filtered] == [created["id"]]
+
+            updated = await service.update_snapshot(
+                created["id"],
+                tags=["still-manual"],
+                detail_payload={
+                    "channels": created["channels"],
+                    "chains": [
+                        {
+                            "id": created["chains"][0]["id"],
+                            "name": "Chain A",
+                            "plugins": [
+                                {"uri": "map2://juce/convolution/reverb", "position": 0, "bypass": False, "parameters": {}, "loader_state": {"ir_type": "reverb"}},
+                                {"uri": "map2://juce/modulation/phaser", "position": 1, "bypass": False, "parameters": {}},
+                            ],
+                        }
+                    ],
+                    "routing": created["routing"],
+                    "midi_map": created["midi_map"],
+                },
+            )
+            assert updated is not None
+            assert updated["tags"] == ["reverb", "modulation"]
+
+            preserved = await service.update_snapshot(created["id"], is_favorite=True, tags=["ignored"])
+            assert preserved is not None
+            assert preserved["tags"] == ["reverb", "modulation"]
+
+            chain_id = updated["chains"][0]["id"]
+            plugin_added = await service.add_plugin(
+                created["id"],
+                chain_id,
+                "map2://juce/dynamics/compressor",
+                plugin_name="Compressor",
+            )
+            assert plugin_added is not None
+            assert plugin_added["tags"] == ["reverb", "compressor", "modulation"]
+
+            latest_detail = await service.get_snapshot(created["id"])
+            assert latest_detail is not None
+            chain_id = latest_detail["chains"][0]["id"]
+            latest_chain = await service._get_chain(created["id"], chain_id)
+            assert latest_chain is not None
+            compressor_id = next(
+                plugin.id
+                for plugin in latest_chain.plugins
+                if plugin.plugin_uri == "map2://juce/dynamics/compressor"
+            )
+            plugin_removed = await service.remove_plugin(created["id"], chain_id, compressor_id)
+            assert plugin_removed is not None
+            assert plugin_removed["tags"] == ["reverb", "modulation"]
+
+    asyncio.run(_run())
+
+
 def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

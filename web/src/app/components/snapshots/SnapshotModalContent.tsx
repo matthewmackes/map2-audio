@@ -34,6 +34,7 @@ import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWi
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import {
   flowSnapshotDataToSnapshotPayload,
+  type SnapshotListResponse,
   snapshotDetailToDraftData,
   snapshotsApi,
 } from '../../../map2/clients/snapshots'
@@ -84,13 +85,12 @@ export function SnapshotModalContent({
     }
   }, [safeTab, handleTabChange])
 
-  const snapshotsQuery = useQuery<{
-    snapshots: SnapshotSummary[]
-    count: number
-    active_id: number | null
-  }>({
-    queryKey: ['snapshots'],
-    queryFn: async () => snapshotsApi.list(),
+  const [snapshotTagFilter, setSnapshotTagFilter] = useState<string>('all')
+  const snapshotTagFilters = snapshotTagFilter === 'all' ? [] : [snapshotTagFilter]
+
+  const snapshotsQuery = useQuery<SnapshotListResponse>({
+    queryKey: ['snapshots', 'list', snapshotTagFilter],
+    queryFn: async () => snapshotsApi.list(snapshotTagFilters.length > 0 ? { tags: snapshotTagFilters } : undefined),
     refetchInterval: 5000,
   })
 
@@ -117,11 +117,24 @@ export function SnapshotModalContent({
       return a.display_order - b.display_order
     })
   }, [snapshotsQuery.data?.snapshots])
+  const availableSnapshotTags = snapshotsQuery.data?.available_tags ?? []
 
-  const activeSnapshot = useMemo(
-    () => savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active) ?? null,
-    [activeSnapshotId, savedSnapshots],
-  )
+  useEffect(() => {
+    if (!snapshotsQuery.data) {
+      return
+    }
+    if (snapshotTagFilter !== 'all' && !availableSnapshotTags.includes(snapshotTagFilter)) {
+      setSnapshotTagFilter('all')
+    }
+  }, [availableSnapshotTags, snapshotTagFilter, snapshotsQuery.data])
+
+  const activeSnapshot = useMemo(() => {
+    const listedSnapshot = savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active)
+    if (listedSnapshot) {
+      return listedSnapshot
+    }
+    return activeSnapshotDetailQuery.data ? activeSnapshotDetailQuery.data as SnapshotSummary : null
+  }, [activeSnapshotDetailQuery.data, activeSnapshotId, savedSnapshots])
   const rawFavoriteSnapshots = useMemo(
     () => savedSnapshots.filter((snapshot) => snapshot.is_favorite),
     [savedSnapshots],
@@ -767,7 +780,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
         <div className="juce-grid-page__snapshot-header">
           <div className="juce-grid-page__snapshot-copy">
             <strong>Snapshots</strong>
-            <span>{savedSnapshots.length} saved snapshots</span>
+            <span>
+              {snapshotTagFilter === 'all'
+                ? `${savedSnapshots.length} saved snapshots`
+                : `${savedSnapshots.length} snapshots tagged ${snapshotTagFilter}`}
+            </span>
           </div>
           <div className="juce-grid-page__compact-actions">
             <Button size="sm" kind="primary" onClick={openSnapshotCreateWizard}>
@@ -780,6 +797,31 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
         </div>
 
         <div className="juce-grid-page__snapshot-content">
+          {availableSnapshotTags.length > 0 && (
+            <div className="juce-grid-page__snapshot-filter-row">
+              <span className="juce-grid-page__snapshot-action-label">Filter by tag</span>
+              <div className="juce-grid-page__snapshot-filter-actions" role="toolbar" aria-label="Filter snapshots by tag">
+                <Button
+                  size="sm"
+                  kind={snapshotTagFilter === 'all' ? 'secondary' : 'ghost'}
+                  onClick={() => setSnapshotTagFilter('all')}
+                >
+                  All tags
+                </Button>
+                {availableSnapshotTags.map((tag) => (
+                  <Button
+                    key={tag}
+                    size="sm"
+                    kind={snapshotTagFilter === tag ? 'secondary' : 'ghost'}
+                    onClick={() => setSnapshotTagFilter(tag)}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="juce-grid-page__snapshot-active-display">
             <div className="juce-grid-page__snapshot-active-header">
               <span className="juce-grid-page__snapshot-action-label">
@@ -802,6 +844,14 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
             </div>
 
             <p className="juce-grid-page__snapshot-active-description">{activeSnapshotDescription}</p>
+
+            {activeSnapshot && activeSnapshot.tags.length > 0 && (
+              <div className="juce-grid-page__compact-tags">
+                {activeSnapshot.tags.map((tag) => (
+                  <Tag key={`active-tag-${tag}`} type="green">{tag}</Tag>
+                ))}
+              </div>
+            )}
 
             <div className="juce-grid-page__compact-tags">
               {activeSnapshot ? (
@@ -965,6 +1015,14 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                                 </span>
                               ))}
                             </div>
+
+                            {snapshot.tags.length > 0 && (
+                              <div className="juce-grid-page__compact-tags">
+                                {snapshot.tags.map((tag) => (
+                                  <Tag key={`${snapshot.id}-tag-${tag}`} type="green">{tag}</Tag>
+                                ))}
+                              </div>
+                            )}
 
                             <div className="juce-grid-page__compact-tags">
                               <Tag type="warm-gray">
@@ -1146,6 +1204,14 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                                   </span>
                                 ))}
                               </div>
+
+                              {snapshot.tags.length > 0 && (
+                                <div className="juce-grid-page__compact-tags">
+                                  {snapshot.tags.map((tag) => (
+                                    <Tag key={`${snapshot.id}-tag-${tag}`} type="green">{tag}</Tag>
+                                  ))}
+                                </div>
+                              )}
 
                               <div className="juce-grid-page__compact-tags">
                                 <Tag type="warm-gray">

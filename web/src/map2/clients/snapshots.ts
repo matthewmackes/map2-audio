@@ -34,6 +34,7 @@ export interface SnapshotListResponse {
   snapshots: SnapshotSummary[]
   count: number
   active_id: number | null
+  available_tags: string[]
 }
 
 export interface SnapshotCreateRequest {
@@ -443,8 +444,14 @@ export function snapshotLoadedEventToFlowSnapshotEvent(
 }
 
 export const snapshotsApi = {
-  list: () =>
-    fetchJson<SnapshotListResponse>(`${API_BASE}/snapshots`, { cache: 'no-store' }),
+  list: (options?: { tags?: string[] }) => {
+    const params = new URLSearchParams()
+    if (options?.tags?.length) {
+      params.set('tags', options.tags.join(','))
+    }
+    const query = params.toString()
+    return fetchJson<SnapshotListResponse>(`${API_BASE}/snapshots${query ? `?${query}` : ''}`, { cache: 'no-store' })
+  },
 
   get: (snapshotId: number) =>
     fetchJson<SnapshotDetail>(`${API_BASE}/snapshots/${snapshotId}`, { cache: 'no-store' }),

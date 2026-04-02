@@ -4263,6 +4263,21 @@
     linear-gradient(180deg, color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, #000), var(--cds-layer-hover, rgba(255,255,255,0.03)));
 }
 
+.juce-grid-page__snapshot-filter-row,
+.juce-grid-page__snapshot-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-filter-row {
+  justify-content: space-between;
+}
+
+.juce-grid-page__snapshot-filter-actions {
+  justify-content: flex-end;
+}
 
 .juce-grid-page__snapshot-compare-display {
   display: flex;
