@@ -63,6 +63,12 @@ interface SnapshotLiveHeadline {
   blinking: boolean
 }
 
+interface SnapshotChannelActivityBadge {
+  label: string
+  tooltip: string
+  warning: boolean
+}
+
 const MIDI_CHANNEL_KEYS = ['channel', 'midi_channel', 'midiChannel', 'channel_number', 'channelNumber'] as const
 const MIDI_CHANNEL_LIST_KEYS = ['channels', 'midi_channels', 'midiChannels', 'channel_numbers', 'channelNumbers'] as const
 
@@ -318,6 +324,77 @@ function resolveLiveHeadline(
   }
 }
 
+function resolveChannelActivitySnapshot(
+  snapshot: SnapshotDetail | null,
+  runtimeLiveState?: SnapshotRuntimeLiveState | null,
+): SnapshotDetail | null {
+  if (runtimeLiveState?.live_snapshot_payload) {
+    return runtimeLiveState.live_snapshot_payload
+  }
+  return snapshot
+}
+
+function buildChannelActivityBadge(
+  snapshot: SnapshotDetail | null,
+  runtimeLiveState?: SnapshotRuntimeLiveState | null,
+): SnapshotChannelActivityBadge | null {
+  const activitySnapshot = resolveChannelActivitySnapshot(snapshot, runtimeLiveState)
+  if (!activitySnapshot) {
+    return null
+  }
+
+  const channelDefinitions = activitySnapshot.channels.length > 0
+    ? activitySnapshot.channels.map((channel) => ({
+      key: channel.channel_key,
+      label: channel.label || channel.channel_key,
+    }))
+    : activitySnapshot.paths.map((path) => ({
+      key: path.id,
+      label: path.label || path.name || path.id,
+    }))
+
+  if (channelDefinitions.length === 0) {
+    return null
+  }
+
+  const livePathsById = new Map(
+    (activitySnapshot.live_state?.paths ?? [])
+      .map((path) => [path.path_id, path] as const),
+  )
+  const runtimeChainsById = new Map(
+    (activitySnapshot.live_state?.runtime_chains ?? [])
+      .map((chain) => [chain.id, chain] as const),
+  )
+  const offline = Boolean(runtimeLiveState?.is_offline || runtimeLiveState?.display_state === 'offline')
+  let activeCount = 0
+  const inactiveDescriptions: string[] = []
+
+  channelDefinitions.forEach((channel) => {
+    const livePath = livePathsById.get(channel.key)
+    const runtimeChain = livePath?.runtime_chain_id != null
+      ? runtimeChainsById.get(livePath.runtime_chain_id)
+      : undefined
+    const runtimeStatus = runtimeChain?.runtime_sync?.status
+    const isActive = runtimeStatus === 'active' || (runtimeStatus == null && Boolean(runtimeChain?.is_active))
+
+    if (isActive) {
+      activeCount += 1
+      return
+    }
+
+    inactiveDescriptions.push(`Channel ${channel.label} is ${offline ? 'offline' : 'not loaded'}.`)
+  })
+
+  const totalCount = channelDefinitions.length
+  return {
+    label: `${activeCount} of ${totalCount} channels active`,
+    tooltip: inactiveDescriptions.length > 0
+      ? inactiveDescriptions.join(' ')
+      : `All ${totalCount} channels are active.`,
+    warning: activeCount < totalCount,
+  }
+}
+
 function buildMetadataTableRows(
   snapshot: SnapshotDetail,
   includeDetailsAction: boolean,
@@ -430,6 +507,10 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     () => resolveLiveHeadline(liveSnapshot, runtimeLiveState),
     [liveSnapshot, runtimeLiveState],
   )
+  const channelActivityBadge = useMemo(
+    () => buildChannelActivityBadge(liveSnapshot, runtimeLiveState),
+    [liveSnapshot, runtimeLiveState],
+  )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState(liveSnapshot?.description ?? '')
@@ -538,11 +619,27 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
 
           <div className="juce-grid-page__snapshot-status-content-row">
             <div className="juce-grid-page__snapshot-status-live-block">
-              <span
-                className={`juce-grid-page__snapshot-status-state-label is-${liveHeadline.tone} ${liveHeadline.blinking ? 'is-blinking' : ''}`}
-              >
-                {liveHeadline.text}
-              </span>
+              <div className="juce-grid-page__snapshot-status-state-row">
+                <span
+                  className={`juce-grid-page__snapshot-status-state-label is-${liveHeadline.tone} ${liveHeadline.blinking ? 'is-blinking' : ''}`}
+                >
+                  {liveHeadline.text}
+                </span>
+                {channelActivityBadge ? (
+                  <div
+                    title={channelActivityBadge.tooltip}
+                    aria-label={channelActivityBadge.tooltip}
+                    className="juce-grid-page__snapshot-status-channel-badge-wrap"
+                  >
+                    <Tag
+                      type={channelActivityBadge.warning ? 'warm-gray' : 'green'}
+                      className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : 'is-healthy'}`}
+                    >
+                      {channelActivityBadge.label}
+                    </Tag>
+                  </div>
+                ) : null}
+              </div>
               <div className="juce-grid-page__snapshot-status-live-row">
                 <h2 className="juce-grid-page__snapshot-status-title">
                   {liveSnapshot && onRenameSnapshot ? (

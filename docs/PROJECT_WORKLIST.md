@@ -1199,7 +1199,7 @@ Last updated: 2026-04-01 21:02 - Codex
 - Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotLastUsed.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T617
-Status: [ ] Todo
+Status: [✓] Done
 Title: "X of Y Channels Active" Real-Time Badge in Editor Hero
 Description:
 - Goal / acceptance criteria: The Snapshot Editor hero displays a real-time badge showing the count of active channels out of total defined channels: e.g., "2 of 3 channels active". This badge updates via WebSocket whenever a channel's runtime state changes — including after initial activation, after the post-activation heartbeat check (T613), and during continuous runtime monitoring (T613). When all channels are active, the badge uses a Carbon Green Tag. When fewer than all channels are active, the badge uses a Carbon Amber Tag. Plain language only — no technical terms like "degraded", "missing", or "runtime chain". Inactive channels are described as "not loaded" or "offline" in the tooltip.
@@ -1208,7 +1208,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: active channel count derivation from SnapshotRuntimeLiveState (channels with runtime_sync.status "active" vs. total defined channels), badge Carbon Tag component in editor hero, real-time WebSocket update on state change, tooltip describing inactive channel(s) in plain language, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 21:22 - Codex
+- Completion notes:
+  - Added a live channel-activity badge to the Snapshot Editor hero that reads `X of Y channels active` and updates from the runtime live-state payload, including websocket-driven changes carried through `SnapshotRuntimeLiveState.live_snapshot_payload`.
+  - The badge now renders Carbon-green when all channels are active and an amber-styled warning treatment when any channel is missing, with plain-language tooltip copy such as `Channel B is not loaded.` and `Channel B is offline.`
+  - Kept the implementation local to the hero card and existing runtime query path, so no new transport or polling path was introduced.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T616
 Status: [ ] Todo

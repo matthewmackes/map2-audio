@@ -1159,6 +1159,17 @@
   text-transform: uppercase;
 }
 
+.juce-grid-page__snapshot-status-state-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-channel-badge-wrap {
+  display: inline-flex;
+}
+
 .juce-grid-page__snapshot-status-state-label.is-current,
 .juce-grid-page__snapshot-status-state-label.is-stopped {
   color: var(--cds-support-error, #da1e28);
@@ -1170,6 +1181,20 @@
 
 .juce-grid-page__snapshot-status-state-label.is-blinking {
   animation: juce-grid-page__snapshot-status-blink 1.8s steps(2, jump-none) infinite;
+}
+
+.juce-grid-page__snapshot-status-channel-badge.cds--tag {
+  min-block-size: 1.75rem;
+  padding-inline: 0.625rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.juce-grid-page__snapshot-status-channel-badge.is-warning.cds--tag {
+  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer-01, #262626));
+  color: #f1c21b;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
 @keyframes juce-grid-page__snapshot-status-blink {

@@ -150,8 +150,50 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
     live_state: {
       is_live: true,
       activated_at: '2026-03-29T18:10:00Z',
-      paths: [],
-      runtime_chains: [],
+      paths: [
+        { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+        { path_id: 'ch_b', snapshot_chain_id: 202, runtime_chain_id: 302 },
+      ],
+      runtime_chains: [
+        {
+          id: 301,
+          name: 'Drive Runtime',
+          is_active: true,
+          created_at: '2026-03-29T18:10:00Z',
+          updated_at: '2026-03-29T18:10:00Z',
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
+          runtime_sync: {
+            enabled: true,
+            status: 'active',
+            reason: undefined,
+            warnings: [],
+            runtime_items: 1,
+            restored_positions: [0],
+            missing_positions: [],
+          },
+        },
+        {
+          id: 302,
+          name: 'Echo Runtime',
+          is_active: true,
+          created_at: '2026-03-29T18:10:00Z',
+          updated_at: '2026-03-29T18:10:00Z',
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
+          runtime_sync: {
+            enabled: true,
+            status: 'active',
+            reason: undefined,
+            warnings: [],
+            runtime_items: 1,
+            restored_positions: [0],
+            missing_positions: [],
+          },
+        },
+      ],
     },
     lineage: {
       derived_from_snapshot_id: 7,
@@ -257,6 +299,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByText('Friday Night Drive')).toBeInTheDocument()
     expect(screen.getByText('LIVE')).toBeInTheDocument()
+    expect(screen.getByText('2 of 2 channels active')).toBeInTheDocument()
     expect(screen.getByText('Details')).toBeInTheDocument()
     expect(midiReadout).toBeInTheDocument()
     expect(screen.queryByText('Current snapshot')).not.toBeInTheDocument()
@@ -350,6 +393,108 @@ describe('SnapshotChainManagementCard', () => {
 
     expect(screen.getByText('Last Used')).toBeInTheDocument()
     expect(screen.getByText('Never')).toBeInTheDocument()
+  })
+
+  it('shows an amber channel-activity badge with plain-language not-loaded guidance when channels are missing', () => {
+    renderCard(buildLiveSnapshot({
+      live_state: {
+        is_live: true,
+        activated_at: '2026-03-29T18:10:00Z',
+        paths: [
+          { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+        ],
+        runtime_chains: [
+          {
+            id: 301,
+            name: 'Drive Runtime',
+            is_active: true,
+            created_at: '2026-03-29T18:10:00Z',
+            updated_at: '2026-03-29T18:10:00Z',
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+            runtime_sync: {
+              enabled: true,
+              status: 'active',
+              reason: undefined,
+              warnings: [],
+              runtime_items: 1,
+              restored_positions: [0],
+              missing_positions: [],
+            },
+          },
+        ],
+      },
+    }))
+
+    const badge = screen.getByText('1 of 2 channels active')
+    expect(badge).toBeInTheDocument()
+    expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is not loaded.')
+  })
+
+  it('updates the channel-activity badge when runtime live-state websocket payloads change', () => {
+    const { rerender } = render(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot()}
+        runtimeLiveState={buildRuntimeLiveState({
+          live_snapshot_payload: buildLiveSnapshot(),
+        })}
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    expect(screen.getByText('2 of 2 channels active')).toBeInTheDocument()
+
+    rerender(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot()}
+        runtimeLiveState={buildRuntimeLiveState({
+          display_state: 'offline',
+          is_offline: true,
+          live_snapshot_payload: buildLiveSnapshot({
+            live_state: {
+              is_live: true,
+              activated_at: '2026-03-29T18:10:00Z',
+              paths: [
+                { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+              ],
+              runtime_chains: [
+                {
+                  id: 301,
+                  name: 'Drive Runtime',
+                  is_active: true,
+                  created_at: '2026-03-29T18:10:00Z',
+                  updated_at: '2026-03-29T18:10:00Z',
+                  plugins: [],
+                  loop_insertions: [],
+                  effects_loops: [],
+                  runtime_sync: {
+                    enabled: true,
+                    status: 'active',
+                    reason: undefined,
+                    warnings: [],
+                    runtime_items: 1,
+                    restored_positions: [0],
+                    missing_positions: [],
+                  },
+                },
+              ],
+            },
+          }),
+        })}
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    const badge = screen.getByText('1 of 2 channels active')
+    expect(badge).toBeInTheDocument()
+    expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is offline.')
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {
