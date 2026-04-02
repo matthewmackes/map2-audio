@@ -85,12 +85,10 @@ LimitRTPRIO=95
 LimitMEMLOCK=infinity
 LimitNOFILE=65536
 
-# CPU affinity: pin to kernel-isolated cores (set in GRUB via isolcpus=4,5).
-# nohz_full=4,5 and rcu_nocbs=4,5 are also set in GRUB for these cores,
-# eliminating HZ tick interrupts and RCU callbacks on the audio cores.
-# IMPORTANT: Must match GRUB_CMDLINE_LINUX isolcpus= value. Previously mismatched
-# (GRUB had isolcpus=2,3 while this was CPUAffinity=4 5) — now both use 4,5.
-CPUAffinity=4 5
+# CPU affinity: keep the Python/uvicorn process on the general-purpose cores.
+# CPUs 4,5 stay isolated for the JUCE callback thread and its dedicated audio IRQ.
+# The backend should not compete for cache or scheduler time on those RT cores.
+CPUAffinity=0 1 2 3
 
 # I/O priority - realtime class, high priority
 IOSchedulingClass=realtime

@@ -2,9 +2,10 @@
 Description=MAP2 Audio Platform — IRQ Affinity Pinning for RT Audio
 Documentation=https://github.com/matthewmackes/map2-audio
 #
-# Pins the xhci_hcd USB controller interrupt (Edirol UA-1000) to the dedicated
-# audio cores (CPU 4,5) isolated via GRUB isolcpus=4,5. Also elevates the
-# irq/N-xhci_hcd kernel thread to SCHED_FIFO/70 (requires threadirqs in cmdline).
+# Pins the UA-1000 xhci_hcd interrupt to the dedicated audio cores (CPU 4,5)
+# while pushing the rest of the host's device IRQ load onto the general-purpose
+# service cores (CPU 0-3). Requires threadirqs in the kernel cmdline so the
+# irq/N-* kernel threads can inherit the same affinity policy cleanly.
 #
 # BACKGROUND: The UA-1000 uses UAC1 USB audio with 1ms USB frame granularity.
 # Each frame fires an interrupt on the xhci_hcd controller. If that interrupt

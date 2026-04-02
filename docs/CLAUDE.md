@@ -639,6 +639,32 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - ✅ SQLite WAL policy: `wal_autocheckpoint=12000` keeps auto-checkpoints off the hot path and graceful shutdown forces `checkpoint_database()`
 - ⚠️ Still verify: plugin processors and convolution IRs for RT allocations
 
+### Service Polling Floors
+
+| Surface / Service | Runtime policy | Notes |
+|---|---|---|
+| MIDI Hub | 2 ms floor | `app/services/midi_hub/hub.py` clamps lower requests |
+| MIDI Engine | Event-driven callback queue, 5 ms fallback | `app/services/midi_engine.py` uses RTMidi callbacks when available |
+| MPX1 MIDI poll | 5 ms | `app/services/mpx1_service.py` |
+| IntelFX MIDI poll | 5 ms | `app/services/intelfx_service.py` |
+| Push Surface | 30 ms render loop, 250 ms reconnect floor, 1 s retry backoff | Already above minimum poll policy |
+| Metering broadcast | spectrum/dynamics 15 fps, meters 30 fps | Override via `metering.broadcast_fps.<topic>` |
+
+### CPU Affinity Policy
+
+- Python backend (`map2-backend.service`) stays on CPUs `0-3`.
+- CPUs `4,5` remain isolated for the JUCE callback thread and the UA-1000 xHCI audio IRQ.
+- `map2-irq-affinity.sh` pins the UA-1000 xHCI IRQ to CPUs `4,5` and pushes every other numeric device IRQ to CPUs `0-3`.
+- Verify live backend affinity with `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` and `ps -o pid,psr,comm -p $(systemctl show map2-backend.service -p ExecMainPID --value)`.
+- Verify IRQ policy with `grep -nH . /proc/irq/*/smp_affinity_list`; only the UA-1000 xHCI IRQ should still target CPUs `4-5`.
+
+### RT-Safe Checklist
+
+- Do not add new `asyncio.sleep()` loops under `app/services/` below `0.005` without an explicit allowlist entry in `tests/test_rt_latency_policy.py`.
+- Prefer event-driven wakeups (`asyncio.Queue`, `asyncio.Event`, callbacks) over polling whenever a device or library supports them.
+- Keep blocking network or discovery startup off the app readiness path; optional services should use background startup helpers.
+- Keep non-audio Python services and generic IRQ load off the isolated audio CPUs.
+
 ---
 
 ## Gotchas & Learned Fixes

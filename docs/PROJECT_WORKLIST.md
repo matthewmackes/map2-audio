@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 04:25 EDT - T596 reduced default spectrum and dynamics broadcast rates to 15fps, kept meters at 30fps, and made per-topic FPS configurable through `metering.broadcast_fps.*` config keys [completed]; T598 moved AVB router discovery and Tesira fleet startup onto background `asyncio.create_task()` helpers so backend readiness no longer blocks on optional network discovery [completed]; T600 replaced the legacy 1ms RTMidi poll loop with a callback-fed asyncio queue plus a bounded 5ms fallback for callback-less backends [completed]; T601 raised MPX1 and IntelFX MIDI poll loops to 5ms and audited Push Surface loops as already above policy [completed]; T603 added a repo-wide RT latency policy test that rejects new sub-5ms `asyncio.sleep()` calls under `app/services/` outside the documented allowlist [completed]
+Last updated: 2026-04-02 04:34 EDT - T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]; T596 reduced default spectrum and dynamics broadcast rates to 15fps, kept meters at 30fps, and made per-topic FPS configurable through `metering.broadcast_fps.*` config keys [completed]; T598 moved AVB router discovery and Tesira fleet startup onto background `asyncio.create_task()` helpers so backend readiness no longer blocks on optional network discovery [completed]
 
 ID: T675
 Status: [✓] Done
@@ -12880,7 +12880,7 @@ Last updated: 2026-04-02 04:05 EDT - Codex
 ---
 
 ID: T595
-Status: [~] On Hold
+Status: [✓] Done
 Title: [HIGH] Move Python backend off audio CPUs 4,5 — fix CPU affinity architecture
 Description:
 - Goal / acceptance criteria: Re-evaluate `CPUAffinity=4 5` in `systemd/map2-backend.service` and drop-ins. The Python uvicorn process should run on CPUs 0-3. Options: (a) remove `CPUAffinity` from the backend service entirely so the kernel schedules it freely on 0-3; or (b) set `AllowedCPUs=0-3` explicitly. JUCE audio thread self-elevates via SCHED_FIFO and does not need the Python process on its cores.
@@ -12889,8 +12889,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated CPU affinity policy in systemd unit and drop-ins, measured before/after jitter if possible.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:34 EDT - Codex
+- Completed: Updated the repo backend unit policy to `CPUAffinity=0 1 2 3`, removed the stale live override that was forcing CPUs `4 5`, reloaded systemd, and restarted `map2-backend.service` so the running backend moved off the isolated audio cores.
+- Validation: `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` -> `CPUAffinity=0-3`; `ps -o pid,psr,comm -p $(systemctl show map2-backend.service -p ExecMainPID --value)` -> running `python3` on CPU `0`; `curl -s http://localhost:8080/api/health` -> healthy
 
 ---
 
@@ -12912,7 +12914,7 @@ Last updated: 2026-04-02 04:25 EDT - Codex
 ---
 
 ID: T597
-Status: [~] On Hold
+Status: [✓] Done
 Title: [HIGH] Pin all device IRQs away from CPUs 4,5 in irq-affinity script
 Description:
 - Goal / acceptance criteria: Extend `systemd/map2-irq-affinity.sh` to pin ALL device IRQs (network, NVMe/disk, USB hubs, PCIe) to CPUs 0-3, not just xhci_hcd. Add a loop setting `/proc/irq/*/smp_affinity_list` to `0-3` for all IRQs except the UA-1000 audio IRQ. Verify with `cat /proc/interrupts` that no unexpected IRQs fire on cores 4,5 during playback.
@@ -12921,8 +12923,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated IRQ affinity script, verified IRQ map.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:34 EDT - Codex
+- Completed: Reworked `systemd/map2-irq-affinity.sh` so the UA-1000 xHCI IRQ remains on CPUs `4,5` and every other numeric IRQ is forced onto CPUs `0-3`, then installed and reran the live `map2-irq-affinity.service`.
+- Validation: `grep -nH . /proc/irq/*/smp_affinity_list` -> only `/proc/irq/39/smp_affinity_list:1:4-5` still targets the audio cores; `grep -i 'xhci|ehci|UA-1000|EDIROL' /proc/interrupts` -> UA-1000 xHCI remains IRQ `39`
 
 ---
 
@@ -12995,7 +12999,7 @@ Last updated: 2026-04-02 04:15 EDT - Codex
 ---
 
 ID: T602
-Status: [~] On Hold
+Status: [✓] Done
 Title: [MEDIUM] Document RT-safe service rules in CLAUDE.md Performance section
 Description:
 - Goal / acceptance criteria: Expand the "Performance & Latency" section in `docs/CLAUDE.md` with: (1) table of all known polling loops and intervals; (2) rules for new background services (minimum sleep interval, no blocking I/O on RT cores); (3) CPU affinity policy; (4) an RT-safe checklist for any new service running on the same host as the audio engine.
@@ -13004,8 +13008,10 @@ Description:
 - Estimated effort: Low
 - Required outputs: Updated CLAUDE.md Performance section, RT-safe service checklist.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:34 EDT - Codex
+- Completed: Expanded `docs/CLAUDE.md` Performance & Latency with the current polling-floor table, CPU-affinity policy, and an RT-safe checklist for future service work on the shared host.
+- Validation: documentation update only; verified against the live host state used for `T595` and `T597`
 
 ---
 

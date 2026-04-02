@@ -3,10 +3,10 @@
 # Executed by: map2-irq-affinity.service (oneshot, runs after boot)
 #
 # PURPOSE:
-#   Pin the xhci_hcd interrupt (which handles USB audio data from the Edirol UA-1000)
-#   to the dedicated audio CPUs (4,5 — isolated via GRUB isolcpus=4,5). This ensures
-#   the USB audio interrupt is processed on the same cores as the audio callback thread,
-#   eliminating cross-CPU wakeup latency and cache-miss penalties.
+#   Keep the general device IRQ load off the dedicated audio CPUs (4,5) while still
+#   reserving the UA-1000 xHCI interrupt for those audio CPUs. This lets the JUCE
+#   callback and its USB audio interrupt share the isolated RT cores, while disk,
+#   network, and non-audio USB interrupts stay on the general-purpose service CPUs.
 #
 #   With "threadirqs" in the kernel cmdline, each hardirq handler runs as a schedulable
 #   kernel thread. These threads can be assigned:
@@ -20,24 +20,25 @@
 #
 # DETECTION STRATEGY:
 #   1. Find the xhci_hcd IRQ for PCI device 0000:00:14.0 by parsing /proc/interrupts.
-#   2. Pin that IRQ's affinity to CPU 4 (primary audio core, within isolcpus=4,5).
-#   3. Pin the corresponding irq/N-xhci_hcd kernel thread to SCHED_FIFO priority 70.
-#      (Lower than JUCE audio thread ~80 so audio callback takes precedence over IRQ.)
-#   4. Also pin all other xhci_hcd IRQ threads (multiple MSI vectors) to audio cores.
+#   2. Pin that IRQ's affinity to CPUs 4,5 (the isolated audio cores).
+#   3. Pin every other numeric IRQ exposed under /proc/irq to CPUs 0-3.
+#   4. Pin the corresponding irq/N-* kernel thread to the same CPU mask for verification.
 #
 # FALLBACK:
 #   If the PCI address cannot be found (e.g., hardware change), the script pins all
 #   xhci_hcd IRQs to the audio cores as a best-effort alternative.
 #
-# AUDIO CPU CONFIGURATION:
-#   Must match GRUB_CMDLINE_LINUX isolcpus= and systemd CPUAffinity= values.
-#   Change these if the audio core assignment changes.
+# CPU CONFIGURATION:
+#   AUDIO_CPU_* must match GRUB isolcpus/nohz_full/rcu_nocbs.
+#   SERVICE_CPU_* must match the backend's CPUAffinity policy.
 AUDIO_CPU_PRIMARY=4
 AUDIO_CPU_SECONDARY=5
 # Bitmask for CPUs 4 and 5: bit4=0x10, bit5=0x20 → 0x10|0x20=0x30
 AUDIO_CPU_MASK="30"
 # smp_affinity_list format for both cores
 AUDIO_CPU_LIST="${AUDIO_CPU_PRIMARY},${AUDIO_CPU_SECONDARY}"
+SERVICE_CPU_MASK="0f"
+SERVICE_CPU_LIST="0-3"
 
 # RT priority for IRQ kernel threads (below JUCE audio callback ~80, above generic work)
 IRQ_THREAD_RTPRIO=70
@@ -50,6 +51,8 @@ log() {
 set_irq_affinity() {
     local irq="$1"
     local desc="$2"
+    local cpu_mask="$3"
+    local cpu_list="$4"
 
     local affinity_file="/proc/irq/${irq}/smp_affinity"
     local affinity_list_file="/proc/irq/${irq}/smp_affinity_list"
@@ -60,12 +63,12 @@ set_irq_affinity() {
     fi
 
     # Set CPU affinity via both interfaces for compatibility
-    echo "${AUDIO_CPU_MASK}" > "$affinity_file" 2>/dev/null && \
-        log "IRQ ${irq} (${desc}): affinity set to CPUs ${AUDIO_CPU_LIST} [mask=${AUDIO_CPU_MASK}]" || \
+    echo "${cpu_mask}" > "$affinity_file" 2>/dev/null && \
+        log "IRQ ${irq} (${desc}): affinity set to CPUs ${cpu_list} [mask=${cpu_mask}]" || \
         log "WARNING: Failed to set IRQ ${irq} affinity via smp_affinity"
 
     # smp_affinity_list is more human-readable and also works on some kernels
-    echo "${AUDIO_CPU_LIST}" > "$affinity_list_file" 2>/dev/null || true
+    echo "${cpu_list}" > "$affinity_list_file" 2>/dev/null || true
 
     # Pin and verify the irq/N kernel thread created by "threadirqs" kernel parameter.
     #
@@ -82,8 +85,8 @@ set_irq_affinity() {
     if [[ -n "$thread_pids" ]]; then
         for pid in $thread_pids; do
             # Pin CPU affinity (this works on kernel threads from userspace)
-            taskset -p "${AUDIO_CPU_MASK}" "$pid" > /dev/null 2>&1 && \
-                log "IRQ ${irq} thread PID ${pid}: CPU affinity pinned to mask ${AUDIO_CPU_MASK} (CPUs ${AUDIO_CPU_LIST})" || \
+            taskset -p "${cpu_mask}" "$pid" > /dev/null 2>&1 && \
+                log "IRQ ${irq} thread PID ${pid}: CPU affinity pinned to mask ${cpu_mask} (CPUs ${cpu_list})" || \
                 log "WARNING: taskset failed for IRQ ${irq} thread PID ${pid}"
 
             # Log existing RT class/priority (kernel sets this via threadirqs, typically SCHED_FIFO/50)
@@ -97,8 +100,20 @@ set_irq_affinity() {
     fi
 }
 
+contains_irq() {
+    local needle="$1"
+    shift
+    local irq
+    for irq in "$@"; do
+        if [[ "$irq" == "$needle" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 log "=== MAP2 IRQ affinity pinning starting ==="
-log "Target: audio CPUs ${AUDIO_CPU_LIST} (isolated via GRUB isolcpus=${AUDIO_CPU_LIST})"
+log "Target: audio IRQ CPUs ${AUDIO_CPU_LIST}; general device IRQ CPUs ${SERVICE_CPU_LIST}"
 
 # ── Find xhci_hcd IRQ for the UA-1000's USB controller (PCI 0000:00:14.0) ──
 # /proc/interrupts format: "  38:  0  0  ... IR-PCI-MSI-0000:00:14.0  0-edge  xhci_hcd"
@@ -132,30 +147,34 @@ fi
 log "Found xhci_hcd IRQs: ${XHCI_IRQS[*]}"
 
 for irq in "${XHCI_IRQS[@]}"; do
-    set_irq_affinity "$irq" "xhci_hcd (UA-1000 USB)"
+    set_irq_affinity "$irq" "xhci_hcd (UA-1000 USB)" "${AUDIO_CPU_MASK}" "${AUDIO_CPU_LIST}"
 done
 
-# ── Also pin EHCI USB IRQ if present (legacy USB companion on this platform) ──
-# EHCI (IRQ 18 on this Xeon platform) handles USB 1.1/2.0 traffic.
-# Lower priority than xhci but still benefits from isolation.
-EHCI_IRQS=()
+# ── Push every other IRQ away from the isolated audio cores ─────────────────
+ALL_IRQS=()
 while IFS= read -r line; do
-    if [[ "$line" == *"ehci"* ]]; then
-        irq_num=$(echo "$line" | awk -F: '{print $1}' | tr -d ' ')
-        [[ -n "$irq_num" ]] && EHCI_IRQS+=("$irq_num")
+    irq_num=$(echo "$line" | awk -F: '{print $1}' | tr -d ' ')
+    if [[ "$irq_num" =~ ^[0-9]+$ ]]; then
+        ALL_IRQS+=("$irq_num")
     fi
 done < /proc/interrupts
 
-for irq in "${EHCI_IRQS[@]}"; do
-    set_irq_affinity "$irq" "ehci_hcd (USB 2.0 companion)"
+for irq in "${ALL_IRQS[@]}"; do
+    if contains_irq "$irq" "${XHCI_IRQS[@]}"; then
+        continue
+    fi
+    set_irq_affinity "$irq" "non-audio device IRQ" "${SERVICE_CPU_MASK}" "${SERVICE_CPU_LIST}"
 done
 
 # ── Verify final state ──
 log "=== Final IRQ affinity verification ==="
-for irq in "${XHCI_IRQS[@]}" "${EHCI_IRQS[@]}"; do
+for irq in "${ALL_IRQS[@]}"; do
     if [[ -f "/proc/irq/${irq}/smp_affinity_list" ]]; then
         affinity=$(cat "/proc/irq/${irq}/smp_affinity_list")
         log "IRQ ${irq}: active affinity = CPUs ${affinity}"
+        if [[ "$affinity" =~ (^|,|-)(4|5)($|,|-) ]] && ! contains_irq "$irq" "${XHCI_IRQS[@]}"; then
+            log "WARNING: IRQ ${irq} still targets audio CPUs: ${affinity}"
+        fi
     fi
 done
 
