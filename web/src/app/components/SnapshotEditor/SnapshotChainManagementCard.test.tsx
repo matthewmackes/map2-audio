@@ -216,6 +216,10 @@ function renderCard(
     onToggleSnapshotLock?: jest.Mock
     onGoLive?: jest.Mock
     goLiveState?: SnapshotGoLiveState | null
+    goLiveDiffItems?: string[] | null
+    goLiveDiffExpanded?: boolean
+    onToggleGoLiveDiff?: jest.Mock
+    onDismissGoLiveDiff?: jest.Mock
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
@@ -252,6 +256,10 @@ function renderCard(
       snapshotLockPending={options.snapshotLockPending}
       onGoLive={options.onGoLive}
       goLiveState={options.goLiveState}
+      goLiveDiffItems={options.goLiveDiffItems}
+      goLiveDiffExpanded={options.goLiveDiffExpanded}
+      onToggleGoLiveDiff={options.onToggleGoLiveDiff}
+      onDismissGoLiveDiff={options.onDismissGoLiveDiff}
       onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
@@ -603,6 +611,54 @@ describe('SnapshotChainManagementCard', () => {
     const liveIndicators = screen.getAllByText('LIVE')
     expect(liveIndicators.length).toBeGreaterThan(1)
     expect(screen.queryByRole('button', { name: 'Go Live' })).not.toBeInTheDocument()
+  })
+
+  it('renders the collapsed snapshot diff expander and reveals the change list on demand', () => {
+    const onToggleGoLiveDiff = jest.fn()
+    const onDismissGoLiveDiff = jest.fn()
+
+    const { rerender } = renderCard(buildLiveSnapshot({ is_active: false, live_state: { is_live: false, activated_at: null, paths: [], runtime_chains: [] } }), {
+      goLiveState: {
+        phase: 'idle',
+        label: 'Go Live',
+        disabled: false,
+        errorMessage: null,
+      },
+      goLiveDiffItems: ['+ Reverb added to Channel Clean', 'NAM Gain: 0.5 -> 0.8 on Channel Clean'],
+      goLiveDiffExpanded: false,
+      onToggleGoLiveDiff,
+      onDismissGoLiveDiff,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show changes (2)' }))
+    expect(onToggleGoLiveDiff).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('list', { name: 'Snapshot changes' })).not.toBeInTheDocument()
+
+    rerender(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot({ is_active: false, live_state: { is_live: false, activated_at: null, paths: [], runtime_chains: [] } })}
+        onGoLive={jest.fn()}
+        goLiveState={{
+          phase: 'idle',
+          label: 'Go Live',
+          disabled: false,
+          errorMessage: null,
+        }}
+        goLiveDiffItems={['+ Reverb added to Channel Clean', 'NAM Gain: 0.5 -> 0.8 on Channel Clean']}
+        goLiveDiffExpanded
+        onToggleGoLiveDiff={onToggleGoLiveDiff}
+        onDismissGoLiveDiff={onDismissGoLiveDiff}
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Hide changes (2)' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Snapshot changes' })).toHaveTextContent('+ Reverb added to Channel Clean')
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(onDismissGoLiveDiff).toHaveBeenCalledTimes(1)
   })
 
   it('places favorite and lock controls below the snapshot description instead of in the title row', () => {

@@ -1364,6 +1364,43 @@
   line-height: 1.45;
 }
 
+.juce-grid-page__snapshot-status-go-live-diff {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 40rem;
+}
+
+.juce-grid-page__snapshot-status-go-live-diff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-go-live-diff-toggle.cds--btn,
+.juce-grid-page__snapshot-status-go-live-diff-dismiss.cds--btn {
+  min-block-size: 2.25rem;
+  padding-inline: 0.875rem;
+}
+
+.juce-grid-page__snapshot-status-go-live-diff-list {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, rgba(255, 255, 255, 0.16)) 88%, #78a9ff 12%);
+  background: color-mix(in srgb, var(--cds-layer-01, #262626) 90%, black 10%);
+  list-style: none;
+}
+
+.juce-grid-page__snapshot-status-go-live-diff-item {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 .juce-grid-page__snapshot-status-secondary-actions {
   display: flex;
   flex-wrap: wrap;

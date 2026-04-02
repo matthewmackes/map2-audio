@@ -175,6 +175,7 @@ import {
 } from '../components/SnapshotEditor/snapshotEditorFlowState'
 import type { JuceGridRoutingState } from '../components/SnapshotEditor/snapshotEditorFlowState'
 import {
+  buildSnapshotGoLiveDiff,
 } from '../components/SnapshotEditor/snapshotEditorComparison'
 import {
   buildEffectiveLiveSnapshotChains,
@@ -920,6 +921,8 @@ export function SnapshotEditorPage() {
   const [pendingGoLiveSnapshotId, setPendingGoLiveSnapshotId] = useState<number | null>(null)
   const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
   const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
+  const [goLiveDiffExpanded, setGoLiveDiffExpanded] = useState(false)
+  const [dismissedGoLiveDiffKey, setDismissedGoLiveDiffKey] = useState<string | null>(null)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
@@ -2319,6 +2322,41 @@ export function SnapshotEditorPage() {
     }
     return map
   }, [pluginsQuery.data])
+  const goLiveDiffSourceSnapshot = runtimeLiveState?.live_snapshot_payload ?? liveSnapshot
+  const goLiveDiff = useMemo(() => {
+    if (
+      !activeSnapshot
+      || !goLiveDiffSourceSnapshot
+      || activeSnapshot.id === goLiveDiffSourceSnapshot.id
+    ) {
+      return null
+    }
+
+    return buildSnapshotGoLiveDiff(goLiveDiffSourceSnapshot, activeSnapshot, pluginMeta)
+  }, [activeSnapshot, goLiveDiffSourceSnapshot, pluginMeta])
+  const goLiveDiffKey = useMemo(() => {
+    if (!activeSnapshot || !goLiveDiffSourceSnapshot) {
+      return null
+    }
+    return `${goLiveDiffSourceSnapshot.id}:${activeSnapshot.id}`
+  }, [activeSnapshot, goLiveDiffSourceSnapshot])
+  const visibleGoLiveDiff = useMemo(() => {
+    if (
+      !goLiveDiff
+      || goLiveDiff.count === 0
+      || !goLiveDiffKey
+      || dismissedGoLiveDiffKey === goLiveDiffKey
+      || snapshotGoLiveState.phase === 'live'
+    ) {
+      return null
+    }
+
+    return goLiveDiff
+  }, [dismissedGoLiveDiffKey, goLiveDiff, goLiveDiffKey, snapshotGoLiveState.phase])
+
+  useEffect(() => {
+    setGoLiveDiffExpanded(false)
+  }, [goLiveDiffKey])
 
   const selectedPlugin = useMemo(() => {
     if (!selectedPluginUri || !currentChain) return null
@@ -5951,6 +5989,16 @@ export function SnapshotEditorPage() {
             snapshotLockPending={toggleActiveSnapshotLockMutation.isPending}
             onGoLive={handleGoLive}
             goLiveState={snapshotGoLiveState}
+            goLiveDiffItems={visibleGoLiveDiff?.items ?? null}
+            goLiveDiffExpanded={goLiveDiffExpanded}
+            onToggleGoLiveDiff={() => setGoLiveDiffExpanded((current) => !current)}
+            onDismissGoLiveDiff={() => {
+              if (!goLiveDiffKey) {
+                return
+              }
+              setDismissedGoLiveDiffKey(goLiveDiffKey)
+              setGoLiveDiffExpanded(false)
+            }}
             onSubmitSnapshotDescription={(description) => {
               if (!activeSnapshot) {
                 return

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]
+Last updated: 2026-04-01 EDT - T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1223,7 +1223,7 @@ Last updated: 2026-04-01 21:22 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T616
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Diff View — Before/After Summary Before Going Live
 Description:
 - Goal / acceptance criteria: When the player presses Go Live (T615), if the snapshot-to-be-activated differs from the currently live snapshot, an optional diff summary is shown inline below the Go Live button (not as a blocking modal). The diff lists changes in plain English: plugin additions ("+ Reverb added to Channel Clean"), removals ("− Chorus removed from Channel Lead"), parameter changes ("NAM model: CleanTone → Crunch"), and bypass state changes ("Reverb: bypassed → active"). The diff is computed client-side by comparing the current live snapshot payload (from SnapshotRuntimeLiveState.live_snapshot_payload) against the to-be-activated snapshot. The diff is collapsed by default with a "Show changes (5)" expander. The player can dismiss the diff and proceed immediately — it is never a blocking gate.
@@ -1232,7 +1232,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: client-side snapshot diff utility (compare two SnapshotDetail objects, produce human-readable change list), diff display below Go Live button (collapsed by default, expandable), diff computed only when both live snapshot and target snapshot are available, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 22:15 - Codex
+- Completion notes:
+  - Added an inline Go Live diff expander beneath the hero action so saved snapshots now expose a collapsed `Show changes (N)` summary, expandable and dismissible without blocking activation.
+  - Built a client-side human-readable diff over the current runtime live snapshot payload versus the selected target snapshot, covering routing changes, plugin adds/removals, bypass changes, parameter deltas, and model/asset swaps.
+  - Added focused regression coverage for both the diff generator and the hero expander behavior.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorComparison.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/utils/snapshotGoLiveState.test.ts web/src/app/utils/snapshotActivationToast.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T615
 Status: [✓] Done

@@ -44,6 +44,10 @@ interface SnapshotChainManagementCardProps {
   snapshotLockPending?: boolean
   onGoLive?: () => void
   goLiveState?: SnapshotGoLiveState | null
+  goLiveDiffItems?: string[] | null
+  goLiveDiffExpanded?: boolean
+  onToggleGoLiveDiff?: () => void
+  onDismissGoLiveDiff?: () => void
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
@@ -493,6 +497,10 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotLockPending = false,
     onGoLive,
     goLiveState = null,
+    goLiveDiffItems = null,
+    goLiveDiffExpanded = false,
+    onToggleGoLiveDiff,
+    onDismissGoLiveDiff,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
@@ -732,6 +740,40 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   )}
                   {goLiveState.errorMessage ? (
                     <p className="juce-grid-page__snapshot-status-go-live-error">{goLiveState.errorMessage}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {goLiveDiffItems && goLiveDiffItems.length > 0 ? (
+                <div className="juce-grid-page__snapshot-status-go-live-diff">
+                  <div className="juce-grid-page__snapshot-status-go-live-diff-actions">
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      className="juce-grid-page__snapshot-status-go-live-diff-toggle"
+                      onClick={onToggleGoLiveDiff}
+                      disabled={!onToggleGoLiveDiff}
+                    >
+                      {goLiveDiffExpanded ? `Hide changes (${goLiveDiffItems.length})` : `Show changes (${goLiveDiffItems.length})`}
+                    </Button>
+                    {onDismissGoLiveDiff ? (
+                      <Button
+                        size="sm"
+                        kind="ghost"
+                        className="juce-grid-page__snapshot-status-go-live-diff-dismiss"
+                        onClick={onDismissGoLiveDiff}
+                      >
+                        Dismiss
+                      </Button>
+                    ) : null}
+                  </div>
+                  {goLiveDiffExpanded ? (
+                    <ul className="juce-grid-page__snapshot-status-go-live-diff-list" aria-label="Snapshot changes">
+                      {goLiveDiffItems.map((item, index) => (
+                        <li key={`${item}-${index}`} className="juce-grid-page__snapshot-status-go-live-diff-item">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                 </div>
               ) : null}
