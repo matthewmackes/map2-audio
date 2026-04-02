@@ -14,7 +14,7 @@ import {
 
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption' | 'launchers'
+export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
   return value === 'host-machine'
@@ -22,7 +22,6 @@ export function isStandalonePanel(value: string | null | undefined): value is St
     || value === 'theme'
     || value === 'about'
     || value === 'adoption'
-    || value === 'launchers'
 }
 
 export interface PlatformPanelNavItem {

@@ -1,4 +1,9 @@
-import { getLauncherCatalogItem, normalizeLandingTiles } from './launcherCatalog'
+import {
+  ensureRequiredHomeLauncher,
+  getLauncherCatalogItem,
+  normalizeLandingTiles,
+  prioritizeRequiredHomeLauncher,
+} from './launcherCatalog'
 
 describe('launcherCatalog', () => {
   it('keeps non-shared launchers out of the catalog and marks hardware submenu triggers as nav-only', () => {
@@ -10,7 +15,7 @@ describe('launcherCatalog', () => {
       navEligible: true,
       directory: 'nav-only',
     })
-    expect(getLauncherCatalogItem('/labs')).toMatchObject({
+    expect(getLauncherCatalogItem('/platforms/workspace-catalog')).toMatchObject({
       landingEligible: true,
       directory: 'core',
     })
@@ -22,12 +27,35 @@ describe('launcherCatalog', () => {
       { route: '/synth-forge', size: 'large' },
       { route: '/platform', size: 'medium' },
       { route: '/hardware-interfaces', size: 'large' },
-      { route: '/labs', size: 'giant' },
-      { route: '/labs', size: 'small' },
-      { route: '/labs', size: 'medium' },
+      { route: '/platforms/workspace-catalog', size: 'giant' },
+      { route: '/platforms/workspace-catalog', size: 'small' },
+      { route: '/platforms/workspace-catalog', size: 'medium' },
     ])).toEqual([
       { route: '/platforms/overview', size: 'medium' },
-      { route: '/labs', size: 'small' },
+      { route: '/platforms/workspace-catalog', size: 'small' },
+    ])
+  })
+
+  it('keeps the required Platforms launcher first when present', () => {
+    expect(prioritizeRequiredHomeLauncher([
+      { route: '/midi-hub', size: 'small' },
+      { route: '/platforms/overview', size: 'medium' },
+      { route: '/audio-table', size: 'large' },
+    ])).toEqual([
+      { route: '/platforms/overview', size: 'medium' },
+      { route: '/midi-hub', size: 'small' },
+      { route: '/audio-table', size: 'large' },
+    ])
+  })
+
+  it('injects the required Platforms launcher when missing', () => {
+    expect(ensureRequiredHomeLauncher([
+      { route: '/midi-hub', size: 'small' },
+      { route: '/audio-table', size: 'large' },
+    ])).toEqual([
+      { route: '/platforms/overview', size: 'medium' },
+      { route: '/midi-hub', size: 'small' },
+      { route: '/audio-table', size: 'large' },
     ])
   })
 })

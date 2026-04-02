@@ -1,7 +1,7 @@
 /**
- * Shared Platforms/Labs workspace surface used by the routed `/platforms/*`
- * and `/labs` shells, with optional modal chrome retained for narrow legacy
- * host flows that still need an overlay wrapper.
+ * Shared Platforms interface surface used by the routed `/platforms/*` shell,
+ * with optional modal chrome retained for narrow legacy host flows that still
+ * need an overlay wrapper.
  */
 import {
   ChartColumn,
@@ -51,11 +51,11 @@ import {
   platformPanelItems,
   type StandalonePanel,
 } from '../../data/platformMenuItems'
-import { useSpecialSettings } from '../../hooks/useSpecialSettings'
+import { useSpecialSettings, type SpecialSettings } from '../../hooks/useSpecialSettings'
 import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
-import { LabsWorkspace } from './LabsWorkspace'
+import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -113,7 +113,6 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
-  'launchers':    { label: 'Launcher Organizer', eyebrow: 'Theme', icon: SettingsAdjust },
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -200,12 +199,12 @@ function SidebarNavigation({
   activeId,
   onOpenLayer,
   onOpenStandalone,
-  onOpenLabs,
+  onOpenWorkspaceCatalog,
 }: {
   activeId: string | null
   onOpenLayer: (id: PlatformLayerId) => void
   onOpenStandalone: (id: StandalonePanel) => void
-  onOpenLabs: () => void
+  onOpenWorkspaceCatalog: () => void
 }) {
   const items: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
     const targetId = item.target.layer ?? item.target.panel ?? null
@@ -229,32 +228,24 @@ function SidebarNavigation({
       },
     }
   })
+  items.push({
+    key: '/platforms/workspace-catalog',
+    label: 'Workspace Catalog',
+    description: 'Launcher Organizer in one native Platforms section.',
+    to: '/platforms/workspace-catalog',
+    icon: SettingsAdjust,
+    active: activeId === 'workspace-catalog',
+    onOpen: onOpenWorkspaceCatalog,
+  })
 
   return (
     <UnifiedWorkspaceSideNav
       className="platform-shell__sidebar"
-      ariaLabel="Platforms and Labs navigation"
+      ariaLabel="Platforms interface navigation"
       eyebrow="Navigation"
-      title="Platforms and Labs"
-      description="Move across platform workspaces from one rail, then drop into Labs for the former Advanced launchers."
+      title="Platforms Interface"
+      description="Move across platform workspaces, then open Workspace Catalog for launcher management."
       items={items}
-      footer={(
-        <button
-          type="button"
-          className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
-          onClick={onOpenLabs}
-          aria-label="Open Labs workspace"
-        >
-          <span className="platform-shell__nav-item-main">
-            <span className="platform-shell__nav-item-copy">
-              <span className="platform-shell__nav-item-chip">Labs</span>
-              <span className="platform-shell__nav-item-desc">
-                Advanced and experimental launchers formerly grouped under the old Advanced menu.
-              </span>
-            </span>
-          </span>
-        </button>
-      )}
     />
   )
 }
@@ -490,7 +481,6 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
         {panel === 'host-machine' && <HostMachinePage />}
         {panel === 'audio-engine' && <AudioEnginePage />}
         {panel === 'theme'        && <ThemePage />}
-        {panel === 'launchers'    && <ThemePage initialModal="launchers" />}
         {panel === 'about'        && <AboutPage />}
         {panel === 'adoption'     && <PlatformAdoptionPage />}
       </Suspense>
@@ -904,7 +894,43 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   )
 }
 
-// ── Shared Platforms/Labs Surface ────────────────────────────────────────────
+function WorkspaceCatalogWorkspace({
+  settings,
+  isLoading,
+  updateSettings,
+  onLaunchRoute,
+}: {
+  settings: SpecialSettings | null
+  isLoading: boolean
+  updateSettings: (newSettings: Partial<SpecialSettings>) => Promise<void>
+  onLaunchRoute: (to: string) => void
+}) {
+  return (
+    <motion.section key="workspace-catalog" className="platform-shell__workspace platform-shell__workspace--workspace-catalog"
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
+    >
+      <div className="platform-shell__ws-header">
+        <span className="platform-shell__ws-header-icon" aria-hidden><SettingsAdjust size={20} /></span>
+        <div className="platform-shell__ws-header-copy">
+          <span className="platform-shell__ws-header-eyebrow">Catalog</span>
+          <h2 className="platform-shell__ws-header-title">Workspace Catalog</h2>
+          <p className="platform-shell__ws-header-summary">
+            Launcher Organizer now lives as one native Platforms section.
+          </p>
+        </div>
+      </div>
+      <PlatformLaunchersWorkspace
+        settings={settings}
+        isLoading={isLoading}
+        updateSettings={updateSettings}
+        onLaunchRoute={onLaunchRoute}
+      />
+    </motion.section>
+  )
+}
+
+// ── Shared Platforms Surface ────────────────────────────────────────────────
 // Route-native by default, with optional modal chrome retained for any narrow
 // legacy host that still needs an overlay wrapper.
 
@@ -915,11 +941,11 @@ export interface PlatformModalContentProps {
   initialLayer?: PlatformLayerId | null
   /** Initial standalone panel to open (from URL deep-link). */
   initialPanel?: StandalonePanel | null
-  /** Open the Labs workspace as the initial routed destination. */
-  initialLabs?: boolean
+  /** Open Workspace Catalog as the initial routed destination. */
+  initialWorkspaceCatalog?: boolean
   /** Called when the user navigates to a layer/panel (for URL sync). */
   onNavigate?: (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => void
-  /** Called when the user launches a Labs route from the unified modal host. */
+  /** Called when the user launches a route from the unified host. */
   onLaunchRoute?: (to: string) => void
   /** Called when user clicks the × close button. */
   onClose: () => void
@@ -929,13 +955,17 @@ export function PlatformModalContent({
   surface = 'route',
   initialLayer,
   initialPanel,
-  initialLabs = false,
+  initialWorkspaceCatalog = false,
   onNavigate,
   onLaunchRoute,
   onClose,
 }: PlatformModalContentProps) {
   const navigate = useNavigate()
-  const { settings: specialSettings } = useSpecialSettings()
+  const {
+    settings: specialSettings,
+    isLoading: specialSettingsLoading,
+    updateSettings: updateSpecialSettings,
+  } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
   const activeLayerId = usePlatformActiveLayer()
   const alerts = usePlatformAlerts()
@@ -944,13 +974,7 @@ export function PlatformModalContent({
   const _summaryMetrics = usePlatformSummaryMetrics()
 
   const [activePanel, setActivePanel] = useState<StandalonePanel | null>(initialPanel ?? null)
-  const [activeLabs, setActiveLabs] = useState(false)
-  const pinnedRoutes = useMemo(() => specialSettings?.pinnedRoutes ?? [], [specialSettings?.pinnedRoutes])
-  const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
-  const landingTileRouteSet = useMemo(
-    () => new Set((specialSettings?.landingTiles ?? []).map((tile) => tile.route)),
-    [specialSettings?.landingTiles],
-  )
+  const [activeWorkspaceCatalog, setActiveWorkspaceCatalog] = useState(initialWorkspaceCatalog)
 
   // Sync live data into store
   useEffect(() => {
@@ -960,31 +984,31 @@ export function PlatformModalContent({
   }, [nextAlerts, nextLayerHealth, nextSummaryMetrics, setAlerts, setLayerHealth, setSummaryMetrics])
 
   useEffect(() => {
-    if (initialLabs) {
+    if (initialWorkspaceCatalog) {
       startTransition(() => closeLayer())
       setActivePanel(null)
-      setActiveLabs(true)
+      setActiveWorkspaceCatalog(true)
       return
     }
 
     if (initialPanel) {
-      setActiveLabs(false)
+      setActiveWorkspaceCatalog(false)
       setActivePanel(initialPanel)
       startTransition(() => closeLayer())
       return
     }
 
     if (initialLayer && isPlatformLayerId(initialLayer)) {
-      setActiveLabs(false)
+      setActiveWorkspaceCatalog(false)
       setActivePanel(null)
       startTransition(() => openLayer(initialLayer))
       return
     }
 
-    if (!activeLabs && activePanel === null && activeLayerId === null) {
+    if (!activeWorkspaceCatalog && activePanel === null && activeLayerId === null) {
       startTransition(() => openLayer(DEFAULT_PLATFORM_LAYER))
     }
-  }, [activeLabs, activeLayerId, activePanel, closeLayer, initialLabs, initialLayer, initialPanel, openLayer])
+  }, [activeWorkspaceCatalog, activeLayerId, activePanel, closeLayer, initialWorkspaceCatalog, initialLayer, initialPanel, openLayer])
 
   // Animation cleanup
   useEffect(() => {
@@ -1004,23 +1028,23 @@ export function PlatformModalContent({
   }, [activeLayer, alerts])
 
   const handleOpenLayer = (layerId: PlatformLayerId) => {
-    setActiveLabs(false)
+    setActiveWorkspaceCatalog(false)
     setActivePanel(null)
     startTransition(() => openLayer(layerId))
     onNavigate?.({ layer: layerId })
   }
 
   const handleOpenStandalone = (panel: StandalonePanel) => {
-    setActiveLabs(false)
+    setActiveWorkspaceCatalog(false)
     startTransition(() => closeLayer())
     setActivePanel(panel)
     onNavigate?.({ panel })
   }
 
-  const handleOpenLabs = () => {
+  const handleOpenWorkspaceCatalog = () => {
     startTransition(() => closeLayer())
     setActivePanel(null)
-    setActiveLabs(true)
+    setActiveWorkspaceCatalog(true)
     onNavigate?.(null)
   }
 
@@ -1035,8 +1059,8 @@ export function PlatformModalContent({
   }
 
   const showStandalone = activePanel !== null
-  const showLayer = !activeLabs && !showStandalone && activeLayer !== null
-  const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
+  const showLayer = !activeWorkspaceCatalog && !showStandalone && activeLayer !== null
+  const activeId = activeWorkspaceCatalog ? 'workspace-catalog' : (activePanel ?? activeLayerId)
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
       <div className="platform-shell__content">
@@ -1045,15 +1069,16 @@ export function PlatformModalContent({
             activeId={activeId}
             onOpenLayer={handleOpenLayer}
             onOpenStandalone={handleOpenStandalone}
-            onOpenLabs={handleOpenLabs}
+            onOpenWorkspaceCatalog={handleOpenWorkspaceCatalog}
           />
           <div className="platform-shell__panel">
             <AnimatePresence mode="wait">
-              {activeLabs && (
-                <LabsWorkspace
-                  key="labs"
-                  pinnedRouteSet={pinnedRouteSet}
-                  landingTileRouteSet={landingTileRouteSet}
+              {activeWorkspaceCatalog && (
+                <WorkspaceCatalogWorkspace
+                  key="workspace-catalog"
+                  settings={specialSettings}
+                  isLoading={specialSettingsLoading}
+                  updateSettings={updateSpecialSettings}
                   onLaunchRoute={handleLaunchRoute}
                 />
               )}
@@ -1063,7 +1088,7 @@ export function PlatformModalContent({
               {showLayer && activeLayer && (
                 <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
               )}
-              {!activeLabs && !showStandalone && !showLayer && (
+              {!activeWorkspaceCatalog && !showStandalone && !showLayer && (
                 <motion.section
                   key="platform-loading"
                   className="platform-shell__workspace platform-shell__workspace--empty"
@@ -1091,12 +1116,12 @@ export function PlatformModalContent({
   return (
     <div className="platform-modal__body platform-modal__body--expanded">
       <div className="platform-modal__header">
-        <span className="platform-modal__header-title">Platforms and Labs</span>
+        <span className="platform-modal__header-title">Platforms Interface</span>
         <button
           type="button"
           className="platform-modal__close"
           onClick={onClose}
-          aria-label="Close Platforms and Labs window"
+          aria-label="Close Platforms interface window"
         >
           <Close size={20} aria-hidden />
         </button>

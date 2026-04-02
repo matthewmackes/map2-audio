@@ -9,13 +9,13 @@ function prefetchSnapshotEditor() {
 function prefetchPlatformWorkspace() {
   return Promise.allSettled([
     import('./pages/PlatformWorkspacePage').then((module) => module),
+    import('./pages/PlatformWorkspaceCatalogPage').then((module) => module),
     import('./components/Platform/PlatformModal').then((module) => module),
   ])
 }
 
-function prefetchLabsWorkspace() {
+function prefetchPushSurfaceWorkspace() {
   return Promise.allSettled([
-    import('./pages/LabsPage').then((module) => module),
     import('./pages/PushSurfacePage').then((module) => module),
   ])
 }
@@ -36,8 +36,8 @@ function prefetchForRoute(route: string) {
     return prefetchPlatformWorkspace()
   }
 
-  if (route === '/labs' || route.startsWith('/labs/')) {
-    return prefetchLabsWorkspace()
+  if (route.startsWith('/labs/')) {
+    return prefetchPushSurfaceWorkspace()
   }
 
   if (route === '/midi-hub' || route.startsWith('/midi-hub/')) {

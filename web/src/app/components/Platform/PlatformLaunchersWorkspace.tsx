@@ -25,9 +25,12 @@ import './PlatformLaunchersWorkspace.css'
 
 import { MAX_PINNED_NAV_ITEMS, normalizePinnedRoutes } from '../../data/advancedMenuItems'
 import {
+  ensureRequiredHomeLauncher,
   getLauncherCatalogItem,
   launcherCatalogItems,
   normalizeLandingTiles,
+  prioritizeRequiredHomeLauncher,
+  REQUIRED_HOME_LAUNCHER_ROUTE,
   type LandingTilePlacement,
   type LauncherCatalogItem,
   type LandingTileSize,
@@ -36,7 +39,7 @@ import type { SpecialSettings } from '../../hooks/useSpecialSettings'
 
 const DIRECTORY_LABELS: Record<LauncherCatalogItem['directory'], string> = {
   core: 'Core',
-  labs: 'Labs',
+  labs: 'Advanced',
   platforms: 'Platforms',
   'nav-only': 'Nav only',
 }
@@ -159,6 +162,8 @@ export function PlatformLaunchersWorkspace({
   const configureLandingIndex = configureItem ? landingTiles.findIndex((tile) => tile.route === configureItem.route) : -1
   const configureLandingTile = configureLandingIndex >= 0 ? landingTiles[configureLandingIndex] : null
   const configureNavIndex = configureItem ? pinnedRoutes.findIndex((route) => route === configureItem.route) : -1
+  const requiredHomeTileIndex = landingTiles.findIndex((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)
+  const isRequiredHomeLauncher = configureItem?.route === REQUIRED_HOME_LAUNCHER_ROUTE
   const navFull = pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
 
   const runAction = async (key: string, fn: () => Promise<void>) => {
@@ -171,7 +176,9 @@ export function PlatformLaunchersWorkspace({
   }
 
   const saveLandingTiles = async (nextTiles: LandingTilePlacement[]) => {
-    await updateSettings({ landingTiles: normalizeLandingTiles(nextTiles) })
+    const normalizedTiles = normalizeLandingTiles(nextTiles)
+    const requiredTiles = ensureRequiredHomeLauncher(normalizedTiles)
+    await updateSettings({ landingTiles: prioritizeRequiredHomeLauncher(requiredTiles) })
   }
 
   const savePinnedRoutes = async (nextRoutes: string[]) => {
@@ -236,10 +243,13 @@ export function PlatformLaunchersWorkspace({
                   <Button
                     size="sm"
                     kind={configureLandingTile ? 'secondary' : 'primary'}
-                    disabled={controlsDisabled}
+                    disabled={controlsDisabled || (isRequiredHomeLauncher && Boolean(configureLandingTile))}
                     onClick={() => {
                       void runAction(`landing-toggle-${configureItem.route}`, async () => {
                         if (configureLandingTile) {
+                          if (isRequiredHomeLauncher) {
+                            return
+                          }
                           await saveLandingTiles(landingTiles.filter((tile) => tile.route !== configureItem.route))
                           return
                         }
@@ -248,9 +258,16 @@ export function PlatformLaunchersWorkspace({
                       })
                     }}
                   >
-                    {configureLandingTile ? 'Remove from landing' : 'Add to landing'}
+                    {configureLandingTile
+                      ? (isRequiredHomeLauncher ? 'Required on landing' : 'Remove from landing')
+                      : 'Add to landing'}
                   </Button>
                 </div>
+                {isRequiredHomeLauncher && configureLandingTile ? (
+                  <p className="platform-launchers__configure-note">
+                    Platforms is always visible on Home and remains the first launcher card.
+                  </p>
+                ) : null}
 
                 {configureLandingTile ? (
                   <>
@@ -284,10 +301,16 @@ export function PlatformLaunchersWorkspace({
                         <Button
                           size="sm"
                           kind="tertiary"
-                          disabled={controlsDisabled || configureLandingIndex <= 0}
+                          disabled={
+                            controlsDisabled
+                            || isRequiredHomeLauncher
+                            || configureLandingIndex <= (requiredHomeTileIndex >= 0 ? 1 : 0)
+                          }
                           onClick={() => {
                             void runAction(`landing-up-${configureItem.route}`, async () => {
-                              await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, configureLandingIndex - 1))
+                              const boundaryIndex = requiredHomeTileIndex >= 0 ? 1 : 0
+                              const targetIndex = Math.max(boundaryIndex, configureLandingIndex - 1)
+                              await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, targetIndex))
                             })
                           }}
                         >
@@ -296,7 +319,7 @@ export function PlatformLaunchersWorkspace({
                         <Button
                           size="sm"
                           kind="tertiary"
-                          disabled={controlsDisabled || configureLandingIndex === landingTiles.length - 1}
+                          disabled={controlsDisabled || isRequiredHomeLauncher || configureLandingIndex === landingTiles.length - 1}
                           onClick={() => {
                             void runAction(`landing-down-${configureItem.route}`, async () => {
                               await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, configureLandingIndex + 1))
@@ -405,11 +428,11 @@ export function PlatformLaunchersWorkspace({
     <section className="platform-launchers">
       <Tile className="platform-launchers__summary">
         <div>
-          <p className="platform-launchers__eyebrow">Theme workspace</p>
+          <p className="platform-launchers__eyebrow">Workspace Catalog</p>
           <h3>Launcher organizer</h3>
           <p>
             Use one Carbon-style table to browse every launcher, open routes, and configure Home or nav promotion.
-            Launch opens a workspace in a new tab so this organizer can stay open for multi-launch use.
+            Launch opens each workspace directly in the current shell.
           </p>
         </div>
         <div className="platform-launchers__summary-tags">
@@ -424,7 +447,7 @@ export function PlatformLaunchersWorkspace({
           <TableContainer
             {...getTableContainerProps()}
             title="Launcher catalog"
-            description="List route-backed launchers, then launch or configure each workspace from one modal."
+            description="List route-backed launchers, then launch or configure each workspace from one native section."
             className="platform-launchers__table-container"
           >
             <TableToolbar {...getToolbarProps()}>

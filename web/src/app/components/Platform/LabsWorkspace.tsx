@@ -64,12 +64,18 @@ interface LabsWorkspaceProps {
   pinnedRouteSet: Set<string>
   landingTileRouteSet: Set<string>
   onLaunchRoute: (to: string) => void
+  headerEyebrow?: string
+  headerTitle?: string
+  headerSummary?: string
 }
 
 export function LabsWorkspace({
   pinnedRouteSet,
   landingTileRouteSet,
   onLaunchRoute,
+  headerEyebrow = 'Advanced',
+  headerTitle = 'Advanced Routes',
+  headerSummary = 'Grouped route cards for advanced, experimental, and hardware-sensitive workflows.',
 }: LabsWorkspaceProps) {
   const location = useLocation()
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
@@ -284,10 +290,10 @@ export function LabsWorkspace({
     <section className="platform-shell__workspace platform-shell__workspace--labs">
       <div className="platform-shell__ws-header">
         <div className="platform-shell__ws-header-copy">
-          <span className="platform-shell__ws-header-eyebrow">Advanced</span>
-          <h2 className="platform-shell__ws-header-title">Labs</h2>
+          <span className="platform-shell__ws-header-eyebrow">{headerEyebrow}</span>
+          <h2 className="platform-shell__ws-header-title">{headerTitle}</h2>
           <p className="platform-shell__ws-header-summary">
-            The old Advanced launchers now live here, grouped by domain and kept on the same icon grammar.
+            {headerSummary}
           </p>
         </div>
       </div>
@@ -300,7 +306,7 @@ export function LabsWorkspace({
             <section
               key={`labs-${sectionTitle}`}
               className="platform-shell__cp-panel advanced-menu-control-panel__section"
-              aria-label={`${sectionTitle} lab workflows`}
+              aria-label={`${sectionTitle} route workflows`}
             >
               <div className="advanced-menu-control-panel__section-heading">
                 <h2 className="platform-shell__cp-title advanced-menu-control-panel__section-title">{sectionTitle}</h2>
@@ -308,7 +314,7 @@ export function LabsWorkspace({
                   {items.length}
                 </span>
               </div>
-              <div className="platform-shell__cp-grid advanced-menu-control-panel__grid" role="list" aria-label={`${sectionTitle} launcher tiles`}>
+              <div className="platform-shell__cp-grid advanced-menu-control-panel__grid" role="list" aria-label={`${sectionTitle} route tiles`}>
                 {items.map((item) => renderLabsItem(item, sectionTitle))}
               </div>
               {expandedItem ? renderLabsSectionDetail(expandedItem, sectionTitle) : null}

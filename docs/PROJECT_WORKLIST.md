@@ -6,7 +6,75 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 09:16 EDT - Completed T682 Snapshot Editor hero cleanup by removing Prev/Next navigation, removing Favorite/Lock controls, keeping only the small top LIVE state label, and regrouping channel/monitoring pills directly under the snapshot title with focused regression and build validation; T647 and T681 through T676 remain complete; T590 and T591 are complete from the JUCE audit/RT-path test slice, while T592 remains blocked pending larger transaction-replay SQLite commit-ownership work.
+Last updated: 2026-04-02 12:24 EDT - Completed T685 regression hardening so Home and launcher settings now always inject/prioritize `Platforms` as slot #1 even when pinning new launchers, preventing overwrite/removal drift; T684, T683, and T682 remain complete; T592 remains blocked pending larger transaction-replay SQLite commit-ownership work.
+
+ID: T685
+Status: [✓] Done
+Title: Prevent pinned launchers from overwriting required Platforms slot on Home
+Description:
+- Goal / acceptance criteria: Fix the regression where adding/pinning launchers to Home could omit or overwrite `Platforms`. `Platforms` must always remain present and in slot #1 across runtime resolution and persisted landing-tile settings.
+- Why it matters: The landing board policy depends on one guaranteed required launcher (`Platforms`). Losing it breaks navigation expectations and conflicts with the new clean tile-only Home behavior.
+- Dependencies: T684
+- Estimated effort: Low
+- Required outputs: required-tile insertion helper wiring in settings/catalog save paths and Home runtime resolution, updated regressions, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 12:24 EDT - Codex
+- Completion notes:
+  - Added `ensureRequiredHomeLauncher` in launcher catalog data so `/platforms/overview` is injected when missing and remains eligible-only.
+  - Enforced ensure+prioritize behavior inside `useSpecialSettings` landing-tile resolution and payload writes, plus Workspace Catalog save flows.
+  - Updated Home runtime launcher resolution to always ensure and prioritize `Platforms` before rendering launcher tiles.
+  - Refreshed focused tests so layouts omitting `Platforms` now normalize to keep `Platforms` first.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/HomePage.test.tsx web/src/app/data/launcherCatalog.test.tsx web/src/app/hooks/useSpecialSettings.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T684
+Status: [✓] Done
+Title: Enforce Platforms-first landing-tile policy with clean empty-home rendering
+Description:
+- Goal / acceptance criteria: Remove legacy static landing cards and empty-state wording so Home renders only launcher tiles. For new/empty layouts, show only `Platforms` by default; keep it first and non-removable/non-hideable from catalog controls. Preserve existing saved layouts that do not include `Platforms`.
+- Why it matters: The previous Home mixed static cards and launcher tiles, left empty-state messaging/spacers, and allowed inconsistent handling of the required `Platforms` entry.
+- Dependencies: T683
+- Estimated effort: Medium
+- Required outputs: Home tile-only rendering, required `Platforms` policy wiring in launcher catalog/configuration flows, focused regression updates, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 11:26 EDT - Codex
+- Completion notes:
+  - Refactored Home landing rendering to a launcher-tile-only grid and removed the legacy promoted-launchers header/empty CTA/text blocks plus stale layout scaffolding.
+  - Added shared `REQUIRED_HOME_LAUNCHER_ROUTE` and required-tile ordering helper, then enforced first-position preservation when saving landing-tile settings.
+  - Updated Workspace Catalog launcher configuration so `Platforms` cannot be removed from Home and cannot be moved out of first position, while other launchers cannot move above it.
+  - Added/updated focused regressions for: no empty-state wording, Platforms-first ordering, required tile lock behavior, and preservation of pre-existing saved layouts without forced Platforms insertion.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/data/launcherCatalog.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T683
+Status: [✓] Done
+Title: Finalize Workspace Catalog route migration and remove stale top-level Labs assumptions
+Description:
+- Goal / acceptance criteria: Finish the active Platform workspace-catalog migration by replacing stale `/labs` top-level route assumptions with `/platforms/workspace-catalog` across route wrappers, launcher catalog defaults, Home quick-launch cards, and focused frontend regressions. Keep `/labs/push-surface` available as a direct route and ensure the integrated Platform modal + catalog path remains validated.
+- Why it matters: The current in-flight workspace change moved launcher/labs content into `Workspace Catalog`, but stale tests and catalog defaults still referenced `/labs`, leaving broken launch targets and failing regression coverage.
+- Dependencies: T682
+- Estimated effort: Low
+- Required outputs: route-wrapper coverage updates, launcher/home route normalization to `/platforms/workspace-catalog`, focused test coverage for the new page wrapper, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 10:08 EDT - Codex
+- Completion notes:
+  - Updated Platform route surfaces so `/platforms/workspace-catalog` is treated as the first-class catalog route in app routing regressions and modal integration tests, replacing the old top-level Labs button expectations.
+  - Migrated Home and launcher-catalog defaults from `/labs` to `/platforms/workspace-catalog`, including landing-tile normalization and special-settings fixture payloads so persisted launcher config no longer points at a removed top-level route.
+  - Added dedicated `PlatformWorkspaceCatalogPage.test.tsx` to lock wrapper behavior (`initialWorkspaceCatalog`, `onNavigate`, `onLaunchRoute`, and close routing) against future regressions.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T682
 Status: [✓] Done

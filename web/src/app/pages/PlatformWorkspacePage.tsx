@@ -19,7 +19,7 @@ export function PlatformWorkspacePage() {
       initialPanel={target.panel ?? null}
       onNavigate={(params) => {
         if (!params) {
-          navigate('/labs')
+          navigate('/platforms/workspace-catalog')
           return
         }
 

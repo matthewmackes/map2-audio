@@ -304,10 +304,10 @@ describe('PlatformModalContent', () => {
 
     expect(screen.getByRole('link', { name: 'Open Overview' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open Theme' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open Labs workspace' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Open Workspace Catalog' })).toBeInTheDocument()
   })
 
-  it('shows the former advanced launcher set inside the Labs workspace', () => {
+  it('shows the workspace catalog launcher organizer section', () => {
     render(
       <MemoryRouter
         future={{
@@ -319,12 +319,10 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Open Workspace Catalog' }))
 
-    expect(screen.getAllByText('Labs').length).toBeGreaterThan(0)
-    expect(screen.getByText('MIDI Hub')).toBeTruthy()
-    expect(screen.getByText('Tesira AVB')).toBeTruthy()
-    expect(screen.getByText('Blocked / Lab')).toBeTruthy()
+    expect(screen.getAllByText('Workspace Catalog').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('MIDI Hub').length).toBeGreaterThan(0)
   })
 
   it('removes the launcher organizer entry from the Platforms rail', () => {
@@ -342,7 +340,7 @@ describe('PlatformModalContent', () => {
     expect(screen.queryByRole('link', { name: 'Open Launchers' })).not.toBeInTheDocument()
   })
 
-  it('delegates Labs route launches to the modal host callback', () => {
+  it('delegates workspace-catalog route launches to the modal host callback', () => {
     const handleLaunchRoute = jest.fn()
 
     render(
@@ -356,8 +354,8 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
-    fireEvent.click(screen.getByRole('button', { name: 'MIDI Hub' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Open Workspace Catalog' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Launch MIDI Hub' }))
 
     expect(handleLaunchRoute).toHaveBeenCalledWith('/midi-hub')
   })

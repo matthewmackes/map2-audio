@@ -16,6 +16,7 @@ import { platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuI
 
 export type LandingTileSize = 'small' | 'medium' | 'large'
 export type LauncherDirectory = 'core' | 'labs' | 'platforms' | 'nav-only'
+export const REQUIRED_HOME_LAUNCHER_ROUTE = '/platforms/overview'
 
 export interface LandingTilePlacement {
   route: string
@@ -42,11 +43,11 @@ type RouteLauncherSource = ShellNavigationItem | HardwareInterfaceMenuItem | Pla
 
 const HOME_ONLY_LAUNCHERS: LauncherCatalogItem[] = [
   {
-    route: '/labs',
-    label: 'Labs',
-    shortLabel: 'Labs',
+    route: '/platforms/workspace-catalog',
+    label: 'Workspace Catalog',
+    shortLabel: 'Catalog',
     icon: Beaker,
-    description: 'Browse experimental routes and advanced MAP2 workspaces from the dedicated Labs catalog.',
+    description: 'Browse advanced routes and launcher controls from the integrated Workspace Catalog section.',
     color: 'var(--cds-link-primary)',
     maturity: 'beta',
     directory: 'core',
@@ -175,4 +176,32 @@ export function normalizeLandingTiles(
   }
 
   return normalized
+}
+
+export function prioritizeRequiredHomeLauncher(tiles: LandingTilePlacement[]): LandingTilePlacement[] {
+  const requiredIndex = tiles.findIndex((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)
+  if (requiredIndex <= 0) {
+    return tiles
+  }
+
+  const nextTiles = [...tiles]
+  const [requiredTile] = nextTiles.splice(requiredIndex, 1)
+  nextTiles.unshift(requiredTile)
+  return nextTiles
+}
+
+export function ensureRequiredHomeLauncher(
+  tiles: LandingTilePlacement[],
+  size: LandingTileSize = 'medium',
+): LandingTilePlacement[] {
+  if (tiles.some((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)) {
+    return tiles
+  }
+
+  const launcher = getLauncherCatalogItem(REQUIRED_HOME_LAUNCHER_ROUTE)
+  if (!launcher || !launcher.landingEligible) {
+    return tiles
+  }
+
+  return [{ route: REQUIRED_HOME_LAUNCHER_ROUTE, size }, ...tiles]
 }

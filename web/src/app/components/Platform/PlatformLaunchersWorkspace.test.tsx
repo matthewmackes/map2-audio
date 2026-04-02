@@ -72,7 +72,10 @@ describe('PlatformLaunchersWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [{ route: '/midi-hub', size: 'medium' }],
+      landingTiles: [
+        { route: '/platforms/overview', size: 'medium' },
+        { route: '/midi-hub', size: 'medium' },
+      ],
     }))
 
     const pinToNavButton = screen.getByRole('button', { name: 'Pin to nav' })
@@ -104,9 +107,44 @@ describe('PlatformLaunchersWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'small' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [{ route: '/midi-hub', size: 'small' }],
+      landingTiles: [
+        { route: '/platforms/overview', size: 'medium' },
+        { route: '/midi-hub', size: 'small' },
+      ],
     }))
 
     expect(screen.getByRole('button', { name: 'Nav full' })).toBeDisabled()
+  })
+
+  it('keeps Platforms locked on Home and first in landing order', async () => {
+    const updateSettings = jest.fn().mockResolvedValue(undefined)
+
+    render(
+      <PlatformLaunchersWorkspace
+        settings={buildSettings({
+          landingTiles: [
+            { route: '/midi-hub', size: 'small' },
+            { route: '/platforms/overview', size: 'medium' },
+          ],
+        })}
+        isLoading={false}
+        updateSettings={updateSettings}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configure Overview' }))
+
+    expect(screen.getByRole('button', { name: 'Required on landing' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Move down' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Move up' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'small' }))
+
+    await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
+      landingTiles: [
+        { route: '/platforms/overview', size: 'small' },
+        { route: '/midi-hub', size: 'small' },
+      ],
+    }))
   })
 })

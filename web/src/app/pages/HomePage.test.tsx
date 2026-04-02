@@ -170,37 +170,29 @@ describe('HomePage landing', () => {
   it('renders the current workspace tiles and online node summary', async () => {
     renderHome()
 
-    expect(screen.getByText('Promoted launchers')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Open launcher organizer in Theme' })).toBeTruthy()
-    expect(await screen.findByText('Platforms')).toBeTruthy()
-    expect(screen.getByText('Audio Grid')).toBeTruthy()
-    expect(screen.getByText('Labs')).toBeTruthy()
-    expect(screen.getByText('Audio Artifacts')).toBeTruthy()
-    expect(screen.queryByText('Drum Machine')).toBeNull()
-    expect(screen.queryByText('SynthForge')).toBeNull()
-    expect(screen.getByText('No Active Flow')).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(screen.queryByText('Promoted launchers')).toBeNull()
+    expect(screen.queryByText('Landing Page')).toBeNull()
+    expect(screen.queryByText('No Tiles Yet')).toBeNull()
+    expect(screen.queryByText('Landing-page launchers are not configured.')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open launcher organizer in Theme' })).toBeNull()
+    expect(screen.queryByText('Audio Grid')).toBeNull()
+    expect(screen.queryByText('Workspace Catalog')).toBeNull()
+    expect(screen.queryByText('Audio Artifacts')).toBeNull()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
-  })
-
-  it('routes the empty launcher CTA into the Theme workspace organizer modal', async () => {
-    renderHome()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open launcher organizer in Theme' }))
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme?themeModal=launchers')
   })
 
   it('opens Platforms from the landing tile using the canonical route', async () => {
     renderHome()
 
-    const platformsCard = await screen.findByText('Platforms')
-    fireEvent.click(platformsCard.closest('.hp2-card') as HTMLElement)
+    const platformsCard = await screen.findByRole('heading', { name: 'Platforms' })
+    fireEvent.click(platformsCard.closest('.hp2-launchers__tile') as HTMLElement)
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
 
-  it('renders promoted landing tiles above the home grid and launches the configured route', async () => {
+  it('renders configured landing tiles and keeps Platforms first', async () => {
     mockSpecialSettingsState.settings.landingTiles = [
       { route: '/midi-hub', size: 'small' },
       { route: '/audio-table', size: 'medium' },
@@ -211,12 +203,28 @@ describe('HomePage landing', () => {
 
     const landingTile = await screen.findByText('MIDI Hub')
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
-    expect(screen.getByText('Audio Table').closest('.hp2-launchers__tile--medium')).toBeTruthy()
-    expect(screen.getByText('Overview').closest('.hp2-launchers__tile--large')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Audio Table' }).closest('.hp2-launchers__tile--medium')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Platforms' }).closest('.hp2-launchers__tile--large')).toBeTruthy()
+
+    const landingTiles = screen.getAllByRole('listitem')
+    expect(landingTiles[0]?.textContent).toContain('Platforms')
 
     fireEvent.click(landingTile.closest('.hp2-launchers__tile') as HTMLElement)
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/midi-hub')
+  })
+
+  it('injects Platforms as slot 1 when saved layouts omit it', async () => {
+    mockSpecialSettingsState.settings.landingTiles = [
+      { route: '/midi-hub', size: 'small' },
+    ]
+
+    renderHome()
+
+    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'MIDI Hub' })).toBeTruthy()
+    const landingTiles = screen.getAllByRole('listitem')
+    expect(landingTiles[0]?.textContent).toContain('Platforms')
   })
 
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {

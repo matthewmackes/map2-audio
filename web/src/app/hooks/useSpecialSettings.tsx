@@ -12,7 +12,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
 import { defaultPinnedRoutes, normalizePinnedRoutes } from '../data/advancedMenuItems'
 import {
+  ensureRequiredHomeLauncher,
   normalizeLandingTiles,
+  prioritizeRequiredHomeLauncher,
   type LandingTilePlacement,
 } from '../data/launcherCatalog'
 
@@ -58,12 +60,13 @@ function resolvePinnedRoutes(data: Record<string, unknown>): string[] {
 function resolveLandingTiles(data: Record<string, unknown>): LandingTilePlacement[] {
   const landingTiles = data.landing_tiles
   if (Array.isArray(landingTiles)) {
-    return normalizeLandingTiles(landingTiles.filter((tile): tile is LandingTilePlacement | { route?: string | null; size?: string | null } => (
+    const normalizedTiles = normalizeLandingTiles(landingTiles.filter((tile): tile is LandingTilePlacement | { route?: string | null; size?: string | null } => (
       typeof tile === 'object' && tile !== null
     )))
+    return prioritizeRequiredHomeLauncher(ensureRequiredHomeLauncher(normalizedTiles))
   }
 
-  return []
+  return [{ route: '/platforms/overview', size: 'medium' }]
 }
 
 function resolveSnapshotSetlistMode(data: Record<string, unknown>): boolean {
@@ -111,7 +114,11 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
 
 function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettings: SpecialSettings | null) {
   const pinnedRoutes = normalizePinnedRoutes(newSettings.pinnedRoutes ?? currentSettings?.pinnedRoutes ?? defaultPinnedRoutes)
-  const landingTiles = normalizeLandingTiles(newSettings.landingTiles ?? currentSettings?.landingTiles ?? [])
+  const landingTiles = prioritizeRequiredHomeLauncher(
+    ensureRequiredHomeLauncher(
+      normalizeLandingTiles(newSettings.landingTiles ?? currentSettings?.landingTiles ?? []),
+    ),
+  )
 
   return {
     enabled: newSettings.enabled ?? currentSettings?.enabled ?? false,

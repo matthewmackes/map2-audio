@@ -1,179 +1,86 @@
-import { type ComponentType, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BareMetalServer, Package } from '@carbon/icons-react'
-import { Beaker } from 'lucide-react'
+import { ArrowRight } from '@carbon/icons-react'
 import { ClickableTile, Tag } from '@carbon/react'
 import {
   MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
-import {
-  MapAudioGridIcon,
-  MapClusterFabricIcon,
-} from '../components/icons/map/MapAppIcons'
+import { MapClusterFabricIcon } from '../components/icons/map/MapAppIcons'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { getLauncherCatalogItem } from '../data/launcherCatalog'
+import {
+  ensureRequiredHomeLauncher,
+  getLauncherCatalogItem,
+  prioritizeRequiredHomeLauncher,
+  REQUIRED_HOME_LAUNCHER_ROUTE,
+} from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
-import type { NodeSummary, NodeTopology } from '../types/node'
 import landingBg from '../../assets/map2-landing-bg.png'
 import './HomePage.css'
 
-// ── Audio flow summary ──────────────────────────────────────────────────────
-
-interface AudioFlowPath {
-  id: string
-  nodes: NodeSummary[]
-}
-
-function getFriendlyNodeName(node: NodeSummary): string {
-  return node.display_label?.trim() || node.hostname
-}
-
-function buildAudioFlowPaths(topology: NodeTopology | undefined): AudioFlowPath[] {
-  const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
-  const activeEdges = Array.isArray(topology?.audio_edges)
-    ? topology.audio_edges.filter((edge) => edge.active)
-    : []
-
-  if (nodes.length === 0 || activeEdges.length === 0) {
-    return []
-  }
-
-  const nodeMap = new Map(nodes.map((node) => [node.node_id, node]))
-  const adjacency = new Map<string, string[]>()
-  const incomingCounts = new Map<string, number>()
-
-  activeEdges.forEach((edge) => {
-    if (!nodeMap.has(edge.source_node_id) || !nodeMap.has(edge.dest_node_id)) {
-      return
-    }
-    const next = adjacency.get(edge.source_node_id) ?? []
-    if (!next.includes(edge.dest_node_id)) {
-      next.push(edge.dest_node_id)
-      adjacency.set(edge.source_node_id, next)
-      incomingCounts.set(edge.dest_node_id, (incomingCounts.get(edge.dest_node_id) ?? 0) + 1)
-    }
-  })
-
-  if (adjacency.size === 0) {
-    return []
-  }
-
-  const startIds = Array.from(adjacency.keys()).filter((nodeId) => (incomingCounts.get(nodeId) ?? 0) === 0)
-  const orderedStarts = (startIds.length > 0 ? startIds : [activeEdges[0].source_node_id]).sort((left, right) => {
-    const leftName = getFriendlyNodeName(nodeMap.get(left) as NodeSummary)
-    const rightName = getFriendlyNodeName(nodeMap.get(right) as NodeSummary)
-    return leftName.localeCompare(rightName)
-  })
-  const collected = new Set<string>()
-  const paths: AudioFlowPath[] = []
-
-  function visit(nodeId: string, trail: string[]) {
-    if (trail.includes(nodeId)) {
-      const cyclePath = [...trail, nodeId]
-      const key = cyclePath.join('>')
-      if (!collected.has(key)) {
-        collected.add(key)
-        paths.push({
-          id: key,
-          nodes: cyclePath
-            .map((id) => nodeMap.get(id))
-            .filter((node): node is NodeSummary => Boolean(node)),
-        })
-      }
-      return
-    }
-
-    const nextTrail = [...trail, nodeId]
-    const nextIds = [...(adjacency.get(nodeId) ?? [])].sort((left, right) => {
-      const leftName = getFriendlyNodeName(nodeMap.get(left) as NodeSummary)
-      const rightName = getFriendlyNodeName(nodeMap.get(right) as NodeSummary)
-      return leftName.localeCompare(rightName)
-    })
-    if (nextIds.length === 0) {
-      const key = nextTrail.join('>')
-      if (!collected.has(key)) {
-        collected.add(key)
-        paths.push({
-          id: key,
-          nodes: nextTrail
-            .map((id) => nodeMap.get(id))
-            .filter((node): node is NodeSummary => Boolean(node)),
-        })
-      }
-      return
-    }
-
-    nextIds.forEach((nextId) => visit(nextId, nextTrail))
-  }
-
-  orderedStarts.forEach((startId) => visit(startId, []))
-
-  return paths.filter((path) => path.nodes.length > 0)
-}
-
 // ── Node status for Platforms card ──────────────────────────────────────────
 
-function useNodeStatusLabel(topology: NodeTopology | undefined): string | null {
-  const nodes = topology?.nodes
-  if (!nodes || !Array.isArray(nodes)) return null
+function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string {
+  if (!Array.isArray(nodes) || nodes.length <= 0) {
+    return 'Nodes unavailable'
+  }
 
-  const total = nodes.length
-  const unhealthy = nodes.filter(
-    (n) => n.status === 'warn' || n.status === 'critical' || n.status === 'offline',
-  ).length
+  const unhealthyCount = nodes.filter((node) => (
+    node.status === 'warn'
+    || node.status === 'critical'
+    || node.status === 'offline'
+  )).length
+  if (unhealthyCount > 0) {
+    return `${unhealthyCount} of ${nodes.length} nodes need attention`
+  }
 
-  if (unhealthy > 0) return `${unhealthy} of ${total} nodes need attention`
-  return `${total} node${total !== 1 ? 's' : ''} online`
+  return `${nodes.length} node${nodes.length !== 1 ? 's' : ''} online`
 }
 
-// ── Card definitions ────────────────────────────────────────────────────────
+// ── Landing launcher rendering helpers ──────────────────────────────────────
 
-interface WorkspaceCard {
-  id: string
-  to: string
-  icon: ComponentType<{ size?: number }>
-  title: string
-  description: string
+interface LandingLauncherTile {
+  route: string
+  size: 'small' | 'medium' | 'large'
+  launcher: NonNullable<ReturnType<typeof getLauncherCatalogItem>>
 }
 
-const HERO_CARD: WorkspaceCard = {
-  id: 'audio-grid',
-  to: '/juce-grid',
-  icon: MapAudioGridIcon,
-  title: 'Audio Grid',
-  description: 'Signal flow, routing, and snapshots',
+function toLandingLaunchers(
+  landingTiles: Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
+): LandingLauncherTile[] {
+  const seen = new Set<string>()
+  const mapped = landingTiles
+    .map((tile) => {
+      const launcher = getLauncherCatalogItem(tile.route)
+      if (!launcher || !launcher.landingEligible || seen.has(tile.route)) {
+        return null
+      }
+      seen.add(tile.route)
+      return { ...tile, launcher }
+    })
+    .filter((tile): tile is LandingLauncherTile => Boolean(tile))
+
+  const platformsIndex = mapped.findIndex((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)
+  if (platformsIndex <= 0) {
+    return mapped
+  }
+
+  const next = [...mapped]
+  const [platformsTile] = next.splice(platformsIndex, 1)
+  next.unshift(platformsTile)
+  return next
 }
 
-const RIGHT_COLUMN_CARDS: WorkspaceCard[] = [
-  {
-    id: 'labs',
-    to: '/labs',
-    icon: Beaker,
-    title: 'Labs',
-    description: 'Experimental routes and advanced workspaces',
-  },
-  {
-    id: 'artifacts',
-    to: '/artifacts',
-    icon: Package,
-    title: 'Audio Artifacts',
-    description: 'Plugins, models, and impulse responses',
-  },
-  {
-    id: 'platforms',
-    to: '/platforms/overview',
-    icon: MapClusterFabricIcon,
-    title: 'Platforms',
-    description: 'System setup and node status',
-  },
-]
-
-const LEFT_COLUMN_CARDS: WorkspaceCard[] = []
+function resolveLandingLaunchers(
+  landingTiles: Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
+): LandingLauncherTile[] {
+  const normalizedTiles = prioritizeRequiredHomeLauncher(ensureRequiredHomeLauncher(landingTiles))
+  return toLandingLaunchers(normalizedTiles)
+}
 
 const LANDING_DIRECTORY_LABELS = {
   core: 'Core',
@@ -188,7 +95,6 @@ export function HomePage() {
   const navigate = useNavigate()
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const topology = useNodeTopology()
-  const nodeStatusLabel = useNodeStatusLabel(topology.data)
   const remediationSummary = usePlatformRemediationSummary()
   const { settings: specialSettings, isLoading: specialSettingsLoading } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
@@ -199,23 +105,13 @@ export function HomePage() {
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
+  const nodes = topology.data?.nodes
+  const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
-  const audioFlowPaths = useMemo(() => buildAudioFlowPaths(topology.data), [topology.data])
-  const hasDefaultSubgridCards = LEFT_COLUMN_CARDS.length > 0
   const landingTileLaunchers = useMemo(() => {
-    return (specialSettings?.landingTiles ?? [])
-      .map((tile) => {
-        const launcher = getLauncherCatalogItem(tile.route)
-        if (!launcher || !launcher.landingEligible) {
-          return null
-        }
-
-        return { ...tile, launcher }
-      })
-      .filter((tile): tile is NonNullable<typeof tile> => Boolean(tile))
+    return resolveLandingLaunchers(specialSettings?.landingTiles ?? [])
   }, [specialSettings?.landingTiles])
-  const showLandingBoard = landingTileLaunchers.length > 0 || !specialSettingsLoading
 
   const remediationPills = [
     { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
@@ -239,173 +135,72 @@ export function HomePage() {
           <img src={landingBg} alt="" className="hp2-hero__img" aria-hidden="true" />
           <div className="hp2-hero__scrim" aria-hidden="true" />
         </div>
-        {showLandingBoard ? (
-          <section className="hp2-launchers" aria-label="Promoted launchers">
-            <div className="hp2-launchers__header">
-              <div>
-                <p className="hp2-launchers__eyebrow">Landing Page</p>
-                <h2 className="hp2-launchers__title">Promoted launchers</h2>
-              </div>
-              <p className="hp2-launchers__summary">
-                Shared launcher placements now live in Theme and render here as Windows-style tiles above the existing home surface.
-              </p>
-            </div>
+        {!specialSettingsLoading && landingTileLaunchers.length > 0 ? (
+          <section className="hp2-launchers" aria-label="Landing launchers">
+            <div className={`hp2-launchers__grid${landingTileLaunchers.length === 1 ? ' hp2-launchers__grid--single' : ''}`} role="list">
+              {landingTileLaunchers.map((tile) => {
+                const Icon = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE ? MapClusterFabricIcon : tile.launcher.icon
+                const tileTitle = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE ? 'Platforms' : tile.launcher.label
+                const tileDescription = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE
+                  ? (syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable')
+                  : tile.launcher.description
 
-            {landingTileLaunchers.length > 0 ? (
-              <div className="hp2-launchers__grid" role="list">
-                {landingTileLaunchers.map((tile) => {
-                  const Icon = tile.launcher.icon
-
-                  return (
-                    <ClickableTile
-                      key={tile.route}
-                      className={`hp2-launchers__tile hp2-launchers__tile--${tile.size}`}
-                      onClick={() => navigate(tile.route)}
-                      role="listitem"
-                    >
-                      <div className="hp2-launchers__tile-body">
-                        <div className="hp2-launchers__tile-meta">
-                          <Tag type="blue" size="sm">
-                            {LANDING_DIRECTORY_LABELS[tile.launcher.directory]}
-                          </Tag>
-                          <Tag type="cool-gray" size="sm">
-                            {tile.size}
-                          </Tag>
-                        </div>
-                        <div className="hp2-launchers__tile-icon" aria-hidden>
-                          <Icon size={tile.size === 'large' ? 28 : 22} />
-                        </div>
-                        <h3 className="hp2-launchers__tile-title">{tile.launcher.label}</h3>
-                        <p className="hp2-launchers__tile-desc">{tile.launcher.description}</p>
+                return (
+                  <ClickableTile
+                    key={tile.route}
+                    className={`hp2-launchers__tile hp2-launchers__tile--${tile.size}`}
+                    onClick={() => navigate(tile.route)}
+                    role="listitem"
+                  >
+                    <div className="hp2-launchers__tile-body">
+                      <div className="hp2-launchers__tile-meta">
+                        <Tag type="blue" size="sm">
+                          {LANDING_DIRECTORY_LABELS[tile.launcher.directory]}
+                        </Tag>
+                        <Tag type="cool-gray" size="sm">
+                          {tile.size}
+                        </Tag>
                       </div>
-                      <ArrowRight size={18} className="hp2-card__arrow" />
-                    </ClickableTile>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="hp2-launchers__empty">
-                <div>
-                  <p className="hp2-launchers__eyebrow">No Tiles Yet</p>
-                  <h3 className="hp2-launchers__empty-title">Landing-page launchers are not configured.</h3>
-                  <p className="hp2-launchers__empty-copy">
-                    Open the Theme launcher organizer to add tiles, choose sizes, and order them.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="hp2-launchers__empty-button"
-                  onClick={() => navigate('/platforms/theme?themeModal=launchers')}
-                >
-                  Open launcher organizer in Theme
-                </button>
-              </div>
-            )}
+                      <div className="hp2-launchers__tile-icon" aria-hidden>
+                        <Icon size={tile.size === 'large' ? 28 : 22} />
+                      </div>
+                      <h3 className="hp2-launchers__tile-title">{tileTitle}</h3>
+                      {tile.route === REQUIRED_HOME_LAUNCHER_ROUTE && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
+                        <div className="hp2-card__pills" aria-label="Platforms remediation pills">
+                          {remediationPills.map((pill) => (
+                            <button
+                              key={`${pill.workflow}-${pill.state}`}
+                              type="button"
+                              className="hp2-card__pill"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                const nodeIds = (remediationSummary.data?.nodes ?? [])
+                                  .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
+                                  .map((node) => node.node_id)
+                                if (pill.workflow === 'adoption') {
+                                  navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
+                                  return
+                                }
+                                setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
+                              }}
+                            >
+                              {pill.label}: {pill.count}
+                            </button>
+                          ))}
+                          {!syncWorkflowAvailable ? (
+                            <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      <p className="hp2-launchers__tile-desc">{tileDescription}</p>
+                    </div>
+                    <ArrowRight size={18} className="hp2-card__arrow" />
+                  </ClickableTile>
+                )
+              })}
+            </div>
           </section>
         ) : null}
-        <nav className="hp2-layout" aria-label="Workspaces">
-          <div className={`hp2-column hp2-column--left${hasDefaultSubgridCards ? ' hp2-column--left-with-subgrid' : ''}`}>
-            <ClickableTile
-              className="hp2-card hp2-card--hero"
-              onClick={() => navigate(HERO_CARD.to)}
-            >
-              <div className="hp2-card__body">
-                <HERO_CARD.icon size={24} />
-                <h2 className="hp2-card__title">{HERO_CARD.title}</h2>
-                <p className="hp2-card__desc">{HERO_CARD.description}</p>
-                <div className="hp2-card__flow" aria-label="Audio Grid signal flow">
-                  {audioFlowPaths.length > 0 ? (
-                    audioFlowPaths.map((path) => (
-                      <div key={path.id} className="hp2-card__flow-row">
-                        {path.nodes.map((node, index) => (
-                          <div key={`${path.id}-${node.node_id}-${index}`} className="hp2-card__flow-segment">
-                            <span className="hp2-card__flow-node">
-                              <BareMetalServer size={14} aria-hidden />
-                              <span>{getFriendlyNodeName(node)}</span>
-                            </span>
-                            {index < path.nodes.length - 1 ? <ArrowRight size={14} aria-hidden className="hp2-card__flow-arrow" /> : null}
-                          </div>
-                        ))}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="hp2-card__flow-empty">No Active Flow</p>
-                  )}
-                </div>
-              </div>
-              <ArrowRight size={20} className="hp2-card__arrow" />
-            </ClickableTile>
-
-            {hasDefaultSubgridCards ? (
-              <div className="hp2-subgrid" aria-label="Performance workspaces">
-                {LEFT_COLUMN_CARDS.map((card) => (
-                  <ClickableTile
-                    key={card.id}
-                    className="hp2-card hp2-card--subgrid"
-                    onClick={() => navigate(card.to)}
-                  >
-                    <div className="hp2-card__body">
-                      <card.icon size={20} />
-                      <h2 className="hp2-card__title">{card.title}</h2>
-                      <p className="hp2-card__desc">{card.description}</p>
-                    </div>
-                    <ArrowRight size={16} className="hp2-card__arrow" />
-                  </ClickableTile>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <div className="hp2-column hp2-column--right">
-            {RIGHT_COLUMN_CARDS.map((card) => {
-              const dynamicDesc =
-                card.id === 'platforms' && nodeStatusLabel
-                  ? (syncWorkflowAvailable ? nodeStatusLabel : 'Sync unavailable')
-                  : card.description
-
-              return (
-                <ClickableTile
-                  key={card.id}
-                  className="hp2-card hp2-card--middle"
-                  onClick={() => navigate(card.to)}
-                >
-                  <div className="hp2-card__body">
-                    <card.icon size={20} />
-                    <h2 className="hp2-card__title">{card.title}</h2>
-                    {card.id === 'platforms' && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
-                      <div className="hp2-card__pills" aria-label="Platforms remediation pills">
-                        {remediationPills.map((pill) => (
-                          <button
-                            key={`${pill.workflow}-${pill.state}`}
-                            type="button"
-                            className="hp2-card__pill"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              const nodeIds = (remediationSummary.data?.nodes ?? [])
-                                .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
-                                .map((node) => node.node_id)
-                              if (pill.workflow === 'adoption') {
-                                navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
-                                return
-                              }
-                              setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
-                            }}
-                          >
-                            {pill.label}: {pill.count}
-                          </button>
-                        ))}
-                        {!syncWorkflowAvailable ? (
-                          <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <p className="hp2-card__desc">{dynamicDesc}</p>
-                  </div>
-                  <ArrowRight size={16} className="hp2-card__arrow" />
-                </ClickableTile>
-              )
-            })}
-          </div>
-        </nav>
 
         {/* ── Footer ───────────────────────────────────────────── */}
         <footer className="hp2-footer">

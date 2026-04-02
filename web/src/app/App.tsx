@@ -24,7 +24,9 @@ const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => 
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
 const PlatformWorkspacePage = lazy(() => import('./pages/PlatformWorkspacePage').then(m => ({ default: m.PlatformWorkspacePage })))
-const LabsPage              = lazy(() => import('./pages/LabsPage').then(m => ({ default: m.LabsPage })))
+const PlatformWorkspaceCatalogPage = lazy(() =>
+  import('./pages/PlatformWorkspaceCatalogPage').then(m => ({ default: m.PlatformWorkspaceCatalogPage }))
+)
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
@@ -203,8 +205,8 @@ export function App() {
                                 <Route path="/" element={<HomeEntryRoute />} />
                                 <Route path="/platform" element={<LegacyPlatformRedirect />} />
                                 <Route path="/platforms" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
+                                <Route path="/platforms/workspace-catalog" element={<PlatformWorkspaceCatalogPage />} />
                                 <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
-                                <Route path="/labs" element={<LabsPage />} />
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
