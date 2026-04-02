@@ -31,6 +31,12 @@ interface SnapshotChainManagementCardProps {
   runtimeLiveState?: SnapshotRuntimeLiveState | null
   detailsAction?: ReactNode
   onRenameSnapshot?: () => void
+  snapshotNameEditing?: boolean
+  snapshotNameDraft?: string
+  snapshotNameError?: string | null
+  onSnapshotNameDraftChange?: (value: string) => void
+  onSubmitSnapshotName?: () => void
+  onCancelSnapshotRename?: () => void
   snapshotRenamePending?: boolean
   onLoadPreviousSnapshot?: () => void
   onLoadNextSnapshot?: () => void
@@ -492,6 +498,12 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     runtimeLiveState = null,
     detailsAction,
     onRenameSnapshot,
+    snapshotNameEditing = false,
+    snapshotNameDraft,
+    snapshotNameError = null,
+    onSnapshotNameDraftChange,
+    onSubmitSnapshotName,
+    onCancelSnapshotRename,
     snapshotRenamePending = false,
     onLoadPreviousSnapshot,
     onLoadNextSnapshot,
@@ -569,6 +581,19 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       submitDescription()
+    }
+  }
+
+  const handleSnapshotNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      onSubmitSnapshotName?.()
+      return
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onCancelSnapshotRename?.()
     }
   }
 
@@ -662,21 +687,59 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                 ) : null}
               </div>
               <div className="juce-grid-page__snapshot-status-live-row">
-                <h2 className="juce-grid-page__snapshot-status-title">
-                  {liveSnapshot && onRenameSnapshot ? (
-                    <button
-                      type="button"
-                      className="juce-grid-page__snapshot-status-title-button"
-                      onClick={onRenameSnapshot}
-                      disabled={snapshotRenamePending}
-                      aria-label={`Rename snapshot ${snapshotTitle}`}
-                      title="Rename snapshot"
-                    >
-                      <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
-                      <Edit size={20} aria-hidden="true" />
-                    </button>
-                  ) : snapshotTitle}
-                </h2>
+                {liveSnapshot && snapshotNameEditing ? (
+                  <div className="juce-grid-page__snapshot-status-title-editor-shell">
+                    <div className="juce-grid-page__snapshot-status-title-editor">
+                      <input
+                        type="text"
+                        className="juce-grid-page__snapshot-status-title-input"
+                        aria-label="Snapshot name"
+                        value={snapshotNameDraft ?? ''}
+                        onChange={(event) => onSnapshotNameDraftChange?.(event.target.value)}
+                        onKeyDown={handleSnapshotNameKeyDown}
+                        disabled={snapshotRenamePending}
+                        autoFocus
+                      />
+                      <div className="juce-grid-page__snapshot-status-title-editor-actions">
+                        <Button
+                          size="sm"
+                          kind="primary"
+                          onClick={onSubmitSnapshotName}
+                          disabled={snapshotRenamePending || !onSubmitSnapshotName || Boolean(snapshotNameError)}
+                        >
+                          {snapshotRenamePending ? 'Saving…' : 'Save'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          kind="ghost"
+                          onClick={onCancelSnapshotRename}
+                          disabled={snapshotRenamePending || !onCancelSnapshotRename}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                    {snapshotNameError ? (
+                      <p className="juce-grid-page__snapshot-status-title-error">{snapshotNameError}</p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <h2 className="juce-grid-page__snapshot-status-title">
+                    {liveSnapshot && onRenameSnapshot ? (
+                      <button
+                        type="button"
+                        className="juce-grid-page__snapshot-status-title-button"
+                        onClick={onRenameSnapshot}
+                        disabled={snapshotRenamePending}
+                        aria-label={`Rename snapshot ${snapshotTitle}`}
+                        title="Rename snapshot"
+                      >
+                        <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
+                        <Edit size={20} aria-hidden="true" />
+                      </button>
+                    ) : snapshotTitle}
+                  </h2>
+                )}
                 {(onLoadPreviousSnapshot || onLoadNextSnapshot) ? (
                   <div className="juce-grid-page__snapshot-status-nav" role="toolbar" aria-label="Snapshot navigation">
                     <Button

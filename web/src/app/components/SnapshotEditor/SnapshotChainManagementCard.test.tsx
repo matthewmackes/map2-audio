@@ -212,6 +212,12 @@ function renderCard(
     onLoadPreviousSnapshot?: jest.Mock
     onLoadNextSnapshot?: jest.Mock
     onRenameSnapshot?: jest.Mock
+    snapshotNameEditing?: boolean
+    snapshotNameDraft?: string
+    snapshotNameError?: string | null
+    onSnapshotNameDraftChange?: jest.Mock
+    onSubmitSnapshotName?: jest.Mock
+    onCancelSnapshotRename?: jest.Mock
     onToggleSnapshotFavorite?: jest.Mock
     onToggleSnapshotLock?: jest.Mock
     onGoLive?: jest.Mock
@@ -243,6 +249,12 @@ function renderCard(
       editorSnapshotDraft={options.editorSnapshotDraft}
       runtimeLiveState={options.runtimeLiveState}
       onRenameSnapshot={options.onRenameSnapshot}
+      snapshotNameEditing={options.snapshotNameEditing}
+      snapshotNameDraft={options.snapshotNameDraft}
+      snapshotNameError={options.snapshotNameError}
+      onSnapshotNameDraftChange={options.onSnapshotNameDraftChange}
+      onSubmitSnapshotName={options.onSubmitSnapshotName}
+      onCancelSnapshotRename={options.onCancelSnapshotRename}
       snapshotRenamePending={options.snapshotRenamePending}
       onLoadPreviousSnapshot={options.onLoadPreviousSnapshot}
       onLoadNextSnapshot={options.onLoadNextSnapshot}
@@ -523,6 +535,48 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(renameButton)
 
     expect(onRenameSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders inline snapshot-name editing controls and routes save/cancel actions', () => {
+    const onSnapshotNameDraftChange = jest.fn()
+    const onSubmitSnapshotName = jest.fn()
+    const onCancelSnapshotRename = jest.fn()
+
+    renderCard(buildLiveSnapshot(), {
+      onRenameSnapshot: jest.fn(),
+      snapshotNameEditing: true,
+      snapshotNameDraft: 'Rig20260401',
+      onSnapshotNameDraftChange,
+      onSubmitSnapshotName,
+      onCancelSnapshotRename,
+    })
+
+    const input = screen.getByRole('textbox', { name: 'Snapshot name' })
+    expect(input).toHaveValue('Rig20260401')
+
+    fireEvent.change(input, { target: { value: 'Rig20260401b' } })
+    expect(onSnapshotNameDraftChange).toHaveBeenCalledWith('Rig20260401b')
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onSubmitSnapshotName).toHaveBeenCalledTimes(1)
+
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(onCancelSnapshotRename).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows inline snapshot-name validation errors while editing', () => {
+    renderCard(buildLiveSnapshot(), {
+      onRenameSnapshot: jest.fn(),
+      snapshotNameEditing: true,
+      snapshotNameDraft: 'Bad Name',
+      snapshotNameError: 'Use letters and numbers only. Spaces and special characters are not allowed.',
+      onSnapshotNameDraftChange: jest.fn(),
+      onSubmitSnapshotName: jest.fn(),
+      onCancelSnapshotRename: jest.fn(),
+    })
+
+    expect(screen.getByText('Use letters and numbers only. Spaces and special characters are not allowed.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
   it('renders a snapshot favorite toggle and calls through when pressed', () => {

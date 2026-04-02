@@ -121,7 +121,7 @@ import {
   sortSnapshotsByProgramNumber,
 } from '../utils/snapshotSetlist'
 import {
-  buildDefaultSnapshotName,
+  buildCapturedSnapshotName,
   normalizeSnapshotName,
   validateSnapshotName,
 } from '../utils/snapshotNames'
@@ -839,7 +839,7 @@ export function SnapshotEditorPage() {
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
   const [savePresetName, setSavePresetName] = useState('')
-  const [showRenameSnapshotModal, setShowRenameSnapshotModal] = useState(false)
+  const [editingSnapshotName, setEditingSnapshotName] = useState(false)
   const [renameSnapshotName, setRenameSnapshotName] = useState('')
   const [showRenameChainModal, setShowRenameChainModal] = useState(false)
   const [renameChainName, setRenameChainName] = useState('')
@@ -1815,6 +1815,19 @@ export function SnapshotEditorPage() {
     )
   }, [activeSnapshot, existingSnapshotNames, renameSnapshotName])
 
+  useEffect(() => {
+    if (!editingSnapshotName) {
+      setRenameSnapshotName(activeSnapshot?.name ?? '')
+    }
+  }, [activeSnapshot?.name, editingSnapshotName])
+
+  useEffect(() => {
+    if (!activeSnapshot) {
+      setEditingSnapshotName(false)
+      setRenameSnapshotName('')
+    }
+  }, [activeSnapshot])
+
   const createSnapshotFromEditorMutation = useMutation({
     mutationFn: async (snapshotName: string) => {
       const created = await snapshotsApi.create({
@@ -1838,6 +1851,8 @@ export function SnapshotEditorPage() {
         resetSelectedBlock: true,
         invalidateSnapshots: true,
       })
+      setRenameSnapshotName(response.snapshot_data.name)
+      setEditingSnapshotName(true)
     },
     onError: (error, snapshotName) => {
       pushToast(
@@ -1952,7 +1967,7 @@ export function SnapshotEditorPage() {
     onSuccess: (response) => {
       syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      setShowRenameSnapshotModal(false)
+      setEditingSnapshotName(false)
       setRenameSnapshotName('')
       pushToast(`Snapshot renamed to "${response.snapshot.name}"`, 'success')
     },
@@ -4212,8 +4227,18 @@ export function SnapshotEditorPage() {
       return
     }
     setRenameSnapshotName(activeSnapshot.name)
-    setShowRenameSnapshotModal(true)
+    setEditingSnapshotName(true)
   }, [activeSnapshot])
+
+  const cancelRenameSnapshot = useCallback(() => {
+    setEditingSnapshotName(false)
+    setRenameSnapshotName(activeSnapshot?.name ?? '')
+  }, [activeSnapshot?.name])
+
+  const createCapturedSnapshot = useCallback(() => {
+    const snapshotName = buildCapturedSnapshotName(existingSnapshotNames)
+    createSnapshotFromEditorMutation.mutate(snapshotName)
+  }, [createSnapshotFromEditorMutation, existingSnapshotNames])
 
   const handleChainRemoved = useCallback((chainId: number) => {
     setFlowSlots((previous) => previous.map((slot) => (
@@ -4391,7 +4416,7 @@ export function SnapshotEditorPage() {
           size="sm"
           kind="secondary"
           className="snapshot-toolbar__button snapshot-toolbar__button--new"
-          onClick={() => createSnapshotFromEditorMutation.mutate(buildDefaultSnapshotName(snapshotCount + 1))}
+          onClick={createCapturedSnapshot}
           disabled={createSnapshotFromEditorMutation.isPending}
         >
           {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New'}
@@ -5018,7 +5043,7 @@ export function SnapshotEditorPage() {
       if (isTextEntryTarget(e.target)) {
         if (e.key === 'Escape') {
           if (showSavePresetModal) setShowSavePresetModal(false)
-          else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
+          else if (editingSnapshotName) cancelRenameSnapshot()
           else if (showRenameChainModal) setShowRenameChainModal(false)
           else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
           else if (presetPendingDelete) setPresetPendingDelete(null)
@@ -5167,7 +5192,7 @@ export function SnapshotEditorPage() {
       // Escape = Close modals/deselect
       if (e.key === 'Escape') {
         if (showSavePresetModal) setShowSavePresetModal(false)
-        else if (showRenameSnapshotModal) setShowRenameSnapshotModal(false)
+        else if (editingSnapshotName) cancelRenameSnapshot()
         else if (showRenameChainModal) setShowRenameChainModal(false)
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
@@ -5193,11 +5218,11 @@ export function SnapshotEditorPage() {
   }, [
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
-    flowSlots, showSavePresetModal, showRenameSnapshotModal, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
+    flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
     showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
-    goToPreviousSnapshot, goToNextSnapshot,
+    goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot,
     snapshotEditingLocked,
   ])
 
@@ -5971,6 +5996,12 @@ export function SnapshotEditorPage() {
             runtimeLiveState={runtimeLiveState}
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
+            snapshotNameEditing={editingSnapshotName}
+            snapshotNameDraft={renameSnapshotName}
+            snapshotNameError={renameSnapshotError}
+            onSnapshotNameDraftChange={setRenameSnapshotName}
+            onSubmitSnapshotName={submitRenameSnapshot}
+            onCancelSnapshotRename={cancelRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
             onLoadPreviousSnapshot={goToPreviousSnapshot}
             onLoadNextSnapshot={goToNextSnapshot}
@@ -6350,7 +6381,7 @@ export function SnapshotEditorPage() {
                 kind="primary"
                 renderIcon={Add}
                 className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--create"
-                onClick={() => createSnapshotFromEditorMutation.mutate(buildDefaultSnapshotName(snapshotCount + 1))}
+                onClick={createCapturedSnapshot}
                 disabled={createSnapshotFromEditorMutation.isPending}
               >
                 {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
@@ -6590,48 +6621,6 @@ export function SnapshotEditorPage() {
               value={renameChainName}
               onChange={(event) => setRenameChainName(event.target.value)}
               placeholder="Main performance chain"
-            />
-          </div>
-        </Modal>
-      )}
-
-      {showRenameSnapshotModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Rename snapshot"
-          modalLabel={activeSnapshot?.name || 'Live snapshot'}
-          primaryButtonText={renameActiveSnapshotMutation.isPending ? 'Saving...' : 'Rename snapshot'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={
-            !activeSnapshot
-            || renameSnapshotError !== null
-            || normalizeSnapshotName(renameSnapshotName) === normalizeSnapshotName(activeSnapshot.name)
-            || renameActiveSnapshotMutation.isPending
-          }
-          onRequestClose={() => {
-            setShowRenameSnapshotModal(false)
-            setRenameSnapshotName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowRenameSnapshotModal(false)
-            setRenameSnapshotName('')
-          }}
-          onRequestSubmit={submitRenameSnapshot}
-          selectorPrimaryFocus="#juce-grid-rename-snapshot-name"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Rename the live snapshot directly from the hero card without leaving the Audio Grid workspace.
-            </p>
-            <TextInput
-              id="juce-grid-rename-snapshot-name"
-              labelText="Snapshot name"
-              value={renameSnapshotName}
-              onChange={(event) => setRenameSnapshotName(event.target.value)}
-              invalid={Boolean(renameSnapshotError)}
-              invalidText={renameSnapshotError ?? undefined}
-              placeholder="Snapshot name"
             />
           </div>
         </Modal>

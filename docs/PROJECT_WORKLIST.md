@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]
+Last updated: 2026-04-01 EDT - T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1325,7 +1325,7 @@ Last updated: 2026-04-01 21:25 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T610
-Status: [ ] Todo
+Status: [✓] Done
 Title: Go Live Button State Machine — Idle / Activating / Live / Error
 Description:
 - Goal / acceptance criteria: The Go Live button (T615) follows a strict 4-state machine that prevents double-tap and communicates system state clearly: (1) Idle: Carbon primary button, "Go Live" label, clickable; (2) Activating: disabled, loading spinner, "Activating..." label — from click until WebSocket confirms live or error; (3) Live: replaced by non-interactive LIVE indicator badge (matching hero treatment — slow red/fuchsia blink), not clickable; (4) Error: Carbon danger button style, "Activation failed — retry" label, pre-flight failure reason shown inline below the button. State transitions are driven exclusively by WebSocket SnapshotRuntimeLiveState events — no polling, no timeout-based transitions. The button returns to Idle only when the snapshot is no longer live (e.g., a different snapshot goes live).
@@ -1334,10 +1334,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: 4-state button component (or state machine hook), WebSocket transition logic, error inline display, Idle transition on snapshot becoming non-live, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 23:18 - Codex
+- Completion notes:
+  - Closed this record as satisfied by `T615`, which already shipped the strict idle / activating / live / error state machine to both the Snapshot Editor hero and the floating toolbar.
+  - Confirmed the existing implementation derives state transitions from `snapshot_runtime_live_state`, prevents double-tap while activating/live, and renders inline failure copy plus retry state exactly as this duplicate task requested.
+  - No additional code changes were required for `T610`; the worklist had simply drifted after `T615` landed.
+- Validation: Existing `T615` coverage remains the source of truth: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/utils/snapshotActivationToast.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T607
-Status: [ ] Todo
+Status: [✓] Done
 Title: "Capture Current State as New Snapshot" — New Button on Floating Toolbar
 Description:
 - Goal / acceptance criteria: The floating toolbar (T642) contains a "New" button that, when pressed, reads the current live audio engine state via the existing live_state_payload mechanism and immediately creates a new snapshot via POST /api/snapshots with that payload. The snapshot is named with a timestamp default: "Rig" + YYYYMMDD (e.g., "Rig20260331"). If a snapshot with that name already exists, a numeric suffix is appended: "Rig20260331b", "Rig20260331c". The new snapshot is immediately opened in the editor with its name in inline-edit mode, so the player can rename it before doing anything else. No wizard, no multi-step form, no modal — one button press captures the rig, one inline edit names it.
@@ -1346,7 +1352,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: New button in floating toolbar, POST /api/snapshots with live_state_payload, timestamp-based name generation with collision suffix, immediate editor navigation to new snapshot, name field in inline-edit mode on load, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 23:18 - Codex
+- Completion notes:
+  - Reworked the Snapshot Editor `New` action so it now captures the current editor/live state into a new snapshot named `RigYYYYMMDD`, automatically advancing to `RigYYYYMMDDb`, `RigYYYYMMDDc`, and so on when same-day captures already exist.
+  - Kept the existing one-click create-and-activate flow, but after the new snapshot opens it now drops the hero title directly into inline rename mode instead of sending the player through a modal dialog.
+  - Added focused regression coverage for the dated capture-name helper, collision suffixing, and the new inline snapshot-title editor states in the Snapshot Editor hero.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T606
 Status: [ ] Todo
