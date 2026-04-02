@@ -125,6 +125,11 @@ import {
   normalizeSnapshotName,
   validateSnapshotName,
 } from '../utils/snapshotNames'
+import {
+  SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+  buildSnapshotActivationFailureToastMessage,
+  buildSnapshotActivationToastMessage,
+} from '../utils/snapshotActivationToast'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
@@ -1312,7 +1317,11 @@ export function SnapshotEditorPage() {
         setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
         clearSnapshotsDirty()
         queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-        pushToast(`Loaded: ${event.snapshot_name} (MIDI PC#${event.program_number})`, 'success')
+        pushToast(
+          buildSnapshotActivationToastMessage(event.snapshot_data, { programNumber: event.program_number ?? null }),
+          'success',
+          { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+        )
       }
     }, [clearSnapshotsDirty, pushToast, queryClient]),
   })
@@ -1739,9 +1748,9 @@ export function SnapshotEditorPage() {
   }, [activeSnapshot, existingSnapshotNames, renameSnapshotName])
 
   const createSnapshotFromEditorMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (snapshotName: string) => {
       const created = await snapshotsApi.create({
-        name: buildDefaultSnapshotName(snapshotCount + 1),
+        name: snapshotName,
         description: 'Created from Snapshot Editor',
         tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
@@ -1756,13 +1765,18 @@ export function SnapshotEditorPage() {
         queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], response.runtime_live_state)
       }
       hydrateEditorFromSnapshot(response.snapshot_data, {
-        toastMessage: 'Snapshot created',
+        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
+        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
         resetSelectedBlock: true,
         invalidateSnapshots: true,
       })
     },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
+    onError: (error, snapshotName) => {
+      pushToast(
+        buildSnapshotActivationFailureToastMessage(snapshotName, error),
+        'warn',
+        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+      )
     },
   })
 
@@ -2001,6 +2015,7 @@ export function SnapshotEditorPage() {
     detail: SnapshotDetail,
     options?: {
       toastMessage?: string | null
+      toastDurationMs?: number
       resetSelectedBlock?: boolean
       invalidateSnapshots?: boolean
     },
@@ -2024,7 +2039,11 @@ export function SnapshotEditorPage() {
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
     }
     if (options?.toastMessage) {
-      pushToast(options.toastMessage, 'success')
+      pushToast(
+        options.toastMessage,
+        'success',
+        options.toastDurationMs ? { durationMs: options.toastDurationMs } : undefined,
+      )
     }
   }, [clearSnapshotsDirty, pushToast, queryClient, setEditorSnapshotState, setSelectedPluginSelection])
 
@@ -4207,7 +4226,7 @@ export function SnapshotEditorPage() {
           size="sm"
           kind="secondary"
           className="snapshot-toolbar__button snapshot-toolbar__button--new"
-          onClick={() => createSnapshotFromEditorMutation.mutate()}
+          onClick={() => createSnapshotFromEditorMutation.mutate(buildDefaultSnapshotName(snapshotCount + 1))}
           disabled={createSnapshotFromEditorMutation.isPending}
         >
           {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New'}
@@ -6148,7 +6167,7 @@ export function SnapshotEditorPage() {
                 kind="primary"
                 renderIcon={Add}
                 className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--create"
-                onClick={() => createSnapshotFromEditorMutation.mutate()}
+                onClick={() => createSnapshotFromEditorMutation.mutate(buildDefaultSnapshotName(snapshotCount + 1))}
                 disabled={createSnapshotFromEditorMutation.isPending}
               >
                 {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}

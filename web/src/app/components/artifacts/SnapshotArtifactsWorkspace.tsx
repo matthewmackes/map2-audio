@@ -27,6 +27,10 @@ import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/s
 import type { SnapshotDetail, SnapshotExport, SnapshotRuntimeLiveState, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
+import {
+  buildSnapshotActivationFailureToastMessage,
+  buildSnapshotActivationToastMessage,
+} from '../../utils/snapshotActivationToast'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
 import {
@@ -274,9 +278,12 @@ export function SnapshotArtifactsWorkspace({
         queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
       }
       setSelectedSnapshotId(result.snapshot_id)
-      onToast('success', 'Snapshot made live', result.name)
+      onToast('success', buildSnapshotActivationToastMessage(result.snapshot_data))
     },
-    onError: (error: Error) => onToast('error', 'Failed to make snapshot live', error.message),
+    onError: (error, snapshotId) => {
+      const snapshotName = snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
+      onToast('warning', buildSnapshotActivationFailureToastMessage(snapshotName, error))
+    },
   })
 
   const duplicateMutation = useMutation({
@@ -343,10 +350,9 @@ export function SnapshotArtifactsWorkspace({
   })
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const name = buildDefaultSnapshotName(snapshots.length + 1)
+    mutationFn: async (snapshotName: string) => {
       const created = await snapshotsApi.create({
-        ...createDefaultSnapshotRequest(name),
+        ...createDefaultSnapshotRequest(snapshotName),
       })
       return snapshotsApi.activate(created.snapshot_id)
     },
@@ -358,9 +364,9 @@ export function SnapshotArtifactsWorkspace({
         queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
       }
       setSelectedSnapshotId(result.snapshot_id)
-      onToast('success', 'Snapshot created', result.name)
+      onToast('success', buildSnapshotActivationToastMessage(result.snapshot_data))
     },
-    onError: (error: Error) => onToast('error', 'Failed to create snapshot', error.message),
+    onError: (error, snapshotName) => onToast('warning', buildSnapshotActivationFailureToastMessage(snapshotName, error)),
   })
 
   const importMutation = useMutation({
@@ -441,7 +447,13 @@ export function SnapshotArtifactsWorkspace({
               <Button kind="secondary" size="sm" renderIcon={CloudUpload} onClick={() => setImportModalOpen(true)}>
                 Import snapshot
               </Button>
-              <Button kind="primary" size="sm" renderIcon={Add} onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+              <Button
+                kind="primary"
+                size="sm"
+                renderIcon={Add}
+                onClick={() => createMutation.mutate(buildDefaultSnapshotName(snapshots.length + 1))}
+                disabled={createMutation.isPending}
+              >
                 {createMutation.isPending ? 'Creating…' : 'Create snapshot'}
               </Button>
             </div>

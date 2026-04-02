@@ -34,6 +34,11 @@ import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWi
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import { formatSnapshotLastUsedLabel } from '../../utils/snapshotLastUsed'
 import {
+  SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+  buildSnapshotActivationFailureToastMessage,
+  buildSnapshotActivationToastMessage,
+} from '../../utils/snapshotActivationToast'
+import {
   flowSnapshotDataToSnapshotPayload,
   type SnapshotListResponse,
   snapshotDetailToDraftData,
@@ -60,7 +65,10 @@ export interface SnapshotModalContentProps {
   activeTab?: string
   onTabChange?: (activeTab: string) => void
   snapshotDraft: SnapshotDraftData
-  applySnapshotData: (snapshotData: SnapshotDraftData, options?: { toastMessage?: string | null; invalidateChains?: boolean }) => void
+  applySnapshotData: (
+    snapshotData: SnapshotDraftData,
+    options?: { toastMessage?: string | null; toastDurationMs?: number; invalidateChains?: boolean },
+  ) => void
 }
 
 export function SnapshotModalContent({
@@ -282,13 +290,18 @@ export function SnapshotModalContent({
       setContentView('library')
       onSnapshotSave?.()
       applySnapshotData(snapshotDetailToDraftData(response.snapshot_data), {
-        toastMessage: 'Snapshot created',
+        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
+        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
         invalidateChains: false,
       })
       onRecall?.()
     },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to create snapshot', 'error')
+    onError: (error, values) => {
+      pushToast(
+        buildSnapshotActivationFailureToastMessage(values.name, error),
+        'warn',
+        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+      )
     },
   })
 
@@ -301,11 +314,20 @@ export function SnapshotModalContent({
         (current) => upsertRuntimeChains(current, data.snapshot_data.live_state?.runtime_chains ?? []),
       )
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), { toastMessage: 'Snapshot recalled', invalidateChains: false })
+      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), {
+        toastMessage: buildSnapshotActivationToastMessage(data.snapshot_data),
+        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        invalidateChains: false,
+      })
       onRecall?.()
     },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to recall snapshot', 'error')
+    onError: (error, snapshotId) => {
+      const snapshotName = savedSnapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
+      pushToast(
+        buildSnapshotActivationFailureToastMessage(snapshotName, error),
+        'warn',
+        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+      )
     },
   })
 

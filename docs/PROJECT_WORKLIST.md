@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]
+Last updated: 2026-04-01 EDT - T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1157,7 +1157,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T620
-Status: [ ] Todo
+Status: [✓] Done
 Title: Activation Toast — Snapshot Name + Channel Count + Block Count
 Description:
 - Goal / acceptance criteria: When a snapshot is activated (via Go Live button, MIDI PC, or any other trigger), a brief toast notification appears confirming activation with musically meaningful content: "Live: SnapshotName — 2 channels, 7 blocks". The channel count is the number of active (not inactive/offline) channels. The block count is the total number of non-bypassed plugin blocks across all active chains. The toast auto-dismisses after 3 seconds. If activation was triggered by MIDI PC, the toast also shows the program number: "Live: VerseClean — 2 channels, 7 blocks (PC 1)". If activation fails, the toast shows the failure reason in amber: "Failed: VerseClean — Channel Lead not loaded." No action buttons on the toast — it is informational only.
@@ -1166,7 +1166,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: activation toast component using Carbon ToastNotification, content populated from activation response (name, active channel count, non-bypassed block count, program number if MIDI PC), auto-dismiss after 3 seconds, failure toast in amber on activation error, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 21:43 - Codex
+- Completion notes:
+  - Added a shared snapshot-activation toast formatter that derives active channel counts from live path state, non-bypassed block counts from active runtime chains, and plain-English failure reasons from backend activation errors.
+  - Replaced the generic activation copy in the Snapshot Editor MIDI-PC listener, snapshot library create/recall flows, and Audio Artifacts snapshot activation/create flows with `Live: SnapshotName - X channels, Y blocks`, including `(PC N)` for MIDI program triggers and amber `Failed: ...` warnings on activation errors.
+  - Added focused regression coverage for the new toast utility and the snapshot-library activation/create paths, while preserving the existing non-activation toast behavior elsewhere in the editor.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotActivationToast.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T619
 Status: [ ] Todo

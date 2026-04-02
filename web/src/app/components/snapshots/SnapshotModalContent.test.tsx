@@ -1,6 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ApiError } from '../../../map2/http'
 
 const mockPushToast = jest.fn()
 const mockSnapshotsList = jest.fn()
@@ -445,7 +446,8 @@ describe('SnapshotModalContent', () => {
     expect(applySnapshotData).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
-        toastMessage: 'Snapshot created',
+        toastMessage: 'Live: FreshSnapshot - 2 channels, 0 blocks',
+        toastDurationMs: 3000,
         invalidateChains: false,
       }),
     )
@@ -574,7 +576,8 @@ describe('SnapshotModalContent', () => {
     expect(applySnapshotData).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
-        toastMessage: 'Snapshot recalled',
+        toastMessage: 'Live: Existing Snapshot - 1 channel, 0 blocks',
+        toastDurationMs: 3000,
         invalidateChains: false,
       }),
     )
@@ -594,6 +597,24 @@ describe('SnapshotModalContent', () => {
       }),
     )
     expect(mockPushToast).not.toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error')
+  })
+
+  it('shows an amber activation failure toast with the snapshot name and backend reason', async () => {
+    mockSnapshotsActivate.mockRejectedValue(
+      new ApiError(422, 'Unprocessable Entity', { detail: 'Channel Lead not loaded.' }),
+    )
+
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Snapshot Library/i }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Recall' }))
+
+    await waitFor(() => expect(mockPushToast).toHaveBeenCalledWith(
+      'Failed: Existing Snapshot - Channel Lead not loaded.',
+      'warn',
+      expect.objectContaining({ durationMs: 3000 }),
+    ))
   })
 
   it('disables delete actions for the live snapshot in the library UI', async () => {
