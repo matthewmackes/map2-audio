@@ -10,6 +10,11 @@ const pluginMeta = {
     name: 'Drive',
     category: 'Drive',
   },
+  'map2://juce/dynamics/gate': {
+    uri: 'map2://juce/dynamics/gate',
+    name: 'Noise Gate',
+    category: 'Dynamics',
+  },
   'map2://juce/nam': {
     uri: 'map2://juce/nam',
     name: 'Neural Amp Modeler',
@@ -17,24 +22,37 @@ const pluginMeta = {
   },
 } as any
 
-function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive', pluginCount = 1) {
+function buildChainFromPlugins(plugins: Array<Record<string, unknown>>) {
   return {
     id: 101,
     name: 'Main Chain',
     is_active: true,
     created_at: '2026-04-01T00:00:00Z',
     updated_at: '2026-04-01T00:00:00Z',
-    plugins: Array.from({ length: pluginCount }, (_, index) => ({
+    plugins: plugins.map((plugin, index) => ({
+      uri: 'plugin://drive',
+      name: 'Drive',
+      position: index,
+      bypassed: false,
+      parameters: {},
+      ...plugin,
+    })),
+    loop_insertions: [],
+    effects_loops: [],
+    runtime_sync: null,
+  }
+}
+
+function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive', pluginCount = 1) {
+  return buildChainFromPlugins(
+    Array.from({ length: pluginCount }, (_, index) => ({
       uri,
       name: pluginCount > 1 ? `${name} ${index + 1}` : name,
       position: index,
       bypassed: index === 0 ? bypassed : false,
       parameters: {},
     })),
-    loop_insertions: [],
-    effects_loops: [],
-    runtime_sync: null,
-  }
+  )
 }
 
 describe('SnapshotEditorSignalCanvas', () => {
@@ -191,5 +209,81 @@ describe('SnapshotEditorSignalCanvas', () => {
 
     expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-0')).not.toBeInTheDocument()
     expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
+  })
+
+  it('marks the system noise gate with a SYS badge and hides delete affordances', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChainFromPlugins([
+          {
+            uri: 'map2://juce/dynamics/gate',
+            name: 'Noise Gate',
+            position: 0,
+            loader_state: {
+              system_block_role: 'noise_gate',
+              system_block_locked: true,
+              system_block_label: 'SYS',
+            },
+            parameters: { threshold: -40, ratio: 10, attack: 1, release: 100 },
+          },
+          {
+            uri: 'plugin://drive',
+            name: 'Drive',
+            position: 1,
+          },
+        ])}
+        pluginMeta={pluginMeta}
+        selectedPluginUri="map2://juce/dynamics/gate"
+        selectedPluginPosition={0}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onDeletePlugin={jest.fn()}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-plugin-system-badge-0')).toHaveTextContent('SYS')
+    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-0').getAttribute('aria-label')).toContain('system block')
+  })
+
+  it('refuses drag reorder interactions across the system noise gate', () => {
+    const handleReorderPlugins = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChainFromPlugins([
+          {
+            uri: 'map2://juce/dynamics/gate',
+            name: 'Noise Gate',
+            position: 0,
+            loader_state: {
+              system_block_role: 'noise_gate',
+              system_block_locked: true,
+              system_block_label: 'SYS',
+            },
+            parameters: { threshold: -40, ratio: 10, attack: 1, release: 100 },
+          },
+          {
+            uri: 'plugin://drive',
+            name: 'Drive',
+            position: 1,
+          },
+        ])}
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onDeletePlugin={jest.fn()}
+        onReorderPlugins={handleReorderPlugins}
+      />,
+    )
+
+    fireEvent.dragStart(screen.getByTestId('juce-grid-signal-plugin-card-1'))
+    fireEvent.dragOver(screen.getByTestId('juce-grid-signal-plugin-card-0'))
+    fireEvent.drop(screen.getByTestId('juce-grid-signal-plugin-card-0'))
+
+    expect(handleReorderPlugins).not.toHaveBeenCalled()
   })
 })

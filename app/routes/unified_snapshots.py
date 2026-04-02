@@ -1013,6 +1013,8 @@ async def remove_plugin(snapshot_id: int, chain_id: int, plugin_id: int) -> dict
             if snapshot is None:
                 _raise_not_found("Plugin")
             return snapshot
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
@@ -1029,6 +1031,8 @@ async def reorder_plugins(snapshot_id: int, chain_id: int, request: PluginReorde
             if snapshot is None:
                 _raise_not_found("Chain")
             return snapshot
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:

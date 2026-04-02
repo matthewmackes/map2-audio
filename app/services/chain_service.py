@@ -24,6 +24,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .command_queue import CommandQueue, CommandType
 from .default_effects_manifest import load_default_effects_manifest
 from app.services.plugin_loader_unified import get_plugin_loader
+from app.services.snapshot_system_blocks import (
+    NOISE_GATE_PLUGIN_URI,
+    build_system_noise_gate_loader_state,
+    build_system_noise_gate_parameters,
+    chain_system_block_descriptor_for_plugin,
+    default_chain_system_blocks,
+    is_system_noise_gate_descriptor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -545,18 +553,30 @@ class ChainService:
         self,
         plugin: Any,
         runtime_item: Optional[Dict[str, Any]] = None,
+        system_blocks: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
+        plugin_uri = str(plugin.plugin_uri)
+        plugin_position = int(plugin.position)
+        system_descriptor = chain_system_block_descriptor_for_plugin(
+            system_blocks,
+            plugin_uri=plugin_uri,
+            plugin_position=plugin_position,
+        )
         meta = self._get_plugin_metadata(plugin.plugin_uri)
         payload: Dict[str, Any] = {
-            "uri": plugin.plugin_uri,
+            "uri": plugin_uri,
             "name": meta.get("name", plugin.plugin_uri),
             "author": meta.get("author", ""),
             "category": meta.get("category", ""),
-            "position": plugin.position,
+            "position": plugin_position,
             "bypassed": plugin.bypass,
             "in_ports": meta.get("in_port_count", 0),
             "out_ports": meta.get("out_port_count", 0),
-            "parameters": {},
+            "parameters": (
+                build_system_noise_gate_parameters()
+                if is_system_noise_gate_descriptor(system_descriptor)
+                else {}
+            ),
         }
 
         if isinstance(runtime_item, dict):
@@ -569,7 +589,9 @@ class ChainService:
                 payload["latency_samples"] = latency_samples
 
         loader_state = self._chain_plugin_loader_state(plugin)
-        if loader_state is not None:
+        if is_system_noise_gate_descriptor(system_descriptor):
+            payload["loader_state"] = build_system_noise_gate_loader_state(loader_state)
+        elif loader_state is not None:
             payload["loader_state"] = loader_state
 
         return payload
@@ -892,21 +914,31 @@ class ChainService:
                 return None
             
             from app.database import Chain
-            
-            chain = Chain(name=name, is_active=False)
+
+            chain = Chain(
+                name=name,
+                is_active=False,
+                config=json.dumps({"system_blocks": default_chain_system_blocks()}),
+            )
             if self.session:
                 self.session.add(chain)
                 await self.session.flush()
                 await self.session.refresh(chain)
                 # Note: commit is handled by route's get_session context manager
-            
-            return {
-                "id": chain.id,
-                "name": chain.name,
-                "is_active": chain.is_active,
-                "plugins": [],
-                "created_at": chain.created_at.isoformat() if chain.created_at else None
-            }
+
+            from app.database import ChainPlugin
+
+            self.session.add(
+                ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri=NOISE_GATE_PLUGIN_URI,
+                    position=0,
+                    bypass=False,
+                )
+            )
+            await self.session.flush()
+
+            return await self.get_chain(chain.id)
         except Exception as e:
             logger.error(f"Error creating chain: {e}")
             return None
@@ -934,6 +966,7 @@ class ChainService:
             if not chain:
                 return None
             chain_config = self._parse_chain_config(chain.config)
+            system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
             
             # Get plugins in chain
             plugins_result = await self.session.execute(
@@ -951,6 +984,7 @@ class ChainService:
                     self._serialize_chain_plugin_entry(
                         p,
                         runtime_plugin_map.get(int(p.position)),
+                        system_blocks,
                     )
                 )
 
@@ -1008,6 +1042,7 @@ class ChainService:
             chains_list = []
             for chain in chains:
                 chain_config = self._parse_chain_config(chain.config)
+                system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
                 # Get plugins for this chain
                 plugins_result = await self.session.execute(
                     select(ChainPlugin)
@@ -1034,6 +1069,7 @@ class ChainService:
                         self._serialize_chain_plugin_entry(
                             p,
                             runtime_plugin_map.get(int(p.position)),
+                            system_blocks,
                         )
                     )
 
@@ -1139,20 +1175,27 @@ class ChainService:
                 logger.warning(f"Chain {chain_id} not found in database")
                 return False
             logger.debug(f"Chain {chain_id} found: {chain.name}")
+            chain_config = self._parse_chain_config(chain.config)
+            system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
+            has_system_noise_gate = any(is_system_noise_gate_descriptor(descriptor) for descriptor in system_blocks)
 
             is_instrument = self._is_instrument_plugin(plugin_uri)
 
             if is_instrument:
-                # Instruments go at position 0 — shift existing plugins right
+                # Instruments normally go at position 0, but the system gate remains fixed at the head.
                 existing = await self.session.execute(
                     select(ChainPlugin)
                     .filter(ChainPlugin.chain_id == chain_id)
                     .order_by(ChainPlugin.position.asc())
                 )
+                insert_position = 1 if has_system_noise_gate else 0
                 for plugin in existing.scalars().all():
-                    plugin.position += 1
-                insert_position = 0
-                logger.debug(f"Instrument detected — inserting at position 0, shifted existing plugins")
+                    if plugin.position >= insert_position:
+                        plugin.position += 1
+                logger.debug(
+                    "Instrument detected — inserting at position %s while preserving the system gate at the head",
+                    insert_position,
+                )
             else:
                 # Effects append at end
                 pos_result = await self.session.execute(
@@ -1340,7 +1383,7 @@ class ChainService:
                 logger.error("REMOVE_PLUGIN: No session available!")
                 return False
             
-            from app.database import ChainPlugin
+            from app.database import Chain, ChainPlugin
             from sqlalchemy import delete
 
             logger.info(
@@ -1349,6 +1392,16 @@ class ChainService:
                 chain_id,
                 plugin_position,
             )
+
+            chain_result = await self.session.execute(
+                select(Chain).filter(Chain.id == chain_id)
+            )
+            chain = chain_result.scalar_one_or_none()
+            if chain is None:
+                logger.error("REMOVE_PLUGIN: chain %s not found", chain_id)
+                return False
+            chain_config = self._parse_chain_config(chain.config)
+            system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
 
             filters = [
                 ChainPlugin.chain_id == chain_id,
@@ -1365,6 +1418,16 @@ class ChainService:
             if not matching_plugins:
                 logger.error("REMOVE_PLUGIN: plugin not found in chain %s", chain_id)
                 return False
+
+            for plugin in matching_plugins:
+                descriptor = chain_system_block_descriptor_for_plugin(
+                    system_blocks,
+                    plugin_uri=str(plugin.plugin_uri),
+                    plugin_position=int(plugin.position),
+                )
+                if is_system_noise_gate_descriptor(descriptor):
+                    logger.warning("REMOVE_PLUGIN: refused to remove system noise gate from chain %s", chain_id)
+                    return False
 
             delete_stmt = delete(ChainPlugin).where(*filters)
             result = await self.session.execute(delete_stmt)
@@ -1721,6 +1784,8 @@ class ChainService:
             
             if not chain:
                 return False
+            chain_config = self._parse_chain_config(chain.config)
+            system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
             
             # Get existing chain plugins
             result = await self.session.execute(
@@ -1731,6 +1796,27 @@ class ChainService:
             resolved_order = self._resolve_reorder_chain_plugins(chain_plugins, plugin_order)
             if resolved_order is None:
                 logger.error("Plugin reorder mismatch for chain %s", chain_id)
+                return False
+
+            system_noise_gate = next(
+                (
+                    plugin
+                    for plugin in chain_plugins
+                    if is_system_noise_gate_descriptor(
+                        chain_system_block_descriptor_for_plugin(
+                            system_blocks,
+                            plugin_uri=str(plugin.plugin_uri),
+                            plugin_position=int(plugin.position),
+                        )
+                    )
+                ),
+                None,
+            )
+            if system_noise_gate is not None and (not resolved_order or resolved_order[0].id != system_noise_gate.id):
+                logger.warning(
+                    "Refused reorder that moves the system noise gate away from the head of chain %s",
+                    chain_id,
+                )
                 return False
 
             # Update positions
@@ -1822,6 +1908,7 @@ class ChainService:
             
             if not chain:
                 return None
+            chain_config = self._parse_chain_config(chain.config)
             
             # Get plugins
             result = await self.session.execute(
@@ -1834,6 +1921,7 @@ class ChainService:
             # Serialize preset
             preset_data = {
                 "name": chain.name,
+                "system_blocks": chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else [],
                 "plugins": [
                     {
                         "uri": cp.plugin_uri,
@@ -1901,7 +1989,17 @@ class ChainService:
             preset_data = json.loads(preset.value)
             
             # Create new chain
-            chain = Chain(name=preset_data["name"], is_active=False)
+            chain = Chain(
+                name=preset_data["name"],
+                is_active=False,
+                config=json.dumps({
+                    "system_blocks": (
+                        preset_data.get("system_blocks")
+                        if isinstance(preset_data.get("system_blocks"), list)
+                        else []
+                    ),
+                }),
+            )
             self.session.add(chain)
             await self.session.flush()
             await self.session.refresh(chain)

@@ -17,6 +17,7 @@ import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import { buildPluginOrderRef, samePluginIdentity } from '../../../map2/utils/pluginIdentity'
 import { getPluginAccentConfig } from '../../utils/pluginAccent'
+import { getSystemBlockBadgeLabel, isSystemNoiseGatePlugin } from '../../utils/snapshotSystemBlocks'
 
 export interface JuceGridAudioInterfaceStatus {
   deviceName?: string
@@ -416,6 +417,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
       setDragOverPlugin(null)
       return
     }
+    if (isSystemNoiseGatePlugin(chain.plugins[sourceIndex]) || isSystemNoiseGatePlugin(chain.plugins[targetIndex])) {
+      setDraggedPlugin(null)
+      setDragOverPlugin(null)
+      return
+    }
 
     const next = [...chain.plugins]
     const [moved] = next.splice(sourceIndex, 1)
@@ -622,6 +628,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           const effectIcon = getSignalCardEffectIcon(meta, plugin)
                           const EffectIcon = effectIcon.component
                           const isSelected = isSelectedPlugin(plugin)
+                          const systemBlockBadge = getSystemBlockBadgeLabel(plugin)
+                          const isSystemBlock = systemBlockBadge !== null
                           const isDropTarget = Boolean(
                             dragOverPlugin
                             && samePluginIdentity(dragOverPlugin, plugin)
@@ -644,11 +652,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                             <article
                               className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${isReorderPreview ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${isReorderTarget ? 'is-reorder-target' : ''}`}
                               data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
-                              aria-label={`${displayName}, ${categoryLabel}${plugin.bypassed ? ', bypassed' : ''}`}
+                              aria-label={`${displayName}, ${categoryLabel}${plugin.bypassed ? ', bypassed' : ''}${isSystemBlock ? ', system block' : ''}`}
                               aria-pressed={isSelected}
                               role="button"
                               tabIndex={0}
-                              draggable={!tabletMode && !readOnly}
+                              draggable={!tabletMode && !readOnly && !isSystemBlock}
                               onClick={(event) => {
                                 event.stopPropagation()
                                 onPluginSelect(plugin.uri, plugin.position)
@@ -661,20 +669,20 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 }
                               }}
                               onDragStart={() => {
-                                if (tabletMode || readOnly) {
+                                if (tabletMode || readOnly || isSystemBlock) {
                                   return
                                 }
                                 setDraggedPlugin(buildPluginOrderRef(plugin))
                               }}
                               onDragOver={(event) => {
-                                if (tabletMode || readOnly) {
+                                if (tabletMode || readOnly || isSystemBlock) {
                                   return
                                 }
                                 event.preventDefault()
                                 setDragOverPlugin(buildPluginOrderRef(plugin))
                               }}
                               onDrop={() => {
-                                if (tabletMode || readOnly) {
+                                if (tabletMode || readOnly || isSystemBlock) {
                                   return
                                 }
                                 handleDrop(plugin)
@@ -705,7 +713,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                       {plugin.bypassed ? <VolumeUp size={14} /> : <VolumeMute size={14} />}
                                       <span>{plugin.bypassed ? 'On' : 'Byp'}</span>
                                     </button>
-                                    {onDeletePlugin ? (
+                                    {onDeletePlugin && !isSystemBlock ? (
                                       <button
                                         type="button"
                                         className="juce-grid-page__signal-plugin-delete"
@@ -731,6 +739,14 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 </div>
 
                                 <div className="juce-grid-page__signal-plugin-copy">
+                                  {systemBlockBadge ? (
+                                    <span
+                                      className="juce-grid-page__signal-plugin-system-badge"
+                                      data-testid={`juce-grid-signal-plugin-system-badge-${plugin.position}`}
+                                    >
+                                      {systemBlockBadge}
+                                    </span>
+                                  ) : null}
                                   <h3 className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</h3>
                                   <span className="cds--visually-hidden">{categoryLabel}</span>
                                 </div>

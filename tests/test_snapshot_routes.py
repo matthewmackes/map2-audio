@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+import pytest
 from app import database as database_module
 from app.routes import cluster_snapshots as cluster_routes
 from app.routes import chains as chain_routes
@@ -10,6 +11,7 @@ from app.services import snapshot_deployment_service as deployment_service_modul
 from app.services import snapshot_runtime_service
 from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
+from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -163,6 +165,33 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
         assert fetched["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "mix"
         assert fetched["session_notes"] == []
+        assert fetched["chains"][0]["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
+        assert fetched["chains"][0]["plugins"][0]["loader_state"]["system_block_role"] == "noise_gate"
+        assert fetched["chains"][0]["plugins"][1]["uri"] == "map2://juce/delay"
+
+        async with database_module.get_session() as session:
+            plugin_result = await session.execute(
+                select(database_module.SnapshotChainPlugin)
+                .where(database_module.SnapshotChainPlugin.snapshot_chain_id == fetched["chains"][0]["id"])
+                .order_by(database_module.SnapshotChainPlugin.position.asc())
+            )
+            chain_plugin_ids = [plugin.id for plugin in plugin_result.scalars().all()]
+        system_gate_id = chain_plugin_ids[0]
+        delay_plugin_id = chain_plugin_ids[1]
+
+        with pytest.raises(HTTPException) as remove_exc:
+            await routes.remove_plugin(snapshot_id, fetched["chains"][0]["id"], system_gate_id)
+        assert remove_exc.value.status_code == 400
+        assert "system noise gate" in str(remove_exc.value.detail).lower()
+
+        with pytest.raises(HTTPException) as reorder_exc:
+            await routes.reorder_plugins(
+                snapshot_id,
+                fetched["chains"][0]["id"],
+                routes.PluginReorderRequest(plugin_ids=[delay_plugin_id, system_gate_id]),
+            )
+        assert reorder_exc.value.status_code == 400
+        assert "first position" in str(reorder_exc.value.detail).lower()
 
         added_note = await routes.add_snapshot_session_note(
             snapshot_id,
@@ -407,7 +436,10 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched_paths_only["paths"][0]["snapshot_chain_id"] == fetched_paths_only["channels"][0]["chain_id"]
         assert fetched_paths_only["paths"][1]["snapshot_chain_id"] == fetched_paths_only["channels"][1]["chain_id"]
         assert any(
-            chain["name"] == "Drive B" and chain["plugins"] and chain["plugins"][0]["uri"] == "urn:test:path-only-plugin"
+            chain["name"] == "Drive B"
+            and chain["plugins"]
+            and chain["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
+            and any(plugin["uri"] == "urn:test:path-only-plugin" for plugin in chain["plugins"])
             for chain in fetched_paths_only["chains"]
         )
 
@@ -502,11 +534,11 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         revisions = await routes.list_snapshot_revisions(revision_snapshot_id)
         assert revisions["count"] == 1
         assert revisions["revisions"][0]["revision_number"] == 1
-        assert revisions["revisions"][0]["summary"] == "1 block, 1 channel, parallel blend routing"
+        assert revisions["revisions"][0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
 
         restored_revision = await routes.restore_snapshot_revision(revision_snapshot_id, 1)
         assert restored_revision["status"] == "success"
-        assert len(restored_revision["snapshot"]["chains"][0]["plugins"]) == 1
+        assert len(restored_revision["snapshot"]["chains"][0]["plugins"]) == 2
 
     asyncio.run(_run())
 

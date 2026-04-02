@@ -365,6 +365,9 @@ export interface PluginLoaderState {
   mix?: number;
   bypass?: boolean;
   ir_type?: 'cabinet' | 'reverb';
+  system_block_role?: string | null;
+  system_block_locked?: boolean;
+  system_block_label?: string | null;
 }
 
 export interface PluginAppearanceOverride {

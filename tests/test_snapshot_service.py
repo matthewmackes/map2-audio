@@ -8,6 +8,7 @@ from app.services import snapshot_runtime_state_service as runtime_state_service
 from app.services.chain_service import ChainService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
+from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from sqlalchemy import select
 
@@ -26,6 +27,19 @@ class _FakeSnapshotPluginLoader:
         if uri.startswith("urn:test:"):
             return {"uri": uri, "name": uri.rsplit(":", 1)[-1]}
         return None
+
+
+def _count_system_noise_gates(snapshot_detail: dict[str, object]) -> int:
+    return sum(
+        1
+        for chain in snapshot_detail.get("chains", [])
+        if isinstance(chain, dict)
+        for plugin in chain.get("plugins", [])
+        if isinstance(plugin, dict)
+        and plugin.get("uri") == NOISE_GATE_PLUGIN_URI
+        and isinstance(plugin.get("loader_state"), dict)
+        and plugin["loader_state"].get("system_block_role") == "noise_gate"
+    )
 
 
 def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
@@ -139,6 +153,15 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["paths"][0]["id"] == "channel-0"
             assert created["paths"][0]["label"] == "A"
             assert created["session_notes"] == []
+            assert created["chains"][0]["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
+            assert created["chains"][0]["plugins"][0]["position"] == 0
+            assert created["chains"][0]["plugins"][0]["loader_state"]["system_block_role"] == "noise_gate"
+            assert created["chains"][0]["plugins"][0]["loader_state"]["system_block_locked"] is True
+            assert created["chains"][0]["plugins"][0]["parameters"]["threshold"] == -40.0
+            assert created["chains"][0]["plugins"][0]["parameters"]["release"] == 100.0
+            assert created["chains"][0]["plugins"][1]["uri"] == "urn:test:plugin"
+            assert created["chains"][0]["plugins"][1]["position"] == 1
+            assert _count_system_noise_gates(created) == 1
 
             notes = await service.add_session_note(created["id"], "First rehearsal note")
             assert notes is not None
@@ -244,6 +267,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert duplicate["lineage"]["derived_from_snapshot_id"] == created["id"]
             assert duplicate["controls"]["midi_map"][0]["program_number"] is None
             assert duplicate["midi_map"][0]["program_number"] is None
+            assert _count_system_noise_gates(duplicate) == 1
 
             saved_as_new = await service.save_snapshot_as_new(created["id"], name="UnifiedSnapshotV2")
             assert saved_as_new is not None
@@ -253,6 +277,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert saved_as_new["controls"]["midi_map"][0]["program_number"] == 10
             assert saved_as_new["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
             assert saved_as_new["is_locked"] is False
+            assert _count_system_noise_gates(saved_as_new) == 1
 
             replaced_midi_map = await service.replace_midi_map(
                 created["id"],
@@ -317,6 +342,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert imported["chains"][0]["plugins"][0]["is_placeholder"] is True
             assert imported["input_device"] is None
             assert imported["output_device"] is None
+            assert _count_system_noise_gates(imported) == 0
 
             await service.update_snapshot(saved_as_new["id"], is_favorite=True, display_order=2)
             await service.update_snapshot(imported["id"], is_favorite=True, display_order=5)
@@ -1042,11 +1068,11 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
             assert revisions is not None
             assert len(revisions) == 1
             assert revisions[0]["revision_number"] == 1
-            assert revisions[0]["summary"] == "1 block, 1 channel, parallel blend routing"
+            assert revisions[0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
 
             restored = await service.restore_revision(created["id"], 1)
             assert restored is not None
-            assert len(restored["chains"][0]["plugins"]) == 1
+            assert len(restored["chains"][0]["plugins"]) == 2
 
             revisions_after_restore = await service.list_revisions(created["id"])
             assert revisions_after_restore is not None

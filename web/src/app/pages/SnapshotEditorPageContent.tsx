@@ -36,6 +36,7 @@ import {
   Play,
   Recording,
   Renew,
+  SettingsAdjust,
   Stop,
   TrashCan,
   VolumeMute,
@@ -192,6 +193,7 @@ import {
   buildEffectiveLiveSnapshotChains,
   buildSnapshotEditorLiveSnapshotHydration,
 } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
+import { isSystemNoiseGatePlugin } from '../utils/snapshotSystemBlocks'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
@@ -206,6 +208,19 @@ const API_BASE = (() => {
   if (port === '' || port === '80' || port === '8080') return '/api'
   return `http://${window.location.hostname}:8080/api`
 })()
+
+const NOISE_GATE_THRESHOLD_CONFIG_KEY = 'snapshots.global_noise_gate_threshold_db'
+const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
+const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
+  thresholdDb: -40,
+  releaseMs: 100,
+}
+const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
+  threshold: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
+  ratio: 10,
+  attack: 1,
+  release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+}
 
 const SESSION_NOTES_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -881,6 +896,7 @@ export function SnapshotEditorPage() {
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
   const [showOutputReferenceModal, setShowOutputReferenceModal] = useState(false)
+  const [showNoiseGateDefaultsModal, setShowNoiseGateDefaultsModal] = useState(false)
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
   const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
@@ -926,6 +942,8 @@ export function SnapshotEditorPage() {
   const [midiModalOpen, setMidiModalOpen] = useState(false)
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
+  const [noiseGateThresholdDraft, setNoiseGateThresholdDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb)
+  const [noiseGateReleaseDraft, setNoiseGateReleaseDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
   const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
@@ -1186,6 +1204,29 @@ export function SnapshotEditorPage() {
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),
     refetchInterval: snapshotStandardCadence,
+  })
+  const systemNoiseGateDefaultsQuery = useQuery({
+    queryKey: ['config', 'snapshot-noise-gate-defaults'],
+    queryFn: async () => {
+      const response = await fetchJson<{
+        config?: {
+          snapshots?: {
+            global_noise_gate_threshold_db?: number
+            global_noise_gate_release_ms?: number
+          }
+        }
+      }>('/api/cluster/config/runtime')
+      const snapshotsConfig = response.config?.snapshots ?? {}
+      return {
+        thresholdDb: typeof snapshotsConfig.global_noise_gate_threshold_db === 'number'
+          ? snapshotsConfig.global_noise_gate_threshold_db
+          : DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
+        releaseMs: typeof snapshotsConfig.global_noise_gate_release_ms === 'number'
+          ? snapshotsConfig.global_noise_gate_release_ms
+          : DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+      }
+    },
+    refetchOnWindowFocus: false,
   })
   const currentEditorSnapshotId = editorSnapshotOverride?.id ?? liveSnapshotQuery.data?.id ?? null
   const snapshotRevisionsQuery = useQuery({
@@ -1729,6 +1770,17 @@ export function SnapshotEditorPage() {
   }, [activeSnapshot?.output_level_warning_threshold_db])
 
   useEffect(() => {
+    if (!systemNoiseGateDefaultsQuery.data) {
+      return
+    }
+    setNoiseGateThresholdDraft(systemNoiseGateDefaultsQuery.data.thresholdDb)
+    setNoiseGateReleaseDraft(systemNoiseGateDefaultsQuery.data.releaseMs)
+  }, [
+    systemNoiseGateDefaultsQuery.data?.releaseMs,
+    systemNoiseGateDefaultsQuery.data?.thresholdDb,
+  ])
+
+  useEffect(() => {
     if (pendingGoLiveSnapshotId == null) {
       if (
         failedGoLiveSnapshotId != null
@@ -1776,6 +1828,7 @@ export function SnapshotEditorPage() {
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
     return slot.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
   }, [effectiveChainById])
+  const effectiveSystemNoiseGateDefaults = systemNoiseGateDefaultsQuery.data ?? DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS
 
   // Capture the current workspace as a snapshot draft
   const captureCurrentState = useCallback((): SnapshotDraftData => {
@@ -1787,13 +1840,23 @@ export function SnapshotEditorPage() {
         if (chain) {
           chainSnapshots[String(slot.chainId)] = {
             name: chain.name,
-            plugins: chain.plugins.map((p, i) => ({
-              uri: p.uri,
-              position: i,
-              bypass: p.bypassed || false,
-              parameters: p.parameters || {},
-              loader_state: p.loader_state,
-            })),
+            plugins: chain.plugins.map((p, i) => {
+              const baseParameters = p.parameters || {}
+              const parameters = isSystemNoiseGatePlugin(p) && Object.keys(baseParameters).length === 0
+                ? {
+                  ...DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS,
+                  threshold: effectiveSystemNoiseGateDefaults.thresholdDb,
+                  release: effectiveSystemNoiseGateDefaults.releaseMs,
+                }
+                : baseParameters
+              return {
+                uri: p.uri,
+                position: i,
+                bypass: p.bypassed || false,
+                parameters,
+                loader_state: p.loader_state,
+              }
+            }),
           }
         }
       }
@@ -1821,7 +1884,14 @@ export function SnapshotEditorPage() {
       activeFlowIndex,
       chains: chainSnapshots,
     }
-  }, [effectiveChainById, flowSlots, routing, activeFlowIndex])
+  }, [
+    effectiveChainById,
+    effectiveSystemNoiseGateDefaults.releaseMs,
+    effectiveSystemNoiseGateDefaults.thresholdDb,
+    flowSlots,
+    routing,
+    activeFlowIndex,
+  ])
 
   const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
   const renameSnapshotError = useMemo(() => {
@@ -2065,6 +2135,46 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update output reference', 'error')
+    },
+  })
+
+  const updateSystemNoiseGateDefaultsMutation = useMutation({
+    mutationFn: async ({
+      thresholdDb,
+      releaseMs,
+    }: {
+      thresholdDb: number
+      releaseMs: number
+    }) => {
+      await fetchJson('/api/cluster/config/runtime', {
+        method: 'PUT',
+        body: JSON.stringify({
+          key: NOISE_GATE_THRESHOLD_CONFIG_KEY,
+          value: thresholdDb,
+          scope: 'cluster',
+        }),
+      })
+      await fetchJson('/api/cluster/config/runtime', {
+        method: 'PUT',
+        body: JSON.stringify({
+          key: NOISE_GATE_RELEASE_CONFIG_KEY,
+          value: releaseMs,
+          scope: 'cluster',
+        }),
+      })
+      return { thresholdDb, releaseMs }
+    },
+    onSuccess: ({ thresholdDb, releaseMs }) => {
+      queryClient.setQueryData(['config', 'snapshot-noise-gate-defaults'], {
+        thresholdDb,
+        releaseMs,
+      })
+      queryClient.invalidateQueries({ queryKey: ['config', 'snapshot-noise-gate-defaults'] })
+      setShowNoiseGateDefaultsModal(false)
+      pushToast('Noise gate defaults updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update noise gate defaults', 'error')
     },
   })
 
@@ -3918,8 +4028,16 @@ export function SnapshotEditorPage() {
   const handleDeletePlugin = useCallback((uri: string, position?: number) => {
     if (snapshotEditingLocked) return
     if (!currentChain) return
+    const targetPlugin = currentChain.plugins.find((plugin) => (
+      plugin.uri === uri
+      && (typeof position !== 'number' || plugin.position === position)
+    ))
+    if (targetPlugin && isSystemNoiseGatePlugin(targetPlugin)) {
+      pushToast('The system noise gate stays locked at the head of the chain', 'warn')
+      return
+    }
     deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri, pluginPosition: position })
-  }, [currentChain, deleteMutation, snapshotEditingLocked])
+  }, [currentChain, deleteMutation, pushToast, snapshotEditingLocked])
 
   const handleTabletCanvasEmptyPress = useCallback((flowId: string) => {
     if (!isTabletTouchLayout) {
@@ -4016,6 +4134,10 @@ export function SnapshotEditorPage() {
     if (currentIndex < 0) {
       return
     }
+    if (isSystemNoiseGatePlugin(plugins[currentIndex])) {
+      pushToast('The system noise gate stays locked at the head of the chain', 'warn')
+      return
+    }
 
     const delta = direction === 'left' ? -1 : 1
     const targetIndex = currentIndex + delta
@@ -4024,6 +4146,10 @@ export function SnapshotEditorPage() {
     }
 
     const targetPlugin = plugins[targetIndex]
+    if (isSystemNoiseGatePlugin(targetPlugin)) {
+      pushToast('No block can move ahead of the system noise gate', 'warn')
+      return
+    }
     const [movedPlugin] = plugins.splice(currentIndex, 1)
     plugins.splice(targetIndex, 0, movedPlugin)
 
@@ -4038,7 +4164,7 @@ export function SnapshotEditorPage() {
       chainId: currentChain.id,
       pluginOrder: plugins.map((plugin) => buildPluginOrderRef(plugin)),
     })
-  }, [currentChain, reorderMutation, selectedPluginPosition, selectedPluginUri, snapshotEditingLocked])
+  }, [currentChain, pushToast, reorderMutation, selectedPluginPosition, selectedPluginUri, snapshotEditingLocked])
 
   const handleAddPlugin = useCallback(() => {
     if (snapshotEditingLocked) {
@@ -5266,11 +5392,7 @@ export function SnapshotEditorPage() {
           pushToast('Unlock snapshot before editing it', 'warn')
           return
         }
-        deleteMutation.mutate({
-          chainId: currentChain.id,
-          pluginUri: selectedPlugin.uri,
-          pluginPosition: selectedPlugin.position,
-        })
+        handleDeletePlugin(selectedPlugin.uri, selectedPlugin.position)
         return
       }
 
@@ -5365,6 +5487,7 @@ export function SnapshotEditorPage() {
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
         else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
+        else if (showNoiseGateDefaultsModal) setShowNoiseGateDefaultsModal(false)
         else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
         else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
@@ -5385,9 +5508,9 @@ export function SnapshotEditorPage() {
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
-    handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
+    handleDeletePlugin, handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot,
     snapshotEditingLocked,
   ])
@@ -5969,15 +6092,18 @@ export function SnapshotEditorPage() {
   const tabletEditorVisible = isTabletTouchLayout && tabletEditorOpen && bottomEditorHasSelection
   const bottomEditorOpen = !isTabletTouchLayout && effectModalOpen && bottomEditorHasSelection
   const bottomEditorAccentColor = getCategoryConfig(selectedPluginMeta?.category || 'Utility').color
+  const selectedPluginIsSystemNoiseGate = selectedPlugin ? isSystemNoiseGatePlugin(selectedPlugin) : false
   const selectedPluginIndex = selectedPlugin && currentChain
     ? currentChain.plugins.findIndex((plugin) => (
       plugin.uri === selectedPlugin.uri
       && plugin.position === selectedPlugin.position
     ))
     : -1
-  const canMoveSelectedPluginLeft = selectedPluginIndex > 0
+  const canMoveSelectedPluginLeft = selectedPluginIndex > 0 && currentChain
+    ? !selectedPluginIsSystemNoiseGate && !isSystemNoiseGatePlugin(currentChain.plugins[selectedPluginIndex - 1])
+    : false
   const canMoveSelectedPluginRight = selectedPluginIndex >= 0 && currentChain
-    ? selectedPluginIndex < currentChain.plugins.length - 1
+    ? !selectedPluginIsSystemNoiseGate && selectedPluginIndex < currentChain.plugins.length - 1
     : false
   const selectedBlockMidiPanelEnabled = Boolean(
     bottomEditorOpen
@@ -6083,6 +6209,12 @@ export function SnapshotEditorPage() {
         className="juce-grid-page__snapshot-status-details-item"
         disabled={!activeSnapshot}
         onClick={() => setShowOutputReferenceModal(true)}
+      />
+      <MenuItem
+        label="Noise Gate Defaults"
+        renderIcon={SettingsAdjust}
+        className="juce-grid-page__snapshot-status-details-item"
+        onClick={() => setShowNoiseGateDefaultsModal(true)}
       />
       <MenuItem
         label={duplicateActiveSnapshotMutation.isPending ? 'Duplicating…' : 'Duplicate'}
@@ -6638,7 +6770,7 @@ export function SnapshotEditorPage() {
                   <OverflowMenuItem
                     itemText="Remove block"
                     isDelete
-                    disabled={snapshotEditingLocked}
+                    disabled={snapshotEditingLocked || selectedPluginIsSystemNoiseGate}
                     onClick={() => setPendingTabletDeletePlugin({
                       uri: selectedPlugin.uri,
                       position: selectedPlugin.position,
@@ -6859,6 +6991,69 @@ export function SnapshotEditorPage() {
                 {outputLevelWarningMessage}
               </Tag>
             ) : null}
+          </div>
+        </Modal>
+      )}
+
+      {showNoiseGateDefaultsModal && (
+        <Modal
+          open
+          size="sm"
+          modalHeading="Noise Gate Defaults"
+          modalLabel="Global chain defaults"
+          primaryButtonText={updateSystemNoiseGateDefaultsMutation.isPending ? 'Saving…' : 'Save defaults'}
+          secondaryButtonText="Cancel"
+          primaryButtonDisabled={updateSystemNoiseGateDefaultsMutation.isPending}
+          onRequestClose={() => setShowNoiseGateDefaultsModal(false)}
+          onSecondarySubmit={() => setShowNoiseGateDefaultsModal(false)}
+          onRequestSubmit={() => {
+            updateSystemNoiseGateDefaultsMutation.mutate({
+              thresholdDb: noiseGateThresholdDraft,
+              releaseMs: noiseGateReleaseDraft,
+            })
+          }}
+        >
+          <div className="juce-grid-page__form-modal-body">
+            <p className="juce-grid-page__modal-copy">
+              Set the cluster-wide noise gate defaults applied when MAP2 creates a new snapshot chain. Existing snapshots keep their own per-snapshot gate values.
+            </p>
+            <div className="juce-grid-page__compact-tags">
+              <Tag type="green">Applied to new chains</Tag>
+              <Tag type="cool-gray">Per-snapshot overrides stay editable</Tag>
+            </div>
+            {systemNoiseGateDefaultsQuery.isPending ? (
+              <InlineLoading description="Loading noise gate defaults" status="active" />
+            ) : null}
+            <NumberInput
+              label="Threshold"
+              value={noiseGateThresholdDraft}
+              min={-96}
+              max={0}
+              step={0.5}
+              precision={1}
+              unit="dB"
+              defaultValue={DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb}
+              valueFormatter={(value) => value.toFixed(1)}
+              onChange={setNoiseGateThresholdDraft}
+              disabled={updateSystemNoiseGateDefaultsMutation.isPending}
+              showBounds={false}
+              accentColor="#24a148"
+            />
+            <NumberInput
+              label="Release"
+              value={noiseGateReleaseDraft}
+              min={1}
+              max={1000}
+              step={1}
+              precision={0}
+              unit="ms"
+              defaultValue={DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs}
+              valueFormatter={(value) => value.toFixed(0)}
+              onChange={setNoiseGateReleaseDraft}
+              disabled={updateSystemNoiseGateDefaultsMutation.isPending}
+              showBounds={false}
+              accentColor="#24a148"
+            />
           </div>
         </Modal>
       )}

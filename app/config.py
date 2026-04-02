@@ -51,6 +51,7 @@ class ConfigSection(Enum):
     APP = "app"
     NODE = "node"
     AUDIO = "audio"
+    SNAPSHOTS = "snapshots"
     MIDI = "midi"
     PUSH_SURFACE = "push_surface"
     LCD = "lcd"
@@ -209,6 +210,22 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[48000],
         description="Allowed sample-rate set for profile-driven PipeWire mapping",
         value_type=list,
+    ),
+    "snapshots.global_noise_gate_threshold_db": ConfigOption(
+        key="snapshots.global_noise_gate_threshold_db",
+        default=-40.0,
+        description="Default threshold in dB for the auto-inserted Snapshot Editor system noise gate",
+        value_type=float,
+        min_value=-100.0,
+        max_value=0.0,
+    ),
+    "snapshots.global_noise_gate_release_ms": ConfigOption(
+        key="snapshots.global_noise_gate_release_ms",
+        default=100.0,
+        description="Default release in milliseconds for the auto-inserted Snapshot Editor system noise gate",
+        value_type=float,
+        min_value=10.0,
+        max_value=5000.0,
     ),
 
     # MIDI settings

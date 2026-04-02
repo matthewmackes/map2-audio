@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app import database as database_module
 from app.routes import chains as chains_routes
 from app.services.chain_service import ChainService
+from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 
 
 def _reset_db_state() -> None:
@@ -119,6 +120,72 @@ async def test_chain_service_serializes_persisted_loader_state(tmp_path):
         "bypass": False,
         "ir_type": "cabinet",
     }
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_chain_service_creates_system_noise_gate_and_refuses_removal_or_reorder(tmp_path):
+    _init_temp_async_db(tmp_path, "chain-system-noise-gate.db")
+
+    async with database_module.get_session() as session:
+        service = ChainService(session)
+
+        created = await service.create_chain("Protected Input Chain")
+
+        assert created is not None
+        assert created["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
+        assert created["plugins"][0]["position"] == 0
+        assert created["plugins"][0]["loader_state"] == {
+            "system_block_role": "noise_gate",
+            "system_block_locked": True,
+            "system_block_label": "SYS",
+        }
+        assert created["plugins"][0]["parameters"] == {
+            "threshold": pytest.approx(-40.0),
+            "ratio": pytest.approx(10.0),
+            "attack": pytest.approx(1.0),
+            "release": pytest.approx(100.0),
+        }
+
+        chain_result = await session.execute(
+            select(database_module.Chain).where(database_module.Chain.id == created["id"])
+        )
+        chain_model = chain_result.scalar_one()
+        chain_config = service._parse_chain_config(chain_model.config)
+        assert chain_config["system_blocks"] == [
+            {
+                "role": "noise_gate",
+                "plugin_uri": NOISE_GATE_PLUGIN_URI,
+                "position": 0,
+                "label": "SYS",
+            }
+        ]
+
+        assert await service.add_plugin_to_chain(created["id"], "map2://juce/modulation/phaser") is True
+
+        populated = await service.get_chain(created["id"])
+        assert populated is not None
+        assert [plugin["uri"] for plugin in populated["plugins"]] == [
+            NOISE_GATE_PLUGIN_URI,
+            "map2://juce/modulation/phaser",
+        ]
+
+        assert await service.remove_plugin_from_chain(created["id"], NOISE_GATE_PLUGIN_URI, 0) is False
+        assert await service.reorder_plugins(
+            created["id"],
+            [
+                {"uri": "map2://juce/modulation/phaser", "position": 1},
+                {"uri": NOISE_GATE_PLUGIN_URI, "position": 0},
+            ],
+        ) is False
+
+        final_chain = await service.get_chain(created["id"])
+        assert final_chain is not None
+        assert [plugin["uri"] for plugin in final_chain["plugins"]] == [
+            NOISE_GATE_PLUGIN_URI,
+            "map2://juce/modulation/phaser",
+        ]
 
     await _dispose_db()
 

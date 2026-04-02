@@ -43,6 +43,12 @@ from app.services.maschine_encoder_map_service import normalize_maschine_encoder
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
 from app.services.plugin_loader_unified import get_plugin_loader
+from app.services.snapshot_system_blocks import (
+    build_system_noise_gate_plugin,
+    ensure_system_noise_gate_at_chain_head,
+    extract_chain_system_blocks,
+    is_system_noise_gate_loader_state,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +322,34 @@ class SnapshotService:
             return
         snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
         await self.session.flush()
+
+    @staticmethod
+    def _snapshot_chain_plugin_is_system_noise_gate(plugin: SnapshotChainPlugin) -> bool:
+        return is_system_noise_gate_loader_state(plugin.loader_state)
+
+    def _apply_default_system_blocks_to_normalized(
+        self,
+        normalized: dict[str, Any],
+        *,
+        apply_defaults: bool,
+    ) -> dict[str, Any]:
+        next_normalized = copy.deepcopy(normalized)
+        next_chains: list[dict[str, Any]] = []
+        for chain in next_normalized.get("chains", []):
+            if not isinstance(chain, dict):
+                continue
+            next_chain = dict(chain)
+            next_chain["plugins"] = ensure_system_noise_gate_at_chain_head(
+                [
+                    dict(plugin)
+                    for plugin in (chain.get("plugins") or [])
+                    if isinstance(plugin, dict)
+                ],
+                apply_defaults=apply_defaults,
+            )
+            next_chains.append(next_chain)
+        next_normalized["chains"] = next_chains
+        return next_normalized
 
     @staticmethod
     def _collect_device_name_candidates(value: Any) -> set[str]:
@@ -601,6 +635,7 @@ class SnapshotService:
         detail_payload: Optional[dict[str, Any]] = None,
         is_favorite: bool = False,
         is_locked: bool = False,
+        apply_default_system_blocks: bool = True,
     ) -> dict[str, Any]:
         normalized_name = validate_snapshot_name(name)
         await self._validate_program_number(program_number)
@@ -631,6 +666,10 @@ class SnapshotService:
         await self.session.flush()
 
         normalized = self._normalize_detail_payload(detail_payload or {})
+        normalized = self._apply_default_system_blocks_to_normalized(
+            normalized,
+            apply_defaults=apply_default_system_blocks,
+        )
         normalized = await self._enrich_normalized_payload(normalized)
         await self._replace_snapshot_state(snapshot, normalized)
         snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
@@ -870,6 +909,7 @@ class SnapshotService:
             detail_payload=duplicate_detail_payload,
             is_favorite=bool(snapshot.get("is_favorite", False)),
             is_locked=False,
+            apply_default_system_blocks=False,
         )
 
     async def save_snapshot_as_new(
@@ -896,6 +936,7 @@ class SnapshotService:
             detail_payload=snapshot,
             is_favorite=bool(snapshot.get("is_favorite", False)),
             is_locked=False,
+            apply_default_system_blocks=False,
         )
 
     async def activate_snapshot(
@@ -1156,6 +1197,20 @@ class SnapshotService:
         chain = SnapshotChain(snapshot_id=snapshot.id, name=name.strip() or f"Chain {next_index + 1}", order_index=next_index)
         self.session.add(chain)
         await self.session.flush()
+        system_gate = build_system_noise_gate_plugin(position=0)
+        self.session.add(
+            SnapshotChainPlugin(
+                snapshot_chain_id=chain.id,
+                plugin_uri=system_gate["uri"],
+                plugin_name=system_gate["name"],
+                position=0,
+                bypass=bool(system_gate.get("bypass", False)),
+                parameters=dict(system_gate.get("parameters") or {}),
+                loader_state=dict(system_gate.get("loader_state") or {}),
+                is_placeholder=bool(system_gate.get("is_placeholder", False)),
+            )
+        )
+        await self.session.flush()
         await self._sync_snapshot_tags(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
@@ -1206,6 +1261,8 @@ class SnapshotService:
         plugin = await self._get_plugin(snapshot_id, chain_id, plugin_id)
         if plugin is None:
             return None
+        if self._snapshot_chain_plugin_is_system_noise_gate(plugin):
+            raise ValueError("The system noise gate cannot be removed from a snapshot chain.")
         await self.session.delete(plugin)
         await self.session.flush()
         await self._resequence_plugins(chain_id)
@@ -1222,6 +1279,13 @@ class SnapshotService:
         if chain is None:
             return None
         plugin_map = {plugin.id: plugin for plugin in chain.plugins}
+        system_gate_plugin = next(
+            (plugin for plugin in chain.plugins if self._snapshot_chain_plugin_is_system_noise_gate(plugin)),
+            None,
+        )
+        if system_gate_plugin is not None:
+            if not plugin_ids or plugin_ids[0] != system_gate_plugin.id:
+                raise ValueError("The system noise gate must stay in the first position.")
         for index, plugin_id in enumerate(plugin_ids):
             plugin = plugin_map.get(plugin_id)
             if plugin is not None:
@@ -1365,6 +1429,7 @@ class SnapshotService:
             input_device=detail_payload.get("input_device"),
             output_device=detail_payload.get("output_device"),
             detail_payload=detail_payload,
+            apply_default_system_blocks=False,
         )
         return imported
 
@@ -2152,6 +2217,9 @@ class SnapshotService:
                         "snapshot_id": snapshot.id,
                         "snapshot_chain_id": snapshot_chain_id,
                         "path_id": channel.get("channel_key"),
+                        "system_blocks": extract_chain_system_blocks(
+                            source_chain.get("plugins") if isinstance(source_chain, dict) else []
+                        ),
                     }
                 ),
             )

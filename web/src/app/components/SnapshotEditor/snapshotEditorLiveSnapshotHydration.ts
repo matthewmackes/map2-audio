@@ -8,6 +8,51 @@ export interface SnapshotEditorLiveSnapshotHydration {
   fingerprint: string
 }
 
+function pluginIdentityKey(plugin: Pick<Chain['plugins'][number], 'uri' | 'position'>): string {
+  return `${plugin.uri}::${plugin.position}`
+}
+
+function mergeRuntimeChainWithSynthetic(
+  runtimeChain: Chain,
+  syntheticChain: Chain | undefined,
+): Chain {
+  if (!syntheticChain) {
+    return runtimeChain
+  }
+
+  const syntheticPluginByIdentity = new Map(
+    syntheticChain.plugins.map((plugin) => [pluginIdentityKey(plugin), plugin] as const),
+  )
+  const mergedPlugins = runtimeChain.plugins.map((plugin) => {
+    const syntheticPlugin = syntheticPluginByIdentity.get(pluginIdentityKey(plugin))
+    const runtimeParameters = plugin.parameters ?? {}
+    const hasRuntimeParameters = Object.keys(runtimeParameters).length > 0
+    return {
+      ...syntheticPlugin,
+      ...plugin,
+      parameters: hasRuntimeParameters
+        ? { ...runtimeParameters }
+        : { ...(syntheticPlugin?.parameters ?? {}) },
+      loader_state: plugin.loader_state ?? syntheticPlugin?.loader_state,
+    }
+  })
+  const mergedPluginIdentityKeys = new Set(mergedPlugins.map((plugin) => pluginIdentityKey(plugin)))
+  const trailingSyntheticPlugins = syntheticChain.plugins.filter((plugin) => !mergedPluginIdentityKeys.has(pluginIdentityKey(plugin)))
+
+  return {
+    ...syntheticChain,
+    ...runtimeChain,
+    plugins: [...mergedPlugins, ...trailingSyntheticPlugins],
+    loop_insertions: runtimeChain.loop_insertions?.length
+      ? [...runtimeChain.loop_insertions]
+      : [...(syntheticChain.loop_insertions ?? [])],
+    effects_loops: runtimeChain.effects_loops?.length
+      ? [...runtimeChain.effects_loops]
+      : [...(syntheticChain.effects_loops ?? [])],
+    runtime_sync: runtimeChain.runtime_sync ?? syntheticChain.runtime_sync ?? null,
+  }
+}
+
 function buildSyntheticRuntimeChains(detail: SnapshotDetail): Chain[] {
   return (detail.paths ?? []).flatMap((path) => {
     const runtimeChainId = path.runtime_chain_id
@@ -66,9 +111,15 @@ export function buildEffectiveLiveSnapshotChains(
 ): ChainsResponse {
   const runtimeChains = detail.live_state?.runtime_chains ?? []
   const syntheticRuntimeChains = buildSyntheticRuntimeChains(detail)
+  const syntheticRuntimeChainById = new Map(
+    syntheticRuntimeChains.map((chain) => [chain.id, chain] as const),
+  )
+  const mergedRuntimeChains = runtimeChains.map((chain) => (
+    mergeRuntimeChainWithSynthetic(chain, syntheticRuntimeChainById.get(chain.id))
+  ))
   return upsertRuntimeChains(
     upsertRuntimeChains(currentChains, syntheticRuntimeChains),
-    runtimeChains,
+    mergedRuntimeChains,
   )
 }
 

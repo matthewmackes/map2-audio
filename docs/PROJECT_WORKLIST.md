@@ -718,7 +718,7 @@ Last updated: 2026-04-01 16:45 - Codex
 - Validation: `pytest -q tests/test_special_settings_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/utils/snapshotSetlist.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T653
-Status: [ ] Todo
+Status: [✓] Done
 Title: Global Noise Gate — Auto-Inserted as Always-First Block in Every New Snapshot Chain
 Description:
 - Goal / acceptance criteria: A global noise gate plugin block is automatically inserted at position 0 (head) of every new snapshot chain when created. It cannot be reordered to a non-first position — the UI prevents moving it past the input. It can be bypassed per-snapshot if the player does not need it. Threshold and release are configurable globally (applied as defaults for new chains) and can be overridden per-snapshot. The block is visually distinguished from user-added blocks (e.g., a lock icon or "SYS" label) so it is never confused with a manually-added gate.
@@ -727,7 +727,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: global gate config (threshold, release) in MAP2 config schema, auto-insert logic in snapshot creation path, UI visual treatment distinguishing system blocks from user blocks, bypass-only (no delete) constraint in the editor, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 00:39 - Codex
+- Completion notes:
+  - Added shared snapshot-system-block helpers plus new `snapshots.global_noise_gate_threshold_db` and `snapshots.global_noise_gate_release_ms` config keys, then auto-inserted the system noise gate into fresh snapshot chains and fresh runtime chains while preserving duplicate/save-as-new/import behavior without double insertion.
+  - Locked the system gate at the head of the chain across snapshot and runtime services, including delete/reorder refusal in backend APIs, `SYS` badge rendering in the signal canvas, drag/drop protection, and live-chain hydration that preserves snapshot-authored gate parameters and loader state while a snapshot is live.
+  - Added a Snapshot Editor Details action and modal for global noise-gate defaults so new chains inherit cluster-wide threshold/release values without removing per-snapshot override capability.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T652
 Status: [ ] Todo
