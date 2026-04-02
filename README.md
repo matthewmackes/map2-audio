@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**934** Python | **1032** TypeScript | **131** C++/H | **129** Docs | **1211** total commits | **3** stars | **0** forks | **0** open issues
+**934** Python | **1032** TypeScript | **131** C++/H | **129** Docs | **1214** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ac07e735`](https://github.com/matthewmackes/map2-audio/commit/ac07e735a1192882c0f93da812a9d989e70b9bd9) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
+| [`adee8100`](https://github.com/matthewmackes/map2-audio/commit/adee8100db469bc9faeabcda616a27fc7c4fe87a) | Auto-tag snapshots from chain plugin types | Map2 Audio | 2026-04-01 |
+| [`e9482737`](https://github.com/matthewmackes/map2-audio/commit/e9482737dd06cff8f47185b743cded23cbb4530c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`9da52c34`](https://github.com/matthewmackes/map2-audio/commit/9da52c34e060926c70ac6a07d11f221354247af5) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`173ff278`](https://github.com/matthewmackes/map2-audio/commit/173ff278e47741c64fa0ba1dee9ead6af7130bfd) | Remove snapshot BPM status copy | Map2 Audio | 2026-04-01 |
 | [`3932baf8`](https://github.com/matthewmackes/map2-audio/commit/3932baf8a3281382b7212b7c8dc0b046f1e5b95d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`89fbfba7`](https://github.com/matthewmackes/map2-audio/commit/89fbfba707ab461de68dc9f37fd3a057f457f893) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
 | [`ab604ed4`](https://github.com/matthewmackes/map2-audio/commit/ab604ed4350f0201a1e078ed8e69987e97fca34f) | Add selected block card bypass controls | Map2 Audio | 2026-04-01 |
-| [`b7cff92f`](https://github.com/matthewmackes/map2-audio/commit/b7cff92f49661fdcf098651e68a9cad16fb7a2c9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`cb4e7431`](https://github.com/matthewmackes/map2-audio/commit/cb4e7431d6253e72cb6af53aa7c6644d50e0b428) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-01 |
-| [`79cc8e97`](https://github.com/matthewmackes/map2-audio/commit/79cc8e97bc0c2bef9d4d6baf17a35fe804156fc7) | Add snapshot editor duplicate action | Map2 Audio | 2026-04-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
