@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**944** Python | **1055** TypeScript | **131** C++/H | **129** Docs | **1293** total commits | **3** stars | **0** forks | **0** open issues
+**946** Python | **1055** TypeScript | **131** C++/H | **129** Docs | **1295** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`210cd03e`](https://github.com/matthewmackes/map2-audio/commit/210cd03e857fab95bc16566fc73514cedc530796) | Add controller display assignment resolver | Map2 Audio | 2026-04-02 |
+| [`2f016a75`](https://github.com/matthewmackes/map2-audio/commit/2f016a7552a774ff634c9ba95b09489c3b4be6bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`8397560a`](https://github.com/matthewmackes/map2-audio/commit/8397560ae2304958f144307d784407c79c1679c3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`7daf6a0f`](https://github.com/matthewmackes/map2-audio/commit/7daf6a0fe77e3f385f6cdc1cf4d7bdb9bd540575) | Add plugin key-parameter metadata registry | Map2 Audio | 2026-04-02 |
 | [`da8f004a`](https://github.com/matthewmackes/map2-audio/commit/da8f004adcc8c6cadd959a52b283067bf02a3001) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`4acb55ba`](https://github.com/matthewmackes/map2-audio/commit/4acb55ba5ae8379bce8cb316f6fd577fd693d3d2) | Add controller display capability metadata | Map2 Audio | 2026-04-02 |
 | [`d4389ac3`](https://github.com/matthewmackes/map2-audio/commit/d4389ac343f8c72ae8166f293c7ff4fb787a2ac5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
 | [`1e8f99c7`](https://github.com/matthewmackes/map2-audio/commit/1e8f99c7a5f49c1809aafdd955b30982d6819f5d) | Add duplicate-safe MIDI command target positions | Map2 Audio | 2026-04-02 |
-| [`35de3b39`](https://github.com/matthewmackes/map2-audio/commit/35de3b392e52262ad423dcf2aa1edd33c65cedd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`f8b71ea5`](https://github.com/matthewmackes/map2-audio/commit/f8b71ea5c9cad540f06e92c907033e55ea5a6ad6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
