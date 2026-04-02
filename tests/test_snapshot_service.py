@@ -10,6 +10,7 @@ from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services import upload_service as upload_service_module
 from app.services.chain_service import ChainService
+from app.services.midi_service import ActionType, CommandType, MIDICommandDTO, midi_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
@@ -176,6 +177,21 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["chains"][0]["plugins"][1]["position"] == 1
             assert _count_system_noise_gates(created) == 1
 
+            command_id = await midi_service.create_command(
+                MIDICommandDTO(
+                    command_type=CommandType.CC_TOGGLE,
+                    channel=1,
+                    data1=80,
+                    action_type=ActionType.TOGGLE_PLUGIN,
+                    target_plugin_uri="urn:test:plugin",
+                    target_plugin_position=1,
+                    action_data={"slot_index": 0},
+                    name="Slot 1 Test Plugin",
+                ),
+                session,
+            )
+            assert command_id is not None
+
             notes = await service.add_session_note(created["id"], "First rehearsal note")
             assert notes is not None
             assert len(notes) == 1
@@ -247,6 +263,11 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_data"]["tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["tempo_source"] == "stored"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["display_label"] == "Clean"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["target_plugin_uri"] == "urn:test:plugin"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["slot_state"] == "active"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["key_parameter"]["parameter_symbol"] == "gain"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["key_parameter"]["current_value"] == 0.5
             assert scheduled_health_checks[0]["snapshot_id"] == created["id"]
             assert scheduled_health_checks[0]["request_id"] == activated["activation_intent"]["request_id"]
             assert footswitch_pushes == [
@@ -268,6 +289,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
             assert live_snapshot["tempo_bpm"] == 140.0
             assert live_snapshot["active_tempo_bpm"] == 140.0
+            assert live_snapshot["controller_display_preview"]["slots"][0]["display_label"] == "Clean"
 
             runtime_state_service = SnapshotRuntimeStateService(session)
             runtime_live_state = await runtime_state_service.get_live_state()

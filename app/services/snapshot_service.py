@@ -48,7 +48,11 @@ from app.services.juce_engine_service import get_audio_engine
 from app.services.maschine_encoder_map_service import normalize_maschine_encoder_map
 from app.services import snapshot_runtime_service
 from app.services.chain_service import ChainService
+from app.services.midi_service import midi_service
 from app.services.plugin_loader_unified import get_plugin_loader
+from app.services.snapshot_controller_display_preview_service import (
+    build_snapshot_controller_display_preview,
+)
 from app.services.snapshot_system_blocks import (
     build_system_noise_gate_plugin,
     ensure_system_noise_gate_at_chain_head,
@@ -705,6 +709,9 @@ class SnapshotService:
                         or runtime_payload.get("snapshot_revision")
                         or live_detail.get("snapshot_revision")
                     )
+                    controller_display_preview = runtime_payload.get("controller_display_preview")
+                    if isinstance(controller_display_preview, dict):
+                        live_detail["controller_display_preview"] = copy.deepcopy(controller_display_preview)
                     return live_detail
             return runtime_payload
 
@@ -1141,6 +1148,13 @@ class SnapshotService:
             if refreshed_detail is None:
                 return None
             refreshed_detail["snapshot_revision"] = snapshot_revision
+            try:
+                refreshed_detail["controller_display_preview"] = build_snapshot_controller_display_preview(
+                    refreshed_detail,
+                    await midi_service.get_all_commands(self.session),
+                )
+            except Exception as exc:
+                logger.debug("Snapshot controller-display preview skipped for %s: %s", snapshot.id, exc)
 
             runtime_metrics = {
                 "params_applied": params_applied,
