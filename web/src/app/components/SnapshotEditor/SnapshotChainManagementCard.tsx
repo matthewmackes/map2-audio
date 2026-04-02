@@ -74,6 +74,7 @@ interface SnapshotChannelActivityBadge {
   label: string
   tooltip: string
   warning: boolean
+  messages: string[]
 }
 
 const MIDI_CHANNEL_KEYS = ['channel', 'midi_channel', 'midiChannel', 'channel_number', 'channelNumber'] as const
@@ -382,14 +383,20 @@ function buildChannelActivityBadge(
       ? runtimeChainsById.get(livePath.runtime_chain_id)
       : undefined
     const runtimeStatus = runtimeChain?.runtime_sync?.status
-    const isActive = runtimeStatus === 'active' || (runtimeStatus == null && Boolean(runtimeChain?.is_active))
+    const activationStatus = typeof livePath?.activation_status === 'string'
+      ? livePath.activation_status.toLowerCase()
+      : null
+    const channelOffline = activationStatus === 'offline' || runtimeStatus === 'offline' || offline
+    const isActive = activationStatus === 'active'
+      || runtimeStatus === 'active'
+      || (activationStatus == null && runtimeStatus == null && Boolean(runtimeChain?.is_active))
 
     if (isActive) {
       activeCount += 1
       return
     }
 
-    inactiveDescriptions.push(`Channel ${channel.label} is ${offline ? 'offline' : 'not loaded'}.`)
+    inactiveDescriptions.push(`Channel ${channel.label} is ${channelOffline ? 'offline' : 'not loaded'}.`)
   })
 
   const totalCount = channelDefinitions.length
@@ -399,6 +406,7 @@ function buildChannelActivityBadge(
       ? inactiveDescriptions.join(' ')
       : `All ${totalCount} channels are active.`,
     warning: activeCount < totalCount,
+    messages: inactiveDescriptions,
   }
 }
 
@@ -741,6 +749,19 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   {goLiveState.errorMessage ? (
                     <p className="juce-grid-page__snapshot-status-go-live-error">{goLiveState.errorMessage}</p>
                   ) : null}
+                </div>
+              ) : null}
+              {channelActivityBadge?.warning && channelActivityBadge.messages.length > 0 ? (
+                <div className="juce-grid-page__snapshot-status-channel-warning-list" aria-live="polite">
+                  {channelActivityBadge.messages.map((message) => (
+                    <Tag
+                      key={message}
+                      type="warm-gray"
+                      className="juce-grid-page__snapshot-status-channel-warning"
+                    >
+                      {message}
+                    </Tag>
+                  ))}
                 </div>
               ) : null}
               {goLiveDiffItems && goLiveDiffItems.length > 0 ? (

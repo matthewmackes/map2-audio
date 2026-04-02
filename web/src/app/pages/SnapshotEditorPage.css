@@ -1222,6 +1222,18 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
+.juce-grid-page__snapshot-status-channel-warning-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-channel-warning.cds--tag {
+  border: 1px solid color-mix(in srgb, #f1c21b 48%, transparent);
+  background: color-mix(in srgb, #f1c21b 14%, var(--cds-layer-01, #262626));
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
 @keyframes juce-grid-page__snapshot-status-blink {
   0%,
   45% {

@@ -674,6 +674,8 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
         from app.routes.chains import _invalidate_chain_list_cache
         _invalidate_chain_list_cache()
         return payload
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
@@ -885,6 +887,8 @@ async def activate_snapshot_by_program(program_number: int) -> dict[str, Any]:
         from app.routes.chains import _invalidate_chain_list_cache
         _invalidate_chain_list_cache()
         return payload
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:

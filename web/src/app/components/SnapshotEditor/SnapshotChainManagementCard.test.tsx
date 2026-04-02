@@ -443,6 +443,7 @@ describe('SnapshotChainManagementCard', () => {
     const badge = screen.getByText('1 of 2 channels active')
     expect(badge).toBeInTheDocument()
     expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is not loaded.')
+    expect(screen.getByText('Channel B is not loaded.')).toBeInTheDocument()
   })
 
   it('updates the channel-activity badge when runtime live-state websocket payloads change', () => {
@@ -508,6 +509,7 @@ describe('SnapshotChainManagementCard', () => {
     const badge = screen.getByText('1 of 2 channels active')
     expect(badge).toBeInTheDocument()
     expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is offline.')
+    expect(screen.getByText('Channel B is offline.')).toBeInTheDocument()
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {

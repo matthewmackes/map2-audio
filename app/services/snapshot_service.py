@@ -711,6 +711,11 @@ class SnapshotService:
             if refreshed_detail is None:
                 return None
 
+            channel_health = await runtime_state_service.assert_snapshot_channels_active(
+                live_snapshot_payload=refreshed_detail,
+            )
+            refreshed_detail = channel_health["snapshot_payload"]
+
             legacy_payload = self.to_legacy_snapshot_data(refreshed_detail)
             params_applied, bypass_applied = await snapshot_runtime_service.apply_snapshot_to_engine(
                 copy.deepcopy(legacy_payload)
@@ -744,12 +749,26 @@ class SnapshotService:
                 "params_applied": params_applied,
                 "bypass_applied": bypass_applied,
                 "runtime_chain_count": len(refreshed_detail.get("live_state", {}).get("runtime_chains", [])),
+                "channel_activity": {
+                    "active_count": channel_health["active_count"],
+                    "total_count": channel_health["total_count"],
+                    "inactive_channels": channel_health["inactive_channels"],
+                },
             }
             live_runtime_state = await runtime_state_service.confirm_live_intent(
                 intent=intent,
                 live_snapshot_payload=refreshed_detail,
                 runtime_metrics=runtime_metrics,
             )
+            try:
+                from app.services.snapshot_runtime_state_service import schedule_post_activation_health_check
+
+                schedule_post_activation_health_check(
+                    snapshot_id=snapshot.id,
+                    request_id=str(intent["request_id"]),
+                )
+            except Exception as exc:
+                logger.debug("Post-activation health check scheduling skipped for %s: %s", snapshot.id, exc)
         except Exception as exc:
             await self._clear_compatibility_live_projections()
             await self.session.flush()

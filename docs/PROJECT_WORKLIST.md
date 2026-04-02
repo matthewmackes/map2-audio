@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]
+Last updated: 2026-04-01 EDT - T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1271,7 +1271,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T613
-Status: [ ] Todo
+Status: [✓] Done
 Title: Dead Channel / Zombie Path Detection — Triple-Check Method
 Description:
 - Goal / acceptance criteria: Three independent verification layers ensure no channel is defined in a snapshot but silently producing no sound: (1) At-Activation Check — immediately after POST /api/snapshots/{id}/activate, the engine confirms each defined channel has a live runtime chain with status "active" before the activation response is returned as successful. If any channel is not active, activation fails with a 422 and a plain-English error per T621. (2) Post-Activation Heartbeat — 2–3 seconds after a successful activation, a background task re-queries all channel runtime states and flags any channel that degraded since the initial confirmation. If any channel is now inactive, a WebSocket event updates the UI immediately. (3) Continuous Runtime Watch — a persistent WebSocket subscription monitors all channel runtime states during a live session. If any channel drops from "active" to "not loaded" or "offline" at any time during playback, the channel card shows a warning indicator in plain language ("Channel Lead — not loaded") and the "X of Y channels active" badge (T617) updates immediately.
@@ -1280,7 +1280,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: at-activation channel status check in activate_snapshot(), post-activation background heartbeat task (asyncio.create_task, 2–3s delay), continuous WebSocket monitoring via existing snapshot_runtime_live_state topic, channel card warning indicator for inactive channels (plain-English label, Carbon Amber Tag), T617 badge update wired to all three check layers, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 22:48 - Codex
+- Completion notes:
+  - Added activation-time runtime validation so snapshot activation now fails with a plain-English `422` when any channel does not come up active, instead of reporting a false successful Go Live.
+  - Reworked the authoritative runtime heartbeat into a live channel-health refresh, added a scheduled post-activation re-check 2.5 seconds after success, and persisted the reconciled per-channel activity state back through the runtime live-state websocket payload and snapshot live projection.
+  - Exposed the inactive-channel warnings directly in the Snapshot Editor hero so `X of Y channels active` now pairs with visible plain-language `Channel ... is not loaded/offline.` guidance instead of keeping that context only in a tooltip.
+- Validation: `pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T612
 Status: [✓] Done

@@ -1,7 +1,9 @@
 import asyncio
+import json
 
 from app import database as database_module
 from app.services import snapshot_runtime_service
+from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services.chain_service import ChainService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotService
@@ -18,6 +20,7 @@ def _init_temp_db(tmp_path):
 
 def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
+    scheduled_health_checks: list[dict[str, object]] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
@@ -32,6 +35,11 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
+    monkeypatch.setattr(
+        runtime_state_service_module,
+        "schedule_post_activation_health_check",
+        lambda **kwargs: scheduled_health_checks.append(dict(kwargs)),
+    )
 
     async def _fake_activate_chain(self, chain_id):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
@@ -192,6 +200,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_data"]["tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["tempo_source"] == "stored"
+            assert scheduled_health_checks[0]["snapshot_id"] == created["id"]
+            assert scheduled_health_checks[0]["request_id"] == activated["activation_intent"]["request_id"]
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None
@@ -452,6 +462,7 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
         return 0, 0
 
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
 
     async def _fake_activate_chain(self, chain_id):
@@ -520,6 +531,220 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
             assert runtime_chain["runtime_sync"]["status"] == "inactive"
 
     monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    asyncio.run(_run())
+
+
+def test_snapshot_service_activation_rejects_missing_runtime_channels(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _failed_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = False
+            chain.config = json.dumps(
+                {
+                    "source_kind": "snapshot_path",
+                    "snapshot_id": 1,
+                    "path_id": "channel-a",
+                    "runtime_sync": {
+                        "enabled": True,
+                        "status": "inactive",
+                        "reason": "test_activation_failure",
+                        "warnings": [],
+                        "runtime_items": 0,
+                        "restored_positions": [],
+                        "missing_positions": [0],
+                    },
+                }
+            )
+            await self.session.flush()
+        return False
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _failed_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            runtime_state_service = SnapshotRuntimeStateService(session)
+
+            created = await service.create_snapshot(
+                name="BrokenSnapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#fa4d56",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.75},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+            )
+
+            try:
+                await service.activate_snapshot(created["id"])
+            except ValueError as exc:
+                assert str(exc) == "Channel Lead not loaded."
+            else:
+                raise AssertionError("Activation should fail when a runtime chain does not come up active")
+
+            assert await service.get_live_snapshot() is None
+
+            runtime_live_state = await runtime_state_service.get_live_state()
+            assert runtime_live_state["state"] == "stopped"
+            assert runtime_live_state["failure_reason"] == "Channel Lead not loaded."
+
+            activation_events = await runtime_state_service.list_activation_events(limit=10)
+            assert activation_events[0]["outcome"] == "failed"
+            assert activation_events[0]["failure_reason"] == "Channel Lead not loaded."
+
+    asyncio.run(_run())
+
+
+def test_snapshot_runtime_health_refresh_marks_live_channels_not_loaded_when_runtime_drops(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+            chain.config = json.dumps(
+                {
+                    "source_kind": "snapshot_path",
+                    "snapshot_id": 1,
+                    "path_id": "channel-a",
+                    "runtime_sync": {
+                        "enabled": True,
+                        "status": "active",
+                        "warnings": [],
+                        "runtime_items": 1,
+                        "restored_positions": [0],
+                        "missing_positions": [],
+                    },
+                }
+            )
+            await self.session.flush()
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            snapshot_service = SnapshotService(session)
+            runtime_state_service = SnapshotRuntimeStateService(session)
+
+            created = await snapshot_service.create_snapshot(
+                name="WatchSnapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#fa4d56",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.75},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+            )
+
+            activated = await snapshot_service.activate_snapshot(created["id"])
+            runtime_chain_id = activated["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"]
+            assert runtime_chain_id is not None
+
+            result = await session.execute(select(database_module.Chain).filter(database_module.Chain.id == runtime_chain_id))
+            runtime_chain = result.scalar_one()
+            runtime_chain.is_active = False
+            chain_config = ChainService._parse_chain_config(runtime_chain.config)
+            chain_config["runtime_sync"] = {
+                "enabled": True,
+                "status": "inactive",
+                "reason": "runtime_dropped",
+                "warnings": [],
+                "runtime_items": 0,
+                "restored_positions": [],
+                "missing_positions": [0],
+            }
+            runtime_chain.config = json.dumps(chain_config)
+            await session.flush()
+
+            refreshed = await runtime_state_service.refresh_live_snapshot_health(
+                expected_snapshot_id=created["id"],
+                expected_request_id=activated["activation_intent"]["request_id"],
+                source="post_activation",
+                emit=False,
+            )
+
+            assert refreshed is not None
+            assert refreshed["runtime_metrics"]["channel_activity"]["active_count"] == 0
+            assert refreshed["runtime_metrics"]["channel_activity"]["total_count"] == 1
+            assert refreshed["runtime_metrics"]["channel_activity"]["inactive_channels"][0]["message"] == "Channel Lead not loaded."
+            assert refreshed["runtime_metrics"]["last_channel_health_source"] == "post_activation"
+
+            live_payload = refreshed["live_snapshot_payload"]
+            assert live_payload is not None
+            assert live_payload["live_state"]["paths"][0]["activation_status"] == "not_loaded"
+            assert live_payload["live_state"]["runtime_chains"][0]["runtime_sync"]["status"] == "inactive"
+
     asyncio.run(_run())
 
 

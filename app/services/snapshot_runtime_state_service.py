@@ -37,6 +37,11 @@ WARNING_AFTER_SECONDS = 10.0
 OFFLINE_AFTER_SECONDS = 15.0
 HEARTBEAT_INTERVAL_SECONDS = 1.0
 ACTIVATION_EVENT_LIMIT_PER_NODE = 100
+POST_ACTIVATION_VERIFY_DELAY_SECONDS = 2.5
+CHANNEL_STATUS_ACTIVE = "active"
+CHANNEL_STATUS_NOT_LOADED = "not_loaded"
+CHANNEL_STATUS_OFFLINE = "offline"
+_health_check_tasks: set[asyncio.Task[None]] = set()
 
 
 def resolve_local_node_id() -> str:
@@ -75,6 +80,39 @@ def _parse_iso_datetime(value: Any) -> Optional[datetime]:
         except Exception:
             return None
     return None
+
+
+def _coerce_optional_int(value: Any) -> Optional[int]:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed
+
+
+def _normalize_channel_label(value: Any, fallback: Any) -> str:
+    label = str(value or "").strip()
+    if label:
+        return label
+    backup = str(fallback or "").strip()
+    return backup or "Channel"
+
+
+def _normalize_channel_health_status(value: Any) -> Optional[str]:
+    normalized = str(value or "").strip().lower()
+    if normalized == CHANNEL_STATUS_ACTIVE:
+        return CHANNEL_STATUS_ACTIVE
+    if normalized == CHANNEL_STATUS_OFFLINE:
+        return CHANNEL_STATUS_OFFLINE
+    if normalized in {"not_loaded", "inactive", "partial", "degraded", "capability_gap", "missing"}:
+        return CHANNEL_STATUS_NOT_LOADED
+    return None
+
+
+def _channel_health_message(label: str, status: str) -> str:
+    if status == CHANNEL_STATUS_OFFLINE:
+        return f"Channel {label} offline."
+    return f"Channel {label} not loaded."
 
 
 class SnapshotRuntimeStateService:
@@ -278,6 +316,261 @@ class SnapshotRuntimeStateService:
         live_state = await self.get_live_state()
         payload = live_state.get("live_snapshot_payload")
         return copy.deepcopy(payload) if isinstance(payload, dict) else None
+
+    @staticmethod
+    def _extract_channel_definitions(snapshot_payload: dict[str, Any]) -> list[dict[str, Any]]:
+        top_level_paths = {
+            str(path.get("id")): path
+            for path in snapshot_payload.get("paths", [])
+            if isinstance(path, dict) and path.get("id") is not None
+        }
+
+        channels = [
+            channel
+            for channel in snapshot_payload.get("channels", [])
+            if isinstance(channel, dict)
+        ]
+        if channels:
+            definitions: list[dict[str, Any]] = []
+            for channel in channels:
+                channel_key = str(channel.get("channel_key") or channel.get("id") or "").strip()
+                if not channel_key:
+                    continue
+                top_level_path = top_level_paths.get(channel_key)
+                definitions.append(
+                    {
+                        "path_id": channel_key,
+                        "label": _normalize_channel_label(
+                            channel.get("label"),
+                            top_level_path.get("label") if isinstance(top_level_path, dict) else channel_key,
+                        ),
+                        "color": channel.get("color") or (top_level_path.get("color") if isinstance(top_level_path, dict) else None),
+                        "snapshot_chain_id": (
+                            channel.get("chain_id")
+                            if channel.get("chain_id") is not None
+                            else (top_level_path.get("snapshot_chain_id") if isinstance(top_level_path, dict) else None)
+                        ),
+                        "runtime_chain_id": top_level_path.get("runtime_chain_id") if isinstance(top_level_path, dict) else None,
+                    }
+                )
+            if definitions:
+                return definitions
+
+        return [
+            {
+                "path_id": str(path.get("id")),
+                "label": _normalize_channel_label(path.get("label") or path.get("name"), path.get("id")),
+                "color": path.get("color"),
+                "snapshot_chain_id": path.get("snapshot_chain_id"),
+                "runtime_chain_id": path.get("runtime_chain_id"),
+            }
+            for path in snapshot_payload.get("paths", [])
+            if isinstance(path, dict) and path.get("id") is not None
+        ]
+
+    async def _evaluate_snapshot_payload_channel_health(
+        self,
+        session: AsyncSession,
+        snapshot_payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        from app.services.chain_service import ChainService
+
+        next_payload = copy.deepcopy(snapshot_payload)
+        live_state = (
+            dict(next_payload.get("live_state"))
+            if isinstance(next_payload.get("live_state"), dict)
+            else {}
+        )
+        existing_live_paths = {
+            str(path.get("path_id")): dict(path)
+            for path in live_state.get("paths", [])
+            if isinstance(path, dict) and path.get("path_id") is not None
+        }
+        top_level_paths = {
+            str(path.get("id")): path
+            for path in next_payload.get("paths", [])
+            if isinstance(path, dict) and path.get("id") is not None
+        }
+        chain_service = ChainService(session)
+        chain_cache: dict[int, Optional[dict[str, Any]]] = {}
+        runtime_chains_by_id: dict[int, dict[str, Any]] = {}
+        next_live_paths: list[dict[str, Any]] = []
+        inactive_channels: list[dict[str, Any]] = []
+        active_count = 0
+
+        for definition in self._extract_channel_definitions(next_payload):
+            path_id = str(definition.get("path_id") or "").strip()
+            if not path_id:
+                continue
+            label = _normalize_channel_label(definition.get("label"), path_id)
+            existing_live_path = existing_live_paths.get(path_id, {})
+            runtime_chain_id = _coerce_optional_int(
+                existing_live_path.get("runtime_chain_id")
+                if existing_live_path.get("runtime_chain_id") is not None
+                else definition.get("runtime_chain_id")
+            )
+
+            runtime_chain: Optional[dict[str, Any]] = None
+            if runtime_chain_id is not None:
+                if runtime_chain_id not in chain_cache:
+                    chain_cache[runtime_chain_id] = await chain_service.get_chain(runtime_chain_id)
+                runtime_chain = chain_cache[runtime_chain_id]
+
+            runtime_sync = runtime_chain.get("runtime_sync") if isinstance(runtime_chain, dict) else None
+            runtime_sync_status = (
+                _normalize_channel_health_status(runtime_sync.get("status"))
+                if isinstance(runtime_sync, dict)
+                else None
+            )
+            existing_status = _normalize_channel_health_status(existing_live_path.get("activation_status"))
+
+            if isinstance(runtime_chain, dict):
+                if bool(runtime_chain.get("is_active")) and runtime_sync_status in {None, CHANNEL_STATUS_ACTIVE}:
+                    activation_status = CHANNEL_STATUS_ACTIVE
+                else:
+                    activation_status = runtime_sync_status or CHANNEL_STATUS_NOT_LOADED
+                runtime_chains_by_id[int(runtime_chain["id"])] = runtime_chain
+            else:
+                activation_status = existing_status or CHANNEL_STATUS_NOT_LOADED
+
+            if activation_status == CHANNEL_STATUS_ACTIVE:
+                active_count += 1
+            else:
+                inactive_channels.append(
+                    {
+                        "path_id": path_id,
+                        "label": label,
+                        "status": activation_status,
+                        "message": _channel_health_message(label, activation_status),
+                    }
+                )
+
+            next_runtime_chain_id = int(runtime_chain["id"]) if isinstance(runtime_chain, dict) else None
+            next_live_paths.append(
+                {
+                    "path_id": path_id,
+                    "label": label,
+                    "color": definition.get("color"),
+                    "snapshot_chain_id": definition.get("snapshot_chain_id"),
+                    "runtime_chain_id": next_runtime_chain_id,
+                    "runtime_chain_name": runtime_chain.get("name") if isinstance(runtime_chain, dict) else None,
+                    "activation_status": activation_status,
+                }
+            )
+
+            top_level_path = top_level_paths.get(path_id)
+            if isinstance(top_level_path, dict):
+                top_level_path["runtime_chain_id"] = next_runtime_chain_id
+
+        total_count = len(next_live_paths)
+        next_payload["live_state"] = {
+            **live_state,
+            "is_live": bool(total_count > 0),
+            "paths": next_live_paths,
+            "runtime_chains": list(runtime_chains_by_id.values()),
+        }
+
+        return {
+            "snapshot_payload": next_payload,
+            "active_count": active_count,
+            "total_count": total_count,
+            "inactive_channels": inactive_channels,
+            "inactive_messages": [item["message"] for item in inactive_channels],
+        }
+
+    async def assert_snapshot_channels_active(
+        self,
+        *,
+        live_snapshot_payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        async with self._session_scope() as session:
+            health = await self._evaluate_snapshot_payload_channel_health(session, live_snapshot_payload)
+        if health["inactive_messages"]:
+            raise ValueError(" ".join(str(message) for message in health["inactive_messages"]))
+        return health
+
+    async def refresh_live_snapshot_health(
+        self,
+        *,
+        expected_snapshot_id: Optional[int] = None,
+        expected_request_id: Optional[str] = None,
+        source: str = "continuous_watch",
+        emit: bool = True,
+    ) -> Optional[dict[str, Any]]:
+        emitted_at = _utcnow()
+        async with self._session_scope() as session:
+            row = await self._get_local_state_row(session)
+            if row is None:
+                return None
+
+            if (
+                str(row.state or "").lower() != "live"
+                or not isinstance(row.live_snapshot_payload, dict)
+            ):
+                row.seq = int(row.seq or 0) + 1
+                row.last_runtime_event_at = emitted_at
+                await session.flush()
+                payload = self._serialize_live_state_row(row, now=emitted_at)
+            else:
+                if expected_snapshot_id is not None and int(row.snapshot_id or 0) != int(expected_snapshot_id):
+                    return None
+                if expected_request_id is not None and str(row.last_successful_request_id or "") != str(expected_request_id):
+                    return None
+
+                health = await self._evaluate_snapshot_payload_channel_health(session, row.live_snapshot_payload)
+                row.seq = int(row.seq or 0) + 1
+                row.live_snapshot_payload = health["snapshot_payload"]
+                row.runtime_metrics = {
+                    **(copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {}),
+                    "channel_activity": {
+                        "active_count": health["active_count"],
+                        "total_count": health["total_count"],
+                        "inactive_channels": copy.deepcopy(health["inactive_channels"]),
+                    },
+                    "last_channel_health_check_at": emitted_at.isoformat(),
+                    "last_channel_health_source": source,
+                }
+                if source == "post_activation":
+                    row.runtime_metrics["post_activation_checked_at"] = emitted_at.isoformat()
+                row.last_runtime_event_at = emitted_at
+                if row.snapshot_id is not None:
+                    from app.database import Snapshot
+
+                    snapshot_result = await session.execute(
+                        select(Snapshot).where(Snapshot.id == int(row.snapshot_id))
+                    )
+                    snapshot = snapshot_result.scalar_one_or_none()
+                    if snapshot is not None:
+                        refreshed_live_state = health["snapshot_payload"].get("live_state", {})
+                        refreshed_paths = [
+                            {
+                                "path_id": item.get("path_id"),
+                                "label": item.get("label"),
+                                "color": item.get("color"),
+                                "snapshot_chain_id": item.get("snapshot_chain_id"),
+                                "runtime_chain_id": item.get("runtime_chain_id"),
+                                "runtime_chain_name": item.get("runtime_chain_name"),
+                                "activation_status": item.get("activation_status"),
+                            }
+                            for item in refreshed_live_state.get("paths", [])
+                            if isinstance(item, dict)
+                        ]
+                        snapshot.live_state_payload = {
+                            "activated_at": refreshed_live_state.get("activated_at") or emitted_at.isoformat(),
+                            "paths": refreshed_paths,
+                            "active_runtime_chain_ids": [
+                                int(item["runtime_chain_id"])
+                                for item in refreshed_paths
+                                if item.get("activation_status") == CHANNEL_STATUS_ACTIVE
+                                and item.get("runtime_chain_id") is not None
+                            ],
+                        }
+                await session.flush()
+                payload = self._serialize_live_state_row(row, now=emitted_at)
+
+        if emit:
+            await self._broadcast_runtime_state(payload, emitted_at=emitted_at)
+        return payload
 
     async def create_activation_intent(
         self,
@@ -645,7 +938,7 @@ class SnapshotRuntimeHeartbeatService:
     async def _run(self) -> None:
         while not self._stop_event.is_set():
             try:
-                await SnapshotRuntimeStateService().emit_heartbeat()
+                await SnapshotRuntimeStateService().refresh_live_snapshot_health()
             except Exception as exc:
                 logger.debug("Snapshot runtime heartbeat failed: %s", exc)
 
@@ -664,3 +957,23 @@ async def start_snapshot_runtime_heartbeat() -> None:
 
 async def stop_snapshot_runtime_heartbeat() -> None:
     await _heartbeat_service.stop()
+
+
+def schedule_post_activation_health_check(*, snapshot_id: int, request_id: str) -> None:
+    async def _runner() -> None:
+        try:
+            await asyncio.sleep(POST_ACTIVATION_VERIFY_DELAY_SECONDS)
+            await SnapshotRuntimeStateService().refresh_live_snapshot_health(
+                expected_snapshot_id=snapshot_id,
+                expected_request_id=request_id,
+                source="post_activation",
+            )
+        except Exception as exc:
+            logger.debug("Post-activation snapshot health check failed for %s: %s", snapshot_id, exc)
+
+    task = asyncio.create_task(
+        _runner(),
+        name=f"snapshot-post-activation-health-{snapshot_id}-{request_id[:8]}",
+    )
+    _health_check_tasks.add(task)
+    task.add_done_callback(_health_check_tasks.discard)

@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from app import database as database_module
 from app.routes import cluster_snapshots as cluster_routes
@@ -7,6 +8,7 @@ from app.routes import unified_snapshots as routes
 from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services import snapshot_runtime_service
+from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -58,6 +60,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
     monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
 
     async def _fake_activate_chain(self, chain_id):
@@ -493,3 +496,82 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     assert "/api/snapshots/{snapshot_id}/revisions/{revision_number}/restore" in registered_paths
     assert "/api/snapshots/{snapshot_id}/activate" in registered_paths
     assert not any(path.startswith("/api/flow-snapshots") for path in registered_paths)
+
+
+def test_activate_snapshot_route_returns_422_when_channel_does_not_load(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _failed_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = False
+            chain.config = json.dumps(
+                {
+                    "source_kind": "snapshot_path",
+                    "snapshot_id": 1,
+                    "path_id": "channel-a",
+                    "runtime_sync": {
+                        "enabled": True,
+                        "status": "inactive",
+                        "reason": "test_activation_failure",
+                        "warnings": [],
+                        "runtime_items": 0,
+                        "restored_positions": [],
+                        "missing_positions": [0],
+                    },
+                }
+            )
+            await self.session.flush()
+        return False
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _failed_activate_chain)
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: None)
+
+    async def _run():
+        created = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="BrokenRouteSnapshot",
+                paths=[
+                    routes.SnapshotPathInput(
+                        id="channel-a",
+                        name="Lead",
+                        label="Lead",
+                        color="#fa4d56",
+                        plugins=[
+                            routes.SnapshotPluginInput(
+                                uri="urn:test:route-plugin",
+                                name="Lead Plugin",
+                                position=0,
+                            )
+                        ],
+                        snapshot_chain_id=1,
+                    )
+                ],
+                routing=routes.SnapshotRoutingInput(
+                    mode="parallel_blend",
+                    active_channel_key="channel-a",
+                    blend_positions={"channel-a": 100.0},
+                    series_order=["channel-a"],
+                ),
+            )
+        )
+
+        try:
+            await routes.activate_snapshot(created["snapshot_id"])
+        except HTTPException as exc:
+            assert exc.status_code == 422
+            assert exc.detail == "Channel Lead not loaded."
+        else:
+            raise AssertionError("Route activation should surface channel-load failures as 422 responses")
+
+    asyncio.run(_run())
