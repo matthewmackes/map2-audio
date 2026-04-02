@@ -18,6 +18,7 @@ from typing import List, Dict, Any, Optional
 from app.response_models import PluginLoadResponse, PluginUnloadResponse
 from app.exceptions import PluginNotFoundException, PluginLoadException
 from app.services.plugin_resource_manager import get_resource_manager, ResourceLimits
+from app.services.plugin_key_parameter_registry import attach_plugin_key_parameter_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +135,7 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
                         )
                         param_index += 1
 
-            processors.append({
+            processors.append(attach_plugin_key_parameter_metadata({
                 "uri": proc["uri"],
                 "name": proc["name"],
                 "author": proc.get("author", "MAP2 Audio"),
@@ -151,7 +152,7 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
                 "features": proc.get("features", []),
                 "parameters": parameters,
                 "priority": proc.get("priority", 10),
-            })
+            }))
 
         logger.info(f"Loaded {len(processors)} JUCE native processors")
         return processors
@@ -198,7 +199,7 @@ _ENGINE_OP_RETRY_BASE_DELAY = max(0.01, float(os.getenv("MAP2_ENGINE_OP_RETRY_BA
 def _get_hardware_plugins() -> List[Dict[str, Any]]:
     """Return hardware effect plugins (Lexicon MPX-1 via S/PDIF)."""
     return [
-        {
+        attach_plugin_key_parameter_metadata({
             "uri": _LEXICON_MPX1_URI,
             "name": "Lexicon MPX-1",
             "author": "Lexicon / Harman",
@@ -217,7 +218,7 @@ def _get_hardware_plugins() -> List[Dict[str, Any]]:
             "has_midi_output": True,
             "parameters": [],
             "priority": 1,
-        }
+        })
     ]
 
 try:
@@ -745,7 +746,7 @@ try:
 
     def _transform_plugin(p) -> dict:
         """Transform a plugin object to API response format."""
-        return {
+        return attach_plugin_key_parameter_metadata({
             "uri": p.uri,
             "name": p.name,
             "author": p.author,
@@ -770,7 +771,7 @@ try:
                 }
                 for param in p.parameters
             ] if hasattr(p, 'parameters') else []
-        }
+        })
 
     def _set_plugins_cache_header(response: Response, refresh: bool) -> None:
         if refresh:

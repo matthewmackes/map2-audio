@@ -6,10 +6,10 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 05:58 EDT - T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T678 remains queued as the next controller-display preparation slice for blocked `T647`; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 06:09 EDT - T678 completed the controller-display key-parameter metadata slice by adding a canonical resolver plus `key_parameter` discovery payloads for JUCE, LV2, and hardware plugins; T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
 
 ID: T678
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add plugin key-parameter metadata registry for controller display prep
 Description:
 - Goal / acceptance criteria: Introduce one canonical helper that selects a default "key parameter" for a plugin instance using existing plugin metadata (parameter names/symbols/category) and explicit overrides for common effect families. The helper must return stable metadata that later controller-display work can consume without guessing from raw parameter arrays on every update.
@@ -19,7 +19,12 @@ Description:
 - Required outputs: shared key-parameter resolver, representative regression coverage for delay/reverb/gain/modulation style plugins, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 05:45 EDT - Codex
+Last updated: 2026-04-02 06:09 EDT - Codex
+- Completion notes:
+  - Added `app/services/plugin_key_parameter_registry.py` as the canonical plugin key-parameter resolver, with deterministic family-aware defaults for delay, reverb, gain, modulation, dynamics, and pitch style plugins plus a safe fallback for uncategorized metadata.
+  - Wired plugin discovery metadata in `app/routes/plugins.py` so JUCE, LV2, and hardware plugin payloads now expose a stable `key_parameter` descriptor rather than forcing later controller-display work to re-scan raw parameter arrays on every update.
+  - Added focused regression coverage proving the resolver picks the intended delay/reverb/gain/modulation defaults, returns explicit `null` when no meaningful parameter exists, and annotates the live JUCE processor inventory with stable key-parameter metadata.
+- Validation: `python3 -m pytest -q tests/test_plugin_key_parameter_registry.py tests/test_plugin_parameter_schema_route.py tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py` -> PASS
 
 ID: T677
 Status: [✓] Done
