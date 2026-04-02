@@ -5,7 +5,7 @@ Core ORM definitions for plugins, chains, MIDI mappings, and system configuratio
 Power-Failure Resilience:
 - WAL (Write-Ahead Logging) mode for atomic commits
 - SYNCHRONOUS=NORMAL for balance of safety and performance
-- Automatic checkpointing every 1000 pages
+- Raised WAL auto-checkpoint threshold plus explicit shutdown checkpoint
 - Connection pragma enforcement on each connection
 """
 
@@ -29,7 +29,9 @@ _SessionLocal = None
 SQLITE_PRAGMAS = {
     "journal_mode": "WAL",           # Write-Ahead Logging for atomic commits
     "synchronous": "NORMAL",         # Balance of safety and performance (FULL for max safety)
-    "wal_autocheckpoint": "4000",    # Checkpoint every 4000 pages (reduced I/O spikes for RT audio)
+    # Keep auto-checkpoints well above the hot path; graceful shutdown already
+    # forces an explicit TRUNCATE checkpoint via checkpoint_database().
+    "wal_autocheckpoint": "12000",
     "busy_timeout": "5000",          # Wait 5s on lock contention
     "cache_size": "-64000",          # 64MB cache (negative = KB)
     "foreign_keys": "ON",            # Enforce foreign key constraints

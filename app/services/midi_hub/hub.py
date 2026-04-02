@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 
 Subscriber = Callable[[MidiMessage], Any]
+RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S = 0.002
 
 
 def _resolve_local_node_id() -> str:
@@ -58,7 +59,7 @@ class MidiHub:
         hotplug_interval_s: float = 1.5,
         auto_discover_alsa: bool = True,
     ):
-        self._poll_interval_s = max(0.0005, float(poll_interval_s))
+        self._poll_interval_s = max(RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S, float(poll_interval_s))
         self._hotplug_interval_s = max(0.25, float(hotplug_interval_s))
         self._auto_discover_alsa = bool(auto_discover_alsa)
 

@@ -18,6 +18,7 @@ Utility functions for error handling and service startup/shutdown.
 """
 
 import asyncio
+import gc
 import os
 import signal
 import threading
@@ -25,8 +26,19 @@ import time
 
 _SERVICE_STOP_TIMEOUT_SECONDS = 2.0
 _FORCED_EXIT_WATCHDOG_SECONDS = 5.0
+_RT_GC_THRESHOLDS = (3500, 10, 10)
 _shutdown_signal_handlers_installed = False
 _shutdown_watchdog_started = False
+
+
+def configure_gc_for_rt_workload() -> tuple[int, int, int]:
+    """Raise Python GC thresholds to reduce event-loop pause frequency."""
+    gc.set_threshold(*_RT_GC_THRESHOLDS)
+    logger.info(
+        "Configured Python GC thresholds for RT workload: %s/%s/%s",
+        *_RT_GC_THRESHOLDS,
+    )
+    return _RT_GC_THRESHOLDS
 
 def log_and_raise_critical(logger, message, exc: Exception = None):
     """Log a critical error and raise."""
@@ -238,6 +250,7 @@ async def lifespan(app):
     try:
         # ===== STARTUP =====
         logger.info("Starting MAP2 Audio Platform services...")
+        configure_gc_for_rt_workload()
         
         # Initialize health metrics
         init_health_metrics()

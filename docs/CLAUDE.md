@@ -1,6 +1,6 @@
 # MAP2 Audio Platform — AI Instructions
 
-> **Last Updated**: 2026-03-29
+> **Last Updated**: 2026-04-02
 > **Purpose**: Central reference for Claude Code working on the MAP2 Audio codebase.
 > Also see: [.github/copilot-instructions.md](.github/copilot-instructions.md) · [.gemini/instructions.md](.gemini/instructions.md)
 
@@ -635,6 +635,8 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - ✅ `setBufferSize()`: stops audio before reallocation
 - ✅ `setSampleRate()`: stops audio before reconfiguration
 - ✅ `audioCallback`: pre-allocated buffers, no heap allocations
+- ✅ Python GC startup tuning: `gc.set_threshold(3500, 10, 10)` reduces gen-0 churn on the shared event loop
+- ✅ SQLite WAL policy: `wal_autocheckpoint=12000` keeps auto-checkpoints off the hot path and graceful shutdown forces `checkpoint_database()`
 - ⚠️ Still verify: plugin processors and convolution IRs for RT allocations
 
 ---

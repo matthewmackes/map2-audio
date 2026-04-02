@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 03:53 EDT - T614, T619, T629, T630, T634, T637, T641, T646, and epic T606 blocked after source inspection confirmed the remaining queue depends on missing live-switching, monitoring-bus, morph/expression, preload/spillover, and zero-cross routing architecture in the current unified snapshot + JUCE runtime layers; T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing; T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]
+Last updated: 2026-04-02 04:05 EDT - T593 raised the MIDI Hub poll floor to 2ms and added coverage for the enforced RT-safe minimum [completed]; T594 raised SQLite WAL auto-checkpointing to 12000 pages with existing graceful-shutdown checkpoints kept as the explicit safe flush path [completed]; T599 tunes Python GC thresholds to `3500/10/10` during backend startup and documents the policy in `docs/CLAUDE.md` [completed]; T614, T619, T629, T630, T634, T637, T641, T646, and epic T606 blocked after source inspection confirmed the remaining queue depends on missing live-switching, monitoring-bus, morph/expression, preload/spillover, and zero-cross routing architecture in the current unified snapshot + JUCE runtime layers; T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing
 
 ID: T675
 Status: [✓] Done
@@ -12846,7 +12846,7 @@ Last updated: 2026-03-31
 ---
 
 ID: T593
-Status: [~] On Hold
+Status: [✓] Done
 Title: [CRITICAL] Raise MIDI Hub minimum poll interval from 500us to 2ms
 Description:
 - Goal / acceptance criteria: In `app/services/midi_hub/hub.py:57`, change `max(0.0005, ...)` floor to `max(0.002, ...)`. Audit all callers to ensure none pass sub-2ms values.
@@ -12855,13 +12855,15 @@ Description:
 - Estimated effort: Low
 - Required outputs: Updated floor, verified no callers override below 2ms.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:05 EDT - Codex
+- Completed: Raised `MidiHub`'s enforced poll floor to `0.002s` via `RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S`, audited callers (only focused tests were still requesting sub-2ms intervals), and added coverage proving lower requested values clamp to the RT-safe minimum.
+- Validation: `pytest tests/test_main_cluster_midi_lifecycle.py tests/test_main_shutdown.py tests/midi_hub/test_hub.py tests/test_runtime_latency_tuning.py -q` -> PASS
 
 ---
 
 ID: T594
-Status: [~] On Hold
+Status: [✓] Done
 Title: [CRITICAL] Disable or defer WAL auto-checkpoint during active playback
 Description:
 - Goal / acceptance criteria: In `app/database.py`, either disable WAL auto-checkpoint (`wal_autocheckpoint=0`) and schedule explicit checkpoints on safe system events (engine stopped, idle), or raise the page threshold to 10000+. Document the RT rationale in a comment.
@@ -12870,8 +12872,10 @@ Description:
 - Estimated effort: Low
 - Required outputs: Updated checkpoint policy, documented safe-checkpoint trigger.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:05 EDT - Codex
+- Completed: Raised SQLite `wal_autocheckpoint` from `4000` to `12000` pages in `app/database.py`, documented the RT rationale inline, and kept the existing explicit `checkpoint_database()` graceful-shutdown flush as the safe checkpoint path.
+- Validation: `pytest tests/test_main_cluster_midi_lifecycle.py tests/test_main_shutdown.py tests/midi_hub/test_hub.py tests/test_runtime_latency_tuning.py -q` -> PASS
 
 ---
 
@@ -12936,7 +12940,7 @@ Last updated: 2026-03-31
 ---
 
 ID: T599
-Status: [~] On Hold
+Status: [✓] Done
 Title: [MEDIUM] Tune Python GC thresholds for RT workload
 Description:
 - Goal / acceptance criteria: In `app/main.py` startup, add `import gc; gc.set_threshold(3500, 10, 10)` to raise the generation-0 threshold and reduce GC frequency. Document the setting in CLAUDE.md under Performance & Latency.
@@ -12945,8 +12949,10 @@ Description:
 - Estimated effort: Low
 - Required outputs: GC tuning applied at startup, documented in CLAUDE.md.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:05 EDT - Codex
+- Completed: Added `configure_gc_for_rt_workload()` in `app/main.py` to apply `gc.set_threshold(3500, 10, 10)` at backend startup and documented the policy in `docs/CLAUDE.md` under Performance & Latency.
+- Validation: `pytest tests/test_main_cluster_midi_lifecycle.py tests/test_main_shutdown.py tests/midi_hub/test_hub.py tests/test_runtime_latency_tuning.py -q` -> PASS
 
 ---
 
