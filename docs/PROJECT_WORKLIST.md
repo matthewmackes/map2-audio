@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 03:24 EDT - T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]
+Last updated: 2026-04-02 05:02 EDT - T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing; T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]
 
 ID: T675
 Status: [✓] Done
@@ -818,7 +818,7 @@ Last updated: 2026-04-02 01:34 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/useSnapshotEditorUndoRedo.test.ts web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T647
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Block Name + Key Parameter Push to Controller Displays via MIDI SysEx
 Description:
 - Goal / acceptance criteria: When MAP2 has a MIDI footswitch assignment mapping a controller button to a plugin block's bypass, it pushes the block's name and its most important current parameter value to the controller's display via MIDI SysEx — both on snapshot activation and whenever that parameter changes. Example: "Reverb — Mix: 45%" pushed to the display of the button assigned to that reverb block's bypass. Supported controllers (via SysEx): Morningstar MC6/MC8, BeatStep Pro. The "key parameter" for each plugin type is configurable (defaults to the first mapped parameter, or a plugin-type default). If the controller does not support SysEx display updates, the push is silently skipped.
@@ -828,7 +828,11 @@ Description:
 - Required outputs: SysEx display formatting for Morningstar MC6/MC8 and BeatStep Pro, parameter-change listener that triggers SysEx push for mapped parameters, "key parameter" config per plugin type, silent-skip when controller does not support display SysEx, focused regression coverage, validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 01:05 - Codex
+Last updated: 2026-04-02 05:02 EDT - Codex
+- Blocked notes:
+  - The official Morningstar SysEx API supports preset-name updates, but the official Arturia BeatStep Pro manual only documents the unit's shared project/value display and does not expose any per-switch text-display surface comparable to MC6/MC8 preset labels. As written, the task promises a BeatStep Pro capability the hardware/protocol surface in source docs does not provide.
+  - The current MIDI command model persists `target_plugin_uri` plus opaque `action_data`, but not `target_plugin_position`, so a bypass-triggered controller display cannot be routed safely to one duplicated block instance versus another. The mapping identity seam exists for CC parameter mappings, not for the command-trigger path this task depends on.
+  - There is no existing plugin-type key-parameter registry or controller-display ownership model in the snapshot/MIDI stack, so satisfying the acceptance criteria would first require a narrower product decision about supported controllers and a schema change for duplicate-safe command targeting.
 
 ID: T646
 Status: [ ] Todo
