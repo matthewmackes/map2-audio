@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]
+Last updated: 2026-04-01 EDT - T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]; T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]
 
 ID: T675
 Status: [✓] Done
@@ -836,7 +836,7 @@ Last updated: 2026-04-01 11:28 - Codex
 - Validation: `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_snapshot_tempo_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
 
 ID: T642
-Status: [ ] Todo
+Status: [✓] Done
 Title: Floating Toolbar — Extend Existing Bottom Bar with Core Snapshot Actions
 Description:
 - Goal / acceptance criteria: The Snapshot Editor's existing floating bottom toolbar is extended with all core player actions, always visible regardless of scroll position or which panel is open. Required buttons: New (T607), Go Live (T615), Prev arrow (T624), Next arrow (T624), Duplicate (T625), Lock/Unlock (T636), Save (with dirty-flag dot indicator when unsaved changes exist), Undo (T648), Redo (T648), Tap Tempo (T659). The toolbar must visually continue the existing bottom bar's color coding, Carbon spacing, and iconography — no new design language. All buttons follow Carbon icon button conventions. The toolbar is fixed-position and never scrolls out of view.
@@ -845,7 +845,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: updated floating toolbar component, all required buttons wired to their respective actions/hooks, dirty-flag indicator logic, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 23:12 - Codex
+- Completion notes:
+  - Extracted the floating snapshots toolbar into a dedicated Snapshot Editor component and added the missing always-visible `Save`, `Undo`, `Redo`, and `Tap Tempo` controls alongside the existing `New`, `Go Live`, `Prev`, `Next`, `Duplicate`, and `Lock/Unlock` actions.
+  - Reworked the save affordance so the toolbar now shows a dedicated `Save` action with an inline amber dirty-dot indicator whenever unsaved snapshot edits are present, while preserving the established bottom-bar visual language.
+  - Added focused regression coverage for the toolbar control surface itself, including the dirty save state, the new undo/redo/tap actions, and the live-indicator swap when the current snapshot is already live.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T641
 Status: [ ] Todo

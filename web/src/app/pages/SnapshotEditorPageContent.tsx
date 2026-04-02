@@ -138,6 +138,7 @@ import {
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
+import { SnapshotEditorToolbar } from '../components/SnapshotEditor/SnapshotEditorToolbar'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
@@ -3424,6 +3425,25 @@ export function SnapshotEditorPage() {
     onError: (error) => pushToast(`Redo failed: ${error}`, 'error'),
   })
 
+  const tapSnapshotTempoMutation = useMutation({
+    mutationFn: async () => {
+      const liveSnapshotId = liveSnapshotQuery.data?.id ?? activeSnapshot?.id ?? null
+      if (liveSnapshotId == null) {
+        throw new Error('No live snapshot available for tap tempo')
+      }
+      return snapshotsApi.tapTempo(liveSnapshotId, Date.now())
+    },
+    onSuccess: (response) => {
+      if (response.snapshot) {
+        syncSnapshotDetailCaches(response.snapshot)
+      }
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to tap tempo', 'error')
+    },
+  })
+
   const savePresetMutation = useMutation({
     mutationFn: ({ chainId, name }: { chainId: number; name: string }) => chainsApi.savePreset(chainId, name),
     onSuccess: (_, variables) => {
@@ -4375,150 +4395,55 @@ export function SnapshotEditorPage() {
   }, [activateCurrentSnapshotMutation, activeSnapshot, snapshotGoLiveState.disabled, snapshotGoLiveState.phase])
 
   const renderSnapshotsToolbar = () => (
-    <div className={`snapshot-toolbar ${snapshotsDirty ? 'is-dirty' : ''}`} role="toolbar" aria-label="Snapshots toolbar">
-      {snapshotsDirty && (
-        prefersReducedMotion ? (
-          <span className="snapshot-toolbar__pulse" aria-hidden />
-        ) : (
-          <motion.span
-            className="snapshot-toolbar__pulse"
-            aria-hidden
-            initial={{ scale: 0.9, opacity: 0.7 }}
-            animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
-            transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
-          />
-        )
-      )}
-      <div className="snapshot-toolbar__label" title={snapshotWorkspaceTitle}>
-        <span className="snapshot-toolbar__title">Snapshots</span>
-      </div>
-      <div className="snapshot-toolbar__actions">
-        {snapshotGoLiveState.phase === 'live' ? (
-          <span
-            className="snapshot-toolbar__live-indicator juce-grid-page__snapshot-status-state-label is-current is-blinking"
-            aria-live="polite"
-          >
-            LIVE
-          </span>
-        ) : (
-          <Button
-            size="sm"
-            kind={snapshotGoLiveState.phase === 'error' ? 'danger' : 'primary'}
-            className={`snapshot-toolbar__button snapshot-toolbar__button--go-live ${snapshotGoLiveState.phase === 'activating' ? 'is-pending' : ''}`}
-            renderIcon={snapshotGoLiveState.phase === 'activating' || snapshotGoLiveState.phase === 'error' ? Renew : Play}
-            onClick={handleGoLive}
-            disabled={!activeSnapshot || snapshotGoLiveState.disabled}
-          >
-            {snapshotGoLiveState.label}
-          </Button>
-        )}
-        <Button
-          size="sm"
-          kind="secondary"
-          className="snapshot-toolbar__button snapshot-toolbar__button--new"
-          onClick={createCapturedSnapshot}
-          disabled={createSnapshotFromEditorMutation.isPending}
-        >
-          {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New'}
-        </Button>
-        <Button
-          size="sm"
-          kind="secondary"
-          className="snapshot-toolbar__button snapshot-toolbar__button--update"
-          onClick={() => updateActiveSnapshotMutation.mutate()}
-          disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
-        >
-          {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update'}
-        </Button>
-        <Button
-          size="sm"
-          kind="ghost"
-          className="snapshot-toolbar__button snapshot-toolbar__button--prev"
-          renderIcon={ArrowLeft}
-          onClick={goToPreviousSnapshot}
-          disabled={snapshotNavigationPending || !previousEditorSnapshot}
-          title={previousSnapshotDisabledReason}
-        >
-          Prev
-        </Button>
-        <Button
-          size="sm"
-          kind="ghost"
-          className="snapshot-toolbar__button snapshot-toolbar__button--next"
-          renderIcon={ArrowRight}
-          onClick={goToNextSnapshot}
-          disabled={snapshotNavigationPending || !nextEditorSnapshot}
-          title={nextSnapshotDisabledReason}
-        >
-          Next
-        </Button>
-        <Button
-          size="sm"
-          kind="ghost"
-          className="snapshot-toolbar__button snapshot-toolbar__button--duplicate"
-          renderIcon={Copy}
-          onClick={() => duplicateActiveSnapshotMutation.mutate()}
-          disabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
-        >
-          {duplicateActiveSnapshotMutation.isPending ? 'Duplicating…' : 'Duplicate'}
-        </Button>
-        {activeSnapshot ? (
-          <Button
-            size="sm"
-            kind={snapshotEditingLocked ? 'secondary' : 'ghost'}
-            className="snapshot-toolbar__button"
-            onClick={() => toggleActiveSnapshotLockMutation.mutate()}
-            disabled={toggleActiveSnapshotLockMutation.isPending}
-          >
-            {toggleActiveSnapshotLockMutation.isPending
-              ? (snapshotEditingLocked ? 'Unlocking…' : 'Locking…')
-              : (snapshotEditingLocked ? 'Locked' : 'Lock')}
-          </Button>
-        ) : null}
-        {activeSnapshot ? (
-          <Button
-            size="sm"
-            kind={activeSnapshot.is_favorite ? 'secondary' : 'ghost'}
-            className="snapshot-toolbar__button snapshot-toolbar__button--favorite"
-            renderIcon={activeSnapshot.is_favorite ? FavoriteFilled : Favorite}
-            onClick={() => {
-              toggleActiveSnapshotFavoriteMutation.mutate({
-                snapshotId: activeSnapshot.id,
-                isFavorite: !activeSnapshot.is_favorite,
-              })
-            }}
-            disabled={toggleActiveSnapshotFavoriteMutation.isPending}
-          >
-            {toggleActiveSnapshotFavoriteMutation.isPending
-              ? 'Saving…'
-              : activeSnapshot.is_favorite
-                ? 'Favorited'
-                : 'Favorite'}
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          kind={snapshotSetlistMode ? 'secondary' : 'ghost'}
-          className="snapshot-toolbar__button snapshot-toolbar__button--setlist"
-          aria-pressed={snapshotSetlistMode}
-          onClick={() => { void toggleSnapshotSetlistMode() }}
-          disabled={snapshotSetlistModePending}
-          title={snapshotSetlistModeTitle}
-        >
-          {snapshotSetlistModePending ? 'Saving…' : 'Setlist'}
-        </Button>
-        <Button
-          size="sm"
-          kind="secondary"
-          className="snapshot-toolbar__button snapshot-toolbar__button--load"
-          onClick={openArtifactsSnapshots}
-          aria-label="Open snapshots workspace"
-          title={snapshotWorkspaceTitle}
-        >
-          Load
-        </Button>
-      </div>
-    </div>
+    <SnapshotEditorToolbar
+      title={snapshotWorkspaceTitle}
+      dirty={snapshotsDirty}
+      prefersReducedMotion={prefersReducedMotion}
+      goLiveState={snapshotGoLiveState}
+      activeSnapshot={Boolean(activeSnapshot)}
+      onGoLive={handleGoLive}
+      onCreate={createCapturedSnapshot}
+      createPending={createSnapshotFromEditorMutation.isPending}
+      onSave={() => updateActiveSnapshotMutation.mutate()}
+      savePending={updateActiveSnapshotMutation.isPending}
+      saveDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
+      onPrevious={goToPreviousSnapshot}
+      previousDisabled={snapshotNavigationPending || !previousEditorSnapshot}
+      previousTitle={previousSnapshotDisabledReason}
+      onNext={goToNextSnapshot}
+      nextDisabled={snapshotNavigationPending || !nextEditorSnapshot}
+      nextTitle={nextSnapshotDisabledReason}
+      onDuplicate={() => duplicateActiveSnapshotMutation.mutate()}
+      duplicatePending={duplicateActiveSnapshotMutation.isPending}
+      duplicateDisabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
+      onToggleLock={activeSnapshot ? () => toggleActiveSnapshotLockMutation.mutate() : undefined}
+      lockVisible={Boolean(activeSnapshot)}
+      locked={snapshotEditingLocked}
+      lockPending={toggleActiveSnapshotLockMutation.isPending}
+      onUndo={() => undoMutation.mutate()}
+      undoDisabled={!historyStatus?.can_undo || undoMutation.isPending}
+      undoPending={undoMutation.isPending}
+      onRedo={() => redoMutation.mutate()}
+      redoDisabled={!historyStatus?.can_redo || redoMutation.isPending}
+      redoPending={redoMutation.isPending}
+      onTapTempo={() => tapSnapshotTempoMutation.mutate()}
+      tapTempoDisabled={!activeSnapshot || tapSnapshotTempoMutation.isPending}
+      tapTempoPending={tapSnapshotTempoMutation.isPending}
+      onToggleFavorite={activeSnapshot ? () => {
+        toggleActiveSnapshotFavoriteMutation.mutate({
+          snapshotId: activeSnapshot.id,
+          isFavorite: !activeSnapshot.is_favorite,
+        })
+      } : undefined}
+      favoriteVisible={Boolean(activeSnapshot)}
+      favoriteActive={Boolean(activeSnapshot?.is_favorite)}
+      favoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
+      onToggleSetlist={() => { void toggleSnapshotSetlistMode() }}
+      setlistMode={snapshotSetlistMode}
+      setlistPending={snapshotSetlistModePending}
+      setlistTitle={snapshotSetlistModeTitle}
+      onOpenWorkspace={openArtifactsSnapshots}
+    />
   )
 
   const renderTabletLoadButton = () => (
