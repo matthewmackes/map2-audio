@@ -3,6 +3,7 @@ import {
   FLOW_CARD_CLIP_LED_COLOR,
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
+  getFlowCardPaletteEntry,
   buildFlowCardMetadataItems,
   buildFlowCardMetadataLine,
   normalizeFlowCardLabel,
@@ -56,14 +57,16 @@ describe('snapshotEditorFlowCard helpers', () => {
     expect(FLOW_CARD_CLIP_HOLD_MS).toBe(1000)
 
     expect(FLOW_CARD_SLOT_COLORS).toHaveLength(6)
-    expect(
-      FLOW_CARD_SLOT_COLORS.every((entry) => (
-        entry.color.includes('var(') || entry.color.includes('color-mix(')
-      )),
-    ).toBe(true)
-    expect(
-      FLOW_CARD_SLOT_COLORS.every((entry) => entry.bg.includes('color-mix(')),
-    ).toBe(true)
+    expect(FLOW_CARD_SLOT_COLORS.map((entry) => entry.color)).toEqual([
+      'var(--cds-green-50, #24a148)',
+      'var(--cds-red-50, #fa4d56)',
+      'var(--cds-blue-50, #0f62fe)',
+      'var(--cds-purple-50, #8a3ffc)',
+      'var(--cds-teal-50, #009d9a)',
+      'var(--cds-orange-50, #eb6200)',
+    ])
+    expect(FLOW_CARD_SLOT_COLORS.every((entry) => entry.bg.includes('color-mix('))).toBe(true)
+    expect(getFlowCardPaletteEntry(7)).toEqual(FLOW_CARD_SLOT_COLORS[1])
   })
 
   it('holds flow clip state for one second after the clipping peak clears', () => {

@@ -128,4 +128,33 @@ describe('SnapshotEditorParameterEditor IR waveform preview', () => {
 
     expect(screen.getByLabelText('Drive')).toBeDisabled()
   })
+
+  it('renders the channel context header using the current flow label', () => {
+    render(
+      <JuceGridParameterEditor
+        plugin={{
+          uri: 'plugin://drive',
+          name: 'Drive',
+          position: 0,
+          parameters: {
+            drive: 0.5,
+          },
+          bypassed: false,
+        } as any}
+        meta={{
+          uri: 'plugin://drive',
+          name: 'Drive',
+          category: 'Drive',
+          format: 'LV2',
+          parameters: [],
+        } as any}
+        flowLabel="Lead"
+        flowColor="#fa4d56"
+        onParameterChange={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Channel Lead')).toBeInTheDocument()
+    expect(screen.getByText('Lead')).toBeInTheDocument()
+  })
 })

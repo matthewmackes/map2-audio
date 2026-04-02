@@ -17,7 +17,7 @@
  * matching the Native JUCE effect card pattern (MidiMappingDialog / MidiCcBadge).
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import {
   Button,
   InlineLoading,
@@ -92,6 +92,7 @@ export interface RoutingTopologyModalProps {
     title: string
     caption: string
     active: boolean
+    color: string
   }>
   /** Live callbacks — fired immediately, no Apply */
   onSetRoutingMode: (mode: RoutingMode) => void
@@ -398,6 +399,9 @@ export function RoutingTopologyModal({
   )
 
   const activeFlow = flowSlots.find((s) => s.id === activeFlowId) ?? flowSlots[activeFlowIndex] ?? null
+  const activeFocusButton = routingFocusButtons.find((button) => button.active) ?? null
+  const morphSourceFlow = flowSlots.find((slot) => slot.id === morphSourceSlotId) ?? null
+  const morphTargetFlow = flowSlots.find((slot) => slot.id === morphTargetSlotId) ?? null
 
   const midiAssignedCount = useMemo(
     () => Object.values(drafts).filter((d) => d.existingId !== null).length,
@@ -440,6 +444,7 @@ export function RoutingTopologyModal({
                 size="sm"
                 kind={btn.active ? 'secondary' : 'ghost'}
                 className="rtm__focus-button"
+                style={{ '--rtm-flow-color': btn.color } as CSSProperties}
                 onClick={() => onSelectFlowIndex(index)}
                 disabled={readOnly}
               >
@@ -457,6 +462,24 @@ export function RoutingTopologyModal({
           <Tile className="rtm__tile rtm__tile--morph">
             <span className="rtm__tile-label">Morph amount</span>
             <p className="rtm__tile-copy">Set the crossfade position between morph source and target.</p>
+            <div className="rtm__morph-endpoints">
+              {morphSourceFlow ? (
+                <span
+                  className="rtm__morph-endpoint"
+                  style={{ '--rtm-flow-color': morphSourceFlow.color } as CSSProperties}
+                >
+                  {morphSourceFlow.label} source
+                </span>
+              ) : null}
+              {morphTargetFlow ? (
+                <span
+                  className="rtm__morph-endpoint"
+                  style={{ '--rtm-flow-color': morphTargetFlow.color } as CSSProperties}
+                >
+                  {morphTargetFlow.label} target
+                </span>
+              ) : null}
+            </div>
             <NumberInput
               id="rtm-morph-amount"
               label="Morph"
@@ -753,9 +776,32 @@ export function RoutingTopologyModal({
           </span>
           <div className="rtm__live-strip-meta">
             <Tag type="blue">{activeMode.label}</Tag>
-            <Tag type="cool-gray">Focus {routingFocusButtons.find((b) => b.active)?.title ?? '—'}</Tag>
+            <span
+              className="rtm__live-focus-chip"
+              style={{ '--rtm-flow-color': activeFocusButton?.color ?? 'var(--cds-border-strong, #6f6f6f)' } as CSSProperties}
+            >
+              Focus {activeFocusButton?.title ?? '—'}
+            </span>
             {routingMode === 'parameter_morph' && (
-              <Tag type="purple">Morph {Math.round(morphProgress * 100)}%</Tag>
+              <span className="rtm__morph-chip-row">
+                <span className="rtm__morph-chip">Morph {Math.round(morphProgress * 100)}%</span>
+                {morphSourceFlow ? (
+                  <span
+                    className="rtm__morph-endpoint"
+                    style={{ '--rtm-flow-color': morphSourceFlow.color } as CSSProperties}
+                  >
+                    {morphSourceFlow.label} source
+                  </span>
+                ) : null}
+                {morphTargetFlow ? (
+                  <span
+                    className="rtm__morph-endpoint"
+                    style={{ '--rtm-flow-color': morphTargetFlow.color } as CSSProperties}
+                  >
+                    {morphTargetFlow.label} target
+                  </span>
+                ) : null}
+              </span>
             )}
             {midiAssignedCount > 0 && (
               <Tag type="teal">

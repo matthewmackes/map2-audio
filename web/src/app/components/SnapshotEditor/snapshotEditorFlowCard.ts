@@ -42,35 +42,40 @@ export type SnapshotEditorFlowClipEdge = 'input' | 'output'
 export const FLOW_CARD_SLOT_COLORS: SnapshotEditorFlowCardPaletteEntry[] = [
   {
     label: 'A',
-    color: 'var(--cds-link-primary)',
-    bg: 'color-mix(in srgb, var(--cds-link-primary) 15%, transparent)',
+    color: 'var(--cds-green-50, #24a148)',
+    bg: 'color-mix(in srgb, var(--cds-green-50, #24a148) 14%, transparent)',
   },
   {
     label: 'B',
-    color: 'var(--cds-support-info)',
-    bg: 'color-mix(in srgb, var(--cds-support-info) 15%, transparent)',
+    color: 'var(--cds-red-50, #fa4d56)',
+    bg: 'color-mix(in srgb, var(--cds-red-50, #fa4d56) 14%, transparent)',
   },
   {
     label: 'C',
-    color: 'var(--cds-support-success)',
-    bg: 'color-mix(in srgb, var(--cds-support-success) 15%, transparent)',
+    color: 'var(--cds-blue-50, #0f62fe)',
+    bg: 'color-mix(in srgb, var(--cds-blue-50, #0f62fe) 14%, transparent)',
   },
   {
     label: 'D',
-    color: 'var(--cds-support-warning)',
-    bg: 'color-mix(in srgb, var(--cds-support-warning) 16%, transparent)',
+    color: 'var(--cds-purple-50, #8a3ffc)',
+    bg: 'color-mix(in srgb, var(--cds-purple-50, #8a3ffc) 14%, transparent)',
   },
   {
     label: 'E',
-    color: 'color-mix(in srgb, var(--cds-link-primary) 72%, var(--cds-support-info) 28%)',
-    bg: 'color-mix(in srgb, var(--cds-link-primary) 11%, transparent)',
+    color: 'var(--cds-teal-50, #009d9a)',
+    bg: 'color-mix(in srgb, var(--cds-teal-50, #009d9a) 14%, transparent)',
   },
   {
     label: 'F',
-    color: 'color-mix(in srgb, var(--cds-support-success) 62%, var(--cds-link-primary) 38%)',
-    bg: 'color-mix(in srgb, var(--cds-support-success) 12%, transparent)',
+    color: 'var(--cds-orange-50, #eb6200)',
+    bg: 'color-mix(in srgb, var(--cds-orange-50, #eb6200) 14%, transparent)',
   },
 ]
+
+export function getFlowCardPaletteEntry(index: number): SnapshotEditorFlowCardPaletteEntry {
+  const normalizedIndex = ((index % FLOW_CARD_SLOT_COLORS.length) + FLOW_CARD_SLOT_COLORS.length) % FLOW_CARD_SLOT_COLORS.length
+  return FLOW_CARD_SLOT_COLORS[normalizedIndex]
+}
 
 function pushUnique(items: string[], value: string | null | undefined): void {
   const nextValue = value?.trim()

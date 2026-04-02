@@ -154,6 +154,7 @@ import {
   FLOW_CARD_CLIP_LED_COLOR,
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
+  getFlowCardPaletteEntry,
   buildFlowCardMetadataLines,
   normalizeFlowCardLabel,
   resolveFlowEdgeClipTimestamp,
@@ -2310,6 +2311,7 @@ export function SnapshotEditorPage() {
           routing.blendPositions[slot.id] ?? 100,
         ),
         active: activeFlowIndex === index,
+        color: slot.color || getFlowCardPaletteEntry(index).color,
       }
     })
   ), [activeFlowIndex, flowSlots, routing.activeSlotId, routing.blendPositions, routing.mode, secondaryRoutingFlowId])
@@ -3460,7 +3462,7 @@ export function SnapshotEditorPage() {
     if (snapshotEditingLocked || flowSlots.length >= MAX_FLOWS) return
 
     const nextIndex = flowSlots.length
-    const colorConfig = SLOT_COLORS[nextIndex] || SLOT_COLORS[nextIndex % SLOT_COLORS.length]
+    const colorConfig = getFlowCardPaletteEntry(nextIndex)
     const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
 
     try {
@@ -5500,6 +5502,8 @@ export function SnapshotEditorPage() {
                       <Button
                         size="sm"
                         kind={flow.solo ? 'secondary' : 'ghost'}
+                        className="juce-grid-page__flow-card-toggle"
+                        style={{ '--flow-color': flow.color } as React.CSSProperties}
                         renderIcon={Headphones}
                         onClick={() => updateFlow(flow.id, { solo: !flow.solo })}
                         disabled={snapshotEditingLocked}
@@ -5509,6 +5513,8 @@ export function SnapshotEditorPage() {
                       <Button
                         size="sm"
                         kind={flow.muted ? 'secondary' : 'ghost'}
+                        className="juce-grid-page__flow-card-toggle"
+                        style={{ '--flow-color': flow.color } as React.CSSProperties}
                         renderIcon={flow.muted ? VolumeMute : VolumeUp}
                         onClick={() => updateFlow(flow.id, { muted: !flow.muted })}
                         disabled={snapshotEditingLocked}
@@ -5821,6 +5827,8 @@ export function SnapshotEditorPage() {
         isRefreshing={isRefreshingPlugins}
         touchMode={isTabletTouchLayout}
         readOnly={snapshotEditingLocked}
+        flowLabel={activeFlow?.label ?? activeFlowLabel}
+        flowColor={activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color}
       />
     )
   ) : null

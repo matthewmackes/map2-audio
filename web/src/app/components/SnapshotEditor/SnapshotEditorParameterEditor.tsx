@@ -13,6 +13,8 @@ import { getPluginAccentConfig } from '../../utils/pluginAccent'
 export interface JuceGridParameterEditorProps {
   plugin: ChainPlugin | null
   meta: Plugin | null
+  flowLabel?: string | null
+  flowColor?: string | null
   onParameterChange: (symbol: string, value: number) => void
   onParameterChangeEnd?: (symbol: string) => void
   onToggleBypass?: () => void
@@ -218,6 +220,8 @@ function renderIRWaveformBars(preview: IRWaveformPreview) {
 export function JuceGridParameterEditor({
   plugin,
   meta,
+  flowLabel = null,
+  flowColor = null,
   onParameterChange,
   onParameterChangeEnd,
   onToggleBypass,
@@ -414,8 +418,20 @@ export function JuceGridParameterEditor({
     <div
       className={`juce-grid-page__parameter-editor ${touchMode ? 'is-touch-mode' : ''}`}
       data-testid="juce-grid-parameter-editor"
-      style={{ '--juce-grid-parameter-accent': accentColor } as CSSProperties}
+      style={{
+        '--juce-grid-parameter-accent': accentColor,
+        '--juce-grid-parameter-flow-color': flowColor ?? accentColor,
+      } as CSSProperties}
     >
+      {flowLabel ? (
+        <div className="juce-grid-page__parameter-editor-channel-context">
+          <span className="juce-grid-page__parameter-editor-channel-pill">{flowLabel}</span>
+          <div className="juce-grid-page__parameter-editor-copy">
+            <strong>Channel {flowLabel}</strong>
+            <p>Selected block parameters stay color-linked to this channel everywhere in the editor.</p>
+          </div>
+        </div>
+      ) : null}
       {touchMode && parameters.length > 0 && (
         <div className="juce-grid-page__parameter-editor-header">
           <div className="juce-grid-page__parameter-editor-copy">

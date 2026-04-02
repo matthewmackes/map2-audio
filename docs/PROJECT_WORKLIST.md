@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]
+Last updated: 2026-04-01 EDT - T612 unified Snapshot Editor channel colors around a shared Carbon bold palette across the canvas, routing modal, and parameter editor [completed]; T616 added the Snapshot Editor inline Go Live diff summary [completed]; T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1283,7 +1283,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T612
-Status: [ ] Todo
+Status: [✓] Done
 Title: Channel Color Coding — Carbon Bold Palette, Consistent Everywhere
 Description:
 - Goal / acceptance criteria: Each channel's color (stored in SnapshotChannel.color) is rendered as a Carbon-themed bold color token consistently across every surface where that channel appears: (1) signal canvas lane background/accent, (2) routing visualizer channel node, (3) live path indicator, (4) parameter editor channel context header, (5) morph slider endpoint labels (A side / B side), (6) mute/solo button accent color, (7) A/B switch button (T630) active state. The color assignment for new channels uses Carbon bold color tokens (Carbon Green 50, Red 50, Blue 50, Purple 50, Teal 50, Orange 50) assigned in round-robin order. A player builds the association "green = clean, red = lead" and it never breaks across any view.
@@ -1292,7 +1292,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: channel color token utility mapping SnapshotChannel.color to Carbon token, color application in signal canvas, routing visualizer, live path, parameter editor, morph slider, mute/solo buttons, A/B switch — all reading from the same utility, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 22:29 - Codex
+- Completion notes:
+  - Replaced the old flow-slot fallback colors with a shared Carbon bold round-robin palette helper, and used that helper both for newly created channels and for routing-focus metadata so channel letters and colors stay stable together.
+  - Extended channel-color propagation into the Snapshot Editor parameter editor header, the routing topology modal focus/live strips and morph endpoint chips, and the large mute/solo card controls, while keeping the existing signal canvas, routing visualizer, and live-path surfaces on the same `flow.color` source of truth.
+  - Added focused regression coverage for palette order/wraparound, the parameter-editor channel context header, and routing-modal focus plus morph endpoint rendering.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/modals/RoutingTopologyModal.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts web/src/app/components/SnapshotEditor/SnapshotEditorParameterEditor.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T611
 Status: [✓] Done
