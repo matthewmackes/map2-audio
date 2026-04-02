@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]
+Last updated: 2026-04-01 EDT - T615 added the Snapshot Editor Go Live state machine in the hero and floating toolbar [completed]; T620 added musically meaningful snapshot activation toasts with channel/block counts and amber failure reasons [completed]; T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1235,7 +1235,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T615
-Status: [ ] Todo
+Status: [✓] Done
 Title: "Go Live" Button in Snapshot Editor — State Machine
 Description:
 - Goal / acceptance criteria: A prominent "Go Live" button is displayed in the Snapshot Editor (in the editor hero area and in the floating toolbar T642). One click triggers POST /api/snapshots/{id}/activate with no confirmation dialog. The button follows a strict state machine: (1) Idle — button active, labeled "Go Live" with a Carbon primary style; (2) Activating — button disabled with a loading spinner and label "Activating..."; (3) Live — button replaced by a non-interactive "LIVE" indicator badge (matching the hero's existing LIVE treatment, slow red/fuchsia blink) — cannot be clicked again while live; (4) Error — button returns to clickable state with a Carbon danger style, error label "Activation failed — retry", and the pre-flight failure reason shown inline. Transitions between states are driven by WebSocket SnapshotRuntimeLiveState updates.
@@ -1244,7 +1244,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Go Live button component with 4-state machine (idle/activating/live/error), WebSocket state transition handling, error message inline display, button placement in editor hero and floating toolbar, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 22:05 - Codex
+- Completion notes:
+  - Added a shared Go Live state resolver so the Snapshot Editor hero and floating toolbar both render the same idle, activating, live, and retry states from one source of truth.
+  - Wired activation to `POST /api/snapshots/{id}/activate`, kept the button in `Activating…` until runtime live-state confirms success, and surfaced activation failure reasons inline under the hero control for retry.
+  - Added focused regression coverage for the state resolver and hero rendering, including idle, activating, live-indicator, and inline-error states.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/utils/snapshotActivationToast.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T614
 Status: [ ] Todo

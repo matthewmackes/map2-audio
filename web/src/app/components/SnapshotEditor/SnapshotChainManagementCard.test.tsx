@@ -3,6 +3,7 @@ import React from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { SnapshotChainManagementCard } from './SnapshotChainManagementCard'
+import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 
 function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail {
   return {
@@ -213,6 +214,8 @@ function renderCard(
     onRenameSnapshot?: jest.Mock
     onToggleSnapshotFavorite?: jest.Mock
     onToggleSnapshotLock?: jest.Mock
+    onGoLive?: jest.Mock
+    goLiveState?: SnapshotGoLiveState | null
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
@@ -247,6 +250,8 @@ function renderCard(
       snapshotFavoritePending={options.snapshotFavoritePending}
       onToggleSnapshotLock={options.onToggleSnapshotLock}
       snapshotLockPending={options.snapshotLockPending}
+      onGoLive={options.onGoLive}
+      goLiveState={options.goLiveState}
       onSubmitSnapshotDescription={options.onSubmitSnapshotDescription}
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
@@ -521,6 +526,83 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.click(favoriteButton)
 
     expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders the Go Live action in idle state and calls through when pressed', () => {
+    const onGoLive = jest.fn()
+
+    renderCard(buildLiveSnapshot({ is_active: false, live_state: { is_live: false, activated_at: null, paths: [], runtime_chains: [] } }), {
+      onGoLive,
+      goLiveState: {
+        phase: 'idle',
+        label: 'Go Live',
+        disabled: false,
+        errorMessage: null,
+      },
+    })
+
+    const goLiveButton = screen.getByRole('button', { name: 'Go Live' })
+    expect(goLiveButton).toBeInTheDocument()
+
+    fireEvent.click(goLiveButton)
+
+    expect(onGoLive).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders activating and error Go Live states with inline feedback', () => {
+    const { rerender } = render(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot({ is_active: false, live_state: { is_live: false, activated_at: null, paths: [], runtime_chains: [] } })}
+        onGoLive={jest.fn()}
+        goLiveState={{
+          phase: 'activating',
+          label: 'Activating…',
+          disabled: true,
+          errorMessage: null,
+        }}
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Activating…' })).toBeDisabled()
+
+    rerender(
+      <SnapshotChainManagementCard
+        onToggleSelectedChainActive={jest.fn()}
+        onDuplicateChain={jest.fn()}
+        onRenameChain={jest.fn()}
+        liveSnapshot={buildLiveSnapshot({ is_active: false, live_state: { is_live: false, activated_at: null, paths: [], runtime_chains: [] } })}
+        onGoLive={jest.fn()}
+        goLiveState={{
+          phase: 'error',
+          label: 'Activation failed — retry',
+          disabled: false,
+          errorMessage: 'Channel Lead not loaded.',
+        }}
+        detailsAction={<button type="button">Details</button>}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Activation failed — retry/i })).toBeInTheDocument()
+    expect(screen.getByText('Channel Lead not loaded.')).toBeInTheDocument()
+  })
+
+  it('replaces the Go Live button with a blinking live indicator when the target snapshot is already live', () => {
+    renderCard(buildLiveSnapshot(), {
+      goLiveState: {
+        phase: 'live',
+        label: 'LIVE',
+        disabled: true,
+        errorMessage: null,
+      },
+    })
+
+    const liveIndicators = screen.getAllByText('LIVE')
+    expect(liveIndicators.length).toBeGreaterThan(1)
+    expect(screen.queryByRole('button', { name: 'Go Live' })).not.toBeInTheDocument()
   })
 
   it('places favorite and lock controls below the snapshot description instead of in the title row', () => {

@@ -129,7 +129,12 @@ import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
   buildSnapshotActivationFailureToastMessage,
   buildSnapshotActivationToastMessage,
+  extractSnapshotActivationFailureReason,
 } from '../utils/snapshotActivationToast'
+import {
+  isSnapshotCurrentRuntimeLive,
+  resolveSnapshotGoLiveState,
+} from '../utils/snapshotGoLiveState'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
@@ -912,6 +917,9 @@ export function SnapshotEditorPage() {
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
   const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
+  const [pendingGoLiveSnapshotId, setPendingGoLiveSnapshotId] = useState<number | null>(null)
+  const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
+  const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
   const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
@@ -1590,6 +1598,7 @@ export function SnapshotEditorPage() {
 
   const chains = chainsQuery.data?.chains || []
   const liveSnapshot = liveSnapshotQuery.data ?? null
+  const runtimeLiveState = runtimeStateQuery.data ?? null
   const activeSnapshot = useMemo(
     () => editorSnapshotOverride ?? liveSnapshot,
     [editorSnapshotOverride, liveSnapshot],
@@ -1601,6 +1610,16 @@ export function SnapshotEditorPage() {
     }
   }, [editorSnapshotOverride, liveSnapshot])
   const snapshotEditingLocked = Boolean(activeSnapshot?.is_locked)
+  const snapshotGoLiveState = useMemo(
+    () => resolveSnapshotGoLiveState({
+      snapshot: activeSnapshot,
+      runtimeLiveState,
+      pendingSnapshotId: pendingGoLiveSnapshotId,
+      failedSnapshotId: failedGoLiveSnapshotId,
+      failureReason: goLiveFailureReason,
+    }),
+    [activeSnapshot, failedGoLiveSnapshotId, goLiveFailureReason, pendingGoLiveSnapshotId, runtimeLiveState],
+  )
   const sessionNotes = activeSnapshot?.session_notes ?? []
   const effectiveChainsResponse = useMemo(
     () => (
@@ -1684,6 +1703,51 @@ export function SnapshotEditorPage() {
   useEffect(() => {
     setOutputReferenceThresholdDraft(activeSnapshot?.output_level_warning_threshold_db ?? 3)
   }, [activeSnapshot?.output_level_warning_threshold_db])
+
+  useEffect(() => {
+    if (pendingGoLiveSnapshotId == null) {
+      if (
+        failedGoLiveSnapshotId != null
+        && runtimeLiveState
+        && (runtimeLiveState.display_state === 'live' || runtimeLiveState.display_state === 'live_warning')
+        && runtimeLiveState.snapshot_id === failedGoLiveSnapshotId
+      ) {
+        setFailedGoLiveSnapshotId(null)
+        setGoLiveFailureReason(null)
+      }
+      return
+    }
+
+    if (
+      runtimeLiveState
+      && (runtimeLiveState.display_state === 'live' || runtimeLiveState.display_state === 'live_warning')
+      && runtimeLiveState.snapshot_id === pendingGoLiveSnapshotId
+    ) {
+      setPendingGoLiveSnapshotId(null)
+      setFailedGoLiveSnapshotId(null)
+      setGoLiveFailureReason(null)
+      return
+    }
+
+    const runtimeFailureReason = runtimeLiveState?.failure_reason?.trim()
+    if (runtimeFailureReason) {
+      setPendingGoLiveSnapshotId(null)
+      setFailedGoLiveSnapshotId(pendingGoLiveSnapshotId)
+      setGoLiveFailureReason(runtimeFailureReason)
+    }
+  }, [failedGoLiveSnapshotId, pendingGoLiveSnapshotId, runtimeLiveState])
+
+  useEffect(() => {
+    if (
+      activeSnapshot
+      && failedGoLiveSnapshotId != null
+      && failedGoLiveSnapshotId !== activeSnapshot.id
+      && isSnapshotCurrentRuntimeLive(activeSnapshot, runtimeLiveState)
+    ) {
+      setFailedGoLiveSnapshotId(null)
+      setGoLiveFailureReason(null)
+    }
+  }, [activeSnapshot, failedGoLiveSnapshotId, runtimeLiveState])
 
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
     return slot.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
@@ -1822,6 +1886,40 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
+    },
+  })
+
+  const activateCurrentSnapshotMutation = useMutation({
+    mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
+    onMutate: (snapshotId) => {
+      setPendingGoLiveSnapshotId(snapshotId)
+      setFailedGoLiveSnapshotId(null)
+      setGoLiveFailureReason(null)
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
+      setEditorSnapshotOverride(null)
+      hydrateEditorFromSnapshot(response.snapshot_data, {
+        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
+        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        resetSelectedBlock: true,
+        invalidateSnapshots: true,
+      })
+    },
+    onError: (error, snapshotId) => {
+      const failureReason = extractSnapshotActivationFailureReason(error) ?? 'Activation failed.'
+      const snapshotName = activeSnapshot?.id === snapshotId
+        ? activeSnapshot.name
+        : snapshotsSummaryQuery.data?.snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
+      setPendingGoLiveSnapshotId((current) => (current === snapshotId ? null : current))
+      setFailedGoLiveSnapshotId(snapshotId)
+      setGoLiveFailureReason(failureReason)
+      pushToast(
+        buildSnapshotActivationFailureToastMessage(snapshotName, error),
+        'warn',
+        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+      )
     },
   })
 
@@ -4203,6 +4301,14 @@ export function SnapshotEditorPage() {
     loadEditorSnapshot(nextEditorSnapshot)
   }, [loadEditorSnapshot, nextEditorSnapshot])
 
+  const handleGoLive = useCallback(() => {
+    if (!activeSnapshot || snapshotGoLiveState.disabled || snapshotGoLiveState.phase === 'live') {
+      return
+    }
+
+    activateCurrentSnapshotMutation.mutate(activeSnapshot.id)
+  }, [activateCurrentSnapshotMutation, activeSnapshot, snapshotGoLiveState.disabled, snapshotGoLiveState.phase])
+
   const renderSnapshotsToolbar = () => (
     <div className={`snapshot-toolbar ${snapshotsDirty ? 'is-dirty' : ''}`} role="toolbar" aria-label="Snapshots toolbar">
       {snapshotsDirty && (
@@ -4222,6 +4328,25 @@ export function SnapshotEditorPage() {
         <span className="snapshot-toolbar__title">Snapshots</span>
       </div>
       <div className="snapshot-toolbar__actions">
+        {snapshotGoLiveState.phase === 'live' ? (
+          <span
+            className="snapshot-toolbar__live-indicator juce-grid-page__snapshot-status-state-label is-current is-blinking"
+            aria-live="polite"
+          >
+            LIVE
+          </span>
+        ) : (
+          <Button
+            size="sm"
+            kind={snapshotGoLiveState.phase === 'error' ? 'danger' : 'primary'}
+            className={`snapshot-toolbar__button snapshot-toolbar__button--go-live ${snapshotGoLiveState.phase === 'activating' ? 'is-pending' : ''}`}
+            renderIcon={snapshotGoLiveState.phase === 'activating' || snapshotGoLiveState.phase === 'error' ? Renew : Play}
+            onClick={handleGoLive}
+            disabled={!activeSnapshot || snapshotGoLiveState.disabled}
+          >
+            {snapshotGoLiveState.label}
+          </Button>
+        )}
         <Button
           size="sm"
           kind="secondary"
@@ -5797,7 +5922,7 @@ export function SnapshotEditorPage() {
             }}
             liveSnapshot={activeSnapshot}
             editorSnapshotDraft={currentSnapshotDraft}
-            runtimeLiveState={runtimeStateQuery.data ?? null}
+            runtimeLiveState={runtimeLiveState}
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
@@ -5824,6 +5949,8 @@ export function SnapshotEditorPage() {
               toggleActiveSnapshotLockMutation.mutate()
             }}
             snapshotLockPending={toggleActiveSnapshotLockMutation.isPending}
+            onGoLive={handleGoLive}
+            goLiveState={snapshotGoLiveState}
             onSubmitSnapshotDescription={(description) => {
               if (!activeSnapshot) {
                 return

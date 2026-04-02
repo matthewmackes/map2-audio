@@ -72,7 +72,7 @@ function countPluginsInPaths(paths: PathLike[]): number {
   return paths.reduce((total, path) => total + countNonBypassedPlugins(path.plugins), 0)
 }
 
-function extractFailureReason(error: unknown): string | null {
+export function extractSnapshotActivationFailureReason(error: unknown): string | null {
   if (error instanceof ApiError) {
     const detail =
       typeof error.body === 'object' && error.body !== null && 'detail' in error.body
@@ -212,6 +212,6 @@ export function buildSnapshotActivationToastMessage(
 }
 
 export function buildSnapshotActivationFailureToastMessage(snapshotName: string, error: unknown): string {
-  const reason = extractFailureReason(error) ?? 'Activation failed.'
+  const reason = extractSnapshotActivationFailureReason(error) ?? 'Activation failed.'
   return `Failed: ${snapshotName} - ${reason}`
 }

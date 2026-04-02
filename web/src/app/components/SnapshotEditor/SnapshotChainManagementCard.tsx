@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Edit, Favorite, FavoriteFilled } from '@carbon/icons-react'
+import { ArrowLeft, ArrowRight, Edit, Favorite, FavoriteFilled, Play, Renew } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -6,6 +6,7 @@ import { NumberInput } from '../ParameterControl'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../icons/map'
 import { formatSnapshotLastUsedValue } from '../../utils/snapshotLastUsed'
+import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 
 interface FlowSlotRef {
   id: string
@@ -41,6 +42,8 @@ interface SnapshotChainManagementCardProps {
   snapshotFavoritePending?: boolean
   onToggleSnapshotLock?: () => void
   snapshotLockPending?: boolean
+  onGoLive?: () => void
+  goLiveState?: SnapshotGoLiveState | null
   onSubmitSnapshotDescription?: (description: string) => void
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
@@ -488,6 +491,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotFavoritePending = false,
     onToggleSnapshotLock,
     snapshotLockPending = false,
+    onGoLive,
+    goLiveState = null,
     onSubmitSnapshotDescription,
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
@@ -706,6 +711,29 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     {liveSnapshot.description?.trim() || 'Add rig notes...'}
                   </button>
                 )
+              ) : null}
+              {liveSnapshot && goLiveState ? (
+                <div className="juce-grid-page__snapshot-status-go-live" aria-live="polite">
+                  {goLiveState.phase === 'live' ? (
+                    <span className="juce-grid-page__snapshot-status-go-live-indicator juce-grid-page__snapshot-status-state-label is-current is-blinking">
+                      LIVE
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      kind={goLiveState.phase === 'error' ? 'danger' : 'primary'}
+                      className={`juce-grid-page__snapshot-status-go-live-button ${goLiveState.phase === 'activating' ? 'is-pending' : ''}`}
+                      renderIcon={goLiveState.phase === 'activating' || goLiveState.phase === 'error' ? Renew : Play}
+                      onClick={onGoLive}
+                      disabled={!onGoLive || goLiveState.disabled}
+                    >
+                      {goLiveState.label}
+                    </Button>
+                  )}
+                  {goLiveState.errorMessage ? (
+                    <p className="juce-grid-page__snapshot-status-go-live-error">{goLiveState.errorMessage}</p>
+                  ) : null}
+                </div>
               ) : null}
               {showSnapshotActionRow ? (
                 <div className="juce-grid-page__snapshot-status-secondary-actions" role="group" aria-label="Snapshot actions">
