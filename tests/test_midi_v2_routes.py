@@ -25,6 +25,8 @@ class _FakeMidiService:
         self.recorded_chain_id = None
         self.recorded_plugin_lookup: tuple[str, int | None] | None = None
         self.created_dto = None
+        self.created_command_dto = None
+        self.updated_command = None
 
     async def get_all_mappings(self, _session, chain_id=None):
         self.recorded_chain_id = chain_id
@@ -54,6 +56,65 @@ class _FakeMidiService:
 
     async def send_mapping_feedback_test(self, *_args, **_kwargs):
         raise RuntimeError("engine offline")
+
+    async def get_all_commands(self, _session):
+        return [
+            {
+                "id": 9,
+                "command_type": "note_on",
+                "channel": 1,
+                "data1": 60,
+                "data2": 100,
+                "action_type": "toggle_plugin",
+                "target_chain_id": None,
+                "target_plugin_uri": "map2://plugin",
+                "target_plugin_position": 3,
+                "action_data": {},
+                "name": "Toggle plugin",
+                "is_enabled": True,
+            }
+        ]
+
+    async def create_command(self, dto, _session):
+        self.created_command_dto = dto
+        return 51
+
+    async def get_command(self, command_id, _session):
+        if command_id == 51 and self.created_command_dto is not None:
+            return {
+                "id": 51,
+                "command_type": self.created_command_dto.command_type.value,
+                "channel": self.created_command_dto.channel,
+                "data1": self.created_command_dto.data1,
+                "data2": self.created_command_dto.data2,
+                "action_type": self.created_command_dto.action_type.value,
+                "target_chain_id": self.created_command_dto.target_chain_id,
+                "target_plugin_uri": self.created_command_dto.target_plugin_uri,
+                "target_plugin_position": self.created_command_dto.target_plugin_position,
+                "action_data": self.created_command_dto.action_data,
+                "name": self.created_command_dto.name,
+                "is_enabled": True,
+            }
+        if command_id == 9:
+            return {
+                "id": 9,
+                "command_type": "note_on",
+                "channel": 1,
+                "data1": 60,
+                "data2": 100,
+                "action_type": "toggle_plugin",
+                "target_chain_id": None,
+                "target_plugin_uri": "map2://plugin",
+                "target_plugin_position": 4,
+                "action_data": {},
+                "name": "Toggle plugin",
+                "is_enabled": True,
+            }
+        return None
+
+    async def update_command(self, command_id, updates, _session):
+        self.updated_command = (command_id, dict(updates))
+        return command_id == 9
 
     def get_learn_status(self):
         return {
@@ -190,3 +251,67 @@ def test_send_cc_requires_engine_and_uses_engine_when_present(monkeypatch):
     assert available.status_code == 200
     assert available.json() == {"success": True}
     assert service._engine.cc_messages == [(2, 11, 99)]
+
+
+def test_list_commands_includes_duplicate_safe_target_position(monkeypatch):
+    client, _service = _build_client(monkeypatch)
+
+    response = client.get("/api/v2/midi/commands")
+
+    assert response.status_code == 200
+    assert response.json()["commands"][0]["target_plugin_position"] == 3
+
+
+def test_create_command_round_trips_duplicate_safe_target_position(monkeypatch):
+    client, service = _build_client(monkeypatch)
+
+    response = client.post(
+        "/api/v2/midi/commands",
+        json={
+            "command_type": "note_on",
+            "channel": 1,
+            "data1": 60,
+            "data2": 100,
+            "action_type": "toggle_plugin",
+            "target_plugin_uri": "map2://plugin",
+            "target_plugin_position": 2,
+            "name": "Toggle plugin",
+            "action_data": {"scene": "lead"},
+        },
+    )
+
+    assert response.status_code == 200
+    assert service.created_command_dto.target_plugin_position == 2
+    assert response.json() == {
+        "command": {
+            "id": 51,
+            "command_type": "note_on",
+            "channel": 1,
+            "data1": 60,
+            "data2": 100,
+            "action_type": "toggle_plugin",
+            "target_chain_id": None,
+            "target_plugin_uri": "map2://plugin",
+            "target_plugin_position": 2,
+            "action_data": {"scene": "lead"},
+            "name": "Toggle plugin",
+            "is_enabled": True,
+        },
+        "message": "Command created",
+    }
+
+
+def test_update_command_passes_duplicate_safe_target_position(monkeypatch):
+    client, service = _build_client(monkeypatch)
+
+    response = client.patch(
+        "/api/v2/midi/commands/9",
+        json={
+            "target_plugin_position": 4,
+            "target_plugin_uri": "map2://plugin",
+        },
+    )
+
+    assert response.status_code == 200
+    assert service.updated_command == (9, {"target_plugin_position": 4, "target_plugin_uri": "map2://plugin"})
+    assert response.json()["command"]["target_plugin_position"] == 4

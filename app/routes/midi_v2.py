@@ -99,6 +99,7 @@ class CommandCreateRequest(BaseModel):
     action_type: str = Field(..., description="Action: activate_chain, toggle_chain, toggle_plugin, set_routing")
     target_chain_id: Optional[int] = Field(None, description="Target chain ID for chain actions")
     target_plugin_uri: Optional[str] = Field(None, description="Target plugin URI for plugin actions")
+    target_plugin_position: Optional[int] = Field(None, ge=0, description="Optional chain position for duplicate-safe plugin targeting")
     name: str = Field("", description="User-friendly name")
     action_data: Dict = Field(default_factory=dict, description="Extra action parameters")
 
@@ -276,6 +277,7 @@ async def create_command(request: CommandCreateRequest):
         action_type=ActionType(request.action_type) if request.action_type in [a.value for a in ActionType] else ActionType.ACTIVATE_CHAIN,
         target_chain_id=request.target_chain_id,
         target_plugin_uri=request.target_plugin_uri,
+        target_plugin_position=request.target_plugin_position,
         name=request.name,
         action_data=request.action_data,
     )
@@ -284,8 +286,10 @@ async def create_command(request: CommandCreateRequest):
         command_id = await midi_service.create_command(dto, session)
         if not command_id:
             raise HTTPException(status_code=400, detail="Failed to create command")
-
-        return {"status": "created", "command_id": command_id}
+        command = await midi_service.get_command(command_id, session)
+        if not command:
+            raise HTTPException(status_code=500, detail="Command was created but could not be reloaded")
+        return {"command": command, "message": "Command created"}
 
 
 @router.delete("/commands/{command_id}")
@@ -308,6 +312,7 @@ class CommandUpdateRequest(BaseModel):
     action_type: Optional[str] = None
     target_chain_id: Optional[int] = None
     target_plugin_uri: Optional[str] = None
+    target_plugin_position: Optional[int] = Field(None, ge=0)
     name: Optional[str] = None
     action_data: Optional[Dict] = None
     is_enabled: Optional[bool] = None
@@ -317,20 +322,14 @@ class CommandUpdateRequest(BaseModel):
 async def update_command(command_id: int, request: CommandUpdateRequest):
     """Update a MIDI command trigger."""
     async with get_session() as session:
-        from app.database import MIDICommand
-        stmt = select(MIDICommand).where(MIDICommand.id == command_id)
-        result = await session.execute(stmt)
-        command = result.scalar_one_or_none()
+        updates = request.model_dump(exclude_unset=True)
+        success = await midi_service.update_command(command_id, updates, session)
+        if not success:
+            raise HTTPException(status_code=404, detail="Command not found")
+        command = await midi_service.get_command(command_id, session)
         if not command:
             raise HTTPException(status_code=404, detail="Command not found")
-
-        updates = request.model_dump(exclude_none=True)
-        for key, value in updates.items():
-            if hasattr(command, key):
-                setattr(command, key, value)
-
-        await session.commit()
-        return {"status": "updated", "command_id": command_id}
+        return {"command": command, "message": "Command updated"}
 
 
 # ==================== Routing Rules ====================

@@ -1031,6 +1031,101 @@ class JuceEngineService(Singleton):
                 await asyncio.to_thread(add_handler, mapping)
         return True
 
+    async def set_midi_command(
+        self,
+        *,
+        command_id: int,
+        command_type: str,
+        channel: int,
+        data1: int,
+        data2: Optional[int] = None,
+        action_type: str,
+        target_chain_id: Optional[int] = None,
+        target_plugin_uri: str = "",
+        target_plugin_position: Optional[int] = None,
+        action_data: Optional[Dict[str, Any]] = None,
+        enabled: bool = True,
+    ) -> bool:
+        """Create or update a JUCE MIDI command trigger with duplicate-safe target metadata."""
+        if not self._engine:
+            return False
+
+        trigger_payload = {
+            "id": int(command_id),
+            "trigger_type": str(command_type or "program_change"),
+            "channel": int(channel),
+            "data1": int(data1),
+            "data2_threshold": int(data2) if data2 is not None else 0,
+            "action": str(action_type or "activate_chain"),
+            "target_chain_id": int(target_chain_id or 0),
+            "target_plugin_uri": str(target_plugin_uri or ""),
+            "target_plugin_position": int(target_plugin_position) if target_plugin_position is not None else None,
+            "action_data": dict(action_data or {}),
+            "active": bool(enabled),
+        }
+
+        update_handler = getattr(self._engine, "midi_update_command_trigger", None)
+        add_handler = getattr(self._engine, "midi_add_command_trigger", None)
+
+        if callable(update_handler):
+            updated = await asyncio.to_thread(update_handler, command_id, trigger_payload)
+            if updated:
+                return True
+        if callable(add_handler):
+            created_id = await asyncio.to_thread(add_handler, trigger_payload)
+            return bool(created_id)
+
+        logger.warning("JUCE engine does not support MIDI command trigger sync")
+        return False
+
+    async def set_all_midi_commands(self, commands: List[Dict[str, Any]]) -> bool:
+        """Replace all JUCE MIDI command triggers."""
+        if not self._engine:
+            return False
+
+        native_commands = [
+            {
+                "id": int(command.get("id") or 0),
+                "trigger_type": str(command.get("command_type") or "program_change"),
+                "channel": int(command.get("channel") or 0),
+                "data1": int(command.get("data1") or 0),
+                "data2_threshold": int(command["data2"]) if command.get("data2") is not None else 0,
+                "action": str(command.get("action_type") or "activate_chain"),
+                "target_chain_id": int(command.get("target_chain_id") or 0),
+                "target_plugin_uri": str(command.get("target_plugin_uri") or ""),
+                "target_plugin_position": (
+                    int(command["target_plugin_position"])
+                    if command.get("target_plugin_position") is not None
+                    else None
+                ),
+                "action_data": dict(command.get("action_data") or {}),
+                "active": bool(command.get("is_enabled", True)),
+            }
+            for command in commands
+        ]
+
+        set_all_handler = getattr(self._engine, "midi_set_all_command_triggers", None)
+        clear_handler = getattr(self._engine, "midi_clear_command_triggers", None)
+        add_handler = getattr(self._engine, "midi_add_command_trigger", None)
+
+        if callable(set_all_handler):
+            await asyncio.to_thread(set_all_handler, native_commands)
+            return True
+
+        if callable(clear_handler):
+            await asyncio.to_thread(clear_handler)
+        else:
+            logger.warning("JUCE engine does not support clearing MIDI command triggers")
+            return False
+
+        if callable(add_handler):
+            for command in native_commands:
+                await asyncio.to_thread(add_handler, command)
+            return True
+
+        logger.warning("JUCE engine does not support MIDI command trigger sync")
+        return False
+
     async def get_plugin_parameter(
         self,
         plugin_uri: str,

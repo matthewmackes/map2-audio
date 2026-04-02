@@ -267,6 +267,7 @@ def _ensure_midi_automation_identity_schema_sync() -> None:
 
     with _engine.begin() as conn:
         _add_sqlite_column_if_missing(conn, "midi_mappings", "target_plugin_position", "INTEGER")
+        _add_sqlite_column_if_missing(conn, "midi_commands", "target_plugin_position", "INTEGER")
         _add_sqlite_column_if_missing(conn, "midi_learn_state", "target_plugin_position", "INTEGER")
         _add_sqlite_column_if_missing(conn, "automation_lanes", "plugin_position", "INTEGER")
 
@@ -465,6 +466,7 @@ async def _ensure_midi_automation_identity_schema_async(conn) -> None:
         return
 
     await _add_sqlite_column_if_missing_async(conn, "midi_mappings", "target_plugin_position", "INTEGER")
+    await _add_sqlite_column_if_missing_async(conn, "midi_commands", "target_plugin_position", "INTEGER")
     await _add_sqlite_column_if_missing_async(conn, "midi_learn_state", "target_plugin_position", "INTEGER")
     await _add_sqlite_column_if_missing_async(conn, "automation_lanes", "plugin_position", "INTEGER")
 
@@ -1438,6 +1440,7 @@ class MIDICommand(Base):
     action_type = Column(String(30), nullable=False)  # activate_chain, toggle_chain, toggle_plugin, set_routing
     target_chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=True)
     target_plugin_uri = Column(String(255))
+    target_plugin_position = Column(Integer, nullable=True)
     action_data = Column(JSON, default=dict)  # Extra action parameters
 
     # Metadata

@@ -2029,6 +2029,7 @@ py::dict midiCommandTriggerToDict(const MidiCommandTrigger& trigger) {
     d["action"] = actionTypeToString(trigger.action);
     d["target_chain_id"] = trigger.targetChainId;
     d["target_plugin_uri"] = trigger.targetPluginUri;
+    d["target_plugin_position"] = trigger.targetPluginPosition >= 0 ? py::cast(trigger.targetPluginPosition) : py::none();
     d["active"] = trigger.active;
     return d;
 }
@@ -2044,6 +2045,9 @@ MidiCommandTrigger dictToMidiCommandTrigger(const py::dict& d) {
     if (d.contains("action")) trigger.action = stringToActionType(d["action"].cast<std::string>());
     if (d.contains("target_chain_id")) trigger.targetChainId = d["target_chain_id"].cast<int>();
     if (d.contains("target_plugin_uri")) trigger.targetPluginUri = d["target_plugin_uri"].cast<std::string>();
+    if (d.contains("target_plugin_position") && !d["target_plugin_position"].is_none()) {
+        trigger.targetPluginPosition = d["target_plugin_position"].cast<int>();
+    }
     if (d.contains("active")) trigger.active = d["active"].cast<bool>();
     return trigger;
 }

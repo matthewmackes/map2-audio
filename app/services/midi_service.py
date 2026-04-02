@@ -95,6 +95,7 @@ class MIDICommandDTO:
     action_type: ActionType = ActionType.ACTIVATE_CHAIN
     target_chain_id: Optional[int] = None
     target_plugin_uri: Optional[str] = None
+    target_plugin_position: Optional[int] = None
     action_data: Dict = field(default_factory=dict)
     name: str = ""
     is_enabled: bool = True
@@ -496,6 +497,7 @@ class MIDIService:
                 action_type=command.action_type.value if isinstance(command.action_type, ActionType) else command.action_type,
                 target_chain_id=command.target_chain_id,
                 target_plugin_uri=command.target_plugin_uri,
+                target_plugin_position=command.target_plugin_position,
                 action_data=command.action_data,
                 name=command.name,
                 is_enabled=command.is_enabled,
@@ -516,6 +518,23 @@ class MIDIService:
             logger.error(f"Error creating MIDI command: {e}")
             return None
 
+    async def get_command(self, command_id: int, session: AsyncSession) -> Optional[Dict[str, Any]]:
+        """Get a single MIDI command by ID."""
+        try:
+            from app.database import MIDICommand
+
+            result = await session.execute(
+                select(MIDICommand).filter(MIDICommand.id == command_id)
+            )
+            command = result.scalar_one_or_none()
+            if not command:
+                return None
+            return self._command_to_dict(command)
+
+        except Exception as e:
+            logger.error(f"Error getting MIDI command {command_id}: {e}")
+            return None
+
     async def get_all_commands(self, session: AsyncSession) -> List[Dict[str, Any]]:
         """Get all MIDI commands."""
         try:
@@ -528,6 +547,36 @@ class MIDIService:
         except Exception as e:
             logger.error(f"Error getting MIDI commands: {e}")
             return []
+
+    async def update_command(self, command_id: int, updates: Dict[str, Any], session: AsyncSession) -> bool:
+        """Update an existing MIDI command."""
+        try:
+            from app.database import MIDICommand
+
+            result = await session.execute(
+                select(MIDICommand).filter(MIDICommand.id == command_id)
+            )
+            command = result.scalar_one_or_none()
+            if not command:
+                return False
+
+            for key, value in updates.items():
+                if hasattr(command, key):
+                    setattr(command, key, value)
+
+            await session.flush()
+
+            logger.info(f"Updated MIDI command {command_id}")
+
+            if self._engine:
+                await self._sync_command_to_engine(command_id, session)
+
+            await self._broadcast_event("midi_command_updated", {"id": command_id, "updates": updates})
+            return True
+
+        except Exception as e:
+            logger.error(f"Error updating MIDI command {command_id}: {e}")
+            return False
 
     async def delete_command(self, command_id: int, session: AsyncSession) -> bool:
         """Delete a MIDI command."""
@@ -545,6 +594,8 @@ class MIDIService:
             await session.flush()
 
             logger.info(f"Deleted MIDI command {command_id}")
+            if self._engine:
+                await self._sync_all_commands_to_engine(session)
             await self._broadcast_event("midi_command_deleted", {"id": command_id})
             return True
 
@@ -1037,6 +1088,8 @@ class MIDIService:
             action_type=c.action_type,
             target_chain_id=c.target_chain_id,
             target_plugin_uri=c.target_plugin_uri or "",
+            target_plugin_position=c.target_plugin_position,
+            action_data=c.action_data or {},
             enabled=c.is_enabled,
         )
 
@@ -1149,6 +1202,7 @@ class MIDIService:
             "action_type": c.action_type,
             "target_chain_id": c.target_chain_id,
             "target_plugin_uri": c.target_plugin_uri,
+            "target_plugin_position": c.target_plugin_position,
             "action_data": c.action_data or {},
             "name": c.name or "",
             "is_enabled": c.is_enabled,

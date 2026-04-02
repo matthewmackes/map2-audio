@@ -8,7 +8,14 @@ from app import database as database_module
 from app.services.automation_engine import AutomationEngine, CurveType, ModulationSource
 from app.services.juce_engine_service import JuceEngineService
 from app.services.midi_engine import MIDIEngineService
-from app.services.midi_service import MIDIMappingDTO, MIDIService, CurveType as MIDICurveType
+from app.services.midi_service import (
+    MIDIMappingDTO,
+    MIDICommandDTO,
+    MIDIService,
+    CurveType as MIDICurveType,
+    ActionType as MIDIActionType,
+    CommandType as MIDICommandType,
+)
 
 
 def _reset_db_state() -> None:
@@ -44,6 +51,12 @@ def test_sqlite_schema_upgrade_adds_duplicate_identity_columns(tmp_path):
             "target_param_index INTEGER NOT NULL)"
         )
         conn.execute(
+            "CREATE TABLE midi_commands ("
+            "id INTEGER PRIMARY KEY, command_type VARCHAR(20), channel INTEGER, "
+            "data1 INTEGER, data2 INTEGER, action_type VARCHAR(30), "
+            "target_plugin_uri VARCHAR(255))"
+        )
+        conn.execute(
             "CREATE TABLE automation_lanes ("
             "id INTEGER PRIMARY KEY, parameter_id VARCHAR(255) UNIQUE NOT NULL, "
             "plugin_uri VARCHAR(255) NOT NULL, param_index INTEGER NOT NULL)"
@@ -60,10 +73,12 @@ def test_sqlite_schema_upgrade_adds_duplicate_identity_columns(tmp_path):
 
     with sqlite3.connect(db_path) as conn:
         midi_mapping_columns = {row[1] for row in conn.execute("PRAGMA table_info(midi_mappings)")}
+        midi_command_columns = {row[1] for row in conn.execute("PRAGMA table_info(midi_commands)")}
         midi_learn_columns = {row[1] for row in conn.execute("PRAGMA table_info(midi_learn_state)")}
         automation_columns = {row[1] for row in conn.execute("PRAGMA table_info(automation_lanes)")}
 
     assert "target_plugin_position" in midi_mapping_columns
+    assert "target_plugin_position" in midi_command_columns
     assert "target_plugin_position" in midi_learn_columns
     assert "plugin_position" in automation_columns
 
@@ -74,6 +89,8 @@ class _FakeMIDIControlEngine:
     def __init__(self) -> None:
         self.mapping_calls: list[dict] = []
         self.mapping_batches: list[list[dict]] = []
+        self.command_calls: list[dict] = []
+        self.command_batches: list[list[dict]] = []
         self.learn_calls: list[dict] = []
         self.parameter_reads: list[tuple[str, int, int | None]] = []
 
@@ -83,6 +100,14 @@ class _FakeMIDIControlEngine:
 
     async def set_all_midi_mappings(self, mappings):
         self.mapping_batches.append(list(mappings))
+        return True
+
+    async def set_midi_command(self, **kwargs):
+        self.command_calls.append(dict(kwargs))
+        return True
+
+    async def set_all_midi_commands(self, commands):
+        self.command_batches.append(list(commands))
         return True
 
     async def start_midi_learn(self, plugin_uri: str, param_index: int, **kwargs):
@@ -155,6 +180,50 @@ async def test_midi_service_persists_and_syncs_duplicate_safe_targets(tmp_path):
     assert fake_engine.mapping_calls[0]["plugin_position"] == 3
     assert fake_engine.learn_calls[0]["plugin_position"] == 4
     assert fake_engine.parameter_reads == [("urn:test:duplicate", 2, 3)]
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_midi_service_persists_and_syncs_duplicate_safe_command_targets(tmp_path):
+    _init_temp_async_db(tmp_path, "midi-command-identity.db")
+    service = MIDIService()
+    fake_engine = _FakeMIDIControlEngine()
+    service.set_engine(fake_engine)
+
+    async with database_module.get_session() as session:
+        command_id = await service.create_command(
+            MIDICommandDTO(
+                command_type=MIDICommandType.NOTE_ON,
+                channel=1,
+                data1=60,
+                data2=100,
+                action_type=MIDIActionType.TOGGLE_PLUGIN,
+                target_plugin_uri="urn:test:duplicate",
+                target_plugin_position=2,
+                name="Duplicate-safe bypass",
+            ),
+            session,
+        )
+        assert command_id is not None
+
+        command = await service.get_command(command_id, session)
+        assert command is not None
+        assert command["target_plugin_position"] == 2
+
+        updated = await service.update_command(command_id, {"target_plugin_position": 4}, session)
+        assert updated is True
+
+        reloaded = await service.get_command(command_id, session)
+        assert reloaded is not None
+        assert reloaded["target_plugin_position"] == 4
+
+        commands = await service.get_all_commands(session)
+        assert commands[0]["target_plugin_position"] == 4
+
+    assert fake_engine.command_calls[0]["target_plugin_position"] == 2
+    assert fake_engine.command_calls[0]["action_type"] == MIDIActionType.TOGGLE_PLUGIN.value
+    assert fake_engine.command_calls[1]["target_plugin_position"] == 4
 
     await _dispose_db()
 
@@ -247,6 +316,9 @@ class _FakeNativeMidiBindings:
         self.updated: list[tuple[int, dict]] = []
         self.added: list[dict] = []
         self.set_all_calls: list[list[dict]] = []
+        self.command_updated: list[tuple[int, dict]] = []
+        self.command_added: list[dict] = []
+        self.command_set_all_calls: list[list[dict]] = []
         self.learn_calls: list[tuple] = []
         self.parameter_reads: list[tuple[int, int]] = []
 
@@ -260,6 +332,17 @@ class _FakeNativeMidiBindings:
 
     def midi_set_all_cc_mappings(self, payloads: list[dict]) -> None:
         self.set_all_calls.append([dict(item) for item in payloads])
+
+    def midi_update_command_trigger(self, trigger_id: int, payload: dict) -> bool:
+        self.command_updated.append((trigger_id, dict(payload)))
+        return False
+
+    def midi_add_command_trigger(self, payload: dict) -> int:
+        self.command_added.append(dict(payload))
+        return int(payload["id"])
+
+    def midi_set_all_command_triggers(self, payloads: list[dict]) -> None:
+        self.command_set_all_calls.append([dict(item) for item in payloads])
 
     def midi_start_learn(
         self,
@@ -339,3 +422,46 @@ async def test_juce_engine_service_resolves_duplicate_identity_for_midi_bindings
     assert native.set_all_calls[0][0]["target_plugin"] == 404
     assert native.learn_calls[0][:4] == (6, 404, "gain", 3)
     assert native.parameter_reads == [(404, 3)]
+
+
+@pytest.mark.asyncio
+async def test_juce_engine_service_syncs_duplicate_safe_command_payloads():
+    service = JuceEngineService()
+    native = _FakeNativeMidiBindings()
+    service._engine = native
+
+    created = await service.set_midi_command(
+        command_id=15,
+        command_type="note_on",
+        channel=1,
+        data1=60,
+        data2=100,
+        action_type="toggle_plugin",
+        target_plugin_uri="urn:test:duplicate",
+        target_plugin_position=4,
+        action_data={"scene": "lead"},
+        enabled=True,
+    )
+    batch = await service.set_all_midi_commands(
+        [
+            {
+                "id": 15,
+                "command_type": "note_on",
+                "channel": 1,
+                "data1": 60,
+                "data2": 100,
+                "action_type": "toggle_plugin",
+                "target_chain_id": None,
+                "target_plugin_uri": "urn:test:duplicate",
+                "target_plugin_position": 4,
+                "action_data": {"scene": "lead"},
+                "is_enabled": True,
+            }
+        ]
+    )
+
+    assert created is True
+    assert batch is True
+    assert native.command_added[0]["target_plugin_position"] == 4
+    assert native.command_set_all_calls[0][0]["target_plugin_position"] == 4
+    assert native.command_set_all_calls[0][0]["action"] == "toggle_plugin"

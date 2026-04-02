@@ -6,7 +6,51 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 04:38 EDT - T590, T591, and T592 blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 05:52 EDT - T676 completed the duplicate-safe MIDI command-target-position prerequisite across SQLite schema upgrades, MIDI v2 command routes, MIDI service sync payloads, JUCE command-trigger wrappers, and focused regression coverage; T677 and T678 remain queued as the next controller-display preparation slices for blocked `T647`; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+
+ID: T678
+Status: [ ] Todo
+Title: Add plugin key-parameter metadata registry for controller display prep
+Description:
+- Goal / acceptance criteria: Introduce one canonical helper that selects a default "key parameter" for a plugin instance using existing plugin metadata (parameter names/symbols/category) and explicit overrides for common effect families. The helper must return stable metadata that later controller-display work can consume without guessing from raw parameter arrays on every update.
+- Why it matters: `T647` is blocked in part because MAP2 has no plugin-type key-parameter registry. A deterministic resolver is a prerequisite for pushing useful block-status text such as `Delay - Feedback 42%` instead of arbitrary first-parameter noise.
+- Dependencies: T676, T677
+- Estimated effort: Low
+- Required outputs: shared key-parameter resolver, representative regression coverage for delay/reverb/gain/modulation style plugins, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 05:45 EDT - Codex
+
+ID: T677
+Status: [ ] Todo
+Title: Add explicit controller-display capability metadata for MIDI device profiles
+Description:
+- Goal / acceptance criteria: Extend the MIDI device-profile/registry model so controller display capabilities are represented explicitly rather than inferred from ad hoc profile IDs. Capability metadata must distinguish supported per-switch text transports from controllers that only support generic SysEx or have no text-display path, and existing footswitch-label push code must consume that metadata.
+- Why it matters: `T647` is blocked because the current profile model overstates BeatStep Pro suitability and hard-codes Morningstar display behavior. MAP2 needs an explicit capability contract before controller-label or parameter-display features can be implemented honestly.
+- Dependencies: T676
+- Estimated effort: Low
+- Required outputs: profile metadata contract, registry/service updates, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 05:45 EDT - Codex
+
+ID: T676
+Status: [✓] Done
+Title: Add duplicate-safe target positions to MIDI command triggers
+Description:
+- Goal / acceptance criteria: Extend MIDI command-trigger persistence, API contracts, and sync payloads so command actions aimed at plugin blocks can carry an optional `target_plugin_position` alongside `target_plugin_uri`, matching the duplicate-safe identity model already used by CC mappings and MIDI learn. Regression coverage must prove create/list/update flows round-trip the position without breaking existing command payloads.
+- Why it matters: `T647` cannot safely address one duplicated block instance versus another while command triggers only identify plugins by URI. This prerequisite closes the most concrete schema gap called out in the blocker notes.
+- Dependencies: T647
+- Estimated effort: Low
+- Required outputs: updated MIDI command schema/contracts, service sync payloads, regression tests, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 05:52 EDT - Codex
+- Completion notes:
+  - Added `target_plugin_position` to persisted `midi_commands` records and SQLite additive schema upgrades so legacy databases gain the duplicate-safe command-target field automatically.
+  - Reworked MIDI v2 command create/update flows to round-trip reloaded command payloads through `MIDIService`, including the new position field, instead of the prior partially direct route logic.
+  - Added JUCE command-trigger sync wrappers plus native binding payload support so duplicate-safe target positions now survive the Python-to-engine command-trigger contract even before `T647` uses them functionally.
+- Validation: `python3 -m pytest -q tests/test_midi_automation_identity_persistence.py tests/test_midi_v2_routes.py` -> PASS
 
 ID: T675
 Status: [✓] Done
@@ -3475,9 +3519,9 @@ Last updated: 2026-03-29 20:28 EDT - Codex
   - Verified on 2026-03-29 that the current host exposes `Jogg USB Audio`, onboard `HDA Intel PCH` analog I/O, and HDMI playback devices via ALSA.
   - Confirmed the UA-1000 is not currently attached, so the remaining blocker for `T055` is specific missing target hardware rather than generic device access.
 
-## Active Blockers Only
+## Active Blockers Context
 
-As of 2026-03-29 20:28 EDT, the active ledger contains blocker-only follow-up. There are no canonical `Status: [ ]` or `Status: [>]` tasks left to promote until an external blocker clears or a new task is added.
+As of 2026-04-02 05:45 EDT, the remaining product backlog is still predominantly blocker-driven, but `T676` through `T678` now capture concrete prerequisite slices that can be executed locally to reduce `T647`'s controller-display blocker surface while the deeper runtime and HIL items below remain blocked.
 
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 

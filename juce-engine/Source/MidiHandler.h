@@ -110,12 +110,13 @@ struct MidiCommandTrigger {
     CommandActionType action;        // What to do when triggered
     int targetChainId;               // Chain ID for chain actions
     std::string targetPluginUri;     // Plugin URI for plugin actions
+    int targetPluginPosition;        // Chain position for duplicate-safe plugin actions (-1 = unset)
     bool active;                     // Is trigger enabled
 
     MidiCommandTrigger()
         : id(0), triggerType(MidiMessageType::ProgramChange), channel(0),
           data1(0), data2Threshold(0), action(CommandActionType::ActivateChain),
-          targetChainId(0), active(true) {}
+          targetChainId(0), targetPluginPosition(-1), active(true) {}
 };
 
 // MIDI learn target
