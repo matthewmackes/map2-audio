@@ -336,6 +336,9 @@ describe('SnapshotChainManagementCard', () => {
     const topTools = container.querySelector('.juce-grid-page__snapshot-status-top-tools')
     const bpmStack = container.querySelector('.juce-grid-page__snapshot-status-bpm-stack')
     const contentRow = container.querySelector('.juce-grid-page__snapshot-status-content-row')
+    const stateRow = container.querySelector('.juce-grid-page__snapshot-status-state-row')
+    const liveRow = container.querySelector('.juce-grid-page__snapshot-status-live-row')
+    const pillRow = container.querySelector('.juce-grid-page__snapshot-status-pill-row')
     const midiReadout = container.querySelector('[aria-label="PC 023  CH 01/05"]')
     const midiPanel = container.querySelector('.juce-grid-page__snapshot-status-midi')
 
@@ -378,6 +381,12 @@ describe('SnapshotChainManagementCard', () => {
     expect(bpmStack?.compareDocumentPosition(midiPanel as Element) & Node.DOCUMENT_POSITION_FOLLOWING)
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(contentRow).toContainElement(screen.getByText('Friday Night Drive'))
+    expect(stateRow).toContainElement(screen.getByText('LIVE'))
+    expect(stateRow).not.toContainElement(screen.getByText('2 of 2 channels active'))
+    expect(liveRow).toContainElement(screen.getByText('Friday Night Drive'))
+    expect(pillRow).toContainElement(screen.getByText('2 of 2 channels active'))
+    expect(liveRow?.compareDocumentPosition(pillRow as Element) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(contentRow).toContainElement(metadataTable)
     expect(container.querySelector('.juce-grid-page__snapshot-status-pill')).not.toBeInTheDocument()
     expect(screen.queryByText('Live now')).not.toBeInTheDocument()
@@ -423,7 +432,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Output is 5.5 dB above reference level.')).toBeInTheDocument()
   })
 
-  it('renders the monitoring solo badge in the hero state row and highlights warning state', () => {
+  it('renders the monitoring solo badge in the hero pill row and highlights warning state', () => {
     const { container } = renderCard(buildLiveSnapshot(), {
       monitoringStatusLabel: 'Monitoring: Lead -> Not assigned',
       monitoringStatusWarning: true,
@@ -431,10 +440,12 @@ describe('SnapshotChainManagementCard', () => {
 
     const badge = screen.getByText('Monitoring: Lead -> Not assigned').closest('.juce-grid-page__snapshot-status-monitoring-badge')
     const stateRow = container.querySelector('.juce-grid-page__snapshot-status-state-row')
+    const pillRow = container.querySelector('.juce-grid-page__snapshot-status-pill-row')
 
     expect(badge).toBeInTheDocument()
     expect(badge).toHaveClass('juce-grid-page__snapshot-status-monitoring-badge', 'is-warning')
-    expect(stateRow).toContainElement(badge as HTMLElement)
+    expect(pillRow).toContainElement(badge as HTMLElement)
+    expect(stateRow).not.toContainElement(badge as HTMLElement)
   })
 
   it('shows never for snapshots that have not been activated yet', () => {
@@ -611,19 +622,6 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
-  it('renders a snapshot favorite toggle and calls through when pressed', () => {
-    const onToggleSnapshotFavorite = jest.fn()
-
-    renderCard(buildLiveSnapshot({ is_favorite: false }), { onToggleSnapshotFavorite })
-
-    const favoriteButton = screen.getByRole('button', { name: 'Favorite' })
-    expect(favoriteButton).toBeInTheDocument()
-
-    fireEvent.click(favoriteButton)
-
-    expect(onToggleSnapshotFavorite).toHaveBeenCalledTimes(1)
-  })
-
   it('renders the Go Live action in idle state and calls through when pressed', () => {
     const onGoLive = jest.fn()
 
@@ -686,8 +684,8 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Channel Lead not loaded.')).toBeInTheDocument()
   })
 
-  it('replaces the Go Live button with a blinking live indicator when the target snapshot is already live', () => {
-    renderCard(buildLiveSnapshot(), {
+  it('keeps only the small top LIVE label when the target snapshot is already live', () => {
+    const { container } = renderCard(buildLiveSnapshot(), {
       goLiveState: {
         phase: 'live',
         label: 'LIVE',
@@ -697,8 +695,9 @@ describe('SnapshotChainManagementCard', () => {
     })
 
     const liveIndicators = screen.getAllByText('LIVE')
-    expect(liveIndicators.length).toBeGreaterThan(1)
+    expect(liveIndicators).toHaveLength(1)
     expect(screen.queryByRole('button', { name: 'Go Live' })).not.toBeInTheDocument()
+    expect(container.querySelector('.juce-grid-page__snapshot-status-go-live-indicator')).not.toBeInTheDocument()
   })
 
   it('renders the collapsed snapshot diff expander and reveals the change list on demand', () => {
@@ -749,66 +748,41 @@ describe('SnapshotChainManagementCard', () => {
     expect(onDismissGoLiveDiff).toHaveBeenCalledTimes(1)
   })
 
-  it('places favorite and lock controls below the snapshot description instead of in the title row', () => {
+  it('does not render removed snapshot hero navigation, favorite, or lock controls even when callbacks are provided', () => {
     const onToggleSnapshotFavorite = jest.fn()
     const onToggleSnapshotLock = jest.fn()
-    const { container } = renderCard(
-      buildLiveSnapshot({ description: 'Created from Snapshot Editor', is_favorite: false }),
-      {
-        onToggleSnapshotFavorite,
-        onToggleSnapshotLock,
-        onSubmitSnapshotDescription: jest.fn(),
-      },
-    )
-
-    const descriptionButton = screen.getByText('Created from Snapshot Editor')
-    const actionGroup = screen.getByRole('group', { name: 'Snapshot actions' })
-    const favoriteButton = screen.getByRole('button', { name: 'Favorite' })
-    const lockButton = screen.getByRole('button', { name: 'Lock' })
-    const liveRow = container.querySelector('.juce-grid-page__snapshot-status-live-row')
-
-    expect(actionGroup).toContainElement(favoriteButton)
-    expect(actionGroup).toContainElement(lockButton)
-    expect(liveRow).not.toContainElement(favoriteButton)
-    expect(liveRow).not.toContainElement(lockButton)
-    expect(descriptionButton.compareDocumentPosition(actionGroup) & Node.DOCUMENT_POSITION_FOLLOWING)
-      .toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  })
-
-  it('renders previous and next snapshot buttons and disables them with the provided reasons', () => {
     const onLoadPreviousSnapshot = jest.fn()
     const onLoadNextSnapshot = jest.fn()
 
     renderCard(buildLiveSnapshot(), {
+      onToggleSnapshotFavorite,
+      onToggleSnapshotLock,
       onLoadPreviousSnapshot,
       onLoadNextSnapshot,
-      previousSnapshotDisabled: true,
-      nextSnapshotDisabled: false,
-      previousSnapshotDisabledReason: 'No previous snapshot',
-      nextSnapshotDisabledReason: 'No next snapshot',
+      onSubmitSnapshotDescription: jest.fn(),
     })
 
-    expect(screen.getByRole('button', { name: 'Prev' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Prev' })).toHaveAttribute('title', 'No previous snapshot')
+    expect(screen.queryByRole('toolbar', { name: 'Snapshot navigation' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Prev' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Snapshot actions' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Favorite' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Favorited' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lock' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Locked' })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-
+    expect(onToggleSnapshotFavorite).not.toHaveBeenCalled()
+    expect(onToggleSnapshotLock).not.toHaveBeenCalled()
     expect(onLoadPreviousSnapshot).not.toHaveBeenCalled()
-    expect(onLoadNextSnapshot).toHaveBeenCalledTimes(1)
+    expect(onLoadNextSnapshot).not.toHaveBeenCalled()
   })
 
-  it('renders a snapshot lock toggle and disables stored BPM edits while locked', () => {
-    const onToggleSnapshotLock = jest.fn()
+  it('disables stored BPM edits for locked snapshots without rendering the old lock control', () => {
+    renderCard(buildLiveSnapshot({ is_locked: true }), { onToggleSnapshotLock: jest.fn() })
 
-    renderCard(buildLiveSnapshot({ is_locked: true }), { onToggleSnapshotLock })
-
-    expect(screen.getAllByText('Locked').length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: 'Locked' })).toBeInTheDocument()
     expect(screen.getByLabelText('Stored BPM')).toBeDisabled()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Locked' }))
-
-    expect(onToggleSnapshotLock).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Lock' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Locked' })).not.toBeInTheDocument()
   })
 
   it('edits the snapshot description inline and saves on enter', () => {

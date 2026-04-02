@@ -8,59 +8,78 @@
 
 namespace map2 {
 
+juce::AudioProcessor::BusesProperties ParallelMixerProcessor::createBusesProperties() {
+    return juce::AudioProcessor::BusesProperties()
+        .withInput("Branch 1", juce::AudioChannelSet::stereo(), true)
+        .withInput("Branch 2", juce::AudioChannelSet::stereo(), true)
+        .withInput("Branch 3", juce::AudioChannelSet::stereo(), true)
+        .withInput("Branch 4", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true);
+}
+
 ParallelMixerProcessor::ParallelMixerProcessor()
-    : AudioProcessor(BusesProperties()
-        .withInput("Input", juce::AudioChannelSet::stereo(), true)
-        .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
+    : AudioProcessor(createBusesProperties()) {
 
     // Initialize branch levels to unity
     for (auto& level : branchLevels_) {
         level.store(1.0f);
-    }
-
-    // Clear buffer flags
-    for (auto& flag : branchBufferSet_) {
-        flag = false;
     }
 }
 
 void ParallelMixerProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
     sampleRate_ = sampleRate;
     blockSize_ = samplesPerBlock;
+    branch0Scratch_.setSize(2, samplesPerBlock, false, false, true);
+    branch0Scratch_.clear();
 
-    // Pre-allocate branch buffers
-    for (auto& buffer : branchBuffers_) {
-        buffer.setSize(2, samplesPerBlock);
-        buffer.clear();
-    }
-
-    prepared_ = true;
+    prepared_.store(true);
 }
 
 void ParallelMixerProcessor::releaseResources() {
-    prepared_ = false;
+    prepared_.store(false);
 }
 
 void ParallelMixerProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& /*midiMessages*/) {
-    if (!prepared_) return;
+    if (!prepared_.load()) return;
 
-    // Bypass mode - pass through unchanged
+    auto output = getBusBuffer(buffer, false, 0);
+    const auto branch0Input = getBusBuffer(buffer, true, 0);
+    const int numSamples = output.getNumSamples();
+    const int outputChannels = output.getNumChannels();
+    const int scratchChannels = std::min(outputChannels, branch0Scratch_.getNumChannels());
+    const int scratchSamples = std::min(numSamples, branch0Scratch_.getNumSamples());
+
+    branch0Scratch_.clear();
+    for (int ch = 0; ch < scratchChannels && ch < branch0Input.getNumChannels(); ++ch) {
+        branch0Scratch_.copyFrom(ch, 0, branch0Input, ch, 0, scratchSamples);
+    }
+
+    // Bypass mode - pass through branch 0 unchanged
     if (bypass_.load()) {
+        output.clear();
+        for (int ch = 0; ch < scratchChannels; ++ch) {
+            output.copyFrom(ch, 0, branch0Scratch_, ch, 0, scratchSamples);
+        }
         return;
     }
 
-    const int numChannels = buffer.getNumChannels();
-    const int numSamples = buffer.getNumSamples();
-
     Mode mode = mode_.load();
     float masterLevel = masterLevel_.load();
+    const int activeBranches = std::clamp(numBranches_.load(), 1, MAX_BRANCHES);
 
-    // Lock for buffer access
-    std::lock_guard<std::mutex> lock(bufferMutex_);
+    output.clear();
 
-    // Clear output buffer
-    buffer.clear();
+    auto addBranchToOutput = [&](const juce::AudioBuffer<float>& source, float gain) {
+        if (std::abs(gain) < 0.001f) {
+            return;
+        }
+        const int channels = std::min(outputChannels, source.getNumChannels());
+        const int samples = std::min(numSamples, source.getNumSamples());
+        for (int ch = 0; ch < channels; ++ch) {
+            output.addFrom(ch, 0, source, ch, 0, samples, gain);
+        }
+    };
 
     switch (mode) {
         case Mode::ABBlend: {
@@ -69,44 +88,25 @@ void ParallelMixerProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             float gainA = std::cos(blend * juce::MathConstants<float>::halfPi);
             float gainB = std::sin(blend * juce::MathConstants<float>::halfPi);
 
-            for (int ch = 0; ch < numChannels; ++ch) {
-                auto* out = buffer.getWritePointer(ch);
+            addBranchToOutput(branch0Scratch_, gainA);
 
-                if (branchBufferSet_[0] && ch < branchBuffers_[0].getNumChannels()) {
-                    const auto* dataA = branchBuffers_[0].getReadPointer(ch);
-                    for (int i = 0; i < numSamples; ++i) {
-                        out[i] += dataA[i] * gainA;
-                    }
-                }
-
-                if (branchBufferSet_[1] && ch < branchBuffers_[1].getNumChannels()) {
-                    const auto* dataB = branchBuffers_[1].getReadPointer(ch);
-                    for (int i = 0; i < numSamples; ++i) {
-                        out[i] += dataB[i] * gainB;
-                    }
-                }
+            if (activeBranches > 1) {
+                const auto branch1Input = getBusBuffer(buffer, true, 1);
+                addBranchToOutput(branch1Input, gainB);
             }
             break;
         }
 
         case Mode::MultiMix: {
             // Mix all branches with individual levels
-            for (int branch = 0; branch < numBranches_; ++branch) {
-                if (!branchBufferSet_[branch]) continue;
-
+            for (int branch = 0; branch < activeBranches; ++branch) {
                 float branchLevel = branchLevels_[branch].load();
-                if (branchLevel < 0.001f) continue;
-
-                for (int ch = 0; ch < numChannels; ++ch) {
-                    if (ch >= branchBuffers_[branch].getNumChannels()) continue;
-
-                    auto* out = buffer.getWritePointer(ch);
-                    const auto* data = branchBuffers_[branch].getReadPointer(ch);
-
-                    for (int i = 0; i < numSamples; ++i) {
-                        out[i] += data[i] * branchLevel;
-                    }
+                if (branch == 0) {
+                    addBranchToOutput(branch0Scratch_, branchLevel);
+                    continue;
                 }
+                const auto branchInput = getBusBuffer(buffer, true, branch);
+                addBranchToOutput(branchInput, branchLevel);
             }
             break;
         }
@@ -116,24 +116,10 @@ void ParallelMixerProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             float wetLevel = abBlend_.load();
             float dryLevel = 1.0f - wetLevel;
 
-            for (int ch = 0; ch < numChannels; ++ch) {
-                auto* out = buffer.getWritePointer(ch);
-
-                // Dry signal (branch 0)
-                if (branchBufferSet_[0] && ch < branchBuffers_[0].getNumChannels()) {
-                    const auto* dry = branchBuffers_[0].getReadPointer(ch);
-                    for (int i = 0; i < numSamples; ++i) {
-                        out[i] += dry[i] * dryLevel;
-                    }
-                }
-
-                // Wet signal (branch 1)
-                if (branchBufferSet_[1] && ch < branchBuffers_[1].getNumChannels()) {
-                    const auto* wet = branchBuffers_[1].getReadPointer(ch);
-                    for (int i = 0; i < numSamples; ++i) {
-                        out[i] += wet[i] * wetLevel;
-                    }
-                }
+            addBranchToOutput(branch0Scratch_, dryLevel);
+            if (activeBranches > 1) {
+                const auto wetInput = getBusBuffer(buffer, true, 1);
+                addBranchToOutput(wetInput, wetLevel);
             }
             break;
         }
@@ -141,12 +127,7 @@ void ParallelMixerProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     // Apply master level
     if (std::abs(masterLevel - 1.0f) > 0.001f) {
-        buffer.applyGain(masterLevel);
-    }
-
-    // Clear branch buffer flags for next cycle
-    for (auto& flag : branchBufferSet_) {
-        flag = false;
+        output.applyGain(masterLevel);
     }
 }
 
@@ -184,41 +165,7 @@ void ParallelMixerProcessor::setBypass(bool bypass) {
 }
 
 void ParallelMixerProcessor::setNumBranches(int num) {
-    numBranches_ = std::clamp(num, 1, MAX_BRANCHES);
-}
-
-// ========================================
-// Branch Buffer Management
-// ========================================
-
-void ParallelMixerProcessor::setBranchBuffer(int branch, const juce::AudioBuffer<float>& buffer) {
-    if (branch < 0 || branch >= MAX_BRANCHES) return;
-
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-
-    // Copy the buffer
-    const int numChannels = std::min(buffer.getNumChannels(), branchBuffers_[branch].getNumChannels());
-    const int numSamples = std::min(buffer.getNumSamples(), branchBuffers_[branch].getNumSamples());
-
-    for (int ch = 0; ch < numChannels; ++ch) {
-        branchBuffers_[branch].copyFrom(ch, 0, buffer, ch, 0, numSamples);
-    }
-
-    branchBufferSet_[branch] = true;
-}
-
-void ParallelMixerProcessor::clearBranchBuffers() {
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-
-    for (int i = 0; i < MAX_BRANCHES; ++i) {
-        branchBuffers_[i].clear();
-        branchBufferSet_[i] = false;
-    }
-}
-
-bool ParallelMixerProcessor::hasBranchBuffer(int branch) const {
-    if (branch < 0 || branch >= MAX_BRANCHES) return false;
-    return branchBufferSet_[branch];
+    numBranches_.store(std::clamp(num, 1, MAX_BRANCHES));
 }
 
 } // namespace map2

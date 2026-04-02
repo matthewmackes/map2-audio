@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Edit, Favorite, FavoriteFilled, Play, Renew } from '@carbon/icons-react'
+import { Edit, Play, Renew } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
 import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -507,16 +507,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     onSubmitSnapshotName,
     onCancelSnapshotRename,
     snapshotRenamePending = false,
-    onLoadPreviousSnapshot,
-    onLoadNextSnapshot,
-    previousSnapshotDisabled = false,
-    nextSnapshotDisabled = false,
-    previousSnapshotDisabledReason,
-    nextSnapshotDisabledReason,
-    onToggleSnapshotFavorite,
-    snapshotFavoritePending = false,
-    onToggleSnapshotLock,
-    snapshotLockPending = false,
     onGoLive,
     goLiveState = null,
     goLiveDiffItems = null,
@@ -557,11 +547,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
   const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
   const snapshotLocked = Boolean(liveSnapshot?.is_locked)
-  const showSnapshotActionRow = Boolean(
-    (liveSnapshot && onToggleSnapshotFavorite)
-    || (liveSnapshot && onToggleSnapshotLock)
-    || snapshotLocked,
-  )
 
   useEffect(() => {
     if (!editingDescription) {
@@ -675,28 +660,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                 >
                   {liveHeadline.text}
                 </span>
-                {channelActivityBadge ? (
-                  <div
-                    title={channelActivityBadge.tooltip}
-                    aria-label={channelActivityBadge.tooltip}
-                    className="juce-grid-page__snapshot-status-channel-badge-wrap"
-                  >
-                    <Tag
-                      type={channelActivityBadge.warning ? 'warm-gray' : 'green'}
-                      className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : 'is-healthy'}`}
-                    >
-                      {channelActivityBadge.label}
-                    </Tag>
-                  </div>
-                ) : null}
-                {monitoringStatusLabel ? (
-                  <Tag
-                    type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
-                    className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
-                  >
-                    {monitoringStatusLabel}
-                  </Tag>
-                ) : null}
               </div>
               <div className="juce-grid-page__snapshot-status-live-row">
                 {liveSnapshot && snapshotNameEditing ? (
@@ -752,31 +715,33 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     ) : snapshotTitle}
                   </h2>
                 )}
-                {(onLoadPreviousSnapshot || onLoadNextSnapshot) ? (
-                  <div className="juce-grid-page__snapshot-status-nav" role="toolbar" aria-label="Snapshot navigation">
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      renderIcon={ArrowLeft}
-                      onClick={onLoadPreviousSnapshot}
-                      disabled={previousSnapshotDisabled}
-                      title={previousSnapshotDisabledReason}
-                    >
-                      Prev
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      renderIcon={ArrowRight}
-                      onClick={onLoadNextSnapshot}
-                      disabled={nextSnapshotDisabled}
-                      title={nextSnapshotDisabledReason}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                ) : null}
               </div>
+              {channelActivityBadge || monitoringStatusLabel ? (
+                <div className="juce-grid-page__snapshot-status-pill-row">
+                  {channelActivityBadge ? (
+                    <div
+                      title={channelActivityBadge.tooltip}
+                      aria-label={channelActivityBadge.tooltip}
+                      className="juce-grid-page__snapshot-status-channel-badge-wrap"
+                    >
+                      <Tag
+                        type={channelActivityBadge.warning ? 'warm-gray' : 'green'}
+                        className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : 'is-healthy'}`}
+                      >
+                        {channelActivityBadge.label}
+                      </Tag>
+                    </div>
+                  ) : null}
+                  {monitoringStatusLabel ? (
+                    <Tag
+                      type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
+                      className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
+                    >
+                      {monitoringStatusLabel}
+                    </Tag>
+                  ) : null}
+                </div>
+              ) : null}
               {liveSnapshot && onSubmitSnapshotDescription ? (
                 editingDescription ? (
                   <textarea
@@ -803,13 +768,9 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                   </button>
                 )
               ) : null}
-              {liveSnapshot && goLiveState ? (
+              {liveSnapshot && goLiveState && (goLiveState.phase !== 'live' || Boolean(goLiveState.errorMessage)) ? (
                 <div className="juce-grid-page__snapshot-status-go-live" aria-live="polite">
-                  {goLiveState.phase === 'live' ? (
-                    <span className="juce-grid-page__snapshot-status-go-live-indicator juce-grid-page__snapshot-status-state-label is-current is-blinking">
-                      LIVE
-                    </span>
-                  ) : (
+                  {goLiveState.phase !== 'live' ? (
                     <Button
                       size="sm"
                       kind={goLiveState.phase === 'error' ? 'danger' : 'primary'}
@@ -820,7 +781,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     >
                       {goLiveState.label}
                     </Button>
-                  )}
+                  ) : null}
                   {goLiveState.errorMessage ? (
                     <p className="juce-grid-page__snapshot-status-go-live-error">{goLiveState.errorMessage}</p>
                   ) : null}
@@ -871,36 +832,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                       ))}
                     </ul>
                   ) : null}
-                </div>
-              ) : null}
-              {showSnapshotActionRow ? (
-                <div className="juce-grid-page__snapshot-status-secondary-actions" role="group" aria-label="Snapshot actions">
-                  {liveSnapshot && onToggleSnapshotFavorite ? (
-                    <Button
-                      size="sm"
-                      kind={liveSnapshot.is_favorite ? 'secondary' : 'ghost'}
-                      renderIcon={liveSnapshot.is_favorite ? FavoriteFilled : Favorite}
-                      onClick={onToggleSnapshotFavorite}
-                      disabled={snapshotFavoritePending}
-                    >
-                      {snapshotFavoritePending
-                        ? (liveSnapshot.is_favorite ? 'Updating…' : 'Saving…')
-                        : (liveSnapshot.is_favorite ? 'Favorited' : 'Favorite')}
-                    </Button>
-                  ) : null}
-                  {liveSnapshot && onToggleSnapshotLock ? (
-                    <Button
-                      size="sm"
-                      kind={snapshotLocked ? 'secondary' : 'ghost'}
-                      onClick={onToggleSnapshotLock}
-                      disabled={snapshotLockPending}
-                    >
-                      {snapshotLockPending
-                        ? (snapshotLocked ? 'Unlocking…' : 'Locking…')
-                        : (snapshotLocked ? 'Locked' : 'Lock')}
-                    </Button>
-                  ) : null}
-                  {snapshotLocked ? <Tag type="warm-gray">Locked</Tag> : null}
                 </div>
               ) : null}
               {!liveSnapshot && (

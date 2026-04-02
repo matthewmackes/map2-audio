@@ -689,7 +689,10 @@ if(BUILD_SYNTHFORGE_TESTS)
         tests/DrumMachineProcessorTests.cpp
         tests/DrumMachineMixerTests.cpp
         tests/DrumSequencerTests.cpp
+        tests/ConvolutionProcessorTests.cpp
+        tests/ParallelMixerProcessorTests.cpp
         tests/SynthForgeSfzTests.cpp
+        Source/ConvolutionProcessor.cpp
         Source/DrumMachine/DrumMachineMixer.cpp
         Source/DrumMachine/DrumMasterFx.cpp
         Source/DrumMachine/DrumMachineProcessor.cpp
@@ -697,6 +700,7 @@ if(BUILD_SYNTHFORGE_TESTS)
         Source/DrumMachine/DrumCvGateOutput.cpp
         Source/DrumMachine/DrumSynthVoice.cpp
         Source/DrumMachine/DrumSequencer.cpp
+        Source/ParallelMixerProcessor.cpp
         Source/SynthForge/Core/Part.cpp
         Source/SynthForge/Core/VoiceAllocator.cpp
         Source/SynthForge/Sampler/GroupedSampler.cpp
@@ -715,6 +719,7 @@ if(BUILD_SYNTHFORGE_TESTS)
         Catch2::Catch2WithMain
         juce::juce_audio_basics
         juce::juce_audio_formats
+        juce::juce_audio_processors
         juce::juce_core
         juce::juce_dsp
     )

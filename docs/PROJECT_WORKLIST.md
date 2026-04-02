@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 07:43 EDT - T647 is complete: snapshot activation now pushes compact Morningstar MC6/MC8 short-name SysEx summaries derived from the controller-display preview after the existing label pass, live plugin parameter writes now refresh the active snapshot preview and re-push any affected key-parameter slots, and unsupported controller profiles such as BeatStep Pro continue to silent-skip via explicit capability metadata rather than over-claiming per-switch text support; T681 through T676 remain complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 09:16 EDT - Completed T682 Snapshot Editor hero cleanup by removing Prev/Next navigation, removing Favorite/Lock controls, keeping only the small top LIVE state label, and regrouping channel/monitoring pills directly under the snapshot title with focused regression and build validation; T647 and T681 through T676 remain complete; T590 and T591 are complete from the JUCE audit/RT-path test slice, while T592 remains blocked pending larger transaction-replay SQLite commit-ownership work.
+
+ID: T682
+Status: [✓] Done
+Title: Simplify Snapshot Editor hero controls and regroup status pills
+Description:
+- Goal / acceptance criteria: Update the Snapshot Editor hero in `Audio Grid` so the `Prev` and `Next` navigation buttons are removed, all status pills/badges render together in one horizontal cluster directly below the snapshot title, the `Favorite` and `Lock` controls are removed entirely, and the blinking boxed `LIVE` badge below the title no longer renders. The updated layout must reclaim the freed space cleanly without leaving empty gaps or breaking the existing title rename affordance.
+- Why it matters: The current hero stacks duplicate or low-value controls around the title area, which adds visual noise and weakens the title/status hierarchy the user wants for faster live scanning.
+- Dependencies: T673, T675
+- Estimated effort: Low
+- Required outputs: Snapshot Editor hero layout cleanup in `SnapshotChainManagementCard`, focused regression coverage for removed controls and pill grouping, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 09:16 EDT - Codex
+- Progress notes:
+  - Confirmed with the user that the small red `LIVE` label above the title stays, `Favorite` and `Lock` should be removed rather than relocated, and the pill regrouping can target desktop-first behavior without a mobile-specific layout requirement.
+- Completion notes:
+  - Removed the Snapshot Editor hero `Prev` and `Next` navigation controls and removed the Favorite/Lock action group entirely from `SnapshotChainManagementCard`, while preserving the existing rename affordance and BPM-lock disable behavior.
+  - Kept the small top LIVE state label in the state row, removed the extra boxed blinking LIVE indicator, and moved channel-activity plus monitoring badges into a dedicated pill row directly beneath the title row.
+  - Updated focused Snapshot hero regression coverage to assert the new pill-row placement and the absence of removed navigation/favorite/lock/live-indicator controls.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T681
 Status: [✓] Done
@@ -12910,7 +12930,7 @@ Last updated: 2026-03-30 09:14 EDT - Codex
 ---
 
 ID: T590
-Status: [✗] Blocked
+Status: [✓] Done
 Title: [CRITICAL] Remove mutex lock from ParallelMixerProcessor::processBlock()
 Description:
 - Goal / acceptance criteria: Eliminate `std::lock_guard<std::mutex>` at line 60 of `juce-engine/Source/ParallelMixerProcessor.cpp` from the audio callback path. Replace with a lock-free mechanism (atomic flag or JUCE AbstractFifo).
@@ -12920,15 +12940,22 @@ Description:
 - Required outputs: Lock-free replacement verified; no audio thread blocking under load.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 04:38 EDT - Codex
-- Blocked notes:
-  - `ParallelMixerProcessor::processBlock()` currently shares `branchBuffers_` and `branchBufferSet_` with `setBranchBuffer()` and `clearBranchBuffers()` under the same `bufferMutex_`. Removing the callback lock without a replacement double-buffer/sequence-ownership design would introduce races on live branch-buffer reads and writes.
-  - Source inspection found no active call sites for `setBranchBuffer()` beyond the processor itself, so there is no current graph-level write path or regression harness proving what the lock-free ownership contract should be. This needs a larger mixer-buffer architecture pass, not a mutex deletion.
+Last updated: 2026-04-02 08:33 EDT - Codex
+- Completion notes:
+  - Replaced the dead callback-side branch-buffer copy path in `juce-engine/Source/ParallelMixerProcessor.{h,cpp}` with four dedicated stereo input buses, a preallocated branch-0 scratch buffer for the aliased main bus, and direct lock-free bus reads in `processBlock()`. The audio callback no longer takes a mutex or depends on shared branch-buffer ownership.
+  - Updated `juce-engine/Source/JuceAudioGraph.cpp` so each parallel branch now connects into its own mixer input bus via `getChannelIndexInProcessBlockBuffer(...)` instead of collapsing all branch tails onto the same stereo input pair.
+  - Added focused Catch2 coverage in `juce-engine/tests/ParallelMixerProcessorTests.cpp` and wired it into `juce-engine/CMakeLists.txt`, covering A/B blend routing, multi-mix branch levels plus master gain, and bypass passthrough.
+- Validation:
+  - `rg -n "lock_guard<std::mutex>|bufferMutex_|setBranchBuffer\\(|clearBranchBuffers\\(|branchBufferSet_|branchBuffers_" juce-engine/Source/ParallelMixerProcessor.cpp juce-engine/Source/ParallelMixerProcessor.h` -> PASS (no matches)
+  - `cmake -S juce-engine -B /var/tmp/map2-parallel-mixer-tests -DBUILD_SYNTHFORGE_TESTS=ON -DCMAKE_BUILD_TYPE=Release` -> PASS
+  - `cmake --build /var/tmp/map2-parallel-mixer-tests --target synthforge_tests -j4` -> PASS
+  - `/var/tmp/map2-parallel-mixer-tests/synthforge_tests "[parallel][mixer]"` -> PASS (`All tests passed (6 assertions in 3 test cases)`)
+  - `cmake --build /var/tmp/map2-parallel-mixer-tests --target map2_audio_engine -j4` -> PASS
 
 ---
 
 ID: T591
-Status: [✗] Blocked
+Status: [✓] Done
 Title: [CRITICAL] Audit ConvolutionProcessor IR swap for audio-thread blocking
 Description:
 - Goal / acceptance criteria: Audit `juce-engine/Source/ConvolutionProcessor.cpp` IR load/swap path. Confirm IR changes are never applied from inside the audio callback. Any `irMutex_` lock reachable from `processBlock()` must be replaced with a double-buffer or message-thread handoff pattern.
@@ -12938,10 +12965,18 @@ Description:
 - Required outputs: Verified lock-free IR swap path, documented handoff mechanism.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 04:38 EDT - Codex
-- Blocked notes:
-  - `Map2AudioEngine::loadCabinetIR()` and `loadReverbIR()` still call `ConvolutionProcessor::loadImpulseResponse()` directly from the control plane, and `ConvolutionProcessor::loadImpulseResponse()` invokes `juce::dsp::Convolution::loadImpulseResponse(...)` on the live processor object with no staged handoff queue or double-buffer swap.
-  - `irMutex_` only protects metadata such as `irPath_`/`irInfo_`; it does not provide a verified off-audio-thread IR swap protocol. Satisfying this task needs a dedicated IR staging and swap design plus live-swap validation, not just a narrow mutex edit.
+Last updated: 2026-04-02 08:37 EDT - Codex
+- Completion notes:
+  - Audited the bundled JUCE primary source under `/var/tmp/map2-parallel-mixer-tests/_deps/juce-src/modules/juce_dsp/frequency/juce_Convolution.{h,cpp}` and confirmed that `juce::dsp::Convolution` already performs IR activation asynchronously using its internal `ConvolutionEngineQueue` background message queue. The acceptance blocker was stale: the live-swap handoff exists inside JUCE rather than in MAP2-owned wrapper code.
+  - Documented that ownership model directly in `juce-engine/Source/ConvolutionProcessor.cpp`: MAP2 prepares the new IR buffer off the audio thread, hands it to JUCE Convolution, and `irMutex_` remains metadata-only rather than being part of the audio callback path.
+  - Added focused wrapper coverage in `juce-engine/tests/ConvolutionProcessorTests.cpp` and wired it into `juce-engine/CMakeLists.txt`, exercising repeated control-plane IR loads followed by live `process()` calls with finite output verification.
+- Validation:
+  - `sed -n '168,182p' /var/tmp/map2-parallel-mixer-tests/_deps/juce-src/modules/juce_dsp/frequency/juce_Convolution.h` -> PASS (`loadImpulseResponse()` documented as asynchronous)
+  - `sed -n '276,296p' /var/tmp/map2-parallel-mixer-tests/_deps/juce-src/modules/juce_dsp/frequency/juce_Convolution_test.cpp` -> PASS (JUCE test covers repeated `loadImpulseResponse(...)` + `process(...)` without audio-thread allocations)
+  - `rg -n "irMutex_|lock_guard<std::mutex>" juce-engine/Source/ConvolutionProcessor.cpp juce-engine/Source/ConvolutionProcessor.h` -> PASS (`irMutex_` only appears in metadata/update paths; `process()` has no mutex lock)
+  - `cmake --build /var/tmp/map2-parallel-mixer-tests --target synthforge_tests -j4` -> PASS
+  - `/var/tmp/map2-parallel-mixer-tests/synthforge_tests "[convolution][rt]"` -> PASS (`All tests passed (48 assertions in 1 test case)`)
+  - `cmake --build /var/tmp/map2-parallel-mixer-tests --target map2_audio_engine -j4` -> PASS
 
 ---
 
@@ -12956,10 +12991,11 @@ Description:
 - Required outputs: Updated timeout, tested lock-contention handling.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 04:38 EDT - Codex
+Last updated: 2026-04-02 08:37 EDT - Codex
 - Blocked notes:
   - `app/database.py` still sets `busy_timeout=5000`, and the current retry infrastructure in `DatabasePoolManager.session()` only retries session acquisition before user code runs. Its own comments explicitly avoid retrying once a yielded session has executed caller work.
   - The codebase still has many direct `session.commit()` / `db.commit()` call sites across routes and services. Local verification showed that after a SQLite `OperationalError: database is locked`, a SQLAlchemy rollback clears pending write state, so a generic low-level commit retry would risk silently dropping writes rather than safely replaying the transaction. This needs a broader transaction-replay/refactor plan before the timeout can be lowered honestly.
+  - Rechecked on 2026-04-02: `rg -n "session\\.commit\\(|db\\.commit\\(|commit\\(\\)" app/routes app/services -g'*.py'` still reports widespread direct commit ownership across the stack, so there is no narrow single-service patch that can make a 100ms timeout safe by itself.
 
 ---
 

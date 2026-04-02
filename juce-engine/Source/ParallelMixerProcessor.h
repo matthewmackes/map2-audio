@@ -101,36 +101,16 @@ public:
     /**
      * Get the number of active branches
      */
-    int getNumBranches() const { return numBranches_; }
+    int getNumBranches() const { return numBranches_.load(); }
 
     /**
      * Set the number of active branches (1-4)
      */
     void setNumBranches(int num);
 
-    // ========================================
-    // Branch Buffer Access
-    // ========================================
-
-    /**
-     * Store a branch's audio for mixing
-     * Called by the audio graph before processBlock
-     * @param branch Branch index
-     * @param buffer Audio from this branch
-     */
-    void setBranchBuffer(int branch, const juce::AudioBuffer<float>& buffer);
-
-    /**
-     * Clear all branch buffers (call at start of processing cycle)
-     */
-    void clearBranchBuffers();
-
-    /**
-     * Check if a branch has been set this cycle
-     */
-    bool hasBranchBuffer(int branch) const;
-
 private:
+    static juce::AudioProcessor::BusesProperties createBusesProperties();
+
     // Mode
     std::atomic<Mode> mode_{Mode::ABBlend};
 
@@ -147,17 +127,16 @@ private:
     std::atomic<bool> bypass_{false};
 
     // Number of active branches
-    int numBranches_{2};
+    std::atomic<int> numBranches_{2};
 
-    // Branch audio storage
-    std::array<juce::AudioBuffer<float>, MAX_BRANCHES> branchBuffers_;
-    std::array<bool, MAX_BRANCHES> branchBufferSet_;
-    mutable std::mutex bufferMutex_;
+    // Branch 0 input shares channels with the output bus, so copy it once
+    // before clearing the output and mix the remaining buses directly.
+    juce::AudioBuffer<float> branch0Scratch_;
 
     // Processing state
     double sampleRate_{44100.0};
     int blockSize_{512};
-    bool prepared_{false};
+    std::atomic<bool> prepared_{false};
 };
 
 } // namespace map2

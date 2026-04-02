@@ -80,7 +80,9 @@ bool ConvolutionProcessor::loadImpulseResponse(const std::string& irPath) {
                 static_cast<int>(reader->lengthInSamples),
                 0, true, true);
 
-    // Load into convolution engine
+    // JUCE's Convolution performs the live IR handoff asynchronously via its
+    // internal background queue; this control-plane call prepares the new
+    // buffer off the audio thread and never routes irMutex_ into process().
     convolution_->loadImpulseResponse(
         std::move(irBuffer),
         reader->sampleRate,
@@ -122,7 +124,9 @@ bool ConvolutionProcessor::loadImpulseResponseFromData(const float* data,
         }
     }
 
-    // Load into convolution engine
+    // The caller-owned sample copy happens before this point. Once handed to
+    // JUCE Convolution, activation is managed by JUCE's wait-free live-swap
+    // path rather than by locking in process().
     convolution_->loadImpulseResponse(
         std::move(irBuffer),
         irSampleRate,

@@ -442,9 +442,15 @@ void JuceAudioGraph::rebuildConnections() {
             continue;
         }
         const auto mixerNodeId = mixerIt->second;
+        auto* mixerNode = graph_->getNodeForId(mixerNodeId);
+        auto* mixerProcessor = mixerNode != nullptr ? mixerNode->getProcessor() : nullptr;
+        if (mixerProcessor == nullptr) {
+            continue;
+        }
 
         bool routedAnyBranch = false;
-        for (const auto& branch : group.branches) {
+        for (size_t branchIndex = 0; branchIndex < group.branches.size(); ++branchIndex) {
+            const auto& branch = group.branches[branchIndex];
             if (branch.empty()) {
                 continue;
             }
@@ -469,13 +475,20 @@ void JuceAudioGraph::rebuildConnections() {
                 branchTail = currIt->second;
             }
 
-            connectAudio(branchTail, mixerNodeId);
+            for (int ch = 0; ch < numChannels_; ++ch) {
+                const int mixerChannel =
+                    mixerProcessor->getChannelIndexInProcessBlockBuffer(true, static_cast<int>(branchIndex), ch);
+                graph_->addConnection({{branchTail, ch}, {mixerNodeId, mixerChannel}});
+            }
             routedAnyBranch = true;
         }
 
         // If all branches are empty/unroutable, pass-through into the mixer.
         if (!routedAnyBranch) {
-            connectAudio(currentNode, mixerNodeId);
+            for (int ch = 0; ch < numChannels_; ++ch) {
+                const int mixerChannel = mixerProcessor->getChannelIndexInProcessBlockBuffer(true, 0, ch);
+                graph_->addConnection({{currentNode, ch}, {mixerNodeId, mixerChannel}});
+            }
         }
 
         currentNode = mixerNodeId;
