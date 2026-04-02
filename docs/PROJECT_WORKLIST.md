@@ -6,7 +6,51 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 06:09 EDT - T678 completed the controller-display key-parameter metadata slice by adding a canonical resolver plus `key_parameter` discovery payloads for JUCE, LV2, and hardware plugins; T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 06:59 EDT - T679 completed the missing controller-display assignment ownership resolver for blocked `T647`, including duplicate-safe slot extraction, label overrides, and collision diagnostics; T680 and T681 remain queued as the next two controller-display preparation slices to add unit-aware parameter metadata and a snapshot activation display-preview planner; T678 completed the controller-display key-parameter metadata slice by adding a canonical resolver plus `key_parameter` discovery payloads for JUCE, LV2, and hardware plugins; T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+
+ID: T681
+Status: [ ] Todo
+Title: Add snapshot controller-display preview planner for activation-time slot summaries
+Description:
+- Goal / acceptance criteria: Introduce one shared planner that combines snapshot chain/plugin state, controller-display command ownership, label overrides, and key-parameter metadata into deterministic per-slot display summaries. The planner must return stable preview payloads for activation-time use without yet claiming the full hardware push/listener feature in `T647`.
+- Why it matters: After `T676` through `T680`, the remaining blocker surface for `T647` is composing those inputs into actual slot-by-slot block summaries. A preview planner lets MAP2 prove that `Delay - Feedback 42%` style data can be assembled correctly before wiring live parameter listeners and final SysEx delivery.
+- Dependencies: T679, T680
+- Estimated effort: Low
+- Required outputs: shared preview-planning helper, activation-time integration point or surfaced preview payload, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 06:57 EDT - Codex
+
+ID: T680
+Status: [ ] Todo
+Title: Preserve unit-aware parameter metadata for controller-display formatting
+Description:
+- Goal / acceptance criteria: Extend discovered plugin parameter payloads so the metadata needed for display formatting retains stable unit hints alongside the existing min/max/name/symbol data. Focus on the shared backend discovery/schema surfaces already feeding key-parameter selection so later controller-display text does not have to guess `%`, `dB`, `ms`, or `Hz` from raw names alone.
+- Why it matters: `T647` now has deterministic key-parameter selection, but without stable unit metadata MAP2 still has to infer how to render values like `42%` or `-6.0 dB`. Preserving units in the canonical plugin metadata path reduces formatter guesswork and duplicate heuristics.
+- Dependencies: T678
+- Estimated effort: Low
+- Required outputs: unit-aware parameter metadata on shared plugin discovery/schema surfaces, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 06:57 EDT - Codex
+
+ID: T679
+Status: [✓] Done
+Title: Add controller-display assignment ownership resolver for plugin-toggle MIDI commands
+Description:
+- Goal / acceptance criteria: Introduce one canonical helper that extracts controller-display ownership from plugin-toggle MIDI command triggers, including duplicate-safe target positions, slot indices, and optional per-snapshot label overrides. The helper must return deterministic slot assignments plus collision/missing-target diagnostics that later display-planning code can consume.
+- Why it matters: `T647` is still blocked because MAP2 has no controller-display ownership model tying toggle-plugin commands to specific display slots. A shared resolver closes that ambiguity without over-claiming the final SysEx feature.
+- Dependencies: T676, T677, T678
+- Estimated effort: Low
+- Required outputs: shared controller-display assignment resolver, focused regression coverage for slot extraction/collision handling/label overrides, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 06:59 EDT - Codex
+- Completion notes:
+  - Added `app/services/controller_display_assignment_service.py` as the canonical ownership resolver for plugin-toggle MIDI commands, translating `slot_index`-style action metadata plus duplicate-safe plugin targets into deterministic display-slot assignments.
+  - The resolver now merges per-snapshot footswitch label overrides and emits explicit collision and skip diagnostics for duplicate slot claims, disabled commands, missing slots, and missing plugin targets so later display-planning code can fail clearly instead of guessing.
+  - Added focused regression coverage proving slot extraction, label override merging, duplicate slot replacement diagnostics, and invalid-command skip reporting.
+- Validation: `python3 -m pytest -q tests/test_controller_display_assignment_service.py tests/test_snapshot_footswitch_label_service.py tests/test_midi_automation_identity_persistence.py` -> PASS
 
 ID: T678
 Status: [✓] Done
@@ -3531,7 +3575,7 @@ Last updated: 2026-03-29 20:28 EDT - Codex
 
 ## Active Blockers Context
 
-As of 2026-04-02 05:45 EDT, the remaining product backlog is still predominantly blocker-driven, but `T676` through `T678` now capture concrete prerequisite slices that can be executed locally to reduce `T647`'s controller-display blocker surface while the deeper runtime and HIL items below remain blocked.
+As of 2026-04-02 06:57 EDT, the remaining product backlog is still predominantly blocker-driven, but `T676` through `T681` now capture concrete prerequisite slices that can be executed locally to reduce `T647`'s controller-display blocker surface while the deeper runtime and HIL items below remain blocked.
 
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
