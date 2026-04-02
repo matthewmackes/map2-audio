@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 04:05 EDT - T593 raised the MIDI Hub poll floor to 2ms and added coverage for the enforced RT-safe minimum [completed]; T594 raised SQLite WAL auto-checkpointing to 12000 pages with existing graceful-shutdown checkpoints kept as the explicit safe flush path [completed]; T599 tunes Python GC thresholds to `3500/10/10` during backend startup and documents the policy in `docs/CLAUDE.md` [completed]; T614, T619, T629, T630, T634, T637, T641, T646, and epic T606 blocked after source inspection confirmed the remaining queue depends on missing live-switching, monitoring-bus, morph/expression, preload/spillover, and zero-cross routing architecture in the current unified snapshot + JUCE runtime layers; T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing
+Last updated: 2026-04-02 04:15 EDT - T600 replaced the legacy 1ms RTMidi poll loop with a callback-fed asyncio queue plus a bounded 5ms fallback for callback-less backends [completed]; T601 raised MPX1 and IntelFX MIDI poll loops to 5ms and audited Push Surface loops as already above policy [completed]; T603 added a repo-wide RT latency policy test that rejects new sub-5ms `asyncio.sleep()` calls under `app/services/` outside the documented allowlist [completed]; T593 raised the MIDI Hub poll floor to 2ms and added coverage for the enforced RT-safe minimum [completed]; T594 raised SQLite WAL auto-checkpointing to 12000 pages with existing graceful-shutdown checkpoints kept as the explicit safe flush path [completed]; T599 tunes Python GC thresholds to `3500/10/10` during backend startup and documents the policy in `docs/CLAUDE.md` [completed]
 
 ID: T675
 Status: [✓] Done
@@ -12957,7 +12957,7 @@ Last updated: 2026-04-02 04:05 EDT - Codex
 ---
 
 ID: T600
-Status: [~] On Hold
+Status: [✓] Done
 Title: [MEDIUM] Replace 1ms MIDI engine poll loop with event-driven pattern
 Description:
 - Goal / acceptance criteria: In `app/services/midi_engine.py:467`, replace `asyncio.sleep(0.001)` polling with an `asyncio.Event` or `asyncio.Queue.get(timeout=...)` pattern that only wakes when data is available.
@@ -12966,13 +12966,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Event-driven MIDI engine loop.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:15 EDT - Codex
+- Completed: Replaced the legacy RTMidi `get_message()` spin loop with a callback-fed asyncio queue in `app/services/midi_engine.py`, keeping a bounded `0.005s` fallback only for RTMidi backends that do not expose callbacks.
+- Validation: `pytest tests/test_midi_engine_event_driven.py tests/test_rt_latency_policy.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
 
 ---
 
 ID: T601
-Status: [~] On Hold
+Status: [✓] Done
 Title: [MEDIUM] Audit and cap tight polling intervals in MPX1, IntelFX, and Push Surface services
 Description:
 - Goal / acceptance criteria: Audit `app/services/mpx1_service.py`, `app/services/intelfx_service.py`, and `app/services/push_surface/manager.py`. Establish a minimum floor of 5ms for all MIDI device polling loops. Replace tight spin-loops with event-driven or bounded-poll patterns where possible.
@@ -12981,8 +12983,10 @@ Description:
 - Estimated effort: Low
 - Required outputs: Audited and updated polling intervals across all three services.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:15 EDT - Codex
+- Completed: Raised MPX1 and IntelFX MIDI poll sleeps from `0.002s` to `0.005s` and audited Push Surface manager loops (`0.03s`, `0.25s`, `1.0s`) as already compliant with the minimum poll-floor policy.
+- Validation: `pytest tests/test_midi_engine_event_driven.py tests/test_rt_latency_policy.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
 
 ---
 
@@ -13002,7 +13006,7 @@ Last updated: 2026-03-31
 ---
 
 ID: T603
-Status: [~] On Hold
+Status: [✓] Done
 Title: [LOW] Add CI test rejecting new services with sub-5ms polling intervals
 Description:
 - Goal / acceptance criteria: Add `tests/test_rt_latency_policy.py` that statically scans `app/services/` for `asyncio.sleep()` calls with values below `0.005` and fails with a descriptive error listing the offending file, line, and value. Allowlist explicitly exempted paths (RT parameter bridge, metering broadcast) with comments explaining why.
@@ -13011,5 +13015,7 @@ Description:
 - Estimated effort: Low
 - Required outputs: Passing CI test, allowlist with documented exemptions.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:15 EDT - Codex
+- Completed: Added `tests/test_rt_latency_policy.py` to statically reject new sub-5ms `asyncio.sleep()` literals under `app/services/`, with documented allowlist exemptions for the RT parameter bridge, metering broadcast policy surface, and audio-I/O queue service.
+- Validation: `pytest tests/test_midi_engine_event_driven.py tests/test_rt_latency_policy.py tests/midi_hub/test_consumer_migration.py -q` -> PASS

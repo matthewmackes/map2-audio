@@ -1071,7 +1071,7 @@ class MPX1Service:
                             cc = int(data[1]) & 0x7F
                             value = int(data[2]) & 0x7F
                             await self.handle_incoming_cc(channel, cc, value)
-                await asyncio.sleep(0.002)
+                await asyncio.sleep(0.005)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:

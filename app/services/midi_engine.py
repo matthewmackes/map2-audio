@@ -20,6 +20,8 @@ from enum import Enum
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+MIDI_ENGINE_EVENT_QUEUE_MAXSIZE = 1024
+MIDI_ENGINE_POLL_FALLBACK_INTERVAL_S = 0.005
 
 try:
     from app.services.midi_hub.hub import MidiHub, get_midi_hub
@@ -125,6 +127,8 @@ class MIDIEngineService:
         self._learn_lock = asyncio.Lock()
         self._parameter_callback: Optional[Callable[..., Awaitable[None]]] = None
         self._cc14_state: Dict[int, int] = {}  # Store MSB values for CC14
+        self._message_queue: asyncio.Queue[List[int]] = asyncio.Queue(maxsize=MIDI_ENGINE_EVENT_QUEUE_MAXSIZE)
+        self._rtmidi_callback_enabled = False
 
         # Expression pedal calibration
         self._expression_calibration: Dict[int, Tuple[int, int]] = {}  # cc -> (min_raw, max_raw)
@@ -188,6 +192,48 @@ class MIDIEngineService:
             asyncio.run_coroutine_threadsafe(self._handle_midi_message(payload), self._loop)
         except Exception as exc:  # pragma: no cover - thread scheduling path
             logger.debug("Failed scheduling hub MIDI message: %s", exc)
+
+    def _queue_rtmidi_message(self, payload: List[int]) -> None:
+        """Push RTMidi callback data into the asyncio consumer queue."""
+        if not self._running or not payload:
+            return
+        if self._message_queue.full():
+            try:
+                self._message_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+        try:
+            self._message_queue.put_nowait(payload)
+        except asyncio.QueueFull:
+            logger.debug("Dropping RTMidi callback message because the consumer queue is full")
+
+    def _on_rtmidi_message(self, event: Any, _data: Any = None) -> None:
+        """Bridge RTMidi callbacks into the event loop without a spin poll."""
+        if not self._running or self._loop is None:
+            return
+        try:
+            message, _delta_time = event
+        except Exception:
+            return
+        payload = [int(byte) & 0xFF for byte in message]
+        if not payload:
+            return
+        try:
+            self._loop.call_soon_threadsafe(self._queue_rtmidi_message, payload)
+        except RuntimeError:
+            logger.debug("Discarding RTMidi callback because the loop is closed")
+
+    def _read_polled_midi_message(self) -> Optional[List[int]]:
+        """Fallback path for RTMidi implementations without callback support."""
+        if self._midi_in is None:
+            return None
+        msg = self._midi_in.get_message()
+        if not msg:
+            return None
+        message, _delta_time = msg
+        if not message:
+            return None
+        return [int(byte) & 0xFF for byte in message]
 
     def _discover_devices(self) -> None:
         """Discover MIDI devices using rtmidi."""
@@ -350,6 +396,8 @@ class MIDIEngineService:
             return True
 
         self._loop = asyncio.get_running_loop()
+        self._message_queue = asyncio.Queue(maxsize=MIDI_ENGINE_EVENT_QUEUE_MAXSIZE)
+        self._rtmidi_callback_enabled = False
 
         if self._hub_enabled and self._hub is not None:
             try:
@@ -372,6 +420,9 @@ class MIDIEngineService:
             if input_port < self._midi_in.get_port_count():
                 self._midi_in.open_port(input_port)
                 self._midi_in.ignore_types(sysex=True, timing=True, active_sense=True)
+                if hasattr(self._midi_in, "set_callback"):
+                    self._midi_in.set_callback(self._on_rtmidi_message)
+                    self._rtmidi_callback_enabled = True
                 self._running = True
                 self._process_task = asyncio.create_task(self._process_loop())
                 logger.info(f"MIDI engine started on port {input_port}")
@@ -402,8 +453,14 @@ class MIDIEngineService:
             self._process_task = None
 
         if self._midi_in:
+            if self._rtmidi_callback_enabled and hasattr(self._midi_in, "cancel_callback"):
+                try:
+                    self._midi_in.cancel_callback()
+                except Exception:
+                    logger.debug("Failed to cancel RTMidi callback cleanly", exc_info=True)
             self._midi_in.close_port()
             self._midi_in = None
+        self._rtmidi_callback_enabled = False
 
         if self._midi_out:
             self._midi_out.close_port()
@@ -458,14 +515,18 @@ class MIDIEngineService:
         """Main MIDI processing loop."""
         while self._running:
             try:
-                if self._midi_in:
-                    msg = self._midi_in.get_message()
-                    if msg:
-                        message, delta_time = msg
-                        await self._handle_midi_message(message)
+                if self._rtmidi_callback_enabled:
+                    message = await self._message_queue.get()
+                else:
+                    message = self._read_polled_midi_message()
+                    if message is None:
+                        await asyncio.sleep(MIDI_ENGINE_POLL_FALLBACK_INTERVAL_S)
+                        continue
 
-                await asyncio.sleep(0.001)  # 1ms polling interval
+                await self._handle_midi_message(message)
 
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 logger.error(f"Error in MIDI processing loop: {e}")
                 await asyncio.sleep(0.1)
