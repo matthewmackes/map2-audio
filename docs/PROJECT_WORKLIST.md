@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 04:34 EDT - T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]; T596 reduced default spectrum and dynamics broadcast rates to 15fps, kept meters at 30fps, and made per-topic FPS configurable through `metering.broadcast_fps.*` config keys [completed]; T598 moved AVB router discovery and Tesira fleet startup onto background `asyncio.create_task()` helpers so backend readiness no longer blocks on optional network discovery [completed]
+Last updated: 2026-04-02 04:38 EDT - T590, T591, and T592 blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
 
 ID: T675
 Status: [✓] Done
@@ -12801,7 +12801,7 @@ Last updated: 2026-03-30 09:14 EDT - Codex
 ---
 
 ID: T590
-Status: [~] On Hold
+Status: [✗] Blocked
 Title: [CRITICAL] Remove mutex lock from ParallelMixerProcessor::processBlock()
 Description:
 - Goal / acceptance criteria: Eliminate `std::lock_guard<std::mutex>` at line 60 of `juce-engine/Source/ParallelMixerProcessor.cpp` from the audio callback path. Replace with a lock-free mechanism (atomic flag or JUCE AbstractFifo).
@@ -12810,13 +12810,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Lock-free replacement verified; no audio thread blocking under load.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:38 EDT - Codex
+- Blocked notes:
+  - `ParallelMixerProcessor::processBlock()` currently shares `branchBuffers_` and `branchBufferSet_` with `setBranchBuffer()` and `clearBranchBuffers()` under the same `bufferMutex_`. Removing the callback lock without a replacement double-buffer/sequence-ownership design would introduce races on live branch-buffer reads and writes.
+  - Source inspection found no active call sites for `setBranchBuffer()` beyond the processor itself, so there is no current graph-level write path or regression harness proving what the lock-free ownership contract should be. This needs a larger mixer-buffer architecture pass, not a mutex deletion.
 
 ---
 
 ID: T591
-Status: [~] On Hold
+Status: [✗] Blocked
 Title: [CRITICAL] Audit ConvolutionProcessor IR swap for audio-thread blocking
 Description:
 - Goal / acceptance criteria: Audit `juce-engine/Source/ConvolutionProcessor.cpp` IR load/swap path. Confirm IR changes are never applied from inside the audio callback. Any `irMutex_` lock reachable from `processBlock()` must be replaced with a double-buffer or message-thread handoff pattern.
@@ -12825,13 +12828,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Verified lock-free IR swap path, documented handoff mechanism.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:38 EDT - Codex
+- Blocked notes:
+  - `Map2AudioEngine::loadCabinetIR()` and `loadReverbIR()` still call `ConvolutionProcessor::loadImpulseResponse()` directly from the control plane, and `ConvolutionProcessor::loadImpulseResponse()` invokes `juce::dsp::Convolution::loadImpulseResponse(...)` on the live processor object with no staged handoff queue or double-buffer swap.
+  - `irMutex_` only protects metadata such as `irPath_`/`irInfo_`; it does not provide a verified off-audio-thread IR swap protocol. Satisfying this task needs a dedicated IR staging and swap design plus live-swap validation, not just a narrow mutex edit.
 
 ---
 
 ID: T592
-Status: [~] On Hold
+Status: [✗] Blocked
 Title: [CRITICAL] Reduce SQLite busy_timeout from 5000ms to 100ms
 Description:
 - Goal / acceptance criteria: Change `busy_timeout` in `app/database.py:33` from `5000` to `100`. Verify all DB code handles `OperationalError: database is locked` gracefully with a fast retry rather than blocking for 5 seconds.
@@ -12840,8 +12846,11 @@ Description:
 - Estimated effort: Low
 - Required outputs: Updated timeout, tested lock-contention handling.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:38 EDT - Codex
+- Blocked notes:
+  - `app/database.py` still sets `busy_timeout=5000`, and the current retry infrastructure in `DatabasePoolManager.session()` only retries session acquisition before user code runs. Its own comments explicitly avoid retrying once a yielded session has executed caller work.
+  - The codebase still has many direct `session.commit()` / `db.commit()` call sites across routes and services. Local verification showed that after a SQLite `OperationalError: database is locked`, a SQLAlchemy rollback clears pending write state, so a generic low-level commit retry would risk silently dropping writes rather than safely replaying the transaction. This needs a broader transaction-replay/refactor plan before the timeout can be lowered honestly.
 
 ---
 
