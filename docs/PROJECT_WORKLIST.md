@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 05:02 EDT - T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing; T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]
+Last updated: 2026-04-02 03:53 EDT - T614, T619, T629, T630, T634, T637, T641, T646, and epic T606 blocked after source inspection confirmed the remaining queue depends on missing live-switching, monitoring-bus, morph/expression, preload/spillover, and zero-cross routing architecture in the current unified snapshot + JUCE runtime layers; T647 blocked after source inspection confirmed the current task depends on unsupported hardware/protocol assumptions: official BeatStep Pro docs expose only the central project/value display rather than per-switch text surfaces, and the current MIDI command model still lacks duplicate-safe target-plugin-position ownership for bypass-display routing; T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]
 
 ID: T675
 Status: [✓] Done
@@ -828,14 +828,14 @@ Description:
 - Required outputs: SysEx display formatting for Morningstar MC6/MC8 and BeatStep Pro, parameter-change listener that triggers SysEx push for mapped parameters, "key parameter" config per plugin type, silent-skip when controller does not support display SysEx, focused regression coverage, validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 05:02 EDT - Codex
+Last updated: 2026-04-02 03:53 EDT - Codex
 - Blocked notes:
   - The official Morningstar SysEx API supports preset-name updates, but the official Arturia BeatStep Pro manual only documents the unit's shared project/value display and does not expose any per-switch text-display surface comparable to MC6/MC8 preset labels. As written, the task promises a BeatStep Pro capability the hardware/protocol surface in source docs does not provide.
   - The current MIDI command model persists `target_plugin_uri` plus opaque `action_data`, but not `target_plugin_position`, so a bypass-triggered controller display cannot be routed safely to one duplicated block instance versus another. The mapping identity seam exists for CC parameter mappings, not for the command-trigger path this task depends on.
   - There is no existing plugin-type key-parameter registry or controller-display ownership model in the snapshot/MIDI stack, so satisfying the acceptance criteria would first require a narrower product decision about supported controllers and a schema change for duplicate-safe command targeting.
 
 ID: T646
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Full Reverb and Delay Tail Spillover on Snapshot Switch
 Description:
 - Goal / acceptance criteria: When the player switches from Snapshot A to Snapshot B, the reverb and delay tails from Snapshot A's chains continue to ring out and decay naturally while Snapshot B's dry signal is already playing. The previous snapshot's wet tails are not cut off. This applies to all reverb and delay plugin blocks in any chain position. Spillover duration is bounded by each plugin's natural decay (not a fixed time limit). Spillover is always enabled — not a per-snapshot toggle. The implementation must not cause any audio gap or click at the transition point. This is the feature that differentiates Helix and Kemper Performance Mode from every other guitar processor on the market.
@@ -844,7 +844,10 @@ Description:
 - Estimated effort: High
 - Required outputs: JUCE audio engine changes to maintain a "fade-out" buffer for the previous snapshot's wet plugins during transition, snapshot activation sequence updated to start the new snapshot's dry chain before completing the old chain's teardown, no audio gap or click at transition, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - The current runtime only exposes plugin-local spillover toggles for specific processors such as Delay, ShoeGaze, and LexiLove when those processors are bypassed. There is no snapshot-switch handoff that preserves the previous snapshot's wet graph while the next snapshot becomes active.
+  - Unified snapshot activation still clears and rematerializes runtime chains in Python before reapplying the legacy payload, so there is no dual-runtime or wet-tail retention seam to attach bounded cross-snapshot spillover to.
 
 ID: T659
 Status: [✓] Done
@@ -883,7 +886,7 @@ Last updated: 2026-04-01 23:12 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T641
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Monitoring Solo Output — Dedicated Solo Bus to Separate Hardware Output
 Description:
 - Goal / acceptance criteria: When a channel is soloed (T619), its signal is routed to a designated monitoring hardware output (a specific output channel on the audio interface) rather than simply muting all other channels through the main output. The main output mix continues playing all non-soloed channels uninterrupted — the guitarist's front-of-house sound is unaffected. The monitoring output assignment is configurable per-snapshot (overriding the global default) and is visible and editable directly in the editor's I/O section. A clear indicator in the UI shows when monitoring solo is active ("Monitoring: Channel Lead → Output 3/4").
@@ -892,7 +895,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: monitoring_output_index field in snapshot io_bindings (and global default in config), audio engine routing change to send soloed channel signal to the designated output pair, solo state indicator in editor UI, configurable per-snapshot in I/O panel, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 02:16 EDT - Codex
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - `monitoring_output_index` is fully wired through config, API payloads, normalization, and editor UI, but source inspection shows zero JUCE-engine consumers for that field. The current implementation stops at persistence and hero/I/O presentation.
+  - There is no engine-side monitoring bus or alternate output-pair send that can route a soloed channel to a separate hardware output while leaving the main mix intact, so the acceptance criteria cannot be met honestly in the present runtime.
 
 ID: T640
 Status: [✓] Done
@@ -934,7 +940,7 @@ Last updated: 2026-04-01 11:28 - Codex
 - Validation: `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotVersionHistoryModal.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T637
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Live Routing Mode Switch Without Snapshot Reload
 Description:
 - Goal / acceptance criteria: While a snapshot is live and making sound, the player can change the routing mode (parallel_blend → series, series → morph, etc.) directly from the routing mode selector in the Snapshot Detail Grid (T611). The audio engine reconfigures the signal path in-place without deactivating and reactivating the snapshot — no audio gap, no chain teardown, no loss of plugin state. The routing visualizer updates immediately. The new routing mode is applied to the live engine and saved to the snapshot's current state (marked dirty until explicitly saved).
@@ -943,7 +949,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: in-place routing reconfiguration in the JUCE audio engine (no chain teardown), API endpoint for live routing mode update on active snapshot, frontend routing mode selector wired to live update (not just draft update), routing visualizer real-time update, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - The current editor routing controls only mutate draft/frontend state and persisted snapshot routing metadata. There is no live engine API that reconfigures an active snapshot's graph between `parallel_blend`, `series`, `morph`, and `sidechain` in place.
+  - This task depends on `T614`, and the current activation/runtime stack does not yet provide a stream-safe topology-switch seam that preserves plugin state while changing routing mode live.
 
 ID: T636
 Status: [✓] Done
@@ -979,7 +988,7 @@ Last updated: 2026-04-01 12:07 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T634
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Next Snapshot Pre-Load in Background — Instantaneous Live Switch
 Description:
 - Goal / acceptance criteria: While Snapshot A is live and playing, MAP2 silently pre-loads Snapshot B (the next snapshot by program number or setlist order) into the audio engine — instantiating all plugins, setting all parameters, and loading all IR/NAM asset files — without making it active. When the player activates Snapshot B (via UI, MIDI PC, or footswitch), the switch is instantaneous because all assets are already loaded. The pre-load happens in a background thread/task and does not affect the audio callback performance on the real-time cores. If the player activates a snapshot other than the pre-loaded one, the pre-loaded snapshot is discarded and the correct one is loaded normally.
@@ -988,7 +997,10 @@ Description:
 - Estimated effort: High
 - Required outputs: background snapshot pre-load mechanism in snapshot_runtime_service.py, pre-load triggered on snapshot activation (load next in sequence), asset pre-loading (NAM models, IR files) in background threads, instantaneous switch when pre-loaded snapshot matches activation target, pre-load cancel/replace when target changes, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - There is no snapshot preloader in `snapshot_runtime_service.py`, the unified snapshot activation path, or the JUCE engine. Source hits for `preload` in the current tree are limited to unrelated sample-loader internals such as SynthForge.
+  - This task depends on both `T614` and `T646`; without a second inactive snapshot graph and a spillover-capable handoff path, there is nothing to warm in the background or switch to instantaneously.
 
 ID: T633
 Status: [✓] Done
@@ -1043,7 +1055,7 @@ Last updated: 2026-04-01 11:54 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T630
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: A/B Hard Switch with Zero-Crossing Detection
 Description:
 - Goal / acceptance criteria: When routing mode is parallel_blend or the snapshot has two active channels, a dedicated A/B switch button is displayed prominently in the editor (and in the floating toolbar T642). Pressing it (or triggering via MIDI note/CC assignment) immediately cuts the active channel from A to B or B to A. The switch waits for the nearest zero-crossing in the audio signal before executing — ensuring a click-free transition imperceptible to the listener. The active channel is highlighted using its Carbon bold color (T612). The A/B switch state is reflected in real-time in the routing visualizer. MIDI assignment for the A/B switch is configurable per-snapshot.
@@ -1052,10 +1064,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: zero-crossing detection in JUCE audio engine for channel switch timing, A/B switch command in activation API, A/B switch button in editor and floating toolbar, MIDI CC/note assignment for A/B switch per-snapshot, active channel highlight using channel color, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - `active_channel_key` is persisted as routing metadata, but there is no live engine command that switches the active channel at audio-thread time, and source inspection found no zero-cross detection path in the current JUCE routing/snapshot stack.
+  - The task also depends on `T619`; without an engine-level live channel-switch architecture, the requested A/B control cannot be made click-free or reflected truthfully as a runtime action.
 
 ID: T629
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Morph Mode — Expression Pedal (MIDI CC) Continuous Blend Between Two Channels
 Description:
 - Goal / acceptance criteria: When routing mode is set to "morph", the editor displays a large horizontal morph position slider (0–100%) as the primary performance control. The slider is mappable to a MIDI CC (e.g., expression pedal CC#11 or CC#7) via MIDI learn in the per-snapshot MIDI map. Heel down (CC value 0) = Channel A at 100%; toe down (CC value 127) = Channel B at 100%. The blend is continuous and smooth — no stepped values, no audio artifacts at the extremes. The morph position is reflected in real-time in both the slider and the routing visualizer. The MIDI CC mapping is per-snapshot and persisted.
@@ -1064,7 +1079,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: morph position MIDI CC listener in midi_service.py, morph position real-time update to audio engine during CC receive, MIDI learn UI for morph CC assignment in per-snapshot MIDI map, large morph slider in routing visualizer with real-time CC feedback, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - The current stack persists `morph_position`, source/target channel ids, and exposes `/api/snapshots/{id}/routing/morph`, but source inspection found no JUCE-engine morph/blend runtime that consumes those values as live audio behavior.
+  - `expression_mappings` is stored and normalized in the snapshot contract but is otherwise unused. There is no per-snapshot MIDI-learn or CC-listener path that binds an expression pedal to morph position and pushes that control into the engine in real time.
 
 ID: T628
 Status: [✓] Done
@@ -1227,7 +1245,7 @@ Last updated: 2026-04-01 21:43 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotActivationToast.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T619
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Mute/Solo Per Channel — Large and Obvious on Channel Card
 Description:
 - Goal / acceptance criteria: Each channel card displays a Mute button and a Solo button directly on the card surface — large, obvious, and always visible (not revealed on hover or selection). Mute immediately silences that channel in the live audio engine (the chain continues processing but its output is zeroed). Solo routes that channel to the designated monitoring output (T641) and does not mute the main mix. Both states are reflected immediately in the engine and persisted to the snapshot on the next explicit save. Muted channels are visually distinct from active channels (e.g., Carbon Warm Gray background on the muted card). Solo channels show a distinct indicator (e.g., Carbon Green border). Multiple channels can be muted simultaneously; only one channel can be soloed at a time.
@@ -1236,7 +1254,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Mute and Solo buttons on channel card (always visible, not hover-dependent), mute/unmute in live audio engine via API, solo routing to monitoring output via T641, visual muted/solo state on card, single-solo enforcement, state persisted on save, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 02:16 EDT - Codex
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - The visual groundwork for prominent channel controls landed, but the acceptance criteria require immediate engine mute plus dedicated solo-to-monitor behavior. The current runtime has no per-channel mute/solo audio path beyond persisted channel flags in snapshot detail.
+  - Because `T641` is blocked on a missing monitoring-bus/output-send architecture, this task cannot satisfy its live solo-routing requirement or be closed honestly.
 
 ID: T618
 Status: [✓] Done
@@ -1311,7 +1332,7 @@ Last updated: 2026-04-01 22:05 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/utils/snapshotActivationToast.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T614
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Live-Safe Snapshot Switching — No Audio Gap, Parameter Crossfade
 Description:
 - Goal / acceptance criteria: When a snapshot is activated while audio is running, the engine applies the new snapshot's plugin parameters WITHOUT stopping or restarting the audio stream. For parameters that change value significantly (e.g., gain drops from 80% to 20%), values are ramped smoothly over a short crossfade window (target: ≤20ms ramp, imperceptible to the listener) rather than jumping instantly. If the new snapshot's plugin topology is identical to the current live topology (same plugin URIs in the same chain order), no plugin teardown or re-instantiation occurs — only parameter values change. If the topology differs (plugins added, removed, or reordered), a minimal teardown occurs but the audio stream itself must not stop. No audible dropout, click, or silence is acceptable during any snapshot switch.
@@ -1320,7 +1341,11 @@ Description:
 - Estimated effort: High
 - Required outputs: parameter ramping in JUCE audio engine (per-parameter ramp time, applied in audioCallback), topology-change detection in snapshot activation (compare plugin URIs and order before teardown), stream-safe chain reconfiguration (no audio thread stop), focused regression coverage including soak tests at 48kHz/64-sample buffer, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - Unified snapshot activation currently clears materialized runtime chains, rebuilds live-state payloads in Python, and reapplies a legacy snapshot payload back into the engine. It does not compare topologies, keep old/new graphs alive together, or route snapshot switching through a dedicated crossfade handoff layer.
+  - The JUCE side still exposes `Map2AudioEngine::loadSnapshot()` as a thin delegate to `SnapshotManager::loadSnapshot()`, and `SnapshotManager::loadSnapshot()` simply loops over saved parameters and calls `host_.setParameterByName(...)` on the current graph. There is no stream-safe dual-graph, topology-diff, or snapshot-switch crossfade implementation behind that seam today.
+  - `ParameterBridge` already has smoothed parameter ramps, but snapshot switching is not wired through a topology-aware path that would let those ramps satisfy the broader no-gap / no-teardown acceptance criteria on their own.
 
 ID: T613
 Status: [✓] Done
@@ -1413,7 +1438,7 @@ Last updated: 2026-04-01 23:18 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T606
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: EPIC — Guitar Player Snapshot Workflow (Phases 1–3)
 Description:
 - Goal / acceptance criteria: Implement the complete dream workflow for a guitar player using the MAP2 Snapshot Editor across three delivery phases:
@@ -1424,7 +1449,10 @@ Description:
 - Estimated effort: Epic (phased delivery — Phase 1 ~8 weeks, Phase 2 ~10 weeks, Phase 3 ~12 weeks)
 - Required outputs: All subtask acceptance criteria met, full audio regression suite passing, production build passing, dual-remote push on each phase completion.
 Subtasks: T607, T610–T659 (50 tasks across 3 phases)
-Last updated: 2026-03-31
+Last updated: 2026-04-02 03:53 EDT - Codex
+- Blocked notes:
+  - Phase 1 and most of the snapshot-editor UX backlog are complete, but the remaining Phase 2/3 items now terminate in blocked runtime/controller tasks: `T614`, `T619`, `T629`, `T630`, `T634`, `T637`, `T641`, `T646`, and `T647`.
+  - The epic cannot meet its acceptance criteria until the underlying live-switching, monitoring-bus, morph/expression, preload/spillover, zero-cross routing, and controller-display architecture is either implemented or re-scoped into feasible replacement tasks.
 
 ID: T605
 Status: [✓] Done
