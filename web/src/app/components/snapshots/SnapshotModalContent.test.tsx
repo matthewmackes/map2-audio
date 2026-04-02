@@ -150,6 +150,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: false,
           display_order: 0,
           channels: [],
+          activated_at: null,
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -202,6 +203,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: false,
           display_order: 0,
           channels: [],
+          activated_at: '2026-03-29T12:00:00Z',
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -223,6 +225,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: false,
           display_order: 1,
           channels: [],
+          activated_at: null,
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -608,6 +611,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: false,
           display_order: 0,
           channels: [],
+          activated_at: '2026-03-29T12:00:00Z',
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -634,6 +638,45 @@ describe('SnapshotModalContent', () => {
     expect(deleteButton?.disabled).toBe(true)
   })
 
+  it('shows last-used copy for snapshot list rows', async () => {
+    mockSnapshotsList.mockResolvedValueOnce({
+      snapshots: [
+        {
+          id: 5,
+          name: 'Existing Snapshot',
+          description: '',
+          tags: [],
+          program_number: null,
+          input_device: null,
+          output_device: null,
+          is_active: false,
+          is_favorite: false,
+          display_order: 0,
+          channels: [],
+          activated_at: null,
+          created_at: '2026-03-29T12:00:00Z',
+          updated_at: '2026-03-29T12:00:00Z',
+          channel_count: 0,
+          chain_count: 0,
+          community_shared: false,
+          community_download_count: 0,
+          community_rating: null,
+          community_rating_count: 0,
+        },
+      ],
+      count: 1,
+      active_id: null,
+      available_tags: [],
+    })
+
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot Library/i }))
+
+    expect(await screen.findByText('Last used: Never')).toBeTruthy()
+  })
+
   it('orders favorites by the persisted gig setlist and saves up/down reorders', async () => {
     mockSpecialSettings = {
       ...mockSpecialSettings,
@@ -654,6 +697,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: true,
           display_order: 0,
           channels: [],
+          activated_at: '2026-03-29T12:00:00Z',
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -675,6 +719,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: true,
           display_order: 1,
           channels: [],
+          activated_at: '2026-03-29T12:00:00Z',
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,
@@ -696,6 +741,7 @@ describe('SnapshotModalContent', () => {
           is_favorite: true,
           display_order: 2,
           channels: [],
+          activated_at: '2026-03-29T12:00:00Z',
           created_at: '2026-03-29T12:00:00Z',
           updated_at: '2026-03-29T12:00:00Z',
           channel_count: 0,

@@ -2329,6 +2329,7 @@ export interface SnapshotSummary {
   io_bindings?: SnapshotIOBindings;
   lineage?: SnapshotLineage;
   snapshot_revision?: string;
+  activated_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }

@@ -32,6 +32,7 @@ import { upsertRuntimeChains } from '../SnapshotEditor/snapshotEditorLiveSnapsho
 import { SnapshotImportDialog } from './SnapshotImportDialog'
 import { SnapshotNewWizard, type SnapshotNewWizardValues } from './SnapshotNewWizard'
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
+import { formatSnapshotLastUsedLabel } from '../../utils/snapshotLastUsed'
 import {
   flowSnapshotDataToSnapshotPayload,
   type SnapshotListResponse,
@@ -856,7 +857,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
             <div className="juce-grid-page__compact-tags">
               {activeSnapshot ? (
                 <Tag type="warm-gray">
-                  Updated {new Date(activeSnapshot.updated_at).toLocaleString()}
+                  {formatSnapshotLastUsedLabel(activeSnapshot.activated_at)}
                 </Tag>
               ) : (
                 <Tag type="warm-gray">{savedSnapshots.length} saved snapshots available</Tag>
@@ -1026,7 +1027,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
 
                             <div className="juce-grid-page__compact-tags">
                               <Tag type="warm-gray">
-                                Updated {new Date(snapshot.updated_at).toLocaleDateString()}
+                                {formatSnapshotLastUsedLabel(snapshot.activated_at)}
                               </Tag>
                             </div>
                           </div>
@@ -1215,7 +1216,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
 
                               <div className="juce-grid-page__compact-tags">
                                 <Tag type="warm-gray">
-                                  Updated {new Date(snapshot.updated_at).toLocaleDateString()}
+                                  {formatSnapshotLastUsedLabel(snapshot.activated_at)}
                                 </Tag>
                               </div>
                             </div>

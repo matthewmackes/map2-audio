@@ -128,6 +128,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert listed["snapshots"][0]["tempo_bpm"] == 126.0
         assert listed["snapshots"][0]["output_level_reference_dbfs"] == -14.0
         assert listed["snapshots"][0]["output_level_warning_threshold_db"] == 2.0
+        assert listed["snapshots"][0]["activated_at"] is None
         assert listed["snapshots"][0]["lineage"]["derived_from_snapshot_id"] is None
 
         filtered = await routes.list_snapshots(tags="delay")
@@ -143,6 +144,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["tempo_bpm"] == 126.0
         assert fetched["output_level_reference_dbfs"] == -14.0
         assert fetched["output_level_warning_threshold_db"] == 2.0
+        assert fetched["activated_at"] is None
         assert fetched["paths"][0]["id"] == "path-a"
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
         assert fetched["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "mix"
@@ -191,6 +193,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         activated = await routes.activate_snapshot(snapshot_id)
         assert activated["status"] == "success"
         assert activated["snapshot_data"]["live_state"]["is_live"] is True
+        assert activated["snapshot_data"]["activated_at"] is not None
         assert activated["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] is not None
         assert len(activated["snapshot_data"]["live_state"]["runtime_chains"]) == 1
         assert activated["snapshot_data"]["tempo_bpm"] == 140.0
@@ -219,9 +222,13 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         live_snapshot = await routes.get_live_snapshot()
         assert live_snapshot["id"] == snapshot_id
         assert live_snapshot["live_state"]["is_live"] is True
+        assert live_snapshot["activated_at"] == activated["snapshot_data"]["activated_at"]
         assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
         assert live_snapshot["tempo_source"] == "tap"
         assert live_snapshot["active_tempo_bpm"] == 120.0
+
+        listed_after_activation = await routes.list_snapshots()
+        assert listed_after_activation["snapshots"][0]["activated_at"] == activated["snapshot_data"]["activated_at"]
 
         reset_tempo = await routes.reset_snapshot_tempo(snapshot_id)
         assert reset_tempo["tempo"]["tempo_source"] == "stored"

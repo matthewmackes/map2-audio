@@ -5,6 +5,7 @@ import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotR
 import { NumberInput } from '../ParameterControl'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../icons/map'
+import { formatSnapshotLastUsedValue } from '../../utils/snapshotLastUsed'
 
 interface FlowSlotRef {
   id: string
@@ -147,22 +148,6 @@ function formatRoutingMode(mode: SnapshotDetail['routing']['mode'] | SnapshotDra
   }
 }
 
-function formatDateTime(value?: string | null): string {
-  if (!value) {
-    return 'Unavailable'
-  }
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return 'Unavailable'
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(parsed)
-}
-
 function formatMidiReadout(snapshot: SnapshotDetail): string {
   const programs = collectMidiPrograms(snapshot)
   const channels = collectMidiChannels(snapshot)
@@ -236,6 +221,10 @@ function resolveChannelCount(snapshot: SnapshotDetail, editorSnapshotDraft?: Sna
     return snapshot.channels.length
   }
   return snapshot.paths.length
+}
+
+function resolveLastUsedAt(snapshot: SnapshotDetail): string | null {
+  return snapshot.activated_at ?? snapshot.live_state?.activated_at ?? null
 }
 
 function formatNodeSyncStatus(snapshot: SnapshotDetail): string {
@@ -387,9 +376,9 @@ function buildMetadataTableRows(
     ],
     [
       {
-        key: 'last-updated',
-        label: 'Last Updated',
-        value: formatDateTime(snapshot.updated_at || snapshot.created_at),
+        key: 'last-used',
+        label: 'Last Used',
+        value: formatSnapshotLastUsedValue(resolveLastUsedAt(snapshot)),
         accent: 'updated',
         colSpan: includeDetailsAction ? 2 : 3,
       },

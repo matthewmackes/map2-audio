@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]
+Last updated: 2026-04-01 EDT - T618 added snapshot last-used timestamps across the editor hero and snapshot library surfaces [completed]; T627 added chain-derived snapshot auto-tags plus library tag filtering [completed]; T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]
 
 ID: T675
 Status: [✓] Done
@@ -1181,7 +1181,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T618
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot Last-Used Timestamp — "Last Used: N Days Ago"
 Description:
 - Goal / acceptance criteria: Each snapshot in the editor hero and any snapshot list row displays its last activated timestamp as a human-readable relative time: "Last used: 2 days ago", "Last used: 3 hours ago", "Last used: Never". The timestamp uses the existing activated_at field in the Snapshot data model. Relative time is recalculated on render (not stored as a string). Timestamps older than 30 days show as an absolute date: "Last used: Feb 28, 2026". The display updates when the snapshot is activated (activated_at is refreshed).
@@ -1190,7 +1190,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: relative-time formatting utility (e.g., using date-fns or native Intl.RelativeTimeFormat), last-used display in editor hero and snapshot list rows, threshold logic for switching to absolute date at >30 days, activated_at field refresh on activation confirmed, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 21:02 - Codex
+- Completion notes:
+  - Added a shared native-Intl snapshot last-used formatter so the UI now renders `Never`, `just now`, relative minute/hour/day strings, and absolute dates once a snapshot is older than 30 days.
+  - Replaced the Snapshot Editor hero metadata cell with `Last Used` and updated the snapshot favorites/library surfaces to show `Last used: ...` based on `activated_at` instead of the prior updated-date copy.
+  - Confirmed the backend summary/detail serializers expose `activated_at` through list, detail, and activation flows so the new UI copy refreshes immediately after a snapshot is recalled.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotLastUsed.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T617
 Status: [ ] Todo

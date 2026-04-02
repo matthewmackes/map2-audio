@@ -2296,6 +2296,7 @@ class SnapshotService:
             "community_download_count": int(snapshot_row.community_download_count or 0) if snapshot_row is not None else 0,
             "community_rating": average_rating,
             "community_rating_count": int(snapshot_row.community_rating_count or 0) if snapshot_row is not None else 0,
+            "activated_at": snapshot_row.activated_at.isoformat() if snapshot_row is not None and snapshot_row.activated_at else None,
             "created_at": snapshot_row.created_at.isoformat() if snapshot_row is not None and snapshot_row.created_at else None,
             "updated_at": snapshot_row.updated_at.isoformat() if snapshot_row is not None and snapshot_row.updated_at else None,
             "session_notes": [self._serialize_session_note(item) for item in (snapshot_row.session_notes if snapshot_row is not None else [])],
@@ -2361,6 +2362,7 @@ class SnapshotService:
             "community_download_count": int(snapshot.community_download_count or 0),
             "community_rating": average_rating,
             "community_rating_count": int(snapshot.community_rating_count or 0),
+            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
             "created_at": snapshot.created_at.isoformat() if snapshot.created_at else None,
             "updated_at": snapshot.updated_at.isoformat() if snapshot.updated_at else None,
         }

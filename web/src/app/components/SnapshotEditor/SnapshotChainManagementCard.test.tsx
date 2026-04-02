@@ -277,7 +277,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('2 channels')).toBeInTheDocument()
     expect(screen.getByText('Output Reference')).toBeInTheDocument()
     expect(screen.getByText('Unset • ±3.0 dB')).toBeInTheDocument()
-    expect(screen.getByText('Last Updated')).toBeInTheDocument()
+    expect(screen.getByText('Last Used')).toBeInTheDocument()
     expect(screen.getByText('Node Sync Status')).toBeInTheDocument()
     expect(screen.getByText('Local live only')).toBeInTheDocument()
     expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
@@ -335,6 +335,21 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('-15.0 dBFS • ±3.0 dB')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Set Reference Level' })).not.toBeInTheDocument()
     expect(screen.getByText('Output is 5.5 dB above reference level.')).toBeInTheDocument()
+  })
+
+  it('shows never for snapshots that have not been activated yet', () => {
+    renderCard(buildLiveSnapshot({
+      activated_at: null,
+      live_state: {
+        is_live: false,
+        activated_at: null,
+        paths: [],
+        runtime_chains: [],
+      },
+    }))
+
+    expect(screen.getByText('Last Used')).toBeInTheDocument()
+    expect(screen.getByText('Never')).toBeInTheDocument()
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {

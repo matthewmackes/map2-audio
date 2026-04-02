@@ -116,6 +116,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["controls"]["midi_map"][0]["program_number"] == 10
             assert created["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "gain"
             assert created["lineage"]["derived_from_snapshot_id"] is None
+            assert created["activated_at"] is None
             assert created["paths"][0]["id"] == "channel-0"
             assert created["paths"][0]["label"] == "A"
             assert created["session_notes"] == []
@@ -187,6 +188,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_revision"]
             assert activated["runtime_live_state"]["snapshot_id"] == created["id"]
             assert activated["snapshot_data"]["live_state"]["is_live"] is True
+            assert activated["snapshot_data"]["activated_at"] is not None
             assert activated["snapshot_data"]["tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["tempo_source"] == "stored"
@@ -195,6 +197,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert live_snapshot is not None
             assert live_snapshot["id"] == created["id"]
             assert live_snapshot["live_state"]["is_live"] is True
+            assert live_snapshot["activated_at"] == activated["snapshot_data"]["activated_at"]
             assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
             assert live_snapshot["tempo_bpm"] == 140.0
             assert live_snapshot["active_tempo_bpm"] == 140.0
@@ -296,6 +299,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert summary["input_device"] == "Capture 2"
             assert summary["output_device"] is None
             assert summary["io_bindings"]["input_device"] == "Capture 2"
+            assert summary["activated_at"] == activated["snapshot_data"]["activated_at"]
             assert summary["lineage"]["derived_from_snapshot_id"] is None
 
             by_program = await service.get_snapshot_by_program(10)
