@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 06:59 EDT - T679 completed the missing controller-display assignment ownership resolver for blocked `T647`, including duplicate-safe slot extraction, label overrides, and collision diagnostics; T680 and T681 remain queued as the next two controller-display preparation slices to add unit-aware parameter metadata and a snapshot activation display-preview planner; T678 completed the controller-display key-parameter metadata slice by adding a canonical resolver plus `key_parameter` discovery payloads for JUCE, LV2, and hardware plugins; T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 07:06 EDT - T680 now preserves explicit parameter `unit` metadata across canonical JUCE/LV2 discovery payloads and parameter-schema serialization, so controller-display formatting can reuse stable `%`/`dB`/`ms`/`Hz` hints instead of re-guessing them later; T681 remains queued as the final controller-display preparation slice to assemble activation-time slot previews after this cycle’s commit/push/rebuild/restart completes; T679 is already committed, pushed, rebuilt, and redeployed on port `3000`; T678 completed the controller-display key-parameter metadata slice by adding a canonical resolver plus `key_parameter` discovery payloads for JUCE, LV2, and hardware plugins; T677 completed the controller-display capability metadata slice by moving Morningstar label-support details into explicit profile capabilities, teaching the snapshot footswitch-label push path to consume those capabilities, and locking the unsupported BeatStep Pro case into focused tests; T676 remains complete; T590, T591, and T592 remain blocked after final source audit confirmed the remaining queue needs deeper lock-free branch-buffer ownership, staged convolution IR swap architecture, and transaction-replay-capable SQLite retry plumbing rather than safe isolated patches in the current codebase; T595 moved the live backend service and repo unit policy onto CPUs `0-3`; `systemctl show map2-backend.service -p CPUAffinity -p ExecMainPID` now reports `CPUAffinity=0-3` and the running `python3` process is scheduled on CPU `0` [completed]; T597 updated the IRQ affinity script so only the UA-1000 xHCI IRQ stays on CPUs `4-5` while every other numeric IRQ is pushed to CPUs `0-3`; `/proc/irq/*/smp_affinity_list` now shows only IRQ `39` on `4-5` [completed]; T602 documented the polling-floor policy, CPU-affinity rules, and RT-safe checklist in `docs/CLAUDE.md` [completed]
 
 ID: T681
 Status: [ ] Todo
@@ -22,7 +22,7 @@ Assigned to: Codex
 Last updated: 2026-04-02 06:57 EDT - Codex
 
 ID: T680
-Status: [ ] Todo
+Status: [✓] Done
 Title: Preserve unit-aware parameter metadata for controller-display formatting
 Description:
 - Goal / acceptance criteria: Extend discovered plugin parameter payloads so the metadata needed for display formatting retains stable unit hints alongside the existing min/max/name/symbol data. Focus on the shared backend discovery/schema surfaces already feeding key-parameter selection so later controller-display text does not have to guess `%`, `dB`, `ms`, or `Hz` from raw names alone.
@@ -32,7 +32,12 @@ Description:
 - Required outputs: unit-aware parameter metadata on shared plugin discovery/schema surfaces, focused regression coverage, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 06:57 EDT - Codex
+Last updated: 2026-04-02 07:06 EDT - Codex
+- Completion notes:
+  - Preserved explicit `unit` metadata on canonical JUCE and LV2 parameter dictionaries inside `app/routes/plugins.py`, so `/api/plugins/discover` and downstream parameter listings now keep stable unit hints alongside the existing min/max/default/name/symbol fields.
+  - Updated parameter-schema serialization to prefer preserved plugin metadata units before falling back to the existing heuristic profile inference, which keeps descriptors deterministic for cases like normalized ratios that should not be rendered as guessed percentages.
+  - Added focused regression coverage proving JUCE inventory keeps explicit units, LV2 route transforms preserve loader-provided units, and parameter-schema payloads reuse explicit units when present.
+- Validation: `python3 -m pytest -q tests/test_plugin_parameter_schema_route.py tests/test_plugin_key_parameter_registry.py tests/test_plugins_residency.py` -> PASS
 
 ID: T679
 Status: [✓] Done

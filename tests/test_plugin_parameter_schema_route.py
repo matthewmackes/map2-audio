@@ -1,4 +1,5 @@
 import asyncio
+from types import SimpleNamespace
 
 from fastapi import Response
 
@@ -50,6 +51,7 @@ def test_get_parameter_schema_serializes_native_and_lv2_descriptors(monkeypatch)
                             "default": 0.5,
                             "is_toggled": False,
                             "is_log": False,
+                            "unit": "ratio",
                         }
                     ],
                 },
@@ -72,6 +74,7 @@ def test_get_parameter_schema_serializes_native_and_lv2_descriptors(monkeypatch)
     assert payload["schema"]["native://synth:cutoff"]["unit"] == "Hz"
     assert payload["schema"]["lv2://plate:mix"]["defaultValue"] == 50.0
     assert payload["schema"]["lv2://plate:resonance"]["profile"] == "normalized_0_1"
+    assert payload["schema"]["lv2://plate:resonance"]["unit"] == "ratio"
     assert [plugin["source"] for plugin in payload["plugins"]] == ["native", "lv2"]
     assert all(plugin["pluginId"] != "hardware://mpx1" for plugin in payload["plugins"])
 
@@ -125,6 +128,48 @@ def test_load_juce_processors_normalizes_enum_defaults_to_numeric_indices(monkey
         "notch",
         "allpass",
     ]
+
+
+def test_load_juce_processors_preserves_explicit_parameter_units(monkeypatch):
+    monkeypatch.setattr(plugins, "_juce_processors_cache", [])
+
+    payload = plugins._get_juce_processors()
+    compressor = next(plugin for plugin in payload if plugin["uri"] == "map2://juce/dynamics/compressor")
+    attack = next(parameter for parameter in compressor["parameters"] if parameter["symbol"] == "attack")
+
+    assert attack["unit"] == "ms"
+
+
+def test_transform_plugin_preserves_lv2_parameter_units():
+    plugin = SimpleNamespace(
+        uri="lv2://delay",
+        name="LV2 Delay",
+        author="Unit Test",
+        category="Delay",
+        class_label="Delay",
+        version="1.0",
+        license="MIT",
+        has_ui=False,
+        in_port_count=2,
+        out_port_count=2,
+        parameters=[
+            SimpleNamespace(
+                index=0,
+                name="Feedback",
+                symbol="feedback",
+                min_value=0.0,
+                max_value=0.95,
+                default_value=0.4,
+                is_toggled=False,
+                is_logarithmic=False,
+                unit="ratio",
+            )
+        ],
+    )
+
+    payload = plugins._transform_plugin(plugin)
+
+    assert payload["parameters"][0]["unit"] == "ratio"
 
 
 def test_get_parameter_schema_covers_every_discovered_native_and_lv2_parameter(monkeypatch):

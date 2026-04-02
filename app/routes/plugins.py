@@ -31,6 +31,10 @@ def _coerce_finite_float(value: Any, fallback: float) -> float:
     return numeric if math.isfinite(numeric) else fallback
 
 
+def _normalize_parameter_unit(value: Any) -> str:
+    return str(value or "").strip()
+
+
 def _normalize_juce_parameter_definition(
     definition: Dict[str, Any],
     index: int,
@@ -81,6 +85,7 @@ def _normalize_juce_parameter_definition(
         "default": default_value,
         "is_toggled": is_toggled,
         "is_log": bool(definition.get("logarithmic", False)) and not (is_toggled or is_enum),
+        "unit": _normalize_parameter_unit(definition.get("unit")),
     }
 
     if options:
@@ -768,6 +773,7 @@ try:
                     "default": param.default_value,
                     "is_toggled": param.is_toggled,
                     "is_log": param.is_logarithmic,
+                    "unit": _normalize_parameter_unit(getattr(param, "unit", "")),
                 }
                 for param in p.parameters
             ] if hasattr(p, 'parameters') else []
@@ -941,8 +947,10 @@ try:
                 index = int(parameter.get("index", len(parameter_entries)))
                 is_toggled = bool(parameter.get("is_toggled", False))
                 is_log = bool(parameter.get("is_log", False))
+                explicit_unit = _normalize_parameter_unit(parameter.get("unit"))
                 param_key = _normalize_parameter_key(symbol or name, f"param-{index}")
-                unit, profile = _infer_parameter_profile(name, symbol, is_toggled, minimum, maximum, default_value)
+                inferred_unit, profile = _infer_parameter_profile(name, symbol, is_toggled, minimum, maximum, default_value)
+                unit = explicit_unit or inferred_unit
                 step = _infer_parameter_step(minimum, maximum, default_value, profile, is_toggled)
                 precision = _precision_from_step(step)
 
