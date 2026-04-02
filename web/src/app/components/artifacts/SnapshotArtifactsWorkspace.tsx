@@ -174,6 +174,7 @@ export function SnapshotArtifactsWorkspace({
   const [programValue, setProgramValue] = useState<string>('')
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importPayloadText, setImportPayloadText] = useState('')
+  const [importBundleFile, setImportBundleFile] = useState<File | null>(null)
   const routeActive = useRouteActive(['/artifacts'])
   const snapshotCadence = useRealtimeCadence({
     routeActive,
@@ -371,6 +372,9 @@ export function SnapshotArtifactsWorkspace({
 
   const importMutation = useMutation({
     mutationFn: async () => {
+      if (importBundleFile) {
+        return snapshotsApi.importSnapshotBundle(importBundleFile, importBundleFile.name)
+      }
       const payload = JSON.parse(importPayloadText) as SnapshotExport | SnapshotDetail | { snapshot: SnapshotDetail }
       return snapshotsApi.importSnapshot(payload)
     },
@@ -379,6 +383,7 @@ export function SnapshotArtifactsWorkspace({
       setSelectedSnapshotId(result.snapshot_id)
       setImportModalOpen(false)
       setImportPayloadText('')
+      setImportBundleFile(null)
       onToast('success', 'Snapshot imported', result.snapshot.name)
     },
     onError: (error: Error) => onToast('error', 'Snapshot import failed', error.message),
@@ -387,14 +392,13 @@ export function SnapshotArtifactsWorkspace({
   const exportMutation = useMutation({
     mutationFn: (snapshotId: number) => snapshotsApi.exportSnapshot(snapshotId),
     onSuccess: (payload) => {
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
+      const url = URL.createObjectURL(payload.blob)
       const anchor = document.createElement('a')
       anchor.href = url
-      anchor.download = `${payload.snapshot.name.replace(/\s+/g, '-').toLowerCase() || 'snapshot'}.map2snapshot.json`
+      anchor.download = payload.filename
       anchor.click()
       URL.revokeObjectURL(url)
-      onToast('success', 'Snapshot exported', payload.snapshot.name)
+      onToast('success', 'Snapshot exported', payload.filename)
     },
     onError: (error: Error) => onToast('error', 'Snapshot export failed', error.message),
   })
@@ -875,13 +879,28 @@ export function SnapshotArtifactsWorkspace({
         primaryButtonText={importMutation.isPending ? 'Importing…' : 'Import'}
         secondaryButtonText="Cancel"
         onRequestClose={() => setImportModalOpen(false)}
-        onSecondarySubmit={() => setImportModalOpen(false)}
+        onSecondarySubmit={() => {
+          setImportBundleFile(null)
+          setImportPayloadText('')
+          setImportModalOpen(false)
+        }}
         onRequestSubmit={() => importMutation.mutate()}
-        primaryButtonDisabled={!importPayloadText.trim() || importMutation.isPending}
+        primaryButtonDisabled={(!importPayloadText.trim() && !importBundleFile) || importMutation.isPending}
       >
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="snapshot-import-bundle" className="cds--label">Snapshot bundle</label>
+          <input
+            id="snapshot-import-bundle"
+            type="file"
+            accept=".map2snapshot,.zip,.json,.map2snapshot.json,application/vnd.map2.snapshot+zip,application/zip,application/json"
+            onChange={(event) => setImportBundleFile(event.target.files?.[0] ?? null)}
+          />
+          {importBundleFile ? <p>{importBundleFile.name}</p> : null}
+        </div>
         <TextArea
           id="snapshot-import-json"
           labelText="Snapshot JSON payload"
+          helperText="Optional fallback for legacy JSON imports."
           placeholder='Paste a SnapshotExport or {"snapshot": ...} payload'
           value={importPayloadText}
           onChange={(event) => setImportPayloadText(event.target.value)}

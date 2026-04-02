@@ -1,5 +1,7 @@
 import asyncio
+import io
 import json
+import zipfile
 
 import pytest
 from app import database as database_module
@@ -11,9 +13,12 @@ from app.services import snapshot_deployment_service as deployment_service_modul
 from app.services import snapshot_runtime_service
 from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
+from app.services import upload_service as upload_service_module
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from fastapi import HTTPException
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 
@@ -97,6 +102,7 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                 io_bindings=routes.SnapshotIOBindingsInput(
                     input_device="Route In",
                     output_device="Route Out",
+                    monitoring_output_index=2,
                 ),
                 controls=routes.SnapshotControlsInput(
                     midi_map=[{"action": "load_snapshot", "program_number": 12}],
@@ -163,7 +169,9 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["activated_at"] is None
         assert fetched["paths"][0]["id"] == "path-a"
         assert fetched["controls"]["midi_map"][0]["program_number"] == 12
+        assert fetched["controls"]["monitoring_output_index"] == 2
         assert fetched["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "mix"
+        assert fetched["io_bindings"]["monitoring_output_index"] == 2
         assert fetched["session_notes"] == []
         assert fetched["chains"][0]["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
         assert fetched["chains"][0]["plugins"][0]["loader_state"]["system_block_role"] == "noise_gate"
@@ -211,7 +219,11 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
                 tempo_bpm=140.0,
                 output_level_reference_dbfs=-10.0,
                 output_level_warning_threshold_db=3.5,
-                io_bindings=routes.SnapshotIOBindingsInput(input_device="Route In 2", output_device=None),
+                io_bindings=routes.SnapshotIOBindingsInput(
+                    input_device="Route In 2",
+                    output_device=None,
+                    monitoring_output_index=4,
+                ),
                 controls=routes.SnapshotControlsInput(
                     midi_map=[{"action": "load_snapshot", "program_number": 12}],
                     maschine_encoder_map={
@@ -225,7 +237,24 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert patched["snapshot"]["output_level_warning_threshold_db"] == 3.5
         assert patched["snapshot"]["input_device"] == "Route In 2"
         assert patched["snapshot"]["output_device"] is None
+        assert patched["snapshot"]["controls"]["monitoring_output_index"] == 4
+        assert patched["snapshot"]["io_bindings"]["monitoring_output_index"] == 4
         assert patched["snapshot"]["controls"]["maschine_encoder_map"]["enc4"]["param_id"] == "gain"
+
+        cleared_monitoring = await routes.update_snapshot(
+            snapshot_id,
+            routes.SnapshotUpdateRequest(
+                controls=routes.SnapshotControlsInput(
+                    midi_map=[{"action": "load_snapshot", "program_number": 12}],
+                    monitoring_output_index=None,
+                    maschine_encoder_map={
+                        "enc4": {"block_id": "block-2", "param_id": "gain", "label": "Gain"},
+                    },
+                ),
+            ),
+        )
+        assert cleared_monitoring["snapshot"]["controls"]["monitoring_output_index"] is None
+        assert cleared_monitoring["snapshot"]["io_bindings"]["monitoring_output_index"] is None
 
         replaced_midi_map = await routes.replace_midi_map(
             snapshot_id,
@@ -541,6 +570,105 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert len(restored_revision["snapshot"]["chains"][0]["plugins"]) == 2
 
     asyncio.run(_run())
+
+
+def test_snapshot_export_and_import_bundle_routes(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    source_assets = tmp_path / "route-bundle-source"
+    source_assets.mkdir(parents=True, exist_ok=True)
+    nam_source = source_assets / "RouteTone.nam"
+    nam_source.write_bytes(b"route-nam")
+
+    storage_root = tmp_path / "route-bundle-library"
+    storage_paths = {
+        upload_service_module.AssetType.NAM: storage_root / "nam",
+        upload_service_module.AssetType.CABINET_IR: storage_root / "ir" / "cabinets",
+        upload_service_module.AssetType.REVERB_IR: storage_root / "ir" / "reverbs",
+        upload_service_module.AssetType.VST3: storage_root / "vst3",
+    }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(
+        upload_service_module.UnifiedUploadService,
+        "get_storage_path",
+        lambda self, asset_type: storage_paths[asset_type],
+    )
+    monkeypatch.setattr(upload_service_module, "_upload_service", None)
+
+    async def _create_snapshot():
+        created = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="RouteBundle",
+                paths=[
+                    routes.SnapshotPathInput(
+                        id="path-a",
+                        name="Path A",
+                        label="A",
+                        color="#2563eb",
+                        snapshot_chain_id=1,
+                        plugins=[
+                            routes.SnapshotPluginInput(
+                                uri="map2://juce/nam",
+                                name="NAM",
+                                position=0,
+                                loader_state={
+                                    "selected_model": "RouteTone",
+                                    "selected_asset_name": "RouteTone",
+                                    "selected_asset_path": str(nam_source),
+                                },
+                            )
+                        ],
+                    )
+                ],
+                routing=routes.SnapshotRoutingInput(
+                    mode="parallel_blend",
+                    active_channel_key="path-a",
+                    blend_positions={"path-a": 100.0},
+                    series_order=["path-a"],
+                ),
+            )
+        )
+        return created["snapshot_id"]
+
+    snapshot_id = asyncio.run(_create_snapshot())
+
+    app = FastAPI()
+    app.include_router(routes.router)
+    client = TestClient(app)
+
+    export_response = client.get(f"/api/snapshots/{snapshot_id}/export")
+    assert export_response.status_code == 200
+    assert export_response.headers["content-type"] == "application/vnd.map2.snapshot+zip"
+    assert 'filename="RouteBundle.map2snapshot"' in export_response.headers["content-disposition"]
+
+    with zipfile.ZipFile(io.BytesIO(export_response.content), "r") as archive:
+        assert "snapshot.json" in archive.namelist()
+        payload = json.loads(archive.read("snapshot.json").decode("utf-8"))
+        assert payload["snapshot"]["name"] == "RouteBundle"
+
+    import_response = client.post(
+        "/api/snapshots/import",
+        files={
+            "file": (
+                "RouteBundle.map2snapshot",
+                export_response.content,
+                "application/vnd.map2.snapshot+zip",
+            )
+        },
+    )
+    assert import_response.status_code == 200
+    imported_snapshot = import_response.json()["snapshot"]
+    imported_plugin = next(
+        plugin
+        for plugin in imported_snapshot["chains"][0]["plugins"]
+        if plugin["uri"] == "map2://juce/nam"
+    )
+    assert imported_plugin["loader_state"]["selected_asset_path"].startswith(str(storage_paths[upload_service_module.AssetType.NAM]))
 
     registered_paths = {route.path for route in routes.router.routes}
     assert "/api/snapshots" in registered_paths

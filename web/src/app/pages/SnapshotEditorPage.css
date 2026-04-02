@@ -1247,6 +1247,23 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
+.juce-grid-page__snapshot-status-monitoring-badge.cds--tag {
+  min-block-size: 1.75rem;
+  padding-inline: 0.625rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, #78a9ff 14%, var(--cds-layer-01, #262626));
+  color: #78a9ff;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #78a9ff 26%, transparent);
+}
+
+.juce-grid-page__snapshot-status-monitoring-badge.is-warning.cds--tag {
+  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer-01, #262626));
+  color: #f1c21b;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
+}
+
 .juce-grid-page__snapshot-status-channel-warning-list {
   display: flex;
   flex-wrap: wrap;

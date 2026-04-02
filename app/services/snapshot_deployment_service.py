@@ -7,12 +7,14 @@ This is the snapshot-granularity replacement for the old flow orchestrator.
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import SnapshotDeployment
+from app.services.cluster.content_distributor import get_content_distributor
 from app.services.cluster.registry import get_cluster_registry
 from app.services.snapshot_service import SnapshotService
 
@@ -41,6 +43,46 @@ class SnapshotDeploymentService:
             return float(value)
         except Exception:
             return default
+
+    async def _deploy_snapshot_assets(
+        self,
+        *,
+        snapshot_id: int,
+        target_node_ids: list[str],
+    ) -> dict[str, Any]:
+        export_payload = await self.snapshot_service.export_snapshot(snapshot_id)
+        if export_payload is None:
+            return {"asset_count": 0, "results": {}}
+
+        distributor = get_content_distributor()
+        results: dict[str, bool] = {node_id: True for node_id in target_node_ids}
+        deployed_assets: set[tuple[str, str]] = set()
+
+        for asset in export_payload.get("asset_manifest", []):
+            asset_path = str(asset.get("asset_path") or "").strip()
+            if not asset_path or not Path(asset_path).is_file():
+                continue
+
+            kind = str(asset.get("kind") or "").strip().lower()
+            dedupe_key = (kind, asset_path)
+            if dedupe_key in deployed_assets:
+                continue
+            deployed_assets.add(dedupe_key)
+
+            if kind == "nam":
+                asset_results = await distributor.deploy_nam_model(asset_path, target_node_ids)
+            elif kind in {"cabinet_ir", "reverb_ir", "plugin_asset"}:
+                asset_results = await distributor.deploy_ir(asset_path, target_node_ids)
+            else:
+                continue
+
+            for node_id in target_node_ids:
+                results[node_id] = results.get(node_id, True) and bool(asset_results.get(node_id, False))
+
+        return {
+            "asset_count": len(deployed_assets),
+            "results": results,
+        }
 
     def select_best_node(
         self,
@@ -79,6 +121,11 @@ class SnapshotDeploymentService:
             return None
 
         standby_ids = self._candidate_standby_nodes(node_id)[:2] if redundancy_enabled else []
+        asset_targets = [node_id, *standby_ids]
+        asset_sync = await self._deploy_snapshot_assets(
+            snapshot_id=snapshot_id,
+            target_node_ids=asset_targets,
+        )
         deployment = await self.snapshot_service.create_deployment(
             snapshot_id,
             primary_node_id=node_id,
@@ -94,7 +141,17 @@ class SnapshotDeploymentService:
             snapshot_id=snapshot_id,
             to_node_id=node_id,
             action="deployed",
-            notes="Snapshot deployment created",
+            notes=(
+                "Snapshot deployment created"
+                if asset_sync["asset_count"] == 0
+                else (
+                    "Snapshot deployment created; bundled assets pushed to "
+                    + ", ".join(
+                        f"{target}={'ok' if asset_sync['results'].get(target) else 'failed'}"
+                        for target in asset_targets
+                    )
+                )
+            ),
         )
         return await self.get_latest_deployment(snapshot_id)
 

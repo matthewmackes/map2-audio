@@ -239,6 +239,13 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         description="Default output device name inherited by new snapshots when no per-snapshot output binding is set",
         value_type=str,
     ),
+    "snapshots.default_monitoring_output_index": ConfigOption(
+        key="snapshots.default_monitoring_output_index",
+        default=None,
+        description="Default stereo output-pair start index used for monitoring solo when no per-snapshot override is set",
+        value_type=int,
+        min_value=0,
+    ),
 
     # MIDI settings
     "midi.enabled": ConfigOption(

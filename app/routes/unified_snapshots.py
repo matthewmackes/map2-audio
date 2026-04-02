@@ -6,7 +6,8 @@ import httpx
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException, Query, Request, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.database import get_session
@@ -87,12 +88,14 @@ class SnapshotPathInput(BaseModel):
 class SnapshotIOBindingsInput(BaseModel):
     input_device: Optional[str] = None
     output_device: Optional[str] = None
+    monitoring_output_index: Optional[int] = Field(default=None, ge=0)
 
 
 class SnapshotControlsInput(BaseModel):
     midi_map: list[dict[str, Any]] = Field(default_factory=list)
     automation_lanes: list[dict[str, Any]] = Field(default_factory=list)
     expression_mappings: list[dict[str, Any]] = Field(default_factory=list)
+    monitoring_output_index: Optional[int] = Field(default=None, ge=0)
     maschine_encoder_map: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -271,12 +274,30 @@ def _resolve_output_device(request: SnapshotCreateRequest | SnapshotUpdateReques
     return request.io_bindings.output_device if request.io_bindings is not None else request.output_device
 
 
+def _monitoring_output_index_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
+    if request.io_bindings is not None and "monitoring_output_index" in request.io_bindings.model_fields_set:
+        return request.io_bindings.monitoring_output_index
+    if request.controls is not None and "monitoring_output_index" in request.controls.model_fields_set:
+        return request.controls.monitoring_output_index
+    return UNSET
+
+
 def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
+    monitoring_output_index = _monitoring_output_index_from_request(request)
+
     if isinstance(request, SnapshotUpdateRequest) and request.controls is None:
-        return UNSET
-    if request.controls is None:
-        return None
-    return request.controls.model_dump(exclude_none=True)
+        if monitoring_output_index is UNSET:
+            return UNSET
+        return {
+            "monitoring_output_index": monitoring_output_index,
+        }
+
+    payload = request.controls.model_dump(exclude_none=True) if request.controls is not None else {}
+    if request.controls is not None and "monitoring_output_index" in request.controls.model_fields_set:
+        payload["monitoring_output_index"] = request.controls.monitoring_output_index
+    if monitoring_output_index is not UNSET:
+        payload["monitoring_output_index"] = monitoring_output_index
+    return payload or None
 
 
 def _raise_not_found(entity: str) -> None:
@@ -580,7 +601,7 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 output_level_warning_threshold_db=request.output_level_warning_threshold_db if "output_level_warning_threshold_db" in provided else UNSET,
                 input_device=_resolve_input_device(request) if "input_device" in provided or "io_bindings" in provided else UNSET,
                 output_device=_resolve_output_device(request) if "output_device" in provided or "io_bindings" in provided else UNSET,
-                controls_payload=_controls_payload_from_request(request) if "controls" in provided else UNSET,
+                controls_payload=_controls_payload_from_request(request) if "controls" in provided or "io_bindings" in provided else UNSET,
                 is_favorite=request.is_favorite if "is_favorite" in provided else UNSET,
                 is_locked=request.is_locked if "is_locked" in provided else UNSET,
                 display_order=request.display_order if "display_order" in provided else UNSET,
@@ -1140,14 +1161,20 @@ async def replace_midi_map(snapshot_id: int, request: MidiMapRequest) -> dict[st
 
 
 @router.get("/api/snapshots/{snapshot_id}/export")
-async def export_snapshot(snapshot_id: int) -> dict[str, Any]:
+async def export_snapshot(snapshot_id: int) -> Response:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            payload = await service.export_snapshot(snapshot_id)
+            payload = await service.export_snapshot_bundle(snapshot_id)
             if payload is None:
                 _raise_not_found("Snapshot")
-            return payload
+            return Response(
+                content=payload["content"],
+                media_type="application/vnd.map2.snapshot+zip",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{payload["filename"]}"',
+                },
+            )
     except HTTPException:
         raise
     except Exception as exc:
@@ -1156,16 +1183,28 @@ async def export_snapshot(snapshot_id: int) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots/import")
-async def import_snapshot(request: dict[str, Any] = Body(...)) -> dict[str, Any]:
+async def import_snapshot(request: Request) -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            snapshot = await service.import_snapshot(request)
+            content_type = str(request.headers.get("content-type") or "").lower()
+            if "multipart/form-data" in content_type:
+                form = await request.form()
+                upload = form.get("file")
+                if upload is None or not hasattr(upload, "read"):
+                    raise HTTPException(status_code=400, detail="Snapshot import requires a file upload")
+                snapshot = await service.import_snapshot(await upload.read())
+            elif content_type in {"application/zip", "application/octet-stream", "application/vnd.map2.snapshot+zip"}:
+                snapshot = await service.import_snapshot(await request.body())
+            else:
+                snapshot = await service.import_snapshot(await request.json())
             return {
                 "status": "success",
                 "snapshot_id": snapshot["id"],
                 "snapshot": snapshot,
             }
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error("Error importing snapshot: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc

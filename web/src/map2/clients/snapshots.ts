@@ -1,4 +1,4 @@
-import { fetchJson } from '../http'
+import { ApiError, fetchJson } from '../http'
 import { API_BASE } from '../transport'
 import type {
   CommunitySnapshot,
@@ -50,7 +50,7 @@ export interface SnapshotCreateRequest {
   output_device?: string | null
   is_locked?: boolean
   io_bindings?: SnapshotIOBindings
-  controls?: SnapshotControls
+  controls?: Partial<SnapshotControls>
   paths?: SnapshotPath[]
   channels?: SnapshotChannel[]
   chains?: SnapshotDetail['chains']
@@ -71,7 +71,7 @@ export interface SnapshotUpdateRequest {
   input_device?: string | null
   output_device?: string | null
   io_bindings?: SnapshotIOBindings
-  controls?: SnapshotControls
+  controls?: Partial<SnapshotControls>
   paths?: SnapshotPath[]
   display_order?: number
   is_favorite?: boolean
@@ -188,6 +188,11 @@ export interface SnapshotDeployResponse {
   redundancy_enabled: boolean
 }
 
+export interface SnapshotBundleDownload {
+  blob: Blob
+  filename: string
+}
+
 export interface SnapshotFailoverResponse {
   status: string
   snapshot_id: number
@@ -207,6 +212,11 @@ function toLegacyRoutingMode(mode: SnapshotRouting['mode']): RoutingConfigSnapsh
 
 function fromLegacyRoutingMode(mode: RoutingConfigSnapshot['mode']): SnapshotRouting['mode'] {
   return mode === 'parameter_morph' || mode === 'ab_switch' ? 'morph' : mode
+}
+
+function snapshotBundleFilenameFromHeaders(contentDisposition: string | null, fallback = 'snapshot.map2snapshot') {
+  const match = contentDisposition?.match(/filename="?([^";]+)"?/i)
+  return match?.[1]?.trim() || fallback
 }
 
 function normalizeSnapshotPlugin(plugin: SnapshotPlugin): SnapshotPlugin {
@@ -673,14 +683,41 @@ export const snapshotsApi = {
       body: JSON.stringify({ entries }),
     }),
 
-  exportSnapshot: (snapshotId: number) =>
-    fetchJson<SnapshotExport>(`${API_BASE}/snapshots/${snapshotId}/export`),
+  exportSnapshot: async (snapshotId: number): Promise<SnapshotBundleDownload> => {
+    const response = await fetch(`${API_BASE}/snapshots/${snapshotId}/export`)
+    if (!response.ok) {
+      let body: unknown
+      try {
+        body = await response.text()
+      } catch {
+        body = response.statusText
+      }
+      throw new ApiError(response.status, response.statusText, body)
+    }
+    const blob = await response.blob()
+    return {
+      blob,
+      filename: snapshotBundleFilenameFromHeaders(
+        response.headers.get('content-disposition'),
+        `snapshot-${snapshotId}.map2snapshot`,
+      ),
+    }
+  },
 
   importSnapshot: (payload: SnapshotExport | { snapshot: SnapshotDetail } | SnapshotDetail) =>
     fetchJson<SnapshotCreateResponse>(`${API_BASE}/snapshots/import`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  importSnapshotBundle: (file: Blob, filename = 'snapshot.map2snapshot') => {
+    const formData = new FormData()
+    formData.append('file', file, filename)
+    return fetchJson<SnapshotCreateResponse>(`${API_BASE}/snapshots/import`, {
+      method: 'POST',
+      body: formData,
+    })
+  },
 
   share: (snapshotId: number, authorName: string) =>
     fetchJson<CommunityMutationResponse>(`${API_BASE}/snapshots/${snapshotId}/share`, {

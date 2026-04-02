@@ -1,10 +1,14 @@
 import asyncio
+import io
 import json
+import zipfile
+from pathlib import Path
 
 from app import database as database_module
 from app.services import snapshot_runtime_service
 from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
+from app.services import upload_service as upload_service_module
 from app.services.chain_service import ChainService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
@@ -420,6 +424,132 @@ def test_snapshot_service_rejects_invalid_names(tmp_path):
     asyncio.run(_run())
 
 
+def test_snapshot_service_bundle_export_import_embeds_and_restores_assets(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    export_dir = tmp_path / "bundle-source"
+    export_dir.mkdir(parents=True, exist_ok=True)
+    nam_source = export_dir / "CleanTone.nam"
+    cab_source = export_dir / "Mesa.wav"
+    nam_source.write_bytes(b"nam-model-data")
+    cab_source.write_bytes(b"wave-data")
+
+    library_root = tmp_path / "bundle-library"
+    storage_paths = {
+        upload_service_module.AssetType.NAM: library_root / "nam",
+        upload_service_module.AssetType.CABINET_IR: library_root / "ir" / "cabinets",
+        upload_service_module.AssetType.REVERB_IR: library_root / "ir" / "reverbs",
+        upload_service_module.AssetType.VST3: library_root / "vst3",
+    }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(
+        upload_service_module.UnifiedUploadService,
+        "get_storage_path",
+        lambda self, asset_type: storage_paths[asset_type],
+    )
+    monkeypatch.setattr(upload_service_module, "_upload_service", None)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="BundledSnapshot",
+                apply_default_system_blocks=False,
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "name": "NAM",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {
+                                        "selected_model": "CleanTone",
+                                        "selected_asset_name": "CleanTone",
+                                        "selected_asset_path": str(nam_source),
+                                    },
+                                },
+                                {
+                                    "uri": "map2://juce/convolution/cabinet",
+                                    "name": "Cabinet IR",
+                                    "position": 1,
+                                    "bypass": False,
+                                    "parameters": {"mix": 1.0},
+                                    "loader_state": {
+                                        "selected_ir": "Mesa",
+                                        "selected_asset_name": "Mesa",
+                                        "selected_asset_path": str(cab_source),
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            bundle = await service.export_snapshot_bundle(created["id"])
+            assert bundle is not None
+            assert bundle["filename"] == "BundledSnapshot.map2snapshot"
+
+            with zipfile.ZipFile(io.BytesIO(bundle["content"]), "r") as archive:
+                assert "snapshot.json" in archive.namelist()
+                payload = json.loads(archive.read("snapshot.json").decode("utf-8"))
+                assert payload["snapshot"]["name"] == "BundledSnapshot"
+                bundled_assets = [asset for asset in payload["asset_manifest"] if asset.get("bundle_path")]
+                assert len(bundled_assets) == 2
+                assert sorted(archive.namelist()) == sorted(
+                    ["snapshot.json", *(asset["bundle_path"] for asset in bundled_assets)]
+                )
+
+            imported = await service.import_snapshot(bundle["content"])
+            assert imported["name"] == "BundledSnapshot"
+
+            imported_plugins = {
+                plugin["uri"]: plugin
+                for plugin in imported["chains"][0]["plugins"]
+            }
+            imported_nam_path = Path(imported_plugins["map2://juce/nam"]["loader_state"]["selected_asset_path"])
+            imported_cab_path = Path(imported_plugins["map2://juce/convolution/cabinet"]["loader_state"]["selected_asset_path"])
+
+            assert imported_nam_path.is_file()
+            assert imported_cab_path.is_file()
+            assert imported_nam_path == storage_paths[upload_service_module.AssetType.NAM] / nam_source.name
+            assert imported_cab_path == storage_paths[upload_service_module.AssetType.CABINET_IR] / cab_source.name
+            assert imported_plugins["map2://juce/nam"]["loader_state"]["selected_model"] == "CleanTone"
+            assert imported_plugins["map2://juce/convolution/cabinet"]["loader_state"]["selected_ir"] == "Mesa"
+
+            nam_models = await session.execute(select(database_module.NAMModel))
+            records = nam_models.scalars().all()
+            assert len(records) == 1
+            assert records[0].file_path == str(imported_nam_path)
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     applied_devices: list[str] = []
@@ -430,6 +560,8 @@ def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tm
                 return "Default Input"
             if key == snapshot_service_module.SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY:
                 return "Default Output"
+            if key == snapshot_service_module.SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY:
+                return 6
             return default
 
     class _AudioInventoryStub:
@@ -482,6 +614,8 @@ def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tm
             assert created["output_device"] == "Default Output"
             assert created["io_bindings"]["input_device"] == "Default Input"
             assert created["io_bindings"]["output_device"] == "Default Output"
+            assert created["controls"]["monitoring_output_index"] == 6
+            assert created["io_bindings"]["monitoring_output_index"] == 6
 
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None

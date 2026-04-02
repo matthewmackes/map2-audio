@@ -2127,6 +2127,7 @@ export interface SnapshotPath {
 export interface SnapshotIOBindings {
   input_device: string | null;
   output_device: string | null;
+  monitoring_output_index?: number | null;
   remap_required: boolean;
 }
 
@@ -2134,6 +2135,7 @@ export interface SnapshotControls {
   midi_map: SnapshotMidiMapEntry[];
   automation_lanes: Array<Record<string, unknown>>;
   expression_mappings: Array<Record<string, unknown>>;
+  monitoring_output_index?: number | null;
   maschine_encoder_map: SnapshotMaschineEncoderMap;
 }
 
@@ -2250,6 +2252,9 @@ export interface SnapshotAssetRef {
   plugin_position?: number | null;
   asset_name?: string | null;
   asset_path?: string | null;
+  filename?: string | null;
+  checksum?: string | null;
+  bundle_path?: string | null;
   available: boolean;
 }
 

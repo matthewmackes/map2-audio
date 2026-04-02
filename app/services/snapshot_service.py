@@ -10,13 +10,16 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import json
 import logging
 import os
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterable, Optional
 from uuid import uuid4
+import zipfile
 
 from sqlalchemy import delete, func, inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +31,7 @@ from app.database import (
     ChainPlugin,
     EffectsLoop,
     EffectsLoopInsertion,
+    NAMModel,
     Snapshot,
     SnapshotChannel,
     SnapshotChain,
@@ -52,6 +56,7 @@ from app.services.snapshot_system_blocks import (
     is_system_noise_gate_loader_state,
 )
 from app.services.snapshot_footswitch_label_service import push_snapshot_footswitch_labels
+from app.services.upload_service import AssetType, get_upload_service
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +80,9 @@ _REVERB_IR_PLUGIN_URIS = {"map2://juce/convolution/reverb", "urn:map2:ir-reverb"
 UNSET = object()
 SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = "snapshots.default_input_device"
 SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = "snapshots.default_output_device"
+SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = "snapshots.default_monitoring_output_index"
+SNAPSHOT_BUNDLE_MANIFEST_FILENAME = "snapshot.json"
+SNAPSHOT_BUNDLE_FORMAT_VERSION = 2
 
 
 def _stable_channel_label(index: int) -> str:
@@ -129,6 +137,14 @@ def _normalize_device_name(value: Any) -> Optional[str]:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _normalize_monitoring_output_index(value: Any) -> Optional[int]:
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError):
+        return None
+    return normalized if normalized >= 0 else None
 
 
 def _utcnow() -> datetime:
@@ -459,11 +475,14 @@ class SnapshotService:
             "has_explicit_output_inventory": bool(explicit_output_names),
         }
 
-    def _get_snapshot_io_defaults(self) -> dict[str, Optional[str]]:
+    def _get_snapshot_io_defaults(self) -> dict[str, Any]:
         manager = get_config()
         return {
             "input_device": _normalize_device_name(manager.get(SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY)),
             "output_device": _normalize_device_name(manager.get(SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY)),
+            "monitoring_output_index": _normalize_monitoring_output_index(
+                manager.get(SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY)
+            ),
         }
 
     def _resolve_snapshot_io_bindings(
@@ -652,6 +671,16 @@ class SnapshotService:
         payload["midi_map"] = [dict(entry) for entry in midi_map if isinstance(entry, dict)]
         payload["automation_lanes"] = [dict(entry) for entry in payload.get("automation_lanes", []) if isinstance(entry, dict)]
         payload["expression_mappings"] = [dict(entry) for entry in payload.get("expression_mappings", []) if isinstance(entry, dict)]
+        monitoring_output_index = payload.get("monitoring_output_index")
+        if monitoring_output_index is None and isinstance(detail_payload, dict):
+            controls_source = detail_payload.get("controls")
+            if isinstance(controls_source, dict):
+                monitoring_output_index = controls_source.get("monitoring_output_index")
+            else:
+                io_source = detail_payload.get("io_bindings")
+                if isinstance(io_source, dict):
+                    monitoring_output_index = io_source.get("monitoring_output_index")
+        payload["monitoring_output_index"] = _normalize_monitoring_output_index(monitoring_output_index)
         payload["maschine_encoder_map"] = normalize_maschine_encoder_map(payload.get("maschine_encoder_map"))
         return payload
 
@@ -725,6 +754,10 @@ class SnapshotService:
             input_device=input_device,
             output_device=output_device,
         )
+        resolved_controls_payload = self._normalize_controls_payload(controls_payload, detail_payload)
+        if resolved_controls_payload.get("monitoring_output_index") is None:
+            resolved_controls_payload["monitoring_output_index"] = self._get_snapshot_io_defaults().get("monitoring_output_index")
+        resolved_controls_payload = self._normalize_controls_payload(resolved_controls_payload, detail_payload)
 
         snapshot = Snapshot(
             name=normalized_name,
@@ -744,7 +777,7 @@ class SnapshotService:
             ),
             input_device=resolved_input_device,
             output_device=resolved_output_device,
-            controls_payload=self._normalize_controls_payload(controls_payload, detail_payload),
+            controls_payload=resolved_controls_payload,
             live_state_payload={},
         )
         self.session.add(snapshot)
@@ -1509,14 +1542,46 @@ class SnapshotService:
         if detail is None:
             return None
         return {
-            "version": 1,
+            "version": SNAPSHOT_BUNDLE_FORMAT_VERSION,
             "exported_at": _utcnow().isoformat(),
             "snapshot": detail,
             "asset_manifest": self._build_asset_manifest(detail),
         }
 
-    async def import_snapshot(self, payload: dict[str, Any]) -> dict[str, Any]:
-        if "snapshot" in payload and isinstance(payload["snapshot"], dict):
+    async def export_snapshot_bundle(self, snapshot_id: int) -> Optional[dict[str, Any]]:
+        payload = await self.export_snapshot(snapshot_id)
+        if payload is None:
+            return None
+
+        bundle_payload = copy.deepcopy(payload)
+        asset_manifest = self._build_bundle_asset_manifest(bundle_payload.get("asset_manifest", []))
+        bundle_payload["asset_manifest"] = asset_manifest
+
+        archive_buffer = io.BytesIO()
+        with zipfile.ZipFile(archive_buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                SNAPSHOT_BUNDLE_MANIFEST_FILENAME,
+                json.dumps(bundle_payload, indent=2).encode("utf-8"),
+            )
+            for asset in asset_manifest:
+                bundle_path = str(asset.get("bundle_path") or "").strip()
+                asset_path = str(asset.get("asset_path") or "").strip()
+                if not bundle_path or not asset_path or not os.path.isfile(asset_path):
+                    continue
+                archive.write(asset_path, bundle_path)
+
+        snapshot_name = str(bundle_payload.get("snapshot", {}).get("name") or f"snapshot-{snapshot_id}").strip() or f"snapshot-{snapshot_id}"
+        return {
+            "filename": f"{snapshot_name}.map2snapshot",
+            "content": archive_buffer.getvalue(),
+            "snapshot": bundle_payload.get("snapshot"),
+            "asset_manifest": asset_manifest,
+        }
+
+    async def import_snapshot(self, payload: dict[str, Any] | bytes | bytearray) -> dict[str, Any]:
+        if isinstance(payload, (bytes, bytearray)):
+            detail_payload = await self._extract_snapshot_bundle_payload(bytes(payload))
+        elif "snapshot" in payload and isinstance(payload["snapshot"], dict):
             detail_payload = payload["snapshot"]
         else:
             detail_payload = payload
@@ -2138,15 +2203,16 @@ class SnapshotService:
         normalized = await self._snapshot_to_normalized(snapshot)
         detail = self._normalized_to_detail(normalized, snapshot)
         detail["snapshot_revision"] = self._snapshot_revision_from_normalized(normalized)
-        detail["io_bindings"] = {
-            "input_device": snapshot.input_device,
-            "output_device": snapshot.output_device,
-            "remap_required": False,
-        }
         detail["controls"] = self._normalize_controls_payload(
             snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
             detail,
         )
+        detail["io_bindings"] = {
+            "input_device": snapshot.input_device,
+            "output_device": snapshot.output_device,
+            "monitoring_output_index": detail["controls"].get("monitoring_output_index"),
+            "remap_required": False,
+        }
         detail["lineage"] = {
             "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
         }
@@ -2776,6 +2842,10 @@ class SnapshotService:
             "io_bindings": {
                 "input_device": snapshot.input_device,
                 "output_device": snapshot.output_device,
+                "monitoring_output_index": self._normalize_controls_payload(
+                    snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
+                    None,
+                ).get("monitoring_output_index"),
                 "remap_required": False,
             },
             "lineage": {
@@ -2915,7 +2985,7 @@ class SnapshotService:
         for chain in detail.get("chains", []):
             for plugin in chain.get("plugins", []):
                 loader_state = plugin.get("loader_state") or {}
-                asset_path = loader_state.get("selected_asset_path")
+                asset_path = str(loader_state.get("selected_asset_path") or "").strip() or None
                 asset_name = (
                     loader_state.get("selected_asset_name")
                     or loader_state.get("selected_model")
@@ -2939,10 +3009,238 @@ class SnapshotService:
                         "plugin_position": plugin.get("position"),
                         "asset_name": asset_name,
                         "asset_path": asset_path,
-                        "available": not bool(plugin.get("is_placeholder", False)),
+                        "filename": Path(asset_path).name if asset_path else None,
+                        "checksum": hashlib.sha256(Path(asset_path).read_bytes()).hexdigest()
+                        if asset_path and os.path.isfile(asset_path)
+                        else None,
+                        "available": bool(asset_path and os.path.isfile(asset_path) and not bool(plugin.get("is_placeholder", False))),
                     }
                 )
         return manifest
+
+    def _build_bundle_asset_manifest(self, manifest: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        used_paths: set[str] = set()
+        bundle_manifest: list[dict[str, Any]] = []
+
+        for index, raw_asset in enumerate(manifest):
+            asset = dict(raw_asset)
+            asset_path = str(asset.get("asset_path") or "").strip()
+            if asset_path and os.path.isfile(asset_path):
+                bundle_path = self._build_bundle_asset_path(asset, index=index, used_paths=used_paths)
+                asset["bundle_path"] = bundle_path
+                asset["filename"] = Path(bundle_path).name
+                asset["available"] = True
+                if not asset.get("checksum"):
+                    asset["checksum"] = hashlib.sha256(Path(asset_path).read_bytes()).hexdigest()
+            else:
+                asset["bundle_path"] = None
+                asset["available"] = False
+            bundle_manifest.append(asset)
+
+        return bundle_manifest
+
+    def _build_bundle_asset_path(
+        self,
+        asset: dict[str, Any],
+        *,
+        index: int,
+        used_paths: set[str],
+    ) -> str:
+        raw_name = str(
+            asset.get("filename")
+            or asset.get("asset_name")
+            or asset.get("asset_path")
+            or f"asset-{index + 1}"
+        ).strip()
+        file_name = Path(raw_name).name or f"asset-{index + 1}"
+        stem = re.sub(r"[^A-Za-z0-9._-]+", "-", Path(file_name).stem).strip(".-") or f"asset-{index + 1}"
+        suffix = Path(file_name).suffix or Path(str(asset.get("asset_path") or "")).suffix or ".bin"
+        kind = re.sub(r"[^A-Za-z0-9_-]+", "-", str(asset.get("kind") or "plugin_asset")).strip("-") or "plugin_asset"
+        plugin_position = _safe_int(asset.get("plugin_position"))
+        chain_id = _safe_int(asset.get("chain_id"))
+        candidate = f"assets/{kind}/{stem}{suffix}"
+        collision_bits = [stem]
+        if chain_id is not None:
+            collision_bits.append(f"c{chain_id}")
+        if plugin_position is not None:
+            collision_bits.append(f"p{plugin_position}")
+        collision_base = "-".join(collision_bits) + suffix
+        collision_index = 1
+        while candidate in used_paths:
+            suffix_index = "" if collision_index == 1 else f"-{collision_index}"
+            candidate = f"assets/{kind}/{collision_base.removesuffix(suffix)}{suffix_index}{suffix}"
+            collision_index += 1
+        used_paths.add(candidate)
+        return candidate
+
+    @staticmethod
+    def _asset_manifest_key(asset: dict[str, Any]) -> tuple[Any, ...]:
+        return (
+            _safe_int(asset.get("chain_id")),
+            str(asset.get("plugin_uri") or ""),
+            _safe_int(asset.get("plugin_position")),
+        )
+
+    @staticmethod
+    def _asset_upload_type(asset: dict[str, Any]) -> AssetType | None:
+        kind = str(asset.get("kind") or "").strip().lower()
+        if kind == "nam":
+            return AssetType.NAM
+        if kind == "cabinet_ir":
+            return AssetType.CABINET_IR
+        if kind == "reverb_ir":
+            return AssetType.REVERB_IR
+
+        suffix = Path(str(asset.get("asset_path") or asset.get("filename") or "")).suffix.lower()
+        if suffix == ".nam":
+            return AssetType.NAM
+        if suffix in {".wav", ".aif", ".aiff", ".flac"}:
+            plugin_uri = str(asset.get("plugin_uri") or "").lower()
+            if "reverb" in plugin_uri:
+                return AssetType.REVERB_IR
+            return AssetType.CABINET_IR
+        return None
+
+    async def _extract_snapshot_bundle_payload(self, bundle_bytes: bytes) -> dict[str, Any]:
+        with zipfile.ZipFile(io.BytesIO(bundle_bytes), "r") as archive:
+            try:
+                export_payload = json.loads(archive.read(SNAPSHOT_BUNDLE_MANIFEST_FILENAME).decode("utf-8"))
+            except KeyError as exc:
+                raise ValueError(f"Snapshot bundle missing {SNAPSHOT_BUNDLE_MANIFEST_FILENAME}") from exc
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError("Snapshot bundle manifest is invalid JSON") from exc
+
+            if "snapshot" in export_payload and isinstance(export_payload["snapshot"], dict):
+                detail_payload = copy.deepcopy(export_payload["snapshot"])
+            elif isinstance(export_payload, dict):
+                detail_payload = copy.deepcopy(export_payload)
+            else:
+                raise ValueError("Snapshot bundle payload is invalid")
+
+            asset_manifest = export_payload.get("asset_manifest") or []
+            imported_assets = await self._import_bundle_assets(archive, asset_manifest)
+            self._apply_imported_asset_paths(detail_payload, asset_manifest, imported_assets)
+            return detail_payload
+
+    async def _import_bundle_assets(
+        self,
+        archive: zipfile.ZipFile,
+        asset_manifest: list[dict[str, Any]],
+    ) -> dict[tuple[Any, ...], dict[str, Any]]:
+        stored_assets: dict[tuple[Any, ...], dict[str, Any]] = {}
+        upload_service = get_upload_service()
+
+        for asset in asset_manifest:
+            bundle_path = str(asset.get("bundle_path") or "").strip()
+            if not bundle_path:
+                continue
+
+            upload_type = self._asset_upload_type(asset)
+            if upload_type is None:
+                continue
+
+            try:
+                content = archive.read(bundle_path)
+            except KeyError:
+                logger.warning("Snapshot bundle asset missing from archive: %s", bundle_path)
+                continue
+
+            filename = str(asset.get("filename") or Path(bundle_path).name or f"{upload_type.value}.bin").strip() or f"{upload_type.value}.bin"
+            result = await upload_service.save_upload(filename, content, upload_type)
+            if not result.success:
+                raise ValueError(result.error or result.message or f"Failed to import asset {filename}")
+
+            if upload_type == AssetType.NAM:
+                await self._ensure_nam_asset_record(
+                    file_path=result.file_path,
+                    file_hash=result.file_hash,
+                    file_size=result.file_size,
+                    display_name=str(asset.get("asset_name") or Path(result.file_path).stem),
+                )
+
+            stored_assets[self._asset_manifest_key(asset)] = {
+                "file_path": result.file_path,
+                "asset_name": str(asset.get("asset_name") or Path(result.file_path).stem),
+                "upload_type": upload_type,
+            }
+
+        return stored_assets
+
+    async def _ensure_nam_asset_record(
+        self,
+        *,
+        file_path: str,
+        file_hash: str,
+        file_size: int,
+        display_name: str,
+    ) -> None:
+        existing_result = await self.session.execute(
+            select(NAMModel).where(NAMModel.file_hash == file_hash)
+        )
+        existing = existing_result.scalar_one_or_none()
+        if existing is not None:
+            return
+
+        self.session.add(
+            NAMModel(
+                name=display_name or Path(file_path).stem,
+                file_path=file_path,
+                file_hash=file_hash,
+                file_size=file_size,
+                model_type="unknown",
+                category="User",
+                license="Snapshot bundle import",
+            )
+        )
+        await self.session.flush()
+
+    def _apply_imported_asset_paths(
+        self,
+        detail_payload: dict[str, Any],
+        asset_manifest: list[dict[str, Any]],
+        imported_assets: dict[tuple[Any, ...], dict[str, Any]],
+    ) -> None:
+        manifest_by_key = {
+            self._asset_manifest_key(asset): asset
+            for asset in asset_manifest
+        }
+
+        for chain in detail_payload.get("chains", []):
+            chain_id = _safe_int(chain.get("id"))
+            for plugin in chain.get("plugins", []):
+                key = (
+                    chain_id,
+                    str(plugin.get("uri") or ""),
+                    _safe_int(plugin.get("position")),
+                )
+                manifest_entry = manifest_by_key.get(key)
+                if manifest_entry is None:
+                    continue
+
+                loader_state = dict(plugin.get("loader_state") or {})
+                imported_asset = imported_assets.get(key)
+                asset_name = str(manifest_entry.get("asset_name") or "").strip() or None
+
+                if imported_asset is None:
+                    loader_state["selected_asset_path"] = None
+                    if asset_name:
+                        loader_state["selected_asset_name"] = asset_name
+                        if manifest_entry.get("kind") == "nam":
+                            loader_state["selected_model"] = asset_name
+                        if manifest_entry.get("kind") in {"cabinet_ir", "reverb_ir"}:
+                            loader_state["selected_ir"] = asset_name
+                    plugin["loader_state"] = loader_state
+                    continue
+
+                loader_state["selected_asset_path"] = imported_asset["file_path"]
+                if imported_asset.get("asset_name"):
+                    loader_state["selected_asset_name"] = imported_asset["asset_name"]
+                upload_type = imported_asset.get("upload_type")
+                if upload_type == AssetType.NAM:
+                    loader_state["selected_model"] = imported_asset["asset_name"]
+                if upload_type in {AssetType.CABINET_IR, AssetType.REVERB_IR}:
+                    loader_state["selected_ir"] = imported_asset["asset_name"]
+                plugin["loader_state"] = loader_state
 
     async def _resequence_channels(self, snapshot_id: int) -> None:
         snapshot = await self._get_snapshot_model(snapshot_id)

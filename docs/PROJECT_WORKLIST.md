@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 EDT - T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]
+Last updated: 2026-04-02 03:24 EDT - T633 upgraded snapshot export/import to a self-contained `.map2snapshot` bundle with embedded NAM/IR assets plus automatic cluster asset fan-out [completed]; T652 added per-snapshot footswitch label storage/editing in the Snapshot Editor MIDI modal, pushed Morningstar MC6/MC8 short-name SysEx plus MAP2 LCD label summaries on activation, and added compatible MIDI-device profile detection/regression coverage [completed]; T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]
 
 ID: T675
 Status: [✓] Done
@@ -879,7 +879,7 @@ Last updated: 2026-04-01 23:12 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T641
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Monitoring Solo Output — Dedicated Solo Bus to Separate Hardware Output
 Description:
 - Goal / acceptance criteria: When a channel is soloed (T619), its signal is routed to a designated monitoring hardware output (a specific output channel on the audio interface) rather than simply muting all other channels through the main output. The main output mix continues playing all non-soloed channels uninterrupted — the guitarist's front-of-house sound is unaffected. The monitoring output assignment is configurable per-snapshot (overriding the global default) and is visible and editable directly in the editor's I/O section. A clear indicator in the UI shows when monitoring solo is active ("Monitoring: Channel Lead → Output 3/4").
@@ -888,7 +888,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: monitoring_output_index field in snapshot io_bindings (and global default in config), audio engine routing change to send soloed channel signal to the designated output pair, solo state indicator in editor UI, configurable per-snapshot in I/O panel, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 02:16 EDT - Codex
 
 ID: T640
 Status: [✓] Done
@@ -987,7 +987,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T633
-Status: [ ] Todo
+Status: [✓] Done
 Title: Asset Bundle — True Self-Contained Snapshot Package (.map2snapshot)
 Description:
 - Goal / acceptance criteria: The snapshot export format (GET /api/snapshots/{id}/export) is extended to produce a ZIP-based binary bundle (`.map2snapshot` file) that embeds the snapshot JSON definition AND all referenced asset files: NAM model files, cabinet IR .wav files, and reverb IR .wav files. The existing asset_manifest (already implemented) identifies which files to include. On import (POST /api/snapshots/import), the bundle is unpacked — assets are stored in the MAP2 asset library if not already present, and the snapshot is created referencing them. Cluster deployment (POST /api/cluster/snapshots/deploy) uses the same bundle to push assets to target nodes automatically, eliminating the current manual asset-distribution gap. A guitarist puts a `.map2snapshot` file on a USB stick, imports it on any MAP2 node, and the sound is reproduced identically with no missing assets.
@@ -996,7 +996,13 @@ Description:
 - Estimated effort: High
 - Required outputs: ZIP bundle creation in export_snapshot() (JSON + asset files), bundle extraction in import_snapshot() (asset registration + snapshot creation), cluster deploy updated to unpack and distribute bundle assets, .map2snapshot MIME type and Content-Disposition header for browser download, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 03:24 EDT - Codex
+- Completion notes:
+  - Replaced the JSON-only snapshot export with a ZIP-based `.map2snapshot` bundle that writes `snapshot.json` plus embedded NAM, cabinet IR, and reverb IR files, preserving per-plugin asset metadata, filenames, checksums, and stable bundle paths.
+  - Extended snapshot import to accept raw bundle bytes or multipart file uploads, register embedded assets through the existing upload service, recreate NAM library records when needed, and rewrite imported loader-state paths so the restored snapshot points at local MAP2 asset-library storage instead of source-machine file paths.
+  - Updated cluster snapshot deployment so the same exported asset manifest is fanned out to the target nodes automatically before deployment history is recorded, closing the previous manual asset-distribution gap for snapshot-backed NAM/IR content.
+- Validation: `python3 -m pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_snapshot_deployment_service.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotIoBindings.test.ts web/src/app/utils/snapshotFlowSlots.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `python3 -m pytest -q tests/test_snapshot_footswitch_label_service.py tests/midi_hub/test_device_registry.py` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T632
 Status: [✓] Done
@@ -1217,7 +1223,7 @@ Last updated: 2026-04-01 21:43 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotActivationToast.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T619
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Mute/Solo Per Channel — Large and Obvious on Channel Card
 Description:
 - Goal / acceptance criteria: Each channel card displays a Mute button and a Solo button directly on the card surface — large, obvious, and always visible (not revealed on hover or selection). Mute immediately silences that channel in the live audio engine (the chain continues processing but its output is zeroed). Solo routes that channel to the designated monitoring output (T641) and does not mute the main mix. Both states are reflected immediately in the engine and persisted to the snapshot on the next explicit save. Muted channels are visually distinct from active channels (e.g., Carbon Warm Gray background on the muted card). Solo channels show a distinct indicator (e.g., Carbon Green border). Multiple channels can be muted simultaneously; only one channel can be soloed at a time.
@@ -1226,7 +1232,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Mute and Solo buttons on channel card (always visible, not hover-dependent), mute/unmute in live audio engine via API, solo routing to monitoring output via T641, visual muted/solo state on card, single-solo enforcement, state persisted on save, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Last updated: 2026-04-02 02:16 EDT - Codex
 
 ID: T618
 Status: [✓] Done

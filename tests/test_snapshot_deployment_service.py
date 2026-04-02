@@ -31,18 +31,32 @@ def _init_temp_db(tmp_path):
 
 def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
+    deployed_assets: list[tuple[str, str, tuple[str, ...]]] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
 
+    class _FakeDistributor:
+        async def deploy_nam_model(self, model_path: str, target_node_ids: list[str]):
+            deployed_assets.append(("nam", model_path, tuple(target_node_ids)))
+            return {node_id: True for node_id in target_node_ids}
+
+        async def deploy_ir(self, ir_path: str, target_node_ids: list[str]):
+            deployed_assets.append(("ir", ir_path, tuple(target_node_ids)))
+            return {node_id: True for node_id in target_node_ids}
+
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
+    monkeypatch.setattr(deployment_service_module, "get_content_distributor", lambda: _FakeDistributor())
     monkeypatch.setattr("app.services.snapshot_runtime_service.enrich_snapshot_data", _passthrough)
 
     async def _run():
+        model_path = tmp_path / "deploy-tone.nam"
+        model_path.write_bytes(b"deployable-nam")
+
         async with database_module.get_session() as session:
             snapshot_service = SnapshotService(session)
             created = await snapshot_service.create_snapshot(
-                name="Deployable Snapshot",
+                name="DeployableSnapshot",
                 detail_payload={
                     "channels": [
                         {
@@ -56,7 +70,19 @@ def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tm
                         {
                             "id": 1,
                             "name": "Chain A",
-                            "plugins": [],
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {},
+                                    "loader_state": {
+                                        "selected_model": "DeployTone",
+                                        "selected_asset_name": "DeployTone",
+                                        "selected_asset_path": str(model_path),
+                                    },
+                                }
+                            ],
                             "loop_insertions": [],
                             "effects_loops": [],
                         }
@@ -82,6 +108,9 @@ def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tm
             assert deployed is not None
             assert deployed["primary_node_id"] == "node-a"
             assert deployed["standby_node_ids"] == ["node-b", "node-c"]
+            assert deployed_assets == [
+                ("nam", str(model_path), ("node-a", "node-b", "node-c")),
+            ]
 
             deployments_on_primary = await service.list_deployments(primary_node_id="node-a")
             assert len(deployments_on_primary) == 1

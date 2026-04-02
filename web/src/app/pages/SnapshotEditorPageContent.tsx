@@ -152,14 +152,17 @@ import {
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import {
+  buildSnapshotIoControlsUpdate,
   SNAPSHOT_IO_USE_DEFAULT_OPTION,
   buildSnapshotIoDefaultsUpdate,
   buildSnapshotIoModalState,
   buildSnapshotIoUpdateRequest,
+  collectMonitoringOutputPairOptions,
   collectSnapshotIoDeviceOptions,
   type SnapshotIoDefaults,
   type SnapshotIoModalState,
 } from '../utils/snapshotIoBindings'
+import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
@@ -230,6 +233,7 @@ const NOISE_GATE_THRESHOLD_CONFIG_KEY = 'snapshots.global_noise_gate_threshold_d
 const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
 const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device'
 const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
+const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = 'snapshots.default_monitoring_output_index'
 const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
   thresholdDb: -40,
   releaseMs: 100,
@@ -1364,6 +1368,7 @@ export function SnapshotEditorPage() {
           snapshots?: {
             default_input_device?: string | null
             default_output_device?: string | null
+            default_monitoring_output_index?: number | null
           }
         }
       }>('/api/cluster/config/runtime')
@@ -1374,6 +1379,9 @@ export function SnapshotEditorPage() {
           : null,
         output_device: typeof snapshotsConfig.default_output_device === 'string'
           ? snapshotsConfig.default_output_device
+          : null,
+        monitoring_output_index: typeof snapshotsConfig.default_monitoring_output_index === 'number'
+          ? snapshotsConfig.default_monitoring_output_index
           : null,
       }
     },
@@ -1942,6 +1950,30 @@ export function SnapshotEditorPage() {
   ])
   const snapshotIoDefaultInputSelectValue = snapshotIoModalState.defaultInputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
   const snapshotIoDefaultOutputSelectValue = snapshotIoModalState.defaultOutputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
+  const snapshotIoDefaultMonitoringOutputSelectValue = (
+    snapshotIoModalState.defaultMonitoringOutputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
+  )
+  const monitoringOutputOptions = useMemo(
+    () => collectMonitoringOutputPairOptions(portsQuery.data?.outputs ?? []),
+    [portsQuery.data?.outputs],
+  )
+  const resolvedMonitoringOutputIndex = (
+    activeSnapshot?.controls?.monitoring_output_index
+    ?? activeSnapshot?.io_bindings?.monitoring_output_index
+    ?? snapshotIoDefaultsQuery.data?.monitoring_output_index
+    ?? null
+  )
+  const monitoringOutputLabel = resolvedMonitoringOutputIndex != null
+    ? `Output ${resolvedMonitoringOutputIndex + 1}/${resolvedMonitoringOutputIndex + 2}`
+    : 'Not assigned'
+  const activeSoloFlow = useMemo(
+    () => flowSlots.find((flow) => flow.solo) ?? null,
+    [flowSlots],
+  )
+  const monitoringStatusLabel = activeSoloFlow
+    ? `Monitoring: ${activeSoloFlow.label} -> ${monitoringOutputLabel}`
+    : null
+  const monitoringStatusWarning = Boolean(activeSoloFlow && resolvedMonitoringOutputIndex == null)
 
   useEffect(() => {
     setOutputReferenceThresholdDraft(activeSnapshot?.output_level_warning_threshold_db ?? 3)
@@ -2382,6 +2414,7 @@ export function SnapshotEditorPage() {
       const previousDefaults = {
         input_device: currentDefaults?.input_device ?? null,
         output_device: currentDefaults?.output_device ?? null,
+        monitoring_output_index: currentDefaults?.monitoring_output_index ?? null,
       }
 
       if (nextDefaults.input_device !== previousDefaults.input_device) {
@@ -2406,8 +2439,22 @@ export function SnapshotEditorPage() {
         })
       }
 
+      if (nextDefaults.monitoring_output_index !== previousDefaults.monitoring_output_index) {
+        await fetchJson('/api/cluster/config/runtime', {
+          method: 'PUT',
+          body: JSON.stringify({
+            key: SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY,
+            value: nextDefaults.monitoring_output_index,
+            scope: 'cluster',
+          }),
+        })
+      }
+
       const snapshot = snapshotId != null
-        ? (await snapshotsApi.update(snapshotId, buildSnapshotIoUpdateRequest(state))).snapshot
+        ? (await snapshotsApi.update(snapshotId, {
+          ...buildSnapshotIoUpdateRequest(state),
+          controls: buildSnapshotIoControlsUpdate(state, activeSnapshot?.controls),
+        })).snapshot
         : null
 
       return { defaults: nextDefaults, snapshot }
@@ -4221,15 +4268,9 @@ export function SnapshotEditorPage() {
     }
     const beforeDraft = captureCurrentState()
     const nextDraft = cloneSnapshotDraftData(beforeDraft)
-    let changed = false
-    nextDraft.flowSlots = nextDraft.flowSlots.map((flow) => {
-      if (flow.id !== flowId) {
-        return flow
-      }
-      const updatedFlow = { ...flow, ...updates }
-      changed = changed || JSON.stringify(flow) !== JSON.stringify(updatedFlow)
-      return updatedFlow
-    })
+    const flowUpdate = applyFlowSlotUpdate(nextDraft.flowSlots, flowId, updates)
+    nextDraft.flowSlots = flowUpdate.nextFlowSlots
+    const changed = flowUpdate.changed
     if (!changed) {
       return
     }
@@ -7072,6 +7113,8 @@ export function SnapshotEditorPage() {
               updateActiveSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, tempoBpm })
             }}
             tempoPending={updateActiveSnapshotTempoMutation.isPending}
+            monitoringStatusLabel={monitoringStatusLabel}
+            monitoringStatusWarning={monitoringStatusWarning}
             outputLevelWarningMessage={outputLevelWarningMessage}
           />
         </div>
@@ -7790,8 +7833,27 @@ export function SnapshotEditorPage() {
                         <SelectItem key={`snapshot-io-output-${deviceName}`} value={deviceName} text={deviceName} />
                       ))}
                     </Select>
+                    <Select
+                      id="juce-grid-snapshot-monitoring-output"
+                      labelText="Monitoring output"
+                      value={snapshotIoModalState.snapshotMonitoringOutputValue}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setSnapshotIoModalState((current) => ({ ...current, snapshotMonitoringOutputValue: value }))
+                      }}
+                      disabled={updateSnapshotIoBindingsMutation.isPending}
+                    >
+                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default monitoring output" />
+                      {monitoringOutputOptions.map((option) => (
+                        <SelectItem
+                          key={`snapshot-monitoring-output-${option.value}`}
+                          value={option.value}
+                          text={option.label}
+                        />
+                      ))}
+                    </Select>
                     <p className="juce-grid-page__modal-copy">
-                      Stored in this snapshot and checked during go-live preflight.
+                      Stored in this snapshot, checked during go-live preflight, and used when a channel is soloed for monitoring.
                     </p>
                   </>
                 ) : (
@@ -7837,6 +7899,28 @@ export function SnapshotEditorPage() {
                   <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default output" />
                   {snapshotIoDeviceOptions.outputOptions.map((deviceName) => (
                     <SelectItem key={`default-io-output-${deviceName}`} value={deviceName} text={deviceName} />
+                  ))}
+                </Select>
+                <Select
+                  id="juce-grid-default-monitoring-output"
+                  labelText="Default monitoring output"
+                  value={snapshotIoDefaultMonitoringOutputSelectValue}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setSnapshotIoModalState((current) => ({
+                      ...current,
+                      defaultMonitoringOutputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
+                    }))
+                  }}
+                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
+                >
+                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default monitoring output" />
+                  {monitoringOutputOptions.map((option) => (
+                    <SelectItem
+                      key={`default-monitoring-output-${option.value}`}
+                      value={option.value}
+                      text={option.label}
+                    />
                   ))}
                 </Select>
                 <p className="juce-grid-page__modal-copy">

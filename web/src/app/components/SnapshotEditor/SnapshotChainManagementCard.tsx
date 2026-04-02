@@ -58,6 +58,8 @@ interface SnapshotChainManagementCardProps {
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
   tempoPending?: boolean
+  monitoringStatusLabel?: string | null
+  monitoringStatusWarning?: boolean
   outputLevelWarningMessage?: string | null
 }
 
@@ -525,6 +527,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
     tempoPending = false,
+    monitoringStatusLabel = null,
+    monitoringStatusWarning = false,
     outputLevelWarningMessage = null,
   } = props
 
@@ -684,6 +688,14 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                       {channelActivityBadge.label}
                     </Tag>
                   </div>
+                ) : null}
+                {monitoringStatusLabel ? (
+                  <Tag
+                    type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
+                    className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
+                  >
+                    {monitoringStatusLabel}
+                  </Tag>
                 ) : null}
               </div>
               <div className="juce-grid-page__snapshot-status-live-row">

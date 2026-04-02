@@ -137,6 +137,7 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
     io_bindings: {
       input_device: 'Stage Input',
       output_device: 'House Left/Right',
+      monitoring_output_index: null,
       remap_required: false,
     },
     controls: {
@@ -146,6 +147,19 @@ function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDet
       ],
       automation_lanes: [],
       expression_mappings: [],
+      monitoring_output_index: null,
+      maschine_encoder_map: {
+        enc1: null,
+        enc2: null,
+        enc3: null,
+        enc4: null,
+        enc5: null,
+        enc6: null,
+        enc7: null,
+        enc8: null,
+        vol: {},
+        tempo: {},
+      },
     },
     assets: [],
     live_state: {
@@ -229,6 +243,8 @@ function renderCard(
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
+    monitoringStatusLabel?: string | null
+    monitoringStatusWarning?: boolean
     snapshotRenamePending?: boolean
     previousSnapshotDisabled?: boolean
     nextSnapshotDisabled?: boolean
@@ -276,6 +292,8 @@ function renderCard(
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
       tempoPending={options.tempoPending}
+      monitoringStatusLabel={options.monitoringStatusLabel}
+      monitoringStatusWarning={options.monitoringStatusWarning}
       detailsAction={<button type="button">Details</button>}
     />,
   )
@@ -403,6 +421,20 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('-15.0 dBFS • ±3.0 dB')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Set Reference Level' })).not.toBeInTheDocument()
     expect(screen.getByText('Output is 5.5 dB above reference level.')).toBeInTheDocument()
+  })
+
+  it('renders the monitoring solo badge in the hero state row and highlights warning state', () => {
+    const { container } = renderCard(buildLiveSnapshot(), {
+      monitoringStatusLabel: 'Monitoring: Lead -> Not assigned',
+      monitoringStatusWarning: true,
+    })
+
+    const badge = screen.getByText('Monitoring: Lead -> Not assigned').closest('.juce-grid-page__snapshot-status-monitoring-badge')
+    const stateRow = container.querySelector('.juce-grid-page__snapshot-status-state-row')
+
+    expect(badge).toBeInTheDocument()
+    expect(badge).toHaveClass('juce-grid-page__snapshot-status-monitoring-badge', 'is-warning')
+    expect(stateRow).toContainElement(badge as HTMLElement)
   })
 
   it('shows never for snapshots that have not been activated yet', () => {
