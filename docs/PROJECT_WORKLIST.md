@@ -1031,7 +1031,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T626
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Plugin Bypass and Delete Controls on Block Card — Visible Only When Selected
 Description:
 - Goal / acceptance criteria: When a plugin block card in the signal canvas is in the unselected state, it shows only its name, type color, and status (bypassed = 30% opacity per T651). When the block is selected (clicked), two additional controls appear on the card: (A) a Bypass toggle button — one click bypasses the plugin in the live engine immediately, block dims to 30% opacity; (B) a Delete (×) button — one click removes the plugin from the chain immediately in the live engine, with no confirmation dialog. Both actions hit the live audio engine instantly (not queued to a save). The controls disappear again when the block is deselected. No context menus, no submenus — the controls appear directly on the card surface.
@@ -1040,7 +1040,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: selected/unselected state management on block cards, Bypass and Delete buttons rendered only in selected state, live engine API calls on both actions, bypass state change triggers T651 opacity update, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 20:06 - Codex
+- Completion notes:
+  - Added a selected-card action cluster directly onto the Snapshot Editor signal canvas so the focused plugin block now exposes both a live bypass toggle and the existing delete action on the card surface, with no overflow or submenu path.
+  - Wired the new bypass button into the existing immediate chain bypass mutation, preserving the real-time dimmed-card state for bypassed blocks while keeping both controls hidden for unselected cards and in read-only mode.
+  - Extended the focused signal-canvas regression to verify the new bypass button, selected-only visibility, immediate live-handler calls, and the continued absence of destructive affordances in read-only mode.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T625
 Status: [✓] Done

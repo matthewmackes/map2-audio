@@ -5463,6 +5463,7 @@
       0 0 0 1px color-mix(in srgb, var(--cds-border-interactive, var(--cds-link-primary)) 14%, transparent);
   }
 
+  .juce-grid-page__signal-plugin-bypass,
   .juce-grid-page__signal-plugin-delete,
   .juce-grid-page__signal-plugin-add,
   .juce-grid-page__touch-toolbar-actions .cds--btn,
@@ -5652,34 +5653,69 @@
   top: 0.44rem;
   right: 0.44rem;
   display: flex;
+  gap: 0.22rem;
   z-index: 2;
 }
 
+.juce-grid-page__signal-plugin-bypass,
 .juce-grid-page__signal-plugin-delete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 1.7rem;
+  gap: 0.18rem;
   min-inline-size: 1.7rem;
   block-size: 1.7rem;
   padding: 0;
   border-radius: 0;
-  border: 1px solid color-mix(in srgb, var(--cds-support-error, #da1e28) 38%, var(--cds-border-subtle, var(--border)));
   background: color-mix(in srgb, var(--cds-background-inverse, #f4f4f4) 86%, var(--cds-layer, #161616));
-  color: var(--cds-support-error, #da1e28);
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.juce-grid-page__signal-plugin-bypass {
+  padding-inline: 0.36rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 42%, var(--cds-border-subtle, var(--border)));
+  color: color-mix(in srgb, var(--juce-grid-signal-accent) 72%, var(--cds-text-primary, #f4f4f4));
+}
+
+.juce-grid-page__signal-plugin-bypass span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.juce-grid-page__signal-plugin-bypass.is-bypassed {
+  border-color: color-mix(in srgb, var(--cds-support-success, #24a148) 48%, var(--cds-border-subtle, var(--border)));
+  color: var(--cds-support-success, #24a148);
+}
+
+.juce-grid-page__signal-plugin-bypass:hover,
+.juce-grid-page__signal-plugin-bypass:focus-visible {
+  background: color-mix(in srgb, var(--cds-background-inverse, #f4f4f4) 92%, var(--juce-grid-signal-accent) 8%);
+  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 76%, var(--cds-border-subtle, var(--border)));
+}
+
+.juce-grid-page__signal-plugin-bypass:focus-visible,
+.juce-grid-page__signal-plugin-delete:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 1px;
+}
+
+.juce-grid-page__signal-plugin-delete {
+  inline-size: 1.7rem;
+  border: 1px solid color-mix(in srgb, var(--cds-support-error, #da1e28) 38%, var(--cds-border-subtle, var(--border)));
+  color: var(--cds-support-error, #da1e28);
 }
 
 .juce-grid-page__signal-plugin-delete:hover,
 .juce-grid-page__signal-plugin-delete:focus-visible {
   background: color-mix(in srgb, var(--cds-background-inverse, #f4f4f4) 92%, var(--cds-support-error, #da1e28) 8%);
-  border-color: var(--cds-support-error, #da1e28);
 }
 
+.juce-grid-page__signal-plugin-delete:hover,
 .juce-grid-page__signal-plugin-delete:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
-  outline-offset: 1px;
+  border-color: var(--cds-support-error, #da1e28);
 }
 
 .juce-grid-page__signal-plugin-delete-glyph {

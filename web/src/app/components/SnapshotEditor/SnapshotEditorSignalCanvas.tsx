@@ -6,6 +6,7 @@ import {
   Link,
   SettingsAdjust,
   VolumeDown,
+  VolumeMute,
   VolumeUp,
   WarningAlt,
 } from '@carbon/icons-react'
@@ -360,6 +361,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   reorderTargetPosition = null,
   reorderPreviewDirection = null,
   onPluginSelect,
+  onToggleBypass,
   onDeletePlugin,
   onReorderPlugins,
   onAddPlugin,
@@ -684,7 +686,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
                             >
                               <div className="juce-grid-page__signal-plugin-face">
-                                {isSelected && onDeletePlugin && !readOnly && (
+                                {isSelected && !readOnly && (
                                   <div
                                     className="juce-grid-page__signal-plugin-actions"
                                     data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
@@ -694,15 +696,28 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                   >
                                     <button
                                       type="button"
-                                      className="juce-grid-page__signal-plugin-delete"
-                                      data-testid={`juce-grid-signal-plugin-delete-${plugin.position}`}
-                                      aria-label={`Remove ${displayName} from chain`}
-                                      onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                                      className={`juce-grid-page__signal-plugin-bypass ${plugin.bypassed ? 'is-bypassed' : ''}`}
+                                      data-testid={`juce-grid-signal-plugin-bypass-${plugin.position}`}
+                                      aria-label={plugin.bypassed ? `Enable ${displayName}` : `Bypass ${displayName}`}
+                                      aria-pressed={!plugin.bypassed}
+                                      onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed, plugin.position)}
                                     >
-                                      <span className="juce-grid-page__signal-plugin-delete-glyph" aria-hidden>
-                                        {NERD_GLYPH_CLOSE}
-                                      </span>
+                                      {plugin.bypassed ? <VolumeUp size={14} /> : <VolumeMute size={14} />}
+                                      <span>{plugin.bypassed ? 'On' : 'Byp'}</span>
                                     </button>
+                                    {onDeletePlugin ? (
+                                      <button
+                                        type="button"
+                                        className="juce-grid-page__signal-plugin-delete"
+                                        data-testid={`juce-grid-signal-plugin-delete-${plugin.position}`}
+                                        aria-label={`Remove ${displayName} from chain`}
+                                        onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                                      >
+                                        <span className="juce-grid-page__signal-plugin-delete-glyph" aria-hidden>
+                                          {NERD_GLYPH_CLOSE}
+                                        </span>
+                                      </button>
+                                    ) : null}
                                   </div>
                                 )}
 

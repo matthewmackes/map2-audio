@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import { JuceGridSignalCanvas } from './SnapshotEditorSignalCanvas'
 
@@ -131,7 +131,7 @@ describe('SnapshotEditorSignalCanvas', () => {
   it('hides destructive editing affordances when the canvas is read-only', () => {
     render(
       <JuceGridSignalCanvas
-        chain={buildChain(false)}
+        chain={buildChain(false, 'plugin://drive', 'Drive', 2)}
         pluginMeta={pluginMeta}
         selectedPluginUri="plugin://drive"
         selectedPluginPosition={0}
@@ -145,6 +145,51 @@ describe('SnapshotEditorSignalCanvas', () => {
     )
 
     expect(screen.queryByRole('button', { name: 'Add effect' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-0')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
+  })
+
+  it('shows bypass and delete controls only for the selected plugin card and fires live handlers immediately', () => {
+    const handleToggleBypass = jest.fn()
+    const handleDelete = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false)}
+        pluginMeta={pluginMeta}
+        selectedPluginUri="plugin://drive"
+        selectedPluginPosition={0}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={handleToggleBypass}
+        onDeletePlugin={handleDelete}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-bypass-0'))
+    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-delete-0'))
+
+    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-1')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-1')).not.toBeInTheDocument()
+    expect(handleToggleBypass).toHaveBeenCalledWith('plugin://drive', true, 0)
+    expect(handleDelete).toHaveBeenCalledWith('plugin://drive', 0)
+  })
+
+  it('keeps selected-card controls hidden when no plugin is selected', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain(false)}
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onDeletePlugin={jest.fn()}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-0')).not.toBeInTheDocument()
     expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
   })
 })
