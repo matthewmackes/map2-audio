@@ -800,7 +800,7 @@ Last updated: 2026-04-01 13:17 - Codex
 - Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T648
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unlimited Undo/Redo in Snapshot Editor (Session Memory Bounded)
 Description:
 - Goal / acceptance criteria: The Snapshot Editor supports unlimited undo and redo for all editing operations within a session: block add, block delete, bypass toggle, parameter value change, routing mode change, channel rename, channel reorder, mute/solo state, and dry/wet mix. Undo/redo history is bounded only by available session memory (no fixed step cap). Redo stack is cleared on any new edit action. Keyboard shortcuts Ctrl+Z / Ctrl+Shift+Z (or Cmd+Z / Cmd+Shift+Z on Mac) are supported. Undo/redo state is local to the editor session and is not persisted across page reloads. Uses the same pattern established in the MPX1 Flow canvas (T042) which implements 50-entry undo/redo via `useFlowUndoRedo.ts`.
@@ -809,10 +809,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: `useSnapshotEditorUndoRedo.ts` hook following the MPX1 pattern, undo/redo wired to all editor mutations, keyboard shortcut handling, undo/redo buttons in the floating toolbar (T642), focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 01:34 - Codex
+- Completion notes:
+  - Replaced the Snapshot Editor’s dead generic `historyApi` wiring with a dedicated local `useSnapshotEditorUndoRedo` session stack that keeps unlimited editor-state history until the page session ends.
+  - Wired the editor to seed history from the hydrated snapshot, clear redo on new edits, preserve keyboard `Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z`, and apply undo/redo states back through snapshot preview so block bypass and parameter changes are pushed into the live engine without saving.
+  - Covered the new stack with focused hook regressions and kept the existing toolbar surface passing while the page moved to the local undo/redo model.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/useSnapshotEditorUndoRedo.test.ts web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T647
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Block Name + Key Parameter Push to Controller Displays via MIDI SysEx
 Description:
 - Goal / acceptance criteria: When MAP2 has a MIDI footswitch assignment mapping a controller button to a plugin block's bypass, it pushes the block's name and its most important current parameter value to the controller's display via MIDI SysEx — both on snapshot activation and whenever that parameter changes. Example: "Reverb — Mix: 45%" pushed to the display of the button assigned to that reverb block's bypass. Supported controllers (via SysEx): Morningstar MC6/MC8, BeatStep Pro. The "key parameter" for each plugin type is configurable (defaults to the first mapped parameter, or a plugin-type default). If the controller does not support SysEx display updates, the push is silently skipped.
@@ -821,7 +827,8 @@ Description:
 - Estimated effort: High
 - Required outputs: SysEx display formatting for Morningstar MC6/MC8 and BeatStep Pro, parameter-change listener that triggers SysEx push for mapped parameters, "key parameter" config per plugin type, silent-skip when controller does not support display SysEx, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 01:05 - Codex
 
 ID: T646
 Status: [ ] Todo

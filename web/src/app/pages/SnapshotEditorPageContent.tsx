@@ -85,7 +85,6 @@ import type { AutomationLane } from '../grid/shared'
 import {
   chainsApi,
   pluginsApi,
-  historyApi,
   audioApi,
   metricsApi,
   midiApiV2,
@@ -112,7 +111,7 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -158,6 +157,7 @@ import { SnapshotChainManagementCard } from '../components/SnapshotEditor/Snapsh
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { SnapshotEditorToolbar } from '../components/SnapshotEditor/SnapshotEditorToolbar'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
+import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
 import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
@@ -228,6 +228,107 @@ const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
   ratio: 10,
   attack: 1,
   release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+}
+
+function cloneSnapshotDraftData(data: SnapshotDraftData): SnapshotDraftData {
+  return JSON.parse(JSON.stringify(data)) as SnapshotDraftData
+}
+
+function fingerprintSnapshotDraftData(data: SnapshotDraftData): string {
+  return JSON.stringify(data)
+}
+
+function snapshotDraftsEqual(left: SnapshotDraftData, right: SnapshotDraftData): boolean {
+  return fingerprintSnapshotDraftData(left) === fingerprintSnapshotDraftData(right)
+}
+
+function resequenceChainSnapshotPlugins(chain: ChainSnapshot): ChainSnapshot {
+  return {
+    ...chain,
+    plugins: chain.plugins.map((plugin, index) => ({
+      ...plugin,
+      position: index,
+    })),
+  }
+}
+
+function updateDraftChain(
+  draft: SnapshotDraftData,
+  chainId: number,
+  updater: (chain: ChainSnapshot) => ChainSnapshot,
+): SnapshotDraftData {
+  const chainKey = String(chainId)
+  const chain = draft.chains[chainKey]
+  if (!chain) {
+    return draft
+  }
+  draft.chains[chainKey] = updater(chain)
+  return draft
+}
+
+function mergePreviewIntoSnapshotDetail(
+  previewDetail: SnapshotDetail,
+  snapshot: SnapshotDetail | null,
+): SnapshotDetail {
+  if (!snapshot) {
+    return previewDetail
+  }
+
+  return {
+    ...snapshot,
+    ...previewDetail,
+    id: snapshot.id,
+    name: snapshot.name,
+    description: snapshot.description,
+    tags: snapshot.tags,
+    program_number: snapshot.program_number,
+    tempo_bpm: snapshot.tempo_bpm,
+    live_tempo_bpm: snapshot.live_tempo_bpm,
+    active_tempo_bpm: snapshot.active_tempo_bpm,
+    tempo_source: snapshot.tempo_source,
+    tempo_updated_at: snapshot.tempo_updated_at,
+    output_level_reference_dbfs: snapshot.output_level_reference_dbfs,
+    output_level_warning_threshold_db: snapshot.output_level_warning_threshold_db,
+    input_device: snapshot.input_device,
+    output_device: snapshot.output_device,
+    io_bindings: snapshot.io_bindings,
+    controls: snapshot.controls,
+    midi_map: snapshot.midi_map,
+    is_active: snapshot.is_active,
+    is_favorite: snapshot.is_favorite,
+    is_locked: snapshot.is_locked,
+    display_order: snapshot.display_order,
+    community_uuid: snapshot.community_uuid,
+    community_shared: snapshot.community_shared,
+    community_author: snapshot.community_author,
+    community_download_count: snapshot.community_download_count,
+    community_rating: snapshot.community_rating,
+    community_rating_count: snapshot.community_rating_count,
+    activated_at: snapshot.activated_at,
+    created_at: snapshot.created_at,
+    updated_at: snapshot.updated_at,
+    session_notes: snapshot.session_notes,
+    deployments: snapshot.deployments,
+  }
+}
+
+function describeFlowUpdate(updates: Partial<FlowSlot>): string {
+  if (typeof updates.label === 'string') {
+    return 'Rename channel'
+  }
+  if (typeof updates.chainId !== 'undefined') {
+    return 'Reassign channel'
+  }
+  if (typeof updates.solo === 'boolean') {
+    return updates.solo ? 'Enable channel solo' : 'Disable channel solo'
+  }
+  if (typeof updates.muted === 'boolean') {
+    return updates.muted ? 'Mute channel' : 'Unmute channel'
+  }
+  if (typeof updates.dryWetMix === 'number') {
+    return 'Adjust channel mix'
+  }
+  return 'Edit channel'
 }
 
 const SESSION_NOTES_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -980,6 +1081,11 @@ export function SnapshotEditorPage() {
   const [automationDuration, setAutomationDuration] = useState(60)
   const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
   const [lanePickerOpen, setLanePickerOpen] = useState(false)
+  const snapshotUndoRedo = useSnapshotEditorUndoRedo()
+  const cleanSnapshotDraftRef = useRef<SnapshotDraftData | null>(null)
+  const pendingParameterUndoStartRef = useRef<SnapshotDraftData | null>(null)
+  const pendingParameterUndoNextRef = useRef<SnapshotDraftData | null>(null)
+  const pendingParameterUndoDescriptionRef = useRef<string | null>(null)
 
   const setSelectedPluginSelection = useCallback((uri: string | null, position?: number | null) => {
     setSelectedPluginUri(uri)
@@ -1101,6 +1207,11 @@ export function SnapshotEditorPage() {
     setSnapshotsDirty(false)
   }, [])
 
+  const syncSnapshotDirtyState = useCallback((nextDraft: SnapshotDraftData) => {
+    const cleanDraft = cleanSnapshotDraftRef.current
+    setSnapshotsDirty(cleanDraft ? !snapshotDraftsEqual(cleanDraft, nextDraft) : false)
+  }, [])
+
   useEffect(() => {
     try {
       localStorage.removeItem('map2_juce_grid_toolbar_collapsed')
@@ -1151,13 +1262,6 @@ export function SnapshotEditorPage() {
     queryFn: () => pluginsApi.discover(),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-  })
-
-  // Fetch history status
-  const historyQuery = useQuery({
-    queryKey: ['history', 'status'],
-    queryFn: historyApi.getStatus,
-    refetchInterval: snapshotFastCadence,
   })
 
   // Fetch presets
@@ -1712,7 +1816,6 @@ export function SnapshotEditorPage() {
     () => new Map(effectiveChains.map((chain) => [chain.id, chain] as const)),
     [effectiveChains],
   )
-  const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
   const liveChainProjection = useMemo(
     () => buildJuceGridLiveChainProjection(effectiveChains, flowSlots),
@@ -2004,6 +2107,7 @@ export function SnapshotEditorPage() {
       hydrateEditorFromSnapshot(response.snapshot, {
         toastMessage: 'Snapshot updated',
         invalidateSnapshots: true,
+        resetUndoHistory: false,
       })
     },
     onError: (error) => {
@@ -2208,13 +2312,22 @@ export function SnapshotEditorPage() {
     mutationFn: async ({ snapshotId, revisionNumber }: { snapshotId: number; revisionNumber: number }) =>
       snapshotsApi.restoreRevision(snapshotId, revisionNumber),
     onSuccess: (response) => {
+      const restoredDraft = buildSnapshotEditorLiveSnapshotHydration(
+        response.snapshot,
+        queryClient.getQueryData<ChainsResponse>(['chains']),
+      ).snapshotData
       syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
       setShowVersionHistoryModal(false)
       hydrateEditorFromSnapshot(response.snapshot, {
         toastMessage: `Restored revision ${response.restored_revision_number}`,
         invalidateSnapshots: true,
+        resetUndoHistory: false,
       })
+      recordSnapshotUndoRedoStep(
+        restoredDraft,
+        `Restore revision ${response.restored_revision_number}`,
+      )
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to restore snapshot revision', 'error')
@@ -2260,6 +2373,21 @@ export function SnapshotEditorPage() {
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
   }, [])
 
+  const seedSnapshotUndoRedo = useCallback((draft: SnapshotDraftData) => {
+    const cleanDraft = cloneSnapshotDraftData(draft)
+    cleanSnapshotDraftRef.current = cleanDraft
+    pendingParameterUndoStartRef.current = null
+    pendingParameterUndoNextRef.current = null
+    pendingParameterUndoDescriptionRef.current = null
+    snapshotUndoRedo.reset(cleanDraft)
+    clearSnapshotsDirty()
+  }, [clearSnapshotsDirty, snapshotUndoRedo.reset])
+
+  const recordSnapshotUndoRedoStep = useCallback((nextDraft: SnapshotDraftData, description: string) => {
+    snapshotUndoRedo.push(cloneSnapshotDraftData(nextDraft), description)
+    syncSnapshotDirtyState(nextDraft)
+  }, [snapshotUndoRedo.push, syncSnapshotDirtyState])
+
   const syncSnapshotDetailCaches = useCallback((snapshot: SnapshotDetail) => {
     queryClient.setQueryData(['snapshots', 'detail', snapshot.id], snapshot)
     if (liveSnapshot?.id === snapshot.id) {
@@ -2278,6 +2406,7 @@ export function SnapshotEditorPage() {
       toastDurationMs?: number
       resetSelectedBlock?: boolean
       invalidateSnapshots?: boolean
+      resetUndoHistory?: boolean
     },
   ) => {
     const hydration = buildSnapshotEditorLiveSnapshotHydration(
@@ -2288,13 +2417,21 @@ export function SnapshotEditorPage() {
     queryClient.setQueryData(['snapshots', 'detail', detail.id], detail)
     lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
     setEditorSnapshotState(hydration.snapshotData)
+    if (options?.resetUndoHistory === false) {
+      cleanSnapshotDraftRef.current = cloneSnapshotDraftData(hydration.snapshotData)
+      pendingParameterUndoStartRef.current = null
+      pendingParameterUndoNextRef.current = null
+      pendingParameterUndoDescriptionRef.current = null
+      clearSnapshotsDirty()
+    } else {
+      seedSnapshotUndoRedo(hydration.snapshotData)
+    }
     if (options?.resetSelectedBlock) {
       setSelectedPluginSelection(null)
       setDetailsPlugin(null)
       setTabletEditorOpen(false)
       setEffectModalOpen(false)
     }
-    clearSnapshotsDirty()
     if (options?.invalidateSnapshots) {
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
     }
@@ -2305,7 +2442,33 @@ export function SnapshotEditorPage() {
         options.toastDurationMs ? { durationMs: options.toastDurationMs } : undefined,
       )
     }
-  }, [clearSnapshotsDirty, pushToast, queryClient, setEditorSnapshotState, setSelectedPluginSelection])
+  }, [clearSnapshotsDirty, pushToast, queryClient, seedSnapshotUndoRedo, setEditorSnapshotState, setSelectedPluginSelection])
+
+  const applySnapshotDraftPreview = useCallback(async (draft: SnapshotDraftData) => {
+    const preview = await snapshotsApi.preview(draft)
+    const detail = mergePreviewIntoSnapshotDetail(preview.snapshot_data, activeSnapshot)
+    const hydration = buildSnapshotEditorLiveSnapshotHydration(
+      detail,
+      queryClient.getQueryData<ChainsResponse>(['chains']),
+    )
+    queryClient.setQueryData(['chains'], hydration.chainsResponse)
+    if (detail.id != null) {
+      queryClient.setQueryData(['snapshots', 'detail', detail.id], detail)
+    }
+    if (editorSnapshotOverride && detail.id === editorSnapshotOverride.id) {
+      setEditorSnapshotOverride(detail)
+    }
+    lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
+    setEditorSnapshotState(hydration.snapshotData)
+    syncSnapshotDirtyState(hydration.snapshotData)
+    return hydration.snapshotData
+  }, [
+    activeSnapshot,
+    editorSnapshotOverride,
+    queryClient,
+    setEditorSnapshotState,
+    syncSnapshotDirtyState,
+  ])
 
   useEffect(() => {
     if (!liveSnapshotQuery.isSuccess) {
@@ -2314,6 +2477,9 @@ export function SnapshotEditorPage() {
 
     if (activeSnapshot === null) {
       lastHydratedLiveSnapshotFingerprintRef.current = null
+      cleanSnapshotDraftRef.current = null
+      snapshotUndoRedo.clear()
+      clearSnapshotsDirty()
       return
     }
 
@@ -2328,9 +2494,11 @@ export function SnapshotEditorPage() {
     hydrateEditorFromSnapshot(activeSnapshot)
   }, [
     activeSnapshot,
+    clearSnapshotsDirty,
     hydrateEditorFromSnapshot,
     liveSnapshotQuery.isSuccess,
     queryClient,
+    snapshotUndoRedo.clear,
   ])
 
   const activeFlow = flowSlots[activeFlowIndex]
@@ -3312,10 +3480,24 @@ export function SnapshotEditorPage() {
   })
 
   const reorderMutation = useMutation({
-    mutationFn: ({ chainId, pluginOrder }: { chainId: number; pluginOrder: PluginOrderRef[] }) =>
-      chainsApi.reorderPlugins(chainId, pluginOrder),
-    onSuccess: () => {
+    mutationFn: ({
+      chainId,
+      pluginOrder,
+    }: {
+      chainId: number
+      pluginOrder: PluginOrderRef[]
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    }) => chainsApi.reorderPlugins(chainId, pluginOrder),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      if (variables.undoRedoDraft) {
+        recordSnapshotUndoRedoStep(
+          variables.undoRedoDraft,
+          variables.undoRedoDescription ?? 'Reorder blocks',
+        )
+        return
+      }
       markSnapshotsDirty()
     },
     onError: (error) => pushToast(`Failed to reorder: ${error}`, 'error'),
@@ -3325,10 +3507,28 @@ export function SnapshotEditorPage() {
   })
 
   const bypassMutation = useMutation({
-    mutationFn: ({ chainId, pluginUri, bypass, pluginPosition }: { chainId: number; pluginUri: string; bypass: boolean; pluginPosition?: number }) =>
-      chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition),
-    onSuccess: () => {
+    mutationFn: ({
+      chainId,
+      pluginUri,
+      bypass,
+      pluginPosition,
+    }: {
+      chainId: number
+      pluginUri: string
+      bypass: boolean
+      pluginPosition?: number
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    }) => chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      if (variables.undoRedoDraft) {
+        recordSnapshotUndoRedoStep(
+          variables.undoRedoDraft,
+          variables.undoRedoDescription ?? (variables.bypass ? 'Bypass block' : 'Enable block'),
+        )
+        return
+      }
       markSnapshotsDirty()
     },
     onError: (error) => pushToast(`Failed to toggle bypass: ${error}`, 'error'),
@@ -3351,8 +3551,17 @@ export function SnapshotEditorPage() {
   }
 
   const deleteMutation = useMutation({
-    mutationFn: ({ chainId, pluginUri, pluginPosition }: { chainId: number; pluginUri: string; pluginPosition?: number }) =>
-      chainsApi.removePlugin(chainId, pluginUri, pluginPosition),
+    mutationFn: ({
+      chainId,
+      pluginUri,
+      pluginPosition,
+    }: {
+      chainId: number
+      pluginUri: string
+      pluginPosition?: number
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    }) => chainsApi.removePlugin(chainId, pluginUri, pluginPosition),
     onMutate: async (variables): Promise<PluginMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
@@ -3383,7 +3592,13 @@ export function SnapshotEditorPage() {
         previousSelectedPluginPosition,
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      if (variables.undoRedoDraft) {
+        recordSnapshotUndoRedoStep(
+          variables.undoRedoDraft,
+          variables.undoRedoDescription ?? 'Remove block',
+        )
+      }
       pushToast('Plugin removed', 'success')
     },
     onError: (error, _variables, context) => {
@@ -3403,8 +3618,15 @@ export function SnapshotEditorPage() {
   })
 
   const addPluginMutation = useMutation({
-    mutationFn: ({ chainId, pluginUri }: { chainId: number; pluginUri: string }) =>
-      chainsApi.addPlugin(chainId, pluginUri),
+    mutationFn: ({
+      chainId,
+      pluginUri,
+    }: {
+      chainId: number
+      pluginUri: string
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    }) => chainsApi.addPlugin(chainId, pluginUri),
     onMutate: async (variables): Promise<AddPluginMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
@@ -3443,7 +3665,13 @@ export function SnapshotEditorPage() {
         previousPluginSearchQuery,
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      if (variables.undoRedoDraft) {
+        recordSnapshotUndoRedoStep(
+          variables.undoRedoDraft,
+          variables.undoRedoDescription ?? 'Add block',
+        )
+      }
       pushToast('Plugin added', 'success')
     },
     onError: (error, _variables, context) => {
@@ -3635,25 +3863,37 @@ export function SnapshotEditorPage() {
   })
 
   const undoMutation = useMutation({
-    mutationFn: () => historyApi.undo(),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['history'] })
-      markSnapshotsDirty()
-      pushToast(data.message || 'Undo successful', 'success')
+    mutationFn: async () => {
+      const draft = snapshotUndoRedo.undo()
+      if (!draft) {
+        throw new Error('Nothing to undo')
+      }
+      return applySnapshotDraftPreview(draft)
     },
-    onError: (error) => pushToast(`Undo failed: ${error}`, 'error'),
+    onSuccess: () => {
+      pushToast('Undo successful', 'success')
+    },
+    onError: (error) => {
+      snapshotUndoRedo.redo()
+      pushToast(`Undo failed: ${error}`, 'error')
+    },
   })
 
   const redoMutation = useMutation({
-    mutationFn: () => historyApi.redo(),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['history'] })
-      markSnapshotsDirty()
-      pushToast(data.message || 'Redo successful', 'success')
+    mutationFn: async () => {
+      const draft = snapshotUndoRedo.redo()
+      if (!draft) {
+        throw new Error('Nothing to redo')
+      }
+      return applySnapshotDraftPreview(draft)
     },
-    onError: (error) => pushToast(`Redo failed: ${error}`, 'error'),
+    onSuccess: () => {
+      pushToast('Redo successful', 'success')
+    },
+    onError: (error) => {
+      snapshotUndoRedo.undo()
+      pushToast(`Redo failed: ${error}`, 'error')
+    },
   })
 
   const tapSnapshotTempoMutation = useMutation({
@@ -3730,6 +3970,7 @@ export function SnapshotEditorPage() {
     const nextIndex = flowSlots.length
     const colorConfig = getFlowCardPaletteEntry(nextIndex)
     const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
+    const beforeDraft = captureCurrentState()
 
     try {
       const newChain = await chainsApi.create(chainName)
@@ -3758,31 +3999,43 @@ export function SnapshotEditorPage() {
         }
       })
 
-      setFlowSlots((prev) => [...prev, newSlot])
-      setRouting((prev) => ({
-        ...prev,
-        seriesOrder: [...prev.seriesOrder, newSlot.id],
-      }))
-      markSnapshotsDirty()
+      const nextDraft = cloneSnapshotDraftData(beforeDraft)
+      nextDraft.flowSlots.push(newSlot)
+      nextDraft.routing.seriesOrder = [...nextDraft.routing.seriesOrder, newSlot.id]
+      setEditorSnapshotState(nextDraft)
+      recordSnapshotUndoRedoStep(nextDraft, `Add channel ${colorConfig.label}`)
       pushToast(`Channel ${colorConfig.label} created with ${chainName}`, 'success')
       queryClient.invalidateQueries({ queryKey: ['chains'] })
     } catch (error) {
       pushToast(`Failed to add channel: ${error}`, 'error')
     }
-  }, [activeSnapshot?.name, flowSlots.length, markSnapshotsDirty, pushToast, queryClient, snapshotEditingLocked])
+  }, [
+    activeSnapshot?.name,
+    captureCurrentState,
+    flowSlots.length,
+    pushToast,
+    queryClient,
+    recordSnapshotUndoRedoStep,
+    setEditorSnapshotState,
+    snapshotEditingLocked,
+  ])
 
   const removeFlow = useCallback((flowId: string) => {
     if (snapshotEditingLocked || flowSlots.length <= MIN_FLOWS) return
-    const removedIndex = flowSlots.findIndex(f => f.id === flowId)
-    setFlowSlots(prev => prev.filter(f => f.id !== flowId))
-    setRouting(prev => ({
-      ...prev,
-      seriesOrder: prev.seriesOrder.filter(id => id !== flowId),
-    }))
-    if (activeFlowIndex >= removedIndex && activeFlowIndex > 0) {
-      setActiveFlowIndex(prev => prev - 1)
+    const beforeDraft = captureCurrentState()
+    const removedIndex = beforeDraft.flowSlots.findIndex((flow) => flow.id === flowId)
+    if (removedIndex < 0) {
+      return
     }
-  }, [flowSlots, activeFlowIndex, snapshotEditingLocked])
+    const nextDraft = cloneSnapshotDraftData(beforeDraft)
+    nextDraft.flowSlots = nextDraft.flowSlots.filter((flow) => flow.id !== flowId)
+    nextDraft.routing.seriesOrder = nextDraft.routing.seriesOrder.filter((id) => id !== flowId)
+    if (nextDraft.activeFlowIndex >= removedIndex && nextDraft.activeFlowIndex > 0) {
+      nextDraft.activeFlowIndex -= 1
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, 'Remove channel')
+  }, [captureCurrentState, flowSlots.length, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditingLocked])
 
   const clearFlows = useCallback(() => {
     if (snapshotEditingLocked) {
@@ -3798,16 +4051,21 @@ export function SnapshotEditorPage() {
       solo: false,
       dryWetMix: 100,
     }
-    setFlowSlots([initialSlot])
-    setActiveFlowIndex(0)
-    setRouting(prev => ({
-      ...prev,
-      activeSlotId: initialSlot.id,
-      seriesOrder: [initialSlot.id],
-      blendPositions: { [initialSlot.id]: 100 },
-    }))
+    const nextDraft = {
+      ...captureCurrentState(),
+      flowSlots: [initialSlot],
+      activeFlowIndex: 0,
+      routing: {
+        ...routing,
+        activeSlotId: initialSlot.id,
+        seriesOrder: [initialSlot.id],
+        blendPositions: { [initialSlot.id]: 100 },
+      },
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, 'Clear channels')
     pushToast('Flows cleared', 'info')
-  }, [pushToast, snapshotEditingLocked])
+  }, [captureCurrentState, pushToast, recordSnapshotUndoRedoStep, routing, setEditorSnapshotState, snapshotEditingLocked])
 
   const handleDeletePresetRequest = useCallback((preset: Snapshot) => {
     setPresetPendingDelete(preset)
@@ -3829,8 +4087,23 @@ export function SnapshotEditorPage() {
     if (snapshotEditingLocked) {
       return
     }
-    setFlowSlots(prev => prev.map(f => f.id === flowId ? { ...f, ...updates } : f))
-  }, [snapshotEditingLocked])
+    const beforeDraft = captureCurrentState()
+    const nextDraft = cloneSnapshotDraftData(beforeDraft)
+    let changed = false
+    nextDraft.flowSlots = nextDraft.flowSlots.map((flow) => {
+      if (flow.id !== flowId) {
+        return flow
+      }
+      const updatedFlow = { ...flow, ...updates }
+      changed = changed || JSON.stringify(flow) !== JSON.stringify(updatedFlow)
+      return updatedFlow
+    })
+    if (!changed) {
+      return
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, describeFlowUpdate(updates))
+  }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditingLocked])
 
   const beginFlowRename = useCallback((flowId: string, currentLabel: string) => {
     if (snapshotEditingLocked) {
@@ -3861,10 +4134,9 @@ export function SnapshotEditorPage() {
     }
 
     updateFlow(flowId, { label: normalizeFlowCardLabel(editingFlowLabel) })
-    markSnapshotsDirty()
     cancelFlowRename()
     return true
-  }, [cancelFlowRename, editingFlowLabel, flowSlots, markSnapshotsDirty, updateFlow])
+  }, [cancelFlowRename, editingFlowLabel, flowSlots, updateFlow])
 
   const selectFlowIndex = useCallback((index: number) => {
     const slot = flowSlots[index]
@@ -3947,47 +4219,57 @@ export function SnapshotEditorPage() {
     if (snapshotEditingLocked) {
       return
     }
-    markSnapshotsDirty()
-    setRouting((previous) => {
-      const fallbackActiveId = previous.activeSlotId ?? activeFlow?.id ?? flowSlots[0]?.id ?? null
-      if (mode === 'parameter_morph') {
-        const morphSourceId = previous.morphSourceSlotId ?? fallbackActiveId
-        const morphTargetId = previous.morphTargetSlotId
-          ?? flowSlots.find((slot) => slot.id !== morphSourceId)?.id
-          ?? null
-        return {
-          ...previous,
-          mode,
-          activeSlotId: fallbackActiveId,
-          morphSourceSlotId: morphSourceId,
-          morphTargetSlotId: morphTargetId,
-        }
+    const beforeDraft = captureCurrentState()
+    const nextDraft = cloneSnapshotDraftData(beforeDraft)
+    const fallbackActiveId = nextDraft.routing.activeSlotId ?? activeFlow?.id ?? nextDraft.flowSlots[0]?.id ?? null
+    if (mode === 'parameter_morph') {
+      const morphSourceId = nextDraft.routing.morphSourceSlotId ?? fallbackActiveId
+      const morphTargetId = nextDraft.routing.morphTargetSlotId
+        ?? nextDraft.flowSlots.find((slot) => slot.id !== morphSourceId)?.id
+        ?? null
+      nextDraft.routing = {
+        ...nextDraft.routing,
+        mode,
+        activeSlotId: fallbackActiveId,
+        morphSourceSlotId: morphSourceId,
+        morphTargetSlotId: morphTargetId,
       }
-
-      return {
-        ...previous,
+    } else {
+      nextDraft.routing = {
+        ...nextDraft.routing,
         mode,
         activeSlotId: fallbackActiveId,
       }
-    })
-  }, [activeFlow?.id, flowSlots, markSnapshotsDirty, snapshotEditingLocked])
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, 'Change routing mode')
+  }, [activeFlow?.id, captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditingLocked])
 
   const setBlendPosition = useCallback((slotId: string, position: number) => {
     if (snapshotEditingLocked) {
       return
     }
-    setRouting(prev => ({
-      ...prev,
-      blendPositions: { ...prev.blendPositions, [slotId]: position },
-    }))
-  }, [snapshotEditingLocked])
+    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
+    nextDraft.routing = {
+      ...nextDraft.routing,
+      blendPositions: { ...nextDraft.routing.blendPositions, [slotId]: position },
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, 'Adjust blend position')
+  }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditingLocked])
 
   const setMorphProgress = useCallback((progress: number) => {
     if (snapshotEditingLocked) {
       return
     }
-    setRouting(prev => ({ ...prev, morphProgress: progress }))
-  }, [snapshotEditingLocked])
+    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
+    nextDraft.routing = {
+      ...nextDraft.routing,
+      morphProgress: progress,
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, 'Adjust morph position')
+  }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditingLocked])
 
   // Plugin operations
   const openSelectedBlockEditor = useCallback(() => {
@@ -4047,8 +4329,27 @@ export function SnapshotEditorPage() {
   const handleToggleBypass = useCallback((uri: string, bypassed: boolean, position: number) => {
     if (snapshotEditingLocked) return
     if (!currentChain) return
-    bypassMutation.mutate({ chainId: currentChain.id, pluginUri: uri, bypass: bypassed, pluginPosition: position })
-  }, [currentChain, bypassMutation, snapshotEditingLocked])
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: chain.plugins.map((plugin) => (
+          plugin.uri === uri && plugin.position === position
+            ? { ...plugin, bypass: bypassed }
+            : plugin
+        )),
+      }),
+    )
+    bypassMutation.mutate({
+      chainId: currentChain.id,
+      pluginUri: uri,
+      bypass: bypassed,
+      pluginPosition: position,
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: bypassed ? 'Bypass block' : 'Enable block',
+    })
+  }, [captureCurrentState, currentChain, bypassMutation, snapshotEditingLocked])
 
   const handleDeletePlugin = useCallback((uri: string, position?: number) => {
     if (snapshotEditingLocked) return
@@ -4061,8 +4362,25 @@ export function SnapshotEditorPage() {
       pushToast('The system noise gate stays locked at the head of the chain', 'warn')
       return
     }
-    deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri, pluginPosition: position })
-  }, [currentChain, deleteMutation, pushToast, snapshotEditingLocked])
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => resequenceChainSnapshotPlugins({
+        ...chain,
+        plugins: chain.plugins.filter((plugin) => !(
+          plugin.uri === uri
+          && (typeof position !== 'number' || plugin.position === position)
+        )),
+      }),
+    )
+    deleteMutation.mutate({
+      chainId: currentChain.id,
+      pluginUri: uri,
+      pluginPosition: position,
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: 'Remove block',
+    })
+  }, [captureCurrentState, currentChain, deleteMutation, pushToast, snapshotEditingLocked])
 
   const handleTabletCanvasEmptyPress = useCallback((flowId: string) => {
     if (!isTabletTouchLayout) {
@@ -4140,8 +4458,38 @@ export function SnapshotEditorPage() {
   const handleReorderPlugins = useCallback((pluginOrder: PluginOrderRef[]) => {
     if (snapshotEditingLocked) return
     if (!currentChain) return
-    reorderMutation.mutate({ chainId: currentChain.id, pluginOrder })
-  }, [currentChain, reorderMutation, snapshotEditingLocked])
+    const reorderedPlugins = pluginOrder.reduce<ChainSnapshot['plugins']>((accumulator, ref, index) => {
+        const match = currentChain.plugins.find((plugin) => (
+          plugin.uri === ref.uri
+          && plugin.position === ref.position
+        ))
+        if (!match) {
+          return accumulator
+        }
+        accumulator.push({
+          uri: match.uri,
+          position: index,
+          bypass: match.bypassed || false,
+          parameters: match.parameters || {},
+          loader_state: match.loader_state,
+        })
+        return accumulator
+      }, [])
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: reorderedPlugins,
+      }),
+    )
+    reorderMutation.mutate({
+      chainId: currentChain.id,
+      pluginOrder,
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: 'Reorder blocks',
+    })
+  }, [captureCurrentState, currentChain, reorderMutation, snapshotEditingLocked])
 
   const moveSelectedPlugin = useCallback((direction: ReorderDirection) => {
     if (snapshotEditingLocked) {
@@ -4185,11 +4533,27 @@ export function SnapshotEditorPage() {
       targetPosition: targetPlugin.position,
       direction,
     })
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: plugins.map((plugin, index) => ({
+          uri: plugin.uri,
+          position: index,
+          bypass: plugin.bypassed || false,
+          parameters: plugin.parameters || {},
+          loader_state: plugin.loader_state,
+        })),
+      }),
+    )
     reorderMutation.mutate({
       chainId: currentChain.id,
       pluginOrder: plugins.map((plugin) => buildPluginOrderRef(plugin)),
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: `Move block ${direction === 'left' ? 'left' : 'right'}`,
     })
-  }, [currentChain, pushToast, reorderMutation, selectedPluginPosition, selectedPluginUri, snapshotEditingLocked])
+  }, [captureCurrentState, currentChain, pushToast, reorderMutation, selectedPluginPosition, selectedPluginUri, snapshotEditingLocked])
 
   const handleAddPlugin = useCallback(() => {
     if (snapshotEditingLocked) {
@@ -4206,14 +4570,58 @@ export function SnapshotEditorPage() {
       pushToast('Select a chain before adding a plugin', 'warn')
       return
     }
-    addPluginMutation.mutate({ chainId: currentChain.id, pluginUri })
-  }, [currentChain, addPluginMutation, pushToast, snapshotEditingLocked])
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: [
+          ...chain.plugins,
+          {
+            uri: pluginUri,
+            position: chain.plugins.length,
+            bypass: false,
+            parameters: {},
+            loader_state: {},
+          },
+        ],
+      }),
+    )
+    addPluginMutation.mutate({
+      chainId: currentChain.id,
+      pluginUri,
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: 'Add block',
+    })
+  }, [captureCurrentState, currentChain, addPluginMutation, pushToast, snapshotEditingLocked])
 
   const handleAddPluginDirect = useCallback((uri: string) => {
     if (snapshotEditingLocked) return
     if (!currentChain) return
-    addPluginMutation.mutate({ chainId: currentChain.id, pluginUri: uri })
-  }, [currentChain, addPluginMutation, snapshotEditingLocked])
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: [
+          ...chain.plugins,
+          {
+            uri,
+            position: chain.plugins.length,
+            bypass: false,
+            parameters: {},
+            loader_state: {},
+          },
+        ],
+      }),
+    )
+    addPluginMutation.mutate({
+      chainId: currentChain.id,
+      pluginUri: uri,
+      undoRedoDraft: nextDraft,
+      undoRedoDescription: 'Add block',
+    })
+  }, [captureCurrentState, currentChain, addPluginMutation, snapshotEditingLocked])
 
   const handleMidiLearnToggle = useCallback(() => {
     if (midiLearnInProgress) {
@@ -4344,6 +4752,36 @@ export function SnapshotEditorPage() {
       return
     }
 
+    if (!pendingParameterUndoStartRef.current) {
+      pendingParameterUndoStartRef.current = cloneSnapshotDraftData(captureCurrentState())
+      pendingParameterUndoDescriptionRef.current = `Adjust ${selectedPluginMeta.parameters[paramIndex]?.name ?? symbol}`
+      pendingParameterUndoNextRef.current = pendingParameterUndoStartRef.current
+    }
+
+    if (currentChain && selectedPlugin) {
+      const baseDraft = pendingParameterUndoNextRef.current
+        ?? pendingParameterUndoStartRef.current
+        ?? captureCurrentState()
+      pendingParameterUndoNextRef.current = updateDraftChain(
+        cloneSnapshotDraftData(baseDraft),
+        currentChain.id,
+        (chain) => ({
+          ...chain,
+          plugins: chain.plugins.map((plugin) => (
+            plugin.uri === selectedPlugin.uri && plugin.position === selectedPlugin.position
+              ? {
+                ...plugin,
+                parameters: {
+                  ...plugin.parameters,
+                  [symbol]: value,
+                },
+              }
+              : plugin
+          )),
+        }),
+      )
+    }
+
     pluginsApi.setParameterBatched(
       selectedPluginUri,
       paramIndex,
@@ -4352,9 +4790,13 @@ export function SnapshotEditorPage() {
       selectedPlugin.position,
     )
   }, [
+    captureCurrentState,
     currentChain,
     midiLearnActive,
     midiLearnInProgress,
+    pendingParameterUndoNextRef,
+    pendingParameterUndoStartRef,
+    pendingParameterUndoDescriptionRef,
     pushToast,
     selectedPlugin,
     selectedPluginMeta,
@@ -4368,19 +4810,26 @@ export function SnapshotEditorPage() {
     if (snapshotEditingLocked) return
     pluginsApi.flushParameterBatch()
     queryClient.invalidateQueries({ queryKey: ['chains'] })
-    markSnapshotsDirty()
-  }, [queryClient, markSnapshotsDirty, snapshotEditingLocked])
+    const beforeDraft = pendingParameterUndoStartRef.current
+    const nextDraft = pendingParameterUndoNextRef.current
+    if (beforeDraft && nextDraft && !snapshotDraftsEqual(beforeDraft, nextDraft)) {
+      recordSnapshotUndoRedoStep(
+        nextDraft,
+        pendingParameterUndoDescriptionRef.current ?? 'Adjust parameter',
+      )
+    } else {
+      markSnapshotsDirty()
+    }
+    pendingParameterUndoStartRef.current = null
+    pendingParameterUndoNextRef.current = null
+    pendingParameterUndoDescriptionRef.current = null
+  }, [markSnapshotsDirty, queryClient, recordSnapshotUndoRedoStep, snapshotEditingLocked])
 
   const handleToggleSelectedBypass = useCallback(() => {
     if (snapshotEditingLocked) return
     if (!selectedPlugin || !currentChain) return
-    bypassMutation.mutate({
-      chainId: currentChain.id,
-      pluginUri: selectedPlugin.uri,
-      bypass: !selectedPlugin.bypassed,
-      pluginPosition: selectedPlugin.position,
-    })
-  }, [selectedPlugin, currentChain, bypassMutation, snapshotEditingLocked])
+    handleToggleBypass(selectedPlugin.uri, !selectedPlugin.bypassed, selectedPlugin.position)
+  }, [currentChain, handleToggleBypass, selectedPlugin, snapshotEditingLocked])
 
   // Refresh plugins discovery (force refresh to pick up newly installed plugins)
   const handleRefreshPlugins = useCallback(async () => {
@@ -4514,17 +4963,19 @@ export function SnapshotEditorPage() {
   }, [createSnapshotFromEditorMutation, existingSnapshotNames])
 
   const handleChainRemoved = useCallback((chainId: number) => {
-    setFlowSlots((previous) => previous.map((slot) => (
+    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
+    nextDraft.flowSlots = nextDraft.flowSlots.map((slot) => (
       slot.chainId === chainId
         ? { ...slot, chainId: null }
         : slot
-    )))
+    ))
+    setEditorSnapshotState(nextDraft)
 
     if (currentChain && currentChain.id === chainId) {
       setSelectedPluginSelection(null)
     }
-    markSnapshotsDirty()
-  }, [currentChain, markSnapshotsDirty, setSelectedPluginSelection])
+    recordSnapshotUndoRedoStep(nextDraft, 'Detach channel from chain')
+  }, [captureCurrentState, currentChain, recordSnapshotUndoRedoStep, setEditorSnapshotState, setSelectedPluginSelection])
 
   const submitRenameChain = useCallback(() => {
     const normalizedName = renameChainName.trim()
@@ -4745,10 +5196,10 @@ export function SnapshotEditorPage() {
       locked={snapshotEditingLocked}
       lockPending={toggleActiveSnapshotLockMutation.isPending}
       onUndo={() => undoMutation.mutate()}
-      undoDisabled={!historyStatus?.can_undo || undoMutation.isPending}
+      undoDisabled={!snapshotUndoRedo.canUndo || undoMutation.isPending}
       undoPending={undoMutation.isPending}
       onRedo={() => redoMutation.mutate()}
-      redoDisabled={!historyStatus?.can_redo || redoMutation.isPending}
+      redoDisabled={!snapshotUndoRedo.canRedo || redoMutation.isPending}
       redoPending={redoMutation.isPending}
       onTapTempo={() => tapSnapshotTempoMutation.mutate()}
       tapTempoDisabled={!activeSnapshot || tapSnapshotTempoMutation.isPending}
@@ -5425,14 +5876,14 @@ export function SnapshotEditorPage() {
       // Ctrl/Cmd + Z = Undo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        if (historyStatus?.can_undo) undoMutation.mutate()
+        if (snapshotUndoRedo.canUndo) undoMutation.mutate()
         return
       }
 
       // Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z = Redo
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault()
-        if (historyStatus?.can_redo) redoMutation.mutate()
+        if (snapshotUndoRedo.canRedo) redoMutation.mutate()
         return
       }
 
@@ -5450,11 +5901,7 @@ export function SnapshotEditorPage() {
           pushToast('Unlock snapshot before editing it', 'warn')
           return
         }
-        bypassMutation.mutate({
-          chainId: currentChain.id,
-          pluginUri: selectedPlugin.uri,
-          bypass: !selectedPlugin.bypassed,
-        })
+        handleToggleBypass(selectedPlugin.uri, !selectedPlugin.bypassed, selectedPlugin.position)
         return
       }
 
@@ -5578,12 +6025,12 @@ export function SnapshotEditorPage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
-    historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
-    bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
+    snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
+    deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
     showClearFlowsModal, showLiveRuntimeModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
-    handleDeletePlugin, handleSavePreset, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
+    handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot,
     snapshotEditingLocked,
   ])
@@ -5661,19 +6108,81 @@ export function SnapshotEditorPage() {
         }}
         onToggleBypass={(uri, bypassed, position) => {
           if (!flowChain) return
-          bypassMutation.mutate({ chainId: flowChain.id, pluginUri: uri, bypass: bypassed, pluginPosition: position })
+          const nextDraft = updateDraftChain(
+            cloneSnapshotDraftData(captureCurrentState()),
+            flowChain.id,
+            (chain) => ({
+              ...chain,
+              plugins: chain.plugins.map((plugin) => (
+                plugin.uri === uri && plugin.position === position
+                  ? { ...plugin, bypass: bypassed }
+                  : plugin
+              )),
+            }),
+          )
+          bypassMutation.mutate({
+            chainId: flowChain.id,
+            pluginUri: uri,
+            bypass: bypassed,
+            pluginPosition: position,
+            undoRedoDraft: nextDraft,
+            undoRedoDescription: bypassed ? 'Bypass block' : 'Enable block',
+          })
         }}
         onDeletePlugin={(uri, position) => {
           if (!flowChain) return
+          const nextDraft = updateDraftChain(
+            cloneSnapshotDraftData(captureCurrentState()),
+            flowChain.id,
+            (chain) => resequenceChainSnapshotPlugins({
+              ...chain,
+              plugins: chain.plugins.filter((plugin) => !(
+                plugin.uri === uri
+                && (typeof position !== 'number' || plugin.position === position)
+              )),
+            }),
+          )
           deleteMutation.mutate({
             chainId: flowChain.id,
             pluginUri: uri,
             pluginPosition: position,
+            undoRedoDraft: nextDraft,
+            undoRedoDescription: 'Remove block',
           })
         }}
         onReorderPlugins={(pluginOrder) => {
           if (!flowChain) return
-          reorderMutation.mutate({ chainId: flowChain.id, pluginOrder })
+          const reorderedPlugins = pluginOrder.reduce<ChainSnapshot['plugins']>((accumulator, ref, pluginIndex) => {
+              const match = flowChain.plugins.find((plugin) => (
+                plugin.uri === ref.uri
+                && plugin.position === ref.position
+              ))
+              if (!match) {
+                return accumulator
+              }
+              accumulator.push({
+                uri: match.uri,
+                position: pluginIndex,
+                bypass: match.bypassed || false,
+                parameters: match.parameters || {},
+                loader_state: match.loader_state,
+              })
+              return accumulator
+            }, [])
+          const nextDraft = updateDraftChain(
+            cloneSnapshotDraftData(captureCurrentState()),
+            flowChain.id,
+            (chain) => ({
+              ...chain,
+              plugins: reorderedPlugins,
+            }),
+          )
+          reorderMutation.mutate({
+            chainId: flowChain.id,
+            pluginOrder,
+            undoRedoDraft: nextDraft,
+            undoRedoDescription: 'Reorder blocks',
+          })
         }}
         onAddPlugin={flow.id === addEffectFlowId ? handleAddPlugin : undefined}
         showAddPluginSlot={flow.id === addEffectFlowId}
