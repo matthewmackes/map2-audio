@@ -315,7 +315,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Number of Blocks involved')).toBeInTheDocument()
     expect(screen.getByText('2 blocks')).toBeInTheDocument()
     expect(screen.getByText('Routing Mode')).toBeInTheDocument()
-    expect(screen.getByText('Parallel')).toBeInTheDocument()
+    expect(screen.getByText('Parallel Blend')).toBeInTheDocument()
     expect(screen.getByText('Number of Channels')).toBeInTheDocument()
     expect(screen.getByText('2 channels')).toBeInTheDocument()
     expect(screen.getByText('Output Reference')).toBeInTheDocument()
@@ -700,5 +700,22 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('5 blocks')).toBeInTheDocument()
     expect(screen.getByText('Morph')).toBeInTheDocument()
     expect(screen.getByText('3 channels')).toBeInTheDocument()
+  })
+
+  it('renders the sidechain routing label in human-readable form', () => {
+    renderCard(buildLiveSnapshot({
+      routing: {
+        mode: 'sidechain',
+        active_channel_key: 'ch_a',
+        blend_positions: { ch_a: 100, ch_b: 100 },
+        morph_position: 0.5,
+        morph_source_channel_key: null,
+        morph_target_channel_key: null,
+        series_order: ['ch_a', 'ch_b'],
+      },
+    }))
+
+    expect(screen.getByText('Routing Mode')).toBeInTheDocument()
+    expect(screen.getByText('Sidechain')).toBeInTheDocument()
   })
 })

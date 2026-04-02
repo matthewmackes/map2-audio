@@ -139,14 +139,14 @@ function collectMidiChannels(snapshot: SnapshotDetail): number[] {
 function formatRoutingMode(mode: SnapshotDetail['routing']['mode'] | SnapshotDraftData['routing']['mode']): string {
   switch (mode) {
     case 'parallel_blend':
-      return 'Parallel'
+      return 'Parallel Blend'
     case 'series':
       return 'Series'
     case 'morph':
     case 'parameter_morph':
       return 'Morph'
     case 'ab_switch':
-      return 'A/B'
+      return 'A/B Switch'
     case 'sidechain':
       return 'Sidechain'
     default:

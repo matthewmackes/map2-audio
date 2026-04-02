@@ -1277,7 +1277,7 @@ Subtasks: None
 Last updated: 2026-03-31
 
 ID: T611
-Status: [ ] Todo
+Status: [✓] Done
 Title: Routing Mode Always Visible in Snapshot Detail Grid
 Description:
 - Goal / acceptance criteria: The active routing mode of the current snapshot (parallel_blend, series, morph, or sidechain) is always displayed as a persistent, readable field in the Snapshot Detail Grid metadata table area in SnapshotChainManagementCard (metadata row 2, which already shows Routing Mode per the T586 implementation). The field must update immediately when the routing mode is changed (T637) — it reads from currentSnapshotDraft (already wired in T589) rather than a stale API query. The routing mode value is displayed in human-readable form: "Parallel Blend", "Series", "Morph", "Sidechain" — not the raw enum value. It is never hidden in a dropdown or behind a Details click.
@@ -1286,7 +1286,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: human-readable routing mode label mapping in SnapshotChainManagementCard, confirmed it reads from currentSnapshotDraft (verify T589 wiring is correct for this field), real-time update when T637 routing mode change fires, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-01 21:25 - Codex
+- Completion notes:
+  - Updated the Snapshot Editor hero routing label mapping so `parallel_blend` now renders as `Parallel Blend`, while the remaining routing modes continue to display in plain product language rather than raw enum-like shorthand.
+  - Kept the metadata field wired to the current editor snapshot draft, so the displayed routing mode continues to update from in-editor state instead of waiting on a refetch.
+  - Expanded the focused hero regression coverage to lock the human-readable `Parallel Blend` and `Sidechain` labels in place.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T610
 Status: [ ] Todo
