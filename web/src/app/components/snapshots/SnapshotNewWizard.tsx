@@ -86,7 +86,7 @@ export function SnapshotNewWizard({
   ][stepIndex]
 
   const stepCopy = [
-    'Start with a short, unique snapshot name.',
+    'Start with a unique snapshot name. Defaults use rhyming names plus today\'s numeric date.',
     'Choose how the new signal design should route its chains.',
     'Store the preferred capture device as snapshot metadata.',
     'Store the preferred playback device as snapshot metadata.',
@@ -171,7 +171,7 @@ export function SnapshotNewWizard({
               }}
               invalid={Boolean(nameError)}
               invalidText={nameError ?? undefined}
-              placeholder="FridayRehearsal"
+              placeholder="LilaMila04022026"
             />
           )}
 

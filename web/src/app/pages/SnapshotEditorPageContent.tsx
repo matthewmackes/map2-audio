@@ -1916,6 +1916,13 @@ export function SnapshotEditorPage() {
     }
     return sortSnapshotsByProgramNumber(snapshots)
   }, [snapshotSetlistMode, snapshotsSummaryQuery.data?.snapshots, specialSettings?.snapshotSetlistOrder])
+  const favoriteSnapshotsForToolbar = useMemo<SnapshotSummary[]>(
+    () => sortFavoriteSnapshotsForSetlist(
+      (snapshotsSummaryQuery.data?.snapshots ?? []).filter((snapshot) => snapshot.is_favorite),
+      specialSettings?.snapshotSetlistOrder,
+    ),
+    [snapshotsSummaryQuery.data?.snapshots, specialSettings?.snapshotSetlistOrder],
+  )
   const activeSnapshotSequenceIndex = activeSnapshot
     ? editorSnapshotSequence.findIndex((snapshot) => snapshot.id === activeSnapshot.id)
     : -1
@@ -4075,25 +4082,6 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const tapSnapshotTempoMutation = useMutation({
-    mutationFn: async () => {
-      const liveSnapshotId = liveSnapshotQuery.data?.id ?? activeSnapshot?.id ?? null
-      if (liveSnapshotId == null) {
-        throw new Error('No live snapshot available for tap tempo')
-      }
-      return snapshotsApi.tapTempo(liveSnapshotId, Date.now())
-    },
-    onSuccess: (response) => {
-      if (response.snapshot) {
-        syncSnapshotDetailCaches(response.snapshot)
-      }
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to tap tempo', 'error')
-    },
-  })
-
   const savePresetMutation = useMutation({
     mutationFn: ({ chainId, name }: { chainId: number; name: string }) => chainsApi.savePreset(chainId, name),
     onSuccess: (_, variables) => {
@@ -5290,8 +5278,8 @@ export function SnapshotEditorPage() {
     ? `${snapshotCountLabel} saved snapshots`
     : 'Open snapshots workspace'
   const snapshotSetlistModeTitle = snapshotSetlistMode
-    ? 'Setlist mode is active: snapshot stepping follows starred snapshots in gig order.'
-    : 'Program mode is active: snapshot stepping follows all snapshots by MIDI program number.'
+    ? 'Setlist mode is active: Back and Forward follow favorite snapshots in gig order.'
+    : 'Program mode is active: Back and Forward follow all snapshots by MIDI program number.'
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return false
@@ -5333,6 +5321,10 @@ export function SnapshotEditorPage() {
   const goToNextSnapshot = useCallback(() => {
     loadEditorSnapshot(nextEditorSnapshot)
   }, [loadEditorSnapshot, nextEditorSnapshot])
+  const openFavoriteSnapshotFromToolbar = useCallback((snapshotId: number) => {
+    const snapshot = favoriteSnapshotsForToolbar.find((candidate) => candidate.id === snapshotId) ?? null
+    loadEditorSnapshot(snapshot)
+  }, [favoriteSnapshotsForToolbar, loadEditorSnapshot])
 
   const handleGoLive = useCallback(() => {
     if (!activeSnapshot || snapshotGoLiveState.disabled || snapshotGoLiveState.phase === 'live') {
@@ -5347,9 +5339,6 @@ export function SnapshotEditorPage() {
       title={snapshotWorkspaceTitle}
       dirty={snapshotsDirty}
       prefersReducedMotion={prefersReducedMotion}
-      goLiveState={snapshotGoLiveState}
-      activeSnapshot={Boolean(activeSnapshot)}
-      onGoLive={handleGoLive}
       onCreate={createCapturedSnapshot}
       createPending={createSnapshotFromEditorMutation.isPending}
       onSave={() => updateActiveSnapshotMutation.mutate()}
@@ -5374,9 +5363,6 @@ export function SnapshotEditorPage() {
       onRedo={() => redoMutation.mutate()}
       redoDisabled={!snapshotUndoRedo.canRedo || redoMutation.isPending}
       redoPending={redoMutation.isPending}
-      onTapTempo={() => tapSnapshotTempoMutation.mutate()}
-      tapTempoDisabled={!activeSnapshot || tapSnapshotTempoMutation.isPending}
-      tapTempoPending={tapSnapshotTempoMutation.isPending}
       onToggleFavorite={activeSnapshot ? () => {
         toggleActiveSnapshotFavoriteMutation.mutate({
           snapshotId: activeSnapshot.id,
@@ -5386,6 +5372,13 @@ export function SnapshotEditorPage() {
       favoriteVisible={Boolean(activeSnapshot)}
       favoriteActive={Boolean(activeSnapshot?.is_favorite)}
       favoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
+      favoriteSnapshots={favoriteSnapshotsForToolbar.map((snapshot) => ({
+        id: snapshot.id,
+        name: snapshot.name,
+        programNumber: snapshot.program_number,
+        isActive: snapshot.id === activeSnapshot?.id,
+      }))}
+      onOpenFavoriteSnapshot={openFavoriteSnapshotFromToolbar}
       onToggleSetlist={() => { void toggleSnapshotSetlistMode() }}
       setlistMode={snapshotSetlistMode}
       setlistPending={snapshotSetlistModePending}

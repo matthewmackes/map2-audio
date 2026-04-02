@@ -25,6 +25,7 @@
     "@carbon/react": "^1.103.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@faker-js/faker": "^10.4.0",
     "@fontsource/fira-sans": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/inter": "^5.2.8",

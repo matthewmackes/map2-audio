@@ -9,13 +9,19 @@ Power-Failure Resilience:
 - Connection pragma enforcement on each connection
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text
-from sqlalchemy.orm import relationship, sessionmaker, Session, declarative_base
-from sqlalchemy.engine import Engine
-from datetime import datetime
-from pathlib import Path
+import asyncio
 import json
 import logging
+import time
+from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text, inspect as sqlalchemy_inspect
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +38,175 @@ SQLITE_PRAGMAS = {
     # Keep auto-checkpoints well above the hot path; graceful shutdown already
     # forces an explicit TRUNCATE checkpoint via checkpoint_database().
     "wal_autocheckpoint": "12000",
-    "busy_timeout": "5000",          # Wait 5s on lock contention
+    "busy_timeout": "100",           # Fail fast on lock contention; bounded replay retries handle recovery
     "cache_size": "-64000",          # 64MB cache (negative = KB)
     "foreign_keys": "ON",            # Enforce foreign key constraints
     "temp_store": "MEMORY",          # Store temp tables in memory
 }
+
+SQLITE_LOCK_RETRY_MAX_ATTEMPTS = 4
+SQLITE_LOCK_RETRY_DELAY_S = 0.05
+
+
+def _is_sqlite_lock_error(exc: BaseException) -> bool:
+    message = str(getattr(exc, "orig", exc)).lower()
+    return "database is locked" in message or "database table is locked" in message
+
+
+def _capture_sqlalchemy_write_plan(session: Session) -> tuple[list[object], list[tuple[object, dict[str, object]]], list[object]]:
+    inserts = list(session.new)
+    deletes = list(session.deleted)
+    ignored = {id(obj) for obj in inserts}
+    ignored.update(id(obj) for obj in deletes)
+    updates: list[tuple[object, dict[str, object]]] = []
+
+    for obj in list(session.identity_map.values()):
+        if id(obj) in ignored or not session.is_modified(obj, include_collections=False):
+            continue
+        state = sqlalchemy_inspect(obj)
+        changed: dict[str, object] = {}
+        for attr in state.mapper.column_attrs:
+            history = state.attrs[attr.key].history
+            if history.has_changes():
+                changed[attr.key] = getattr(obj, attr.key)
+        if changed:
+            updates.append((obj, changed))
+
+    return inserts, updates, deletes
+
+
+def _restore_sqlalchemy_write_plan(
+    session: Session,
+    plan: tuple[list[object], list[tuple[object, dict[str, object]]], list[object]],
+) -> None:
+    inserts, updates, deletes = plan
+
+    for obj in inserts:
+        state = sqlalchemy_inspect(obj)
+        if state.transient or state.detached:
+            session.add(obj)
+
+    for obj, changed in updates:
+        state = sqlalchemy_inspect(obj)
+        if state.detached or state.transient:
+            session.add(obj)
+        for key, value in changed.items():
+            setattr(obj, key, value)
+
+    for obj in deletes:
+        state = sqlalchemy_inspect(obj)
+        if state.detached or state.transient:
+            session.add(obj)
+        session.delete(obj)
+
+
+def _run_sync_sqlite_lock_retry(session: Session, operation_name: str, operation):
+    for attempt in range(1, SQLITE_LOCK_RETRY_MAX_ATTEMPTS + 1):
+        plan = _capture_sqlalchemy_write_plan(session)
+        try:
+            return operation()
+        except OperationalError as exc:
+            if not _is_sqlite_lock_error(exc):
+                raise
+            session.rollback()
+            if attempt >= SQLITE_LOCK_RETRY_MAX_ATTEMPTS:
+                raise
+            _restore_sqlalchemy_write_plan(session, plan)
+            logger.warning(
+                "SQLite lock during %s; retrying attempt %s/%s in %.3fs",
+                operation_name,
+                attempt + 1,
+                SQLITE_LOCK_RETRY_MAX_ATTEMPTS,
+                SQLITE_LOCK_RETRY_DELAY_S,
+            )
+            time.sleep(SQLITE_LOCK_RETRY_DELAY_S)
+
+
+async def _run_async_sqlite_lock_retry(session: AsyncSession, operation_name: str, operation):
+    sync_session = session.sync_session
+    for attempt in range(1, SQLITE_LOCK_RETRY_MAX_ATTEMPTS + 1):
+        plan = _capture_sqlalchemy_write_plan(sync_session)
+        try:
+            return await operation()
+        except OperationalError as exc:
+            if not _is_sqlite_lock_error(exc):
+                raise
+            await session.rollback()
+            if attempt >= SQLITE_LOCK_RETRY_MAX_ATTEMPTS:
+                raise
+            _restore_sqlalchemy_write_plan(sync_session, plan)
+            logger.warning(
+                "SQLite lock during %s; retrying attempt %s/%s in %.3fs",
+                operation_name,
+                attempt + 1,
+                SQLITE_LOCK_RETRY_MAX_ATTEMPTS,
+                SQLITE_LOCK_RETRY_DELAY_S,
+            )
+            await asyncio.sleep(SQLITE_LOCK_RETRY_DELAY_S)
+
+
+class RetryingSession(Session):
+    """SQLite session that retries transient writer-lock failures with UoW replay."""
+
+    _sqlite_lock_retry_active = False
+
+    def flush(self, objects=None):
+        if self._sqlite_lock_retry_active:
+            return super().flush(objects=objects)
+        self._sqlite_lock_retry_active = True
+        try:
+            return _run_sync_sqlite_lock_retry(
+                self,
+                "flush",
+                lambda: super(RetryingSession, self).flush(objects=objects),
+            )
+        finally:
+            self._sqlite_lock_retry_active = False
+
+    def commit(self):
+        if self._sqlite_lock_retry_active:
+            return super().commit()
+        self._sqlite_lock_retry_active = True
+        try:
+            return _run_sync_sqlite_lock_retry(
+                self,
+                "commit",
+                lambda: super(RetryingSession, self).commit(),
+            )
+        finally:
+            self._sqlite_lock_retry_active = False
+
+
+class RetryingAsyncSession(AsyncSession):
+    """Async SQLite session that retries transient writer-lock failures with UoW replay."""
+
+    _sqlite_lock_retry_active = False
+
+    async def flush(self, objects=None):
+        if self._sqlite_lock_retry_active:
+            return await super().flush(objects=objects)
+        self._sqlite_lock_retry_active = True
+        try:
+            return await _run_async_sqlite_lock_retry(
+                self,
+                "flush",
+                lambda: super(RetryingAsyncSession, self).flush(objects=objects),
+            )
+        finally:
+            self._sqlite_lock_retry_active = False
+
+    async def commit(self):
+        if self._sqlite_lock_retry_active:
+            return await super().commit()
+        self._sqlite_lock_retry_active = True
+        try:
+            return await _run_async_sqlite_lock_retry(
+                self,
+                "commit",
+                lambda: super(RetryingAsyncSession, self).commit(),
+            )
+        finally:
+            self._sqlite_lock_retry_active = False
 
 
 def _resolve_database_path() -> Path:
@@ -84,7 +254,12 @@ def init_db(database_url: str = None) -> None:
         connect_args={"check_same_thread": False},
         pool_pre_ping=True,  # Verify connections are alive
     )
-    _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+    _SessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=_engine,
+        class_=RetryingSession,
+    )
     Base.metadata.create_all(bind=_engine)
     _ensure_special_settings_schema_sync()
     _ensure_midi_automation_identity_schema_sync()
@@ -129,10 +304,6 @@ def get_db_session() -> Session:
         init_db()
     return _SessionLocal()
 
-
-from contextlib import asynccontextmanager
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-
 _async_engine = None
 _async_session_maker = None
 _tables_created = False  # Track if tables have been created
@@ -151,7 +322,11 @@ def init_async_db(database_url: str = None) -> None:
     # CRITICAL: expire_on_commit=True ensures deleted objects are expired after commit
     # This forces fresh database queries instead of returning stale cached objects
     # With expire_on_commit=False, deleted plugins would remain visible in the session
-    _async_session_maker = async_sessionmaker(_async_engine, expire_on_commit=True)
+    _async_session_maker = async_sessionmaker(
+        _async_engine,
+        class_=RetryingAsyncSession,
+        expire_on_commit=True,
+    )
 
 
 async def _set_async_pragmas(conn) -> None:

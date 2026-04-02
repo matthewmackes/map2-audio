@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from sqlalchemy import Column, String, Integer, JSON, DateTime, create_engine, inspect
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
+from app.database import RetryingSession
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,11 @@ class NAMLibraryService:
             echo=False,
             connect_args={"check_same_thread": False} if "sqlite" in database_url else {}
         )
-        self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
+        self.SessionLocal = sessionmaker(
+            bind=self.engine,
+            class_=RetryingSession,
+            expire_on_commit=False,
+        )
         
         # Create tables
         Base.metadata.create_all(self.engine)

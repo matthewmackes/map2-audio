@@ -1096,6 +1096,7 @@ class SnapshotService:
 
         params_applied = 0
         bypass_applied = 0
+        topology_reused = False
         audio_device_binding_result: dict[str, Any] | None = None
         try:
             await self._validate_snapshot_activation_preflight(detail)
@@ -1109,8 +1110,17 @@ class SnapshotService:
 
         try:
             audio_device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
-            await self._clear_materialized_runtime_chains()
-            live_state_payload = await self._materialize_live_state(snapshot, detail)
+            current_live_detail = await self.get_live_snapshot()
+            live_state_payload = await self._reuse_live_runtime_chains(
+                snapshot,
+                detail,
+                current_live_detail=current_live_detail,
+            )
+            if live_state_payload is None:
+                await self._clear_materialized_runtime_chains()
+                live_state_payload = await self._materialize_live_state(snapshot, detail)
+            else:
+                topology_reused = True
             snapshot.live_state_payload = live_state_payload
             await self.session.flush()
 
@@ -1162,6 +1172,7 @@ class SnapshotService:
             runtime_metrics = {
                 "params_applied": params_applied,
                 "bypass_applied": bypass_applied,
+                "topology_reused": topology_reused,
                 "runtime_chain_count": len(refreshed_detail.get("live_state", {}).get("runtime_chains", [])),
                 "channel_activity": {
                     "active_count": channel_health["active_count"],
@@ -1263,6 +1274,7 @@ class SnapshotService:
             "runtime_live_state": live_runtime_state,
             "params_applied": params_applied,
             "bypass_applied": bypass_applied,
+            "topology_reused": topology_reused,
         }
 
     async def preview_snapshot(self, detail_payload: dict[str, Any]) -> dict[str, Any]:
@@ -2374,6 +2386,233 @@ class SnapshotService:
         )
         await self.session.flush()
 
+    def _ordered_detail_channels(self, detail: dict[str, Any]) -> list[dict[str, Any]]:
+        channels = [channel for channel in detail.get("channels", []) if isinstance(channel, dict)]
+        return sorted(
+            channels,
+            key=lambda item: (
+                int(item.get("order_index", 0)),
+                str(item.get("channel_key") or ""),
+            ),
+        )
+
+    def _runtime_chain_name_for_channel(
+        self,
+        source_chain: dict[str, Any] | None,
+        channel: dict[str, Any],
+    ) -> str:
+        source_name = (
+            source_chain.get("name")
+            if isinstance(source_chain, dict) and source_chain.get("name")
+            else "Path"
+        )
+        channel_name = channel.get("label") or channel.get("channel_key")
+        return f"{source_name} ({channel_name})"
+
+    def _snapshot_runtime_topology_signature(self, detail: dict[str, Any]) -> dict[str, Any]:
+        chain_index_by_id: dict[int, int] = {}
+        canonical_chains: list[dict[str, Any]] = []
+        ordered_chains = [chain for chain in detail.get("chains", []) if isinstance(chain, dict)]
+
+        for chain_index, chain in enumerate(ordered_chains):
+            chain_id = _safe_int(chain.get("id"))
+            if chain_id is not None:
+                chain_index_by_id[chain_id] = chain_index
+
+            plugins = [
+                {
+                    "uri": str(plugin.get("uri") or ""),
+                    "position": int(plugin.get("position", index)),
+                }
+                for index, plugin in enumerate(chain.get("plugins", []))
+                if isinstance(plugin, dict)
+            ]
+            plugins.sort(key=lambda item: (int(item["position"]), item["uri"]))
+
+            loop_insertions = [
+                {
+                    key: _canonicalize_json_value(value)
+                    for key, value in sorted(loop.items())
+                    if key not in (_CANONICAL_TRANSIENT_KEYS | {"insertion_id"})
+                }
+                for loop in chain.get("loop_insertions", [])
+                if isinstance(loop, dict)
+            ]
+
+            effects_loops = [
+                {
+                    key: _canonicalize_json_value(loop.get(key))
+                    for key in sorted(_CANONICAL_EFFECTS_LOOP_KEYS)
+                    if key in loop
+                }
+                for loop in chain.get("effects_loops", [])
+                if isinstance(loop, dict)
+            ]
+
+            canonical_chains.append(
+                {
+                    "plugins": plugins,
+                    "loop_insertions": loop_insertions,
+                    "effects_loops": effects_loops,
+                }
+            )
+
+        canonical_channels = [
+            {
+                "chain_index": chain_index_by_id.get(_safe_int(channel.get("chain_id")) or -1),
+            }
+            for channel in self._ordered_detail_channels(detail)
+        ]
+
+        return {
+            "channels": canonical_channels,
+            "chains": canonical_chains,
+        }
+
+    async def _reuse_live_runtime_chains(
+        self,
+        snapshot: Snapshot,
+        detail: dict[str, Any],
+        *,
+        current_live_detail: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        if not isinstance(current_live_detail, dict):
+            return None
+        if self._snapshot_runtime_topology_signature(current_live_detail) != self._snapshot_runtime_topology_signature(detail):
+            return None
+
+        current_live_state = current_live_detail.get("live_state")
+        if not isinstance(current_live_state, dict):
+            return None
+
+        current_runtime_paths = [
+            dict(item)
+            for item in current_live_state.get("paths", [])
+            if isinstance(item, dict)
+        ]
+        target_channels = self._ordered_detail_channels(detail)
+        if len(current_runtime_paths) != len(target_channels):
+            return None
+
+        runtime_chain_ids: list[int] = []
+        for path in current_runtime_paths:
+            runtime_chain_id = _safe_int(path.get("runtime_chain_id"))
+            if runtime_chain_id is None:
+                return None
+            runtime_chain_ids.append(runtime_chain_id)
+
+        result = await self.session.execute(select(Chain).where(Chain.id.in_(runtime_chain_ids)))
+        runtime_chains = {chain.id: chain for chain in result.scalars().all()}
+        if len(runtime_chains) != len(runtime_chain_ids):
+            return None
+
+        runtime_plugin_result = await self.session.execute(
+            select(ChainPlugin)
+            .where(ChainPlugin.chain_id.in_(runtime_chain_ids))
+            .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.position.asc(), ChainPlugin.id.asc())
+        )
+        runtime_plugins_by_chain_id: dict[int, list[ChainPlugin]] = {}
+        for runtime_plugin in runtime_plugin_result.scalars().all():
+            runtime_plugins_by_chain_id.setdefault(int(runtime_plugin.chain_id), []).append(runtime_plugin)
+
+        chain_by_id = {
+            _safe_int(chain.get("id")): chain
+            for chain in detail.get("chains", [])
+            if isinstance(chain, dict) and _safe_int(chain.get("id")) is not None
+        }
+
+        rebound_paths: list[dict[str, Any]] = []
+        active_runtime_chain_ids: list[int] = []
+        for runtime_path, channel in zip(current_runtime_paths, target_channels):
+            runtime_chain_id = _safe_int(runtime_path.get("runtime_chain_id"))
+            if runtime_chain_id is None:
+                return None
+
+            runtime_chain = runtime_chains.get(runtime_chain_id)
+            if runtime_chain is None:
+                return None
+
+            snapshot_chain_id = _safe_int(channel.get("chain_id"))
+            source_chain = chain_by_id.get(snapshot_chain_id)
+            target_plugins = (
+                [
+                    plugin
+                    for plugin in source_chain.get("plugins", [])
+                    if isinstance(plugin, dict)
+                ]
+                if isinstance(source_chain, dict)
+                else []
+            )
+            target_plugins = sorted(
+                target_plugins,
+                key=lambda item: (int(item.get("position", 0)), str(item.get("uri") or "")),
+            )
+            runtime_plugins = runtime_plugins_by_chain_id.get(runtime_chain_id, [])
+            if len(runtime_plugins) != len(target_plugins):
+                return None
+
+            for runtime_plugin, target_plugin in zip(runtime_plugins, target_plugins):
+                target_uri = str(target_plugin.get("uri") or "")
+                target_position = int(target_plugin.get("position", 0))
+                if runtime_plugin.plugin_uri != target_uri or int(runtime_plugin.position) != target_position:
+                    return None
+
+            chain_config = self.chain_service._parse_chain_config(runtime_chain.config)
+            if not isinstance(chain_config, dict):
+                chain_config = {}
+            chain_config.update(
+                {
+                    "source_kind": "snapshot_path",
+                    "snapshot_id": snapshot.id,
+                    "snapshot_chain_id": snapshot_chain_id,
+                    "path_id": channel.get("channel_key"),
+                    "system_blocks": extract_chain_system_blocks(
+                        source_chain.get("plugins") if isinstance(source_chain, dict) else []
+                    ),
+                }
+            )
+            runtime_chain.name = self._runtime_chain_name_for_channel(source_chain, channel)
+            runtime_chain.is_active = True
+            runtime_chain.config = json.dumps(chain_config)
+
+            for runtime_plugin, target_plugin in zip(runtime_plugins, target_plugins):
+                runtime_plugin.bypass = bool(target_plugin.get("bypass", False))
+                loader_state = (
+                    target_plugin.get("loader_state")
+                    if isinstance(target_plugin.get("loader_state"), dict)
+                    else None
+                )
+                for column, value in self.chain_service._chain_plugin_loader_columns(
+                    str(target_plugin.get("uri") or ""),
+                    loader_state,
+                ).items():
+                    setattr(runtime_plugin, column, value)
+
+            runtime_sync = chain_config.get("runtime_sync")
+            rebound_paths.append(
+                {
+                    "path_id": channel.get("channel_key"),
+                    "label": channel.get("label"),
+                    "color": channel.get("color"),
+                    "snapshot_chain_id": snapshot_chain_id,
+                    "runtime_chain_id": runtime_chain_id,
+                    "runtime_chain_name": runtime_chain.name,
+                    "activation_status": (
+                        runtime_sync.get("status")
+                        if isinstance(runtime_sync, dict) and runtime_sync.get("status")
+                        else "active"
+                    ),
+                }
+            )
+            active_runtime_chain_ids.append(runtime_chain_id)
+
+        await self.session.flush()
+        return {
+            "activated_at": _utcnow().isoformat(),
+            "paths": rebound_paths,
+            "active_runtime_chain_ids": active_runtime_chain_ids,
+        }
+
     async def _clear_materialized_runtime_chains(self) -> None:
         result = await self.session.execute(select(Chain))
         for chain in result.scalars().all():
@@ -2402,7 +2641,7 @@ class SnapshotService:
             snapshot_chain_id = channel.get("chain_id")
             source_chain = chain_by_id.get(snapshot_chain_id) if snapshot_chain_id is not None else None
             runtime_chain = Chain(
-                name=f"{source_chain.get('name') if isinstance(source_chain, dict) and source_chain.get('name') else 'Path'} ({channel.get('label') or channel.get('channel_key')})",
+                name=self._runtime_chain_name_for_channel(source_chain, channel),
                 is_active=False,
                 config=json.dumps(
                     {

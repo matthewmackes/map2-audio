@@ -2776,6 +2776,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("reorder_chain", &Map2AudioEngine::reorderChain,
              py::arg("order"),
              "Reorder plugin chain")
+        .def("begin_topology_update", [](Map2AudioEngine& self) {
+            self.getAudioGraph().beginTopologyUpdate();
+        }, "Begin a batched topology update")
+        .def("end_topology_update", [](Map2AudioEngine& self) {
+            self.getAudioGraph().endTopologyUpdate();
+        }, "Finish a batched topology update and rebuild connections once if needed")
 
         // ========================================
         // Sidechain Routing (NEW)

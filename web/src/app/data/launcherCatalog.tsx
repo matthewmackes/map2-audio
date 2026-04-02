@@ -16,6 +16,7 @@ import { platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuI
 
 export type LandingTileSize = 'small' | 'medium' | 'large'
 export type LauncherDirectory = 'core' | 'labs' | 'platforms' | 'nav-only'
+export type LauncherCatalogCategory = 'Audio Interface' | 'Human Interface' | 'Platform'
 export const REQUIRED_HOME_LAUNCHER_ROUTE = '/platforms/overview'
 
 export interface LandingTilePlacement {
@@ -26,9 +27,11 @@ export interface LandingTilePlacement {
 export interface LauncherCatalogItem {
   route: string
   label: string
+  heroTitle: string
   shortLabel?: string
   icon: ComponentType<any>
   description: string
+  category: LauncherCatalogCategory
   color: string
   maturity: NavigationMaturityState
   directory: LauncherDirectory
@@ -41,13 +44,18 @@ export interface LauncherCatalogItem {
 
 type RouteLauncherSource = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 
+const AUDIO_INTERFACE_DEVICE_TYPES = new Set(['edirol-ua1000', 'hotone-jogg', 'generic-interface'])
+const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pro', 'maschine-mk1'])
+
 const HOME_ONLY_LAUNCHERS: LauncherCatalogItem[] = [
   {
     route: '/platforms/workspace-catalog',
     label: 'Workspace Catalog',
+    heroTitle: 'Workspace Catalog',
     shortLabel: 'Catalog',
     icon: Beaker,
     description: 'Browse advanced routes and launcher controls from the integrated Workspace Catalog section.',
+    category: 'Platform',
     color: 'var(--cds-link-primary)',
     maturity: 'beta',
     directory: 'core',
@@ -72,6 +80,24 @@ function isLabsCatalogRoute(item: ShellNavigationItem | HardwareInterfaceMenuIte
   )
 }
 
+function resolveLauncherCatalogCategory(
+  item: RouteLauncherSource,
+  route: string,
+): LauncherCatalogCategory {
+  const deviceType = 'deviceType' in item ? item.deviceType : undefined
+  const homeSection = 'homeSection' in item ? item.homeSection : 'Platform'
+
+  if (route === '/hardware-interfaces' || (deviceType && AUDIO_INTERFACE_DEVICE_TYPES.has(deviceType))) {
+    return 'Audio Interface'
+  }
+
+  if (homeSection === 'MIDI' || route === '/lcd' || (deviceType && HUMAN_INTERFACE_DEVICE_TYPES.has(deviceType))) {
+    return 'Human Interface'
+  }
+
+  return 'Platform'
+}
+
 function toLauncherCatalogItem(
   item: RouteLauncherSource,
   directory: LauncherDirectory,
@@ -81,9 +107,11 @@ function toLauncherCatalogItem(
   return {
     route,
     label: item.label,
+    heroTitle: item.label,
     shortLabel: item.shortLabel,
     icon: item.icon,
     description: item.description,
+    category: resolveLauncherCatalogCategory(item, route),
     color: item.color,
     maturity: item.maturity,
     directory,

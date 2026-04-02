@@ -11,11 +11,18 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
     expect(getLauncherCatalogItem('/hardware-interfaces')).toMatchObject({
+      category: 'Audio Interface',
       landingEligible: false,
       navEligible: true,
       directory: 'nav-only',
     })
+    expect(getLauncherCatalogItem('/midi-hub')).toMatchObject({
+      heroTitle: 'MIDI Hub',
+      category: 'Human Interface',
+    })
     expect(getLauncherCatalogItem('/platforms/workspace-catalog')).toMatchObject({
+      heroTitle: 'Workspace Catalog',
+      category: 'Platform',
       landingEligible: true,
       directory: 'core',
     })

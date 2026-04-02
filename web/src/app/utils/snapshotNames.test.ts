@@ -6,9 +6,61 @@ import {
 } from './snapshotNames'
 
 describe('snapshotNames', () => {
-  it('keeps the generic default snapshot helper for non-capture flows', () => {
-    expect(buildDefaultSnapshotName(1)).toBe('Snapshot1')
-    expect(buildDefaultSnapshotName(3)).toBe('Snapshot3')
+  it('builds an alphanumeric rhyming default snapshot name with a numeric date suffix', () => {
+    expect(
+      buildDefaultSnapshotName([], {
+        pair: ['Aiden', 'Jayden'],
+        date: new Date('2026-04-02T15:30:00Z'),
+      }),
+    ).toBe('AidenJayden04022026')
+    expect(
+      buildDefaultSnapshotName([], {
+        pair: ['Mia', 'Tia'],
+        date: new Date('2026-04-02T15:30:00Z'),
+      }),
+    ).toBe('MiaTia04022026')
+  })
+
+  it('skips already-taken same-day defaults before returning a new one', () => {
+    expect(
+      buildDefaultSnapshotName(
+        ['AidenJayden04022026'],
+        {
+          date: new Date('2026-04-02T15:30:00Z'),
+          pairPool: [
+            ['Aiden', 'Jayden'],
+            ['Lila', 'Mila'],
+          ],
+        },
+      ),
+    ).toBe('LilaMila04022026')
+  })
+
+  it('falls back to combining rhyming pairs when every single-pair name for the day is taken', () => {
+    expect(
+      buildDefaultSnapshotName(
+        ['AidenJayden04022026', 'LilaMila04022026'],
+        {
+          date: new Date('2026-04-02T15:30:00Z'),
+          pair: ['Aiden', 'Jayden'],
+          pairPool: [
+            ['Aiden', 'Jayden'],
+            ['Lila', 'Mila'],
+          ],
+        },
+      ),
+    ).toBe('AidenJaydenLilaMila04022026')
+  })
+
+  it('keeps generated default names valid under the snapshot naming rule', () => {
+    expect(
+      validateSnapshotName(
+        buildDefaultSnapshotName([], {
+          pair: ['Lila', 'Mila'],
+          date: new Date('2026-04-02T15:30:00Z'),
+        }),
+      ),
+    ).toBeNull()
   })
 
   it('builds a dated Rig capture base name', () => {

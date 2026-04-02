@@ -49,6 +49,18 @@
   gap: 1rem;
 }
 
+.platform-launchers__toolbar-main {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.platform-launchers__filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .platform-launchers__cell-copy {
   display: grid;
   gap: 0.45rem;
@@ -125,9 +137,17 @@
   }
 
   .platform-launchers__toolbar,
+  .platform-launchers__toolbar-main,
   .platform-launchers__cell-head,
   .platform-launchers__configure-head {
-    flex-direction: column;
     align-items: start;
+  }
+
+  .platform-launchers__toolbar {
+    flex-direction: column;
+  }
+
+  .platform-launchers__toolbar-main {
+    width: 100%;
   }
 }

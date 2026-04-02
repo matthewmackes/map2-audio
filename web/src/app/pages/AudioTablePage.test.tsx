@@ -24,6 +24,48 @@ if (typeof window !== 'undefined') {
   })
 }
 
+jest.mock('reactflow', () => {
+  const React = require('react')
+
+  return {
+    __esModule: true,
+    default: ({ nodes = [], nodeTypes = {}, children }: any) => (
+      <div data-testid="reactflow-mock">
+        {nodes.map((node: any) => {
+          const NodeComponent = nodeTypes[node.type]
+          if (NodeComponent) {
+            return <NodeComponent key={node.id} id={node.id} data={node.data} selected={node.selected} />
+          }
+
+          return (
+            <div key={node.id}>
+              {node.data?.label ?? node.id}
+            </div>
+          )
+        })}
+        {children}
+      </div>
+    ),
+    ReactFlowProvider: ({ children }: any) => <div>{children}</div>,
+    Background: () => null,
+    Controls: () => null,
+    Handle: () => null,
+    useReactFlow: () => ({ fitView: jest.fn() }),
+    Position: {
+      Left: 'left',
+      Right: 'right',
+      Top: 'top',
+      Bottom: 'bottom',
+    },
+    BackgroundVariant: {
+      Dots: 'dots',
+    },
+    MarkerType: {
+      ArrowClosed: 'arrowclosed',
+    },
+  }
+})
+
 // ── Mock APIs ─────────────────────────────────────────────────────────────
 
 const mockUseIsMobile = jest.fn(() => false)
@@ -174,6 +216,7 @@ const createMockPluginOutputState = () => ({
 })
 
 const mockUsePluginOutputs = jest.fn(() => createMockPluginOutputState())
+const mockScrollIntoView = jest.fn()
 
 const mockChainsApi = {
   activate: jest.fn(async () => ({})),
@@ -297,7 +340,7 @@ jest.mock('../components/Toasts', () => ({
 }))
 
 jest.mock('../../map2/displayNames', () => ({
-  getDisplayPluginName: (_uri: string, name: string) => name || 'Unknown',
+  getDisplayPluginName: (name: string) => name || 'Unknown',
   sanitizeRestrictedDisplayText: (text: string) => text,
 }))
 
@@ -362,6 +405,19 @@ function getToolbarButton(label: string) {
   return trigger as HTMLButtonElement
 }
 
+function getPluginTableCell(name: string) {
+  const matches = screen.getAllByText(name)
+  const tableCell = matches.find((node) => node.tagName.toLowerCase() === 'td')
+  expect(tableCell).toBeTruthy()
+  return tableCell as HTMLTableCellElement
+}
+
+function getPluginTableRow(name: string) {
+  const row = getPluginTableCell(name).closest('tr')
+  expect(row).not.toBeNull()
+  return row as HTMLTableRowElement
+}
+
 // Import after mocks
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { AudioTablePage } = require('./AudioTablePage') as typeof import('./AudioTablePage')
@@ -371,13 +427,14 @@ const { AudioTablePage } = require('./AudioTablePage') as typeof import('./Audio
 beforeAll(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
-    value: jest.fn(),
+    value: mockScrollIntoView,
     writable: true,
   })
 })
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockScrollIntoView.mockReset()
   currentMidiMappingsResponse = { mappings: [], count: 0 }
   mockUseIsMobile.mockReturnValue(false)
   mockUsePluginOutputs.mockReturnValue(createMockPluginOutputState())
@@ -486,8 +543,8 @@ describe('AudioTablePage — Data Display', () => {
   it('shows plugin names in the flow table', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Reverb')).toBeInTheDocument()
-      expect(screen.getByText('Delay')).toBeInTheDocument()
+      expect(getPluginTableCell('Reverb')).toBeInTheDocument()
+      expect(getPluginTableCell('Delay')).toBeInTheDocument()
     })
   })
 
@@ -519,18 +576,16 @@ describe('AudioTablePage — Row Controls', () => {
 
   it('renders bypass checkbox in plugin rows', async () => {
     renderPage()
-    const reverbCell = await screen.findByText('Reverb')
-    const reverbRow = reverbCell.closest('tr')
-    expect(reverbRow).not.toBeNull()
-    expect(within(reverbRow as HTMLTableRowElement).getByRole('checkbox')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(within(getPluginTableRow('Reverb')).getByRole('checkbox')).toBeInTheDocument()
+    })
   })
 
   it('renders remove button in plugin rows', async () => {
     renderPage()
-    const reverbCell = await screen.findByText('Reverb')
-    const reverbRow = reverbCell.closest('tr')
-    expect(reverbRow).not.toBeNull()
-    expect(within(reverbRow as HTMLTableRowElement).getByRole('button', { name: 'Remove' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(within(getPluginTableRow('Reverb')).getByRole('button', { name: 'Remove' })).toBeInTheDocument()
+    })
   })
 
   it('enables undo when history supports it', async () => {
@@ -544,8 +599,11 @@ describe('AudioTablePage — Row Controls', () => {
   it('dispatches bypass, remove, and reorder mutations from plugin rows', async () => {
     renderPage()
 
-    const reverbRow = (await screen.findByText('Reverb')).closest('tr') as HTMLTableRowElement
-    const delayRow = screen.getByText('Delay').closest('tr') as HTMLTableRowElement
+    await waitFor(() => {
+      expect(getPluginTableRow('Reverb')).toBeInTheDocument()
+    })
+    const reverbRow = getPluginTableRow('Reverb')
+    const delayRow = getPluginTableRow('Delay')
 
     fireEvent.click(within(reverbRow).getByRole('checkbox'))
     await waitFor(() => {
@@ -686,7 +744,7 @@ describe('AudioTablePage — Real-Time Data', () => {
     })
 
     renderPage()
-    const reverbRow = (await screen.findByText('Reverb')).closest('tr') as HTMLTableRowElement
+    const reverbRow = await waitFor(() => getPluginTableRow('Reverb'))
     expect(within(reverbRow).getByText('-6.0')).toBeInTheDocument()
     expect(within(reverbRow).getByText('-12.0')).toBeInTheDocument()
   })
@@ -715,8 +773,8 @@ describe('AudioTablePage — Column Visibility', () => {
     expect(screen.getByText('Time')).toBeInTheDocument()
     expect(screen.getByText('Mode')).toBeInTheDocument()
 
-    const reverbRow = screen.getByText('Reverb').closest('tr') as HTMLTableRowElement
-    const delayRow = screen.getByText('Delay').closest('tr') as HTMLTableRowElement
+    const reverbRow = getPluginTableRow('Reverb')
+    const delayRow = getPluginTableRow('Delay')
 
     expect(within(reverbRow).getAllByRole('spinbutton')).toHaveLength(2)
     expect(within(reverbRow).queryByRole('combobox')).not.toBeInTheDocument()
@@ -726,8 +784,11 @@ describe('AudioTablePage — Column Visibility', () => {
 
   it('renders editable numeric and discrete parameter cells', async () => {
     renderPage()
-    const reverbRow = (await screen.findByText('Reverb')).closest('tr') as HTMLTableRowElement
-    const delayRow = screen.getByText('Delay').closest('tr') as HTMLTableRowElement
+    await waitFor(() => {
+      expect(getPluginTableRow('Reverb')).toBeInTheDocument()
+    })
+    const reverbRow = getPluginTableRow('Reverb')
+    const delayRow = getPluginTableRow('Delay')
 
     const reverbMixInput = within(reverbRow).getByDisplayValue('0.5') as HTMLInputElement
     expect(reverbMixInput).toHaveValue(0.5)
@@ -781,7 +842,7 @@ describe('AudioTablePage — Column Visibility', () => {
     expect(screen.getByText('Min')).toBeInTheDocument()
     expect(screen.getByText('Max')).toBeInTheDocument()
 
-    const reverbRow = screen.getByText('Reverb').closest('tr') as HTMLTableRowElement
+    const reverbRow = getPluginTableRow('Reverb')
     expect(within(reverbRow).getByDisplayValue('21')).toBeInTheDocument()
     expect(within(reverbRow).getByDisplayValue('0.1')).toBeInTheDocument()
     expect(within(reverbRow).getByDisplayValue('0.9')).toBeInTheDocument()
@@ -810,7 +871,9 @@ describe('AudioTablePage — Column Visibility', () => {
   it('commits inline parameter edits through the batched parameter API', async () => {
     renderPage()
 
-    await screen.findByText('Reverb')
+    await waitFor(() => {
+      expect(getPluginTableCell('Reverb')).toBeInTheDocument()
+    })
     const reverbMixInput = document.querySelector('#flow-0-0-param--urn-test-reverb--mix') as HTMLInputElement | null
     const delayModeSelect = document.querySelector('#flow-0-1-param--urn-test-delay--mode') as HTMLSelectElement | null
 
@@ -984,8 +1047,8 @@ describe('AudioTablePage — Toolbar', () => {
     await waitFor(() => {
       expect(screen.getByText('Filtered')).toBeInTheDocument()
       expect(screen.getByText('1 visible')).toBeInTheDocument()
-      expect(screen.getByText('Reverb')).toBeInTheDocument()
-      expect(screen.queryByText('Delay')).not.toBeInTheDocument()
+      expect(getPluginTableCell('Reverb')).toBeInTheDocument()
+      expect(screen.queryByDisplayValue('0.3')).not.toBeInTheDocument()
     })
   })
 
@@ -1131,6 +1194,55 @@ describe('AudioTablePage — Toolbar', () => {
 
     await waitFor(() => {
       expect(mockChainsApi.deactivate).toHaveBeenCalledWith(1)
+    })
+  })
+})
+
+// ============================================================================
+// 10. Live Graph Rail Tests
+// ============================================================================
+
+describe('AudioTablePage — Live Graph Rail', () => {
+  it('renders the desktop live graph rail with a closed inspector drawer by default', async () => {
+    renderPage()
+
+    expect(await screen.findByTestId('audio-table-live-graph-rail')).toBeInTheDocument()
+    expect(screen.getByTestId('audio-table-live-graph')).toBeInTheDocument()
+    expect(screen.getByTestId('audio-table-graph-inspector')).toHaveAttribute('data-state', 'closed')
+    expect(screen.getByText('Live path rail')).toBeInTheDocument()
+  })
+
+  it('opens the inspector and links the selection back to the matching table row when a graph plugin node is selected', async () => {
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Inspect Reverb' }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('audio-table-graph-inspector')).toHaveAttribute('data-state', 'open')
+      expect(screen.getByText('Bottom inspector')).toBeInTheDocument()
+      expect(screen.getByText('Table-linked')).toBeInTheDocument()
+    })
+  })
+
+  it('dispatches parameter updates from the graph inspector using the shared control path', async () => {
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Inspect Reverb' }))
+
+    const inspector = await screen.findByTestId('audio-table-graph-inspector')
+    const inspectorMixInput = within(inspector).getByDisplayValue('0.5')
+    fireEvent.input(inspectorMixInput, { target: { value: '0.7' } })
+    fireEvent.change(inspectorMixInput, { target: { value: '0.7' } })
+
+    await waitFor(() => {
+      expect(mockPluginsApi.setParameterBatched).toHaveBeenCalledWith(
+        'urn:test:reverb',
+        0,
+        0.7,
+        undefined,
+        0,
+      )
+      expect(mockPluginsApi.flushParameterBatch).toHaveBeenCalled()
     })
   })
 })

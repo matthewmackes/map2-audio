@@ -45,9 +45,13 @@ const DIRECTORY_LABELS: Record<LauncherCatalogItem['directory'], string> = {
 }
 
 const SIZE_OPTIONS: LandingTileSize[] = ['small', 'medium', 'large']
+const CATEGORY_FILTER_OPTIONS = ['all', 'Audio Interface', 'Human Interface', 'Platform'] as const
+
+type LauncherCategoryFilter = typeof CATEGORY_FILTER_OPTIONS[number]
 
 const LAUNCHER_TABLE_HEADERS = [
-  { key: 'name', header: 'Launcher' },
+  { key: 'heroTitle', header: 'Hero title' },
+  { key: 'description', header: 'Description' },
   { key: 'category', header: 'Category' },
   { key: 'status', header: 'Status' },
 ] as const
@@ -69,6 +73,18 @@ function maturityTagType(maturity: LauncherCatalogItem['maturity']): 'green' | '
   }
 }
 
+function categoryTagType(category: LauncherCatalogItem['category']): 'blue' | 'purple' | 'green' {
+  switch (category) {
+    case 'Audio Interface':
+      return 'blue'
+    case 'Human Interface':
+      return 'purple'
+    case 'Platform':
+    default:
+      return 'green'
+  }
+}
+
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
   if (fromIndex === toIndex || toIndex < 0 || toIndex >= items.length) {
     return items
@@ -85,7 +101,11 @@ function summarizeLauncherStatus(
   landingTile: LandingTilePlacement | null,
   navIndex: number,
 ): string {
-  const parts = [item.maturity, DIRECTORY_LABELS[item.directory]]
+  const parts: string[] = [item.maturity, item.category]
+
+  if (item.directory === 'nav-only') {
+    parts.push(DIRECTORY_LABELS[item.directory])
+  }
 
   if (landingTile) {
     parts.push(`Home ${landingTile.size}`)
@@ -112,6 +132,7 @@ export function PlatformLaunchersWorkspace({
   onLaunchRoute,
 }: PlatformLaunchersWorkspaceProps) {
   const [searchValue, setSearchValue] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<LauncherCategoryFilter>('all')
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [configureRoute, setConfigureRoute] = useState<string | null>(null)
   const controlsDisabled = isLoading || !settings || Boolean(pendingAction)
@@ -119,30 +140,51 @@ export function PlatformLaunchersWorkspace({
   const landingTiles = settings?.landingTiles ?? []
   const pinnedRoutes = settings?.pinnedRoutes ?? []
 
+  const categoryCounts = useMemo(() => {
+    return launcherCatalogItems.reduce<Record<LauncherCategoryFilter, number>>((counts, item) => {
+      counts.all += 1
+      counts[item.category] += 1
+      return counts
+    }, {
+      all: 0,
+      'Audio Interface': 0,
+      'Human Interface': 0,
+      Platform: 0,
+    })
+  }, [])
+
   const catalogItems = useMemo(() => {
     const needle = searchValue.trim().toLowerCase()
     const ordered = [...launcherCatalogItems].sort((left, right) => {
-      const directoryCompare = DIRECTORY_LABELS[left.directory].localeCompare(DIRECTORY_LABELS[right.directory])
-      if (directoryCompare !== 0) {
-        return directoryCompare
+      const categoryCompare = left.category.localeCompare(right.category)
+      if (categoryCompare !== 0) {
+        return categoryCompare
       }
 
-      return left.label.localeCompare(right.label)
+      return left.heroTitle.localeCompare(right.heroTitle)
     })
 
     if (!needle) {
-      return ordered
+      return ordered.filter((item) => selectedCategory === 'all' || item.category === selectedCategory)
     }
 
-    return ordered.filter((item) => [
-      item.label,
-      item.shortLabel,
-      item.description,
-      item.route,
-      DIRECTORY_LABELS[item.directory],
-      item.maturity,
-    ].filter(Boolean).join(' ').toLowerCase().includes(needle))
-  }, [searchValue])
+    return ordered.filter((item) => {
+      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
+        return false
+      }
+
+      return [
+        item.heroTitle,
+        item.label,
+        item.shortLabel,
+        item.description,
+        item.category,
+        item.route,
+        DIRECTORY_LABELS[item.directory],
+        item.maturity,
+      ].filter(Boolean).join(' ').toLowerCase().includes(needle)
+    })
+  }, [searchValue, selectedCategory])
 
   const tableRows = useMemo(() => {
     return catalogItems.map((item) => {
@@ -151,8 +193,9 @@ export function PlatformLaunchersWorkspace({
 
       return {
         id: item.route,
-        name: item.label,
-        category: DIRECTORY_LABELS[item.directory],
+        heroTitle: item.heroTitle,
+        description: item.description,
+        category: item.category,
         status: summarizeLauncherStatus(item, landingTile, navIndex),
       }
     })
@@ -204,7 +247,7 @@ export function PlatformLaunchersWorkspace({
       onClose={() => setConfigureRoute(null)}
     >
       <ModalHeader
-        title={configureItem.label}
+        title={configureItem.heroTitle}
         label="Launcher configuration"
         closeModal={() => setConfigureRoute(null)}
       />
@@ -214,14 +257,18 @@ export function PlatformLaunchersWorkspace({
             <div className="platform-launchers__configure-head">
               <div>
                 <p className="platform-launchers__eyebrow">Workspace</p>
-                <h4>{configureItem.label}</h4>
+                <h4>{configureItem.heroTitle}</h4>
               </div>
               <div className="platform-launchers__status-tags">
+                <Tag type={categoryTagType(configureItem.category)} size="sm">{configureItem.category}</Tag>
                 <Tag type="blue" size="sm">{DIRECTORY_LABELS[configureItem.directory]}</Tag>
                 <Tag type={maturityTagType(configureItem.maturity)} size="sm">{configureItem.maturity}</Tag>
               </div>
             </div>
-            <p>{configureItem.description}</p>
+            <div className="platform-launchers__configure-section">
+              <span className="platform-launchers__configure-label">Description</span>
+              <p>{configureItem.description}</p>
+            </div>
             <code>{configureItem.route}</code>
           </section>
 
@@ -431,8 +478,8 @@ export function PlatformLaunchersWorkspace({
           <p className="platform-launchers__eyebrow">Workspace Catalog</p>
           <h3>Launcher organizer</h3>
           <p>
-            Use one Carbon-style table to browse every launcher, open routes, and configure Home or nav promotion.
-            Launch opens each workspace directly in the current shell.
+            Use one Carbon-style table to browse every launcher by hero title, description, and operator category,
+            then open routes or configure Home and nav promotion from the same workspace.
           </p>
         </div>
         <div className="platform-launchers__summary-tags">
@@ -447,20 +494,42 @@ export function PlatformLaunchersWorkspace({
           <TableContainer
             {...getTableContainerProps()}
             title="Launcher catalog"
-            description="List route-backed launchers, then launch or configure each workspace from one native section."
+            description="List route-backed launchers with hero title, description, category, and placement state from one native section."
             className="platform-launchers__table-container"
           >
             <TableToolbar {...getToolbarProps()}>
               <TableToolbarContent className="platform-launchers__toolbar">
-                <TableToolbarSearch
-                  persistent
-                  value={searchValue}
-                  placeholder="Search launchers"
-                  onChange={(_event, value) => setSearchValue(value ?? '')}
-                />
+                <div className="platform-launchers__toolbar-main">
+                  <TableToolbarSearch
+                    persistent
+                    value={searchValue}
+                    placeholder="Search launchers"
+                    onChange={(_event, value) => setSearchValue(value ?? '')}
+                  />
+                  <div className="platform-launchers__filter-group" role="group" aria-label="Filter launchers by category">
+                    {CATEGORY_FILTER_OPTIONS.map((category) => {
+                      const selected = selectedCategory === category
+                      const label = category === 'all' ? 'All' : category
+
+                      return (
+                        <Button
+                          key={category}
+                          size="sm"
+                          kind={selected ? 'primary' : 'tertiary'}
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          {`${label} (${categoryCounts[category]})`}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
                 <div className="platform-launchers__toolbar-tags">
                   <Tag type="cool-gray">{catalogItems.length} visible</Tag>
-                  <Tag type="cool-gray">Configure per launcher</Tag>
+                  <Tag type="cool-gray">{launcherCatalogItems.length} total</Tag>
+                  <Tag type={selectedCategory === 'all' ? 'cool-gray' : categoryTagType(selectedCategory)}>
+                    {selectedCategory === 'all' ? 'All categories' : selectedCategory}
+                  </Tag>
                 </div>
               </TableToolbarContent>
             </TableToolbar>
@@ -485,7 +554,7 @@ export function PlatformLaunchersWorkspace({
                     <TableCell colSpan={headers.length + 1}>
                       <div className="platform-launchers__empty">
                         <strong>No launchers match that filter.</strong>
-                        <p>Clear the search to restore the full launcher catalog.</p>
+                        <p>Clear the search or choose another category to restore the launcher catalog.</p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -502,16 +571,25 @@ export function PlatformLaunchersWorkspace({
                   return (
                     <TableRow key={row.id} {...rowProps}>
                       {row.cells.map((cell) => {
-                        if (cell.info.header === 'name') {
+                        if (cell.info.header === 'heroTitle') {
                           return (
                             <TableCell key={cell.id}>
                               <div className="platform-launchers__cell-copy">
                                 <div className="platform-launchers__cell-head">
-                                  <strong>{item.label}</strong>
+                                  <strong>{item.heroTitle}</strong>
                                   <Tag type={maturityTagType(item.maturity)} size="sm">{item.maturity}</Tag>
                                 </div>
-                                <p>{item.description}</p>
                                 <code>{item.route}</code>
+                              </div>
+                            </TableCell>
+                          )
+                        }
+
+                        if (cell.info.header === 'description') {
+                          return (
+                            <TableCell key={cell.id}>
+                              <div className="platform-launchers__cell-copy">
+                                <p>{item.description}</p>
                               </div>
                             </TableCell>
                           )
@@ -521,7 +599,7 @@ export function PlatformLaunchersWorkspace({
                           return (
                             <TableCell key={cell.id}>
                               <div className="platform-launchers__status-tags">
-                                <Tag type="blue" size="sm">{DIRECTORY_LABELS[item.directory]}</Tag>
+                                <Tag type={categoryTagType(item.category)} size="sm">{item.category}</Tag>
                                 {!item.landingEligible ? <Tag type="purple" size="sm">Nav only</Tag> : null}
                               </div>
                             </TableCell>

@@ -17,9 +17,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import random
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import QueuePool
 
+from app.database import RetryingAsyncSession
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
 from app.exceptions import DatabaseConnectionException, DatabaseException
@@ -100,7 +101,7 @@ class DatabasePoolManager(Singleton):
             self._session_maker = async_sessionmaker(
                 self._engine,
                 expire_on_commit=True,
-                class_=AsyncSession,
+                class_=RetryingAsyncSession,
             )
             
             self._initialized = True

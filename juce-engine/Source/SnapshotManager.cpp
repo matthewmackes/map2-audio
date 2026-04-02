@@ -9,13 +9,14 @@
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
+#include <utility>
 
 namespace fs = std::filesystem;
 
 namespace map2 {
 
-SnapshotManager::SnapshotManager(JucePluginHost& host)
-    : host_(host) {
+SnapshotManager::SnapshotManager(JucePluginHost& host, ParameterSetter parameterSetter)
+    : host_(host), parameterSetter_(std::move(parameterSetter)) {
     // Initialize snapshot slots
     for (int i = 0; i < MAX_SNAPSHOTS; i++) {
         snapshots_[i].id = i;
@@ -62,7 +63,11 @@ bool SnapshotManager::loadSnapshot(int slotId) {
     // Restore plugin parameters
     for (const auto& [instanceId, params] : snapshot.pluginStates) {
         for (const auto& [paramName, value] : params) {
-            host_.setParameterByName(instanceId, paramName, value);
+            if (parameterSetter_) {
+                parameterSetter_(instanceId, paramName, value);
+            } else {
+                host_.setParameterByName(instanceId, paramName, value);
+            }
         }
     }
     
@@ -130,7 +135,11 @@ bool SnapshotManager::restoreChainState(const ChainState& state, std::vector<Ins
                 if (plugin.id == id && plugin.uri == item.uri) {
                     // Restore parameters
                     for (const auto& [name, value] : item.parameters) {
-                        host_.setParameterByName(id, name, value);
+                        if (parameterSetter_) {
+                            parameterSetter_(id, name, value);
+                        } else {
+                            host_.setParameterByName(id, name, value);
+                        }
                     }
                     host_.setBypass(id, item.bypassed);
                     break;

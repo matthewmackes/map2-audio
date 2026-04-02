@@ -112,6 +112,7 @@ export function SnapshotModalContent({
   })
 
   const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
+  const [wizardInitialName, setWizardInitialName] = useState<string>('')
   const snapshotCompareDetailQuery = useQuery<SnapshotDetail>({
     queryKey: ['snapshots', 'compare-detail', snapshotCompareTargetId],
     queryFn: async () => snapshotsApi.get(snapshotCompareTargetId as number),
@@ -406,8 +407,9 @@ export function SnapshotModalContent({
   })
 
   const openSnapshotCreateWizard = useCallback(() => {
+    setWizardInitialName(buildDefaultSnapshotName(savedSnapshots.map((snapshot) => snapshot.name)))
     setContentView('wizard')
-  }, [])
+  }, [savedSnapshots])
 
   const openSnapshotRenameModal = useCallback((snapshot: SnapshotSummary) => {
     setSnapshotPendingRename(snapshot)
@@ -777,7 +779,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
     return (
       <SnapshotNewWizard
         existingSnapshotNames={savedSnapshots.map((snapshot) => snapshot.name)}
-        initialName={buildDefaultSnapshotName(savedSnapshots.length + 1)}
+        initialName={wizardInitialName}
         isSubmitting={createFlowSnapshotMutation.isPending}
         onCancel={() => setContentView(entryPoint ? 'entry' : 'library')}
         onSubmit={async (values) => {

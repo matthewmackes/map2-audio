@@ -844,6 +844,147 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
     asyncio.run(_run())
 
 
+def test_activate_snapshot_reuses_runtime_chains_for_same_topology(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    applied_payloads: list[dict[str, object]] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(snapshot_data):
+        applied_payloads.append(json.loads(json.dumps(snapshot_data)))
+        return 1, 1
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            current_live = await service.create_snapshot(
+                name="CurrentLive",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Clean",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Drive Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.25},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated_live = await service.activate_snapshot(current_live["id"])
+            assert activated_live is not None
+            assert activated_live["topology_reused"] is False
+            runtime_chain_id = activated_live["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"]
+            assert runtime_chain_id is not None
+
+            next_snapshot = await service.create_snapshot(
+                name="NextLive",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-b",
+                            "label": "Lead",
+                            "color": "#fa4d56",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": True,
+                                    "parameters": {"gain": 0.85},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-b",
+                        "blend_positions": {"channel-b": 100.0},
+                        "series_order": ["channel-b"],
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            async def _unexpected_clear():
+                raise AssertionError("same-topology activation should not clear runtime chains")
+
+            async def _unexpected_materialize(_snapshot, _detail):
+                raise AssertionError("same-topology activation should not materialize new runtime chains")
+
+            monkeypatch.setattr(service, "_clear_materialized_runtime_chains", _unexpected_clear)
+            monkeypatch.setattr(service, "_materialize_live_state", _unexpected_materialize)
+
+            activated_next = await service.activate_snapshot(next_snapshot["id"])
+            assert activated_next is not None
+            assert activated_next["topology_reused"] is True
+            assert activated_next["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] == runtime_chain_id
+            assert activated_next["snapshot_data"]["live_state"]["paths"][0]["path_id"] == "channel-b"
+            assert activated_next["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_name"] == "Lead Chain (Lead)"
+
+            result = await session.execute(select(database_module.Chain).filter(database_module.Chain.id == runtime_chain_id))
+            runtime_chain = result.scalar_one()
+            runtime_config = ChainService._parse_chain_config(runtime_chain.config)
+            assert runtime_config["snapshot_id"] == next_snapshot["id"]
+            assert runtime_config["path_id"] == "channel-b"
+            assert runtime_config["snapshot_chain_id"] == activated_next["snapshot_data"]["paths"][0]["snapshot_chain_id"]
+            assert runtime_chain.name == "Lead Chain (Lead)"
+
+            runtime_chain_detail = await ChainService(session).get_chain(runtime_chain_id)
+            assert runtime_chain_detail is not None
+            assert runtime_chain_detail["plugins"][0]["uri"] == "urn:test:plugin"
+            assert runtime_chain_detail["plugins"][0]["bypassed"] is True
+
+            assert applied_payloads[-1]["flowSlots"][0]["label"] == "Lead"
+            applied_plugin = applied_payloads[-1]["chains"][str(activated_next["snapshot_data"]["paths"][0]["snapshot_chain_id"])]["plugins"][0]
+            assert applied_plugin["parameters"] == {"gain": 0.85}
+            assert applied_plugin["bypass"] is True
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_activation_rejects_missing_runtime_channels(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

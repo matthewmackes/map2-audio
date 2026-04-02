@@ -64,9 +64,15 @@ describe('PlatformLaunchersWorkspace', () => {
 
     expect(window.open).toHaveBeenCalledWith('/midi-hub', '_blank', 'noopener,noreferrer')
     expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Hero title' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
 
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText('Human Interface')).toBeInTheDocument()
+    expect(within(dialog).getByText('Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration.')).toBeInTheDocument()
     expect(screen.getByText('Landing tile')).toBeInTheDocument()
     expect(within(container).queryByText('Landing tile')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
@@ -114,6 +120,24 @@ describe('PlatformLaunchersWorkspace', () => {
     }))
 
     expect(screen.getByRole('button', { name: 'Nav full' })).toBeDisabled()
+  })
+
+  it('filters launcher rows by category before opening a route', () => {
+    render(
+      <PlatformLaunchersWorkspace
+        settings={buildSettings()}
+        isLoading={false}
+        updateSettings={jest.fn().mockResolvedValue(undefined)}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Audio Interface \(/ }))
+
+    expect(screen.queryByRole('button', { name: 'Launch MIDI Hub' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Launch Audio Interfaces' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Launch Edirol UA-1000' })).toBeInTheDocument()
   })
 
   it('keeps Platforms locked on Home and first in landing order', async () => {

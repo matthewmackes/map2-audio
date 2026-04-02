@@ -130,6 +130,11 @@ public:
      */
     std::vector<SidechainConnection> getSidechainConnections() const;
 
+    /**
+     * Remove a detached plugin node after the processor has been taken out of topology.
+     */
+    void removeDetachedPluginNode(InstanceId instanceId);
+
     // ========================================
     // Parallel Processing (A/B Routing)
     // ========================================
@@ -173,6 +178,12 @@ public:
      * Remove a plugin from a parallel branch
      */
     bool removeFromParallelBranch(int groupId, int branchIndex, InstanceId pluginId);
+
+    /**
+     * Batch topology mutations and rebuild graph connections once on completion.
+     */
+    void beginTopologyUpdate();
+    void endTopologyUpdate();
 
     /**
      * Set A/B blend for a parallel group (0.0 = all A, 1.0 = all B)
@@ -307,6 +318,8 @@ private:
     std::map<int, std::unique_ptr<ParallelMixerProcessor>> parallelMixers_;
     std::map<int, juce::AudioProcessorGraph::NodeID> parallelMixerNodes_;
     int nextParallelGroupId_ = 1;
+    int topologyUpdateDepth_ = 0;
+    bool topologyDirty_ = false;
 
     // Metering
     VuMeter inputMeter_;
@@ -320,6 +333,7 @@ private:
 
     // Helper methods
     void rebuildConnections();
+    void markTopologyDirtyAndMaybeRebuildLocked();
     void createIONodes();
     juce::AudioProcessorGraph::NodeID addPluginNode(InstanceId instanceId);
     void removePluginNode(InstanceId instanceId);

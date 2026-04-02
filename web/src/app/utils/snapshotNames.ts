@@ -1,11 +1,106 @@
+import { faker } from '@faker-js/faker'
+
 const SNAPSHOT_NAME_PATTERN = /^[A-Za-z0-9]+$/
+const RHYMING_NAME_PAIRS = [
+  ['Aiden', 'Jayden'],
+  ['Ari', 'Mari'],
+  ['Cara', 'Sara'],
+  ['Cora', 'Nora'],
+  ['Ella', 'Stella'],
+  ['Kira', 'Mira'],
+  ['Lena', 'Xena'],
+  ['Lila', 'Mila'],
+  ['Lily', 'Millie'],
+  ['Mia', 'Tia'],
+  ['Nina', 'Tina'],
+  ['Riley', 'Miley'],
+] as const
+
+type RhymingNamePair = (typeof RHYMING_NAME_PAIRS)[number]
+
+type DefaultSnapshotNameOptions = {
+  date?: Date
+  pair?: RhymingNamePair
+  pairPool?: readonly RhymingNamePair[]
+}
 
 export function normalizeSnapshotName(value: string): string {
   return value.trim()
 }
 
-export function buildDefaultSnapshotName(index: number): string {
-  return `Snapshot${Math.max(1, index)}`
+function sanitizeSnapshotNameSegment(value: string): string {
+  return value.replace(/[^A-Za-z0-9]/g, '')
+}
+
+function buildNumericDateSuffix(date: Date): string {
+  const month = padDateSegment(date.getMonth() + 1)
+  const day = padDateSegment(date.getDate())
+  const year = date.getFullYear()
+  return `${month}${day}${year}`
+}
+
+function buildRhymingNameStem(pair: RhymingNamePair): string {
+  return sanitizeSnapshotNameSegment(`${pair[0]}${pair[1]}`) || 'Snapshot'
+}
+
+function buildOrderedRhymingNamePairs(options: DefaultSnapshotNameOptions): RhymingNamePair[] {
+  const source = [...(options.pairPool ?? RHYMING_NAME_PAIRS)]
+  const preferredPair = options.pair
+
+  if (!preferredPair) {
+    return faker.helpers.shuffle(source)
+  }
+
+  return [
+    preferredPair,
+    ...source.filter((pair) => pair[0] !== preferredPair[0] || pair[1] !== preferredPair[1]),
+  ]
+}
+
+export function buildDefaultSnapshotName(
+  existingSnapshotNames: string[] = [],
+  options: DefaultSnapshotNameOptions = {},
+): string {
+  const takenNames = new Set(
+    existingSnapshotNames
+      .map((entry) => normalizeSnapshotName(entry).toLowerCase())
+      .filter(Boolean),
+  )
+  const dateSuffix = buildNumericDateSuffix(options.date ?? new Date())
+  const orderedPairs = buildOrderedRhymingNamePairs(options)
+
+  for (const pair of orderedPairs) {
+    const candidate = `${buildRhymingNameStem(pair)}${dateSuffix}`
+    if (!takenNames.has(candidate.toLowerCase())) {
+      return candidate
+    }
+  }
+
+  for (const primaryPair of orderedPairs) {
+    for (const secondaryPair of orderedPairs) {
+      if (primaryPair[0] === secondaryPair[0] && primaryPair[1] === secondaryPair[1]) {
+        continue
+      }
+      const candidate = `${buildRhymingNameStem(primaryPair)}${buildRhymingNameStem(secondaryPair)}${dateSuffix}`
+      if (!takenNames.has(candidate.toLowerCase())) {
+        return candidate
+      }
+    }
+  }
+
+  let attempt = 0
+  while (attempt < 256) {
+    const primaryPair = faker.helpers.arrayElement(orderedPairs)
+    const secondaryPair = faker.helpers.arrayElement(orderedPairs)
+    const nonce = sanitizeSnapshotNameSegment(faker.string.alphanumeric({ length: 4, casing: 'upper' }))
+    const candidate = `${buildRhymingNameStem(primaryPair)}${buildRhymingNameStem(secondaryPair)}${nonce}${dateSuffix}`
+    if (!takenNames.has(candidate.toLowerCase())) {
+      return candidate
+    }
+    attempt += 1
+  }
+
+  return `Snapshot${sanitizeSnapshotNameSegment(faker.string.alphanumeric({ length: 8, casing: 'upper' }))}${dateSuffix}`
 }
 
 function padDateSegment(value: number): string {

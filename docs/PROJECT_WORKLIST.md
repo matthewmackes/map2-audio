@@ -6,7 +6,237 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 12:24 EDT - Completed T685 regression hardening so Home and launcher settings now always inject/prioritize `Platforms` as slot #1 even when pinning new launchers, preventing overwrite/removal drift; T684, T683, and T682 remain complete; T592 remains blocked pending larger transaction-replay SQLite commit-ownership work.
+Last updated: 2026-04-02 18:37 EDT - Completed T689 root-cause diagnosis for the JUCE 48kHz/64 live-rewire soak, landed graph/harness isolation fixes, and recorded the staged-graph follow-up needed to unblock T614 honestly.
+
+ID: T688
+Status: [✓] Done
+Title: Add Workspace Catalog category filters for launcher browsing
+Description:
+- Goal / acceptance criteria: Extend `/platforms/workspace-catalog` so operators can filter launcher rows by the normalized categories `Audio Interface`, `Human Interface`, and `Platform` in addition to free-text search. Keep launch/configure flows unchanged, surface visible/total counts clearly, and add focused regressions for the filter behavior.
+- Why it matters: T687 introduced the category model, but the current organizer only displays it. Operators still need one-click browsing by category instead of manually searching or scanning the full table.
+- Dependencies: T687 launcher metadata and existing `PlatformLaunchersWorkspace` table/search surface.
+- Estimated effort: Low
+- Required outputs: category-filter UI, filtered table behavior, focused tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 17:43 EDT - Codex
+- Completion notes:
+  - Added explicit category filter controls to `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, keeping free-text search and launch/configure actions intact while allowing one-click narrowing to `Audio Interface`, `Human Interface`, or `Platform`.
+  - Added toolbar count tags for visible vs total launchers plus the active category, and updated the empty-state copy so the recovery path mentions both search and category filters.
+  - Updated `web/src/app/components/Platform/PlatformLaunchersWorkspace.css` for the new filter-group layout and expanded `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` with a category-filter regression.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+- Licensing review:
+  - Touched frontend/css/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T687
+Status: [✓] Done
+Title: Expand Workspace Catalog listings with hero-title, description, and operator category metadata
+Description:
+- Goal / acceptance criteria: Update the routed Workspace Catalog at `/platforms/workspace-catalog` so every launcher listing exposes a hero title, description, and a normalized category limited to `Audio Interface`, `Human Interface`, or `Platform`. Keep launcher placement controls intact, surface the new fields in the organizer UI, and add focused regression coverage for the new metadata.
+- Why it matters: The current launcher organizer exposes route labels and internal directory groupings, but it does not present the operator-facing content model the user requested. The catalog needs clearer listing semantics so operators can scan what each launcher is for without inferring meaning from implementation-oriented group names.
+- Dependencies: Existing launcher catalog data/types, `PlatformLaunchersWorkspace`, and focused frontend tests.
+- Estimated effort: Low
+- Required outputs: launcher-catalog metadata update, workspace-catalog UI update, focused tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 17:34 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/data/launcherCatalog.tsx` so every launcher now carries explicit `heroTitle` and normalized `category` metadata, with category resolution constrained to `Audio Interface`, `Human Interface`, or `Platform`.
+  - Updated `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` so the routed Workspace Catalog renders separate `Hero title`, `Description`, `Category`, and `Status` columns while preserving launch/configure behavior and placement controls.
+  - Expanded focused regressions in `web/src/app/data/launcherCatalog.test.tsx` and `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` to lock the new metadata and organizer presentation.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+- Licensing review:
+  - Touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T686
+Status: [✓] Done
+Title: Deliver Audio Table live-path React Flow rail, advanced Carbon inspector, and full deployment
+Description:
+- Goal / acceptance criteria: Extend `/audio-table` so desktop operators get an always-visible right-side React Flow overview that uses Carbon styling and renders only backend-confirmed live paths. The graph must include path inputs, plugin blocks, outputs, and the final routing/merge stage; remain read-only; scroll to and visually identify the matching table row when a plugin node is selected; and open a bottom-drawer Carbon inspector with near-parity advanced controls in a utilitarian table-driven interface. The left-side Audio Table remains the authoritative advanced edit surface. Full project completion includes focused regression coverage, `npm --prefix web run typecheck`, `npm --prefix web run build`, production restart on port `3000`, smoke validation of the deployed page, and documented rollback steps if the deployment fails.
+- Why it matters: Audio Table is already a dense advanced editor, but it does not provide a persistent live topology view. Operators need immediate visual awareness of the actual live runtime paths without giving up the detailed Carbon table workflow.
+- Dependencies: Existing `AudioTablePage` and tests, installed `reactflow`, `snapshotEditorLiveChains` runtime-authority helpers, current frontend deploy workflow on port `3000`, and any existing plugin-parameter / MIDI editing helpers that can be shared between table and inspector surfaces.
+- Estimated effort: High
+- Required outputs: live-path graph transform/helpers; Carbon React Flow rail component; split-layout page integration; graph-selection-to-row anchoring and highlight behavior; bottom-drawer advanced inspector; shared editor extraction to keep table and inspector behavior aligned; honest routing-status treatment when runtime truth is unavailable; focused tests; deployment validation evidence; rollback notes.
+Subtasks:
+  - T686-subA: Define the runtime-authoritative live graph contract and transform Audio Table data into graph nodes/edges
+  - T686-subB: Build the Carbon-styled React Flow rail with Audio Table-specific node and edge renderers
+  - T686-subC: Integrate the permanent desktop split layout into `AudioTablePage` without weakening the table editor
+  - T686-subD: Add graph-node selection, row anchor lookup, scroll/highlight behavior, and graph/table synchronization
+  - T686-subE: Build the bottom-drawer Carbon inspector with advanced controls and graph-driven open/close state
+  - T686-subF: Extract shared advanced editor primitives so the table and inspector stay behaviorally identical
+  - T686-subG: Represent routing/merge state honestly, including degraded or workspace-derived labels where runtime truth is not available
+  - T686-subH: Add focused graph, inspector, and interaction regression coverage plus transform tests
+  - T686-subI: Run build validation, deploy to the production web server on port `3000`, smoke-test the deployed route, and capture rollback instructions
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added shared Audio Table editor primitives in `web/src/app/components/AudioTable/audioTablePluginPrimitives.tsx` so the table rows and graph inspector reuse the same parameter, MIDI, position, and targeting logic.
+  - Added the runtime-authoritative live-path graph transform in `web/src/app/components/AudioTable/audioTableLiveGraph.ts`, including live-only filtering, duplicate-safe plugin targeting, and explicit workspace-derived routing-stage labeling where backend runtime truth is unavailable.
+  - Added the Carbon-styled right rail and bottom inspector in `web/src/app/components/AudioTable/AudioTableLiveGraphRail.tsx`, then integrated the permanent desktop split layout, graph/table selection sync, row anchoring, and highlight behavior into `web/src/app/pages/AudioTablePage.tsx`.
+  - Expanded focused regressions in `web/src/app/pages/AudioTablePage.test.tsx` and added `web/src/app/components/AudioTable/audioTableLiveGraph.test.ts` to lock the new graph, inspector, and duplicate-instance behaviors.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/AudioTable/audioTableLiveGraph.test.ts web/src/app/pages/AudioTablePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restarted the production dist server with `nohup /usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000 > /tmp/preview.log 2>&1 &`.
+  - `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/` -> `200`
+  - `curl -s http://127.0.0.1:3000/audio-table | head -40` -> served the built HTML shell for the deployed route
+  - `curl -s http://127.0.0.1:3000/ | grep -o 'index-[^"]*\.js' | head -1` -> `index-Cl41CFFu.js`
+  - `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/assets/index-Cl41CFFu.js` -> `200`
+- Rollback:
+  - If the deployed Audio Table regresses, restore the touched frontend files from the last known-good commit: `git checkout <known-good-commit> -- web/src/app/pages/AudioTablePage.tsx web/src/app/pages/AudioTablePage.test.tsx web/src/app/components/AudioTable/audioTablePluginPrimitives.tsx web/src/app/components/AudioTable/audioTableLiveGraph.ts web/src/app/components/AudioTable/AudioTableLiveGraphRail.tsx web/src/app/components/AudioTable/audioTableLiveGraph.test.ts`
+  - Rebuild the production bundle with `npm --prefix web run build`
+  - Restart port `3000` with `pkill -f "serve_web_dist.mjs" 2>/dev/null` followed by `nohup /usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000 > /tmp/preview.log 2>&1 &`
+
+ID: T686-subA
+Status: [✓] Done
+Title: Define the runtime-authoritative live graph contract and transform Audio Table data into graph nodes and edges
+Description:
+- Goal / acceptance criteria: Add one canonical transform that derives the Audio Table graph strictly from backend-confirmed live path data rather than local workspace intent. It must emit stable node/edge records for path inputs, plugin blocks, outputs, and routing/merge stages, preserve plugin identity and row-target metadata, and exclude non-live paths entirely.
+- Why it matters: The graph cannot become another speculative state surface; it must respect the existing repo rule that realtime/runtime state is the authority for what is actually live.
+- Dependencies: Existing `buildSnapshotEditorLiveChainProjection`, Audio Table flow-slot state, runtime chain queries, and plugin identity fields.
+- Estimated effort: Medium
+- Required outputs: pure graph transform/helper module, stable graph entity types, row-anchor metadata contract, targeted tests for live-only filtering and identity mapping.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/AudioTable/audioTableLiveGraph.ts` as the canonical live-graph transform so Audio Table graph nodes and edges are derived only from backend-confirmed live path data and preserve duplicate-safe plugin targeting metadata.
+
+ID: T686-subB
+Status: [✓] Done
+Title: Build the Carbon-styled React Flow rail with Audio Table-specific node and edge renderers
+Description:
+- Goal / acceptance criteria: Create the read-only right-rail React Flow surface and custom node/edge styling for live path visualization. The rail must use Carbon color/layer tokens, support fit/zoom controls, show path and status cues clearly, and avoid MUI-specific graph styling patterns.
+- Why it matters: The graph must feel native to the current Carbon-driven page rather than reusing older graph surfaces that bring a different design language.
+- Dependencies: T686-subA, existing React Flow installation, Carbon tokens/components, and any reusable dagre layout helpers.
+- Estimated effort: Medium
+- Required outputs: right-rail graph component, Audio Table node/edge renderer components, layout helper wiring, Carbon token-based styling, empty/degraded state rendering.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/AudioTable/AudioTableLiveGraphRail.tsx` with Carbon-styled live path nodes, empty/degraded states, fit-view controls, and the graph shell used by the desktop Audio Table rail.
+
+ID: T686-subC
+Status: [✓] Done
+Title: Integrate the permanent desktop split layout into `AudioTablePage` without weakening the table editor
+Description:
+- Goal / acceptance criteria: Refactor the page so the left side remains the primary advanced DataTable workspace while the right side permanently hosts the graph rail. The layout must preserve current toolbar and table functionality, keep the graph visible at all times on desktop, and maintain the current mobile/tablet guardrails unless explicitly expanded later.
+- Why it matters: The graph is useful only if it coexists cleanly with the dense editor; the tables must not become cramped or secondary.
+- Dependencies: T686-subB and the existing `AudioTablePage` toolbar, flow sections, and cluster section layout.
+- Estimated effort: Medium
+- Required outputs: desktop split-shell layout, sizing rules/min widths, updated page composition, and any necessary Carbon `Layer` usage for the rail and nested surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Refactored `web/src/app/pages/AudioTablePage.tsx` into a permanent desktop split layout that keeps the existing table/editor workflow on the left while pinning the live graph rail on the right.
+
+ID: T686-subD
+Status: [✓] Done
+Title: Add graph-node selection, row anchor lookup, scroll/highlight behavior, and graph/table synchronization
+Description:
+- Goal / acceptance criteria: Clicking a plugin node in the graph must identify the matching table row, scroll it into view in the left editor region, and apply a clear temporary highlight while keeping the graph read-only. Selection must remain stable across refetches and avoid breaking when multiple plugins share the same URI.
+- Why it matters: The graph becomes operationally useful only if it can direct the operator back to the exact detailed edit row without ambiguity.
+- Dependencies: T686-subA, T686-subC, stable plugin identity keys, and accessible row anchor semantics in the DataTable rendering path.
+- Estimated effort: Medium
+- Required outputs: graph-selection state, row-anchor lookup helper, scroll/highlight behavior, duplicate-safe plugin targeting, focused interaction tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added duplicate-safe graph selection keys, deterministic row anchor IDs, graph-to-table synchronization, and row highlight/visibility handling so selecting a live graph plugin targets the matching table row.
+
+ID: T686-subE
+Status: [✓] Done
+Title: Build the bottom-drawer Carbon inspector with advanced controls and graph-driven open/close state
+Description:
+- Goal / acceptance criteria: Add a bottom drawer beneath the graph that opens when a graph node is selected and presents a richer Carbon inspector immediately, not a placeholder. The drawer must support advanced, utilitarian control surfaces for the selected plugin, including overview/status, actions, parameters, MIDI mapping controls, and any other high-value detailed controls required to reach near-parity with the table editing experience.
+- Why it matters: The requested graph interaction model explicitly includes opening a richer details/editor surface from graph selection, so the right rail needs an operational inspector rather than passive metadata.
+- Dependencies: T686-subC, T686-subD, existing Audio Table mutation flows, and Carbon components suited for dense forms/tables/drawer content.
+- Estimated effort: High
+- Required outputs: bottom-drawer component, selected-plugin inspector state model, advanced control layout, graph-driven open/close wiring, focused UI tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added the bottom-drawer inspector beneath the live graph rail with overview, actions, parameter controls, and MIDI mapping controls driven directly from graph selection state.
+
+ID: T686-subF
+Status: [✓] Done
+Title: Extract shared advanced editor primitives so the table and inspector stay behaviorally identical
+Description:
+- Goal / acceptance criteria: Refactor Audio Table editing controls so parameter editors, MIDI mapping editors, status badges, and destructive actions can be reused by both the table rows and the new bottom drawer without behavior drift. Existing table behavior must remain intact while avoiding duplicated mutation logic.
+- Why it matters: A second advanced editor surface will become fragile quickly if it forks the row-level editing implementation instead of sharing it.
+- Dependencies: T686-subE and the current inline renderers inside `AudioTablePage`.
+- Estimated effort: High
+- Required outputs: shared editor helpers/components, reduced duplication inside `AudioTablePage`, parity coverage between row and drawer editing behavior.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Extracted shared editor fields and helper utilities into `web/src/app/components/AudioTable/audioTablePluginPrimitives.tsx` so the table and drawer mutate parameters/MIDI state through the same code paths.
+
+ID: T686-subG
+Status: [✓] Done
+Title: Represent routing and merge state honestly, including degraded or workspace-derived labels where runtime truth is not available
+Description:
+- Goal / acceptance criteria: Ensure the graph’s final routing/merge stage communicates truthfully. If the backend/runtime provides authoritative routing state, use it; otherwise render the merge/routing stage with explicit degraded or workspace-derived labeling rather than presenting local editor state as confirmed live fact.
+- Why it matters: The repo’s standing live-state rule forbids the UI from overstating runtime truth from cached or intended state, and this graph includes a routing-stage visualization that could otherwise imply false certainty.
+- Dependencies: T686-subA and confirmation of currently available runtime routing signals.
+- Estimated effort: Medium
+- Required outputs: truthful routing-state treatment in the graph and inspector, clear labels/tags/copy for degraded/workspace-derived conditions, focused tests covering mismatch conditions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - The live graph transform now renders the final routing stage with explicit workspace-derived labeling instead of overstating routing truth that the runtime payload does not currently expose.
+
+ID: T686-subH
+Status: [✓] Done
+Title: Add focused graph, inspector, and interaction regression coverage plus transform tests
+Description:
+- Goal / acceptance criteria: Cover the new live graph transform, graph render states, node selection behavior, row scroll/highlight behavior, drawer opening, and advanced control interactions that are newly exposed through the inspector. Tests must prove that non-live paths are excluded and duplicate-safe plugin selection works.
+- Why it matters: This change crosses layout, runtime truth, table/editor behavior, and a second control surface; without targeted coverage it is likely to regress.
+- Dependencies: T686-subA through T686-subG.
+- Estimated effort: Medium
+- Required outputs: focused Jest tests for `AudioTablePage` and helper modules, any needed React Flow mocks/test utilities, passing frontend validation commands.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Added focused transform coverage in `web/src/app/components/AudioTable/audioTableLiveGraph.test.ts` and expanded `web/src/app/pages/AudioTablePage.test.tsx` with React Flow mocks plus graph-selection and inspector-edit regressions.
+
+ID: T686-subI
+Status: [✓] Done
+Title: Run build validation, deploy to the production web server on port `3000`, smoke-test the deployed route, and capture rollback instructions
+Description:
+- Goal / acceptance criteria: Complete the work with deployment-grade validation. Run the focused Audio Table tests, `npm --prefix web run typecheck`, and `npm --prefix web run build`; restart the production web server on port `3000` using the repo’s documented pattern; smoke-test `/audio-table`; and record exact rollback steps in the worklist notes if the deployment reveals regressions.
+- Why it matters: The user asked for the full project from planning through deployment, not a local-only implementation with validation gaps.
+- Dependencies: T686-subH and the existing port-`3000` production serve/restart workflow.
+- Estimated effort: Medium
+- Required outputs: validation command results, deployment/restart evidence, live route smoke-check evidence, rollback procedure notes suitable for cold-start handoff.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 15:58 EDT - Codex
+- Completion notes:
+  - Reused the passing focused Audio Table tests, `npm --prefix web run typecheck`, and `npm --prefix web run build` results from the implementation pass, then restarted the production server on port `3000` with the repo’s documented `serve_web_dist.mjs` workflow.
+  - Verified the deployed route by confirming `/` returned `200`, `/audio-table` served the built HTML shell, the live asset hash was `index-Cl41CFFu.js`, and that asset also returned `200`.
+- Validation:
+  - `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/` -> `200`
+  - `curl -s http://127.0.0.1:3000/audio-table | head -40` -> PASS (deployed route shell served)
+  - `curl -s http://127.0.0.1:3000/ | grep -o 'index-[^"]*\.js' | head -1` -> `index-Cl41CFFu.js`
+  - `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/assets/index-Cl41CFFu.js` -> `200`
+- Rollback:
+  - `git checkout <known-good-commit> -- web/src/app/pages/AudioTablePage.tsx web/src/app/pages/AudioTablePage.test.tsx web/src/app/components/AudioTable/audioTablePluginPrimitives.tsx web/src/app/components/AudioTable/audioTableLiveGraph.ts web/src/app/components/AudioTable/AudioTableLiveGraphRail.tsx web/src/app/components/AudioTable/audioTableLiveGraph.test.ts`
+  - `npm --prefix web run build`
+  - `pkill -f "serve_web_dist.mjs" 2>/dev/null`
+  - `nohup /usr/bin/node /home/mm/map2-audio/scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000 > /tmp/preview.log 2>&1 &`
 
 ID: T685
 Status: [✓] Done
@@ -1538,11 +1768,57 @@ Description:
 - Estimated effort: High
 - Required outputs: parameter ramping in JUCE audio engine (per-parameter ramp time, applied in audioCallback), topology-change detection in snapshot activation (compare plugin URIs and order before teardown), stream-safe chain reconfiguration (no audio thread stop), focused regression coverage including soak tests at 48kHz/64-sample buffer, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-02 17:46 EDT - Codex
+- Progress notes:
+  - Implemented a same-topology activation fast path in `SnapshotService.activate_snapshot()` so identical live topologies now reuse existing runtime-chain IDs instead of clearing and rematerializing snapshot-path chains.
+  - Rebound reused runtime-chain metadata to the newly active snapshot, updated runtime chain/plugin DB metadata in place, and added focused regression coverage in `tests/test_snapshot_service.py`.
+  - Wired JUCE name-based parameter application through the runtime-aware `Map2AudioEngine::setParameterByName()` seam, registered loaded plugin parameters with `ParameterBridge`, enabled smoothing-block processing in the audio callback, and routed `SnapshotManager` recalls through that seam so snapshot loads no longer bypass smoothing while audio is running.
+  - Validation passed for `python3 -m pytest -q tests/test_snapshot_service.py`, `python3 -m pytest -q tests/test_snapshot_routes.py`, and `cmake --build juce-engine/build -j$(nproc)`.
 - Blocked notes:
-  - Unified snapshot activation currently clears materialized runtime chains, rebuilds live-state payloads in Python, and reapplies a legacy snapshot payload back into the engine. It does not compare topologies, keep old/new graphs alive together, or route snapshot switching through a dedicated crossfade handoff layer.
-  - The JUCE side still exposes `Map2AudioEngine::loadSnapshot()` as a thin delegate to `SnapshotManager::loadSnapshot()`, and `SnapshotManager::loadSnapshot()` simply loops over saved parameters and calls `host_.setParameterByName(...)` on the current graph. There is no stream-safe dual-graph, topology-diff, or snapshot-switch crossfade implementation behind that seam today.
-  - `ParameterBridge` already has smoothed parameter ramps, but snapshot switching is not wired through a topology-aware path that would let those ramps satisfy the broader no-gap / no-teardown acceptance criteria on their own.
+  - The required 48kHz/64-sample soak evidence still fails on this host after the implementation slice. Safe-rewire smoke artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214038Z.{json,md}` reported `174` xruns and `20.346ms` peak callback jitter; live-rewire artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214424Z.{json,md}` reported `182` xruns and `24.659ms` peak callback jitter.
+  - Until those xrun/jitter failures are understood and reduced enough to satisfy the no-gap acceptance bar, `T614` cannot be closed honestly and remains the blocker for `T646`, `T637`, and `T634`.
+
+ID: T690
+Status: [ ] Todo
+Title: Preload live snapshot effect pools and swap staged JUCE graphs without runtime plugin/node construction
+Description:
+- Goal / acceptance criteria: Remove plugin load/unload and plugin-node create/destroy work from the low-latency live snapshot apply path by keeping the needed effect instances preloaded and switching between staged JUCE graph topologies or pre-attached prepared nodes. Revalidate the 48kHz/64-sample soak with evidence that separates topology-only switching from plugin-construction stress and shows materially improved xrun / peak-jitter behavior.
+- Why it matters: T689 showed the steady-state callback path is healthy but that xruns and peak callback jitter still cluster around live flow-apply windows on this PipeWire/ALSA host. `T614` cannot close honestly until the runtime path stops constructing plugins/nodes in the critical live-switch window.
+- Dependencies: T689 diagnosis artifacts, T614 implementation slice, JUCE graph/node lifecycle, and the random-effects soak harness.
+- Estimated effort: High
+- Required outputs: staged/preloaded graph-swap design, implementation in JUCE runtime, updated 48kHz/64-sample soak evidence, and honest PASS/FAIL comparison against the current diagnostic artifacts.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 18:37 EDT - Codex
+
+ID: T689
+Status: [✓] Done
+Title: Diagnose 48kHz/64-sample xrun and peak-jitter failures in JUCE live snapshot soak
+Description:
+- Goal / acceptance criteria: Identify why the new 48kHz/64-sample JUCE soak evidence for `T614` still records nonzero xruns and large peak callback jitter, determine whether the issue comes from realtime graph mutation, metric accounting/reset behavior, device/backend restart seams, or other host/runtime bottlenecks, and land the required fix or instrumentation so the soak can pass the existing thresholds.
+- Why it matters: `T614` now has the architectural same-topology fast path and JUCE smoothing seam, but the platform still lacks passing runtime proof for honest no-gap snapshot switching at the target low-latency settings.
+- Dependencies: T614 implementation slice, soak artifacts in `docs/fit-for-purpose-evidence/20260402`, JUCE audio stats/xrun/jitter codepaths, and the random-effects soak harness.
+- Estimated effort: High
+- Required outputs: root-cause analysis for the current xrun/jitter failures, any required code or instrumentation changes, updated 48kHz/64-sample soak evidence, PASS/FAIL comparison against the current artifacts, and follow-up tasks if host/runtime constraints still prevent closure.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 18:37 EDT - Codex
+- Completion notes:
+  - Removed the wrapper `graphLock_` from the JUCE audio callback, batched graph connection mutations with `AudioProcessorGraph::UpdateKind::none` plus a single rebuild, and tightened sidechain/topology batching so the callback no longer blocks behind each connection edit.
+  - Kept detached plugin nodes resident in `JuceAudioGraph` until the plugin is actually unloaded, so live rewires can reconnect already-loaded instances without forcing node destruction and `prepareToPlay()` churn on every topology mutation.
+  - Updated the random-effects soak harness so exact-size explicit effect pools stay deterministic instead of consuming extra RNG shuffles, which makes churn-vs-rewire comparisons reproducible when the operator pins a fixed 10-effect set.
+  - New evidence confirmed that steady-state DSP is not the problem: sampled callback jitter stayed in the low-microsecond / low-single-digit-microsecond range and callback budget utilization stayed under `40%`, while xrun and peak-jitter spikes clustered around live flow-apply windows.
+  - Focused evidence after the lock/batching slice improved materially over the original failures but still failed the no-gap bar: `juce-random-fx-soak-20260402T215317Z` improved the live-rewire probe to `26` xruns / `12.585ms` peak jitter, and `juce-random-fx-soak-20260402T215511Z` recorded `55` xruns / `8.174ms` peak jitter versus the earlier `182` xruns / `24.659ms`.
+  - A deterministic explicit-pool live-rewire stress run (`juce-random-fx-soak-20260402T223553Z`) still recorded `5` xruns / `3.934ms` peak jitter, and the matching fixed-pool `--reuse-effects` run (`juce-random-fx-soak-20260402T223622Z`) still recorded `4` xruns / `23.403ms` peak jitter on this host. The exact peak varies run-to-run, but the failure mode remains the same: occasional callback-interval spikes during live apply, not sustained DSP overload.
+  - Conclusion: the deterministic callback-lock stall was only one contributor. `T614` remains blocked by a host/runtime seam in the live-apply path that spans plugin construction and occasional topology updates under PipeWire/ALSA at `48kHz / 64` samples. The next honest slice is a staged/preloaded graph-swap architecture (`T690`), not more blind tweaking of xrun accounting.
+- Validation:
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --seed 20260402 --effect-uri ...` -> FAIL artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T223553Z.{json,md}` (`5` xruns / `3.934ms` peak jitter)
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --reuse-effects --seed 20260402 --effect-uri ...` -> FAIL artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T223622Z.{json,md}` (`4` xruns / `23.403ms` peak jitter)
 
 ID: T613
 Status: [✓] Done
@@ -13049,7 +13325,7 @@ Last updated: 2026-04-02 08:37 EDT - Codex
 ---
 
 ID: T592
-Status: [✗] Blocked
+Status: [✓] Done
 Title: [CRITICAL] Reduce SQLite busy_timeout from 5000ms to 100ms
 Description:
 - Goal / acceptance criteria: Change `busy_timeout` in `app/database.py:33` from `5000` to `100`. Verify all DB code handles `OperationalError: database is locked` gracefully with a fast retry rather than blocking for 5 seconds.
@@ -13059,11 +13335,17 @@ Description:
 - Required outputs: Updated timeout, tested lock-contention handling.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 08:37 EDT - Codex
-- Blocked notes:
-  - `app/database.py` still sets `busy_timeout=5000`, and the current retry infrastructure in `DatabasePoolManager.session()` only retries session acquisition before user code runs. Its own comments explicitly avoid retrying once a yielded session has executed caller work.
-  - The codebase still has many direct `session.commit()` / `db.commit()` call sites across routes and services. Local verification showed that after a SQLite `OperationalError: database is locked`, a SQLAlchemy rollback clears pending write state, so a generic low-level commit retry would risk silently dropping writes rather than safely replaying the transaction. This needs a broader transaction-replay/refactor plan before the timeout can be lowered honestly.
-  - Rechecked on 2026-04-02: `rg -n "session\\.commit\\(|db\\.commit\\(|commit\\(\\)" app/routes app/services -g'*.py'` still reports widespread direct commit ownership across the stack, so there is no narrow single-service patch that can make a 100ms timeout safe by itself.
+Last updated: 2026-04-02 16:31 EDT - Codex
+- Completion notes:
+  - Lowered `app/database.py` SQLite `busy_timeout` from `5000` to `100` and added shared `RetryingSession` / `RetryingAsyncSession` classes that detect transient SQLite writer-lock failures, roll back cleanly, replay the captured SQLAlchemy unit of work, and retry with a bounded fast-delay loop.
+  - Wired the retry-aware session classes into the primary sync/async session factories in `app/database.py`, the async pool-backed path in `app/services/db_pool_manager.py`, the generic async database service in `app/services/database.py`, and the NAM library SQLAlchemy session factory in `app/services/nam_library.py`.
+  - Added real lock-contention coverage in `tests/test_database_lock_retry.py`, including sync insert replay and async update/delete replay against a temp SQLite database with an actual held writer lock.
+- Validation:
+  - `python3 -m pytest -q tests/test_database_lock_retry.py tests/test_runtime_latency_tuning.py` -> PASS
+  - `python3 -m pytest -q tests/test_main_cluster_midi_lifecycle.py tests/test_main_shutdown.py tests/midi_hub/test_hub.py tests/test_runtime_latency_tuning.py tests/test_database_lock_retry.py` -> PASS
+  - `python3 -m pytest -q tests/test_nam_route_prefixes.py tests/test_nam_models_routes.py` -> PASS
+- Notes:
+  - Attempted to restart the live `map2-backend.service` after the code change, but `systemctl restart map2-backend.service` was denied because interactive authentication is not available in this session. The repository changes and tests are complete; the running backend process was not refreshed from here.
 
 ---
 

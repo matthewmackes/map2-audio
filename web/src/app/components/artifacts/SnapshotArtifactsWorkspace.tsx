@@ -455,7 +455,7 @@ export function SnapshotArtifactsWorkspace({
                 kind="primary"
                 size="sm"
                 renderIcon={Add}
-                onClick={() => createMutation.mutate(buildDefaultSnapshotName(snapshots.length + 1))}
+                onClick={() => createMutation.mutate(buildDefaultSnapshotName(snapshots.map((snapshot) => snapshot.name)))}
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? 'Creating…' : 'Create snapshot'}

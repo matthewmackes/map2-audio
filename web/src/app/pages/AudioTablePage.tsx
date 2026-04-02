@@ -57,7 +57,6 @@ import {
   TableToolbarContent,
   TableToolbarSearch,
   Tag,
-  TextInput,
   Toggle,
 } from '@carbon/react'
 
@@ -78,7 +77,6 @@ import type {
   PluginOrderRef,
   HistoryStatus,
   MIDIMappingV2,
-  MIDICurveType,
   MIDIStatus,
   PeakData,
   Snapshot,
@@ -114,9 +112,6 @@ import {
 } from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
   STATIC_COLUMNS,
-  LEVEL_COLUMNS,
-  MIDI_COLUMNS,
-  AUTOMATION_COLUMNS,
   DEFAULT_COLUMN_VISIBILITY,
   buildParameterColumns,
   assembleVisibleColumns,
@@ -124,7 +119,23 @@ import {
   type AudioTableColumnVisibility,
   type ColumnDef,
 } from '../components/AudioTable/audioTableColumns'
+import { AudioTableLiveGraphRail } from '../components/AudioTable/AudioTableLiveGraphRail'
+import { buildAudioTableLiveGraphModel } from '../components/AudioTable/audioTableLiveGraph'
 import { createAudioTableKeyHandler } from '../components/AudioTable/audioTableKeyboard'
+import {
+  AudioTableMidiField,
+  AudioTableParameterField,
+  AudioTablePositionField,
+  buildAudioTablePluginParameters,
+  buildAudioTablePluginTargetKey,
+  buildAudioTableRowAnchorDomId,
+  buildAudioTableRowAnchorId,
+  formatAudioTablePluginPeak,
+  getAudioTablePluginDisplayName,
+  resolveAudioTableDefaultMidiTarget,
+  resolveAudioTableMidiMapping,
+  type AudioTablePluginSelectionTarget,
+} from '../components/AudioTable/audioTablePluginPrimitives'
 
 // ============================================================================
 // Constants — shared with JuceGridPage
@@ -155,13 +166,6 @@ const ROUTING_MODE_OPTIONS: Array<{ id: JuceGridRoutingMode; label: string }> = 
   { id: 'series', label: 'Series' },
   { id: 'parameter_morph', label: 'Parameter Morph' },
   { id: 'sidechain', label: 'Sidechain' },
-]
-
-const MIDI_CURVE_OPTIONS: Array<{ id: MIDICurveType; label: string }> = [
-  { id: 'linear', label: 'Linear' },
-  { id: 'logarithmic', label: 'Log' },
-  { id: 'exponential', label: 'Exp' },
-  { id: 's_curve', label: 'S-Curve' },
 ]
 
 const LS_FLOWS_KEY = 'map2_juce_grid_flows_v2'
@@ -279,6 +283,7 @@ const toolbarWrapStyle: CSSProperties = {
 
 const flowSectionStyle: CSSProperties = {
   marginBottom: '1rem',
+  scrollMarginTop: '1rem',
 }
 
 const flowHeaderStyle: CSSProperties = {
@@ -329,8 +334,21 @@ const mobileBlockStyle: CSSProperties = {
   minHeight: '100vh',
 }
 
-const compactTabStyle: CSSProperties = {
-  padding: '1rem',
+const desktopContentStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(24rem, 38vw)',
+  gap: '1rem',
+  alignItems: 'start',
+}
+
+const desktopTableColumnStyle: CSSProperties = {
+  minWidth: 0,
+}
+
+const desktopRailColumnStyle: CSSProperties = {
+  position: 'sticky',
+  top: '1rem',
+  alignSelf: 'start',
 }
 
 // ============================================================================
@@ -343,6 +361,7 @@ export function AudioTablePage() {
   const isMobile = useIsMobile()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout('/audio-table')
   const containerRef = useRef<HTMLDivElement>(null)
+  const rowAnchorRefs = useRef<Record<string, HTMLElement | null>>({})
   const { nodes: clusterNodes, localNodeId, activeNodeId, setActiveNode, isClusterMode } = useCluster()
 
   // ── Shared state (same localStorage keys as JuceGridPage) ───────────────
@@ -351,9 +370,10 @@ export function AudioTablePage() {
 
   // UI state
   const [search, setSearch] = useState('')
-  const [tabletTab, setTabletTab] = useState(0)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
+  const [selectedPluginTargetKey, setSelectedPluginTargetKey] = useState<string | null>(null)
+  const [highlightedRowAnchorId, setHighlightedRowAnchorId] = useState<string | null>(null)
 
   // Automation state (local — synced via shared queries)
   const [automationPlaying, setAutomationPlaying] = useState(false)
@@ -462,18 +482,12 @@ export function AudioTablePage() {
     refetchInterval: 5000,
   })
 
-  // Per-chain preset queries
-  const activeChainIds = useMemo(
-    () => flowSlots.map(s => s.chainId).filter((id): id is number => id !== null),
-    [flowSlots],
-  )
-
   // Plugin outputs for real-time levels
   const pluginOutputState = usePluginOutputs()
   const peaksMap = pluginOutputState.peaks
 
   // Favorites
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
+  const [favorites] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem('map2-favorite-plugins')
       return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
@@ -787,6 +801,23 @@ export function AudioTablePage() {
       }
     })
   }, [flowSlots, chainMap])
+  const primaryFlowSlotByChainId = useMemo(() => {
+    const entries = flowData
+      .map((flowDatum, flowIndex) => ({ ...flowDatum, flowIndex }))
+      .filter((flowDatum): flowDatum is { slot: JuceGridFlowSlotState; chain: Chain; plugins: Chain['plugins']; flowIndex: number } => (
+        Boolean(flowDatum.chain)
+      ))
+      .sort((left, right) => left.slot.label.localeCompare(right.slot.label, undefined, { sensitivity: 'base' }))
+    const mapping = new Map<number, { slot: JuceGridFlowSlotState; flowIndex: number }>()
+
+    entries.forEach((entry) => {
+      if (!mapping.has(entry.chain.id)) {
+        mapping.set(entry.chain.id, { slot: entry.slot, flowIndex: entry.flowIndex })
+      }
+    })
+
+    return mapping
+  }, [flowData])
 
   const activeFlowData = flowData[activeFlowIndex] ?? flowData[0] ?? null
   const activeFlowOptions = useMemo(
@@ -800,6 +831,10 @@ export function AudioTablePage() {
   const liveRuntimeProjection = useMemo(
     () => buildSnapshotEditorLiveChainProjection(chains, flowSlots),
     [chains, flowSlots],
+  )
+  const liveProjectionByChainId = useMemo(
+    () => new Map(liveRuntimeProjection.map((projection) => [projection.chainId, projection])),
+    [liveRuntimeProjection],
   )
   const desiredLiveChainIds = useMemo(
     () => getSnapshotEditorDesiredLiveChainIds(flowSlots),
@@ -821,6 +856,76 @@ export function AudioTablePage() {
   )
   const midiMappings = useMemo(() => midiMappingsQuery.data?.mappings ?? [], [midiMappingsQuery.data?.mappings])
   const snapshotCount = flowSnapshotsQuery.data?.count ?? flowSnapshotsQuery.data?.snapshots.length ?? 0
+  const liveGraph = useMemo(
+    () => buildAudioTableLiveGraphModel({
+      chains,
+      flowSlots,
+      routing,
+      projections: liveRuntimeProjection,
+      selectedPluginTargetKey,
+    }),
+    [chains, flowSlots, routing, liveRuntimeProjection, selectedPluginTargetKey],
+  )
+  const selectedInspectorSelection = useMemo(() => {
+    if (!selectedPluginTargetKey) {
+      return null
+    }
+
+    for (const chain of chains) {
+      const projection = liveProjectionByChainId.get(chain.id)
+      if (!projection) {
+        continue
+      }
+
+      for (const plugin of chain.plugins) {
+        const targetKey = buildAudioTablePluginTargetKey({
+          chainId: chain.id,
+          pluginUri: plugin.uri,
+          pluginPosition: plugin.position,
+          instanceId: plugin.instance_id,
+        })
+        if (targetKey !== selectedPluginTargetKey) {
+          continue
+        }
+
+        const flowEntry = primaryFlowSlotByChainId.get(chain.id) ?? null
+        const parameters = buildAudioTablePluginParameters(plugin, pluginInventoryByUri)
+        const peakSummary = formatAudioTablePluginPeak(peaksMap, plugin)
+
+        return {
+          target: {
+            chainId: chain.id,
+            chainName: chain.name,
+            flowLabel: flowEntry?.slot.label ?? projection.primaryFlowLabel,
+            flowSlotId: flowEntry?.slot.id ?? null,
+            pluginUri: plugin.uri,
+            pluginName: getAudioTablePluginDisplayName(plugin),
+            pluginPosition: plugin.position,
+            instanceId: plugin.instance_id,
+            rowAnchorId: flowEntry ? buildAudioTableRowAnchorId(flowEntry.slot.id, plugin) : null,
+            syntheticFlow: projection.syntheticFlow,
+          },
+          chain,
+          plugin,
+          flowSlot: flowEntry?.slot ?? null,
+          flowIndex: flowEntry?.flowIndex ?? null,
+          parameters,
+          inputDb: peakSummary.inputDb,
+          outputDb: peakSummary.outputDb,
+          projection,
+        }
+      }
+    }
+
+    return null
+  }, [
+    chains,
+    liveProjectionByChainId,
+    peaksMap,
+    pluginInventoryByUri,
+    primaryFlowSlotByChainId,
+    selectedPluginTargetKey,
+  ])
 
   // Dynamic parameter columns per flow
   const parameterColumnsPerFlow = useMemo(() => {
@@ -1015,50 +1120,18 @@ export function AudioTablePage() {
     setParameterMutation.mutate({ chainId, uri, paramIndex, value, instanceId, pluginPosition })
   }, [setParameterMutation])
 
-  const resolveDefaultMidiTarget = useCallback((plugin: Chain['plugins'][number]) => {
-    const catalogParams = pluginInventoryByUri.get(plugin.uri)?.parameters ?? []
-    const symbolValues = plugin.parameters ?? {}
-    const preferred = catalogParams.find(param => param.symbol in symbolValues)
-    if (preferred) {
-      return { index: preferred.index, symbol: preferred.symbol }
-    }
-
-    const [firstSymbol] = Object.keys(symbolValues)
-    if (!firstSymbol) {
-      return null
-    }
-
-    return { index: 0, symbol: firstSymbol }
-  }, [pluginInventoryByUri])
-
-  const resolveMidiMappingForPlugin = useCallback((chainId: number, plugin: Chain['plugins'][number]) => {
-    return [...midiMappings]
-      .filter(mapping => (
-        mapping.target_plugin_uri === plugin.uri
-        && (mapping.chain_id === chainId || mapping.chain_id === null)
-      ))
-      .sort((left, right) => {
-        const leftScope = left.chain_id === chainId ? 0 : 1
-        const rightScope = right.chain_id === chainId ? 0 : 1
-        if (leftScope !== rightScope) {
-          return leftScope - rightScope
-        }
-        return (left.target_param_index ?? Number.MAX_SAFE_INTEGER) - (right.target_param_index ?? Number.MAX_SAFE_INTEGER)
-      })[0] ?? null
-  }, [midiMappings])
-
   const handleMidiMappingChange = useCallback((
     chainId: number,
     plugin: Chain['plugins'][number],
     updates: Partial<MIDIMappingV2>,
   ) => {
-    const existing = resolveMidiMappingForPlugin(chainId, plugin)
+    const existing = resolveAudioTableMidiMapping(chainId, plugin, midiMappings)
     if (existing) {
       updateMidiMappingMutation.mutate({ id: existing.id, updates })
       return
     }
 
-    const target = resolveDefaultMidiTarget(plugin)
+    const target = resolveAudioTableDefaultMidiTarget(plugin, pluginInventoryByUri)
     if (!target) {
       pushToast('No parameter available for MIDI mapping on this block', 'info')
       return
@@ -1077,7 +1150,7 @@ export function AudioTablePage() {
       invert: false,
       feedback_enabled: false,
       feedback_cc: null,
-      name: `${getDisplayPluginName(plugin.uri, plugin.name)} ${target.symbol}`,
+      name: `${getDisplayPluginName(plugin.name, plugin.uri)} ${target.symbol}`,
       group_id: null,
       is_learned: false,
       is_enabled: true,
@@ -1085,9 +1158,9 @@ export function AudioTablePage() {
     })
   }, [
     createMidiMappingMutation,
+    midiMappings,
+    pluginInventoryByUri,
     pushToast,
-    resolveDefaultMidiTarget,
-    resolveMidiMappingForPlugin,
     updateMidiMappingMutation,
   ])
 
@@ -1145,6 +1218,88 @@ export function AudioTablePage() {
     killLivePathMutation.mutate(chainId)
   }, [killLivePathMutation])
 
+  const registerRowAnchor = useCallback((rowAnchorId: string, element: HTMLElement | null) => {
+    if (element) {
+      rowAnchorRefs.current[rowAnchorId] = element
+      return
+    }
+
+    delete rowAnchorRefs.current[rowAnchorId]
+  }, [])
+
+  const handleSelectGraphPlugin = useCallback((target: AudioTablePluginSelectionTarget) => {
+    const selectedChain = chains.find((chain) => chain.id === target.chainId)
+    const selectedPlugin = selectedChain?.plugins.find((plugin) => (
+      plugin.uri === target.pluginUri
+      && plugin.position === target.pluginPosition
+      && (plugin.instance_id ?? null) === (target.instanceId ?? null)
+    ))
+
+    if (search.trim() && selectedPlugin) {
+      const searchTerm = search.trim().toLowerCase()
+      const displayName = getAudioTablePluginDisplayName(selectedPlugin).toLowerCase()
+      if (!displayName.includes(searchTerm)) {
+        setSearch('')
+      }
+    }
+
+    const flowEntry = primaryFlowSlotByChainId.get(target.chainId)
+    if (flowEntry) {
+      updateActiveFlow(flowEntry.flowIndex)
+    }
+
+    if (target.rowAnchorId) {
+      setHighlightedRowAnchorId(target.rowAnchorId)
+      const anchoredRow = rowAnchorRefs.current[target.rowAnchorId]
+        ?? document.getElementById(buildAudioTableRowAnchorDomId(target.rowAnchorId))
+        ?? containerRef.current?.querySelector(`[data-row-anchor="${target.rowAnchorId}"]`)
+
+      ;(anchoredRow as HTMLElement | null)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      })
+    }
+
+    setSelectedPluginTargetKey(buildAudioTablePluginTargetKey(target))
+  }, [chains, primaryFlowSlotByChainId, search, updateActiveFlow])
+
+  useEffect(() => {
+    if (selectedPluginTargetKey && !selectedInspectorSelection) {
+      setSelectedPluginTargetKey(null)
+    }
+  }, [selectedInspectorSelection, selectedPluginTargetKey])
+
+  useEffect(() => {
+    const rowAnchorId = selectedInspectorSelection?.target.rowAnchorId
+    if (!rowAnchorId) {
+      return
+    }
+
+    setHighlightedRowAnchorId(rowAnchorId)
+    const anchoredRow = rowAnchorRefs.current[rowAnchorId]
+      ?? document.getElementById(buildAudioTableRowAnchorDomId(rowAnchorId))
+      ?? containerRef.current?.querySelector(`[data-row-anchor="${rowAnchorId}"]`)
+
+    ;(anchoredRow as HTMLElement | null)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'nearest',
+    })
+  }, [selectedInspectorSelection?.target.rowAnchorId])
+
+  useEffect(() => {
+    if (!highlightedRowAnchorId) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setHighlightedRowAnchorId((current) => (current === highlightedRowAnchorId ? null : current))
+    }, 2600)
+
+    return () => window.clearTimeout(timeout)
+  }, [highlightedRowAnchorId])
+
   // ── Column picker ───────────────────────────────────────────────────────
 
   const toggleColumnGroup = useCallback((group: 'midiGroup' | 'automationGroup' | 'inputLevel' | 'outputLevel') => {
@@ -1157,7 +1312,7 @@ export function AudioTablePage() {
     if (!search.trim()) return plugins
     const q = search.toLowerCase()
     return plugins.filter(p => {
-      const name = getDisplayPluginName(p.uri, p.name)
+      const name = getDisplayPluginName(p.name, p.uri)
       return name.toLowerCase().includes(q)
     })
   }, [search])
@@ -1180,6 +1335,142 @@ export function AudioTablePage() {
       plugins: activeVisiblePlugins,
     })
   }, [activeFlowData?.chain, activeVisiblePlugins, batchVisibleMutation])
+
+  const showDesktopLiveRail = !isTabletTouchRoute
+  const tableWorkspace = (
+    <>
+      {flowData.map((fd, flowIndex) => (
+        <FlowTableSection
+          key={fd.slot.id}
+          flowIndex={flowIndex}
+          slot={fd.slot}
+          chain={fd.chain}
+          plugins={filterPlugins(fd.plugins)}
+          chains={chains}
+          ports={ports}
+          pluginGroups={pluginGroups}
+          pluginInventoryByUri={pluginInventoryByUri}
+          visibleColumns={visibleColumnsPerFlow[flowIndex] ?? assembleVisibleColumns(columnVisibility, [])}
+          dataTableHeaders={dataTableHeadersPerFlow[flowIndex] ?? toDataTableHeaders(assembleVisibleColumns(columnVisibility, []))}
+          search={search}
+          peaksMap={peaksMap}
+          midiMappings={midiMappings}
+          highlightedRowAnchorId={highlightedRowAnchorId}
+          onRegisterRowAnchor={registerRowAnchor}
+          onChainAssign={handleChainAssign}
+          onMuteToggle={handleMuteToggle}
+          onSoloToggle={handleSoloToggle}
+          onDryWetChange={handleDryWetChange}
+          onBypassToggle={handleBypassToggle}
+          onRemovePlugin={handleRemovePlugin}
+          onAddPlugin={handleAddPlugin}
+          onPositionChange={handlePositionChange}
+          onParameterChange={handleParameterChange}
+          onMidiMappingChange={handleMidiMappingChange}
+          onRemoveFlow={handleRemoveFlow}
+          canRemoveFlow={flowSlots.length > MIN_FLOWS}
+          onCreateChain={name => createChainMutation.mutate(name)}
+          onDeleteChain={chainId => deleteChainMutation.mutate(chainId)}
+          onRenameChain={(chainId, name) => renameChainMutation.mutate({ chainId, name })}
+        />
+      ))}
+
+      <div style={addFlowBarStyle}>
+        <Button
+          kind="ghost"
+          size="sm"
+          renderIcon={Add}
+          onClick={handleAddFlow}
+          disabled={flowSlots.length >= MAX_FLOWS}
+          data-testid="audio-table-add-flow"
+        >
+          Add Path ({flowSlots.length}/{MAX_FLOWS})
+        </Button>
+      </div>
+
+      <Layer>
+        <div style={clusterSectionStyle} data-testid="audio-table-cluster-section">
+          <div style={clusterHeaderStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Cluster Nodes</h3>
+              <Tag type={isClusterMode ? 'blue' : 'cool-gray'} size="sm">
+                {isClusterMode ? 'Cluster mode' : 'Single node'}
+              </Tag>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <Tag type="cool-gray" size="sm">Focused {activeNodeId ?? localNodeId}</Tag>
+              <Button kind="ghost" size="sm" onClick={() => setShowAudioNodesModal(true)}>
+                Open Node Manager
+              </Button>
+            </div>
+          </div>
+
+          <DataTable
+            rows={clusterNodes.map(node => ({
+              id: node.nodeId,
+              hostname: node.hostname,
+              role: node.role,
+              status: (
+                <Tag type={node.isOnline ? 'green' : 'red'} size="sm">
+                  {node.isOnline ? 'Online' : 'Offline'}
+                </Tag>
+              ),
+              latency: node.latencyMs === null ? '—' : `${node.latencyMs.toFixed(1)} ms`,
+              scope: (
+                <Button
+                  kind={((activeNodeId ?? localNodeId) === node.nodeId) ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)}
+                >
+                  {(activeNodeId ?? localNodeId) === node.nodeId ? 'Focused' : 'Focus'}
+                </Button>
+              ),
+            }))}
+            headers={[
+              { key: 'hostname', header: 'Hostname' },
+              { key: 'role', header: 'Role' },
+              { key: 'status', header: 'Status' },
+              { key: 'latency', header: 'Latency' },
+              { key: 'scope', header: 'Scope' },
+            ]}
+            size="sm"
+            useZebraStyles
+          >
+            {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+              <TableContainer {...getTableContainerProps()} title="Node Management" description="Audio Table keeps cluster focus aligned with the shared platform node scope.">
+                <Table {...getTableProps()} size="sm">
+                  <TableHead>
+                    <TableRow>
+                      {headers.map(header => {
+                        const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
+                        return (
+                          <TableHeader key={header.key} {...headerProps}>
+                            {header.header}
+                          </TableHeader>
+                        )
+                      })}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {rows.map(row => {
+                      const { key: _rowKey, ...rowProps } = getRowProps({ row })
+                      return (
+                        <TableRow key={row.id} {...rowProps}>
+                          {row.cells.map(cell => (
+                            <TableCell key={cell.id}>{cell.value as React.ReactNode}</TableCell>
+                          ))}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </DataTable>
+        </div>
+      </Layer>
+    </>
+  )
 
   // ── Mobile/Tablet handling ──────────────────────────────────────────────
 
@@ -1430,136 +1721,28 @@ export function AudioTablePage() {
         </OverflowMenu>
       </div>
 
-      {/* ── Flow Table Sections ───────────────────────────────────────── */}
-      {flowData.map((fd, flowIndex) => (
-        <FlowTableSection
-          key={fd.slot.id}
-          flowIndex={flowIndex}
-          slot={fd.slot}
-          chain={fd.chain}
-          plugins={filterPlugins(fd.plugins)}
-          chains={chains}
-          ports={ports}
-          pluginGroups={pluginGroups}
-          pluginInventoryByUri={pluginInventoryByUri}
-          visibleColumns={visibleColumnsPerFlow[flowIndex] ?? assembleVisibleColumns(columnVisibility, [])}
-          dataTableHeaders={dataTableHeadersPerFlow[flowIndex] ?? toDataTableHeaders(assembleVisibleColumns(columnVisibility, []))}
-          search={search}
-          peaksMap={peaksMap}
-          midiMappings={midiMappings}
-          onChainAssign={handleChainAssign}
-          onMuteToggle={handleMuteToggle}
-          onSoloToggle={handleSoloToggle}
-          onDryWetChange={handleDryWetChange}
-          onBypassToggle={handleBypassToggle}
-          onRemovePlugin={handleRemovePlugin}
-          onAddPlugin={handleAddPlugin}
-          onPositionChange={handlePositionChange}
-          onParameterChange={handleParameterChange}
-          onMidiMappingChange={handleMidiMappingChange}
-          onRemoveFlow={handleRemoveFlow}
-          canRemoveFlow={flowSlots.length > MIN_FLOWS}
-          onCreateChain={name => createChainMutation.mutate(name)}
-          onDeleteChain={chainId => deleteChainMutation.mutate(chainId)}
-          onRenameChain={(chainId, name) => renameChainMutation.mutate({ chainId, name })}
-        />
-      ))}
-
-      {/* ── Add Path Button ───────────────────────────────────────────── */}
-      <div style={addFlowBarStyle}>
-        <Button
-          kind="ghost"
-          size="sm"
-          renderIcon={Add}
-          onClick={handleAddFlow}
-          disabled={flowSlots.length >= MAX_FLOWS}
-          data-testid="audio-table-add-flow"
-        >
-          Add Path ({flowSlots.length}/{MAX_FLOWS})
-        </Button>
-      </div>
-
-      <Layer>
-        <div style={clusterSectionStyle} data-testid="audio-table-cluster-section">
-          <div style={clusterHeaderStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Cluster Nodes</h3>
-              <Tag type={isClusterMode ? 'blue' : 'cool-gray'} size="sm">
-                {isClusterMode ? 'Cluster mode' : 'Single node'}
-              </Tag>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <Tag type="cool-gray" size="sm">Focused {activeNodeId ?? localNodeId}</Tag>
-              <Button kind="ghost" size="sm" onClick={() => setShowAudioNodesModal(true)}>
-                Open Node Manager
-              </Button>
-            </div>
+      {showDesktopLiveRail ? (
+        <div style={desktopContentStyle}>
+          <div style={desktopTableColumnStyle}>
+            {tableWorkspace}
           </div>
-
-          <DataTable
-            rows={clusterNodes.map(node => ({
-              id: node.nodeId,
-              hostname: node.hostname,
-              role: node.role,
-              status: (
-                <Tag type={node.isOnline ? 'green' : 'red'} size="sm">
-                  {node.isOnline ? 'Online' : 'Offline'}
-                </Tag>
-              ),
-              latency: node.latencyMs === null ? '—' : `${node.latencyMs.toFixed(1)} ms`,
-              scope: (
-                <Button
-                  kind={((activeNodeId ?? localNodeId) === node.nodeId) ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)}
-                >
-                  {(activeNodeId ?? localNodeId) === node.nodeId ? 'Focused' : 'Focus'}
-                </Button>
-              ),
-            }))}
-            headers={[
-              { key: 'hostname', header: 'Hostname' },
-              { key: 'role', header: 'Role' },
-              { key: 'status', header: 'Status' },
-              { key: 'latency', header: 'Latency' },
-              { key: 'scope', header: 'Scope' },
-            ]}
-            size="sm"
-            useZebraStyles
-          >
-            {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
-              <TableContainer {...getTableContainerProps()} title="Node Management" description="Audio Table keeps cluster focus aligned with the shared platform node scope.">
-                <Table {...getTableProps()} size="sm">
-                  <TableHead>
-                    <TableRow>
-                      {headers.map(header => {
-                        const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
-                        return (
-                          <TableHeader key={header.key} {...headerProps}>
-                            {header.header}
-                          </TableHeader>
-                        )
-                      })}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {rows.map(row => {
-                      const { key: _rowKey, ...rowProps } = getRowProps({ row })
-                      return (
-                        <TableRow key={row.id} {...rowProps}>
-                          {row.cells.map(cell => (
-                            <TableCell key={cell.id}>{cell.value as React.ReactNode}</TableCell>
-                          ))}
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </DataTable>
+          <div style={desktopRailColumnStyle}>
+            <AudioTableLiveGraphRail
+              graph={liveGraph}
+              selection={selectedInspectorSelection}
+              pluginInventoryByUri={pluginInventoryByUri}
+              midiMappings={midiMappings}
+              onSelectPlugin={handleSelectGraphPlugin}
+              onCloseInspector={() => setSelectedPluginTargetKey(null)}
+              onParameterChange={handleParameterChange}
+              onMidiMappingChange={handleMidiMappingChange}
+              onBypassToggle={handleBypassToggle}
+              onRemovePlugin={handleRemovePlugin}
+              onPositionChange={handlePositionChange}
+            />
+          </div>
         </div>
-      </Layer>
+      ) : tableWorkspace}
 
       {showAudioNodesModal ? (
         <AudioNodesModal open={showAudioNodesModal} onClose={() => setShowAudioNodesModal(false)} />
@@ -1602,6 +1785,8 @@ interface FlowTableSectionProps {
   search: string
   peaksMap: Record<string, Record<string, PeakData>>
   midiMappings: MIDIMappingV2[]
+  highlightedRowAnchorId: string | null
+  onRegisterRowAnchor: (rowAnchorId: string, element: HTMLElement | null) => void
   onChainAssign: (flowIndex: number, chainId: number | null) => void
   onMuteToggle: (flowIndex: number) => void
   onSoloToggle: (flowIndex: number) => void
@@ -1644,6 +1829,8 @@ function FlowTableSection({
   search,
   peaksMap,
   midiMappings,
+  highlightedRowAnchorId,
+  onRegisterRowAnchor,
   onChainAssign,
   onMuteToggle,
   onSoloToggle,
@@ -1660,8 +1847,6 @@ function FlowTableSection({
   onDeleteChain,
   onRenameChain,
 }: FlowTableSectionProps) {
-  const [addPluginUri, setAddPluginUri] = useState<string | null>(null)
-
   const renderParameterCell = useCallback((
     plugin: Chain['plugins'][number],
     rowIdx: number,
@@ -1674,100 +1859,24 @@ function FlowTableSection({
       return ''
     }
 
-    const paramValue = plugin.parameters[column.paramSymbol]
     const inputId = `${slot.id}-${rowIdx}-${column.key.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+    const parameter = buildAudioTablePluginParameters(plugin, pluginInventoryByUri)
+      .find((candidate) => candidate.symbol === column.paramSymbol)
 
-    if (column.paramIsToggled) {
-      return (
-        <Checkbox
-          id={inputId}
-          checked={paramValue >= 0.5}
-          labelText=""
-          hideLabel
-          onChange={(_evt: ChangeEvent<HTMLInputElement>, data: { checked: boolean; id: string }) => {
-            onParameterChange(
-              chain.id,
-              plugin.uri,
-              column.paramIndex ?? 0,
-              data.checked ? 1 : 0,
-              plugin.instance_id,
-              plugin.position,
-            )
-          }}
-        />
-      )
+    if (!parameter) {
+      return ''
     }
-
-    const isDiscreteIntegerRange = Number.isInteger(column.paramMin)
-      && Number.isInteger(column.paramMax)
-      && Number.isInteger(paramValue)
-      && (column.paramMax ?? 0) - (column.paramMin ?? 0) <= 8
-
-    if (isDiscreteIntegerRange) {
-      const min = column.paramMin ?? 0
-      const max = column.paramMax ?? min
-      return (
-        <Select
-          id={inputId}
-          size="sm"
-          hideLabel
-          labelText=""
-          value={String(Math.round(paramValue))}
-          onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
-            onParameterChange(
-              chain.id,
-              plugin.uri,
-              column.paramIndex ?? 0,
-              Number(evt.target.value),
-              plugin.instance_id,
-              plugin.position,
-            )
-          }}
-        >
-          {Array.from({ length: max - min + 1 }, (_, offset) => {
-            const optionValue = min + offset
-            return (
-              <SelectItem
-                key={optionValue}
-                text={String(optionValue)}
-                value={String(optionValue)}
-              />
-            )
-          })}
-        </Select>
-      )
-    }
-
-    const min = column.paramMin ?? 0
-    const max = column.paramMax ?? 1
-    const span = Math.abs(max - min)
-    const step = span > 0 ? Math.max(span / 100, 0.01) : 0.01
 
     return (
-      <CarbonNumberInput
-        id={inputId}
-        size="sm"
-        min={min}
-        max={max}
-        step={step}
-        value={paramValue}
-        label=""
-        hideLabel
-        hideSteppers
-        onChange={(_evt: unknown, { value }: { value: string | number }) => {
-          onParameterChange(
-            chain.id,
-            plugin.uri,
-            column.paramIndex ?? 0,
-            Number(value),
-            plugin.instance_id,
-            plugin.position,
-          )
-        }}
-        style={{ width: 88 }}
+      <AudioTableParameterField
+        chainId={chain.id}
+        plugin={plugin}
+        parameter={parameter}
+        controlId={inputId}
+        onParameterChange={onParameterChange}
       />
     )
-  }, [chain, onParameterChange, slot.id])
+  }, [chain, onParameterChange, pluginInventoryByUri, slot.id])
 
   const renderMidiCell = useCallback((
     plugin: Chain['plugins'][number],
@@ -1778,160 +1887,36 @@ function FlowTableSection({
       return ''
     }
 
-    const mapping = [...midiMappings]
-      .filter(candidate => (
-        candidate.target_plugin_uri === plugin.uri
-        && (candidate.chain_id === chain.id || candidate.chain_id === null)
-      ))
-      .sort((left, right) => {
-        const leftScope = left.chain_id === chain.id ? 0 : 1
-        const rightScope = right.chain_id === chain.id ? 0 : 1
-        if (leftScope !== rightScope) {
-          return leftScope - rightScope
-        }
-        return (left.target_param_index ?? Number.MAX_SAFE_INTEGER) - (right.target_param_index ?? Number.MAX_SAFE_INTEGER)
-      })[0] ?? null
-
-    const catalogParams = pluginInventoryByUri.get(plugin.uri)?.parameters ?? []
-    const targetParam = mapping
-      ? catalogParams.find(param => param.index === mapping.target_param_index)
-      : catalogParams.find(param => param.symbol in (plugin.parameters ?? {})) ?? catalogParams[0] ?? null
-
-    if (!mapping && !targetParam) {
-      return '—'
-    }
-
     const inputId = `${slot.id}-${rowIdx}-${column.key}`
 
-    switch (column.key) {
-      case 'midiCc':
-        return (
-          <CarbonNumberInput
-            id={inputId}
-            size="sm"
-            min={0}
-            max={127}
-            step={1}
-            value={mapping?.cc ?? 0}
-            label=""
-            hideLabel
-            hideSteppers
-            onChange={(_evt: unknown, { value }: { value: string | number }) => {
-              onMidiMappingChange(chain.id, plugin, { cc: Math.max(0, Math.min(127, Math.round(Number(value)))) })
-            }}
-            style={{ width: 76 }}
-          />
-        )
-      case 'midiChannel':
-        return (
-          <Select
-            id={inputId}
-            size="sm"
-            hideLabel
-            labelText=""
-            value={String(mapping?.channel ?? 0)}
-            onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
-              onMidiMappingChange(chain.id, plugin, { channel: Number(evt.target.value) })
-            }}
-          >
-            <SelectItem value="0" text="Omni" />
-            {Array.from({ length: 16 }, (_, index) => (
-              <SelectItem key={index + 1} value={String(index + 1)} text={`Ch ${index + 1}`} />
-            ))}
-          </Select>
-        )
-      case 'midiCurve':
-        return (
-          <Select
-            id={inputId}
-            size="sm"
-            hideLabel
-            labelText=""
-            value={mapping?.curve_type ?? 'linear'}
-            onChange={(evt: ChangeEvent<HTMLSelectElement>) => {
-              onMidiMappingChange(chain.id, plugin, { curve_type: evt.target.value as MIDICurveType })
-            }}
-          >
-            {MIDI_CURVE_OPTIONS.map(option => (
-              <SelectItem key={option.id} value={option.id} text={option.label} />
-            ))}
-          </Select>
-        )
-      case 'midiMin':
-        return (
-          <CarbonNumberInput
-            id={inputId}
-            size="sm"
-            min={0}
-            max={1}
-            step={0.01}
-            value={mapping?.min_val ?? 0}
-            label=""
-            hideLabel
-            hideSteppers
-            onChange={(_evt: unknown, { value }: { value: string | number }) => {
-              onMidiMappingChange(chain.id, plugin, { min_val: Number(value) })
-            }}
-            style={{ width: 76 }}
-          />
-        )
-      case 'midiMax':
-        return (
-          <CarbonNumberInput
-            id={inputId}
-            size="sm"
-            min={0}
-            max={1}
-            step={0.01}
-            value={mapping?.max_val ?? 1}
-            label=""
-            hideLabel
-            hideSteppers
-            onChange={(_evt: unknown, { value }: { value: string | number }) => {
-              onMidiMappingChange(chain.id, plugin, { max_val: Number(value) })
-            }}
-            style={{ width: 76 }}
-          />
-        )
-      default:
-        return ''
-    }
+    return AudioTableMidiField({
+      field: column.key as 'midiCc' | 'midiChannel' | 'midiCurve' | 'midiMin' | 'midiMax',
+      chainId: chain.id,
+      plugin,
+      midiMappings,
+      pluginInventoryByUri,
+      controlId: inputId,
+      onMidiMappingChange,
+    })
   }, [chain, midiMappings, onMidiMappingChange, pluginInventoryByUri, slot.id])
 
   // Build DataTable rows
   const rows = useMemo(() => {
     return plugins.map((plugin, rowIdx) => {
-      const displayName = getDisplayPluginName(plugin.uri, plugin.name)
-      const pluginPeaks = peaksMap[plugin.uri] ?? peaksMap[`${plugin.uri}::${plugin.position}`]
-      let inputDb = '—'
-      let outputDb = '—'
-      if (pluginPeaks) {
-        const ports = Object.values(pluginPeaks)
-        const inPort = ports.find(p => p.port_symbol?.includes('in')) ?? ports[0]
-        const outPort = ports.find(p => p.port_symbol?.includes('out')) ?? ports[ports.length > 1 ? 1 : 0]
-        if (inPort) inputDb = (20 * Math.log10(Math.max(inPort.peak, 0.0001))).toFixed(1)
-        if (outPort) outputDb = (20 * Math.log10(Math.max(outPort.peak, 0.0001))).toFixed(1)
-      }
+      const displayName = getAudioTablePluginDisplayName(plugin)
+      const { inputDb, outputDb } = formatAudioTablePluginPeak(peaksMap, plugin)
+      const rowAnchorId = buildAudioTableRowAnchorId(slot.id, plugin)
 
       const cells: Record<string, React.ReactNode> = {
-        position: (
-          <CarbonNumberInput
-            id={`pos-${slot.id}-${rowIdx}`}
-            size="sm"
-            min={0}
-            max={plugins.length - 1}
-            value={plugin.position}
-            label=""
-            hideLabel
-            hideSteppers
-            onChange={(_e: unknown, { value }: { value: string | number }) => {
-              if (chain) {
-                onPositionChange(chain.id, plugins, plugin.position, Number(value))
-              }
-            }}
-            style={{ width: 48 }}
+        position: chain ? (
+          <AudioTablePositionField
+            chainId={chain.id}
+            plugin={plugin}
+            plugins={plugins}
+            controlId={`pos-${slot.id}-${rowIdx}`}
+            onPositionChange={onPositionChange}
           />
-        ),
+        ) : '',
         name: displayName,
         bypass: (
           <Checkbox
@@ -1975,6 +1960,7 @@ function FlowTableSection({
 
       return {
         id: `${slot.id}-plugin-${rowIdx}`,
+        rowAnchorId,
         ...cells,
       }
     })
@@ -2169,6 +2155,8 @@ function FlowTableSection({
                   <TableBody>
                     {tableRows.map((row, rowIdx) => {
                       const { key: _k, ...rp } = getRowProps({ row })
+                      const rowAnchorId = (row as typeof row & { rowAnchorId?: string }).rowAnchorId ?? null
+                      const isHighlighted = rowAnchorId !== null && rowAnchorId === highlightedRowAnchorId
                       return (
                         <TableRow key={row.id} {...rp}>
                           {row.cells.map((cell, colIdx) => (
@@ -2176,8 +2164,22 @@ function FlowTableSection({
                               key={cell.id}
                               data-row={rowIdx}
                               data-col={colIdx}
+                              style={isHighlighted ? {
+                                background: 'var(--cds-layer-selected-01)',
+                                boxShadow: `inset 0 0 0 1px ${slot.color}`,
+                              } : undefined}
                             >
-                              {cell.value as React.ReactNode}
+                              {colIdx === 0 && rowAnchorId ? (
+                                <div
+                                  id={buildAudioTableRowAnchorDomId(rowAnchorId)}
+                                  data-row-anchor={rowAnchorId}
+                                  ref={(node) => onRegisterRowAnchor(rowAnchorId, node)}
+                                >
+                                  {cell.value as React.ReactNode}
+                                </div>
+                              ) : (
+                                cell.value as React.ReactNode
+                              )}
                             </TableCell>
                           ))}
                         </TableRow>

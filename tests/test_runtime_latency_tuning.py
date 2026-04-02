@@ -6,6 +6,10 @@ def test_sqlite_wal_autocheckpoint_threshold_is_rt_safe():
     assert database_module.SQLITE_PRAGMAS["wal_autocheckpoint"] == "12000"
 
 
+def test_sqlite_busy_timeout_is_rt_safe():
+    assert database_module.SQLITE_PRAGMAS["busy_timeout"] == "100"
+
+
 def test_configure_gc_for_rt_workload(monkeypatch):
     calls = []
 

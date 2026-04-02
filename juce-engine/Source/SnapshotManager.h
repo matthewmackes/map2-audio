@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "JucePluginHost.h"
 #include <fstream>
+#include <functional>
 
 namespace map2 {
 
@@ -30,7 +31,9 @@ struct ChainState {
 
 class SnapshotManager {
 public:
-    SnapshotManager(JucePluginHost& host);
+    using ParameterSetter = std::function<bool(InstanceId, const std::string&, float)>;
+
+    SnapshotManager(JucePluginHost& host, ParameterSetter parameterSetter = {});
     ~SnapshotManager();
     
     // Snapshot management (0-5)
@@ -65,6 +68,7 @@ public:
     
 private:
     JucePluginHost& host_;
+    ParameterSetter parameterSetter_;
     int currentSnapshot_ = 0;
     
     std::array<Snapshot, MAX_SNAPSHOTS> snapshots_;

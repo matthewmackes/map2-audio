@@ -4,9 +4,9 @@ Async database operations with SQLAlchemy and aiosqlite.
 """
 
 import logging
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.future import select
-from app.database import Base, Plugin, Chain, ChainPlugin
+from app.database import Base, Plugin, Chain, ChainPlugin, RetryingAsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,11 @@ class DatabaseService:
         try:
             self.engine = create_async_engine(self.db_url, echo=False)
             # CRITICAL: expire_on_commit=True to force fresh queries after commit
-            self.SessionLocal = async_sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=True)
+            self.SessionLocal = async_sessionmaker(
+                self.engine,
+                class_=RetryingAsyncSession,
+                expire_on_commit=True,
+            )
             
             # Create tables
             async with self.engine.begin() as conn:

@@ -233,7 +233,12 @@ bool insertionUsesParallelBlend(const std::string& mode) {
 
 Map2AudioEngine::Map2AudioEngine() {
     audioGraph_ = std::make_unique<JuceAudioGraph>(pluginHost_);
-    snapshotManager_ = std::make_unique<SnapshotManager>(pluginHost_);
+    snapshotManager_ = std::make_unique<SnapshotManager>(
+        pluginHost_,
+        [this](InstanceId instanceId, const std::string& name, float value) {
+            return setParameterByName(instanceId, name, value);
+        }
+    );
 }
 
 Map2AudioEngine::~Map2AudioEngine() {
@@ -1624,6 +1629,9 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     parameterBridge_.processQueue([this](const ParameterUpdate& update) {
         pluginHost_.setParameter(update.pluginId, update.paramIndex, update.value);
     });
+    parameterBridge_.processSmoothingBlock(processSamples, [this](InstanceId pluginId, int paramIndex, float value) {
+        pluginHost_.setParameter(pluginId, paramIndex, value);
+    });
 
     // Instruments (SynthForge, DrumMachine) are now graph-managed via their
     // GraphAdapter wrappers — processed inside audioGraph_->process() below.
@@ -1996,12 +2004,33 @@ std::optional<PluginInfo> Map2AudioEngine::getPluginInfo(const std::string& uri)
 InstanceId Map2AudioEngine::loadPlugin(const std::string& uri) {
     // Loading and placement are intentionally separate operations.
     // Callers must explicitly place loaded plugins via addToChain/addToParallelBranch.
-    return pluginHost_.loadPlugin(uri, sampleRate_, bufferSize_);
+    const InstanceId instanceId = pluginHost_.loadPlugin(uri, sampleRate_, bufferSize_);
+    if (instanceId == INVALID_INSTANCE_ID) {
+        return INVALID_INSTANCE_ID;
+    }
+
+    if (auto* processor = pluginHost_.getProcessor(instanceId)) {
+        auto& params = processor->getParameters();
+        for (int i = 0; i < params.size(); ++i) {
+            const std::string name = params[i]->getName(256).toStdString();
+            parameterBridge_.registerParameter(instanceId, i, name, params[i]->getValue());
+            if (auto* paramWithID = dynamic_cast<juce::AudioProcessorParameterWithID*>(params[i])) {
+                const std::string paramId = paramWithID->paramID.toStdString();
+                if (!paramId.empty() && paramId != name) {
+                    parameterBridge_.registerParameter(instanceId, i, paramId, params[i]->getValue());
+                }
+            }
+        }
+    }
+
+    return instanceId;
 }
 
 bool Map2AudioEngine::unloadPlugin(InstanceId instanceId) {
     audioGraph_->removePlugin(instanceId);
+    audioGraph_->removeDetachedPluginNode(instanceId);
     cpuMonitor_.removePlugin(instanceId);
+    parameterBridge_.unregisterPlugin(instanceId);
 
     const bool unloaded = pluginHost_.unloadPlugin(instanceId);
     if (unloaded) {
@@ -2095,6 +2124,7 @@ bool Map2AudioEngine::unloadLexiconPlugin() {
 
     // Remove from chain if present
     audioGraph_->removePlugin(lexiconInstanceId_);
+    audioGraph_->removeDetachedPluginNode(lexiconInstanceId_);
     cpuMonitor_.removePlugin(lexiconInstanceId_);
 
     const InstanceId instanceId = lexiconInstanceId_;
@@ -2148,10 +2178,20 @@ std::vector<SidechainConnection> Map2AudioEngine::getSidechainConnections() cons
 // ========================================
 
 bool Map2AudioEngine::setParameter(InstanceId instanceId, int paramIndex, float value) {
-    return parameterBridge_.queueParameterChange(instanceId, paramIndex, value);
+    if (audioRunning_.load(std::memory_order_acquire)) {
+        if (parameterBridge_.queueParameterChange(instanceId, paramIndex, value)) {
+            return true;
+        }
+    }
+    return pluginHost_.setParameter(instanceId, paramIndex, value);
 }
 
 bool Map2AudioEngine::setParameterByName(InstanceId instanceId, const std::string& name, float value) {
+    if (audioRunning_.load(std::memory_order_acquire)) {
+        if (parameterBridge_.queueParameterChange(instanceId, name, value)) {
+            return true;
+        }
+    }
     return pluginHost_.setParameterByName(instanceId, name, value);
 }
 

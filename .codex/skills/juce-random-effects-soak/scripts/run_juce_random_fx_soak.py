@@ -313,7 +313,8 @@ def load_effects(
                 failures.append(f"{uri}:load_plugin_returned_{instance_id}")
     else:
         candidates = list(effect_pool)
-        rng.shuffle(candidates)
+        if len(candidates) > target_count:
+            rng.shuffle(candidates)
         for uri in candidates:
             if len(loaded) >= target_count:
                 break
@@ -680,6 +681,8 @@ def run() -> int:
     start_ok = False
     audio_running = False
     init_ok = False
+    begin_topology_update = None
+    end_topology_update = None
 
     engine.set_sample_rate(args.sample_rate)
     engine.set_buffer_size(args.buffer_size)
@@ -693,6 +696,8 @@ def run() -> int:
         if not start_ok:
             raise SystemExit("engine.start_audio failed")
         audio_running = True
+        begin_topology_update = getattr(engine, "begin_topology_update", None)
+        end_topology_update = getattr(engine, "end_topology_update", None)
 
         runtime_discovered = discover_runtime_loadable_pool(engine)
         runtime_effect_pool = list(effect_pool)
@@ -755,81 +760,90 @@ def run() -> int:
                     else:
                         flow_apply_failures.append("stop_audio_before_rewire:returned_false")
 
-                cleanup_result = clear_routing(engine)
-                routing_cleanup_failures += (
-                    cleanup_result["remove_group_failures"] + cleanup_result["remove_chain_failures"]
-                )
+                topology_batch_started = False
+                if callable(begin_topology_update):
+                    begin_topology_update()
+                    topology_batch_started = True
 
-                if active_effects and not reuse_effects:
-                    unloaded, failures = unload_effects(engine, active_effects)
-                    if unloaded != len(active_effects):
-                        unload_failures.extend(failures)
-                    active_effects = []
+                try:
+                    cleanup_result = clear_routing(engine)
+                    routing_cleanup_failures += (
+                        cleanup_result["remove_group_failures"] + cleanup_result["remove_chain_failures"]
+                    )
 
-                if not active_effects:
-                    allow_duplicates = len(runtime_effect_pool) < active_effect_count
-                    try:
-                        active_effects, load_errors = load_effects(
-                            engine,
-                            runtime_effect_pool,
-                            rng,
-                            active_effect_count,
-                            allow_duplicates=allow_duplicates,
-                        )
-                    except RuntimeError as exc:
-                        fallback_used = False
-                        if runtime_discovered and runtime_effect_pool != runtime_discovered:
-                            fallback_pool = unique_preserve_order(runtime_discovered)
-                            fallback_allow_duplicates = len(fallback_pool) < active_effect_count
-                            try:
-                                active_effects, load_errors = load_effects(
-                                    engine,
-                                    fallback_pool,
-                                    rng,
-                                    active_effect_count,
-                                    allow_duplicates=fallback_allow_duplicates,
-                                )
-                                runtime_effect_pool = fallback_pool
-                                effect_pool_source = "runtime_discovered_fallback_after_load_failure"
-                                fallback_used = True
-                                if (
-                                    not reuse_effects
-                                    and runtime_effect_pool
-                                    and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
-                                ):
-                                    reuse_effects = True
-                                    auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
-                            except RuntimeError:
-                                fallback_used = False
-                        if not fallback_used:
-                            raise SystemExit(f"failed to load active effect set: {exc}") from exc
-                    load_failures.extend(load_errors)
+                    if active_effects and not reuse_effects:
+                        unloaded, failures = unload_effects(engine, active_effects)
+                        if unloaded != len(active_effects):
+                            unload_failures.extend(failures)
+                        active_effects = []
 
-                effect_order = [int(entry["instance_id"]) for entry in active_effects]
-                rng.shuffle(effect_order)
+                    if not active_effects:
+                        allow_duplicates = len(runtime_effect_pool) < active_effect_count
+                        try:
+                            active_effects, load_errors = load_effects(
+                                engine,
+                                runtime_effect_pool,
+                                rng,
+                                active_effect_count,
+                                allow_duplicates=allow_duplicates,
+                            )
+                        except RuntimeError as exc:
+                            fallback_used = False
+                            if runtime_discovered and runtime_effect_pool != runtime_discovered:
+                                fallback_pool = unique_preserve_order(runtime_discovered)
+                                fallback_allow_duplicates = len(fallback_pool) < active_effect_count
+                                try:
+                                    active_effects, load_errors = load_effects(
+                                        engine,
+                                        fallback_pool,
+                                        rng,
+                                        active_effect_count,
+                                        allow_duplicates=fallback_allow_duplicates,
+                                    )
+                                    runtime_effect_pool = fallback_pool
+                                    effect_pool_source = "runtime_discovered_fallback_after_load_failure"
+                                    fallback_used = True
+                                    if (
+                                        not reuse_effects
+                                        and runtime_effect_pool
+                                        and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
+                                    ):
+                                        reuse_effects = True
+                                        auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
+                                except RuntimeError:
+                                    fallback_used = False
+                            if not fallback_used:
+                                raise SystemExit(f"failed to load active effect set: {exc}") from exc
+                        load_failures.extend(load_errors)
 
-                current_flow_template = choose_different(flow_templates, current_flow_template, rng)
-                current_blend_type = choose_different(BLEND_TYPES, current_blend_type, rng)
-                current_group_ids, apply_failures = apply_flow(engine, current_flow_template, effect_order)
-                flow_apply_failures.extend(apply_failures)
-                current_flow_start = now
-                current_blend_value = 0.5
+                    effect_order = [int(entry["instance_id"]) for entry in active_effects]
+                    rng.shuffle(effect_order)
 
-                flow_events.append(
-                    {
-                        "timestamp_utc": utc_now_iso(),
-                        "flow_index": flow_index,
-                        "elapsed_seconds": round(elapsed, 3),
-                        "flow_template": current_flow_template.name,
-                        "blend_type": current_blend_type,
-                        "active_effect_count": len(active_effects),
-                        "active_effect_uris": [entry["uri"] for entry in active_effects],
-                        "group_ids": list(current_group_ids),
-                        "apply_failure_count": len(apply_failures),
-                        "apply_failures": list(apply_failures),
-                        "live_rewire": bool(args.live_rewire),
-                    }
-                )
+                    current_flow_template = choose_different(flow_templates, current_flow_template, rng)
+                    current_blend_type = choose_different(BLEND_TYPES, current_blend_type, rng)
+                    current_group_ids, apply_failures = apply_flow(engine, current_flow_template, effect_order)
+                    flow_apply_failures.extend(apply_failures)
+                    current_flow_start = now
+                    current_blend_value = 0.5
+
+                    flow_events.append(
+                        {
+                            "timestamp_utc": utc_now_iso(),
+                            "flow_index": flow_index,
+                            "elapsed_seconds": round(elapsed, 3),
+                            "flow_template": current_flow_template.name,
+                            "blend_type": current_blend_type,
+                            "active_effect_count": len(active_effects),
+                            "active_effect_uris": [entry["uri"] for entry in active_effects],
+                            "group_ids": list(current_group_ids),
+                            "apply_failure_count": len(apply_failures),
+                            "apply_failures": list(apply_failures),
+                            "live_rewire": bool(args.live_rewire),
+                        }
+                    )
+                finally:
+                    if topology_batch_started and callable(end_topology_update):
+                        end_topology_update()
 
                 if not args.live_rewire:
                     try:

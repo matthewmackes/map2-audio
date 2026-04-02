@@ -26,6 +26,9 @@
       "<rootDir>/juce-engine/build-check/",
       "<rootDir>/juce-engine/build-.*?/"
     ],
+    "transformIgnorePatterns": [
+      "/node_modules/(?!@faker-js/faker/)"
+    ],
     "testPathIgnorePatterns": [
       "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx"
     ]

@@ -98,6 +98,24 @@ map2::PluginInfo buildNativePluginInfo(const std::string& uri) {
     return info;
 }
 
+int findProcessorParameterIndex(juce::AudioProcessor& processor, const std::string& name) {
+    auto& params = processor.getParameters();
+    for (int i = 0; i < params.size(); ++i) {
+        if (params[i] == nullptr) {
+            continue;
+        }
+        if (params[i]->getName(256).toStdString() == name) {
+            return i;
+        }
+        if (auto* paramWithID = dynamic_cast<juce::AudioProcessorParameterWithID*>(params[i])) {
+            if (paramWithID->paramID.toStdString() == name) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
 class NativeUriPassthroughProcessor final : public juce::AudioProcessor {
 public:
     explicit NativeUriPassthroughProcessor(const juce::String& displayName)
@@ -416,6 +434,8 @@ InstanceId JucePluginHost::loadPlugin(const std::string& pluginId,
 
     InstanceId id = entry->id;
 
+    buildParameterMap(*entry);
+
     {
         std::lock_guard<std::mutex> lock(mutex_);
         instances_[id] = std::move(entry);
@@ -578,12 +598,23 @@ PluginFormat JucePluginHost::getPluginFormat(InstanceId instanceId) const {
 bool JucePluginHost::setParameter(InstanceId instanceId, int paramIndex, float value) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return false;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return false;
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return false;
+        auto& params = instance->getParameters();
+        if (paramIndex < 0 || paramIndex >= params.size()) return false;
 
-    auto& params = instance->getParameters();
+        params[paramIndex]->setValue(value);
+        return true;
+    }
+
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt == hardwareInstances_.end() || hwIt->second->processor == nullptr) {
+        return false;
+    }
+
+    auto& params = hwIt->second->processor->getParameters();
     if (paramIndex < 0 || paramIndex >= params.size()) return false;
 
     params[paramIndex]->setValue(value);
@@ -593,23 +624,58 @@ bool JucePluginHost::setParameter(InstanceId instanceId, int paramIndex, float v
 bool JucePluginHost::setParameterByName(InstanceId instanceId, const std::string& name, float value) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return false;
+    if (it != instances_.end()) {
+        if (it->second->paramNameToIndex.empty()) {
+            buildParameterMap(*it->second);
+        }
+        auto paramIt = it->second->paramNameToIndex.find(name);
+        if (paramIt == it->second->paramNameToIndex.end()) return false;
 
-    auto paramIt = it->second->paramNameToIndex.find(name);
-    if (paramIt == it->second->paramNameToIndex.end()) return false;
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return false;
+        auto& params = instance->getParameters();
+        if (paramIt->second < 0 || paramIt->second >= params.size()) return false;
+        params[paramIt->second]->setValue(value);
+        return true;
+    }
 
-    return setParameter(instanceId, paramIt->second, value);
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt == hardwareInstances_.end() || hwIt->second->processor == nullptr) {
+        return false;
+    }
+
+    const int paramIndex = findProcessorParameterIndex(*hwIt->second->processor, name);
+    if (paramIndex < 0) {
+        return false;
+    }
+
+    auto& params = hwIt->second->processor->getParameters();
+    if (paramIndex >= params.size()) {
+        return false;
+    }
+    params[paramIndex]->setValue(value);
+    return true;
 }
 
 float JucePluginHost::getParameter(InstanceId instanceId, int paramIndex) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return 0.0f;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return 0.0f;
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return 0.0f;
+        auto& params = instance->getParameters();
+        if (paramIndex < 0 || paramIndex >= params.size()) return 0.0f;
 
-    auto& params = instance->getParameters();
+        return params[paramIndex]->getValue();
+    }
+
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt == hardwareInstances_.end() || hwIt->second->processor == nullptr) {
+        return 0.0f;
+    }
+
+    auto& params = hwIt->second->processor->getParameters();
     if (paramIndex < 0 || paramIndex >= params.size()) return 0.0f;
 
     return params[paramIndex]->getValue();
@@ -618,12 +684,42 @@ float JucePluginHost::getParameter(InstanceId instanceId, int paramIndex) const 
 float JucePluginHost::getParameterByName(InstanceId instanceId, const std::string& name) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return 0.0f;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return 0.0f;
 
-    auto paramIt = it->second->paramNameToIndex.find(name);
-    if (paramIt == it->second->paramNameToIndex.end()) return 0.0f;
+        auto& params = instance->getParameters();
+        for (int i = 0; i < params.size(); ++i) {
+            if (params[i] == nullptr) {
+                continue;
+            }
+            if (params[i]->getName(256).toStdString() == name) {
+                return params[i]->getValue();
+            }
+            if (auto* paramWithID = dynamic_cast<juce::AudioProcessorParameterWithID*>(params[i])) {
+                if (paramWithID->paramID.toStdString() == name) {
+                    return params[i]->getValue();
+                }
+            }
+        }
+        return 0.0f;
+    }
 
-    return getParameter(instanceId, paramIt->second);
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt == hardwareInstances_.end() || hwIt->second->processor == nullptr) {
+        return 0.0f;
+    }
+
+    const int paramIndex = findProcessorParameterIndex(*hwIt->second->processor, name);
+    if (paramIndex < 0) {
+        return 0.0f;
+    }
+
+    auto& params = hwIt->second->processor->getParameters();
+    if (paramIndex >= params.size()) {
+        return 0.0f;
+    }
+    return params[paramIndex]->getValue();
 }
 
 std::map<std::string, float> JucePluginHost::getAllParameters(InstanceId instanceId) const {
@@ -631,16 +727,26 @@ std::map<std::string, float> JucePluginHost::getAllParameters(InstanceId instanc
     std::lock_guard<std::mutex> lock(mutex_);
 
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return result;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return result;
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return result;
+        auto& params = instance->getParameters();
+        for (int i = 0; i < params.size(); ++i) {
+            result[params[i]->getName(256).toStdString()] = params[i]->getValue();
+        }
+        return result;
+    }
 
-    auto& params = instance->getParameters();
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt == hardwareInstances_.end() || hwIt->second->processor == nullptr) {
+        return result;
+    }
+
+    auto& params = hwIt->second->processor->getParameters();
     for (int i = 0; i < params.size(); ++i) {
         result[params[i]->getName(256).toStdString()] = params[i]->getValue();
     }
-
     return result;
 }
 
@@ -871,6 +977,7 @@ PluginFormat JucePluginHost::formatFromString(const juce::String& formatName) co
 void JucePluginHost::buildParameterMap(PluginEntry& entry) {
     if (entry.instance == nullptr) return;
 
+    entry.paramNameToIndex.clear();
     auto& params = entry.instance->getParameters();
     for (int i = 0; i < params.size(); ++i) {
         std::string name = params[i]->getName(256).toStdString();
