@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 04:15 EDT - T600 replaced the legacy 1ms RTMidi poll loop with a callback-fed asyncio queue plus a bounded 5ms fallback for callback-less backends [completed]; T601 raised MPX1 and IntelFX MIDI poll loops to 5ms and audited Push Surface loops as already above policy [completed]; T603 added a repo-wide RT latency policy test that rejects new sub-5ms `asyncio.sleep()` calls under `app/services/` outside the documented allowlist [completed]; T593 raised the MIDI Hub poll floor to 2ms and added coverage for the enforced RT-safe minimum [completed]; T594 raised SQLite WAL auto-checkpointing to 12000 pages with existing graceful-shutdown checkpoints kept as the explicit safe flush path [completed]; T599 tunes Python GC thresholds to `3500/10/10` during backend startup and documents the policy in `docs/CLAUDE.md` [completed]
+Last updated: 2026-04-02 04:25 EDT - T596 reduced default spectrum and dynamics broadcast rates to 15fps, kept meters at 30fps, and made per-topic FPS configurable through `metering.broadcast_fps.*` config keys [completed]; T598 moved AVB router discovery and Tesira fleet startup onto background `asyncio.create_task()` helpers so backend readiness no longer blocks on optional network discovery [completed]; T600 replaced the legacy 1ms RTMidi poll loop with a callback-fed asyncio queue plus a bounded 5ms fallback for callback-less backends [completed]; T601 raised MPX1 and IntelFX MIDI poll loops to 5ms and audited Push Surface loops as already above policy [completed]; T603 added a repo-wide RT latency policy test that rejects new sub-5ms `asyncio.sleep()` calls under `app/services/` outside the documented allowlist [completed]
 
 ID: T675
 Status: [✓] Done
@@ -12895,7 +12895,7 @@ Last updated: 2026-03-31
 ---
 
 ID: T596
-Status: [~] On Hold
+Status: [✓] Done
 Title: [HIGH] Reduce or batch 30fps metering WebSocket broadcasts
 Description:
 - Goal / acceptance criteria: In `app/services/metering_broadcast.py:38-46`, reduce spectrum and dynamics to 15fps, keeping meters at 30fps. Alternatively batch all three into a single combined JSON push per tick. Make rate configurable via config.json.
@@ -12904,8 +12904,10 @@ Description:
 - Estimated effort: Low
 - Required outputs: Reduced/batched broadcast, configurable rate.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:25 EDT - Codex
+- Completed: Reduced default `spectrum` and `dynamics` broadcast rates to `15fps`, kept `meters` at `30fps`, and added `metering.broadcast_fps.<topic>` config overrides in `app/services/metering_broadcast.py`.
+- Validation: `pytest tests/test_metering_broadcast.py tests/test_main_background_startup.py tests/test_main_shutdown.py -q` -> PASS
 
 ---
 
@@ -12925,7 +12927,7 @@ Last updated: 2026-03-31
 ---
 
 ID: T598
-Status: [~] On Hold
+Status: [✓] Done
 Title: [HIGH] Defer AVB discovery and Tesira fleet init to background tasks at startup
 Description:
 - Goal / acceptance criteria: In `app/main.py` lifespan startup (lines 521-556), move AVB router discovery and Tesira fleet initialization to background `asyncio.create_task()` calls that run after the audio engine is online, rather than blocking the startup sequence.
@@ -12934,8 +12936,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Background-deferred discovery; audio engine starts independently of network discovery.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 04:25 EDT - Codex
+- Completed: Added reusable background optional-service startup helpers in `app/main.py` and moved AVB router discovery plus Tesira fleet/PTP initialization onto non-blocking `asyncio.create_task()` startup paths with shutdown cancellation handling.
+- Validation: `pytest tests/test_metering_broadcast.py tests/test_main_background_startup.py tests/test_main_shutdown.py -q` -> PASS
 
 ---
 

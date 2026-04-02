@@ -76,6 +76,45 @@ async def safe_stop_service(
         logger.warning(f"Failed to stop {name}: {e}")
 
 
+async def _run_optional_service_start(
+    logger,
+    name: str,
+    start_coro_factory: Callable[[], Awaitable[Any]],
+) -> None:
+    """Start optional services in the background without delaying app readiness."""
+    try:
+        await start_coro_factory()
+        logger.info("%s started successfully (background startup)", name)
+    except asyncio.CancelledError:
+        logger.debug("Background startup cancelled for %s", name)
+        raise
+    except Exception as e:
+        logger.warning(f"{name} not started: {e}")
+
+
+def defer_optional_service_start(
+    logger,
+    name: str,
+    start_coro_factory: Callable[[], Awaitable[Any]],
+) -> asyncio.Task[None]:
+    task_name = f"startup:{name.strip().lower().replace(' ', '-')}"
+    return asyncio.create_task(
+        _run_optional_service_start(logger, name, start_coro_factory),
+        name=task_name,
+    )
+
+
+async def cancel_background_startup_tasks(tasks: list[asyncio.Task[None]]) -> None:
+    """Cancel or drain background startup helpers before shutdown."""
+    for task in tasks:
+        if not task.done():
+            task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
 def _emit_shutdown_notice(message: str) -> None:
     try:
         os.write(2, (message.rstrip() + "\n").encode("utf-8", "replace"))
@@ -151,7 +190,7 @@ def _install_runtime_shutdown_signal_handlers() -> None:
 import logging
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
-from typing import Any, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
 from app.utils.health_metrics import init_health_metrics
@@ -317,6 +356,7 @@ async def lifespan(app):
         openapi_schema_sync = None
         avb_event_sync = None
         push_surface_manager = None
+        background_start_tasks: list[asyncio.Task[None]] = []
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -543,7 +583,9 @@ async def lifespan(app):
             from app.services.avb.avb_router import get_avb_router
 
             avb_router = get_avb_router()
-            await safe_start_service(logger, "AVB router discovery", avb_router.start)
+            background_start_tasks.append(
+                defer_optional_service_start(logger, "AVB router discovery", avb_router.start)
+            )
         except Exception as e:
             logger.warning(f"AVB router discovery not started: {e}")
 
@@ -557,17 +599,25 @@ async def lifespan(app):
                 from app.services.tesira.ptp_coordinator import TesiraPTPCoordinator
                 from app.services.tesira.preset_interlock import TesiraPresetInterlock
                 tesira_fleet = get_tesira_fleet()
-                await safe_start_service(logger, "Tesira Fleet", tesira_fleet.start)
-                tesira_ptp = TesiraPTPCoordinator(tesira_fleet)
-                await safe_start_service(logger, "Tesira PTP Coordinator", tesira_ptp.start)
-                tesira_interlock = TesiraPresetInterlock(tesira_fleet)
-                tesira_fleet.set_preset_interlock(tesira_interlock)
-                preset_lifecycle.register_listener(
-                    "preset_loaded", tesira_interlock.on_preset_loaded_event
+
+                async def _start_tesira_background() -> None:
+                    nonlocal tesira_ptp
+
+                    await tesira_fleet.start()
+                    tesira_ptp = TesiraPTPCoordinator(tesira_fleet)
+                    await tesira_ptp.start()
+                    tesira_interlock = TesiraPresetInterlock(tesira_fleet)
+                    tesira_fleet.set_preset_interlock(tesira_interlock)
+                    preset_lifecycle.register_listener(
+                        "preset_loaded", tesira_interlock.on_preset_loaded_event
+                    )
+                    # Discovery service is stateless — just instantiate the singleton
+                    get_tesira_discovery()
+                    logger.info("Tesira Forte AVB integration started")
+
+                background_start_tasks.append(
+                    defer_optional_service_start(logger, "Tesira Fleet", _start_tesira_background)
                 )
-                # Discovery service is stateless — just instantiate the singleton
-                get_tesira_discovery()
-                logger.info("Tesira Forte AVB integration started")
             else:
                 logger.debug("Tesira integration disabled (tesira.enabled=false)")
         except Exception as e:
@@ -582,6 +632,7 @@ async def lifespan(app):
 
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
+        await cancel_background_startup_tasks(background_start_tasks)
 
         if tesira_ptp is not None:
             await safe_stop_service(logger, "Tesira PTP Coordinator", tesira_ptp.stop)

@@ -9,11 +9,23 @@ import json
 from datetime import datetime
 from typing import Optional
 
+from app.config import config_get
 from app.services.websocket_manager import ws_manager
 from app.services.juce_engine_service import get_audio_engine
 from app.services.timing_jitter_collector import get_timing_jitter_collector
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_BROADCAST_FPS = {
+    "spectrum": 15.0,
+    "lufs": 10.0,
+    "cpu": 2.0,
+    "phase": 10.0,
+    "meters": 30.0,
+    "latency": 1.0,
+    "dynamics": 15.0,
+    "timing_jitter": 10.0,
+}
 
 
 class MeteringBroadcastService:
@@ -22,28 +34,34 @@ class MeteringBroadcastService:
     and broadcasts it to subscribed WebSocket clients.
 
     Broadcast rates:
-    - spectrum: 30 fps (33ms)
+    - spectrum: 15 fps (67ms)
     - lufs: 10 fps (100ms)
     - cpu: 2 fps (500ms)
     - phase: 10 fps (100ms)
     - meters (VU): 30 fps (33ms)
+    - dynamics: 15 fps (67ms)
     """
 
     def __init__(self):
         self._running = False
         self._tasks: list = []
 
-        # Broadcast intervals in seconds
-        self._intervals = {
-            "spectrum": 1.0 / 30,  # 30 fps
-            "lufs": 1.0 / 10,      # 10 fps
-            "cpu": 1.0 / 2,        # 2 fps
-            "phase": 1.0 / 10,     # 10 fps
-            "meters": 1.0 / 30,    # 30 fps
-            "latency": 1.0 / 1,    # 1 fps (latency doesn't change often)
-            "dynamics": 1.0 / 30,  # 30 fps (gain reduction meters)
-            "timing_jitter": 1.0 / 10,  # 10 fps (callback timing diagnostics)
-        }
+        self._intervals: dict[str, float] = {}
+        self.refresh_intervals_from_config()
+
+    def refresh_intervals_from_config(self) -> None:
+        """Reload per-topic FPS settings from config with RT-safe defaults."""
+        intervals: dict[str, float] = {}
+        for topic, default_fps in DEFAULT_BROADCAST_FPS.items():
+            fps = config_get(f"metering.broadcast_fps.{topic}", default_fps)
+            try:
+                fps_value = float(fps)
+            except (TypeError, ValueError):
+                fps_value = default_fps
+            if fps_value <= 0:
+                fps_value = default_fps
+            intervals[topic] = 1.0 / fps_value
+        self._intervals = intervals
 
     async def start(self):
         """Start all broadcast tasks"""
@@ -52,6 +70,7 @@ class MeteringBroadcastService:
             return
 
         self._running = True
+        self.refresh_intervals_from_config()
 
         # Start broadcast tasks
         self._tasks = [
