@@ -679,6 +679,68 @@ class ChainService:
 
         return warnings
 
+    @staticmethod
+    def _runtime_instance_id(payload: Dict[str, Any]) -> Optional[int]:
+        raw_value = payload.get("instance_id", payload.get("id"))
+        try:
+            instance_id = int(raw_value)
+        except (TypeError, ValueError):
+            return None
+        return instance_id if instance_id > 0 else None
+
+    async def _stage_runtime_chain_instances(
+        self,
+        engine_service: Any,
+        chain_plugins: List[Any],
+    ) -> tuple[List[tuple[Any, int]], List[str]]:
+        loaded_plugins = await engine_service.get_loaded_plugins()
+        pedalboard = await engine_service.get_current_pedalboard()
+
+        active_instance_ids = {
+            instance_id
+            for item in pedalboard.get("items", []) if isinstance(item, dict)
+            for instance_id in [self._runtime_instance_id(item)]
+            if instance_id is not None
+        }
+
+        detached_by_uri: Dict[str, deque[int]] = defaultdict(deque)
+        for plugin in loaded_plugins:
+            if not isinstance(plugin, dict):
+                continue
+            instance_id = self._runtime_instance_id(plugin)
+            plugin_uri = str(plugin.get("uri") or "")
+            if instance_id is None or not plugin_uri or instance_id in active_instance_ids:
+                continue
+            detached_by_uri[plugin_uri].append(instance_id)
+
+        staged_instances: List[tuple[Any, int]] = []
+        warnings: List[str] = []
+
+        for chain_plugin in chain_plugins:
+            plugin_uri = str(getattr(chain_plugin, "plugin_uri", "") or "")
+            if not plugin_uri:
+                warnings.append(f"Missing plugin URI at position {chain_plugin.position}")
+                continue
+
+            instance_id: Optional[int] = None
+            bucket = detached_by_uri.get(plugin_uri)
+            if bucket:
+                instance_id = bucket.popleft()
+
+            if instance_id is None:
+                instance_id = await engine_service.load_plugin(plugin_uri)
+                if instance_id < 0:
+                    warnings.append(f"Failed to load plugin {plugin_uri} at position {chain_plugin.position}")
+                    continue
+
+            if not await engine_service.prewarm_plugin_node(instance_id):
+                warnings.append(f"Failed to prewarm plugin {plugin_uri} at position {chain_plugin.position}")
+
+            warnings.extend(await self._apply_persisted_loader_state(engine_service, chain_plugin, instance_id))
+            staged_instances.append((chain_plugin, instance_id))
+
+        return staged_instances, warnings
+
     async def _deploy_chain_to_engine(self, chain_plugins: List[Any]) -> Dict[str, Any]:
         if not _ENABLE_ENGINE_CHAIN_DEPLOY:
             return self._build_runtime_sync_payload(
@@ -711,7 +773,13 @@ class ChainService:
 
         missing_methods = [
             method
-            for method in ("clear_chain", "add_to_chain", "get_current_pedalboard")
+            for method in (
+                "clear_chain",
+                "add_to_chain",
+                "get_current_pedalboard",
+                "get_loaded_plugins",
+                "prewarm_plugin_node",
+            )
             if not hasattr(engine, method)
         ]
         if missing_methods:
@@ -723,19 +791,26 @@ class ChainService:
                 warnings=[f"Engine missing required APIs: {', '.join(missing_methods)}"],
             )
 
-        await asyncio.to_thread(engine.clear_chain)
+        staged_instances, warnings = await self._stage_runtime_chain_instances(engine_service, chain_plugins)
 
         restored_positions: List[int] = []
-        warnings: List[str] = []
-        for chain_plugin in chain_plugins:
-            instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
-            if instance_id < 0:
-                warnings.append(f"Failed to load plugin {chain_plugin.plugin_uri} at position {chain_plugin.position}")
-                continue
+        begin_topology_update = getattr(engine, "begin_topology_update", None)
+        end_topology_update = getattr(engine, "end_topology_update", None)
+        topology_batch_started = False
 
-            await asyncio.to_thread(engine.add_to_chain, instance_id, chain_plugin.position)
-            restored_positions.append(int(chain_plugin.position))
-            warnings.extend(await self._apply_persisted_loader_state(engine_service, chain_plugin, instance_id))
+        if callable(begin_topology_update):
+            await asyncio.to_thread(begin_topology_update)
+            topology_batch_started = True
+
+        try:
+            await engine_service.clear_chain()
+
+            for chain_plugin, instance_id in staged_instances:
+                await asyncio.to_thread(engine.add_to_chain, instance_id, chain_plugin.position)
+                restored_positions.append(int(chain_plugin.position))
+        finally:
+            if topology_batch_started and callable(end_topology_update):
+                await asyncio.to_thread(end_topology_update)
 
         pedalboard = await engine_service.get_current_pedalboard()
         runtime_items = pedalboard.get("items", []) if isinstance(pedalboard, dict) else []

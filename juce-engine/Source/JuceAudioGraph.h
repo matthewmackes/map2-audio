@@ -108,6 +108,11 @@ public:
      */
     void clearChain();
 
+    /**
+     * Ensure a plugin has a detached graph node prepared before it is connected live.
+     */
+    bool prewarmPluginNode(InstanceId instanceId);
+
     // ========================================
     // Sidechain routing
     // ========================================

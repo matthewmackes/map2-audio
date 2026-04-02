@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 18:37 EDT - Completed T689 root-cause diagnosis for the JUCE 48kHz/64 live-rewire soak, landed graph/harness isolation fixes, and recorded the staged-graph follow-up needed to unblock T614 honestly.
+Last updated: 2026-04-02 19:52 EDT - Advanced T690 with staged runtime-chain instance reuse/prewarm APIs and validated the implementation slice, but the low-latency soak proof is still pending because the current harness bypasses the new chain-activation path.
 
 ID: T688
 Status: [✓] Done
@@ -1780,7 +1780,7 @@ Last updated: 2026-04-02 17:46 EDT - Codex
   - Until those xrun/jitter failures are understood and reduced enough to satisfy the no-gap acceptance bar, `T614` cannot be closed honestly and remains the blocker for `T646`, `T637`, and `T634`.
 
 ID: T690
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Preload live snapshot effect pools and swap staged JUCE graphs without runtime plugin/node construction
 Description:
 - Goal / acceptance criteria: Remove plugin load/unload and plugin-node create/destroy work from the low-latency live snapshot apply path by keeping the needed effect instances preloaded and switching between staged JUCE graph topologies or pre-attached prepared nodes. Revalidate the 48kHz/64-sample soak with evidence that separates topology-only switching from plugin-construction stress and shows materially improved xrun / peak-jitter behavior.
@@ -1790,7 +1790,19 @@ Description:
 - Required outputs: staged/preloaded graph-swap design, implementation in JUCE runtime, updated 48kHz/64-sample soak evidence, and honest PASS/FAIL comparison against the current diagnostic artifacts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 18:37 EDT - Codex
+Last updated: 2026-04-02 19:52 EDT - Codex
+- Progress notes:
+  - Exposed `clear_chain`, `get_loaded_plugins`, and `prewarm_plugin_node` through the JUCE Python bindings and `JuceEngineService`, so runtime callers can clear topology without unloading processors, inspect detached resident instances, and prepare plugin nodes before reconnecting them live.
+  - Updated `ChainService._deploy_chain_to_engine()` to stage runtime chain instances before the live clear step by reusing detached loaded instances where possible, preloading missing plugins ahead of time, prewarming their nodes off-chain, restoring persisted loader state, and only then rebuilding the active chain inside one batched topology update.
+  - Added focused regression coverage proving runtime activation still restores persisted loader state and now reuses detached resident instances instead of reloading matching plugins during chain activation.
+- Blocked notes:
+  - `T690` is not done yet. The current random-effects soak harness mutates the JUCE engine directly rather than exercising `ChainService.activate_chain()`, so this slice still lacks updated `48kHz / 64` runtime evidence for the new staged activation path.
+  - The remaining honest work is a JUCE/runtime evidence seam that can measure staged-node switching directly and show whether the live-apply spikes improve enough to close `T614`.
+- Validation:
+  - `python3 -m pytest -q tests/test_chain_plugin_loader_state_persistence.py`
+  - `python3 -m pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_chain_plugin_loader_state_persistence.py`
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4`
+  - `python3` binding smoke verified `clear_chain`, `get_loaded_plugins`, and `prewarm_plugin_node` are present on `map2_audio_engine.create_engine()`
 
 ID: T689
 Status: [✓] Done

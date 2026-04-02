@@ -260,6 +260,11 @@ void JuceAudioGraph::clearChain() {
     markTopologyDirtyAndMaybeRebuildLocked();
 }
 
+bool JuceAudioGraph::prewarmPluginNode(InstanceId instanceId) {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+    return addPluginNode(instanceId) != juce::AudioProcessorGraph::NodeID();
+}
+
 void JuceAudioGraph::beginTopologyUpdate() {
     std::lock_guard<std::mutex> lock(chainMutex_);
     ++topologyUpdateDepth_;

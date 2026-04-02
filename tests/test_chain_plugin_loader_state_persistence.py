@@ -334,7 +334,11 @@ async def test_activate_chain_records_runtime_sync_capability_gap_when_deploy_di
 class _FakeRuntimeEngine:
     def __init__(self) -> None:
         self.items: list[dict] = []
+        self.loaded_plugins: list[dict] = []
         self.add_calls: list[tuple[int, int]] = []
+        self.prewarm_calls: list[int] = []
+        self.topology_begin_calls = 0
+        self.topology_end_calls = 0
 
     def clear_chain(self) -> None:
         self.items = []
@@ -345,6 +349,31 @@ class _FakeRuntimeEngine:
             if item["instance_id"] == instance_id:
                 item["position"] = position
                 return
+        loaded = next(
+            (plugin for plugin in self.loaded_plugins if plugin.get("instance_id") == instance_id),
+            {"instance_id": instance_id, "uri": "", "name": ""},
+        )
+        self.items.append(
+            {
+                "instance_id": instance_id,
+                "uri": loaded.get("uri", ""),
+                "name": loaded.get("name", ""),
+                "position": position,
+            }
+        )
+
+    def get_loaded_plugins(self):
+        return list(self.loaded_plugins)
+
+    def prewarm_plugin_node(self, instance_id: int) -> bool:
+        self.prewarm_calls.append(instance_id)
+        return True
+
+    def begin_topology_update(self) -> None:
+        self.topology_begin_calls += 1
+
+    def end_topology_update(self) -> None:
+        self.topology_end_calls += 1
 
     def get_current_pedalboard(self):
         return {"name": "Runtime Chain", "items": list(self.items)}
@@ -368,8 +397,23 @@ class _FakeRuntimeEngineService:
         self.loaded_plugin_calls.append(uri)
         self._next_instance_id += 1
         instance_id = self._next_instance_id
-        self._engine.items.append({"uri": uri, "instance_id": instance_id})
+        self._engine.loaded_plugins.append(
+            {
+                "instance_id": instance_id,
+                "uri": uri,
+                "name": uri.rsplit("/", 1)[-1],
+            }
+        )
         return instance_id
+
+    async def get_loaded_plugins(self):
+        return self._engine.get_loaded_plugins()
+
+    async def clear_chain(self) -> None:
+        self._engine.clear_chain()
+
+    async def prewarm_plugin_node(self, instance_id: int) -> bool:
+        return self._engine.prewarm_plugin_node(instance_id)
 
     async def load_nam_model_instance(self, instance_id: int, path: str) -> bool:
         self.nam_load_calls.append((instance_id, path))
@@ -474,6 +518,64 @@ async def test_activate_chain_restores_persisted_loader_state_into_runtime_insta
         "runtime_items": 2,
         "warnings": [],
         "restored_positions": [0, 1],
+        "missing_positions": [],
+    }
+    assert fake_engine_service._engine.prewarm_calls == [101, 102]
+    assert fake_engine_service._engine.topology_begin_calls == 1
+    assert fake_engine_service._engine.topology_end_calls == 1
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_activate_chain_reuses_detached_loaded_instances_before_live_clear(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-reuse.db")
+    fake_engine_service = _FakeRuntimeEngineService()
+    fake_engine_service._engine.loaded_plugins = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "Active NAM"},
+        {"instance_id": 402, "uri": "map2://juce/nam", "name": "Detached NAM"},
+    ]
+    fake_engine_service._engine.items = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "Active NAM", "position": 0},
+    ]
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(name="Reuse Detached", is_active=False)
+        session.add(chain)
+        await session.flush()
+        session.add(
+            database_module.ChainPlugin(
+                chain_id=chain.id,
+                plugin_uri="map2://juce/nam",
+                position=0,
+                bypass=False,
+                selected_asset_path="/tmp/reused-runtime.nam",
+            )
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.activate_chain(chain.id) is True
+        payload = await service.get_chain(chain.id)
+
+    assert fake_engine_service.loaded_plugin_calls == []
+    assert fake_engine_service._engine.prewarm_calls == [402]
+    assert fake_engine_service._engine.add_calls == [(402, 0)]
+    assert fake_engine_service.nam_load_calls == [(402, "/tmp/reused-runtime.nam")]
+    assert payload["runtime_sync"] == {
+        "enabled": True,
+        "status": "active",
+        "runtime_items": 1,
+        "warnings": [],
+        "restored_positions": [0],
         "missing_positions": [],
     }
 

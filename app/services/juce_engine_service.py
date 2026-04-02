@@ -364,6 +364,24 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return {"name": "none", "plugins": [], "items": []}
         return self._engine.get_current_pedalboard()
+
+    async def get_loaded_plugins(self) -> List[Dict[str, Any]]:
+        """List every loaded plugin instance, including detached residents."""
+        if not self._engine:
+            return []
+        return await asyncio.to_thread(self._engine.get_loaded_plugins)
+
+    async def clear_chain(self) -> None:
+        """Clear the active chain topology without unloading plugin instances."""
+        if not self._engine:
+            return
+        await asyncio.to_thread(self._engine.clear_chain)
+
+    async def prewarm_plugin_node(self, instance_id: int) -> bool:
+        """Prepare a detached graph node for a loaded plugin instance."""
+        if not self._engine:
+            return False
+        return await asyncio.to_thread(self._engine.prewarm_plugin_node, instance_id)
     
     # Chain Management
     

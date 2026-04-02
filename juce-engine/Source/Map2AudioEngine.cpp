@@ -2061,6 +2061,10 @@ std::vector<InstanceId> Map2AudioEngine::getChainOrder() const {
     return audioGraph_->getChainOrder();
 }
 
+void Map2AudioEngine::clearChain() {
+    audioGraph_->clearChain();
+}
+
 bool Map2AudioEngine::addToChain(InstanceId instanceId, int position) {
     return audioGraph_->addPlugin(instanceId, position);
 }
@@ -2071,6 +2075,10 @@ bool Map2AudioEngine::removeFromChain(InstanceId instanceId) {
 
 bool Map2AudioEngine::reorderChain(const std::vector<InstanceId>& order) {
     return audioGraph_->reorderPlugins(order);
+}
+
+bool Map2AudioEngine::prewarmPluginNode(InstanceId instanceId) {
+    return audioGraph_->prewarmPluginNode(instanceId);
 }
 
 // ========================================

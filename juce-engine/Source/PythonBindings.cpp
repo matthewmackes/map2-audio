@@ -98,6 +98,21 @@ py::dict pluginInfoToDict(const PluginInfo& info) {
     return d;
 }
 
+py::dict pluginInstanceToDict(const PluginInstance& plugin) {
+    py::dict d;
+    d["instance_id"] = plugin.id;
+    d["uri"] = plugin.uri;
+    d["name"] = plugin.name;
+    d["bypassed"] = plugin.bypassed;
+
+    py::dict parameterValues;
+    for (const auto& [name, value] : plugin.parameterValues) {
+        parameterValues[py::str(name)] = value;
+    }
+    d["parameter_values"] = parameterValues;
+    return d;
+}
+
 // Convert VuLevels to Python dict
 py::dict vuLevelsToDict(const VuLevels& vu) {
     py::dict d;
@@ -2767,6 +2782,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
         .def("get_chain_order", &Map2AudioEngine::getChainOrder,
              "Get current plugin chain order")
+        .def("clear_chain", &Map2AudioEngine::clearChain,
+             "Clear chain topology without unloading plugin instances")
         .def("add_to_chain", &Map2AudioEngine::addToChain,
              py::arg("instance_id"), py::arg("position") = -1,
              "Add plugin to chain at position")
@@ -2776,6 +2793,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("reorder_chain", &Map2AudioEngine::reorderChain,
              py::arg("order"),
              "Reorder plugin chain")
+        .def("prewarm_plugin_node", &Map2AudioEngine::prewarmPluginNode,
+             py::arg("instance_id"),
+             "Create a detached graph node for a loaded plugin before live placement")
         .def("begin_topology_update", [](Map2AudioEngine& self) {
             self.getAudioGraph().beginTopologyUpdate();
         }, "Begin a batched topology update")
@@ -5784,6 +5804,13 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["items"] = items;
             return d;
         }, "Get current pedalboard configuration")
+        .def("get_loaded_plugins", [](Map2AudioEngine& self) {
+            py::list plugins;
+            for (const auto& plugin : self.getPluginHost().getLoadedPlugins()) {
+                plugins.append(pluginInstanceToDict(plugin));
+            }
+            return plugins;
+        }, "List all loaded plugin instances, including detached resident instances")
 
         // ========================================
         // AVDECC Entity Methods (Phase 10)
