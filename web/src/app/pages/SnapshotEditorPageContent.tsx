@@ -111,7 +111,7 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -131,6 +131,15 @@ import {
   buildSnapshotActivationToastMessage,
   extractSnapshotActivationFailureReason,
 } from '../utils/snapshotActivationToast'
+import {
+  collectSnapshotMidiMapEntries,
+  formatMidiNoteLabel,
+  getSnapshotBlockFocusRange,
+  normalizeSnapshotBlockFocusSnapshot,
+  parseMidiActivityNoteOn,
+  replaceSnapshotBlockFocusRange,
+  resolveSnapshotBlockFocusIndex,
+} from '../utils/snapshotBlockFocus'
 import {
   isSnapshotCurrentRuntimeLive,
   resolveSnapshotGoLiveState,
@@ -935,6 +944,8 @@ export function SnapshotEditorPage() {
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
   const perfSeqRef = useRef(0)
   const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
+  const [blockFocusMidiChannelDraft, setBlockFocusMidiChannelDraft] = useState<string>('omni')
+  const [blockFocusStartNoteDraft, setBlockFocusStartNoteDraft] = useState<number>(60)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
@@ -1626,6 +1637,14 @@ export function SnapshotEditorPage() {
     [activeSnapshot, failedGoLiveSnapshotId, goLiveFailureReason, pendingGoLiveSnapshotId, runtimeLiveState],
   )
   const sessionNotes = activeSnapshot?.session_notes ?? []
+  const snapshotMidiEntries = useMemo(
+    () => collectSnapshotMidiMapEntries(activeSnapshot),
+    [activeSnapshot],
+  )
+  const snapshotBlockFocusRange = useMemo(
+    () => getSnapshotBlockFocusRange(snapshotMidiEntries),
+    [snapshotMidiEntries],
+  )
   const effectiveChainsResponse = useMemo(
     () => (
       activeSnapshot
@@ -2228,6 +2247,21 @@ export function SnapshotEditorPage() {
     if (!activeFlow) return null
     return activeFlow.chainId !== null ? effectiveChainById.get(activeFlow.chainId) ?? null : null
   }, [activeFlow, effectiveChainById])
+  const blockFocusPlugins = currentChain?.plugins ?? []
+  const maxBlockFocusStartNote = Math.max(0, 127 - Math.max(0, blockFocusPlugins.length - 1))
+  const blockFocusStartNote = Math.max(0, Math.min(127, Math.trunc(blockFocusStartNoteDraft)))
+  const blockFocusStartNoteOverflow = blockFocusPlugins.length > 0 && blockFocusStartNote > maxBlockFocusStartNote
+  const blockFocusSaveDisabled = (
+    snapshotEditingLocked
+    || !activeSnapshot
+    || blockFocusPlugins.length === 0
+    || blockFocusStartNoteOverflow
+  )
+
+  useEffect(() => {
+    setBlockFocusMidiChannelDraft(snapshotBlockFocusRange?.midiChannel == null ? 'omni' : String(snapshotBlockFocusRange.midiChannel))
+    setBlockFocusStartNoteDraft(snapshotBlockFocusRange?.startNote ?? 60)
+  }, [snapshotBlockFocusRange?.midiChannel, snapshotBlockFocusRange?.startNote, activeSnapshot?.id])
 
   useEffect(() => {
     if (!isTabletTouchLayout) {
@@ -2485,6 +2519,14 @@ export function SnapshotEditorPage() {
       channel: midiStatus.last_channel,
     }
   }, [lastMidiActivityWs, midiStatus])
+  const blockFocusPreview = useMemo(() => (
+    blockFocusPlugins.map((plugin, index) => ({
+      key: `${plugin.uri}-${plugin.position ?? index}`,
+      blockLabel: getDisplayPluginName(plugin.name, plugin.uri),
+      note: blockFocusStartNote + index,
+      position: plugin.position,
+    }))
+  ), [blockFocusPlugins, blockFocusStartNote])
 
   const midiScopeLabel = useMemo(() => {
     switch (midiScope) {
@@ -2536,6 +2578,36 @@ export function SnapshotEditorPage() {
     const parameter = meta?.parameters?.find((entry) => entry.index === mapping.target_param_index)
     return parameter?.name ?? mapping.target_param_symbol ?? `Parameter #${mapping.target_param_index ?? 0}`
   }, [pluginMeta])
+
+  const handleMidiBlockFocusActivity = useCallback((data: Record<string, unknown>) => {
+    const noteOn = parseMidiActivityNoteOn(data)
+    const blockIndex = resolveSnapshotBlockFocusIndex(snapshotBlockFocusRange, noteOn, blockFocusPlugins.length)
+    if (blockIndex == null) {
+      return
+    }
+
+    const plugin = blockFocusPlugins[blockIndex]
+    if (!plugin) {
+      return
+    }
+
+    setSelectedPluginSelection(plugin.uri, plugin.position)
+    if (isTabletTouchLayout) {
+      setTabletEditorOpen(true)
+      return
+    }
+
+    setEffectModalOpen(true)
+    if (isCompactLayout) {
+      setCompactTab('editor')
+    }
+  }, [
+    blockFocusPlugins,
+    isCompactLayout,
+    isTabletTouchLayout,
+    setSelectedPluginSelection,
+    snapshotBlockFocusRange,
+  ])
 
   useEffect(() => {
     if (midiScope === 'selected-plugin' && !selectedPluginUri) {
@@ -2611,8 +2683,11 @@ export function SnapshotEditorPage() {
         value: data.data2 ?? parseInt(data.raw_hex?.split(' ')[2] ?? '0', 16),
         channel: data.channel ?? 0,
       })
+      return
     }
-  }, []))
+
+    handleMidiBlockFocusActivity(data)
+  }, [handleMidiBlockFocusActivity]))
 
   // Fallback: poll-based learn completion (covers missed WebSocket events)
   useEffect(() => {
@@ -3028,6 +3103,27 @@ export function SnapshotEditorPage() {
     void queryClient.invalidateQueries({ queryKey: ['midi'] })
     void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
   }, [queryClient])
+
+  const replaceSnapshotBlockFocusMutation = useMutation({
+    mutationFn: async ({
+      snapshotId,
+      entries,
+    }: {
+      snapshotId: number
+      entries: SnapshotMidiMapEntry[]
+    }) => {
+      const response = await snapshotsApi.replaceMidiMap(snapshotId, entries)
+      return normalizeSnapshotBlockFocusSnapshot(response, entries)
+    },
+    onSuccess: (snapshot) => {
+      syncSnapshotDetailCaches(snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Snapshot block-focus mapping updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot block-focus mapping', 'error')
+    },
+  })
 
   const updateMidiMappingMutation = useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) =>
@@ -3771,25 +3867,31 @@ export function SnapshotEditorPage() {
     }
   }, [isCompactLayout, isTabletTouchLayout])
 
+  const focusSelectedPluginEditor = useCallback((
+    uri: string,
+    position: number,
+    options?: { openOnTablet?: boolean },
+  ) => {
+    setSelectedPluginSelection(uri, position)
+    if (isTabletTouchLayout && !options?.openOnTablet) {
+      return
+    }
+    openSelectedBlockEditor()
+  }, [isTabletTouchLayout, openSelectedBlockEditor, setSelectedPluginSelection])
+
   const handlePluginSelect = useCallback((uri: string, position: number) => {
     if (!isTabletTouchLayout && selectedPluginUri === uri && selectedPluginPosition === position && effectModalOpen) {
       setEffectModalOpen(false)
       return
     }
 
-    setSelectedPluginSelection(uri, position)
-    if (isTabletTouchLayout) {
-      return
-    }
-
-    openSelectedBlockEditor()
+    focusSelectedPluginEditor(uri, position, { openOnTablet: false })
   }, [
     effectModalOpen,
+    focusSelectedPluginEditor,
     isTabletTouchLayout,
-    openSelectedBlockEditor,
     selectedPluginPosition,
     selectedPluginUri,
-    setSelectedPluginSelection,
   ])
 
   const handleCloseEffectModal = useCallback(() => {
@@ -4303,6 +4405,40 @@ export function SnapshotEditorPage() {
     addSessionNoteMutation.mutate({ snapshotId: activeSnapshot.id, text: normalizedText })
   }, [activeSnapshot, addSessionNoteMutation, sessionNoteDraft])
 
+  const saveSnapshotBlockFocusRange = useCallback(() => {
+    if (!activeSnapshot || blockFocusSaveDisabled) {
+      return
+    }
+
+    const nextRange = {
+      midiChannel: blockFocusMidiChannelDraft === 'omni' ? null : Number.parseInt(blockFocusMidiChannelDraft, 10),
+      startNote: blockFocusStartNote,
+    }
+
+    replaceSnapshotBlockFocusMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, nextRange),
+    })
+  }, [
+    activeSnapshot,
+    blockFocusMidiChannelDraft,
+    blockFocusSaveDisabled,
+    blockFocusStartNote,
+    replaceSnapshotBlockFocusMutation,
+    snapshotMidiEntries,
+  ])
+
+  const clearSnapshotBlockFocusRange = useCallback(() => {
+    if (!activeSnapshot) {
+      return
+    }
+
+    replaceSnapshotBlockFocusMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, null),
+    })
+  }, [activeSnapshot, replaceSnapshotBlockFocusMutation, snapshotMidiEntries])
+
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
     setFavoritePlugins(prev => {
@@ -4587,6 +4723,111 @@ export function SnapshotEditorPage() {
           </Tag>
         )}
       </div>
+
+      <Tile className="juce-grid-page__midi-block-focus-card">
+        <div className="juce-grid-page__midi-tile-header">
+          <div className="juce-grid-page__midi-tile-copy">
+            <h3 className="juce-grid-page__dense-card-heading">Block focus</h3>
+            <p>Map incoming MIDI notes to block positions in the active chain and open the parameter editor on receipt.</p>
+          </div>
+          <div className="juce-grid-page__compact-tags">
+            <Tag type={snapshotBlockFocusRange ? 'green' : 'cool-gray'}>
+              {snapshotBlockFocusRange ? 'Configured' : 'Not configured'}
+            </Tag>
+            <Tag type="cool-gray">
+              {currentChain ? `${currentChain.name} - ${blockFocusPlugins.length} blocks` : 'No active chain'}
+            </Tag>
+          </div>
+        </div>
+
+        <div className="juce-grid-page__midi-block-focus-grid">
+          <Select
+            id="juce-grid-block-focus-channel"
+            labelText="MIDI channel"
+            value={blockFocusMidiChannelDraft}
+            onChange={(event) => setBlockFocusMidiChannelDraft(event.target.value)}
+            disabled={!activeSnapshot || snapshotEditingLocked}
+          >
+            <SelectItem value="omni" text="Omni" />
+            {Array.from({ length: 16 }, (_, index) => (
+              <SelectItem
+                key={`juce-grid-block-focus-channel-${index + 1}`}
+                value={String(index + 1)}
+                text={`Channel ${index + 1}`}
+              />
+            ))}
+          </Select>
+          <NumberInput
+            label="Start note"
+            value={blockFocusStartNote}
+            min={0}
+            max={127}
+            step={1}
+            precision={0}
+            showBounds={false}
+            disabled={!activeSnapshot || snapshotEditingLocked}
+            onChange={(nextValue) => setBlockFocusStartNoteDraft(Math.max(0, Math.min(127, Math.round(nextValue))))}
+          />
+        </div>
+
+        <div className="juce-grid-page__midi-actions">
+          <div className="juce-grid-page__compact-tags">
+            <Tag type="cool-gray">
+              {blockFocusMidiChannelDraft === 'omni' ? 'Omni' : `Ch ${blockFocusMidiChannelDraft}`}
+            </Tag>
+            {blockFocusPlugins.length > 0 && (
+              <Tag type={blockFocusStartNoteOverflow ? 'red' : 'green'}>
+                {formatMidiNoteLabel(blockFocusStartNote)} - {formatMidiNoteLabel(Math.min(127, blockFocusStartNote + blockFocusPlugins.length - 1))}
+              </Tag>
+            )}
+          </div>
+          <div className="juce-grid-page__compact-actions">
+            <Button
+              size="sm"
+              kind="ghost"
+              onClick={clearSnapshotBlockFocusRange}
+              disabled={!activeSnapshot || replaceSnapshotBlockFocusMutation.isPending || !snapshotBlockFocusRange}
+            >
+              Clear
+            </Button>
+            <Button
+              size="sm"
+              kind="secondary"
+              onClick={saveSnapshotBlockFocusRange}
+              disabled={blockFocusSaveDisabled || replaceSnapshotBlockFocusMutation.isPending}
+            >
+              {replaceSnapshotBlockFocusMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </div>
+
+        {!activeSnapshot ? (
+          <p className="juce-grid-page__empty-state-copy">
+            Load a snapshot to configure block-focus note mapping.
+          </p>
+        ) : blockFocusPlugins.length === 0 ? (
+          <p className="juce-grid-page__empty-state-copy">
+            Select a chain with blocks before assigning block-focus notes.
+          </p>
+        ) : blockFocusStartNoteOverflow ? (
+          <p className="juce-grid-page__flow-card-error">
+            Start note must be {maxBlockFocusStartNote} or lower for the current chain length.
+          </p>
+        ) : (
+          <div className="juce-grid-page__midi-block-focus-preview" role="list" aria-label="Block focus preview">
+            {blockFocusPreview.map((item, index) => (
+              <div key={item.key} className="juce-grid-page__midi-block-focus-preview-item" role="listitem">
+                <span className="juce-grid-page__midi-block-focus-preview-note">
+                  {formatMidiNoteLabel(item.note)}
+                </span>
+                <span className="juce-grid-page__midi-block-focus-preview-label">
+                  Block {index + 1} - {item.blockLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Tile>
 
       {midiMappingsQuery.isLoading ? (
         <div className="juce-grid-page__empty-state">

@@ -1326,8 +1326,16 @@ class SnapshotService:
             self.session.add(midi_map)
             await self.session.flush()
 
-        midi_map.entries = [dict(entry) for entry in entries]
+        normalized_entries = [dict(entry) for entry in entries]
+        midi_map.entries = normalized_entries
         midi_map.updated_at = _utcnow()
+        merged_controls_payload = dict(snapshot.controls_payload or {})
+        merged_controls_payload["midi_map"] = normalized_entries
+        snapshot.controls_payload = self._normalize_controls_payload(
+            merged_controls_payload,
+            {"midi_map": normalized_entries},
+        )
+        snapshot.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_detail(snapshot_id)
 

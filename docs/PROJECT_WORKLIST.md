@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]; T613 added activation-time dead-channel rejection, delayed runtime re-verification, and visible Snapshot Editor zombie-path warnings [completed]
+Last updated: 2026-04-02 EDT - T655 added per-snapshot MIDI note-on block-focus mapping with active-chain note previews, editor auto-focus on note receive, and persisted `controls.midi_map` synchronization through the dedicated MIDI-map route [completed]; T621 added a pre-flight snapshot activation safety gate that blocks broken plugins/assets/devices before any live-engine teardown and surfaces structured inline Go Live errors [completed]; T642 extended the floating Snapshot Editor toolbar with Save, Undo, Redo, Tap Tempo, and dirty-state affordances while keeping the existing core actions always visible [completed]; T607 updated the Snapshot Editor New action to capture the current rig as a dated `RigYYYYMMDD` snapshot and open the hero title in inline rename mode [completed]; T610 was closed as a stale duplicate already satisfied by the shipped T615 Go Live state machine [completed]
 
 ID: T675
 Status: [✓] Done
@@ -682,7 +682,7 @@ Last updated: 2026-04-01 11:28 - Codex
 - Validation: `python3 -m pytest tests/test_snapshot_tempo_service.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS; `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
 
 ID: T655
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Note-On Block Focus — Any Controller Selects and Focuses Plugin Block in Editor
 Description:
 - Goal / acceptance criteria: When a MIDI note-on message is received on the configured "block focus" channel/note range, MAP2 selects and focuses the corresponding plugin block in the Snapshot Editor signal canvas. The mapping is configurable: each note or CC value maps to a block position (1–N) in the active chain. This allows any MIDI controller — pedalboard, Push, expression unit — to jump the editor's focus to a specific effect block without touching the screen, equivalent to Helix's touch-to-select footswitch shortcut. The focused block's parameter panel opens automatically.
@@ -691,7 +691,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: MIDI note-to-block-index mapping config (stored per snapshot or globally), MIDI listener routing in midi_service.py, WebSocket or store update that sets editor focus to the mapped block, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-03-31
+Assigned to: Codex
+Last updated: 2026-04-02 00:01 - Codex
+- Completion notes:
+  - Added a per-snapshot `Block focus` card to the Snapshot Editor MIDI workspace so operators can store an omni-or-specific MIDI channel plus a starting note for the active chain, with a live note-to-block preview for every plugin position.
+  - Extended the editor `midi_activity` subscription to parse incoming note-on traffic and immediately select the matching plugin block in the active chain, opening the parameter editor without the toggle-close behavior used for repeated manual clicks.
+  - Synced the dedicated snapshot MIDI-map replace path so `midi_map` and `controls.midi_map` stay aligned across real refetches, then added focused frontend and backend regressions for note parsing, entry replacement, and persisted snapshot reloads.
+- Validation: `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/utils/snapshotBlockFocus.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T654
 Status: [✓] Done

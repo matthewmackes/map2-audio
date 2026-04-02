@@ -5068,6 +5068,49 @@
   gap: 0.75rem;
 }
 
+.juce-grid-page__midi-block-focus-card {
+  gap: 1rem;
+}
+
+.juce-grid-page__midi-block-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.juce-grid-page__midi-block-focus-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.juce-grid-page__midi-block-focus-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+  background: color-mix(in srgb, var(--cds-layer-hover, rgba(255, 255, 255, 0.03)) 88%, transparent);
+}
+
+.juce-grid-page__midi-block-focus-preview-note {
+  color: var(--cds-support-success, #24a148);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.juce-grid-page__midi-block-focus-preview-label {
+  min-width: 0;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
 .juce-grid-page__midi-panel {
   position: fixed;
   top: 56px;
@@ -6956,6 +6999,14 @@
   }
 
   .juce-grid-page__midi-range-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__midi-block-focus-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__midi-block-focus-preview {
     grid-template-columns: 1fr;
   }
 

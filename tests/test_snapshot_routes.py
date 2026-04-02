@@ -200,9 +200,20 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
 
         replaced_midi_map = await routes.replace_midi_map(
             snapshot_id,
-            routes.MidiMapRequest(entries=[{"action": "load_snapshot", "program_number": 5}]),
+            routes.MidiMapRequest(
+                entries=[
+                    {"action": "load_snapshot", "program_number": 5},
+                    {"action": "focus_block_note_range", "midi_channel": 2, "start_note": 60},
+                ],
+            ),
         )
         assert replaced_midi_map["midi_map"][0]["program_number"] == 5
+        assert replaced_midi_map["controls"]["midi_map"][1]["start_note"] == 60
+        assert replaced_midi_map["controls"]["maschine_encoder_map"]["enc4"]["param_id"] == "gain"
+
+        refetched_after_midi_map_replace = await routes.get_snapshot(snapshot_id)
+        assert refetched_after_midi_map_replace["controls"]["midi_map"][1]["midi_channel"] == 2
+        assert refetched_after_midi_map_replace["midi_map"][1]["action"] == "focus_block_note_range"
 
         activated = await routes.activate_snapshot(snapshot_id)
         assert activated["status"] == "success"

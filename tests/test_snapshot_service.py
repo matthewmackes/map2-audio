@@ -254,6 +254,23 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert saved_as_new["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
             assert saved_as_new["is_locked"] is False
 
+            replaced_midi_map = await service.replace_midi_map(
+                created["id"],
+                [
+                    {"action": "load_snapshot", "program_number": 5},
+                    {"action": "focus_block_note_range", "midi_channel": 3, "start_note": 48},
+                ],
+            )
+            assert replaced_midi_map is not None
+            assert replaced_midi_map["midi_map"][1]["action"] == "focus_block_note_range"
+            assert replaced_midi_map["controls"]["midi_map"][1]["start_note"] == 48
+            assert replaced_midi_map["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
+
+            refetched_after_midi_map_replace = await service.get_snapshot(created["id"])
+            assert refetched_after_midi_map_replace is not None
+            assert refetched_after_midi_map_replace["controls"]["midi_map"][1]["midi_channel"] == 3
+            assert refetched_after_midi_map_replace["midi_map"][1]["start_note"] == 48
+
             exported = await service.export_snapshot(created["id"])
             assert exported is not None
             assert exported["snapshot"]["name"] == "UnifiedSnapshot"
