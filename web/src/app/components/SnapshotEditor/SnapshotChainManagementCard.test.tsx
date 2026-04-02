@@ -264,7 +264,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByRole('button', { name: 'Edit snapshot description' })).toHaveTextContent('Lead-ready snapshot for the main performance set.')
     expect(screen.getByText('Stored BPM')).toBeInTheDocument()
     expect(screen.getByDisplayValue('128.0')).toBeInTheDocument()
-    expect(screen.getByText('Active 128.0 BPM • Stored tempo')).toBeInTheDocument()
+    expect(screen.queryByText('Active 128.0 BPM • Stored tempo')).not.toBeInTheDocument()
     expect(screen.getByText('Input Device')).toBeInTheDocument()
     expect(screen.getByText('Stage Input')).toBeInTheDocument()
     expect(screen.getByText('Output Device')).toBeInTheDocument()
@@ -312,7 +312,7 @@ describe('SnapshotChainManagementCard', () => {
     fireEvent.blur(screen.getByLabelText('Stored BPM'))
     expect(onSubmitTempoBpm).toHaveBeenCalledWith(140)
 
-    expect(screen.getByText('Active 132.0 BPM via MIDI tap')).toBeInTheDocument()
+    expect(screen.queryByText('Active 132.0 BPM via MIDI tap')).not.toBeInTheDocument()
     expect(screen.getByText('MIDI tap override active')).toBeInTheDocument()
   })
 

@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-01 EDT - T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]; T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]; T672 removed Drum Machine and SynthForge from the shared landing launcher catalog [completed]
+Last updated: 2026-04-01 EDT - T675 removed the redundant Stored BPM status line under the Snapshot Editor BPM panel [completed]; T674 moved and restyled the Snapshot Editor Stored BPM panel to match the MIDI readout [completed]; T673 moved Snapshot Editor hero Favorite and Lock controls below the notes copy [completed]; T624 added prev/next snapshot editor navigation in hero, floating toolbar, and keyboard flow [completed]
+
+ID: T675
+Status: [✓] Done
+Title: Remove redundant Stored BPM status copy below the Snapshot Editor BPM panel
+Description:
+- Goal / acceptance criteria: The Snapshot Editor hero must no longer render the status copy below the inline `Stored BPM` panel (`Active 120.0 BPM • Stored tempo` or the MIDI-tap variant). Removing the line must reclaim the vertical space directly under the BPM box without changing the BPM input itself or the adjacent MIDI readout.
+- Why it matters: The extra status line duplicates information the BPM control already communicates and wastes vertical space in the compact hero control cluster.
+- Dependencies: T674
+- Estimated effort: Low
+- Required outputs: Snapshot hero BPM-panel copy removal, spacing cleanup so the empty row is reclaimed, focused regression update, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-01 20:11 - Codex
+- Completion notes:
+  - Removed the redundant status line from the Stored BPM panel so the control stack now collapses directly to the BPM input and reclaims the unused vertical row beneath it.
+  - Kept the existing BPM entry behavior and the separate `MIDI tap override active` indicator intact, so the hero still surfaces tap-state context without duplicating the stored-tempo line.
+  - Updated the focused Snapshot hero regression to assert the old stored/tap status copy no longer renders beneath the BPM box.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T674
 Status: [✓] Done

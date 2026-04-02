@@ -1348,12 +1348,6 @@
   background: color-mix(in srgb, #42be65 35%, transparent);
 }
 
-.juce-grid-page__snapshot-status-bpm-status {
-  color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
-  line-height: 1.35;
-}
-
 .juce-grid-page__snapshot-status-output-reference,
 .juce-grid-page__snapshot-status-output-reference-copy,
 .juce-grid-page__snapshot-status-output-reference-actions,

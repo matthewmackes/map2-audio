@@ -190,13 +190,6 @@ function formatOutputReferenceSummary(snapshot: SnapshotDetail): string {
   return `${formatOutputReferenceValue(snapshot.output_level_reference_dbfs)} • ±${(snapshot.output_level_warning_threshold_db ?? 3).toFixed(1)} dB`
 }
 
-function formatTempoBpm(value?: number | null): string {
-  if (value == null || !Number.isFinite(value)) {
-    return '120.0 BPM'
-  }
-  return `${value.toFixed(1)} BPM`
-}
-
 function resolveSnapshotBlockCount(snapshot: SnapshotDetail): number {
   const chainBlockCount = snapshot.chains.reduce(
     (total, chain) => total + (chain.plugins?.length ?? 0),
@@ -454,7 +447,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const [tempoDraftValue, setTempoDraftValue] = useState(liveSnapshot?.tempo_bpm ?? 120)
   const storedTempoBpm = liveSnapshot?.tempo_bpm ?? 120
   const storedTempoDisplay = storedTempoBpm.toFixed(1)
-  const activeTempoBpm = liveSnapshot?.active_tempo_bpm ?? storedTempoBpm
   const liveTempoBpm = liveSnapshot?.live_tempo_bpm ?? null
   const liveTapOverrideActive = liveSnapshot?.tempo_source === 'tap' && liveTempoBpm != null
   const snapshotLocked = Boolean(liveSnapshot?.is_locked)
@@ -463,9 +455,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     || (liveSnapshot && onToggleSnapshotLock)
     || snapshotLocked,
   )
-  const tempoStatusText = liveTapOverrideActive
-    ? `Active ${formatTempoBpm(activeTempoBpm)} via MIDI tap`
-    : `Active ${formatTempoBpm(activeTempoBpm)} • Stored tempo`
 
   useEffect(() => {
     if (!editingDescription) {
@@ -540,9 +529,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                       />
                     )}
                   />
-                  <span className="juce-grid-page__snapshot-status-bpm-status">
-                    {tempoStatusText}
-                  </span>
                   {liveTapOverrideActive ? (
                     <Tag type="green" className="juce-grid-page__snapshot-status-tempo-tag">
                       MIDI tap override active
