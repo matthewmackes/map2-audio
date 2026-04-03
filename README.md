@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**951** Python | **1061** TypeScript | **133** C++/H | **129** Docs | **1317** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1067** TypeScript | **133** C++/H | **129** Docs | **1319** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,8 +172,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-03 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-02 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-02 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-01 |
 | [Ground Control Pro Reverse Engineering](https://github.com/matthewmackes/map2-audio/blob/master/docs/ground-control-pro-reverse-engineering.md) | 2026-03-30 |
 | [MAP2 Memory Index](https://github.com/matthewmackes/map2-audio/blob/master/docs/MEMORY.md) | 2026-03-29 |
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7c415aeb`](https://github.com/matthewmackes/map2-audio/commit/7c415aeb01ad73ac2cefdb12ec78f5cbe531e7f4) | Update audio state authority and snapshot editor | Map2 Audio | 2026-04-03 |
+| [`8fd814e6`](https://github.com/matthewmackes/map2-audio/commit/8fd814e6ccca266384b6581b48cd4f70d00f2606) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
 | [`67d67ace`](https://github.com/matthewmackes/map2-audio/commit/67d67acead3f4d7164def2f24a3f7c7b6cffe891) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
 | [`071501ce`](https://github.com/matthewmackes/map2-audio/commit/071501ce2bd9eb1cc105ce87e89e01678b181a65) | Close T690 soak evidence and T691 frontend polish | Map2 Audio | 2026-04-02 |
 | [`2e3f036e`](https://github.com/matthewmackes/map2-audio/commit/2e3f036e603c3ffad734fdb21623c3a525e717d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
 | [`dd3e41f3`](https://github.com/matthewmackes/map2-audio/commit/dd3e41f3b882daf9f8edcb330ab2e99b95487562) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
 | [`edb0ed5d`](https://github.com/matthewmackes/map2-audio/commit/edb0ed5dce434da9560e93e0b1d7e8c4d17e2fae) | feat: replace staged runtime chains in one engine call | Map2 Audio | 2026-04-02 |
 | [`bb26d4b1`](https://github.com/matthewmackes/map2-audio/commit/bb26d4b1ce1727fd067aadd7bc41e227bc482044) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-02 |
-| [`1574a670`](https://github.com/matthewmackes/map2-audio/commit/1574a670d1df89a44c3fb8293eb5dcebba2e085d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-02 |
-| [`aee80b15`](https://github.com/matthewmackes/map2-audio/commit/aee80b15d7ca04bf1364c7c87e26bd6adfef6982) | feat: stage runtime chain instances before live rebuild | Map2 Audio | 2026-04-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -229,7 +229,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **35** more open-source packages from PyPI and npm.
+...and **36** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
