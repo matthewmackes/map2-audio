@@ -6,7 +6,30 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 19:59 EDT - Advanced T690 again by collapsing staged runtime activations into a single engine-side replace_chain swap after the prewarm/reuse slice; validation passed, but the low-latency soak proof is still pending because the current harness bypasses the new chain-activation path.
+Last updated: 2026-04-02 21:46 EDT - Closed T691 after focused frontend validation/build passed; no additional unblocked tasks remain because T614 and its dependents still fail the low-latency live-apply evidence bar.
+
+ID: T691
+Status: [✓] Done
+Title: Remove redundant Workspace Catalog intro chrome and restore Snapshot toolbar icon spacing
+Description:
+- Goal / acceptance criteria: Simplify `/platforms/workspace-catalog` so the routed table is the primary surface without the extra summary tile or duplicate table title/description chrome, and restore the floating Snapshot Editor toolbar button padding so text labels and right-aligned icons stay visually balanced after the recent hero/control tightening. Keep launcher actions/filtering unchanged and add or update focused frontend coverage where needed.
+- Why it matters: The recent Workspace Catalog expansion made the page heavier than necessary by repeating context the routed page already provides, and the Snapshot Editor toolbar buttons need stable spacing so the core live controls remain readable.
+- Dependencies: T688, T682, T642
+- Estimated effort: Low
+- Required outputs: workspace-catalog chrome cleanup, snapshot-toolbar spacing fix, focused frontend regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-02 21:46 EDT - Codex
+- Completion notes:
+  - Removed the extra Workspace Catalog summary tile plus the duplicate `TableContainer` title/description chrome in `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, leaving the routed page and Carbon table as the primary context while preserving launcher search, filters, launch, and placement controls.
+  - Tightened the workspace-catalog regression in `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` so the routed table path now explicitly guards against the removed summary copy returning.
+  - Updated `web/src/app/pages/SnapshotEditorPage.css` so floating toolbar buttons keep their right-side icon gutter after the recent label padding changes, preventing icon overlap and preserving the established Snapshot Editor control rhythm.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched frontend/css/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T688
 Status: [✓] Done
@@ -1769,7 +1792,7 @@ Description:
 - Required outputs: parameter ramping in JUCE audio engine (per-parameter ramp time, applied in audioCallback), topology-change detection in snapshot activation (compare plugin URIs and order before teardown), stream-safe chain reconfiguration (no audio thread stop), focused regression coverage including soak tests at 48kHz/64-sample buffer, validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 17:46 EDT - Codex
+Last updated: 2026-04-02 21:47 EDT - Codex
 - Progress notes:
   - Implemented a same-topology activation fast path in `SnapshotService.activate_snapshot()` so identical live topologies now reuse existing runtime-chain IDs instead of clearing and rematerializing snapshot-path chains.
   - Rebound reused runtime-chain metadata to the newly active snapshot, updated runtime chain/plugin DB metadata in place, and added focused regression coverage in `tests/test_snapshot_service.py`.
@@ -1777,10 +1800,11 @@ Last updated: 2026-04-02 17:46 EDT - Codex
   - Validation passed for `python3 -m pytest -q tests/test_snapshot_service.py`, `python3 -m pytest -q tests/test_snapshot_routes.py`, and `cmake --build juce-engine/build -j$(nproc)`.
 - Blocked notes:
   - The required 48kHz/64-sample soak evidence still fails on this host after the implementation slice. Safe-rewire smoke artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214038Z.{json,md}` reported `174` xruns and `20.346ms` peak callback jitter; live-rewire artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214424Z.{json,md}` reported `182` xruns and `24.659ms` peak callback jitter.
+  - The new preloaded-pool topology-only artifact `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.{json,md}` still failed at `12` xruns and `6.080ms` peak callback jitter after plugin load/node creation was moved out of the measured window, which narrows the remaining gap to live topology mutation itself.
   - Until those xrun/jitter failures are understood and reduced enough to satisfy the no-gap acceptance bar, `T614` cannot be closed honestly and remains the blocker for `T646`, `T637`, and `T634`.
 
 ID: T690
-Status: [>] In Progress
+Status: [✓] Done
 Title: Preload live snapshot effect pools and swap staged JUCE graphs without runtime plugin/node construction
 Description:
 - Goal / acceptance criteria: Remove plugin load/unload and plugin-node create/destroy work from the low-latency live snapshot apply path by keeping the needed effect instances preloaded and switching between staged JUCE graph topologies or pre-attached prepared nodes. Revalidate the 48kHz/64-sample soak with evidence that separates topology-only switching from plugin-construction stress and shows materially improved xrun / peak-jitter behavior.
@@ -1790,20 +1814,22 @@ Description:
 - Required outputs: staged/preloaded graph-swap design, implementation in JUCE runtime, updated 48kHz/64-sample soak evidence, and honest PASS/FAIL comparison against the current diagnostic artifacts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 19:59 EDT - Codex
-- Progress notes:
+Last updated: 2026-04-02 21:43 EDT - Codex
+- Completion notes:
   - Exposed `clear_chain`, `get_loaded_plugins`, and `prewarm_plugin_node` through the JUCE Python bindings and `JuceEngineService`, so runtime callers can clear topology without unloading processors, inspect detached resident instances, and prepare plugin nodes before reconnecting them live.
   - Updated `ChainService._deploy_chain_to_engine()` to stage runtime chain instances before the live clear step by reusing detached loaded instances where possible, preloading missing plugins ahead of time, prewarming their nodes off-chain, restoring persisted loader state, and only then rebuilding the active chain inside one batched topology update.
   - Added focused regression coverage proving runtime activation still restores persisted loader state and now reuses detached resident instances instead of reloading matching plugins during chain activation.
   - Added an engine-side `replaceChain` / `replace_chain` path in `JuceAudioGraph`, `Map2AudioEngine`, the Python bindings, and `JuceEngineService`, then taught `ChainService` to prefer that single-call swap after staging/prewarm so live activation no longer loops through repeated `clear_chain` plus per-plugin `add_to_chain` crossings when the runtime supports the new API.
-- Blocked notes:
-  - `T690` is not done yet. The current random-effects soak harness mutates the JUCE engine directly rather than exercising `ChainService.activate_chain()`, so this slice still lacks updated `48kHz / 64` runtime evidence for the new staged activation path.
-  - The remaining honest work is a JUCE/runtime evidence seam that can measure staged-node switching directly and show whether the live-apply spikes improve enough to close `T614`.
+  - Extended `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py` with a `--preload-effect-pool` mode that loads and prewarms the full effect pool before stats reset, then measures only resident-node topology rewires during the live-apply window instead of mixing in first-load plugin/node construction spikes.
+  - New topology-only evidence in `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.{json,md}` still failed the no-gap bar at `12` xruns / `6.080ms` peak jitter, but it reduced the worst peak jitter versus the prior fixed-pool `--reuse-effects` artifact (`23.403ms`) enough to show plugin/node construction was only part of the stall budget.
+  - Conclusion: the repo now has an honest preloaded-pool evidence seam for staged resident-node switching, and it confirms `T614` remains blocked by live topology mutation itself rather than by runtime plugin/node construction.
 - Validation:
-  - `python3 -m pytest -q tests/test_chain_plugin_loader_state_persistence.py`
-  - `python3 -m pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_chain_plugin_loader_state_persistence.py`
-  - `cmake --build juce-engine/build --target map2_audio_engine -j4`
-  - `python3` binding smoke verified `clear_chain`, `get_loaded_plugins`, `prewarm_plugin_node`, and `replace_chain` are present on `map2_audio_engine.create_engine()`
+  - `python3 -m pytest -q tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `python3 -m py_compile .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py` -> PASS
+  - `python3` binding smoke verified `clear_chain`, `get_loaded_plugins`, `prewarm_plugin_node`, and `replace_chain` are present on `map2_audio_engine.create_engine()` -> PASS
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --preload-effect-pool --seed 20260402 --effect-uri map2://juce/amp/peavey5150 --effect-uri map2://juce/pitch/h3000 --effect-uri map2://juce/amp/tweedbassman --effect-uri map2://juce/multieffect/passionfx --effect-uri map2://juce/delay --effect-uri map2://juce/pitch/boss-xs1 --effect-uri map2://juce/effects/eventide-h9 --effect-uri map2://juce/eq/parametric --effect-uri map2://juce/delay/circular --effect-uri map2://juce/dynamics/limiter` -> FAIL artifact `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.{json,md}` (`12` xruns / `6.080ms` peak jitter / `0` flow-apply errors)
 
 ID: T689
 Status: [✓] Done

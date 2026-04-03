@@ -18,7 +18,6 @@ import {
   TableToolbarContent,
   TableToolbarSearch,
   Tag,
-  Tile,
 } from '@carbon/react'
 
 import './PlatformLaunchersWorkspace.css'
@@ -473,28 +472,10 @@ export function PlatformLaunchersWorkspace({
 
   return (
     <section className="platform-launchers">
-      <Tile className="platform-launchers__summary">
-        <div>
-          <p className="platform-launchers__eyebrow">Workspace Catalog</p>
-          <h3>Launcher organizer</h3>
-          <p>
-            Use one Carbon-style table to browse every launcher by hero title, description, and operator category,
-            then open routes or configure Home and nav promotion from the same workspace.
-          </p>
-        </div>
-        <div className="platform-launchers__summary-tags">
-          <Tag type="cool-gray">{landingTiles.length} landing tiles</Tag>
-          <Tag type="cool-gray">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS} nav pins</Tag>
-          {controlsDisabled ? <Tag type="blue">{isLoading ? 'Loading state' : 'Saving state'}</Tag> : null}
-        </div>
-      </Tile>
-
       <DataTable rows={tableRows} headers={[...LAUNCHER_TABLE_HEADERS]} useZebraStyles>
         {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
           <TableContainer
             {...getTableContainerProps()}
-            title="Launcher catalog"
-            description="List route-backed launchers with hero title, description, category, and placement state from one native section."
             className="platform-launchers__table-container"
           >
             <TableToolbar {...getToolbarProps()}>

@@ -466,7 +466,8 @@
 
 .snapshot-toolbar__button.cds--btn {
   min-block-size: 2.75rem;
-  padding-inline: 0.95rem 1.25rem;
+  padding-inline-start: 0.95rem;
+  padding-inline-end: 3rem;
   border: none;
   font-weight: 600;
 }
@@ -501,6 +502,10 @@
   min-inline-size: 2.75rem;
   padding-inline: 0.75rem;
   justify-content: center;
+}
+
+.snapshot-toolbar__button.cds--btn .cds--btn__icon {
+  inset-inline-end: 0.95rem;
 }
 
 .snapshot-toolbar__button-label {
@@ -7186,7 +7191,8 @@
 
   .snapshot-toolbar__button.cds--btn {
     min-block-size: 2.5rem;
-    padding-inline: 0.875rem;
+    padding-inline-start: 0.875rem;
+    padding-inline-end: 2.75rem;
   }
 
   .snapshot-toolbar__toggle.cds--btn {

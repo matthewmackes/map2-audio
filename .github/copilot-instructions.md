@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 30, 2026 (snapshot create restored to direct action)
+> **Last Updated**: April 2, 2026 (preloaded JUCE soak mode added for topology-only live-rewire evidence)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1409,6 +1409,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: When a Carbon hero promotes a data label into the primary focal element, the interaction model should usually follow the same hierarchy: the visible title becomes the trigger, but persistence logic remains in the owning route.
 
+**44. Topology-Only JUCE Soak Evidence Must Preload And Prewarm The Full Effect Pool Before Stats Reset (MEDIUM - Apr 2, 2026)**
+- **Files**: `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: A "reuse effects" live-rewire soak can still overstate runtime apply jitter because the first measured flow rotation includes plugin load and node-creation work before the resident-node path has been established.
+- **Root Cause**: The earlier harness loaded the active set lazily inside the measurement window, so even fixed-pool runs mixed first-load/plugin-node-prep spikes into what was supposed to be topology-only evidence.
+- **Fix**: Add a `--preload-effect-pool` mode that loads and prewarms the full effect pool before stats reset, then rotates only resident-node topology during the measured low-latency window.
+- **Verification**: `python3 -m py_compile .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py`; `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --preload-effect-pool --seed 20260402 --effect-uri map2://juce/amp/peavey5150 --effect-uri map2://juce/pitch/h3000 --effect-uri map2://juce/amp/tweedbassman --effect-uri map2://juce/multieffect/passionfx --effect-uri map2://juce/delay --effect-uri map2://juce/pitch/boss-xs1 --effect-uri map2://juce/effects/eventide-h9 --effect-uri map2://juce/eq/parametric --effect-uri map2://juce/delay/circular --effect-uri map2://juce/dynamics/limiter`
+- **Lesson**: When low-latency evidence is trying to isolate live topology mutation, preload and prewarm every measured effect instance before resetting stats or the first-load seam will contaminate the result.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1679,6 +1687,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-02] - Preloaded JUCE Soak Mode For Topology-Only Evidence
+- **Section**: Gotchas & Learned Fixes (#44), Update Log
+- **Change**: Documented and added the `--preload-effect-pool` harness mode so low-latency JUCE live-rewire evidence can preload and prewarm the measured effect pool before stats reset.
+- **Reason**: The staged-node activation work needed an honest way to separate topology-only runtime mutation from first-load plugin/node construction spikes.
+- **Impact**: Future snapshot-switch and graph-mutation investigations can compare topology-only evidence against construction-stress runs without contaminating the measured window.
+- **Files**: `.github/copilot-instructions.md`, `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-30] - Snapshot Hero Rename Trigger And Web-Port Reference Fix
 - **Section**: Gotchas & Learned Fixes (#43), Additional Resources, Essential Files to Read First, Update Log

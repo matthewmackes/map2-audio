@@ -285,6 +285,57 @@ def unload_effects(engine: Any, active_effects: list[dict[str, Any]]) -> tuple[i
     return unloaded, failures
 
 
+def preload_effect_pool(
+    engine: Any,
+    effect_pool: list[str],
+    target_count: int = DEFAULT_ACTIVE_EFFECT_COUNT,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    loaded: list[dict[str, Any]] = []
+    failures: list[str] = []
+    if not effect_pool:
+        raise RuntimeError("empty effect pool")
+
+    preload_targets = list(effect_pool)
+    if len(preload_targets) < target_count:
+        repeats = math.ceil(target_count / len(preload_targets))
+        preload_targets = (preload_targets * repeats)[:target_count]
+
+    prewarm_plugin_node = getattr(engine, "prewarm_plugin_node", None)
+
+    for uri in preload_targets:
+        try:
+            instance_id = int(engine.load_plugin(uri))
+        except Exception as exc:
+            failures.append(f"{uri}:exception:{exc}")
+            continue
+        if instance_id <= 0:
+            failures.append(f"{uri}:load_plugin_returned_{instance_id}")
+            continue
+
+        loaded.append({"uri": uri, "instance_id": instance_id})
+
+        if callable(prewarm_plugin_node):
+            try:
+                prewarmed = bool(prewarm_plugin_node(instance_id))
+            except Exception as exc:
+                failures.append(f"{uri}:{instance_id}:prewarm_exception:{exc}")
+                continue
+            if not prewarmed:
+                failures.append(f"{uri}:{instance_id}:prewarm_returned_false")
+
+    if len(loaded) < target_count:
+        for entry in loaded:
+            try:
+                engine.unload_plugin(int(entry["instance_id"]))
+            except Exception:
+                pass
+        raise RuntimeError(
+            f"could only preload {len(loaded)}/{target_count} effects from pool size {len(effect_pool)}"
+        )
+
+    return loaded, failures
+
+
 def load_effects(
     engine: Any,
     effect_pool: list[str],
@@ -338,6 +389,21 @@ def load_effects(
             f"could only load {len(loaded)}/{target_count} effects from pool size {len(effect_pool)}"
         )
     return loaded, failures
+
+
+def pick_active_effects(
+    loaded_effects: list[dict[str, Any]],
+    rng: random.Random,
+    target_count: int = DEFAULT_ACTIVE_EFFECT_COUNT,
+) -> list[dict[str, Any]]:
+    if len(loaded_effects) < target_count:
+        raise RuntimeError(
+            f"loaded effect pool size {len(loaded_effects)} is smaller than requested active count {target_count}"
+        )
+
+    candidates = list(loaded_effects)
+    rng.shuffle(candidates)
+    return list(candidates[:target_count])
 
 
 def choose_different(items: tuple[T, ...], previous: T | None, rng: random.Random) -> T:
@@ -453,6 +519,8 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
         f"- Blend step: `{result['config']['blend_step_seconds']}s`",
         f"- Live rewire: `{result['config']['live_rewire']}`",
         f"- Effects active per flow: `{result['config']['active_effect_count']}`",
+        f"- Preloaded effect pool: `{result['config']['preload_effect_pool']}`",
+        f"- Preloaded instances: `{result['config']['preloaded_instance_count']}`",
         f"- Runtime pool source: `{result['config']['effect_pool_source']}`",
         "",
         "## Overall",
@@ -572,6 +640,11 @@ def parse_args(repo_root: Path) -> argparse.Namespace:
         action="store_true",
         help="Reuse one random 10-effect set across all flows (no unload/reload churn).",
     )
+    parser.add_argument(
+        "--preload-effect-pool",
+        action="store_true",
+        help="Preload and prewarm the full effect pool once, then rotate only resident-node topology.",
+    )
     parser.add_argument("--seed", type=int, default=None, help="Random seed for deterministic replay.")
     parser.add_argument("--output-json", type=Path, default=None, help="Output JSON path.")
     parser.add_argument("--output-md", type=Path, default=None, help="Output markdown path.")
@@ -664,6 +737,7 @@ def run() -> int:
     flow_apply_failures: list[str] = []
 
     active_effects: list[dict[str, Any]] = []
+    preloaded_effects: list[dict[str, Any]] = []
     current_group_ids: list[int] = []
     current_blend_type: str | None = None
     current_flow_template: FlowTemplate | None = None
@@ -673,8 +747,10 @@ def run() -> int:
     last_log = 0.0
     start_monotonic = 0.0
     runtime_effect_pool: list[str] = []
+    preloaded_instance_count = 0
     effect_pool_source = "requested"
     reuse_effects = bool(args.reuse_effects)
+    preload_effect_pool_enabled = bool(args.preload_effect_pool)
     auto_reuse_reason: str | None = None
 
     started_utc = utc_now_iso()
@@ -721,10 +797,22 @@ def run() -> int:
         if (
             not reuse_effects
             and runtime_effect_pool
-                            and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
-                        ):
-                            reuse_effects = True
-                            auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
+            and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
+        ):
+            reuse_effects = True
+            auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
+
+        if preload_effect_pool_enabled:
+            try:
+                preloaded_effects, preload_errors = preload_effect_pool(
+                    engine,
+                    runtime_effect_pool,
+                    active_effect_count,
+                )
+            except RuntimeError as exc:
+                raise SystemExit(f"failed to preload effect pool: {exc}") from exc
+            load_failures.extend(preload_errors)
+            preloaded_instance_count = len(preloaded_effects)
 
         time.sleep(max(0.0, args.warmup_seconds))
         if args.reset_stats_after_warmup:
@@ -771,13 +859,23 @@ def run() -> int:
                         cleanup_result["remove_group_failures"] + cleanup_result["remove_chain_failures"]
                     )
 
-                    if active_effects and not reuse_effects:
+                    if active_effects and not reuse_effects and not preload_effect_pool_enabled:
                         unloaded, failures = unload_effects(engine, active_effects)
                         if unloaded != len(active_effects):
                             unload_failures.extend(failures)
                         active_effects = []
 
-                    if not active_effects:
+                    if preload_effect_pool_enabled:
+                        try:
+                            if not active_effects or not reuse_effects:
+                                active_effects = pick_active_effects(
+                                    preloaded_effects,
+                                    rng,
+                                    active_effect_count,
+                                )
+                        except RuntimeError as exc:
+                            raise SystemExit(f"failed to pick active effect set: {exc}") from exc
+                    elif not active_effects:
                         allow_duplicates = len(runtime_effect_pool) < active_effect_count
                         try:
                             active_effects, load_errors = load_effects(
@@ -928,7 +1026,12 @@ def run() -> int:
         cleanup_result = clear_routing(engine)
         routing_cleanup_failures += cleanup_result["remove_group_failures"] + cleanup_result["remove_chain_failures"]
 
-        if active_effects:
+        if preloaded_effects:
+            _, failures = unload_effects(engine, preloaded_effects)
+            unload_failures.extend(failures)
+            preloaded_effects = []
+            active_effects = []
+        elif active_effects:
             _, failures = unload_effects(engine, active_effects)
             unload_failures.extend(failures)
             active_effects = []
@@ -999,6 +1102,8 @@ def run() -> int:
             "reset_stats_after_warmup": bool(args.reset_stats_after_warmup),
             "reuse_effects": bool(reuse_effects),
             "auto_reuse_reason": auto_reuse_reason,
+            "preload_effect_pool": preload_effect_pool_enabled,
+            "preloaded_instance_count": preloaded_instance_count,
             "requested_effect_pool_size": len(effect_pool),
             "requested_effect_pool": effect_pool,
             "runtime_effect_pool_size": len(runtime_effect_pool),

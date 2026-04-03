@@ -64,6 +64,8 @@ describe('PlatformLaunchersWorkspace', () => {
 
     expect(window.open).toHaveBeenCalledWith('/midi-hub', '_blank', 'noopener,noreferrer')
     expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
+    expect(screen.queryByText('Launcher organizer')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Use one Carbon-style table to browse every launcher/i)).not.toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Hero title' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument()
