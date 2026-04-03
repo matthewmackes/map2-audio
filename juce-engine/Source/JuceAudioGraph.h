@@ -109,6 +109,11 @@ public:
     void clearChain();
 
     /**
+     * Replace the linear chain order in one topology mutation.
+     */
+    bool replaceChain(const std::vector<InstanceId>& order);
+
+    /**
      * Ensure a plugin has a detached graph node prepared before it is connected live.
      */
     bool prewarmPluginNode(InstanceId instanceId);

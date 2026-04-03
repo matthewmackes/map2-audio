@@ -2065,6 +2065,10 @@ void Map2AudioEngine::clearChain() {
     audioGraph_->clearChain();
 }
 
+bool Map2AudioEngine::replaceChain(const std::vector<InstanceId>& order) {
+    return audioGraph_->replaceChain(order);
+}
+
 bool Map2AudioEngine::addToChain(InstanceId instanceId, int position) {
     return audioGraph_->addPlugin(instanceId, position);
 }

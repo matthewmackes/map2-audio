@@ -377,6 +377,12 @@ class JuceEngineService(Singleton):
             return
         await asyncio.to_thread(self._engine.clear_chain)
 
+    async def replace_chain(self, order: List[int]) -> bool:
+        """Replace the active chain order in one topology mutation."""
+        if not self._engine:
+            return False
+        return await asyncio.to_thread(self._engine.replace_chain, list(order))
+
     async def prewarm_plugin_node(self, instance_id: int) -> bool:
         """Prepare a detached graph node for a loaded plugin instance."""
         if not self._engine:

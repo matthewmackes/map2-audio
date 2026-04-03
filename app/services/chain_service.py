@@ -771,15 +771,19 @@ class ChainService:
                 warnings=["JUCE engine is not initialized"],
             )
 
+        required_methods = [
+            "get_current_pedalboard",
+            "get_loaded_plugins",
+            "prewarm_plugin_node",
+        ]
+        if hasattr(engine, "replace_chain"):
+            required_methods.append("replace_chain")
+        else:
+            required_methods.extend(("clear_chain", "add_to_chain"))
+
         missing_methods = [
             method
-            for method in (
-                "clear_chain",
-                "add_to_chain",
-                "get_current_pedalboard",
-                "get_loaded_plugins",
-                "prewarm_plugin_node",
-            )
+            for method in required_methods
             if not hasattr(engine, method)
         ]
         if missing_methods:
@@ -793,24 +797,39 @@ class ChainService:
 
         staged_instances, warnings = await self._stage_runtime_chain_instances(engine_service, chain_plugins)
 
-        restored_positions: List[int] = []
-        begin_topology_update = getattr(engine, "begin_topology_update", None)
-        end_topology_update = getattr(engine, "end_topology_update", None)
-        topology_batch_started = False
+        ordered_staged_instances = sorted(
+            staged_instances,
+            key=lambda pair: int(getattr(pair[0], "position", 0)),
+        )
+        restored_positions = [int(chain_plugin.position) for chain_plugin, _ in ordered_staged_instances]
+        ordered_instance_ids = [instance_id for _, instance_id in ordered_staged_instances]
 
-        if callable(begin_topology_update):
-            await asyncio.to_thread(begin_topology_update)
-            topology_batch_started = True
+        replace_chain = getattr(engine_service, "replace_chain", None) if hasattr(engine, "replace_chain") else None
+        replaced_in_one_call = False
+        if callable(replace_chain):
+            replaced_in_one_call = bool(await replace_chain(ordered_instance_ids))
+            if not replaced_in_one_call and ordered_instance_ids:
+                warnings.append("Engine replace_chain returned false; falling back to clear/add runtime rebuild")
 
-        try:
-            await engine_service.clear_chain()
+        if not replaced_in_one_call:
+            restored_positions = []
+            begin_topology_update = getattr(engine, "begin_topology_update", None)
+            end_topology_update = getattr(engine, "end_topology_update", None)
+            topology_batch_started = False
 
-            for chain_plugin, instance_id in staged_instances:
-                await asyncio.to_thread(engine.add_to_chain, instance_id, chain_plugin.position)
-                restored_positions.append(int(chain_plugin.position))
-        finally:
-            if topology_batch_started and callable(end_topology_update):
-                await asyncio.to_thread(end_topology_update)
+            if callable(begin_topology_update):
+                await asyncio.to_thread(begin_topology_update)
+                topology_batch_started = True
+
+            try:
+                await engine_service.clear_chain()
+
+                for chain_plugin, instance_id in ordered_staged_instances:
+                    await asyncio.to_thread(engine.add_to_chain, instance_id, chain_plugin.position)
+                    restored_positions.append(int(chain_plugin.position))
+            finally:
+                if topology_batch_started and callable(end_topology_update):
+                    await asyncio.to_thread(end_topology_update)
 
         pedalboard = await engine_service.get_current_pedalboard()
         runtime_items = pedalboard.get("items", []) if isinstance(pedalboard, dict) else []

@@ -336,11 +336,14 @@ class _FakeRuntimeEngine:
         self.items: list[dict] = []
         self.loaded_plugins: list[dict] = []
         self.add_calls: list[tuple[int, int]] = []
+        self.replace_chain_calls: list[list[int]] = []
+        self.clear_chain_calls = 0
         self.prewarm_calls: list[int] = []
         self.topology_begin_calls = 0
         self.topology_end_calls = 0
 
     def clear_chain(self) -> None:
+        self.clear_chain_calls += 1
         self.items = []
 
     def add_to_chain(self, instance_id: int, position: int) -> None:
@@ -361,6 +364,25 @@ class _FakeRuntimeEngine:
                 "position": position,
             }
         )
+
+    def replace_chain(self, order):
+        ordered_ids = [int(instance_id) for instance_id in order]
+        self.replace_chain_calls.append(ordered_ids)
+        self.items = []
+        for position, instance_id in enumerate(ordered_ids):
+            loaded = next(
+                (plugin for plugin in self.loaded_plugins if plugin.get("instance_id") == instance_id),
+                {"instance_id": instance_id, "uri": "", "name": ""},
+            )
+            self.items.append(
+                {
+                    "instance_id": instance_id,
+                    "uri": loaded.get("uri", ""),
+                    "name": loaded.get("name", ""),
+                    "position": position,
+                }
+            )
+        return True
 
     def get_loaded_plugins(self):
         return list(self.loaded_plugins)
@@ -411,6 +433,9 @@ class _FakeRuntimeEngineService:
 
     async def clear_chain(self) -> None:
         self._engine.clear_chain()
+
+    async def replace_chain(self, order) -> bool:
+        return self._engine.replace_chain(order)
 
     async def prewarm_plugin_node(self, instance_id: int) -> bool:
         return self._engine.prewarm_plugin_node(instance_id)
@@ -520,9 +545,12 @@ async def test_activate_chain_restores_persisted_loader_state_into_runtime_insta
         "restored_positions": [0, 1],
         "missing_positions": [],
     }
+    assert fake_engine_service._engine.replace_chain_calls == [[101, 102]]
+    assert fake_engine_service._engine.clear_chain_calls == 0
+    assert fake_engine_service._engine.add_calls == []
     assert fake_engine_service._engine.prewarm_calls == [101, 102]
-    assert fake_engine_service._engine.topology_begin_calls == 1
-    assert fake_engine_service._engine.topology_end_calls == 1
+    assert fake_engine_service._engine.topology_begin_calls == 0
+    assert fake_engine_service._engine.topology_end_calls == 0
 
     await _dispose_db()
 
@@ -568,7 +596,9 @@ async def test_activate_chain_reuses_detached_loaded_instances_before_live_clear
 
     assert fake_engine_service.loaded_plugin_calls == []
     assert fake_engine_service._engine.prewarm_calls == [402]
-    assert fake_engine_service._engine.add_calls == [(402, 0)]
+    assert fake_engine_service._engine.replace_chain_calls == [[402]]
+    assert fake_engine_service._engine.clear_chain_calls == 0
+    assert fake_engine_service._engine.add_calls == []
     assert fake_engine_service.nam_load_calls == [(402, "/tmp/reused-runtime.nam")]
     assert payload["runtime_sync"] == {
         "enabled": True,

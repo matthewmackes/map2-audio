@@ -2784,6 +2784,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Get current plugin chain order")
         .def("clear_chain", &Map2AudioEngine::clearChain,
              "Clear chain topology without unloading plugin instances")
+        .def("replace_chain", &Map2AudioEngine::replaceChain,
+             py::arg("order"),
+             "Replace the active chain order in one topology update")
         .def("add_to_chain", &Map2AudioEngine::addToChain,
              py::arg("instance_id"), py::arg("position") = -1,
              "Add plugin to chain at position")

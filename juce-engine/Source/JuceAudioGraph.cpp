@@ -260,6 +260,36 @@ void JuceAudioGraph::clearChain() {
     markTopologyDirtyAndMaybeRebuildLocked();
 }
 
+bool JuceAudioGraph::replaceChain(const std::vector<InstanceId>& order) {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+
+    std::set<InstanceId> seen;
+    for (const auto instanceId : order) {
+        if (!seen.insert(instanceId).second) {
+            return false;
+        }
+        if (isPluginInParallelGroupsUnlocked(instanceId)) {
+            return false;
+        }
+        if (addPluginNode(instanceId) == juce::AudioProcessorGraph::NodeID()) {
+            return false;
+        }
+    }
+
+    chain_ = order;
+
+    {
+        std::lock_guard<std::mutex> meterLock(meterMutex_);
+        pluginMeters_.clear();
+        for (const auto instanceId : chain_) {
+            pluginMeters_[instanceId] = std::make_unique<VuMeter>();
+        }
+    }
+
+    markTopologyDirtyAndMaybeRebuildLocked();
+    return true;
+}
+
 bool JuceAudioGraph::prewarmPluginNode(InstanceId instanceId) {
     std::lock_guard<std::mutex> lock(chainMutex_);
     return addPluginNode(instanceId) != juce::AudioProcessorGraph::NodeID();

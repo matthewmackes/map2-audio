@@ -292,6 +292,7 @@ public:
 
     std::vector<InstanceId> getChainOrder() const;
     void clearChain();
+    bool replaceChain(const std::vector<InstanceId>& order);
     bool addToChain(InstanceId instanceId, int position = -1);
     bool removeFromChain(InstanceId instanceId);
     bool reorderChain(const std::vector<InstanceId>& order);
