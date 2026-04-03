@@ -300,9 +300,9 @@ class DirectMap2SurfaceBridge:
             from app.services.snapshot_service import SnapshotService
 
             service = SnapshotService(session)
-            live = await service.get_live_snapshot()
-            if live is not None:
-                self._selected_snapshot_id = int(live["id"])
+            control_plane_snapshot_id = await service.get_control_plane_snapshot_id()
+            if control_plane_snapshot_id is not None:
+                self._selected_snapshot_id = int(control_plane_snapshot_id)
                 return self._selected_snapshot_id
             presets = await service.list_snapshots()
             if not presets:
@@ -326,13 +326,15 @@ class DirectMap2SurfaceBridge:
         async with self._session() as session:
             from app.services.snapshot_service import SnapshotService
 
-            presets = await SnapshotService(session).list_snapshots()
+            service = SnapshotService(session)
+            presets = await service.list_snapshots()
+            control_plane_snapshot_id = await service.get_control_plane_snapshot_id()
         summaries = [
             PresetSummary(
                 id=str(item["id"]),
                 name=str(item.get("name") or f"Snapshot {item['id']}"),
                 program_number=item.get("program_number"),
-                is_active=bool(item.get("is_active", False)),
+                is_active=control_plane_snapshot_id is not None and int(item["id"]) == int(control_plane_snapshot_id),
                 is_favorite=bool(item.get("is_favorite", False)),
             )
             for item in presets
@@ -591,16 +593,20 @@ class RestWebSocketMap2SurfaceBridge:
         if self._selected_snapshot_id is not None:
             return self._selected_snapshot_id
         try:
-            live = await self._request("GET", "/api/snapshots/live")
-            self._selected_snapshot_id = int(live["id"])
-            return self._selected_snapshot_id
+            committed = await self._request("GET", "/api/audio/state/committed")
+            source_snapshot = committed.get("value", {}).get("source_snapshot", {})
+            committed_snapshot_id = source_snapshot.get("snapshot_id")
+            if committed_snapshot_id is not None:
+                self._selected_snapshot_id = int(committed_snapshot_id)
+                return self._selected_snapshot_id
         except Exception:
-            payload = await self._request("GET", "/api/snapshots")
-            snapshots = payload.get("snapshots", [])
-            if not snapshots:
-                raise RuntimeError("no snapshots available")
-            self._selected_snapshot_id = int(snapshots[0]["id"])
-            return self._selected_snapshot_id
+            pass
+        payload = await self._request("GET", "/api/snapshots")
+        snapshots = payload.get("snapshots", [])
+        if not snapshots:
+            raise RuntimeError("no snapshots available")
+        self._selected_snapshot_id = int(snapshots[0]["id"])
+        return self._selected_snapshot_id
 
     async def _get_snapshot_detail(self, snapshot_id: int) -> dict[str, Any]:
         if snapshot_id in self._detail_cache:
@@ -612,12 +618,20 @@ class RestWebSocketMap2SurfaceBridge:
     async def list_presets(self) -> list[PresetSummary]:
         payload = await self._request("GET", "/api/snapshots")
         presets = payload.get("snapshots", [])
+        control_plane_snapshot_id: int | None = None
+        try:
+            committed = await self._request("GET", "/api/audio/state/committed")
+            source_snapshot = committed.get("value", {}).get("source_snapshot", {})
+            snapshot_id = source_snapshot.get("snapshot_id")
+            control_plane_snapshot_id = int(snapshot_id) if snapshot_id is not None else None
+        except Exception:
+            control_plane_snapshot_id = None
         return [
             PresetSummary(
                 id=str(item["id"]),
                 name=str(item.get("name") or f"Snapshot {item['id']}"),
                 program_number=item.get("program_number"),
-                is_active=bool(item.get("is_active", False)),
+                is_active=control_plane_snapshot_id is not None and int(item["id"]) == control_plane_snapshot_id,
                 is_favorite=bool(item.get("is_favorite", False)),
             )
             for item in presets

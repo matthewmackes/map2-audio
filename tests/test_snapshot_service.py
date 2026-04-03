@@ -172,7 +172,6 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["activated_at"] is None
             assert created["paths"][0]["id"] == "channel-0"
             assert created["paths"][0]["label"] == "A"
-            assert created["session_notes"] == []
             assert created["chains"][0]["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
             assert created["chains"][0]["plugins"][0]["position"] == 0
             assert created["chains"][0]["plugins"][0]["loader_state"]["system_block_role"] == "noise_gate"
@@ -197,32 +196,6 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 session,
             )
             assert command_id is not None
-
-            notes = await service.add_session_note(created["id"], "First rehearsal note")
-            assert notes is not None
-            assert len(notes) == 1
-            assert notes[0]["body"] == "First rehearsal note"
-
-            notes = await service.add_session_note(created["id"], "Second rehearsal note")
-            assert notes is not None
-            assert [note["body"] for note in notes] == [
-                "Second rehearsal note",
-                "First rehearsal note",
-            ]
-
-            listed_notes = await service.list_session_notes(created["id"])
-            assert listed_notes is not None
-            assert [note["body"] for note in listed_notes] == [
-                "Second rehearsal note",
-                "First rehearsal note",
-            ]
-
-            detail_with_notes = await service.get_snapshot(created["id"])
-            assert detail_with_notes is not None
-            assert [note["body"] for note in detail_with_notes["session_notes"]] == [
-                "Second rehearsal note",
-                "First rehearsal note",
-            ]
 
             renamed = await service.update_snapshot(
                 created["id"],
@@ -1475,5 +1448,67 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
             assert len(revisions_after_restore) == 2
             assert revisions_after_restore[0]["revision_number"] == 2
             assert revisions_after_restore[0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
+
+    asyncio.run(_run())
+
+
+def test_delete_snapshot_ignores_stale_runtime_live_state_when_control_plane_points_elsewhere(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="DeleteMe",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            runtime_service = SnapshotRuntimeStateService(session)
+            await runtime_service.sync_live_snapshot_payload(
+                snapshot_id=created["id"],
+                live_snapshot_payload={"id": created["id"], "name": created["name"]},
+                snapshot_revision=created.get("snapshot_revision"),
+            )
+
+            async def _fake_control_plane_snapshot_id():
+                return None
+
+            monkeypatch.setattr(service, "get_control_plane_snapshot_id", _fake_control_plane_snapshot_id)
+
+            deleted = await service.delete_snapshot(created["id"])
+            assert deleted is True
+            assert await service.get_snapshot(created["id"]) is None
 
     asyncio.run(_run())

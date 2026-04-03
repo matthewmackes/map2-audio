@@ -6,7 +6,191 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-02 21:46 EDT - Closed T691 after focused frontend validation/build passed; no additional unblocked tasks remain because T614 and its dependents still fail the low-latency live-apply evidence bar.
+Last updated: 2026-04-03 13:42 EDT - Closed T694 after removing the last active `Snapshot.is_active` read/write behavior from snapshot-service live paths and making snapshot summaries/details runtime-aware for live activation metadata and tempo state. No unblocked epics remain open in the canonical worklist.
+
+ID: T692
+Status: [✓] Done
+Title: Replace split snapshot/runtime audio truth with an etcd-backed authoritative Audio State control plane
+Description:
+- Goal / acceptance criteria: Execute a big-bang cutover so MAP2 has one understood standard for audio state across backend, frontend, and cluster nodes. Preserve snapshots as the centralized durable store of saved configurations that can be re-applied on demand, but move all live/control-plane truth to a single authoritative `AuthoritativeAudioState` model backed by etcd. Remove backward-compatibility requirements for legacy split runtime paths and ensure all operator-visible live status surfaces can read the same committed state object.
+- Why it matters: Audio Grid is core, and the current system mixes persisted snapshot metadata, local editor derivation, runtime heartbeat state, and engine-local device state. That produces contradictory operator signals and prevents cluster-safe live-state reasoning. A mission-critical control plane needs one committed truth for desired state, observed state, and cluster-converged live state.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: architecture decision record with all five researched authority options and the chosen etcd path; canonical backend/frontend `AuthoritativeAudioState` schema; etcd client/config scaffolding; authority service and API surface; snapshot-to-intent compilation path; node observation contract; UI migration plan away from legacy split truth; focused validation evidence.
+Subtasks:
+  - T692-subA: Record the five researched audio-state authority options and the selected etcd strategy in canonical architecture docs
+  - T692-subB: Define the canonical `AuthoritativeAudioState`, `CompiledSnapshotIntent`, node observation, and commit/ack schemas in backend and shared frontend types
+  - T692-subC: Add etcd runtime configuration, client wrapper, and leader/namespace scaffolding for the audio-state authority service
+  - T692-subD: Implement the backend authority API surface for committed audio state, desired state submission, and node observation submission
+  - T692-subE: Preserve snapshots as the centralized saved-configuration store by compiling snapshot revisions into deployable desired intent on activation/reapply
+  - T692-subF: Refactor live runtime services and Audio Grid consumers to read committed authority state instead of legacy split snapshot/runtime sources
+  - T692-subG: Add cluster propagation/ack semantics so nodes can observe, apply, and report the authoritative state version cleanly
+  - T692-subH: Add focused regression coverage and validation for authority schema, API, and frontend consumer migration
+Assigned to: Codex
+Last updated: 2026-04-03 07:36 EDT - Codex
+- Execution notes:
+  - Researched and recorded five mission-critical authority options to keep in the decision record and handoff trail:
+    - `Option 1`: MAP2-native authority service backed by one primary management node and a versioned database row/event log.
+    - `Option 2`: etcd-backed audio authority with MAP2 as the state machine. Selected execution track.
+    - `Option 3`: PostgreSQL primary with synchronous standbys and logical decoding.
+    - `Option 4`: NATS JetStream KV/stream authority bus.
+    - `Option 5`: Consul KV/session-backed authority and leader election.
+  - The user explicitly selected `Option 2` and requested a big-bang cutover with no backward compatibility requirement. Snapshots must remain the centralized durable store of saved configurations and be re-applied by compiling saved snapshot revisions into desired authority intent on demand.
+- Progress notes:
+  - Added `docs/architecture/AUDIO_STATE_AUTHORITY_ETCD_BIG_BANG.md` to capture the five authority options, the selected etcd strategy, the canonical desired/observed/committed model, the snapshot reapply contract, and the professional-grade Fedora installation standard for the control plane.
+  - Added backend authority foundation files `app/models/audio_state.py`, `app/services/audio_state_authority.py`, and `app/routes/audio_state.py` with canonical Pydantic schemas plus initial etcd JSON API read/write scaffolding for committed state, desired state, and node observations.
+  - Extended `app/config.py`, `requirements-backend-runtime.txt`, and `app/main.py` so the repo has explicit audio-state authority runtime configuration, etcd transport dependencies, and the new `/api/audio/state/*` route surface registered in the app.
+  - Added shared frontend authority types and consumers in `web/src/map2/types.ts`, `web/src/map2/clients/audioState.ts`, and `web/src/app/hooks/useAuthoritativeAudioState.ts` so the UI can begin migrating off `['snapshots', 'live']` and `snapshot_runtime_live_state`.
+  - Added `scripts/install_audio_state_authority_etcd_fedora.sh` as the first repo-native installation artifact for Fedora Server etcd deployment.
+  - Added `app/services/audio_state_snapshot_compiler.py` plus `POST /api/audio/state/snapshots/{snapshot_id}/activate` so saved snapshots now have an explicit path into the new authority model: compile SQL-backed saved configuration into `CompiledSnapshotIntent`, write desired state, and seed initial committed state with `pending_apply` path records.
+  - Extended `app/services/audio_state_authority.py` and `app/routes/audio_state.py` with observation listing plus committed-state reconciliation so node observations can now collapse into one merged `AuthoritativeAudioState` instead of living as dead etcd leaf records.
+  - Migrated the Audio Grid hero card in `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` and `web/src/app/pages/SnapshotEditorPageContent.tsx` to prefer committed authority devices, sync status, headline state, and channel/path health over the old split snapshot/runtime sources whenever the committed state targets the current snapshot.
+  - Hardened `scripts/install_audio_state_authority_etcd_fedora.sh` into a professional-grade installer path with `--dry-run`, `--uninstall`, backup capture, architecture-correct binary staging, validated single-node or cluster bootstrap, optional TLS wiring, hardened systemd generation, deployment-grade etcd verification, and automatic MAP2 authority environment bridging through `/etc/map2/environment`.
+  - Fixed the `GET /api/audio/state/status` route runtime config import path and added focused route-level regression coverage in `tests/test_audio_state_routes.py` so the new authority API surface is validated beyond service-level unit tests.
+  - Added `web/src/app/pages/snapshotAuthorityState.ts` plus focused tests in `web/src/app/pages/snapshotAuthorityState.test.ts` so the Snapshot Editor now has one explicit resolver for authority snapshot identity, control-plane snapshot selection, editor override precedence, and preferred live display state.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so the editor now resolves its control-plane snapshot from committed authority first when the corresponding saved snapshot detail is available, then falls back to the legacy live snapshot only as a temporary compatibility path. The same slice also switched clip-source chain derivation and runtime display labeling to use the new control-plane resolver, and mirrors runtime-chain cache pruning into the authority-backed snapshot detail cache.
+  - Extended `web/src/app/hooks/useAuthoritativeAudioState.ts` with observation-list queries, then updated `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` so snapshot cards, delete guards, dirty-state comparison, lifecycle tags, and node-sync cards now resolve their live/control-plane state from committed authority first and use authority observations before falling back to legacy runtime APIs.
+  - Updated `web/src/app/components/snapshots/SnapshotModalContent.tsx` so the modal resolves its active snapshot identity from committed authority first, uses authority-backed snapshot detail for active/needs-update comparisons, removes `snapshot.is_active` from delete and action guards, and invalidates authority caches after activate/create flows.
+  - Expanded `web/src/app/pages/snapshotAuthorityState.ts` and `web/src/app/pages/snapshotAuthorityState.test.ts` with reusable control-plane status and authority-observation mapping helpers so the remaining frontend consumers can share one source-of-truth resolver.
+  - Updated `web/src/app/hooks/useSnapshotRuntimeState.ts` so matching runtime live-state and activation-event websocket traffic now invalidates the active authority committed/desired/observed queries plus the authority-active snapshot detail cache, preventing authority-first consumers from drifting behind until their next poll cycle.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so the editor’s MIDI-triggered snapshot loads, tap-tempo refresh path, create/activate flows, and live-chain cache invalidation helpers now bridge through shared control-plane snapshot cache helpers and invalidate authority committed/desired/observed queries when those legacy live-cache paths fire.
+  - Switched the remaining frontend activation boundary in `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/snapshots/SnapshotModalContent.tsx` from legacy `snapshotsApi.activate(...)` to `audioStateApi.activateSnapshot(...)`, then re-fetched canonical snapshot detail for hydration so editor/modal control-plane actions now target the authority route directly.
+  - Added focused backend route coverage in `tests/test_audio_state_routes.py` for `POST /api/audio/state/snapshots/{snapshot_id}/activate`, locking the snapshot-to-authority compile-and-commit path that now backs the editor and modal activation commands.
+  - Normalized `web/src/app/components/snapshots/SnapshotModalContent.tsx` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` onto the shared authority-aware live-cache helper so all primary snapshot surfaces now coordinate `['snapshots', 'live']` together with committed/desired/observed authority invalidation instead of open-coding separate cache behavior.
+  - Removed the `fetchLiveSnapshotOrNull` / `snapshotsApi.getLive()` control-plane read dependency from `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, so those surfaces now resolve active control-plane snapshot selection from committed authority state plus authority snapshot detail instead of polling the legacy live snapshot endpoint.
+  - Removed the modal fallback read path in `web/src/app/components/snapshots/SnapshotModalContent.tsx` by deleting its `active_id` / `legacyActiveSnapshotDetailQuery` control-plane dependency, so the modal library now resolves the active snapshot entirely from committed authority state plus authority snapshot detail.
+  - Tightened `web/src/app/pages/snapshotAuthorityState.ts` so `resolveControlPlaneSnapshot(...)` and `resolveControlPlaneSnapshotId(...)` no longer accept legacy `liveSnapshot` or `active_id` fallback parameters, and updated `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` to use that stricter authority-only selector contract.
+  - Removed the remaining runtime-status fallback from `web/src/app/pages/snapshotAuthorityState.ts` and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, so non-authority snapshots are no longer presented as live from websocket/runtime state when the committed authority object points at a different control-plane snapshot.
+  - Removed the legacy `['snapshots', 'live']` compatibility cache bridge from `web/src/app/pages/snapshotLiveState.ts`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and the related modal/helper tests, so active frontend control-plane paths no longer write, restore, invalidate, or assert against the dead live snapshot cache key.
+  - Updated `web/src/app/utils/snapshotGoLiveState.ts`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so the editor hero LIVE/Stopped headline and the Go Live state machine now confirm against committed authority snapshot identity plus authority engine status instead of runtime websocket snapshot identity or snapshot-local `is_active` metadata.
+  - Removed the residual runtime-payload comparison seam from `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` and `web/src/app/pages/SnapshotEditorPageContent.tsx`, so channel-activity detail and go-live diff generation now derive from the authority-backed control-plane snapshot detail rather than `runtimeLiveState.live_snapshot_payload`.
+  - Flattened the remaining snapshot-local no-deployment node-sync fallback in `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` from `Local live only` vs `Local only` to `Local only`, eliminating one more operator-facing read of snapshot-local live metadata outside authority state.
+  - Removed legacy snapshot-list `active_id` from `app/routes/unified_snapshots.py`, `web/src/map2/clients/snapshots.ts`, `web/src/map2/clients/workflows.ts`, and the affected frontend tests, so the snapshot list contract no longer exports a redundant active-snapshot identifier alongside the committed authority control-plane path.
+  - Removed legacy snapshot summary/detail `is_active` payload emission from `app/services/snapshot_service.py`, updated the shared snapshot contract in `web/src/map2/types.ts` so it no longer requires that field, and removed the remaining frontend snapshot-surface behavior that still sorted or hydrated from `summary/detail.is_active`.
+  - T692 acceptance is now satisfied for operator-visible live/control-plane behavior: the primary frontend surfaces resolve liveness from committed authority state, and the legacy snapshot list/detail payloads no longer export competing live markers.
+  - Added focused backend/frontend regression coverage in `tests/test_audio_state_authority_service.py` and `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` to lock the reconciliation semantics and the new UI source-of-truth preference.
+  - Performed a local Fedora installation of upstream etcd `v3.6.10`, fixed the systemd environment/flag conflict in the installer unit generation, and validated the host authority service as an active singleton member on `http://127.0.0.1:2379`.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/config.py app/routes/audio_state.py app/services/audio_state_authority.py app/models/audio_state.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio_state.py app/services/audio_state_authority.py app/services/audio_state_snapshot_compiler.py app/models/audio_state.py` -> PASS
+  - `pytest -q tests/test_audio_state_snapshot_compiler.py` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_authority_service.py` -> PASS
+  - `ETCDCTL_API=3 /usr/local/bin/etcdctl --endpoints=http://127.0.0.1:2379 endpoint health` -> PASS
+  - `ETCDCTL_API=3 /usr/local/bin/etcdctl --endpoints=http://127.0.0.1:2379 endpoint status -w table` -> PASS
+  - `ETCDCTL_API=3 /usr/local/bin/etcdctl --endpoints=http://127.0.0.1:2379 member list -w table` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/pages/snapshotAuthorityState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/hooks/useSnapshotRuntimeState.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts web/src/app/pages/snapshotLiveState.test.ts` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/pages/snapshotLiveState.test.ts src/app/pages/snapshotAuthorityState.test.ts web/src/app/hooks/useSnapshotRuntimeState.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/snapshotLiveState.test.ts src/app/pages/snapshotAuthorityState.test.ts web/src/app/hooks/useSnapshotRuntimeState.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `pytest -q tests/test_audio_state_routes.py tests/test_audio_state_snapshot_compiler.py` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/pages/snapshotAuthorityState.test.ts src/app/pages/snapshotLiveState.test.ts` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/pages/snapshotAuthorityState.test.ts src/app/pages/snapshotLiveState.test.ts web/src/app/hooks/useSnapshotRuntimeState.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/snapshotAuthorityState.test.ts src/app/pages/snapshotLiveState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/pages/snapshotAuthorityState.test.ts web/src/app/pages/AudioArtifactsPage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/pages/snapshotLiveState.test.ts` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/pages/snapshotAuthorityState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts src/app/pages/snapshotAuthorityState.test.ts` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/utils/snapshotGoLiveState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `pytest -q tests/test_snapshot_routes.py` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/AudioTablePage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `pytest -q tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts src/app/utils/snapshotGoLiveState.test.ts src/app/pages/snapshotAuthorityState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/pages/snapshotLiveState.test.ts src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts web/src/app/components/SnapshotEditor/snapshotEditorState.test.ts src/app/pages/snapshotAuthorityState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - Licensing review: touched backend/frontend/scripts/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran repository license/notice scans and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T694
+Status: [✓] Done
+Title: Retire backend-local snapshot live compatibility surfaces after authority cutover
+Description:
+- Goal / acceptance criteria: Remove the remaining backend-local snapshot live compatibility layer that still persists and serves live state through `Snapshot.is_active`, `Snapshot.live_state_payload`, and `/api/snapshots/live` for non-authority consumers. Route any remaining machine/push-surface/runtime integrations through the committed authority model or an explicit authority-derived compatibility adapter instead of snapshot-local flags.
+- Why it matters: T692 finished the operator-facing authority cutover, but the backend still carries an internal split-truth layer for legacy runtime helpers and device integrations. Leaving that layer in place increases maintenance cost and risks future regressions back toward snapshot-local live state.
+- Dependencies: T692
+- Estimated effort: Medium
+- Required outputs: audited backend consumers of `get_live_snapshot` / `Snapshot.is_active` / `live_state_payload`, selected replacement path per consumer, code cleanup or adapter replacement, and focused validation evidence.
+Subtasks:
+  - T694-subA: Audit and classify all backend consumers of `/api/snapshots/live`, `SnapshotService.get_live_snapshot()`, `Snapshot.is_active`, and `Snapshot.live_state_payload`
+  - T694-subB: Replace machine/push-surface/backend integrations that still read snapshot-local live state with authority-native or authority-derived paths
+  - T694-subC: Remove or reduce the legacy snapshot-local live persistence path once no required consumer depends on it
+Assigned to: Codex
+Last updated: 2026-04-03 13:42 EDT - Codex
+- Progress notes:
+  - Migrated `app/services/maschine_service.py` and `app/services/push_surface/map2_bridge.py` away from `/api/snapshots/live`, direct `Snapshot.is_active` reads, and snapshot-summary `is_active` trust. They now derive the current preset from committed authority state or the authority-derived control-plane snapshot id.
+  - Collapsed the `/api/snapshots/live` route in `app/routes/unified_snapshots.py` onto `SnapshotService.get_control_plane_snapshot()` and removed the final `Snapshot.is_active` database fallback from `SnapshotService.get_control_plane_snapshot_id()`.
+  - Switched snapshot detail serialization in `app/services/snapshot_service.py` to use runtime-state-backed live metadata only. Activation now uses an explicit in-flight compatibility projection for channel-health verification and `confirm_live_intent`, so public reads no longer reconstruct live state from `Snapshot.live_state_payload` or `Snapshot.is_active`.
+  - Removed snapshot-row live-state writeback from `app/services/chain_service.py` and `app/services/snapshot_runtime_state_service.py`; runtime chain activation/deactivation and health refresh now mutate only the runtime projection held by `SnapshotRuntimeStateService`.
+  - Removed the remaining direct `Snapshot.live_state_payload` writes from `app/services/snapshot_service.py`; the explicit activation compatibility payload now stays in-memory, and compatibility row clearing no longer rewrites the JSON live-state column.
+  - `SnapshotService.update_snapshot()` no longer uses `snapshot.is_active` to decide runtime payload sync or live tempo updates; it now checks the current runtime/control-plane payload directly.
+  - `app/services/snapshot_service.py` now overlays runtime-derived `activated_at` and active tempo state onto snapshot details and list summaries when the snapshot matches the current runtime/control-plane payload, instead of trusting the snapshot row as the primary live source.
+  - Removed the last direct `snapshot.is_active = True` activation write in `app/services/snapshot_service.py`.
+  - Removed the last cold-path `_tempo_status_for_snapshot(...)` fallback to `snapshot_row.is_active`, and stopped `_clear_compatibility_live_projections()` from rewriting the `is_active` column. Snapshot-row `is_active` is now inert for this epic’s control-plane/live-state behavior.
+  - T694 acceptance criteria are met: active backend consumers have been migrated off `/api/snapshots/live`, `SnapshotService.get_live_snapshot()` compatibility reads, `Snapshot.is_active`, and `Snapshot.live_state_payload` as production live-state sources. Remaining row-level `activated_at` data is historical metadata, not the live control-plane source.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/snapshot_runtime_state_service.py app/routes/unified_snapshots.py app/services/push_surface/map2_bridge.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/push_surface/test_bridge.py tests/push_surface/test_manager.py tests/push_surface/test_pages.py` -> PASS (`24 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/chain_service.py app/services/snapshot_runtime_state_service.py app/services/snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k "crud_activation_and_import or deactivate_snapshot_runtime_chain_removes_live_path or activate_snapshot_reuses_runtime_chains_for_same_topology or runtime_health_refresh_marks_live_channels_not_loaded_when_runtime_drops or activation_preflight_blocks_broken_assets_and_preserves_live_snapshot"` -> PASS (`5 passed`)
+  - `pytest -q tests/test_snapshot_routes.py -k "unified_snapshot_routes_and_cluster_routes or snapshot_routes_runtime_state_refresh_marks_channels_not_loaded"` -> PASS (`1 passed`, `3 deselected`)
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/push_surface/test_bridge.py` -> PASS (`19 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS (`15 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS (`15 passed`)
+
+ID: T692-subI
+Status: [✓] Done
+Title: Harden the Fedora etcd authority installer to professional-grade operational standards
+Description:
+- Goal / acceptance criteria: Upgrade the repo-native Fedora etcd installer so it supports safe execution planning, rollback-friendly backups, architecture-correct binary staging, validated single-node or clustered bootstrap configuration, optional TLS wiring, hardened systemd service generation, and deployment-grade verification that proves both etcd and MAP2 authority configuration are coherent after install.
+- Why it matters: The current installer is a useful bootstrap artifact, but it is still a single-shot local script. The user explicitly asked for a detailed professional-grade installation path, and the authority cutover cannot be operationally credible without a safer installer and clearer post-install verification.
+- Dependencies: T692-subC, T692-subD
+- Estimated effort: Medium
+- Required outputs: upgraded `scripts/install_audio_state_authority_etcd_fedora.sh`, generated MAP2 authority env bridge artifact, focused validation for dry-run/script syntax, and updated worklist notes with exact verification evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 08:26 EDT - Codex
+- Completion notes:
+  - Replaced the original single-shot Fedora etcd bootstrap script with a safer installer that now supports `--dry-run`, `--uninstall`, host-artifact backups, architecture-aware release staging, cluster-mode validation, TLS-aware env generation, hardened systemd unit generation, and namespace write checks via `etcdctl`.
+  - Added automatic MAP2 authority config bridging by writing the relevant `MAP2_AUDIO_STATE_*` variables into `/etc/map2/environment`, which matches the existing `map2-backend.service` `EnvironmentFile` contract instead of requiring manual unit edits.
+  - Updated `docs/architecture/AUDIO_STATE_AUTHORITY_ETCD_BIG_BANG.md` so the documented Fedora installation standard now explicitly reflects dry-run, rollback, `/etc/map2/environment` bridging, and deployment-grade verification expectations.
+- Validation:
+  - `bash -n scripts/install_audio_state_authority_etcd_fedora.sh` -> PASS
+  - `ETCD_VERSION=v3.6.10 bash scripts/install_audio_state_authority_etcd_fedora.sh --dry-run --mode single-node` -> PASS
+  - `ETCD_VERSION=v3.6.10 ETCD_INSTALL_MODE=cluster ETCD_ENABLE_TLS=1 ETCD_CERT_FILE=/tmp/server.crt ETCD_KEY_FILE=/tmp/server.key ETCD_TRUSTED_CA_FILE=/tmp/ca.crt ETCD_PEER_CERT_FILE=/tmp/peer.crt ETCD_PEER_KEY_FILE=/tmp/peer.key ETCD_PEER_TRUSTED_CA_FILE=/tmp/ca.crt ETCD_NAME=node-a ETCD_HOST_FQDN=localhost ETCD_INITIAL_CLUSTER='node-a=https://localhost:2380,node-b=https://127.0.0.1:3380,node-c=https://localhost:4380' MAP2_AUTHORITY_ENDPOINTS='https://localhost:2379,https://127.0.0.1:3379,https://localhost:4379' bash scripts/install_audio_state_authority_etcd_fedora.sh --dry-run` -> PASS
+  - `bash scripts/install_audio_state_authority_etcd_fedora.sh --dry-run --uninstall` -> PASS
+
+ID: T693
+Status: [✓] Done
+Title: Hard-delete Snapshot Session Notes feature and backend surface
+Description:
+- Goal / acceptance criteria: Remove the Snapshot Editor Session Notes feature end-to-end, including the editor accordion, note-creation client calls, backend `/api/snapshots/{id}/notes` routes, snapshot-session-note persistence/model wiring, and any `session_notes` payload contract so snapshots no longer expose or depend on this feature anywhere in the app.
+- Why it matters: The user explicitly requested that Session Notes and its backend be removed rather than left as dormant or compatibility-only code, so MAP2 should stop carrying UI, API, schema, and test maintenance cost for that feature.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: frontend Session Notes UI/client/type removal, backend route/service/model/schema cleanup, focused regression updates, and validation evidence recorded in this worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 08:54 EDT - Codex
+- Completion notes:
+  - Removed the Snapshot Editor Session Notes accordion, note draft/mutation wiring, session-note client methods, and the `session_notes` field from the shared `SnapshotDetail` contract plus affected editor-state helpers and frontend fixtures.
+  - Removed backend Session Notes request/route handlers, snapshot-service note methods/serialization, ORM relationship/model wiring, and all focused route/service assertions that still expected the deleted feature surface.
+  - Updated SQLite startup schema maintenance to `DROP TABLE IF EXISTS snapshot_session_notes`, so the legacy Session Notes table is actively removed on SQLite-backed environments instead of lingering as dead storage.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/utils/snapshotIoBindings.test.ts src/app/utils/snapshotFootswitchLabels.test.ts src/app/utils/snapshotBlockFocus.test.ts src/app/pages/snapshotAuthorityState.test.ts src/app/components/SnapshotEditor/snapshotEditorState.test.ts src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts src/app/pages/snapshotLiveState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T691
 Status: [✓] Done

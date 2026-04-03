@@ -179,7 +179,7 @@ export interface ChainRuntimeSync {
 export interface Chain {
   id: number;
   name: string;
-  is_active: boolean;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
   plugins: ChainPlugin[];
@@ -2213,6 +2213,142 @@ export interface SnapshotRuntimeClusterLiveStateResponse {
   nodes: SnapshotRuntimeLiveState[];
 }
 
+export type AudioStatePathStatus = 'pending' | 'active' | 'not_loaded' | 'offline' | 'degraded';
+export type AudioStateEngineStatus = 'live' | 'live_warning' | 'stopped' | 'offline';
+
+export interface AudioStateSnapshotRef {
+  snapshot_id: number;
+  snapshot_revision_id?: number | null;
+  name: string;
+}
+
+export interface AudioStateDesiredIO {
+  requested_input_device?: string | null;
+  requested_output_device?: string | null;
+  monitoring_output_index?: number | null;
+}
+
+export interface AudioStateRouting {
+  mode: string;
+  active_path_ids: string[];
+  path_order: string[];
+}
+
+export interface AudioStateDeployment {
+  placement_mode: string;
+  preferred_nodes: string[];
+}
+
+export interface CompiledSnapshotIntent {
+  snapshot_id: number;
+  snapshot_revision_id?: number | null;
+  compiled_at: string;
+  intent_version: number;
+  io: AudioStateDesiredIO;
+  routing: AudioStateRouting;
+  deployment: AudioStateDeployment;
+  chains: Array<Record<string, unknown>>;
+}
+
+export interface AudioStateObservedIOSummary {
+  effective_input_device?: string | null;
+  effective_output_device?: string | null;
+}
+
+export interface AudioStateClusterStatus {
+  sync_status: string;
+  applied_node_ids: string[];
+  degraded_node_ids: string[];
+}
+
+export interface AudioStateEngineSummary {
+  display_state: AudioStateEngineStatus;
+  is_warning: boolean;
+  is_offline: boolean;
+}
+
+export interface AudioStatePathRecord {
+  path_id: string;
+  label: string;
+  snapshot_chain_id?: number | null;
+  runtime_chain_id?: number | null;
+  owner_node_id?: string | null;
+  status: AudioStatePathStatus;
+  status_reason?: string | null;
+}
+
+export interface AudioStateDerivedStatus {
+  active_channel_count: number;
+  total_channel_count: number;
+  inactive_messages: string[];
+}
+
+export interface AuthoritativeAudioState {
+  schema_version: number;
+  state_version: number;
+  leader_epoch: number;
+  committed_at: string;
+  origin_node_id: string;
+  source_snapshot?: AudioStateSnapshotRef | null;
+  desired: CompiledSnapshotIntent;
+  observed_summary: AudioStateObservedIOSummary;
+  cluster: AudioStateClusterStatus;
+  engine: AudioStateEngineSummary;
+  paths: AudioStatePathRecord[];
+  derived: AudioStateDerivedStatus;
+}
+
+export interface AuthoritativeAudioStateEnvelope {
+  namespace: string;
+  key: string;
+  revision?: number | null;
+  value: AuthoritativeAudioState;
+}
+
+export interface DesiredAudioStateEnvelope {
+  namespace: string;
+  key: string;
+  revision?: number | null;
+  value: CompiledSnapshotIntent;
+}
+
+export interface AudioStateObservation {
+  node_id: string;
+  observed_state_version: number;
+  applied: boolean;
+  effective_input_device?: string | null;
+  effective_output_device?: string | null;
+  runtime_paths: AudioStatePathRecord[];
+  engine: AudioStateEngineSummary;
+  runtime_metrics: Record<string, unknown>;
+  observed_at: string;
+}
+
+export interface AudioStateObservationEnvelope {
+  namespace: string;
+  key: string;
+  revision?: number | null;
+  ttl_seconds?: number | null;
+  value: AudioStateObservation;
+}
+
+export interface AudioStateObservationListResponse {
+  namespace: string;
+  count: number;
+  observations: AudioStateObservationEnvelope[];
+}
+
+export interface AudioStateRouteStatus {
+  status: 'ok';
+  namespace: string;
+  authority_backend: string;
+}
+
+export interface ActivateSnapshotIntoAudioStateRequest {
+  triggered_by?: string;
+  leader_epoch?: number;
+}
+
 export interface SnapshotActivationAuditEvent {
   id: number;
   node_id: string;
@@ -2283,13 +2419,6 @@ export interface SnapshotDeployment {
   history: SnapshotDeploymentHistory[];
 }
 
-export interface SnapshotSessionNote {
-  id: number;
-  snapshot_id: number;
-  body: string;
-  created_at?: string | null;
-}
-
 export interface SnapshotTempoStatus {
   snapshot_id: number | null;
   stored_tempo_bpm: number;
@@ -2325,7 +2454,7 @@ export interface SnapshotSummary {
   output_level_warning_threshold_db?: number;
   input_device: string | null;
   output_device: string | null;
-  is_active: boolean;
+  is_active?: boolean;
   is_favorite: boolean;
   is_locked?: boolean;
   display_order: number;
@@ -2357,7 +2486,6 @@ export interface SnapshotDetail extends SnapshotSummary {
   assets: SnapshotAssetRef[];
   live_state: SnapshotLiveState;
   lineage: SnapshotLineage;
-  session_notes: SnapshotSessionNote[];
   active_channel_index: number;
   deployments: SnapshotDeployment[];
   snapshot_revision?: string;
@@ -2451,7 +2579,7 @@ export interface FlowSnapshot {
   description: string;
   tags: string[];
   program_number: number | null;
-  is_active: boolean;
+  is_active?: boolean;
   is_favorite: boolean;
   is_locked?: boolean;
   display_order: number;

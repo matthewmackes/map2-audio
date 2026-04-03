@@ -157,9 +157,6 @@ export function HomePage() {
                         <Tag type="blue" size="sm">
                           {LANDING_DIRECTORY_LABELS[tile.launcher.directory]}
                         </Tag>
-                        <Tag type="cool-gray" size="sm">
-                          {tile.size}
-                        </Tag>
                       </div>
                       <div className="hp2-launchers__tile-icon" aria-hidden>
                         <Icon size={tile.size === 'large' ? 28 : 22} />

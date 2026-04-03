@@ -51,6 +51,7 @@ class ConfigSection(Enum):
     APP = "app"
     NODE = "node"
     AUDIO = "audio"
+    AUDIO_STATE = "audio_state"
     SNAPSHOTS = "snapshots"
     MIDI = "midi"
     PUSH_SURFACE = "push_surface"
@@ -210,6 +211,77 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[48000],
         description="Allowed sample-rate set for profile-driven PipeWire mapping",
         value_type=list,
+    ),
+    "audio_state.authority_backend": ConfigOption(
+        key="audio_state.authority_backend",
+        default="etcd",
+        description="Cluster authority backend for committed audio state",
+        value_type=str,
+        choices=["etcd"],
+        env_var="MAP2_AUDIO_STATE_AUTHORITY_BACKEND",
+        restart_required=True,
+    ),
+    "audio_state.etcd_endpoints": ConfigOption(
+        key="audio_state.etcd_endpoints",
+        default=["http://127.0.0.1:2379"],
+        description="Ordered etcd endpoint list for the authoritative audio state control plane",
+        value_type=list,
+        env_var="MAP2_AUDIO_STATE_ETCD_ENDPOINTS",
+        restart_required=True,
+    ),
+    "audio_state.etcd_namespace": ConfigOption(
+        key="audio_state.etcd_namespace",
+        default="/map2/audio-state/v1",
+        description="etcd namespace root for the authoritative audio state keyspace",
+        value_type=str,
+        env_var="MAP2_AUDIO_STATE_ETCD_NAMESPACE",
+        restart_required=True,
+    ),
+    "audio_state.etcd_connect_timeout_s": ConfigOption(
+        key="audio_state.etcd_connect_timeout_s",
+        default=2.0,
+        description="Connection timeout in seconds for etcd control-plane requests",
+        value_type=float,
+        min_value=0.1,
+        max_value=30.0,
+        env_var="MAP2_AUDIO_STATE_ETCD_CONNECT_TIMEOUT_S",
+        restart_required=True,
+    ),
+    "audio_state.etcd_request_timeout_s": ConfigOption(
+        key="audio_state.etcd_request_timeout_s",
+        default=5.0,
+        description="Total request timeout in seconds for etcd control-plane operations",
+        value_type=float,
+        min_value=0.1,
+        max_value=60.0,
+        env_var="MAP2_AUDIO_STATE_ETCD_REQUEST_TIMEOUT_S",
+        restart_required=True,
+    ),
+    "audio_state.etcd_verify_tls": ConfigOption(
+        key="audio_state.etcd_verify_tls",
+        default=True,
+        description="Verify TLS certificates for etcd authority connections",
+        value_type=bool,
+        env_var="MAP2_AUDIO_STATE_ETCD_VERIFY_TLS",
+        restart_required=True,
+    ),
+    "audio_state.etcd_ca_cert_path": ConfigOption(
+        key="audio_state.etcd_ca_cert_path",
+        default="",
+        description="Optional CA bundle path for etcd TLS validation",
+        value_type=str,
+        env_var="MAP2_AUDIO_STATE_ETCD_CA_CERT_PATH",
+        restart_required=True,
+    ),
+    "audio_state.node_observation_ttl_s": ConfigOption(
+        key="audio_state.node_observation_ttl_s",
+        default=15,
+        description="TTL in seconds for node observation leases in etcd",
+        value_type=int,
+        min_value=1,
+        max_value=300,
+        env_var="MAP2_AUDIO_STATE_NODE_OBSERVATION_TTL_S",
+        restart_required=True,
     ),
     "snapshots.global_noise_gate_threshold_db": ConfigOption(
         key="snapshots.global_noise_gate_threshold_db",

@@ -1,15 +1,36 @@
+import type { QueryClient } from '@tanstack/react-query'
 import type { SnapshotDetail } from '../../map2/types'
-import { ApiError } from '../../map2/http'
-import { snapshotsApi } from '../../map2/clients/snapshots'
 
-export async function fetchLiveSnapshotOrNull(): Promise<SnapshotDetail | null> {
-  try {
-    return await snapshotsApi.getLive()
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return null
-    }
-    throw error
+export function setAuthorityAwareLiveSnapshot(
+  queryClient: Pick<QueryClient, 'setQueryData'>,
+  snapshot: SnapshotDetail,
+  authoritySnapshotId?: number | null,
+) {
+  if (authoritySnapshotId != null && authoritySnapshotId === snapshot.id) {
+    queryClient.setQueryData(['snapshots', 'detail', 'authority-active', authoritySnapshotId], snapshot)
+  }
+}
+
+export function restoreAuthorityAwareLiveSnapshot(
+  queryClient: Pick<QueryClient, 'setQueryData'>,
+  snapshot: SnapshotDetail | null | undefined,
+  authoritySnapshotId?: number | null,
+) {
+  if (authoritySnapshotId != null && snapshot?.id === authoritySnapshotId) {
+    queryClient.setQueryData(['snapshots', 'detail', 'authority-active', authoritySnapshotId], snapshot)
+  }
+}
+
+export function invalidateAuthorityAwareLiveSnapshot(
+  queryClient: Pick<QueryClient, 'invalidateQueries'>,
+  options: { includeDesired?: boolean } = {},
+) {
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'committed'] })
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'observed'] })
+  void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active'] })
+
+  if (options.includeDesired) {
+    void queryClient.invalidateQueries({ queryKey: ['audio-state', 'desired'] })
   }
 }
 

@@ -42,7 +42,6 @@ from app.database import (
     SnapshotMidiMap,
     SnapshotRevision,
     SnapshotRouting,
-    SnapshotSessionNote,
 )
 from app.services.juce_engine_service import get_audio_engine
 from app.services.maschine_encoder_map_service import normalize_maschine_encoder_map
@@ -304,7 +303,37 @@ class SnapshotService:
 
         result = await self.session.execute(stmt)
         snapshots = result.scalars().all()
-        summaries = [self._serialize_snapshot_summary(snapshot) for snapshot in snapshots]
+        live_snapshot_id: int | None = None
+        live_activated_at: str | None = None
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+            runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+            runtime_payload = runtime_state.get("live_snapshot_payload")
+            if (
+                runtime_state.get("state") == "live"
+                and runtime_state.get("snapshot_id") is not None
+                and isinstance(runtime_payload, dict)
+            ):
+                live_snapshot_id = int(runtime_state["snapshot_id"])
+                live_state_payload = runtime_payload.get("live_state")
+                if isinstance(live_state_payload, dict):
+                    live_activated_at = str(
+                        live_state_payload.get("activated_at") or runtime_state.get("emitted_at") or ""
+                    ).strip() or None
+                else:
+                    live_activated_at = str(runtime_state.get("emitted_at") or "").strip() or None
+        except Exception as exc:
+            logger.debug("Snapshot list runtime-state lookup skipped: %s", exc)
+
+        summaries = [
+            self._serialize_snapshot_summary(
+                snapshot,
+                live_snapshot_id=live_snapshot_id,
+                live_activated_at=live_activated_at,
+            )
+            for snapshot in snapshots
+        ]
         tag_set = {str(tag).strip().lower() for tag in (tags or []) if str(tag).strip()}
         if not tag_set:
             return summaries
@@ -697,7 +726,17 @@ class SnapshotService:
             return None
         return await self._serialize_snapshot_detail(snapshot)
 
-    async def get_live_snapshot(self) -> Optional[dict[str, Any]]:
+    async def get_control_plane_snapshot_id(self) -> Optional[int]:
+        try:
+            from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
+
+            committed = await AudioStateAuthorityService().get_committed_state()
+            snapshot_id = committed.value.source_snapshot.snapshot_id if committed.value.source_snapshot else None
+            return int(snapshot_id) if snapshot_id is not None else None
+        except Exception as exc:
+            if exc.__class__.__name__ != "AudioStateAuthorityError":
+                logger.debug("Control-plane snapshot lookup fell back to runtime compatibility path: %s", exc)
+
         from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
         runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
@@ -705,38 +744,36 @@ class SnapshotService:
         if runtime_state.get("state") == "live" and isinstance(runtime_payload, dict):
             snapshot_id = _safe_int(runtime_payload.get("id"))
             if snapshot_id is not None:
-                live_detail = await self.get_snapshot(snapshot_id)
-                if live_detail is not None:
-                    live_detail["snapshot_revision"] = (
-                        runtime_state.get("snapshot_revision")
-                        or runtime_payload.get("snapshot_revision")
-                        or live_detail.get("snapshot_revision")
-                    )
-                    controller_display_preview = runtime_payload.get("controller_display_preview")
-                    if isinstance(controller_display_preview, dict):
-                        live_detail["controller_display_preview"] = copy.deepcopy(controller_display_preview)
-                    return live_detail
-            return runtime_payload
+                return snapshot_id
+        return None
 
-        result = await self.session.execute(
-            select(Snapshot)
-            .options(
-                selectinload(Snapshot.channels),
-                selectinload(Snapshot.chains).selectinload(SnapshotChain.plugins),
-                selectinload(Snapshot.chains).selectinload(SnapshotChain.loop_insertions),
-                selectinload(Snapshot.routing),
-                selectinload(Snapshot.midi_map),
-                selectinload(Snapshot.deployments).selectinload(SnapshotDeployment.history),
-                selectinload(Snapshot.session_notes),
-            )
-            .where(Snapshot.is_active.is_(True))
-            .order_by(Snapshot.updated_at.desc(), Snapshot.id.desc())
-            .limit(1)
-        )
-        snapshot = result.scalar_one_or_none()
-        if snapshot is None:
+    async def get_control_plane_snapshot(self) -> Optional[dict[str, Any]]:
+        snapshot_id = await self.get_control_plane_snapshot_id()
+        if snapshot_id is None:
             return None
-        return await self._serialize_snapshot_detail(snapshot)
+        return await self.get_snapshot(snapshot_id)
+
+    async def get_live_snapshot(self) -> Optional[dict[str, Any]]:
+        live_detail = await self.get_control_plane_snapshot()
+        if live_detail is None:
+            return None
+
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        runtime_payload = runtime_state.get("live_snapshot_payload")
+        if runtime_state.get("state") == "live" and isinstance(runtime_payload, dict):
+            snapshot_id = _safe_int(runtime_payload.get("id"))
+            if snapshot_id == live_detail.get("id"):
+                live_detail["snapshot_revision"] = (
+                    runtime_state.get("snapshot_revision")
+                    or runtime_payload.get("snapshot_revision")
+                    or live_detail.get("snapshot_revision")
+                )
+                controller_display_preview = runtime_payload.get("controller_display_preview")
+                if isinstance(controller_display_preview, dict):
+                    live_detail["controller_display_preview"] = copy.deepcopy(controller_display_preview)
+        return live_detail
 
     async def create_snapshot(
         self,
@@ -788,7 +825,6 @@ class SnapshotService:
             input_device=resolved_input_device,
             output_device=resolved_output_device,
             controls_payload=resolved_controls_payload,
-            live_state_payload={},
         )
         self.session.add(snapshot)
         await self.session.flush()
@@ -891,10 +927,21 @@ class SnapshotService:
         if detail is None:
             return None
 
-        if snapshot.is_active:
-            try:
-                from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+        current_runtime_payload: dict[str, Any] | None = None
+        is_current_live_snapshot = False
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
+            current_runtime_payload = await SnapshotRuntimeStateService(self.session).get_live_snapshot_payload()
+            is_current_live_snapshot = (
+                isinstance(current_runtime_payload, dict)
+                and int(current_runtime_payload.get("id") or 0) == int(snapshot.id)
+            )
+        except Exception as exc:
+            logger.debug("Snapshot runtime live-state lookup skipped for %s: %s", snapshot.id, exc)
+
+        if is_current_live_snapshot:
+            try:
                 await SnapshotRuntimeStateService(self.session).sync_live_snapshot_payload(
                     snapshot_id=snapshot.id,
                     live_snapshot_payload=detail,
@@ -908,7 +955,7 @@ class SnapshotService:
                 from app.services.snapshot_tempo_service import get_snapshot_tempo_service
 
                 legacy_payload = None
-                if snapshot.is_active:
+                if is_current_live_snapshot:
                     legacy_payload = copy.deepcopy(self.to_legacy_snapshot_data(detail))
                 await get_snapshot_tempo_service().update_stored_tempo(
                     snapshot.id,
@@ -924,44 +971,13 @@ class SnapshotService:
         if snapshot is None:
             return False
 
-        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-
-        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
-        live_snapshot_id = runtime_state.get("snapshot_id")
-        live_snapshot_payload = runtime_state.get("live_snapshot_payload") or {}
-        if live_snapshot_id == snapshot_id or live_snapshot_payload.get("id") == snapshot_id:
+        control_plane_snapshot_id = await self.get_control_plane_snapshot_id()
+        if control_plane_snapshot_id == snapshot_id:
             raise ValueError("Cannot delete a live snapshot.")
 
         await self.session.delete(snapshot)
         await self.session.flush()
         return True
-
-    async def list_session_notes(self, snapshot_id: int) -> Optional[list[dict[str, Any]]]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            return None
-        return [self._serialize_session_note(note) for note in snapshot.session_notes]
-
-    async def add_session_note(self, snapshot_id: int, body: str) -> Optional[list[dict[str, Any]]]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            return None
-
-        normalized_body = str(body or "").strip()
-        if not normalized_body:
-            raise ValueError("Session note text is required")
-
-        self.session.add(
-            SnapshotSessionNote(
-                snapshot_id=snapshot.id,
-                body=normalized_body,
-                created_at=_utcnow(),
-            )
-        )
-        snapshot.updated_at = _utcnow()
-        await self.session.flush()
-        await self.session.refresh(snapshot, attribute_names=["session_notes"])
-        return [self._serialize_session_note(note) for note in snapshot.session_notes]
 
     async def list_revisions(self, snapshot_id: int) -> Optional[list[dict[str, Any]]]:
         snapshot = await self._get_snapshot_model(snapshot_id)
@@ -1121,12 +1137,13 @@ class SnapshotService:
                 live_state_payload = await self._materialize_live_state(snapshot, detail)
             else:
                 topology_reused = True
-            snapshot.live_state_payload = live_state_payload
             await self.session.flush()
 
-            refreshed_detail = await self.get_snapshot(snapshot_id)
-            if refreshed_detail is None:
-                return None
+            refreshed_detail = await self._serialize_snapshot_detail(
+                snapshot,
+                compatibility_live_state_payload=live_state_payload,
+                compatibility_is_live=True,
+            )
 
             channel_health = await runtime_state_service.assert_snapshot_channels_active(
                 live_snapshot_payload=refreshed_detail,
@@ -1140,10 +1157,8 @@ class SnapshotService:
 
             activated_at = _utcnow()
             await self._clear_compatibility_live_projections()
-            snapshot.is_active = True
             snapshot.updated_at = activated_at
             snapshot.activated_at = activated_at
-            snapshot.live_state_payload = live_state_payload
             await self.session.flush()
 
             try:
@@ -1157,9 +1172,12 @@ class SnapshotService:
             except Exception as exc:
                 logger.debug("Snapshot tempo activation skipped for %s: %s", snapshot.id, exc)
 
-            refreshed_detail = await self.get_snapshot(snapshot_id)
-            if refreshed_detail is None:
-                return None
+            refreshed_detail = await self._serialize_snapshot_detail(
+                snapshot,
+                compatibility_live_state_payload=live_state_payload,
+                compatibility_is_live=True,
+                compatibility_activated_at=activated_at,
+            )
             refreshed_detail["snapshot_revision"] = snapshot_revision
             try:
                 refreshed_detail["controller_display_preview"] = build_snapshot_controller_display_preview(
@@ -1842,7 +1860,6 @@ class SnapshotService:
                 selectinload(Snapshot.routing),
                 selectinload(Snapshot.midi_map),
                 selectinload(Snapshot.deployments).selectinload(SnapshotDeployment.history),
-                selectinload(Snapshot.session_notes),
             )
             .execution_options(populate_existing=True)
             .where(Snapshot.id == snapshot_id)
@@ -2237,9 +2254,42 @@ class SnapshotService:
             logger.debug("Snapshot enrichment skipped runtime refresh: %s", exc)
             return normalized
 
-    async def _serialize_snapshot_detail(self, snapshot: Snapshot) -> dict[str, Any]:
+    async def _serialize_snapshot_detail(
+        self,
+        snapshot: Snapshot,
+        *,
+        compatibility_live_state_payload: dict[str, Any] | None = None,
+        compatibility_is_live: bool = False,
+        compatibility_activated_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
         normalized = await self._snapshot_to_normalized(snapshot)
         detail = self._normalized_to_detail(normalized, snapshot)
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        runtime_payload = runtime_state.get("live_snapshot_payload")
+        runtime_live_paths: list[dict[str, Any]] = []
+        if (
+            runtime_state.get("state") == "live"
+            and int(runtime_state.get("snapshot_id") or 0) == int(snapshot.id)
+            and isinstance(runtime_payload, dict)
+        ):
+            live_state_payload = runtime_payload.get("live_state")
+            if isinstance(live_state_payload, dict):
+                runtime_live_paths = [
+                    dict(item)
+                    for item in live_state_payload.get("paths", [])
+                    if isinstance(item, dict)
+                ]
+            elif isinstance(runtime_payload.get("paths"), list):
+                runtime_live_paths = [
+                    {
+                        "path_id": item.get("id"),
+                        "runtime_chain_id": item.get("runtime_chain_id"),
+                    }
+                    for item in runtime_payload.get("paths", [])
+                    if isinstance(item, dict) and item.get("id") is not None
+                ]
         detail["snapshot_revision"] = self._snapshot_revision_from_normalized(normalized)
         detail["controls"] = self._normalize_controls_payload(
             snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
@@ -2255,10 +2305,36 @@ class SnapshotService:
             "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
         }
         detail["is_locked"] = bool(snapshot.is_locked)
-        detail["session_notes"] = [self._serialize_session_note(note) for note in snapshot.session_notes]
         detail["assets"] = self._build_asset_manifest(detail)
-        detail["paths"] = self._build_snapshot_paths(detail, snapshot.live_state_payload)
-        detail["live_state"] = await self._build_live_state(snapshot)
+        detail["paths"] = self._build_snapshot_paths(
+            detail,
+            runtime_live_paths,
+            compatibility_live_state_payload=compatibility_live_state_payload,
+        )
+        detail["live_state"] = await self._build_live_state(
+            snapshot,
+            runtime_state=runtime_state,
+            compatibility_live_state_payload=compatibility_live_state_payload,
+            compatibility_is_live=compatibility_is_live,
+            compatibility_activated_at=compatibility_activated_at,
+        )
+        is_runtime_live_snapshot = bool(
+            runtime_state.get("state") == "live"
+            and int(runtime_state.get("snapshot_id") or 0) == int(snapshot.id)
+        )
+        if is_runtime_live_snapshot:
+            runtime_activated_at = None
+            if isinstance(runtime_payload, dict):
+                live_state_payload = runtime_payload.get("live_state")
+                if isinstance(live_state_payload, dict):
+                    runtime_activated_at = str(live_state_payload.get("activated_at") or "").strip() or None
+            detail["activated_at"] = runtime_activated_at or str(runtime_state.get("emitted_at") or "").strip() or None
+            tempo_status = self._tempo_status_for_snapshot(snapshot, is_active=True)
+            detail["tempo_bpm"] = tempo_status["stored_tempo_bpm"]
+            detail["live_tempo_bpm"] = tempo_status["live_tempo_bpm"]
+            detail["active_tempo_bpm"] = tempo_status["active_tempo_bpm"]
+            detail["tempo_source"] = tempo_status["tempo_source"]
+            detail["tempo_updated_at"] = tempo_status["updated_at"]
         return detail
 
     async def _snapshot_name_exists(
@@ -2290,18 +2366,26 @@ class SnapshotService:
     def _build_snapshot_paths(
         self,
         detail: dict[str, Any],
-        live_state_payload: Any,
+        runtime_live_paths: list[dict[str, Any]] | None = None,
+        *,
+        compatibility_live_state_payload: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         chain_by_id = {
             chain.get("id"): chain
             for chain in detail.get("chains", [])
             if chain.get("id") is not None
         }
+        if not runtime_live_paths and isinstance(compatibility_live_state_payload, dict):
+            runtime_live_paths = [
+                dict(item)
+                for item in compatibility_live_state_payload.get("paths", [])
+                if isinstance(item, dict)
+            ]
         live_paths = {
             str(item.get("path_id")): item
-            for item in (live_state_payload or {}).get("paths", [])
+            for item in (runtime_live_paths or [])
             if isinstance(item, dict) and item.get("path_id") is not None
-        } if isinstance(live_state_payload, dict) else {}
+        }
 
         paths: list[dict[str, Any]] = []
         for channel in detail.get("channels", []):
@@ -2327,10 +2411,19 @@ class SnapshotService:
             )
         return paths
 
-    async def _build_live_state(self, snapshot: Snapshot) -> dict[str, Any]:
-        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+    async def _build_live_state(
+        self,
+        snapshot: Snapshot,
+        *,
+        runtime_state: dict[str, Any] | None = None,
+        compatibility_live_state_payload: dict[str, Any] | None = None,
+        compatibility_is_live: bool = False,
+        compatibility_activated_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        if runtime_state is None:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
-        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+            runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
         runtime_payload = runtime_state.get("live_snapshot_payload")
         if (
             runtime_state.get("state") == "live"
@@ -2351,36 +2444,48 @@ class SnapshotService:
                     "last_runtime_event_at": runtime_state.get("emitted_at"),
                     "node_id": runtime_state.get("node_id"),
                 }
-
-        payload = dict(snapshot.live_state_payload or {}) if isinstance(snapshot.live_state_payload, dict) else {}
-        runtime_paths = [dict(item) for item in payload.get("paths", []) if isinstance(item, dict)]
-        runtime_chain_ids = [
-            int(item["runtime_chain_id"])
-            for item in runtime_paths
-            if item.get("runtime_chain_id") is not None
-        ]
-        runtime_chains: list[dict[str, Any]] = []
-        for runtime_chain_id in runtime_chain_ids:
-            chain = await self.chain_service.get_chain(runtime_chain_id)
-            if chain is not None:
-                runtime_chains.append(chain)
+        if compatibility_is_live and isinstance(compatibility_live_state_payload, dict):
+            runtime_paths = [
+                dict(item)
+                for item in compatibility_live_state_payload.get("paths", [])
+                if isinstance(item, dict)
+            ]
+            runtime_chain_ids = [
+                int(item["runtime_chain_id"])
+                for item in runtime_paths
+                if item.get("runtime_chain_id") is not None
+            ]
+            runtime_chains: list[dict[str, Any]] = []
+            for runtime_chain_id in runtime_chain_ids:
+                chain = await self.chain_service.get_chain(runtime_chain_id)
+                if chain is not None:
+                    runtime_chains.append(chain)
+            return {
+                "is_live": True,
+                "activated_at": compatibility_activated_at.isoformat() if compatibility_activated_at else None,
+                "paths": runtime_paths,
+                "runtime_chains": runtime_chains,
+                "display_state": "live",
+                "display_label": "Live",
+                "is_warning": False,
+                "is_offline": False,
+                "last_runtime_event_at": compatibility_activated_at.isoformat() if compatibility_activated_at else None,
+            }
         return {
-            "is_live": bool(snapshot.is_active),
-            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
-            "paths": runtime_paths,
-            "runtime_chains": runtime_chains,
-            "display_state": "live" if snapshot.is_active else "stopped",
-            "display_label": "Live" if snapshot.is_active else "Stopped",
+            "is_live": False,
+            "activated_at": None,
+            "paths": [],
+            "runtime_chains": [],
+            "display_state": "stopped",
+            "display_label": "Stopped",
             "is_warning": False,
             "is_offline": False,
-            "last_runtime_event_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
+            "last_runtime_event_at": None,
         }
 
     async def _clear_compatibility_live_projections(self) -> None:
         await self.session.execute(
             update(Snapshot).values(
-                is_active=False,
-                live_state_payload={},
                 activated_at=None,
             )
         )
@@ -2909,7 +3014,7 @@ class SnapshotService:
         *,
         snapshot_id: Optional[int] = None,
         stored_tempo_bpm: Any = DEFAULT_SNAPSHOT_TEMPO_BPM,
-        is_active: bool = False,
+        is_active: Optional[bool] = None,
     ) -> dict[str, Any]:
         resolved_snapshot_id = snapshot_row.id if snapshot_row is not None else snapshot_id
         resolved_stored_bpm = (
@@ -2917,7 +3022,7 @@ class SnapshotService:
             if snapshot_row is not None and snapshot_row.tempo_bpm is not None
             else stored_tempo_bpm
         )
-        resolved_is_active = bool(snapshot_row.is_active) if snapshot_row is not None else bool(is_active)
+        resolved_is_active = bool(is_active) if is_active is not None else False
         try:
             from app.services.snapshot_tempo_service import get_snapshot_tempo_service
 
@@ -3034,7 +3139,6 @@ class SnapshotService:
             ),
             "input_device": snapshot_row.input_device if snapshot_row is not None else None,
             "output_device": snapshot_row.output_device if snapshot_row is not None else None,
-            "is_active": bool(snapshot_row.is_active) if snapshot_row is not None else False,
             "is_favorite": bool(snapshot_row.is_favorite) if snapshot_row is not None else False,
             "is_locked": bool(snapshot_row.is_locked) if snapshot_row is not None else False,
             "display_order": int(snapshot_row.display_order) if snapshot_row is not None else 0,
@@ -3062,11 +3166,16 @@ class SnapshotService:
             "activated_at": snapshot_row.activated_at.isoformat() if snapshot_row is not None and snapshot_row.activated_at else None,
             "created_at": snapshot_row.created_at.isoformat() if snapshot_row is not None and snapshot_row.created_at else None,
             "updated_at": snapshot_row.updated_at.isoformat() if snapshot_row is not None and snapshot_row.updated_at else None,
-            "session_notes": [self._serialize_session_note(item) for item in (snapshot_row.session_notes if snapshot_row is not None else [])],
             "deployments": [self._serialize_deployment(item) for item in (snapshot_row.deployments if snapshot_row is not None else [])],
         }
 
-    def _serialize_snapshot_summary(self, snapshot: Snapshot) -> dict[str, Any]:
+    def _serialize_snapshot_summary(
+        self,
+        snapshot: Snapshot,
+        *,
+        live_snapshot_id: int | None = None,
+        live_activated_at: str | None = None,
+    ) -> dict[str, Any]:
         channel_summaries = [
             {
                 "id": channel.id,
@@ -3080,7 +3189,11 @@ class SnapshotService:
         average_rating = None
         if snapshot.community_rating_count:
             average_rating = float(snapshot.community_rating_sum or 0.0) / float(snapshot.community_rating_count)
-        tempo_status = self._tempo_status_for_snapshot(snapshot)
+        is_live_snapshot = live_snapshot_id is not None and int(snapshot.id) == int(live_snapshot_id)
+        tempo_status = self._tempo_status_for_snapshot(
+            snapshot,
+            is_active=is_live_snapshot if live_snapshot_id is not None else None,
+        )
         return {
             "id": snapshot.id,
             "name": snapshot.name,
@@ -3116,7 +3229,6 @@ class SnapshotService:
             "lineage": {
                 "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
             },
-            "is_active": bool(snapshot.is_active),
             "is_favorite": bool(snapshot.is_favorite),
             "is_locked": bool(snapshot.is_locked),
             "display_order": int(snapshot.display_order),
@@ -3129,17 +3241,13 @@ class SnapshotService:
             "community_download_count": int(snapshot.community_download_count or 0),
             "community_rating": average_rating,
             "community_rating_count": int(snapshot.community_rating_count or 0),
-            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else None,
+            "activated_at": (
+                live_activated_at
+                if is_live_snapshot and live_activated_at is not None
+                else (snapshot.activated_at.isoformat() if snapshot.activated_at else None)
+            ),
             "created_at": snapshot.created_at.isoformat() if snapshot.created_at else None,
             "updated_at": snapshot.updated_at.isoformat() if snapshot.updated_at else None,
-        }
-
-    def _serialize_session_note(self, note: SnapshotSessionNote) -> dict[str, Any]:
-        return {
-            "id": note.id,
-            "snapshot_id": note.snapshot_id,
-            "body": note.body,
-            "created_at": note.created_at.isoformat() if note.created_at else None,
         }
 
     async def _append_snapshot_revision(self, snapshot_id: int, detail: dict[str, Any]) -> dict[str, Any]:

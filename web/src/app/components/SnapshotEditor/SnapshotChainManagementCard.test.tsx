@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import type { SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
+import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { SnapshotChainManagementCard } from './SnapshotChainManagementCard'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 
@@ -243,6 +243,7 @@ function renderCard(
     onSubmitSnapshotDescription?: jest.Mock
     onSubmitTempoBpm?: jest.Mock
     runtimeLiveState?: SnapshotRuntimeLiveState | null
+    authoritativeAudioState?: AuthoritativeAudioState | null
     monitoringStatusLabel?: string | null
     monitoringStatusWarning?: boolean
     snapshotRenamePending?: boolean
@@ -264,6 +265,7 @@ function renderCard(
       liveSnapshot={liveSnapshot}
       editorSnapshotDraft={options.editorSnapshotDraft}
       runtimeLiveState={options.runtimeLiveState}
+      authoritativeAudioState={options.authoritativeAudioState}
       onRenameSnapshot={options.onRenameSnapshot}
       snapshotNameEditing={options.snapshotNameEditing}
       snapshotNameDraft={options.snapshotNameDraft}
@@ -324,11 +326,88 @@ function buildRuntimeLiveState(overrides: Partial<SnapshotRuntimeLiveState> = {}
   }
 }
 
+function buildAuthoritativeAudioState(overrides: Partial<AuthoritativeAudioState> = {}): AuthoritativeAudioState {
+  return {
+    schema_version: 1,
+    state_version: 7,
+    leader_epoch: 1,
+    committed_at: '2026-04-03T11:00:00Z',
+    origin_node_id: 'local-node',
+    source_snapshot: {
+      snapshot_id: 42,
+      snapshot_revision_id: 3,
+      name: 'Friday Night Drive',
+    },
+    desired: {
+      snapshot_id: 42,
+      snapshot_revision_id: 3,
+      compiled_at: '2026-04-03T10:59:58Z',
+      intent_version: 1,
+      io: {
+        requested_input_device: 'Stage Input',
+        requested_output_device: 'House Left/Right',
+        monitoring_output_index: null,
+      },
+      routing: {
+        mode: 'parallel_blend',
+        active_path_ids: ['ch_a'],
+        path_order: ['ch_a', 'ch_b'],
+      },
+      deployment: {
+        placement_mode: 'local_only',
+        preferred_nodes: [],
+      },
+      chains: [],
+    },
+    observed_summary: {
+      effective_input_device: 'Stage Input',
+      effective_output_device: 'House Left/Right',
+    },
+    cluster: {
+      sync_status: 'synced',
+      applied_node_ids: ['local-node'],
+      degraded_node_ids: [],
+    },
+    engine: {
+      display_state: 'live',
+      is_warning: false,
+      is_offline: false,
+    },
+    paths: [
+      {
+        path_id: 'ch_a',
+        label: 'A',
+        snapshot_chain_id: 201,
+        runtime_chain_id: 301,
+        owner_node_id: 'local-node',
+        status: 'active',
+        status_reason: null,
+      },
+      {
+        path_id: 'ch_b',
+        label: 'B',
+        snapshot_chain_id: 202,
+        runtime_chain_id: 302,
+        owner_node_id: 'local-node',
+        status: 'active',
+        status_reason: null,
+      },
+    ],
+    derived: {
+      active_channel_count: 2,
+      total_channel_count: 2,
+      inactive_messages: [],
+    },
+    ...overrides,
+  }
+}
+
 describe('SnapshotChainManagementCard', () => {
   it('renders the unified live snapshot hero with title, details trigger, LCD readout, and right-side metadata table', () => {
     const { container } = renderCard(buildLiveSnapshot(), {
       onSubmitSnapshotDescription: jest.fn(),
       runtimeLiveState: buildRuntimeLiveState(),
+      authoritativeAudioState: buildAuthoritativeAudioState(),
     })
     const metadataTable = screen.getByRole('table', { name: 'Live snapshot metadata' })
     const metadataRows = metadataTable.querySelectorAll('tbody tr')
@@ -368,12 +447,12 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Unset • ±3.0 dB')).toBeInTheDocument()
     expect(screen.getByText('Last Used')).toBeInTheDocument()
     expect(screen.getByText('Node Sync Status')).toBeInTheDocument()
-    expect(screen.getByText('Local live only')).toBeInTheDocument()
+    expect(screen.getByText('Synced')).toBeInTheDocument()
     expect(container.querySelector('.juce-grid-page__snapshot-status-grid')).not.toBeInTheDocument()
     expect(metadataTable).toBeInTheDocument()
     expect(metadataRows).toHaveLength(3)
     expect(within(metadataRows[2] as HTMLTableRowElement).getByRole('button', { name: 'Details' })).toBeInTheDocument()
-    expect(metadataTable).toContainElement(screen.getByText('Local live only'))
+    expect(metadataTable).toContainElement(screen.getByText('Synced'))
     expect(topRow).toContainElement(screen.getByText('Audio Grid'))
     expect(topTools).toContainElement(bpmStack as Element)
     expect(topTools).toContainElement(midiPanel as Element)
@@ -501,16 +580,80 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Channel B is not loaded.')).toBeInTheDocument()
   })
 
-  it('updates the channel-activity badge when runtime live-state websocket payloads change', () => {
+  it('prefers authoritative audio-state devices and sync status over saved snapshot metadata', () => {
+    renderCard(buildLiveSnapshot({
+      input_device: null,
+      output_device: null,
+      io_bindings: {
+        input_device: null,
+        output_device: null,
+        monitoring_output_index: null,
+        remap_required: false,
+      },
+    }), {
+      authoritativeAudioState: buildAuthoritativeAudioState({
+        observed_summary: {
+          effective_input_device: 'Rack In 1-2',
+          effective_output_device: 'AVB 7-8',
+        },
+        cluster: {
+          sync_status: 'partial_apply',
+          applied_node_ids: ['local-node'],
+          degraded_node_ids: [],
+        },
+      }),
+    })
+
+    expect(screen.getByText('Rack In 1-2')).toBeInTheDocument()
+    expect(screen.getByText('AVB 7-8')).toBeInTheDocument()
+    expect(screen.getByText('Partial apply')).toBeInTheDocument()
+    expect(screen.queryByText('Not assigned')).not.toBeInTheDocument()
+  })
+
+  it('prefers authoritative path status when it conflicts with legacy runtime payloads', () => {
+    renderCard(buildLiveSnapshot(), {
+      authoritativeAudioState: buildAuthoritativeAudioState({
+        paths: [
+          {
+            path_id: 'ch_a',
+            label: 'A',
+            snapshot_chain_id: 201,
+            runtime_chain_id: 301,
+            owner_node_id: 'local-node',
+            status: 'active',
+            status_reason: null,
+          },
+          {
+            path_id: 'ch_b',
+            label: 'B',
+            snapshot_chain_id: 202,
+            runtime_chain_id: null,
+            owner_node_id: 'local-node',
+            status: 'not_loaded',
+            status_reason: 'Channel B is not loaded.',
+          },
+        ],
+        derived: {
+          active_channel_count: 1,
+          total_channel_count: 2,
+          inactive_messages: ['Channel B is not loaded.'],
+        },
+      }),
+    })
+
+    const badge = screen.getByText('1 of 2 channels active')
+    expect(badge).toBeInTheDocument()
+    expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is not loaded.')
+    expect(screen.getByText('Channel B is not loaded.')).toBeInTheDocument()
+  })
+
+  it('updates the channel-activity badge when the control-plane snapshot detail changes', () => {
     const { rerender } = render(
       <SnapshotChainManagementCard
         onToggleSelectedChainActive={jest.fn()}
         onDuplicateChain={jest.fn()}
         onRenameChain={jest.fn()}
         liveSnapshot={buildLiveSnapshot()}
-        runtimeLiveState={buildRuntimeLiveState({
-          live_snapshot_payload: buildLiveSnapshot(),
-        })}
         detailsAction={<button type="button">Details</button>}
       />,
     )
@@ -522,40 +665,39 @@ describe('SnapshotChainManagementCard', () => {
         onToggleSelectedChainActive={jest.fn()}
         onDuplicateChain={jest.fn()}
         onRenameChain={jest.fn()}
-        liveSnapshot={buildLiveSnapshot()}
+        liveSnapshot={buildLiveSnapshot({
+          live_state: {
+            is_live: true,
+            activated_at: '2026-03-29T18:10:00Z',
+            paths: [
+              { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+            ],
+            runtime_chains: [
+              {
+                id: 301,
+                name: 'Drive Runtime',
+                is_active: true,
+                created_at: '2026-03-29T18:10:00Z',
+                updated_at: '2026-03-29T18:10:00Z',
+                plugins: [],
+                loop_insertions: [],
+                effects_loops: [],
+                runtime_sync: {
+                  enabled: true,
+                  status: 'active',
+                  reason: undefined,
+                  warnings: [],
+                  runtime_items: 1,
+                  restored_positions: [0],
+                  missing_positions: [],
+                },
+              },
+            ],
+          },
+        })}
         runtimeLiveState={buildRuntimeLiveState({
           display_state: 'offline',
           is_offline: true,
-          live_snapshot_payload: buildLiveSnapshot({
-            live_state: {
-              is_live: true,
-              activated_at: '2026-03-29T18:10:00Z',
-              paths: [
-                { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
-              ],
-              runtime_chains: [
-                {
-                  id: 301,
-                  name: 'Drive Runtime',
-                  is_active: true,
-                  created_at: '2026-03-29T18:10:00Z',
-                  updated_at: '2026-03-29T18:10:00Z',
-                  plugins: [],
-                  loop_insertions: [],
-                  effects_loops: [],
-                  runtime_sync: {
-                    enabled: true,
-                    status: 'active',
-                    reason: undefined,
-                    warnings: [],
-                    runtime_items: 1,
-                    restored_positions: [0],
-                    missing_positions: [],
-                  },
-                },
-              ],
-            },
-          }),
         })}
         detailsAction={<button type="button">Details</button>}
       />,
@@ -686,6 +828,7 @@ describe('SnapshotChainManagementCard', () => {
 
   it('keeps only the small top LIVE label when the target snapshot is already live', () => {
     const { container } = renderCard(buildLiveSnapshot(), {
+      authoritativeAudioState: buildAuthoritativeAudioState(),
       goLiveState: {
         phase: 'live',
         label: 'LIVE',
@@ -821,13 +964,33 @@ describe('SnapshotChainManagementCard', () => {
 
   it('shows the alternate live snapshot name when another known snapshot is live on the host', () => {
     renderCard(buildLiveSnapshot(), {
+      authoritativeAudioState: buildAuthoritativeAudioState({
+        source_snapshot: {
+          snapshot_id: 84,
+          snapshot_revision_id: 4,
+          name: 'Clean Intro',
+        },
+        engine: {
+          display_state: 'live',
+          is_warning: false,
+          is_offline: false,
+        },
+      }),
+    })
+
+    expect(screen.getByText('LIVE: Clean Intro')).toBeInTheDocument()
+  })
+
+  it('shows stopped when only runtime websocket state claims another snapshot is live', () => {
+    renderCard(buildLiveSnapshot(), {
       runtimeLiveState: buildRuntimeLiveState({
         snapshot_id: 84,
         snapshot_name: 'Clean Intro',
       }),
     })
 
-    expect(screen.getByText('LIVE: Clean Intro')).toBeInTheDocument()
+    expect(screen.getByText('Stopped')).toBeInTheDocument()
+    expect(screen.queryByText('LIVE: Clean Intro')).not.toBeInTheDocument()
   })
 
   it('uses the current editor snapshot draft for block count, routing mode, and channel count metadata', () => {

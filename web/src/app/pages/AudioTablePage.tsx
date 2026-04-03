@@ -475,7 +475,6 @@ export function AudioTablePage() {
   const flowSnapshotsQuery = useQuery<{
     snapshots: Array<{ id: number; name: string }>
     count: number
-    active_id: number | null
   }>({
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),

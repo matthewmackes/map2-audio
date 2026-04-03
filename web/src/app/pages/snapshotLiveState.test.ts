@@ -1,15 +1,10 @@
 import type { SnapshotDetail } from '../../map2/types'
-import { ApiError } from '../../map2/http'
-import { snapshotsApi } from '../../map2/clients/snapshots'
-import { fetchLiveSnapshotOrNull, removeRuntimeChainsFromLiveSnapshot } from './snapshotLiveState'
-
-jest.mock('../../map2/clients/snapshots', () => ({
-  snapshotsApi: {
-    getLive: jest.fn(),
-  },
-}))
-
-const mockGetLive = snapshotsApi.getLive as jest.MockedFunction<typeof snapshotsApi.getLive>
+import {
+  invalidateAuthorityAwareLiveSnapshot,
+  removeRuntimeChainsFromLiveSnapshot,
+  restoreAuthorityAwareLiveSnapshot,
+  setAuthorityAwareLiveSnapshot,
+} from './snapshotLiveState'
 
 const liveSnapshotFixture: SnapshotDetail = {
   id: 7,
@@ -86,7 +81,6 @@ const liveSnapshotFixture: SnapshotDetail = {
     expression_mappings: [],
   },
   assets: [],
-  session_notes: [],
   live_state: {
     is_live: true,
     activated_at: null,
@@ -149,31 +143,6 @@ const liveSnapshotFixture: SnapshotDetail = {
   deployments: [],
 }
 
-describe('fetchLiveSnapshotOrNull', () => {
-  beforeEach(() => {
-    mockGetLive.mockReset()
-  })
-
-  it('returns the live snapshot when one exists', async () => {
-    mockGetLive.mockResolvedValue(liveSnapshotFixture)
-
-    await expect(fetchLiveSnapshotOrNull()).resolves.toEqual(liveSnapshotFixture)
-  })
-
-  it('treats 404 as no live snapshot', async () => {
-    mockGetLive.mockRejectedValue(new ApiError(404, 'Not Found', { detail: 'Live snapshot not found' }))
-
-    await expect(fetchLiveSnapshotOrNull()).resolves.toBeNull()
-  })
-
-  it('rethrows non-404 API errors', async () => {
-    const error = new ApiError(500, 'Internal Server Error', { detail: 'boom' })
-    mockGetLive.mockRejectedValue(error)
-
-    await expect(fetchLiveSnapshotOrNull()).rejects.toBe(error)
-  })
-})
-
 describe('removeRuntimeChainsFromLiveSnapshot', () => {
   it('clears matching runtime chain ids from the snapshot cache', () => {
     const next = removeRuntimeChainsFromLiveSnapshot(liveSnapshotFixture, [301])
@@ -189,5 +158,38 @@ describe('removeRuntimeChainsFromLiveSnapshot', () => {
 
   it('returns the original snapshot when nothing matches', () => {
     expect(removeRuntimeChainsFromLiveSnapshot(liveSnapshotFixture, [999])).toBe(liveSnapshotFixture)
+  })
+})
+
+describe('authority-aware live snapshot cache helpers', () => {
+  it('updates the authority-active detail cache when the snapshot matches authority state', () => {
+    const setQueryData = jest.fn()
+
+    setAuthorityAwareLiveSnapshot({ setQueryData }, liveSnapshotFixture, liveSnapshotFixture.id)
+
+    expect(setQueryData).toHaveBeenCalledTimes(1)
+    expect(setQueryData).toHaveBeenCalledWith(
+      ['snapshots', 'detail', 'authority-active', liveSnapshotFixture.id],
+      liveSnapshotFixture,
+    )
+  })
+
+  it('does not restore any cache when the previous snapshot does not match authority state', () => {
+    const setQueryData = jest.fn()
+
+    restoreAuthorityAwareLiveSnapshot({ setQueryData }, liveSnapshotFixture, 999)
+
+    expect(setQueryData).not.toHaveBeenCalled()
+  })
+
+  it('invalidates authority cache keys together', () => {
+    const invalidateQueries = jest.fn()
+
+    invalidateAuthorityAwareLiveSnapshot({ invalidateQueries }, { includeDesired: true })
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['audio-state', 'committed'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['audio-state', 'observed'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['snapshots', 'detail', 'authority-active'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['audio-state', 'desired'] })
   })
 })

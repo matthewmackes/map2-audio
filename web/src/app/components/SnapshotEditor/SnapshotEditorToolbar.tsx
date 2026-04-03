@@ -16,16 +16,9 @@ import {
 } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 const TOOLBAR_COLLAPSE_STORAGE_KEY = 'map2_snapshot_toolbar_collapsed'
-
-type ToolbarFavoriteSnapshot = {
-  id: number
-  name: string
-  programNumber: number | null
-  isActive: boolean
-}
 
 interface SnapshotEditorToolbarProps {
   title: string
@@ -59,12 +52,6 @@ interface SnapshotEditorToolbarProps {
   favoriteVisible: boolean
   favoriteActive: boolean
   favoritePending: boolean
-  favoriteSnapshots: ToolbarFavoriteSnapshot[]
-  onOpenFavoriteSnapshot: (snapshotId: number) => void
-  onToggleSetlist: () => void
-  setlistMode: boolean
-  setlistPending: boolean
-  setlistTitle: string
   onOpenWorkspace: () => void
 }
 
@@ -100,19 +87,9 @@ export function SnapshotEditorToolbar({
   favoriteVisible,
   favoriteActive,
   favoritePending,
-  favoriteSnapshots,
-  onOpenFavoriteSnapshot,
-  onToggleSetlist,
-  setlistMode,
-  setlistPending,
-  setlistTitle,
   onOpenWorkspace,
 }: SnapshotEditorToolbarProps) {
-  const [setlistMenuOpen, setSetlistMenuOpen] = useState(false)
-  const setlistMenuId = useId()
   const toolbarPanelId = useId()
-  const setlistShellRef = useRef<HTMLDivElement | null>(null)
-  const setlistMenuRef = useRef<HTMLDivElement | null>(null)
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return false
@@ -132,60 +109,6 @@ export function SnapshotEditorToolbar({
       window.localStorage.setItem(TOOLBAR_COLLAPSE_STORAGE_KEY, collapsed ? 'true' : 'false')
     } catch {}
   }, [collapsed])
-
-  useEffect(() => {
-    if (!collapsed) {
-      return
-    }
-    setSetlistMenuOpen(false)
-  }, [collapsed])
-
-  useEffect(() => {
-    if (!setlistMenuOpen || collapsed) {
-      return undefined
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target
-      if (!(target instanceof Node)) {
-        return
-      }
-      if (setlistShellRef.current?.contains(target) || setlistMenuRef.current?.contains(target)) {
-        return
-      }
-      setSetlistMenuOpen(false)
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return
-      }
-      setSetlistMenuOpen(false)
-    }
-
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [setlistMenuOpen])
-
-  const favoriteSnapshotCountLabel = useMemo(() => {
-    const count = favoriteSnapshots.length
-    return `${count} favorite snapshot${count === 1 ? '' : 's'}`
-  }, [favoriteSnapshots])
-
-  const handleSetlistModeToggle = () => {
-    onToggleSetlist()
-    setSetlistMenuOpen(false)
-  }
-
-  const handleFavoriteSnapshotOpen = (snapshotId: number) => {
-    onOpenFavoriteSnapshot(snapshotId)
-    setSetlistMenuOpen(false)
-  }
 
   return (
     <div className="snapshot-toolbar-shell">
@@ -227,71 +150,79 @@ export function SnapshotEditorToolbar({
               <div className="snapshot-toolbar__actions">
                 <div className="snapshot-toolbar__group" role="group" aria-label="Snapshot workflow actions">
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="secondary"
                     className="snapshot-toolbar__button snapshot-toolbar__button--new"
                     renderIcon={Add}
+                    iconDescription={createPending ? 'Creating snapshot' : 'New snapshot'}
+                    aria-label={createPending ? 'Creating snapshot' : 'New snapshot'}
+                    title={createPending ? 'Creating snapshot' : 'New snapshot'}
                     onClick={onCreate}
                     disabled={createPending}
-                  >
-                    {createPending ? 'Creating…' : 'New'}
-                  </Button>
+                  />
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="secondary"
                     className="snapshot-toolbar__button snapshot-toolbar__button--load"
                     renderIcon={FolderOpen}
+                    iconDescription="Load snapshot"
+                    aria-label="Load snapshot"
                     onClick={onOpenWorkspace}
                     title={title}
-                  >
-                    Load
-                  </Button>
+                  />
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="ghost"
                     className="snapshot-toolbar__button snapshot-toolbar__button--duplicate"
                     renderIcon={Copy}
+                    iconDescription={duplicatePending ? 'Duplicating snapshot' : 'Duplicate snapshot'}
+                    aria-label={duplicatePending ? 'Duplicating snapshot' : 'Duplicate snapshot'}
+                    title={duplicatePending ? 'Duplicating snapshot' : 'Duplicate snapshot'}
                     onClick={onDuplicate}
                     disabled={duplicateDisabled}
-                  >
-                    {duplicatePending ? 'Duplicating…' : 'Duplicate'}
-                  </Button>
+                  />
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind={dirty ? 'primary' : 'secondary'}
-                    className="snapshot-toolbar__button snapshot-toolbar__button--update"
+                    className={`snapshot-toolbar__button snapshot-toolbar__button--update ${dirty ? 'is-dirty' : ''}`}
                     renderIcon={Renew}
+                    iconDescription={savePending ? 'Updating snapshot' : 'Update snapshot'}
+                    aria-label={savePending ? 'Updating snapshot' : 'Update snapshot'}
+                    title={savePending ? 'Updating snapshot' : 'Update snapshot'}
                     onClick={onSave}
                     disabled={saveDisabled}
-                  >
-                    <span className="snapshot-toolbar__button-label">
-                      <span>{savePending ? 'Updating…' : 'Update'}</span>
-                      {dirty ? <span className="snapshot-toolbar__dirty-dot" aria-hidden /> : null}
-                    </span>
-                  </Button>
+                  />
                 </div>
 
                 <div className="snapshot-toolbar__group" role="group" aria-label="History and lock actions">
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="ghost"
                     className="snapshot-toolbar__button snapshot-toolbar__button--undo"
                     renderIcon={Undo}
+                    iconDescription={undoPending ? 'Undoing change' : 'Undo'}
+                    aria-label={undoPending ? 'Undoing change' : 'Undo'}
+                    title={undoPending ? 'Undoing change' : 'Undo'}
                     onClick={onUndo}
                     disabled={undoDisabled}
-                  >
-                    {undoPending ? 'Undoing…' : 'Undo'}
-                  </Button>
+                  />
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="ghost"
                     className="snapshot-toolbar__button snapshot-toolbar__button--redo"
                     renderIcon={Redo}
+                    iconDescription={redoPending ? 'Redoing change' : 'Redo'}
+                    aria-label={redoPending ? 'Redoing change' : 'Redo'}
+                    title={redoPending ? 'Redoing change' : 'Redo'}
                     onClick={onRedo}
                     disabled={redoDisabled}
-                  >
-                    {redoPending ? 'Redoing…' : 'Redo'}
-                  </Button>
+                  />
                   {lockVisible ? (
                     <Button
                       hasIconOnly
@@ -309,121 +240,31 @@ export function SnapshotEditorToolbar({
                   ) : null}
                 </div>
 
-                <div className="snapshot-toolbar__group" role="group" aria-label="Setlist and navigation actions">
-                  <div className="snapshot-toolbar__setlist-shell" ref={setlistShellRef}>
-                    <Button
-                      size="sm"
-                      kind={setlistMode ? 'secondary' : 'ghost'}
-                      className="snapshot-toolbar__button snapshot-toolbar__button--setlist"
-                      renderIcon={FavoriteFilled}
-                      aria-haspopup="menu"
-                      aria-expanded={setlistMenuOpen}
-                      aria-controls={setlistMenuOpen ? setlistMenuId : undefined}
-                      onClick={() => setSetlistMenuOpen((current) => !current)}
-                      title="Open the favorite snapshots setlist"
-                    >
-                      Setlist (Favorites)
-                    </Button>
-
-                    {setlistMenuOpen ? (
-                      <div
-                        ref={setlistMenuRef}
-                        id={setlistMenuId}
-                        className="snapshot-toolbar__setlist-menu"
-                        role="menu"
-                        aria-label="Favorite snapshots setlist"
-                      >
-                        <div className="snapshot-toolbar__setlist-menu-header">
-                          <div>
-                            <p className="snapshot-toolbar__setlist-menu-eyebrow">Favorite snapshots</p>
-                            <h3 className="snapshot-toolbar__setlist-menu-title">Quick list</h3>
-                          </div>
-                          <span className={`snapshot-toolbar__setlist-mode-badge ${setlistMode ? 'is-active' : ''}`}>
-                            {setlistMode ? 'Setlist on' : 'Program on'}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          role="menuitemcheckbox"
-                          aria-checked={setlistMode}
-                          className="snapshot-toolbar__setlist-menu-item snapshot-toolbar__setlist-menu-item--mode"
-                          onClick={handleSetlistModeToggle}
-                          disabled={setlistPending}
-                          title={setlistTitle}
-                        >
-                          <span className="snapshot-toolbar__setlist-menu-copy">
-                            <span className="snapshot-toolbar__setlist-menu-label">
-                              {setlistPending
-                                ? 'Updating setlist navigation…'
-                                : setlistMode
-                                  ? 'Use all snapshots for Back and Forward'
-                                  : 'Use favorites for Back and Forward'}
-                            </span>
-                            <span className="snapshot-toolbar__setlist-menu-meta">{setlistTitle}</span>
-                          </span>
-                          <span className="snapshot-toolbar__setlist-menu-action">{setlistMode ? 'Disable' : 'Enable'}</span>
-                        </button>
-
-                        <div className="snapshot-toolbar__setlist-menu-divider" />
-
-                        <p className="snapshot-toolbar__setlist-menu-summary">{favoriteSnapshotCountLabel}</p>
-
-                        {favoriteSnapshots.length > 0 ? (
-                          <div className="snapshot-toolbar__setlist-menu-list">
-                            {favoriteSnapshots.map((snapshot) => (
-                              <button
-                                key={snapshot.id}
-                                type="button"
-                                role="menuitem"
-                                className={`snapshot-toolbar__setlist-menu-item ${snapshot.isActive ? 'is-current' : ''}`}
-                                onClick={() => handleFavoriteSnapshotOpen(snapshot.id)}
-                              >
-                                <span className="snapshot-toolbar__setlist-menu-copy">
-                                  <span className="snapshot-toolbar__setlist-menu-label">{snapshot.name}</span>
-                                  <span className="snapshot-toolbar__setlist-menu-meta">
-                                    {snapshot.programNumber != null
-                                      ? `Program ${String(snapshot.programNumber).padStart(3, '0')}`
-                                      : 'No MIDI program'}
-                                  </span>
-                                </span>
-                                <span className="snapshot-toolbar__setlist-menu-action">
-                                  {snapshot.isActive ? 'Current' : 'Load'}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="snapshot-toolbar__setlist-menu-empty">
-                            Add favorites with the heart button and they will appear here.
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-
+                <div className="snapshot-toolbar__group" role="group" aria-label="Navigation and favorites actions">
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="ghost"
                     className="snapshot-toolbar__button snapshot-toolbar__button--back"
                     renderIcon={ArrowLeft}
+                    iconDescription="Back"
+                    aria-label="Back"
                     onClick={onPrevious}
                     disabled={previousDisabled}
                     title={previousTitle}
-                  >
-                    Back
-                  </Button>
+                  />
                   <Button
+                    hasIconOnly
                     size="sm"
                     kind="ghost"
                     className="snapshot-toolbar__button snapshot-toolbar__button--forward"
                     renderIcon={ArrowRight}
+                    iconDescription="Forward"
+                    aria-label="Forward"
                     onClick={onNext}
                     disabled={nextDisabled}
                     title={nextTitle}
-                  >
-                    Forward
-                  </Button>
+                  />
                   {favoriteVisible ? (
                     <Button
                       hasIconOnly
@@ -451,12 +292,14 @@ export function SnapshotEditorToolbar({
         kind={collapsed ? 'primary' : 'tertiary'}
         className={`snapshot-toolbar__toggle ${collapsed ? 'is-collapsed' : ''}`}
         renderIcon={collapsed ? ChevronRight : ChevronLeft}
+        hasIconOnly
+        iconDescription={collapsed ? 'Expand snapshots toolbar' : 'Collapse snapshots toolbar'}
+        aria-label={collapsed ? 'Expand snapshots toolbar' : 'Collapse snapshots toolbar'}
+        title={collapsed ? 'Expand snapshots toolbar' : 'Collapse snapshots toolbar'}
         aria-controls={toolbarPanelId}
         aria-expanded={!collapsed}
         onClick={() => setCollapsed((current) => !current)}
-      >
-        Snapshots
-      </Button>
+      />
     </div>
   )
 }

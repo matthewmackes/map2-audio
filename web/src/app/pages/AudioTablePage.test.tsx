@@ -259,7 +259,7 @@ const mockMidiApiV2 = {
 }
 
 const mockSnapshotsApi = {
-  list: jest.fn(async () => ({ snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })),
+  list: jest.fn(async () => ({ snapshots: [{ id: 1, name: 'Startup' }], count: 1 })),
 }
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ function createQueryClient() {
   client.setQueryData(['audio', 'ports'], buildMockPortsResponse())
   client.setQueryData(['midi', 'status'], buildMockMidiStatus())
   client.setQueryData(['chains', 'presets'], buildMockPresetsResponse())
-  client.setQueryData(['snapshots'], { snapshots: [{ id: 1, name: 'Startup' }], count: 1, active_id: 1 })
+  client.setQueryData(['snapshots'], { snapshots: [{ id: 1, name: 'Startup' }], count: 1 })
   client.setQueryData(['midi', 'mappings', 'audio-table'], currentMidiMappingsResponse)
   return client
 }

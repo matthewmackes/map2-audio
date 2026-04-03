@@ -533,38 +533,6 @@ class SnapshotRuntimeStateService:
                 if source == "post_activation":
                     row.runtime_metrics["post_activation_checked_at"] = emitted_at.isoformat()
                 row.last_runtime_event_at = emitted_at
-                if row.snapshot_id is not None:
-                    from app.database import Snapshot
-
-                    snapshot_result = await session.execute(
-                        select(Snapshot).where(Snapshot.id == int(row.snapshot_id))
-                    )
-                    snapshot = snapshot_result.scalar_one_or_none()
-                    if snapshot is not None:
-                        refreshed_live_state = health["snapshot_payload"].get("live_state", {})
-                        refreshed_paths = [
-                            {
-                                "path_id": item.get("path_id"),
-                                "label": item.get("label"),
-                                "color": item.get("color"),
-                                "snapshot_chain_id": item.get("snapshot_chain_id"),
-                                "runtime_chain_id": item.get("runtime_chain_id"),
-                                "runtime_chain_name": item.get("runtime_chain_name"),
-                                "activation_status": item.get("activation_status"),
-                            }
-                            for item in refreshed_live_state.get("paths", [])
-                            if isinstance(item, dict)
-                        ]
-                        snapshot.live_state_payload = {
-                            "activated_at": refreshed_live_state.get("activated_at") or emitted_at.isoformat(),
-                            "paths": refreshed_paths,
-                            "active_runtime_chain_ids": [
-                                int(item["runtime_chain_id"])
-                                for item in refreshed_paths
-                                if item.get("activation_status") == CHANNEL_STATUS_ACTIVE
-                                and item.get("runtime_chain_id") is not None
-                            ],
-                        }
                 await session.flush()
                 payload = self._serialize_live_state_row(row, now=emitted_at)
 
@@ -683,13 +651,21 @@ class SnapshotRuntimeStateService:
 
         async with self._session_scope() as session:
             row = await self._get_or_create_local_state_row(session)
+            had_confirmed_live_snapshot = (
+                str(row.state or "").lower() == "live"
+                and row.snapshot_id is not None
+                and isinstance(row.live_snapshot_payload, dict)
+                and bool(row.live_snapshot_payload)
+            )
             row.seq = int(row.seq or 0) + 1
-            row.state = "stopped"
-            row.snapshot_id = None
-            row.snapshot_revision = None
+            row.state = "live" if had_confirmed_live_snapshot else "stopped"
+            if not had_confirmed_live_snapshot:
+                row.snapshot_id = None
+                row.snapshot_revision = None
             row.triggered_by = str(intent.get("triggered_by") or "ui")
             row.failure_reason = failure_reason
-            row.live_snapshot_payload = {}
+            if not had_confirmed_live_snapshot:
+                row.live_snapshot_payload = {}
             row.runtime_metrics = copy.deepcopy(runtime_metrics or {})
             row.last_requested_at = _parse_iso_datetime(intent.get("requested_at")) or emitted_at
             row.last_runtime_event_at = emitted_at

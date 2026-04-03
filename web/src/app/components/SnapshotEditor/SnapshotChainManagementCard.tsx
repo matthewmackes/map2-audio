@@ -1,7 +1,7 @@
 import { Edit, Play, Renew } from '@carbon/icons-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Button, Layer, Table, TableBody, TableCell, TableRow, Tag } from '@carbon/react'
-import type { SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
+import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotMidiMapEntry, SnapshotRuntimeLiveState } from '../../../map2/types'
 import { NumberInput } from '../ParameterControl'
 import { SegmentedLedText } from '../Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../icons/map'
@@ -29,6 +29,7 @@ interface SnapshotChainManagementCardProps {
   liveSnapshot?: SnapshotDetail | null
   editorSnapshotDraft?: SnapshotDraftData | null
   runtimeLiveState?: SnapshotRuntimeLiveState | null
+  authoritativeAudioState?: AuthoritativeAudioState | null
   detailsAction?: ReactNode
   onRenameSnapshot?: () => void
   snapshotNameEditing?: boolean
@@ -252,7 +253,7 @@ function resolveLastUsedAt(snapshot: SnapshotDetail): string | null {
 function formatNodeSyncStatus(snapshot: SnapshotDetail): string {
   const deployments = snapshot.deployments ?? []
   if (deployments.length === 0) {
-    return snapshot.live_state?.is_live || snapshot.is_active ? 'Local live only' : 'Local only'
+    return 'Local only'
   }
 
   const activeCount = deployments.filter((deployment) => deployment.deployment_status === 'active').length
@@ -277,59 +278,35 @@ function formatNodeSyncStatus(snapshot: SnapshotDetail): string {
 
 function resolveLiveHeadline(
   snapshot: SnapshotDetail | null,
+  authoritativeAudioState?: AuthoritativeAudioState | null,
   runtimeLiveState?: SnapshotRuntimeLiveState | null,
 ): SnapshotLiveHeadline {
-  const runtimeDisplayState = runtimeLiveState?.display_state
-  const runtimeIsLive = runtimeDisplayState === 'live' || runtimeDisplayState === 'live_warning'
-  const runtimeSnapshotId = runtimeLiveState?.snapshot_id ?? runtimeLiveState?.live_snapshot_payload?.id ?? null
-  const runtimeSnapshotName = runtimeLiveState?.snapshot_name?.trim()
-    || runtimeLiveState?.live_snapshot_payload?.name?.trim()
-    || null
+  void runtimeLiveState
 
-  if (runtimeLiveState) {
-    if (runtimeIsLive) {
-      const isCurrentSnapshot = Boolean(
-        snapshot && (
-          (runtimeSnapshotId !== null && runtimeSnapshotId === snapshot.id)
-          || (runtimeSnapshotId === null && runtimeSnapshotName !== null && runtimeSnapshotName === snapshot.name)
-        ),
-      )
-
-      if (isCurrentSnapshot) {
-        return {
-          text: 'LIVE',
-          tone: 'current',
-          blinking: true,
-        }
-      }
-
-      if (runtimeSnapshotName) {
-        return {
-          text: `LIVE: ${runtimeSnapshotName}`,
-          tone: 'other',
-          blinking: true,
-        }
-      }
-
+  if (authoritativeAudioState) {
+    const authorityIsLive = authoritativeAudioState.engine.display_state === 'live'
+      || authoritativeAudioState.engine.display_state === 'live_warning'
+    const authoritySnapshotId = authoritativeAudioState.source_snapshot?.snapshot_id ?? null
+    if (authorityIsLive && snapshot && authoritySnapshotId === snapshot.id) {
       return {
-        text: 'LIVE: OTHER',
+        text: 'LIVE',
+        tone: 'current',
+        blinking: true,
+      }
+    }
+    if (authorityIsLive && authoritativeAudioState.source_snapshot?.name) {
+      return {
+        text: `LIVE: ${authoritativeAudioState.source_snapshot.name}`,
         tone: 'other',
         blinking: true,
       }
     }
-
-    return {
-      text: 'Stopped',
-      tone: 'stopped',
-      blinking: false,
-    }
-  }
-
-  if (snapshot?.live_state?.is_live || snapshot?.is_active) {
-    return {
-      text: 'LIVE',
-      tone: 'current',
-      blinking: true,
+    if (authoritativeAudioState.engine.display_state === 'offline') {
+      return {
+        text: 'Stopped',
+        tone: 'stopped',
+        blinking: false,
+      }
     }
   }
 
@@ -340,21 +317,43 @@ function resolveLiveHeadline(
   }
 }
 
-function resolveChannelActivitySnapshot(
-  snapshot: SnapshotDetail | null,
-  runtimeLiveState?: SnapshotRuntimeLiveState | null,
-): SnapshotDetail | null {
-  if (runtimeLiveState?.live_snapshot_payload) {
-    return runtimeLiveState.live_snapshot_payload
+function formatAuthorityPathMessage(label: string, status: AuthoritativeAudioState['paths'][number]['status']): string {
+  switch (status) {
+    case 'pending':
+      return `Channel ${label} pending apply.`
+    case 'offline':
+      return `Channel ${label} is offline.`
+    case 'degraded':
+      return `Channel ${label} is degraded.`
+    case 'not_loaded':
+      return `Channel ${label} is not loaded.`
+    default:
+      return `Channel ${label} is not loaded.`
   }
-  return snapshot
 }
 
 function buildChannelActivityBadge(
   snapshot: SnapshotDetail | null,
+  authoritativeAudioState?: AuthoritativeAudioState | null,
   runtimeLiveState?: SnapshotRuntimeLiveState | null,
 ): SnapshotChannelActivityBadge | null {
-  const activitySnapshot = resolveChannelActivitySnapshot(snapshot, runtimeLiveState)
+  if (authoritativeAudioState?.paths?.length) {
+    const activeCount = authoritativeAudioState.paths.filter((path) => path.status === 'active').length
+    const totalCount = authoritativeAudioState.derived.total_channel_count || authoritativeAudioState.paths.length
+    const inactiveDescriptions = authoritativeAudioState.paths
+      .filter((path) => path.status !== 'active')
+      .map((path) => path.status_reason?.trim() || formatAuthorityPathMessage(path.label, path.status))
+    return {
+      label: `${activeCount} of ${totalCount} channels active`,
+      tooltip: inactiveDescriptions.length > 0
+        ? inactiveDescriptions.join(' ')
+        : `All ${totalCount} channels are active.`,
+      warning: activeCount < totalCount,
+      messages: inactiveDescriptions,
+    }
+  }
+
+  const activitySnapshot = snapshot
   if (!activitySnapshot) {
     return null
   }
@@ -418,30 +417,64 @@ function buildChannelActivityBadge(
   }
 }
 
+function formatAuthoritySyncStatus(syncStatus: string): string {
+  switch (syncStatus) {
+    case 'synced':
+      return 'Synced'
+    case 'partial_apply':
+      return 'Partial apply'
+    case 'pending_apply':
+      return 'Pending apply'
+    case 'degraded':
+      return 'Degraded'
+    default:
+      return syncStatus
+        .split('_')
+        .filter((segment) => segment.length > 0)
+        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(' ')
+    }
+}
+
 function buildMetadataTableRows(
   snapshot: SnapshotDetail,
   includeDetailsAction: boolean,
   editorSnapshotDraft?: SnapshotDraftData | null,
+  authoritativeAudioState?: AuthoritativeAudioState | null,
 ): SnapshotMetadataCell[][] {
   const routingMode = editorSnapshotDraft?.routing.mode ?? snapshot.routing.mode
+  const effectiveInputDevice = authoritativeAudioState?.observed_summary.effective_input_device
+    ?? authoritativeAudioState?.desired.io.requested_input_device
+    ?? snapshot.io_bindings?.input_device
+    ?? snapshot.input_device
+    ?? null
+  const effectiveOutputDevice = authoritativeAudioState?.observed_summary.effective_output_device
+    ?? authoritativeAudioState?.desired.io.requested_output_device
+    ?? snapshot.io_bindings?.output_device
+    ?? snapshot.output_device
+    ?? null
+  const channelCount = authoritativeAudioState?.derived.total_channel_count || resolveChannelCount(snapshot, editorSnapshotDraft)
+  const nodeSyncStatus = authoritativeAudioState
+    ? formatAuthoritySyncStatus(authoritativeAudioState.cluster.sync_status)
+    : formatNodeSyncStatus(snapshot)
 
   return [
     [
       {
         key: 'input-device',
         label: 'Input Device',
-        value: snapshot.io_bindings?.input_device || snapshot.input_device || 'Not assigned',
+        value: effectiveInputDevice || 'Not assigned',
         accent: 'input',
         colSpan: 2,
-        muted: !(snapshot.io_bindings?.input_device || snapshot.input_device),
+        muted: !effectiveInputDevice,
       },
       {
         key: 'output-device',
         label: 'Output Device',
-        value: snapshot.io_bindings?.output_device || snapshot.output_device || 'Not assigned',
+        value: effectiveOutputDevice || 'Not assigned',
         accent: 'output',
         colSpan: 2,
-        muted: !(snapshot.io_bindings?.output_device || snapshot.output_device),
+        muted: !effectiveOutputDevice,
       },
       {
         key: 'block-count',
@@ -462,7 +495,7 @@ function buildMetadataTableRows(
       {
         key: 'channel-count',
         label: 'Number of Channels',
-        value: formatCount(resolveChannelCount(snapshot, editorSnapshotDraft), 'channel'),
+        value: formatCount(channelCount, 'channel'),
         accent: 'channels',
         colSpan: 2,
       },
@@ -485,7 +518,7 @@ function buildMetadataTableRows(
       {
         key: 'node-sync-status',
         label: 'Node Sync Status',
-        value: formatNodeSyncStatus(snapshot),
+        value: nodeSyncStatus,
         accent: 'sync',
         colSpan: includeDetailsAction ? 2 : 3,
       },
@@ -498,6 +531,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     liveSnapshot = null,
     editorSnapshotDraft = null,
     runtimeLiveState = null,
+    authoritativeAudioState = null,
     detailsAction,
     onRenameSnapshot,
     snapshotNameEditing = false,
@@ -523,20 +557,20 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   } = props
 
   const metadataTableRows = useMemo(
-    () => (liveSnapshot ? buildMetadataTableRows(liveSnapshot, Boolean(detailsAction), editorSnapshotDraft) : []),
-    [detailsAction, editorSnapshotDraft, liveSnapshot],
+    () => (liveSnapshot ? buildMetadataTableRows(liveSnapshot, Boolean(detailsAction), editorSnapshotDraft, authoritativeAudioState) : []),
+    [authoritativeAudioState, detailsAction, editorSnapshotDraft, liveSnapshot],
   )
   const midiReadout = useMemo(
     () => (liveSnapshot ? formatMidiReadout(liveSnapshot) : 'PC --  CH --'),
     [liveSnapshot],
   )
   const liveHeadline = useMemo(
-    () => resolveLiveHeadline(liveSnapshot, runtimeLiveState),
-    [liveSnapshot, runtimeLiveState],
+    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, runtimeLiveState),
+    [authoritativeAudioState, liveSnapshot, runtimeLiveState],
   )
   const channelActivityBadge = useMemo(
-    () => buildChannelActivityBadge(liveSnapshot, runtimeLiveState),
-    [liveSnapshot, runtimeLiveState],
+    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState, runtimeLiveState),
+    [authoritativeAudioState, liveSnapshot, runtimeLiveState],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)

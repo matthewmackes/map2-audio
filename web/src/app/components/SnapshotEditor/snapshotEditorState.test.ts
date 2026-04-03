@@ -142,7 +142,6 @@ describe('snapshotEditorState', () => {
       lineage: {
         derived_from_snapshot_id: null,
       },
-      session_notes: [],
       active_channel_index: 0,
       channel_count: 1,
       chain_count: 1,
@@ -182,6 +181,5 @@ describe('snapshotEditorState', () => {
     expect(nextDetail.routing.series_order).toEqual(['channel-a'])
     expect(nextDetail.midi_map).toEqual([{ action: 'load_snapshot', program_number: 11 }])
     expect(nextDetail.chains[0].name).toBe('Primary Chain')
-    expect(nextDetail.session_notes).toEqual([])
   })
 })

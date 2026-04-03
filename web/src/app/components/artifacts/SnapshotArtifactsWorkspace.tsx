@@ -23,14 +23,15 @@ import {
   Renew,
   WarningAlt,
 } from '@carbon/icons-react'
+import { audioStateApi } from '../../../map2/clients/audioState'
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
 import type { SnapshotDetail, SnapshotExport, SnapshotRuntimeLiveState, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import {
   buildSnapshotActivationFailureToastMessage,
-  buildSnapshotActivationToastMessage,
 } from '../../utils/snapshotActivationToast'
+import { useCommittedAudioState, useObservedAudioState } from '../../hooks/useAuthoritativeAudioState'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
 import {
@@ -38,6 +39,16 @@ import {
   useSnapshotActivationEvents,
   useSnapshotRuntimeLiveState,
 } from '../../hooks/useSnapshotRuntimeState'
+import { ApiError } from '../../../map2/http'
+import { invalidateAuthorityAwareLiveSnapshot } from '../../pages/snapshotLiveState'
+import {
+  buildObservedRuntimeNodeCards,
+  formatAuthoritySyncStatusLabel,
+  resolveAuthoritySnapshotId,
+  resolveControlPlaneSnapshotId,
+  resolveControlPlaneSnapshot,
+  resolveSnapshotControlPlaneStatus,
+} from '../../pages/snapshotAuthorityState'
 
 type ToastKind = 'error' | 'info' | 'success' | 'warning'
 
@@ -141,9 +152,11 @@ function computeDirty(
   snapshot: SnapshotSummary,
   snapshotDetail: SnapshotDetail | undefined,
   liveSnapshot: SnapshotDetail | null | undefined,
-  runtimeState: SnapshotRuntimeLiveState | undefined,
 ) {
-  if (runtimeState?.snapshot_id !== snapshot.id || !snapshotDetail || !liveSnapshot) {
+  if (!snapshotDetail || !liveSnapshot) {
+    return false
+  }
+  if (liveSnapshot.id !== snapshot.id) {
     return false
   }
   if (snapshotDetail.snapshot_revision && liveSnapshot.snapshot_revision) {
@@ -158,6 +171,32 @@ function summarizeDeploymentNodes(snapshotId: number, deployments: SnapshotDetai
     return 'Cluster canonical'
   }
   return matching.map((deployment) => deployment.primary_node_id).join(', ')
+}
+
+function getDisplayTagType(displayState: SnapshotRuntimeLiveState['display_state'] | 'saved') {
+  if (displayState === 'live_warning') {
+    return 'warm-gray'
+  }
+  if (displayState === 'offline') {
+    return 'red'
+  }
+  if (displayState === 'live') {
+    return 'green'
+  }
+  return 'cool-gray'
+}
+
+function getAuthoritySyncTagType(syncStatus: string) {
+  if (syncStatus === 'synced') {
+    return 'green'
+  }
+  if (syncStatus === 'degraded') {
+    return 'red'
+  }
+  if (syncStatus === 'pending_apply' || syncStatus === 'partial_apply') {
+    return 'warm-gray'
+  }
+  return 'cool-gray'
 }
 
 export function SnapshotArtifactsWorkspace({
@@ -194,9 +233,23 @@ export function SnapshotArtifactsWorkspace({
     queryFn: () => snapshotsApi.list(),
     refetchInterval: snapshotCadence,
   })
-  const liveSnapshotQuery = useQuery({
-    queryKey: ['snapshots', 'live'],
-    queryFn: () => snapshotsApi.getLive(),
+  const committedAudioStateQuery = useCommittedAudioState({
+    refetchInterval: snapshotCadence,
+  })
+  const authoritySnapshotId = resolveAuthoritySnapshotId(committedAudioStateQuery.data?.value ?? null)
+  const authoritySnapshotDetailQuery = useQuery({
+    queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
+    queryFn: async () => {
+      try {
+        return await snapshotsApi.get(authoritySnapshotId!)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    },
+    enabled: authoritySnapshotId != null,
     retry: false,
     refetchInterval: snapshotCadence,
   })
@@ -205,6 +258,10 @@ export function SnapshotArtifactsWorkspace({
   })
   const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({
     enabled: isClusterMode,
+    refetchInterval: deploymentCadence,
+  })
+  const observedAudioStateQuery = useObservedAudioState(committedAudioStateQuery.data?.value?.state_version, {
+    enabled: committedAudioStateQuery.isSuccess,
     refetchInterval: deploymentCadence,
   })
   const activationEventsQuery = useSnapshotActivationEvents(undefined, {
@@ -225,17 +282,27 @@ export function SnapshotArtifactsWorkspace({
   })
 
   const snapshots = snapshotsQuery.data?.snapshots ?? []
-  const activeSnapshotId = snapshotsQuery.data?.active_id ?? null
-  const selectedId = selectedSnapshotId ?? activeSnapshotId ?? snapshots[0]?.id ?? null
   const runtimeState = runtimeStateQuery.data
+  const committedAudioState = committedAudioStateQuery.data?.value ?? null
+  const controlPlaneSnapshot = resolveControlPlaneSnapshot({
+    committedAudioState,
+    authoritySnapshotDetail: authoritySnapshotDetailQuery.data ?? null,
+  })
+  const selectedId = selectedSnapshotId ?? resolveControlPlaneSnapshotId({
+    controlPlaneSnapshot,
+    authoritySnapshotId,
+    runtimeLiveState: runtimeState ?? null,
+  }) ?? snapshots[0]?.id ?? null
 
   const selectedSnapshotQuery = useQuery({
     queryKey: ['snapshots', 'detail', selectedId],
     queryFn: () => snapshotsApi.get(selectedId as number),
-    enabled: selectedId !== null,
+    enabled: selectedId !== null && authoritySnapshotDetailQuery.data?.id !== selectedId,
   })
 
-  const selectedSnapshot = selectedSnapshotQuery.data
+  const selectedSnapshot = authoritySnapshotDetailQuery.data?.id === selectedId
+    ? authoritySnapshotDetailQuery.data
+    : selectedSnapshotQuery.data
 
   const remoteNodes = useMemo(() => {
     const source = nodesQuery.data?.nodes ?? nodes.map((node) => ({
@@ -251,8 +318,6 @@ export function SnapshotArtifactsWorkspace({
     const list = [...snapshots].sort((a, b) => {
       if (a.is_favorite && !b.is_favorite) return -1
       if (!a.is_favorite && b.is_favorite) return 1
-      if (a.is_active && !b.is_active) return -1
-      if (!a.is_active && b.is_active) return 1
       return a.display_order - b.display_order
     })
     if (!q) {
@@ -270,16 +335,23 @@ export function SnapshotArtifactsWorkspace({
   }, [searchQuery, snapshots])
 
   const activateMutation = useMutation({
-    mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
-    onSuccess: (result) => {
+    mutationFn: (snapshotId: number) => audioStateApi.activateSnapshot(snapshotId, {
+      triggered_by: 'artifacts_workspace',
+    }),
+    onSuccess: (result, snapshotId) => {
+      const activatedSnapshotId = result.value.source_snapshot?.snapshot_id ?? result.value.desired.snapshot_id ?? snapshotId
       void queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      invalidateAuthorityAwareLiveSnapshot(queryClient, { includeDesired: true })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
       void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
-      queryClient.setQueryData(['snapshots', 'live'], result.snapshot_data)
-      if (result.runtime_live_state) {
-        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
-      }
-      setSelectedSnapshotId(result.snapshot_id)
-      onToast('success', buildSnapshotActivationToastMessage(result.snapshot_data))
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active', activatedSnapshotId] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activatedSnapshotId] })
+      setSelectedSnapshotId(activatedSnapshotId)
+      onToast(
+        'success',
+        'Snapshot activated',
+        result.value.source_snapshot?.name ?? snapshots.find((snapshot) => snapshot.id === activatedSnapshotId)?.name,
+      )
     },
     onError: (error, snapshotId) => {
       const snapshotName = snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
@@ -355,17 +427,22 @@ export function SnapshotArtifactsWorkspace({
       const created = await snapshotsApi.create({
         ...createDefaultSnapshotRequest(snapshotName),
       })
-      return snapshotsApi.activate(created.snapshot_id)
+      return audioStateApi.activateSnapshot(created.snapshot_id, {
+        triggered_by: 'artifacts_workspace',
+      })
     },
     onSuccess: async (result) => {
+      const activatedSnapshotId = result.value.source_snapshot?.snapshot_id ?? result.value.desired.snapshot_id ?? null
       await queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      invalidateAuthorityAwareLiveSnapshot(queryClient, { includeDesired: true })
+      await queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
       await queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
-      queryClient.setQueryData(['snapshots', 'live'], result.snapshot_data)
-      if (result.runtime_live_state) {
-        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], result.runtime_live_state)
+      if (activatedSnapshotId !== null) {
+        await queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active', activatedSnapshotId] })
+        await queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activatedSnapshotId] })
       }
-      setSelectedSnapshotId(result.snapshot_id)
-      onToast('success', buildSnapshotActivationToastMessage(result.snapshot_data))
+      setSelectedSnapshotId(activatedSnapshotId)
+      onToast('success', 'Snapshot created and activated', result.value.source_snapshot?.name ?? 'Snapshot')
     },
     onError: (error, snapshotName) => onToast('warning', buildSnapshotActivationFailureToastMessage(snapshotName, error)),
   })
@@ -408,8 +485,9 @@ export function SnapshotArtifactsWorkspace({
       is_active: false,
     } as SnapshotSummary),
     selectedSnapshot,
-    liveSnapshotQuery.data ?? null,
-    runtimeState,
+    selectedId !== null && authoritySnapshotId === selectedId
+      ? controlPlaneSnapshot
+      : null,
   )
 
   const selectedDeployment = useMemo(
@@ -422,9 +500,30 @@ export function SnapshotArtifactsWorkspace({
     ).filter((node) => node.snapshot_id === selectedId || node.live_snapshot_payload?.id === selectedId),
     [clusterRuntimeStateQuery.data?.nodes, selectedId],
   )
-  const selectedSnapshotLocalRuntime = selectedId !== null && runtimeState?.snapshot_id === selectedId
-    ? runtimeState
+  const selectedSnapshotObservedNodes = useMemo(
+    () => authoritySnapshotId === selectedId
+      ? buildObservedRuntimeNodeCards((observedAudioStateQuery.data?.observations ?? []).map((envelope) => envelope.value))
+      : [],
+    [authoritySnapshotId, observedAudioStateQuery.data?.observations, selectedId],
+  )
+  const selectedSnapshotControlPlaneStatus = selectedId !== null
+    ? resolveSnapshotControlPlaneStatus({
+      snapshotId: selectedId,
+      authoritySnapshotId,
+      authoritativeAudioState: committedAudioState,
+    })
     : null
+  const selectedAuthorityState = selectedId !== null && authoritySnapshotId === selectedId
+    ? committedAudioState
+    : null
+  const selectedSnapshotInputDevice = selectedAuthorityState?.observed_summary.effective_input_device
+    ?? selectedAuthorityState?.desired.io.requested_input_device
+    ?? selectedSnapshot?.io_bindings.input_device
+    ?? 'Default'
+  const selectedSnapshotOutputDevice = selectedAuthorityState?.observed_summary.effective_output_device
+    ?? selectedAuthorityState?.desired.io.requested_output_device
+    ?? selectedSnapshot?.io_bindings.output_device
+    ?? 'Default'
 
   const targetNodeName = remoteNodes.find((node) => node.id === targetNodeId)?.hostname ?? targetNodeId
 
@@ -440,7 +539,7 @@ export function SnapshotArtifactsWorkspace({
             <div className="aap-snapshots__toolbar-actions">
               <Button kind="ghost" size="sm" renderIcon={Renew} onClick={() => {
                 void queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-                void queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+                invalidateAuthorityAwareLiveSnapshot(queryClient, { includeDesired: true })
                 void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
                 void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local', 100] })
                 void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
@@ -485,7 +584,12 @@ export function SnapshotArtifactsWorkspace({
             <div className="aap-snapshots__list" role="list" aria-label="Snapshots library">
               {filteredSnapshots.map((snapshot) => {
                 const isSelected = snapshot.id === selectedId
-                const isLiveSnapshot = runtimeState?.snapshot_id === snapshot.id
+                const controlPlaneStatus = resolveSnapshotControlPlaneStatus({
+                  snapshotId: snapshot.id,
+                  authoritySnapshotId,
+                  authoritativeAudioState: committedAudioState,
+                })
+                const isLiveSnapshot = controlPlaneStatus.isLive
                 const isDirty = snapshot.id === selectedId
                   ? selectedSnapshotDirty
                   : false
@@ -527,22 +631,8 @@ export function SnapshotArtifactsWorkspace({
                       </div>
                     </div>
                     <div className="aap-snapshots__card-flags">
-                      <Tag
-                        type={
-                          runtimeState?.snapshot_id === snapshot.id
-                            ? runtimeState.display_state === 'live_warning'
-                              ? 'warm-gray'
-                              : runtimeState.display_state === 'offline'
-                                ? 'red'
-                                : 'green'
-                            : 'cool-gray'
-                        }
-                      >
-                        {runtimeState?.snapshot_id === snapshot.id
-                          ? runtimeState.display_state === 'live_warning'
-                            ? 'Live + Warning'
-                            : runtimeState.display_label
-                          : 'Saved'}
+                      <Tag type={getDisplayTagType(controlPlaneStatus.isLive ? controlPlaneStatus.displayState : 'saved')}>
+                        {controlPlaneStatus.isLive ? controlPlaneStatus.displayLabel : 'Saved'}
                       </Tag>
                       {snapshot.is_favorite ? <Tag type="purple">Favorite</Tag> : null}
                       <Tag type={isDirty ? 'purple' : 'warm-gray'}>{isDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
@@ -560,7 +650,7 @@ export function SnapshotArtifactsWorkspace({
         </Tile>
 
         <Tile className="aap-snapshots__detail" role="complementary" aria-label="Snapshot details">
-          {selectedSnapshotQuery.isLoading ? (
+          {selectedSnapshotQuery.isLoading || (authoritySnapshotId === selectedId && authoritySnapshotDetailQuery.isLoading) ? (
             <InlineLoading description="Loading snapshot detail" status="active" />
           ) : !selectedSnapshot ? (
             <p>Select a snapshot to inspect its full contents, lifecycle, and cluster state.</p>
@@ -599,8 +689,8 @@ export function SnapshotArtifactsWorkspace({
                   <OverflowMenuItem
                     isDelete
                     itemText="Delete snapshot"
-                    disabled={selectedSnapshotLocalRuntime != null}
-                    title={selectedSnapshotLocalRuntime ? 'Cannot delete a live snapshot.' : undefined}
+                    disabled={selectedSnapshotControlPlaneStatus?.isLive ?? false}
+                    title={selectedSnapshotControlPlaneStatus?.isLive ? 'Cannot delete a live snapshot.' : undefined}
                     onClick={() => {
                       if (!selectedId) {
                         return
@@ -636,23 +726,21 @@ export function SnapshotArtifactsWorkspace({
               </div>
 
               <div className="aap-snapshots__detail-tags">
-                <Tag
-                  type={
-                    selectedSnapshotLocalRuntime
-                      ? selectedSnapshotLocalRuntime.display_state === 'live_warning'
-                        ? 'warm-gray'
-                        : selectedSnapshotLocalRuntime.display_state === 'offline'
-                          ? 'red'
-                          : 'green'
-                      : 'cool-gray'
-                  }
-                >
-                  {selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Saved'}
+                <Tag type={getDisplayTagType(selectedSnapshotControlPlaneStatus?.isLive ? selectedSnapshotControlPlaneStatus.displayState : 'saved')}>
+                  {selectedSnapshotControlPlaneStatus?.displayLabel ?? 'Saved'}
                 </Tag>
                 {selectedSnapshot.is_favorite ? <Tag type="purple">Favorite</Tag> : null}
                 <Tag type={selectedSnapshotDirty ? 'purple' : 'warm-gray'}>{selectedSnapshotDirty ? 'Modified / Dirty' : 'Saved'}</Tag>
                 <Tag type="blue">MIDI PC {selectedSnapshot.program_number === null ? '—' : selectedSnapshot.program_number}</Tag>
                 <Tag type="cool-gray">Routing {selectedSnapshot.routing.mode}</Tag>
+                {selectedAuthorityState ? (
+                  <>
+                    <Tag type={getAuthoritySyncTagType(selectedAuthorityState.cluster.sync_status)}>
+                      {formatAuthoritySyncStatusLabel(selectedAuthorityState.cluster.sync_status)}
+                    </Tag>
+                    <Tag type="cool-gray">State v{selectedAuthorityState.state_version}</Tag>
+                  </>
+                ) : null}
               </div>
 
               <div className="aap-snapshots__section-grid">
@@ -662,8 +750,9 @@ export function SnapshotArtifactsWorkspace({
                     <div><dt>Created</dt><dd>{formatDate(selectedSnapshot.created_at)}</dd></div>
                     <div><dt>Updated</dt><dd>{formatDate(selectedSnapshot.updated_at)}</dd></div>
                     <div><dt>Lifecycle flags</dt><dd>{selectedSnapshotDirty ? 'Saved, Modified / Dirty' : 'Saved'}</dd></div>
-                    <div><dt>Live activation</dt><dd>{selectedSnapshotLocalRuntime ? formatDate(selectedSnapshotLocalRuntime.emitted_at) : 'Not live'}</dd></div>
-                    <div><dt>Runtime freshness</dt><dd>{selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Stopped'}</dd></div>
+                    <div><dt>Live activation</dt><dd>{selectedSnapshotControlPlaneStatus?.isLive ? formatDate(committedAudioState?.committed_at) : 'Not live'}</dd></div>
+                    <div><dt>Runtime freshness</dt><dd>{selectedSnapshotControlPlaneStatus?.isLive ? selectedSnapshotControlPlaneStatus.displayLabel : 'Stopped'}</dd></div>
+                    {selectedAuthorityState ? <div><dt>Authority commit</dt><dd>{formatDate(selectedAuthorityState.committed_at)}</dd></div> : null}
                   </dl>
                 </section>
 
@@ -671,9 +760,10 @@ export function SnapshotArtifactsWorkspace({
                   <h4>Surface fields</h4>
                   <dl>
                     <div><dt>Name</dt><dd>{selectedSnapshot.name}</dd></div>
-                    <div><dt>Flag</dt><dd>{selectedSnapshotLocalRuntime ? selectedSnapshotLocalRuntime.display_label : 'Saved'}</dd></div>
+                    <div><dt>Flag</dt><dd>{selectedSnapshotControlPlaneStatus?.displayLabel ?? 'Saved'}</dd></div>
                     <div><dt>MIDI PC</dt><dd>{selectedSnapshot.program_number === null ? '—' : selectedSnapshot.program_number}</dd></div>
-                    <div><dt>Revision</dt><dd>{selectedSnapshot.snapshot_revision ?? '—'}</dd></div>
+                    <div><dt>Revision</dt><dd>{selectedAuthorityState?.source_snapshot?.snapshot_revision_id ?? selectedSnapshot.snapshot_revision ?? '—'}</dd></div>
+                    {selectedAuthorityState ? <div><dt>Authority sync</dt><dd>{formatAuthoritySyncStatusLabel(selectedAuthorityState.cluster.sync_status)}</dd></div> : null}
                   </dl>
                 </section>
 
@@ -698,10 +788,10 @@ export function SnapshotArtifactsWorkspace({
                   <h4>Routing and environment</h4>
                   <dl>
                     <div><dt>Routing mode</dt><dd>{selectedSnapshot.routing.mode}</dd></div>
-                    <div><dt>Active path</dt><dd>{selectedSnapshot.routing.active_channel_key ?? 'Default'}</dd></div>
+                    <div><dt>Active path</dt><dd>{selectedAuthorityState?.desired.routing.active_path_ids[0] ?? selectedSnapshot.routing.active_channel_key ?? 'Default'}</dd></div>
                     <div><dt>Series order</dt><dd>{selectedSnapshot.routing.series_order.join(', ') || '—'}</dd></div>
-                    <div><dt>Input device</dt><dd>{selectedSnapshot.io_bindings.input_device ?? 'Default'}</dd></div>
-                    <div><dt>Output device</dt><dd>{selectedSnapshot.io_bindings.output_device ?? 'Default'}</dd></div>
+                    <div><dt>Input device</dt><dd>{selectedSnapshotInputDevice}</dd></div>
+                    <div><dt>Output device</dt><dd>{selectedSnapshotOutputDevice}</dd></div>
                     <div><dt>Missing resource policy</dt><dd>Use default</dd></div>
                   </dl>
                 </section>
@@ -709,6 +799,23 @@ export function SnapshotArtifactsWorkspace({
 
               <section className="aap-snapshots__section">
                 <h4>Node sync</h4>
+                {selectedAuthorityState ? (
+                  <div className="aap-snapshots__deployment-list">
+                    <div className="aap-snapshots__deployment-card">
+                      <div className="aap-snapshots__deployment-header">
+                        <strong>Authority control plane</strong>
+                        <Tag type={getAuthoritySyncTagType(selectedAuthorityState.cluster.sync_status)}>
+                          {formatAuthoritySyncStatusLabel(selectedAuthorityState.cluster.sync_status)}
+                        </Tag>
+                      </div>
+                      <p>State version: {selectedAuthorityState.state_version}</p>
+                      <p>Leader epoch: {selectedAuthorityState.leader_epoch}</p>
+                      <p>Origin node: {selectedAuthorityState.origin_node_id}</p>
+                      <p>Applied nodes: {selectedAuthorityState.cluster.applied_node_ids.join(', ') || '—'}</p>
+                      <p>Degraded nodes: {selectedAuthorityState.cluster.degraded_node_ids.join(', ') || '—'}</p>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="aap-snapshots__node-controls">
                   <Select
                     id="snapshot-node-target"
@@ -772,9 +879,13 @@ export function SnapshotArtifactsWorkspace({
                     ))}
                   </div>
                 )}
-                {(selectedSnapshotRuntimeNodes.length > 0 || selectedSnapshotLocalRuntime) ? (
+                {(selectedSnapshotObservedNodes.length > 0 || selectedSnapshotRuntimeNodes.length > 0) ? (
                   <div className="aap-snapshots__deployment-list">
-                    {(selectedSnapshotRuntimeNodes.length > 0 ? selectedSnapshotRuntimeNodes : selectedSnapshotLocalRuntime ? [selectedSnapshotLocalRuntime] : []).map((node) => (
+                    {(selectedSnapshotObservedNodes.length > 0
+                      ? selectedSnapshotObservedNodes
+                      : selectedSnapshotRuntimeNodes.length > 0
+                        ? selectedSnapshotRuntimeNodes
+                        : []).map((node) => (
                       <div key={node.node_id} className="aap-snapshots__deployment-card">
                         <div className="aap-snapshots__deployment-header">
                           <strong>{node.node_id}</strong>

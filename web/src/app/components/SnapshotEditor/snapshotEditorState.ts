@@ -521,7 +521,6 @@ export function snapshotEditorStateToDetail(
     program_number: base?.program_number ?? null,
     input_device: base?.input_device ?? null,
     output_device: base?.output_device ?? null,
-    is_active: base?.is_active ?? false,
     is_favorite: base?.is_favorite ?? false,
     display_order: base?.display_order ?? 0,
     channels: payload.channels,
@@ -544,7 +543,6 @@ export function snapshotEditorStateToDetail(
     lineage: base?.lineage ?? {
       derived_from_snapshot_id: null,
     },
-    session_notes: base?.session_notes ?? [],
     active_channel_index: state.activeChannelIndex,
     channel_count: payload.channels.length,
     chain_count: payload.chains.length,

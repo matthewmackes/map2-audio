@@ -1,0 +1,171 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.models.audio_state import AudioStateDesiredIO, AudioStateRouting, CompiledSnapshotIntent
+from app.routes import audio_state as audio_state_routes
+from app.services.audio_state_authority import AudioStateAuthorityError
+
+
+class _FakeConfig:
+    def __init__(self) -> None:
+        self._values = {
+            "audio_state.etcd_namespace": "/map2/audio-state/v1",
+            "audio_state.authority_backend": "etcd",
+        }
+
+    def get(self, key: str, default=None):
+        return self._values.get(key, default)
+
+
+class _MissingCommittedService:
+    async def get_committed_state(self):
+        raise AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+
+class _DesiredOnlyService:
+    def __init__(self) -> None:
+        self.requested = None
+
+    async def put_desired_state(self, desired):
+        self.requested = desired
+        return type("DesiredEnvelope", (), {"revision": 17})()
+
+    async def put_committed_state(self, committed):
+        return type("CommittedEnvelope", (), {"namespace": "/map2/audio-state/v1", "key": "/map2/audio-state/v1/committed", "revision": 23})()
+
+
+class _ActivateService:
+    def __init__(self) -> None:
+        self.desired = None
+        self.committed = None
+
+    async def next_state_version(self):
+        return 12
+
+    async def put_desired_state(self, desired):
+        self.desired = desired
+        return type("DesiredEnvelope", (), {"revision": 31})()
+
+    async def put_committed_state(self, committed):
+        self.committed = committed
+        return type(
+            "CommittedEnvelope",
+            (),
+            {
+                "namespace": "/map2/audio-state/v1",
+                "key": "/map2/audio-state/v1/committed",
+                "revision": 32,
+                "value": committed,
+            },
+        )()
+
+
+def _build_client(monkeypatch) -> TestClient:
+    app = FastAPI()
+    app.include_router(audio_state_routes.router)
+    monkeypatch.setattr(audio_state_routes, "get_config", lambda: _FakeConfig())
+    return TestClient(app)
+
+
+def test_audio_state_status_route_reads_runtime_config(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+
+    response = client.get("/api/audio/state/status")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "namespace": "/map2/audio-state/v1",
+        "authority_backend": "etcd",
+    }
+
+
+def test_committed_audio_state_route_maps_missing_state_to_404(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: _MissingCommittedService())
+
+    response = client.get("/api/audio/state/committed")
+
+    assert response.status_code == 404
+    assert "No committed authoritative audio state exists" in response.json()["detail"]
+
+
+def test_put_desired_audio_state_commits_authoritative_envelope(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+    fake_service = _DesiredOnlyService()
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
+
+    response = client.put(
+        "/api/audio/state/desired",
+        json={
+            "requested_by": "ui",
+            "leader_epoch": 4,
+            "state_version": 9,
+            "committed_at": "2026-04-03T12:00:00",
+            "origin_node_id": "node-a",
+            "desired": CompiledSnapshotIntent(
+                snapshot_id=11,
+                snapshot_revision_id=3,
+                compiled_at="2026-04-03T11:59:59",
+                io=AudioStateDesiredIO(requested_input_device="In", requested_output_device="Out"),
+                routing=AudioStateRouting(mode="series", active_path_ids=["a"], path_order=["a"]),
+                chains=[],
+            ).model_dump(mode="json"),
+            "paths": [],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["namespace"] == "/map2/audio-state/v1"
+    assert payload["key"] == "/map2/audio-state/v1/committed"
+    assert payload["revision"] == 23
+    assert payload["value"]["state_version"] == 9
+    assert payload["value"]["leader_epoch"] == 4
+    assert fake_service.requested.snapshot_id == 11
+
+
+def test_activate_snapshot_route_compiles_and_commits_authoritative_state(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+    fake_service = _ActivateService()
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
+    monkeypatch.setattr(audio_state_routes, "resolve_local_node_id", lambda: "node-a")
+
+    class _FakeSnapshotService:
+        def __init__(self, _session) -> None:
+            pass
+
+        async def get_snapshot(self, snapshot_id: int):
+            return {
+                "id": snapshot_id,
+                "name": "Authority Snapshot",
+                "routing": {"mode": "series", "active_channel_key": "ch_a", "series_order": ["ch_a"]},
+                "paths": [{"id": "ch_a", "label": "A", "snapshot_chain_id": 101}],
+                "chains": [],
+            }
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(audio_state_routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(audio_state_routes, "get_session", _fake_session)
+
+    response = client.post(
+        "/api/audio/state/snapshots/7/activate",
+        json={"triggered_by": "ui-test", "leader_epoch": 4},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["namespace"] == "/map2/audio-state/v1"
+    assert payload["key"] == "/map2/audio-state/v1/committed"
+    assert payload["revision"] == 32
+    assert payload["value"]["state_version"] == 12
+    assert payload["value"]["leader_epoch"] == 4
+    assert payload["value"]["source_snapshot"]["snapshot_id"] == 7
+    assert payload["value"]["cluster"]["sync_status"] == "pending_apply"
+    assert fake_service.desired.snapshot_id == 7
+    assert fake_service.committed.source_snapshot.snapshot_id == 7

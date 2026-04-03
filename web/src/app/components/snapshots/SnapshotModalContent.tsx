@@ -15,6 +15,7 @@ import {
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
+import { useCommittedAudioState } from '../../hooks/useAuthoritativeAudioState'
 import { useSpecialSettings } from '../../hooks/useSpecialSettings'
 import {
   buildSnapshotSetlistOrder,
@@ -44,7 +45,17 @@ import {
   snapshotDetailToDraftData,
   snapshotsApi,
 } from '../../../map2/clients/snapshots'
+import { audioStateApi } from '../../../map2/clients/audioState'
 import type { Chain, ChainsResponse } from '../../../map2/types'
+import { ApiError } from '../../../map2/http'
+import {
+  invalidateAuthorityAwareLiveSnapshot,
+  setAuthorityAwareLiveSnapshot,
+} from '../../pages/snapshotLiveState'
+import {
+  resolveAuthoritySnapshotId,
+  resolveControlPlaneSnapshot,
+} from '../../pages/snapshotAuthorityState'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
@@ -103,12 +114,24 @@ export function SnapshotModalContent({
     refetchInterval: 5000,
   })
 
-  const activeSnapshotId = snapshotsQuery.data?.active_id ?? null
-
-  const activeSnapshotDetailQuery = useQuery<SnapshotDetail>({
-    queryKey: ['snapshots', 'detail', activeSnapshotId],
-    queryFn: async () => snapshotsApi.get(activeSnapshotId as number),
-    enabled: activeSnapshotId !== null,
+  const committedAudioStateQuery = useCommittedAudioState({
+    refetchInterval: 5000,
+  })
+  const authoritySnapshotId = resolveAuthoritySnapshotId(committedAudioStateQuery.data?.value ?? null)
+  const authoritySnapshotDetailQuery = useQuery<SnapshotDetail | null>({
+    queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
+    queryFn: async () => {
+      try {
+        return await snapshotsApi.get(authoritySnapshotId as number)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    },
+    enabled: authoritySnapshotId !== null,
+    retry: false,
   })
 
   const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
@@ -138,13 +161,24 @@ export function SnapshotModalContent({
     }
   }, [availableSnapshotTags, snapshotTagFilter, snapshotsQuery.data])
 
+  const controlPlaneActiveSnapshot = useMemo(
+    () => resolveControlPlaneSnapshot({
+      committedAudioState: committedAudioStateQuery.data?.value ?? null,
+      authoritySnapshotDetail: authoritySnapshotDetailQuery.data ?? null,
+    }),
+    [
+      authoritySnapshotDetailQuery.data,
+      committedAudioStateQuery.data?.value,
+    ],
+  )
+  const activeSnapshotId = controlPlaneActiveSnapshot?.id ?? authoritySnapshotId ?? null
   const activeSnapshot = useMemo(() => {
-    const listedSnapshot = savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active)
+    const listedSnapshot = savedSnapshots.find((snapshot) => snapshot.id === activeSnapshotId)
     if (listedSnapshot) {
       return listedSnapshot
     }
-    return activeSnapshotDetailQuery.data ? activeSnapshotDetailQuery.data as SnapshotSummary : null
-  }, [activeSnapshotDetailQuery.data, activeSnapshotId, savedSnapshots])
+    return controlPlaneActiveSnapshot ? controlPlaneActiveSnapshot as SnapshotSummary : null
+  }, [activeSnapshotId, controlPlaneActiveSnapshot, savedSnapshots])
   const rawFavoriteSnapshots = useMemo(
     () => savedSnapshots.filter((snapshot) => snapshot.is_favorite),
     [savedSnapshots],
@@ -164,21 +198,21 @@ export function SnapshotModalContent({
   const activeSnapshotNeedsUpdate = useMemo(
     () => Boolean(
       activeSnapshot
-      && activeSnapshotDetailQuery.data
-      && fingerprintSnapshotData(snapshotDetailToDraftData(activeSnapshotDetailQuery.data)) !== fingerprintSnapshotData(snapshotDraft),
+      && controlPlaneActiveSnapshot
+      && fingerprintSnapshotData(snapshotDetailToDraftData(controlPlaneActiveSnapshot)) !== fingerprintSnapshotData(snapshotDraft),
     ),
-    [activeSnapshot, activeSnapshotDetailQuery.data, snapshotDraft],
+    [activeSnapshot, controlPlaneActiveSnapshot, snapshotDraft],
   )
 
   const snapshotComparisonSummary = useMemo(() => {
     if (!snapshotCompareDetailQuery.data) {
       return null
     }
-    const baseData = activeSnapshotDetailQuery.data
-      ? snapshotDetailToDraftData(activeSnapshotDetailQuery.data)
+    const baseData = controlPlaneActiveSnapshot
+      ? snapshotDetailToDraftData(controlPlaneActiveSnapshot)
       : snapshotDraft
     return buildSnapshotComparisonSummary(baseData, snapshotDetailToDraftData(snapshotCompareDetailQuery.data))
-  }, [activeSnapshotDetailQuery.data, snapshotDraft, snapshotCompareDetailQuery.data])
+  }, [controlPlaneActiveSnapshot, snapshotDraft, snapshotCompareDetailQuery.data])
 
   const [contentView, setContentView] = useState<'entry' | 'library' | 'wizard'>(entryPoint ? 'entry' : 'library')
   const [snapshotPendingRename, setSnapshotPendingRename] = useState<SnapshotSummary | null>(null)
@@ -279,19 +313,30 @@ export function SnapshotModalContent({
         },
         midi_map: [],
       })
-      return snapshotsApi.activate(created.snapshot_id)
+      const activated = await audioStateApi.activateSnapshot(created.snapshot_id, {
+        triggered_by: 'snapshot_modal',
+      })
+      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? created.snapshot_id
+      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      return {
+        snapshotId: activatedSnapshotId,
+        snapshotData,
+      }
     },
     onSuccess: async (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      setAuthorityAwareLiveSnapshot(queryClient, response.snapshotData, authoritySnapshotId)
       queryClient.setQueryData<ChainsResponse | undefined>(
         ['chains'],
-        (current) => upsertRuntimeChains(current, response.snapshot_data.live_state?.runtime_chains ?? []),
+        (current) => upsertRuntimeChains(current, response.snapshotData.live_state?.runtime_chains ?? []),
       )
+      invalidateAuthorityAwareLiveSnapshot(queryClient, { includeDesired: true })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active', response.snapshotId] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', response.snapshotId] })
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       setContentView('library')
       onSnapshotSave?.()
-      applySnapshotData(snapshotDetailToDraftData(response.snapshot_data), {
-        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
+      applySnapshotData(snapshotDetailToDraftData(response.snapshotData), {
+        toastMessage: buildSnapshotActivationToastMessage(response.snapshotData),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
         invalidateChains: false,
       })
@@ -307,16 +352,29 @@ export function SnapshotModalContent({
   })
 
   const loadFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
+    mutationFn: async (snapshotId: number) => {
+      const activated = await audioStateApi.activateSnapshot(snapshotId, {
+        triggered_by: 'snapshot_modal',
+      })
+      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? snapshotId
+      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      return {
+        snapshotId: activatedSnapshotId,
+        snapshotData,
+      }
+    },
     onSuccess: (data) => {
-      queryClient.setQueryData(['snapshots', 'live'], data.snapshot_data)
+      setAuthorityAwareLiveSnapshot(queryClient, data.snapshotData, authoritySnapshotId)
       queryClient.setQueryData<ChainsResponse | undefined>(
         ['chains'],
-        (current) => upsertRuntimeChains(current, data.snapshot_data.live_state?.runtime_chains ?? []),
+        (current) => upsertRuntimeChains(current, data.snapshotData.live_state?.runtime_chains ?? []),
       )
+      invalidateAuthorityAwareLiveSnapshot(queryClient, { includeDesired: true })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active', data.snapshotId] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', data.snapshotId] })
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      applySnapshotData(snapshotDetailToDraftData(data.snapshot_data), {
-        toastMessage: buildSnapshotActivationToastMessage(data.snapshot_data),
+      applySnapshotData(snapshotDetailToDraftData(data.snapshotData), {
+        toastMessage: buildSnapshotActivationToastMessage(data.snapshotData),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
         invalidateChains: false,
       })
@@ -436,7 +494,7 @@ export function SnapshotModalContent({
     if (!snapshotPendingDelete) {
       return
     }
-    if (snapshotPendingDelete.id === activeSnapshotId || snapshotPendingDelete.is_active) {
+    if (snapshotPendingDelete.id === activeSnapshotId) {
       pushToast('Cannot delete a live snapshot.', 'error')
       setSnapshotPendingDelete(null)
       return
@@ -616,7 +674,7 @@ export function SnapshotModalContent({
     }
 
     try {
-      const sourceDetail = activeSnapshotDetailQuery.data ?? await fetchSnapshotDetail(activeSnapshot.id)
+      const sourceDetail = controlPlaneActiveSnapshot ?? await fetchSnapshotDetail(activeSnapshot.id)
       const targetDetail = await fetchSnapshotDetail(snapshotMorphTarget.id)
       const sourceDraft = snapshotDetailToDraftData(sourceDetail)
       const targetDraft = snapshotDetailToDraftData(targetDetail)
@@ -649,7 +707,7 @@ export function SnapshotModalContent({
   }, [
     activeSnapshot,
     activeSnapshotNeedsUpdate,
-    activeSnapshotDetailQuery.data,
+    controlPlaneActiveSnapshot,
     snapshotDraft,
     setSnapshotMorphRunning,
     fetchSnapshotDetail,
@@ -886,7 +944,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
               ) : (
                 <Tag type="warm-gray">{savedSnapshots.length} saved snapshots available</Tag>
               )}
-              {activeSnapshot && activeSnapshotDetailQuery.isLoading && (
+              {activeSnapshot && authoritySnapshotDetailQuery.isLoading && (
                 <Tag type="blue">Inspecting active snapshot</Tag>
               )}
             </div>
@@ -898,7 +956,11 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                   kind={activeSnapshotNeedsUpdate ? 'primary' : 'secondary'}
                   renderIcon={Renew}
                   onClick={handleActiveSnapshotRefresh}
-                  disabled={!activeSnapshotNeedsUpdate || refreshActiveSnapshotMutation.isPending || activeSnapshotDetailQuery.isLoading}
+                  disabled={
+                    !activeSnapshotNeedsUpdate
+                    || refreshActiveSnapshotMutation.isPending
+                    || authoritySnapshotDetailQuery.isLoading
+                  }
                 >
                   {refreshActiveSnapshotMutation.isPending ? 'Updating...' : 'Update snapshot'}
                 </Button>
@@ -991,9 +1053,9 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                     </p>
                   </div>
                 ) : (
-                  <div className="juce-grid-page__snapshot-list">
-                    {favoriteSnapshots.map((snapshot, index) => {
-                      const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
+                    <div className="juce-grid-page__snapshot-list">
+                      {favoriteSnapshots.map((snapshot, index) => {
+                      const isActiveSnapshot = snapshot.id === activeSnapshotId
 
                       return (
                         <Tile
@@ -1182,9 +1244,9 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                       </p>
                     </div>
                   ) : (
-                    <div className="juce-grid-page__snapshot-list">
+                      <div className="juce-grid-page__snapshot-list">
                       {librarySnapshots.map((snapshot, index) => {
-                        const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
+                        const isActiveSnapshot = snapshot.id === activeSnapshotId
 
                         return (
                           <Tile

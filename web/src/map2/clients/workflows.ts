@@ -245,7 +245,6 @@ export const flowSnapshotsApi = {
     return {
       snapshots: response.snapshots.map(snapshotSummaryToFlowSnapshot),
       count: response.count,
-      active_id: response.active_id,
     }
   },
 

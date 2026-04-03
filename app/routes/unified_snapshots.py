@@ -207,10 +207,6 @@ class SaveAsNewRequest(BaseModel):
     description: Optional[str] = None
 
 
-class SnapshotSessionNoteCreateRequest(BaseModel):
-    text: str = Field(min_length=1)
-
-
 class SnapshotTempoTapRequest(BaseModel):
     timestamp_ms: Optional[float] = None
 
@@ -367,7 +363,6 @@ async def list_snapshots(tags: Optional[str] = Query(default=None)) -> dict[str,
             service = SnapshotService(session)
             all_snapshots = await service.list_snapshots()
             snapshots = all_snapshots if not tag_list else await service.list_snapshots(tags=tag_list)
-            active_id = next((item["id"] for item in all_snapshots if item.get("is_active")), None)
             available_tags = sorted(
                 {
                     str(tag).strip()
@@ -379,7 +374,6 @@ async def list_snapshots(tags: Optional[str] = Query(default=None)) -> dict[str,
             return {
                 "snapshots": snapshots,
                 "count": len(snapshots),
-                "active_id": active_id,
                 "available_tags": available_tags,
             }
     except Exception as exc:
@@ -392,7 +386,7 @@ async def get_live_snapshot() -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            snapshot = await service.get_live_snapshot()
+            snapshot = await service.get_control_plane_snapshot()
             if snapshot is None:
                 _raise_not_found("Live snapshot")
             return snapshot
@@ -484,49 +478,6 @@ async def get_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error getting snapshot %s: %s", snapshot_id, exc)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.get("/api/snapshots/{snapshot_id}/notes")
-async def list_snapshot_session_notes(snapshot_id: int) -> dict[str, Any]:
-    try:
-        async with get_session() as session:
-            service = SnapshotService(session)
-            notes = await service.list_session_notes(snapshot_id)
-            if notes is None:
-                _raise_not_found("Snapshot")
-            return {
-                "snapshot_id": snapshot_id,
-                "notes": notes,
-                "count": len(notes),
-            }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("Error listing session notes for snapshot %s: %s", snapshot_id, exc)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-@router.post("/api/snapshots/{snapshot_id}/notes")
-async def add_snapshot_session_note(snapshot_id: int, request: SnapshotSessionNoteCreateRequest) -> dict[str, Any]:
-    try:
-        async with get_session() as session:
-            service = SnapshotService(session)
-            notes = await service.add_session_note(snapshot_id, request.text)
-            if notes is None:
-                _raise_not_found("Snapshot")
-            return {
-                "status": "success",
-                "snapshot_id": snapshot_id,
-                "notes": notes,
-                "count": len(notes),
-            }
-    except ValueError as exc:
-        _translate_value_error(exc)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("Error adding session note for snapshot %s: %s", snapshot_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -723,7 +674,7 @@ async def get_snapshot_tempo(snapshot_id: int) -> dict[str, Any]:
             tempo_status = get_snapshot_tempo_service().get_status(
                 snapshot_id=snapshot_id,
                 stored_tempo_bpm=snapshot.get("tempo_bpm"),
-                is_active=bool(snapshot.get("is_active")),
+                is_active=bool((snapshot.get("live_state") or {}).get("is_live")),
             )
             return {
                 "status": "success",

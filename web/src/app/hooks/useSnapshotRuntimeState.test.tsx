@@ -127,6 +127,7 @@ describe('useSnapshotRuntimeState hooks', () => {
   it('updates the scoped runtime live-state cache only for the matching node websocket event', async () => {
     snapshotsApi.getRuntimeLiveState.mockResolvedValue(remoteRuntimeState)
     const queryClient = makeQueryClient()
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
 
     const { result } = renderHook(
       () => useSnapshotRuntimeLiveState('node-b', { refetchInterval: false }),
@@ -134,6 +135,7 @@ describe('useSnapshotRuntimeState hooks', () => {
     )
 
     await waitFor(() => expect(result.current.data?.seq).toBe(4))
+    invalidateSpy.mockClear()
 
     act(() => {
       mockTopicHandlers.get('snapshot_runtime_live_state')?.(
@@ -153,6 +155,9 @@ describe('useSnapshotRuntimeState hooks', () => {
 
     await waitFor(() => expect(result.current.data?.seq).toBe(6))
     expect(result.current.data?.display_state).toBe('live_warning')
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'committed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'observed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['snapshots', 'detail', 'authority-active'] })
   })
 
   it('dedupes activation events by request id and ignores websocket events from other nodes', async () => {
@@ -163,6 +168,7 @@ describe('useSnapshotRuntimeState hooks', () => {
     }
     snapshotsApi.getActivationEvents.mockResolvedValue(initialEvents)
     const queryClient = makeQueryClient()
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
 
     const { result } = renderHook(
       () => useSnapshotActivationEvents('node-b', { limit: 2, refetchInterval: false }),
@@ -170,6 +176,7 @@ describe('useSnapshotRuntimeState hooks', () => {
     )
 
     await waitFor(() => expect(result.current.data?.events).toHaveLength(1))
+    invalidateSpy.mockClear()
 
     act(() => {
       mockTopicHandlers.get('snapshot_activation_events')?.(
@@ -190,6 +197,10 @@ describe('useSnapshotRuntimeState hooks', () => {
 
     await waitFor(() => expect(result.current.data?.events[0]?.outcome).toBe('failed'))
     expect(result.current.data?.events).toHaveLength(1)
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'committed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'desired'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'observed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['snapshots', 'detail', 'authority-active'] })
 
     act(() => {
       mockTopicHandlers.get('snapshot_activation_events')?.(

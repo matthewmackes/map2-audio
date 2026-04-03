@@ -59,7 +59,6 @@ function buildSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail 
     lineage: {
       derived_from_snapshot_id: null,
     },
-    session_notes: [],
     active_channel_index: 0,
     deployments: [],
     ...overrides,

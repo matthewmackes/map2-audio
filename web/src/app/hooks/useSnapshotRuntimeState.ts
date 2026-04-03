@@ -17,6 +17,16 @@ function runtimeActivationEventsKey(nodeId?: string | null, limit = 100) {
   return ['snapshots', 'runtime', 'activation-events', nodeId ?? 'local', limit] as const
 }
 
+function invalidateAuthorityStateCaches(queryClient: ReturnType<typeof useQueryClient>, options?: { includeDesired?: boolean }) {
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'committed'] })
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'observed'] })
+  void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active'] })
+
+  if (options?.includeDesired) {
+    void queryClient.invalidateQueries({ queryKey: ['audio-state', 'desired'] })
+  }
+}
+
 export function useSnapshotRuntimeLiveState(
   nodeId?: string | null,
   options: { enabled?: boolean; refetchInterval?: number | false } = {},
@@ -34,6 +44,7 @@ export function useSnapshotRuntimeLiveState(
       return
     }
     queryClient.setQueryData(queryKey, data)
+    invalidateAuthorityStateCaches(queryClient)
   })
 
   return useQuery<SnapshotRuntimeLiveState>({
@@ -71,6 +82,7 @@ export function useSnapshotActivationEvents(
         events: nextEvents,
       }
     })
+    invalidateAuthorityStateCaches(queryClient, { includeDesired: true })
   })
 
   return useQuery<SnapshotActivationEventsResponse>({

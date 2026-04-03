@@ -25,7 +25,6 @@ import type {
   SnapshotRuntimeLiveState,
   SnapshotRouting,
   SnapshotRevisionSummary,
-  SnapshotSessionNote,
   SnapshotSummary,
   SnapshotTempoStatus,
 } from '../types'
@@ -33,7 +32,6 @@ import type {
 export interface SnapshotListResponse {
   snapshots: SnapshotSummary[]
   count: number
-  active_id: number | null
   available_tags: string[]
 }
 
@@ -118,12 +116,6 @@ export interface SnapshotUpdateResponse {
 export interface SnapshotDraftResponse {
   status: string
   snapshot: SnapshotDetail
-}
-
-export interface SnapshotSessionNotesResponse {
-  snapshot_id: number
-  notes: SnapshotSessionNote[]
-  count: number
 }
 
 export interface SnapshotTempoResponse {
@@ -410,7 +402,6 @@ export function snapshotSummaryToFlowSnapshot(summary: SnapshotSummary): FlowSna
     description: summary.description,
     tags: [...summary.tags],
     program_number: summary.program_number,
-    is_active: summary.is_active,
     is_favorite: summary.is_favorite,
     is_locked: summary.is_locked,
     display_order: summary.display_order,
@@ -489,17 +480,6 @@ export const snapshotsApi = {
   openDraft: (snapshotId: number) =>
     fetchJson<SnapshotDraftResponse>(`${API_BASE}/snapshots/${snapshotId}/draft`, {
       method: 'POST',
-    }),
-
-  listSessionNotes: (snapshotId: number) =>
-    fetchJson<SnapshotSessionNotesResponse>(`${API_BASE}/snapshots/${snapshotId}/notes`, {
-      cache: 'no-store',
-    }),
-
-  addSessionNote: (snapshotId: number, text: string) =>
-    fetchJson<SnapshotSessionNotesResponse>(`${API_BASE}/snapshots/${snapshotId}/notes`, {
-      method: 'POST',
-      body: JSON.stringify({ text }),
     }),
 
   getTempo: (snapshotId: number) =>

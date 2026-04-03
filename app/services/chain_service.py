@@ -1597,36 +1597,52 @@ class ChainService:
                 and chain_config.get("source_kind") == "snapshot_path"
                 and chain_config.get("snapshot_id") is not None
             ):
-                from app.database import Snapshot
-
                 try:
                     snapshot_id = int(chain_config["snapshot_id"])
                 except (TypeError, ValueError):
                     snapshot_id = None
 
                 if snapshot_id is not None:
-                    snapshot_result = await self.session.execute(
-                        select(Snapshot).filter(Snapshot.id == snapshot_id)
-                    )
-                    snapshot = snapshot_result.scalar_one_or_none()
-                    if snapshot is not None:
-                        path_id = chain_config.get("path_id")
-                        live_state_payload = (
-                            dict(snapshot.live_state_payload or {})
-                            if isinstance(snapshot.live_state_payload, dict)
-                            else {}
-                        )
-                        runtime_paths = [
-                            dict(item)
-                            for item in live_state_payload.get("paths", [])
-                            if isinstance(item, dict)
-                        ]
-                        found = False
-                        for item in runtime_paths:
-                            if item.get("runtime_chain_id") == chain_id or (
-                                path_id is not None and str(item.get("path_id")) == str(path_id)
-                            ):
-                                item.update(
+                    try:
+                        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+                        runtime_state_service = SnapshotRuntimeStateService(self.session)
+                        current_payload = await runtime_state_service.get_live_snapshot_payload()
+                        if isinstance(current_payload, dict) and int(current_payload.get("id") or 0) == snapshot_id:
+                            current_live_state = (
+                                dict(current_payload.get("live_state"))
+                                if isinstance(current_payload.get("live_state"), dict)
+                                else {}
+                            )
+                            activated_at = current_live_state.get("activated_at")
+                            path_id = chain_config.get("path_id")
+                            runtime_paths = [
+                                dict(item)
+                                for item in current_live_state.get("paths", [])
+                                if isinstance(item, dict)
+                            ]
+                            found = False
+                            for item in runtime_paths:
+                                if item.get("runtime_chain_id") == chain_id or (
+                                    path_id is not None and str(item.get("path_id")) == str(path_id)
+                                ):
+                                    item.update(
+                                        {
+                                            "path_id": path_id,
+                                            "snapshot_chain_id": chain_config.get("snapshot_chain_id"),
+                                            "runtime_chain_id": chain_id,
+                                            "runtime_chain_name": chain.name,
+                                            "activation_status": (
+                                                runtime_sync.get("status")
+                                                if isinstance(runtime_sync, dict)
+                                                else "active"
+                                            ),
+                                        }
+                                    )
+                                    found = True
+                                    break
+                            if not found:
+                                runtime_paths.append(
                                     {
                                         "path_id": path_id,
                                         "snapshot_chain_id": chain_config.get("snapshot_chain_id"),
@@ -1639,62 +1655,36 @@ class ChainService:
                                         ),
                                     }
                                 )
-                                found = True
-                                break
-                        if not found:
-                            runtime_paths.append(
-                                {
-                                    "path_id": path_id,
-                                    "snapshot_chain_id": chain_config.get("snapshot_chain_id"),
-                                    "runtime_chain_id": chain_id,
-                                    "runtime_chain_name": chain.name,
-                                    "activation_status": (
-                                        runtime_sync.get("status")
-                                        if isinstance(runtime_sync, dict)
-                                        else "active"
-                                    ),
-                                }
-                            )
-                        live_state_payload["paths"] = runtime_paths
-                        active_runtime_chain_ids = {
-                            int(runtime_chain_id)
-                            for runtime_chain_id in live_state_payload.get("active_runtime_chain_ids", [])
-                        }
-                        active_runtime_chain_ids.add(chain_id)
-                        live_state_payload["active_runtime_chain_ids"] = sorted(active_runtime_chain_ids)
-                        snapshot.live_state_payload = live_state_payload
-                        await self.session.flush()
-
-                        try:
-                            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
                             active_runtime_chains = []
-                            for runtime_chain_id in live_state_payload.get("active_runtime_chain_ids", []):
+                            for runtime_path in runtime_paths:
+                                runtime_chain_id = runtime_path.get("runtime_chain_id")
+                                if runtime_chain_id is None:
+                                    continue
                                 runtime_chain = await self.get_chain(int(runtime_chain_id))
                                 if runtime_chain is not None:
                                     active_runtime_chains.append(runtime_chain)
 
-                            await SnapshotRuntimeStateService(self.session).sync_live_snapshot_paths(
+                            await runtime_state_service.sync_live_snapshot_paths(
                                 snapshot_id=snapshot_id,
-                                snapshot_live_state_payload=live_state_payload,
+                                snapshot_live_state_payload={
+                                    "activated_at": activated_at,
+                                    "paths": runtime_paths,
+                                },
                                 runtime_chains=active_runtime_chains,
                             )
-                        except Exception as exc:
-                            logger.debug("Snapshot runtime live-state sync after chain activation failed: %s", exc)
 
-                        try:
-                            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
                             from app.services.snapshot_service import SnapshotService
 
                             snapshot_detail = await SnapshotService(self.session).get_snapshot(snapshot_id)
                             if snapshot_detail is not None:
-                                await SnapshotRuntimeStateService(self.session).sync_live_snapshot_payload(
+                                await runtime_state_service.sync_live_snapshot_payload(
                                     snapshot_id=snapshot_id,
                                     live_snapshot_payload=snapshot_detail,
                                     snapshot_revision=snapshot_detail.get("snapshot_revision"),
                                 )
-                        except Exception as exc:
-                            logger.debug("Snapshot runtime live-state sync after chain activation failed: %s", exc)
+                    except Exception as exc:
+                        logger.debug("Snapshot runtime live-state sync after chain activation failed: %s", exc)
             
             logger.info(f"Activated chain {chain_id}")
             return True
@@ -1715,7 +1705,7 @@ class ChainService:
             if not self.session:
                 return False
             
-            from app.database import Chain, Snapshot
+            from app.database import Chain
             
             result = await self.session.execute(
                 select(Chain).filter(Chain.id == chain_id)
@@ -1751,24 +1741,27 @@ class ChainService:
                 except (TypeError, ValueError):
                     snapshot_id = None
 
-                if snapshot_id is not None:
-                    snapshot_result = await self.session.execute(
-                        select(Snapshot).filter(Snapshot.id == snapshot_id)
-                    )
-                    snapshot = snapshot_result.scalar_one_or_none()
-                    if snapshot is not None:
-                        live_state_payload = (
-                            dict(snapshot.live_state_payload or {})
-                            if isinstance(snapshot.live_state_payload, dict)
+            await self.session.flush()
+
+            if snapshot_id is not None:
+                try:
+                    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+                    runtime_state_service = SnapshotRuntimeStateService(self.session)
+                    current_payload = await runtime_state_service.get_live_snapshot_payload()
+                    if isinstance(current_payload, dict) and int(current_payload.get("id") or 0) == snapshot_id:
+                        current_live_state = (
+                            dict(current_payload.get("live_state"))
+                            if isinstance(current_payload.get("live_state"), dict)
                             else {}
                         )
                         path_id = chain_config.get("path_id")
                         runtime_paths = [
                             dict(item)
-                            for item in live_state_payload.get("paths", [])
+                            for item in current_live_state.get("paths", [])
                             if isinstance(item, dict)
                         ]
-                        live_state_payload["paths"] = [
+                        runtime_paths = [
                             item
                             for item in runtime_paths
                             if not (
@@ -1779,37 +1772,22 @@ class ChainService:
                                 )
                             )
                         ]
-                        live_state_payload["active_runtime_chain_ids"] = [
-                            int(runtime_chain_id)
-                            for runtime_chain_id in live_state_payload.get("active_runtime_chain_ids", [])
-                            if int(runtime_chain_id) != chain_id
-                        ]
-                        snapshot.live_state_payload = live_state_payload
 
-            await self.session.flush()
-
-            if snapshot_id is not None:
-                try:
-                    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-                    active_runtime_chains = []
-                    snapshot_result = await self.session.execute(
-                        select(Snapshot).filter(Snapshot.id == snapshot_id)
-                    )
-                    snapshot = snapshot_result.scalar_one_or_none()
-                    if snapshot is not None:
-                        live_state_payload = (
-                            dict(snapshot.live_state_payload or {})
-                            if isinstance(snapshot.live_state_payload, dict)
-                            else {}
-                        )
-                        for runtime_chain_id in live_state_payload.get("active_runtime_chain_ids", []):
+                        active_runtime_chains = []
+                        for runtime_path in runtime_paths:
+                            runtime_chain_id = runtime_path.get("runtime_chain_id")
+                            if runtime_chain_id is None:
+                                continue
                             runtime_chain = await self.get_chain(int(runtime_chain_id))
                             if runtime_chain is not None:
                                 active_runtime_chains.append(runtime_chain)
 
-                        await SnapshotRuntimeStateService(self.session).sync_live_snapshot_paths(
+                        await runtime_state_service.sync_live_snapshot_paths(
                             snapshot_id=snapshot_id,
-                            snapshot_live_state_payload=live_state_payload,
+                            snapshot_live_state_payload={
+                                "activated_at": current_live_state.get("activated_at"),
+                                "paths": runtime_paths,
+                            },
                             runtime_chains=active_runtime_chains,
                         )
                 except Exception as exc:

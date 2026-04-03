@@ -63,7 +63,7 @@ function buildSyntheticRuntimeChains(detail: SnapshotDetail): Chain[] {
     return [{
       id: runtimeChainId,
       name: path.name,
-      is_active: detail.is_active,
+      is_active: detail.live_state?.is_live ?? false,
       created_at: detail.created_at ?? detail.live_state?.activated_at ?? new Date(0).toISOString(),
       updated_at: detail.updated_at ?? detail.live_state?.activated_at ?? new Date(0).toISOString(),
       plugins: [...(path.plugins ?? [])].map((plugin, index) => ({

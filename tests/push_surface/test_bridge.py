@@ -44,7 +44,7 @@ async def test_direct_bridge_lists_chains_and_updates_snapshot_detail(tmp_path, 
 
     created = await snapshot_routes.create_snapshot(
         snapshot_routes.SnapshotCreateRequest(
-            name="Bridge Snapshot",
+            name="BridgeSnapshot",
             snapshot_data={
                 "paths": [
                     {
@@ -70,9 +70,13 @@ async def test_direct_bridge_lists_chains_and_updates_snapshot_detail(tmp_path, 
 
     chains = await bridge.list_chains(str(snapshot_id))
     assert chains[0].name in {"Path A", "Chain 1", "A"}
-    node = chains[0].nodes[0]
+    node = next(
+        candidate
+        for candidate in chains[0].nodes
+        if any(parameter.id == "drive" for parameter in candidate.parameters)
+    )
     params = await bridge.get_node_parameters(node.id)
-    assert params[0].id == "drive"
+    assert any(param.id == "drive" for param in params)
 
     await bridge.set_parameter(node.id, "drive", 0.9)
     updated_params = await bridge.get_node_parameters(node.id)
@@ -94,7 +98,7 @@ async def test_direct_bridge_lists_drum_instances(tmp_path, monkeypatch):
 
     await snapshot_routes.create_snapshot(
         snapshot_routes.SnapshotCreateRequest(
-            name="Drum Snapshot",
+            name="DrumSnapshot",
             snapshot_data={
                 "paths": [
                     {

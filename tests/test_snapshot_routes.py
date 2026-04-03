@@ -172,7 +172,6 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert fetched["controls"]["monitoring_output_index"] == 2
         assert fetched["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "mix"
         assert fetched["io_bindings"]["monitoring_output_index"] == 2
-        assert fetched["session_notes"] == []
         assert fetched["chains"][0]["plugins"][0]["uri"] == NOISE_GATE_PLUGIN_URI
         assert fetched["chains"][0]["plugins"][0]["loader_state"]["system_block_role"] == "noise_gate"
         assert fetched["chains"][0]["plugins"][1]["uri"] == "map2://juce/delay"
@@ -200,18 +199,6 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
             )
         assert reorder_exc.value.status_code == 400
         assert "first position" in str(reorder_exc.value.detail).lower()
-
-        added_note = await routes.add_snapshot_session_note(
-            snapshot_id,
-            routes.SnapshotSessionNoteCreateRequest(text="Arena mix translated well"),
-        )
-        assert added_note["status"] == "success"
-        assert added_note["count"] == 1
-        assert added_note["notes"][0]["body"] == "Arena mix translated well"
-
-        listed_notes = await routes.list_snapshot_session_notes(snapshot_id)
-        assert listed_notes["count"] == 1
-        assert listed_notes["notes"][0]["body"] == "Arena mix translated well"
 
         patched = await routes.update_snapshot(
             snapshot_id,
@@ -673,7 +660,6 @@ def test_snapshot_export_and_import_bundle_routes(tmp_path, monkeypatch):
     registered_paths = {route.path for route in routes.router.routes}
     assert "/api/snapshots" in registered_paths
     assert "/api/snapshots/{snapshot_id}" in registered_paths
-    assert "/api/snapshots/{snapshot_id}/notes" in registered_paths
     assert "/api/snapshots/{snapshot_id}/revisions" in registered_paths
     assert "/api/snapshots/{snapshot_id}/revisions/{revision_number}/restore" in registered_paths
     assert "/api/snapshots/{snapshot_id}/activate" in registered_paths

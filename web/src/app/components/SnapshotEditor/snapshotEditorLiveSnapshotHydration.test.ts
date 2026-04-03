@@ -130,7 +130,6 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
         expression_mappings: [],
       },
       assets: [],
-      session_notes: [],
       live_state: {
         is_live: true,
         activated_at: '2026-03-30T08:00:00Z',
@@ -251,7 +250,6 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
         expression_mappings: [],
       },
       assets: [],
-      session_notes: [],
       live_state: {
         is_live: true,
         activated_at: '2026-03-30T08:00:00Z',
@@ -370,7 +368,6 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
         expression_mappings: [],
       },
       assets: [],
-      session_notes: [],
       live_state: {
         is_live: true,
         activated_at: '2026-03-30T08:00:00Z',

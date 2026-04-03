@@ -396,28 +396,30 @@
   justify-content: flex-start;
 }
 
-/* Floating snapshots toolbar — bottom dock */
+/* Floating snapshots toolbar — left-side rail */
 .juce-grid-page__floating-actions {
   position: fixed;
-  inset-inline-start: 50%;
-  inset-block-end: calc(0.625rem + env(safe-area-inset-bottom));
+  inset-inline-start: 0;
+  inset-block-start: 50%;
   display: flex;
-  justify-content: center;
-  max-inline-size: calc(100vw - 2rem);
-  transform: translateX(-50%);
+  align-items: center;
+  justify-content: flex-start;
+  max-inline-size: none;
+  transform: translateY(-50%);
   z-index: 97; /* above footer (96) and automation panel (95) */
 }
 
 .snapshot-toolbar-shell {
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-  max-inline-size: calc(100vw - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  max-inline-size: none;
 }
 
 .snapshot-toolbar__tray {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: stretch;
   overflow: hidden;
   min-inline-size: 0;
 }
@@ -432,52 +434,63 @@
   --snapshot-toolbar-spring-peach: #ffd9be;
   --snapshot-toolbar-spring-rose: #ffafd2;
   --snapshot-toolbar-spring-bluebell: #d0e2ff;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
+  padding: 0.75rem 0.5rem 0.75rem 0.375rem;
   border: 1px solid var(--cds-border-subtle-01, #525252);
   background: color-mix(in srgb, var(--cds-layer, #161616) 90%, #000000 10%);
   box-shadow: 0 0.75rem 2.25rem rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(16px);
   overflow: visible;
+  border-inline-start: none;
+  border-start-end-radius: 1rem;
+  border-end-end-radius: 1rem;
 }
 
 .snapshot-toolbar__actions {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
 .snapshot-toolbar__group {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: stretch;
   gap: 0.375rem;
   flex-wrap: nowrap;
 }
 
 .snapshot-toolbar__group + .snapshot-toolbar__group {
-  padding-inline-start: 0.75rem;
-  border-inline-start: 1px solid color-mix(in srgb, var(--cds-border-subtle-01, #525252) 88%, transparent);
+  padding-block-start: 0.625rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--cds-border-subtle-01, #525252) 88%, transparent);
 }
 
 .snapshot-toolbar__button.cds--btn {
   min-block-size: 2.75rem;
-  padding-inline-start: 0.95rem;
-  padding-inline-end: 3rem;
+  min-inline-size: 2.75rem;
+  padding-inline: 0.75rem;
   border: none;
   font-weight: 600;
 }
 
 .snapshot-toolbar__toggle.cds--btn {
   min-block-size: 2.75rem;
-  padding-inline: 1rem 1.125rem;
+  min-inline-size: 2.75rem;
+  padding-inline: 0.75rem;
   border: none;
   font-weight: 600;
   box-shadow: 0 0.75rem 2.25rem rgba(0, 0, 0, 0.24);
+  border-start-end-radius: 0.875rem;
+  border-end-end-radius: 0.875rem;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
 }
 
 .snapshot-toolbar__toggle.cds--btn:not(:disabled) {
@@ -505,7 +518,8 @@
 }
 
 .snapshot-toolbar__button.cds--btn .cds--btn__icon {
-  inset-inline-end: 0.95rem;
+  position: static;
+  margin: 0;
 }
 
 .snapshot-toolbar__button-label {
@@ -514,11 +528,20 @@
   gap: 0.45rem;
 }
 
-.snapshot-toolbar__dirty-dot {
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
+.snapshot-toolbar__button--update.cds--btn.is-dirty {
+  position: relative;
+}
+
+.snapshot-toolbar__button--update.cds--btn.is-dirty::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 0.35rem;
+  inset-inline-end: 0.35rem;
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
   border-radius: 50%;
   background: var(--cds-support-warning, #f1c21b);
+  box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--snapshot-toolbar-spring-lilac) 65%, white);
 }
 
 .snapshot-toolbar__button--new.cds--btn:not(:disabled) {
@@ -804,8 +827,8 @@
 
 .snapshot-toolbar__pulse {
   position: absolute;
-  top: 0.45rem;
-  inset-inline-start: 0.45rem;
+  inset-block-start: 0.55rem;
+  inset-inline-start: 0.55rem;
   inline-size: 0.5rem;
   block-size: 0.5rem;
   border-radius: 50%;
@@ -1426,7 +1449,7 @@
 .juce-grid-page__snapshot-status-hero,
 .juce-grid-page__snapshot-status-empty {
   padding: 1rem 1rem 1.125rem;
-  border: 1px solid var(--cds-border-subtle, var(--border));
+  border: none;
   background: transparent;
 }
 
@@ -1966,7 +1989,7 @@
 
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn {
   min-block-size: 3rem;
-  min-inline-size: 8.75rem;
+  min-inline-size: 9.5rem;
   justify-content: space-between;
   padding-inline: 1rem 0.875rem;
   border-color: var(--cds-button-primary, #0f62fe);
@@ -1984,24 +2007,7 @@
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn .cds--btn__text {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
   font-weight: 600;
-}
-
-.juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn .cds--btn__text::before {
-  content: "i";
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  flex: 0 0 0.875rem;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.625rem;
-  font-weight: 700;
-  line-height: 1;
-  text-transform: lowercase;
 }
 
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn .cds--btn__icon {
@@ -4930,54 +4936,6 @@
   padding-right: 0;
 }
 
-.juce-grid-page__session-notes-shell {
-  padding-top: 0;
-}
-
-.juce-grid-page__session-notes-accordion .cds--accordion__content {
-  padding-right: 0;
-}
-
-.juce-grid-page__session-notes-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem 0 0;
-}
-
-.juce-grid-page__session-notes-copy,
-.juce-grid-page__session-notes-empty,
-.juce-grid-page__session-note-body {
-  margin: 0;
-}
-
-.juce-grid-page__session-notes-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.juce-grid-page__session-notes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.juce-grid-page__session-note {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer, var(--surface));
-}
-
-.juce-grid-page__session-note-timestamp {
-  margin: 0;
-  color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 .juce-grid-page__browser-category-title {
   display: inline-flex;
   align-items: center;
@@ -7159,18 +7117,18 @@
   }
 
   .juce-grid-page__floating-actions {
-    inset-inline-start: 50%;
-    inset-block-end: calc(0.5rem + env(safe-area-inset-bottom));
-    max-inline-size: calc(100vw - 1rem);
+    inset-inline-start: 0;
+    inset-block-start: 50%;
+    max-inline-size: none;
   }
 
   .snapshot-toolbar-shell {
-    max-inline-size: calc(100vw - 1rem);
+    max-inline-size: none;
   }
 
   .snapshot-toolbar {
     gap: 0.5rem;
-    padding: 0.5rem 0.625rem;
+    padding: 0.625rem 0.4375rem 0.625rem 0.25rem;
   }
 
   .snapshot-toolbar__actions {
@@ -7178,7 +7136,7 @@
   }
 
   .snapshot-toolbar__tray {
-    max-inline-size: calc(100vw - 8rem);
+    max-inline-size: none;
   }
 
   .snapshot-toolbar__group {
@@ -7186,18 +7144,19 @@
   }
 
   .snapshot-toolbar__group + .snapshot-toolbar__group {
-    padding-inline-start: 0.5rem;
+    padding-block-start: 0.5rem;
   }
 
   .snapshot-toolbar__button.cds--btn {
     min-block-size: 2.5rem;
-    padding-inline-start: 0.875rem;
-    padding-inline-end: 2.75rem;
+    min-inline-size: 2.5rem;
+    padding-inline: 0.625rem;
   }
 
   .snapshot-toolbar__toggle.cds--btn {
     min-block-size: 2.5rem;
-    padding-inline: 0.875rem 1rem;
+    min-inline-size: 2.5rem;
+    padding-inline: 0.625rem;
   }
 
   .snapshot-toolbar__icon-button.cds--btn {

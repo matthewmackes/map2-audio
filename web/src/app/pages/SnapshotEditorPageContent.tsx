@@ -13,7 +13,7 @@
  * - Audio configuration
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { Fragment, useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
@@ -58,6 +58,7 @@ import {
   Layer,
   MenuButton,
   MenuItem,
+  MenuItemDivider,
   Modal,
   OverflowMenu,
   OverflowMenuItem,
@@ -68,7 +69,6 @@ import {
   TabList,
   Tabs,
   Tag,
-  TextArea,
   TextInput,
   Tile,
 } from '@carbon/react'
@@ -79,7 +79,18 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
-import { fetchLiveSnapshotOrNull, removeRuntimeChainsFromLiveSnapshot } from './snapshotLiveState'
+import {
+  invalidateAuthorityAwareLiveSnapshot,
+  removeRuntimeChainsFromLiveSnapshot,
+  restoreAuthorityAwareLiveSnapshot,
+  setAuthorityAwareLiveSnapshot,
+} from './snapshotLiveState'
+import {
+  resolveAuthoritySnapshotId,
+  resolveControlPlaneSnapshot,
+  resolveEditorActiveSnapshot,
+  resolvePreferredLiveRuntimeDisplayState,
+} from './snapshotAuthorityState'
 import { getCategoryConfig } from '../grid/shared'
 import type { AutomationLane } from '../grid/shared'
 import {
@@ -96,12 +107,14 @@ import {
   snapshotsApi,
   flowSnapshotDataToSnapshotPayload,
 } from '../../map2/clients/snapshots'
-import { fetchJson } from '../../map2/http'
+import { audioStateApi } from '../../map2/clients/audioState'
+import { ApiError, fetchJson } from '../../map2/http'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
 import { useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
+import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
@@ -125,6 +138,7 @@ import {
   normalizeSnapshotName,
   validateSnapshotName,
 } from '../utils/snapshotNames'
+import { buildSnapshotDetailsMenuModel } from './snapshotDetailsMenuModel'
 import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
   buildSnapshotActivationFailureToastMessage,
@@ -148,7 +162,7 @@ import {
   sanitizeFootswitchLabel,
 } from '../utils/snapshotFootswitchLabels'
 import {
-  isSnapshotCurrentRuntimeLive,
+  isSnapshotCurrentAuthorityLive,
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import {
@@ -322,7 +336,6 @@ function mergePreviewIntoSnapshotDetail(
     activated_at: snapshot.activated_at,
     created_at: snapshot.created_at,
     updated_at: snapshot.updated_at,
-    session_notes: snapshot.session_notes,
     deployments: snapshot.deployments,
   }
 }
@@ -345,14 +358,6 @@ function describeFlowUpdate(updates: Partial<FlowSlot>): string {
   }
   return 'Edit channel'
 }
-
-const SESSION_NOTES_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit',
-  hour: 'numeric',
-  minute: '2-digit',
-})
 
 const FEATURED_NATIVE_BROWSER_GROUPS = [
   {
@@ -1080,7 +1085,6 @@ export function SnapshotEditorPage() {
   const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
   const [goLiveDiffExpanded, setGoLiveDiffExpanded] = useState(false)
   const [dismissedGoLiveDiffKey, setDismissedGoLiveDiffKey] = useState<string | null>(null)
-  const [sessionNoteDraft, setSessionNoteDraft] = useState('')
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
   const [flowOutputClipTimestamps, setFlowOutputClipTimestamps] = useState<Record<string, number>>({})
@@ -1323,11 +1327,25 @@ export function SnapshotEditorPage() {
     refetchInterval: snapshotStandardCadence,
   })
 
-  const liveSnapshotQuery = useQuery({
-    queryKey: ['snapshots', 'live'],
-    queryFn: fetchLiveSnapshotOrNull,
-    refetchInterval: snapshotStandardCadence,
+  const committedAudioStateQuery = useCommittedAudioState({
+    refetchInterval: 2_000,
+  })
+  const authoritySnapshotId = resolveAuthoritySnapshotId(committedAudioStateQuery.data?.value ?? null)
+  const authoritySnapshotDetailQuery = useQuery({
+    queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
+    queryFn: async () => {
+      try {
+        return await snapshotsApi.get(authoritySnapshotId!)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    },
+    enabled: authoritySnapshotId != null && !editorSnapshotOverride,
     retry: false,
+    refetchInterval: snapshotStandardCadence,
   })
   const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
     refetchInterval: snapshotStandardCadence,
@@ -1387,7 +1405,31 @@ export function SnapshotEditorPage() {
     },
     refetchOnWindowFocus: false,
   })
-  const currentEditorSnapshotId = editorSnapshotOverride?.id ?? liveSnapshotQuery.data?.id ?? null
+  const runtimeLiveState = runtimeStateQuery.data ?? null
+  const committedAudioState = committedAudioStateQuery.data?.value ?? null
+  const authoritySnapshotDetail = authoritySnapshotDetailQuery.data ?? null
+  const controlPlaneSnapshot = useMemo(
+    () => resolveControlPlaneSnapshot({
+      committedAudioState,
+      authoritySnapshotDetail,
+    }),
+    [authoritySnapshotDetail, committedAudioState],
+  )
+  const activeSnapshot = useMemo(
+    () => resolveEditorActiveSnapshot({
+      editorSnapshotOverride,
+      controlPlaneSnapshot,
+    }),
+    [controlPlaneSnapshot, editorSnapshotOverride],
+  )
+  const setControlPlaneSnapshotCaches = useCallback((snapshot: SnapshotDetail) => {
+    setAuthorityAwareLiveSnapshot(queryClient, snapshot, authoritySnapshotId)
+  }, [authoritySnapshotId, queryClient])
+
+  const invalidateControlPlaneSnapshotCaches = useCallback((options?: { includeDesired?: boolean }) => {
+    invalidateAuthorityAwareLiveSnapshot(queryClient, options)
+  }, [queryClient])
+  const currentEditorSnapshotId = editorSnapshotOverride?.id ?? controlPlaneSnapshot?.id ?? authoritySnapshotId ?? null
   const snapshotRevisionsQuery = useQuery({
     queryKey: ['snapshots', 'revisions', currentEditorSnapshotId],
     queryFn: () => snapshotsApi.listRevisions(currentEditorSnapshotId!),
@@ -1402,7 +1444,7 @@ export function SnapshotEditorPage() {
       .filter((name): name is string => typeof name === 'string' && name.trim().length > 0),
     [snapshotsSummaryQuery.data?.snapshots],
   )
-  const snapshotEntryRequired = liveSnapshotQuery.isSuccess && currentEditorSnapshotId === null
+  const snapshotEntryRequired = committedAudioStateQuery.isSuccess && currentEditorSnapshotId === null
 
   const openArtifactsSnapshots = useCallback(() => {
     navigate('/artifacts?category=snapshots')
@@ -1534,7 +1576,8 @@ export function SnapshotEditorPage() {
           hydration.snapshotData.activeFlowIndex,
         )
         queryClient.setQueryData(['chains'], hydration.chainsResponse)
-        queryClient.setQueryData(['snapshots', 'live'], event.snapshot_data)
+        setControlPlaneSnapshotCaches(event.snapshot_data)
+        invalidateControlPlaneSnapshotCaches({ includeDesired: true })
         lastHydratedLiveSnapshotFingerprintRef.current = hydration.fingerprint
         setFlowSlots(normalizedSnapshotState.flowSlots)
         setRouting(normalizedSnapshotState.routing)
@@ -1547,7 +1590,7 @@ export function SnapshotEditorPage() {
           { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
         )
       }
-    }, [clearSnapshotsDirty, pushToast, queryClient]),
+    }, [clearSnapshotsDirty, invalidateControlPlaneSnapshotCaches, pushToast, queryClient, setControlPlaneSnapshotCaches]),
   })
 
   useWebSocketTopic('chain_updates', useCallback((_data, message) => {
@@ -1555,8 +1598,8 @@ export function SnapshotEditorPage() {
       return
     }
     void queryClient.invalidateQueries({ queryKey: ['chains'] })
-    void queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
-  }, [queryClient]))
+    invalidateControlPlaneSnapshotCaches()
+  }, [invalidateControlPlaneSnapshotCaches, queryClient]))
 
   useEffect(() => {
     if (!snapshotFastCadence) {
@@ -1574,13 +1617,14 @@ export function SnapshotEditorPage() {
           return
         }
         const events = Array.isArray(payload.events) ? payload.events : []
-        const liveSnapshotId = liveSnapshotQuery.data?.id ?? null
+        const liveSnapshotId = activeSnapshot?.id ?? authoritySnapshotId ?? null
         if (events.length > 0 && liveSnapshotId != null) {
           for (const event of events) {
             if (event.action === 'perform.tap_tempo') {
               const tapped = await snapshotsApi.tapTempo(liveSnapshotId, Date.now())
               if (tapped.snapshot) {
-                queryClient.setQueryData(['snapshots', 'live'], tapped.snapshot)
+                setControlPlaneSnapshotCaches(tapped.snapshot)
+                invalidateControlPlaneSnapshotCaches()
               }
             }
           }
@@ -1602,7 +1646,7 @@ export function SnapshotEditorPage() {
       closed = true
       window.clearInterval(id)
     }
-  }, [liveSnapshotQuery.data?.id, queryClient, snapshotFastCadence])
+  }, [activeSnapshot?.id, authoritySnapshotId, invalidateControlPlaneSnapshotCaches, queryClient, setControlPlaneSnapshotCaches, snapshotFastCadence])
 
   // ============================================================================
   // Effects for Enhanced Features
@@ -1661,8 +1705,8 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     const now = Date.now()
-    const clipSourceChains = liveSnapshotQuery.data
-      ? buildEffectiveLiveSnapshotChains(liveSnapshotQuery.data, chainsQuery.data).chains
+    const clipSourceChains = controlPlaneSnapshot
+      ? buildEffectiveLiveSnapshotChains(controlPlaneSnapshot, chainsQuery.data).chains
       : (chainsQuery.data?.chains ?? [])
     const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
 
@@ -1690,12 +1734,12 @@ export function SnapshotEditorPage() {
 
       return changed ? next : previous
     })
-  }, [chainsQuery.data, flowClipPeakEntries, flowSlots, liveSnapshotQuery.data])
+  }, [chainsQuery.data, controlPlaneSnapshot, flowClipPeakEntries, flowSlots])
 
   useEffect(() => {
     const now = Date.now()
-    const clipSourceChains = liveSnapshotQuery.data
-      ? buildEffectiveLiveSnapshotChains(liveSnapshotQuery.data, chainsQuery.data).chains
+    const clipSourceChains = controlPlaneSnapshot
+      ? buildEffectiveLiveSnapshotChains(controlPlaneSnapshot, chainsQuery.data).chains
       : (chainsQuery.data?.chains ?? [])
     const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
 
@@ -1730,7 +1774,7 @@ export function SnapshotEditorPage() {
 
     setFlowInputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'input'))
     setFlowOutputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'output'))
-  }, [chainsQuery.data, flowClipPeakEntries, flowSlots, liveSnapshotQuery.data])
+  }, [chainsQuery.data, controlPlaneSnapshot, flowClipPeakEntries, flowSlots])
 
   useEffect(() => {
     const expiryDelays = Object.values(flowClipTimestamps)
@@ -1813,30 +1857,34 @@ export function SnapshotEditorPage() {
   // ============================================================================
 
   const chains = chainsQuery.data?.chains || []
-  const liveSnapshot = liveSnapshotQuery.data ?? null
-  const runtimeLiveState = runtimeStateQuery.data ?? null
-  const activeSnapshot = useMemo(
-    () => editorSnapshotOverride ?? liveSnapshot,
-    [editorSnapshotOverride, liveSnapshot],
+  const authoritativeAudioState = useMemo(
+    () => {
+      if (!activeSnapshot || !committedAudioState) {
+        return null
+      }
+      return resolveAuthoritySnapshotId(committedAudioState) === activeSnapshot.id
+        ? committedAudioState
+        : null
+    },
+    [activeSnapshot, committedAudioState],
   )
   const snapshotSetlistMode = specialSettings?.snapshotSetlistMode ?? false
   useEffect(() => {
-    if (editorSnapshotOverride && liveSnapshot && editorSnapshotOverride.id === liveSnapshot.id) {
+    if (editorSnapshotOverride && controlPlaneSnapshot && editorSnapshotOverride.id === controlPlaneSnapshot.id) {
       setEditorSnapshotOverride(null)
     }
-  }, [editorSnapshotOverride, liveSnapshot])
+  }, [controlPlaneSnapshot, editorSnapshotOverride])
   const snapshotEditingLocked = Boolean(activeSnapshot?.is_locked)
   const snapshotGoLiveState = useMemo(
     () => resolveSnapshotGoLiveState({
       snapshot: activeSnapshot,
-      runtimeLiveState,
+      authoritativeAudioState,
       pendingSnapshotId: pendingGoLiveSnapshotId,
       failedSnapshotId: failedGoLiveSnapshotId,
       failureReason: goLiveFailureReason,
     }),
-    [activeSnapshot, failedGoLiveSnapshotId, goLiveFailureReason, pendingGoLiveSnapshotId, runtimeLiveState],
+    [activeSnapshot, authoritativeAudioState, failedGoLiveSnapshotId, goLiveFailureReason, pendingGoLiveSnapshotId],
   )
-  const sessionNotes = activeSnapshot?.session_notes ?? []
   const snapshotMidiEntries = useMemo(
     () => collectSnapshotMidiMapEntries(activeSnapshot),
     [activeSnapshot],
@@ -1872,10 +1920,13 @@ export function SnapshotEditorPage() {
       return
     }
 
-    queryClient.setQueryData<SnapshotDetail | null | undefined>(['snapshots', 'live'], (current) => (
-      removeRuntimeChainsFromLiveSnapshot(current, chainIds)
-    ))
-  }, [queryClient])
+    if (authoritySnapshotId != null) {
+      queryClient.setQueryData<SnapshotDetail | null | undefined>(
+        ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
+        (current) => removeRuntimeChainsFromLiveSnapshot(current, chainIds),
+      )
+    }
+  }, [authoritySnapshotId, queryClient])
   const desiredLiveChainIds = useMemo(
     () => getJuceGridDesiredLiveChainIds(flowSlots),
     [flowSlots],
@@ -2012,9 +2063,9 @@ export function SnapshotEditorPage() {
     if (pendingGoLiveSnapshotId == null) {
       if (
         failedGoLiveSnapshotId != null
-        && runtimeLiveState
-        && (runtimeLiveState.display_state === 'live' || runtimeLiveState.display_state === 'live_warning')
-        && runtimeLiveState.snapshot_id === failedGoLiveSnapshotId
+        && committedAudioState
+        && (committedAudioState.engine.display_state === 'live' || committedAudioState.engine.display_state === 'live_warning')
+        && committedAudioState.source_snapshot?.snapshot_id === failedGoLiveSnapshotId
       ) {
         setFailedGoLiveSnapshotId(null)
         setGoLiveFailureReason(null)
@@ -2023,9 +2074,9 @@ export function SnapshotEditorPage() {
     }
 
     if (
-      runtimeLiveState
-      && (runtimeLiveState.display_state === 'live' || runtimeLiveState.display_state === 'live_warning')
-      && runtimeLiveState.snapshot_id === pendingGoLiveSnapshotId
+      committedAudioState
+      && (committedAudioState.engine.display_state === 'live' || committedAudioState.engine.display_state === 'live_warning')
+      && committedAudioState.source_snapshot?.snapshot_id === pendingGoLiveSnapshotId
     ) {
       setPendingGoLiveSnapshotId(null)
       setFailedGoLiveSnapshotId(null)
@@ -2033,25 +2084,26 @@ export function SnapshotEditorPage() {
       return
     }
 
-    const runtimeFailureReason = runtimeLiveState?.failure_reason?.trim()
-    if (runtimeFailureReason) {
+    const authorityFailureReason = committedAudioState?.derived.inactive_messages.find((message) => message.trim().length > 0)?.trim()
+      ?? null
+    if (authorityFailureReason) {
       setPendingGoLiveSnapshotId(null)
       setFailedGoLiveSnapshotId(pendingGoLiveSnapshotId)
-      setGoLiveFailureReason(runtimeFailureReason)
+      setGoLiveFailureReason(authorityFailureReason)
     }
-  }, [failedGoLiveSnapshotId, pendingGoLiveSnapshotId, runtimeLiveState])
+  }, [committedAudioState, failedGoLiveSnapshotId, pendingGoLiveSnapshotId])
 
   useEffect(() => {
     if (
       activeSnapshot
       && failedGoLiveSnapshotId != null
       && failedGoLiveSnapshotId !== activeSnapshot.id
-      && isSnapshotCurrentRuntimeLive(activeSnapshot, runtimeLiveState)
+      && isSnapshotCurrentAuthorityLive(activeSnapshot, authoritativeAudioState)
     ) {
       setFailedGoLiveSnapshotId(null)
       setGoLiveFailureReason(null)
     }
-  }, [activeSnapshot, failedGoLiveSnapshotId, runtimeLiveState])
+  }, [activeSnapshot, authoritativeAudioState, failedGoLiveSnapshotId])
 
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
     return slot.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
@@ -2154,15 +2206,22 @@ export function SnapshotEditorPage() {
         tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
         ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
       })
-      return snapshotsApi.activate(created.snapshot_id)
+      const activated = await audioStateApi.activateSnapshot(created.snapshot_id, {
+        triggered_by: 'snapshot_editor',
+      })
+      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? created.snapshot_id
+      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      return {
+        snapshot_id: activatedSnapshotId,
+        snapshot_data: snapshotData,
+      }
     },
     onSuccess: (response) => {
       setEditorSnapshotOverride(null)
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
-      if (response.runtime_live_state) {
-        queryClient.setQueryData(['snapshots', 'runtime', 'live-state', 'local'], response.runtime_live_state)
-      }
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
       hydrateEditorFromSnapshot(response.snapshot_data, {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
@@ -2185,7 +2244,7 @@ export function SnapshotEditorPage() {
     mutationFn: (snapshotId: number) => snapshotsApi.openDraft(snapshotId),
     onSuccess: (response) => {
       const detail = response.snapshot
-      if (liveSnapshot?.id === detail.id) {
+      if (controlPlaneSnapshot?.id === detail.id) {
         setEditorSnapshotOverride(null)
       } else {
         setEditorSnapshotOverride(detail)
@@ -2228,15 +2287,27 @@ export function SnapshotEditorPage() {
   })
 
   const activateCurrentSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => snapshotsApi.activate(snapshotId),
+    mutationFn: async (snapshotId: number) => {
+      const activated = await audioStateApi.activateSnapshot(snapshotId, {
+        triggered_by: 'snapshot_editor',
+      })
+      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? snapshotId
+      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      return {
+        snapshot_id: activatedSnapshotId,
+        snapshot_data: snapshotData,
+      }
+    },
     onMutate: (snapshotId) => {
       setPendingGoLiveSnapshotId(snapshotId)
       setFailedGoLiveSnapshotId(null)
       setGoLiveFailureReason(null)
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(['snapshots', 'live'], response.snapshot_data)
+      setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
       setEditorSnapshotOverride(null)
       hydrateEditorFromSnapshot(response.snapshot_data, {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
@@ -2520,34 +2591,6 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const addSessionNoteMutation = useMutation({
-    mutationFn: async ({ snapshotId, text }: { snapshotId: number; text: string }) =>
-      snapshotsApi.addSessionNote(snapshotId, text),
-    onSuccess: (response) => {
-      queryClient.setQueryData<SnapshotDetail | null>(['snapshots', 'live'], (current) => (
-        current && current.id === response.snapshot_id
-          ? { ...current, session_notes: response.notes }
-          : current
-      ))
-      queryClient.setQueryData<SnapshotDetail | undefined>(['snapshots', 'detail', response.snapshot_id], (current) => (
-        current
-          ? { ...current, session_notes: response.notes }
-          : current
-      ))
-      setEditorSnapshotOverride((current) => (
-        current && current.id === response.snapshot_id
-          ? { ...current, session_notes: response.notes }
-          : current
-      ))
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      setSessionNoteDraft('')
-      pushToast('Session note added', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to add session note', 'error')
-    },
-  })
-
   const setEditorSnapshotState = useCallback((data: SnapshotDraftData) => {
     const normalizedSnapshotState = normalizeRuntimeGridState(
       data.flowSlots,
@@ -2574,16 +2617,25 @@ export function SnapshotEditorPage() {
     syncSnapshotDirtyState(nextDraft)
   }, [snapshotUndoRedo.push, syncSnapshotDirtyState])
 
+  const cancelControlPlaneSnapshotCaches = useCallback(async () => {
+    if (authoritySnapshotId != null) {
+      await queryClient.cancelQueries({ queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId] })
+    }
+  }, [authoritySnapshotId, queryClient])
+
   const syncSnapshotDetailCaches = useCallback((snapshot: SnapshotDetail) => {
     queryClient.setQueryData(['snapshots', 'detail', snapshot.id], snapshot)
-    if (liveSnapshot?.id === snapshot.id) {
-      queryClient.setQueryData(['snapshots', 'live'], snapshot)
+    if (authoritySnapshotId === snapshot.id) {
+      queryClient.setQueryData(['snapshots', 'detail', 'authority-active', authoritySnapshotId], snapshot)
+    }
+    if (controlPlaneSnapshot?.id === snapshot.id) {
+      setControlPlaneSnapshotCaches(snapshot)
       setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? null : current))
       return
     }
 
     setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? snapshot : current))
-  }, [liveSnapshot?.id, queryClient])
+  }, [authoritySnapshotId, controlPlaneSnapshot?.id, queryClient, setControlPlaneSnapshotCaches])
 
   const hydrateEditorFromSnapshot = useCallback((
     detail: SnapshotDetail,
@@ -2657,7 +2709,7 @@ export function SnapshotEditorPage() {
   ])
 
   useEffect(() => {
-    if (!liveSnapshotQuery.isSuccess) {
+    if (!committedAudioStateQuery.isSuccess) {
       return
     }
 
@@ -2681,8 +2733,8 @@ export function SnapshotEditorPage() {
   }, [
     activeSnapshot,
     clearSnapshotsDirty,
+    committedAudioStateQuery.isSuccess,
     hydrateEditorFromSnapshot,
-    liveSnapshotQuery.isSuccess,
     queryClient,
     snapshotUndoRedo.clear,
   ])
@@ -2860,7 +2912,7 @@ export function SnapshotEditorPage() {
     }
     return map
   }, [pluginsQuery.data])
-  const goLiveDiffSourceSnapshot = runtimeLiveState?.live_snapshot_payload ?? liveSnapshot
+  const goLiveDiffSourceSnapshot = controlPlaneSnapshot
   const goLiveDiff = useMemo(() => {
     if (
       !activeSnapshot
@@ -3733,7 +3785,7 @@ export function SnapshotEditorPage() {
 
   type ChainActivationMutationContext = {
     previousChains?: ChainsResponse
-    previousLiveSnapshot?: SnapshotDetail | null
+    previousAuthorityActiveSnapshot?: SnapshotDetail | null
   }
 
   const deleteMutation = useMutation({
@@ -3896,7 +3948,7 @@ export function SnapshotEditorPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      invalidateControlPlaneSnapshotCaches()
       markSnapshotsDirty()
       pushToast('Chain activated', 'success')
     },
@@ -3912,9 +3964,11 @@ export function SnapshotEditorPage() {
     mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
     onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
+      await cancelControlPlaneSnapshotCaches()
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
+      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
+        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
+        : undefined
       const nextActiveChainIds = new Set(
         (previousChains?.chains ?? [])
           .filter((chain) => chain.is_active && chain.id !== chainId)
@@ -3924,11 +3978,11 @@ export function SnapshotEditorPage() {
         applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
       ))
       pruneLiveSnapshotCache([chainId])
-      return { previousChains, previousLiveSnapshot }
+      return { previousChains, previousAuthorityActiveSnapshot }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      invalidateControlPlaneSnapshotCaches()
       markSnapshotsDirty()
       pushToast('Chain deactivated', 'info')
     },
@@ -3936,8 +3990,8 @@ export function SnapshotEditorPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      if (context?.previousLiveSnapshot !== undefined) {
-        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
+      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
+        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
       }
       pushToast(`Failed to deactivate: ${error}`, 'error')
     },
@@ -3950,9 +4004,11 @@ export function SnapshotEditorPage() {
     },
     onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
+      await cancelControlPlaneSnapshotCaches()
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
+      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
+        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
+        : undefined
       const nextActiveChainIds = new Set(
         (previousChains?.chains ?? [])
           .filter((chain) => chain.is_active && chain.id !== chainId)
@@ -3962,11 +4018,11 @@ export function SnapshotEditorPage() {
         applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
       ))
       pruneLiveSnapshotCache([chainId])
-      return { previousChains, previousLiveSnapshot }
+      return { previousChains, previousAuthorityActiveSnapshot }
     },
     onSuccess: (chainId) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      invalidateControlPlaneSnapshotCaches()
       const killedChain = chains.find((chain) => chain.id === chainId)
       markSnapshotsDirty()
       pushToast(
@@ -3978,8 +4034,8 @@ export function SnapshotEditorPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      if (context?.previousLiveSnapshot !== undefined) {
-        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
+      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
+        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
       }
       pushToast(`Failed to kill live path: ${error}`, 'error')
     },
@@ -4012,9 +4068,11 @@ export function SnapshotEditorPage() {
     },
     onMutate: async (nextActiveChainIds): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await queryClient.cancelQueries({ queryKey: ['snapshots', 'live'] })
+      await cancelControlPlaneSnapshotCaches()
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousLiveSnapshot = queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'live'])
+      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
+        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
+        : undefined
       const currentActiveChainIds = new Set(
         (previousChains?.chains ?? [])
           .filter((chain) => chain.is_active)
@@ -4025,11 +4083,11 @@ export function SnapshotEditorPage() {
         applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
       ))
       pruneLiveSnapshotCache(chainIdsToDeactivate)
-      return { previousChains, previousLiveSnapshot }
+      return { previousChains, previousAuthorityActiveSnapshot }
     },
     onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'live'] })
+      invalidateControlPlaneSnapshotCaches()
       pushToast(
         chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
           ? 'Live chains already match the editor'
@@ -4041,8 +4099,8 @@ export function SnapshotEditorPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      if (context?.previousLiveSnapshot !== undefined) {
-        queryClient.setQueryData(['snapshots', 'live'], context.previousLiveSnapshot)
+      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
+        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
       }
       pushToast(`Failed to update live chains: ${error}`, 'error')
     },
@@ -5160,14 +5218,6 @@ export function SnapshotEditorPage() {
     renameActiveSnapshotMutation.mutate({ snapshotId: activeSnapshot.id, name: normalizedName })
   }, [activeSnapshot, renameSnapshotError, renameSnapshotName, renameActiveSnapshotMutation])
 
-  const submitSessionNote = useCallback(() => {
-    const normalizedText = sessionNoteDraft.trim()
-    if (!activeSnapshot || !normalizedText) {
-      return
-    }
-    addSessionNoteMutation.mutate({ snapshotId: activeSnapshot.id, text: normalizedText })
-  }, [activeSnapshot, addSessionNoteMutation, sessionNoteDraft])
-
   const saveSnapshotBlockFocusRange = useCallback(() => {
     if (!activeSnapshot || blockFocusSaveDisabled) {
       return
@@ -5321,11 +5371,6 @@ export function SnapshotEditorPage() {
   const goToNextSnapshot = useCallback(() => {
     loadEditorSnapshot(nextEditorSnapshot)
   }, [loadEditorSnapshot, nextEditorSnapshot])
-  const openFavoriteSnapshotFromToolbar = useCallback((snapshotId: number) => {
-    const snapshot = favoriteSnapshotsForToolbar.find((candidate) => candidate.id === snapshotId) ?? null
-    loadEditorSnapshot(snapshot)
-  }, [favoriteSnapshotsForToolbar, loadEditorSnapshot])
-
   const handleGoLive = useCallback(() => {
     if (!activeSnapshot || snapshotGoLiveState.disabled || snapshotGoLiveState.phase === 'live') {
       return
@@ -5372,17 +5417,6 @@ export function SnapshotEditorPage() {
       favoriteVisible={Boolean(activeSnapshot)}
       favoriteActive={Boolean(activeSnapshot?.is_favorite)}
       favoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
-      favoriteSnapshots={favoriteSnapshotsForToolbar.map((snapshot) => ({
-        id: snapshot.id,
-        name: snapshot.name,
-        programNumber: snapshot.program_number,
-        isActive: snapshot.id === activeSnapshot?.id,
-      }))}
-      onOpenFavoriteSnapshot={openFavoriteSnapshotFromToolbar}
-      onToggleSetlist={() => { void toggleSnapshotSetlistMode() }}
-      setlistMode={snapshotSetlistMode}
-      setlistPending={snapshotSetlistModePending}
-      setlistTitle={snapshotSetlistModeTitle}
       onOpenWorkspace={openArtifactsSnapshots}
     />
   )
@@ -6901,7 +6935,10 @@ export function SnapshotEditorPage() {
   ) : null
   const canPageTabletFocusedBranchBackward = tabletFocusedBranchPage > 0
   const canPageTabletFocusedBranchForward = tabletFocusedBranchPage < tabletFocusedBranchPageCount - 1
-  const liveRuntimeDisplayState = runtimeStateQuery.data?.display_state
+  const liveRuntimeDisplayState = resolvePreferredLiveRuntimeDisplayState({
+    runtimeLiveState,
+    authoritativeAudioState,
+  })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
   const liveRuntimeButtonLabel = liveRuntimeDisplayState === 'live_warning'
     ? 'Live Warning'
@@ -6912,99 +6949,101 @@ export function SnapshotEditorPage() {
         : 'Live State'
   const snapshotDetailsAction = (
     <MenuButton
-      label="Details"
+      label="Actions"
       size="sm"
       kind="primary"
       menuAlignment="bottom-end"
       menuBorder
       className="juce-grid-page__snapshot-status-details-menu"
     >
-      <MenuItem
-        label="Add path"
-        renderIcon={Add}
-        className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--add"
-        onClick={addFlow}
-        disabled={snapshotEditingLocked || flowSlots.length >= MAX_FLOWS}
-      />
-      <MenuItem
-        label="Reset paths"
-        kind="danger"
-        renderIcon={TrashCan}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowClearFlowsModal(true)}
-        disabled={snapshotEditingLocked || flowSlots.length <= 1}
-      />
-      <MenuItem
-        label="Network Routing"
-        renderIcon={Network_3}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowAudioNodesModal(true)}
-      />
-      <MenuItem
-        label={liveRuntimeButtonLabel}
-        renderIcon={Launch}
-        className={`juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--live ${liveRuntimeActive ? 'is-live' : ''}`}
-        onClick={() => setShowLiveRuntimeModal(true)}
-      />
-      <MenuItem
-        label="Local Routing"
-        renderIcon={Flow}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowRoutingTopologyModal(true)}
-        disabled={snapshotEditingLocked}
-      />
-      <MenuItem
-        label="I/O Devices"
-        renderIcon={Headphones}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowSnapshotIoModal(true)}
-      />
-      <MenuItem
-        label="Output Reference"
-        renderIcon={Meter}
-        className="juce-grid-page__snapshot-status-details-item"
-        disabled={!activeSnapshot}
-        onClick={() => setShowOutputReferenceModal(true)}
-      />
-      <MenuItem
-        label="Noise Gate Defaults"
-        renderIcon={SettingsAdjust}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowNoiseGateDefaultsModal(true)}
-      />
-      <MenuItem
-        label={duplicateActiveSnapshotMutation.isPending ? 'Duplicating…' : 'Duplicate'}
-        renderIcon={Copy}
-        className="juce-grid-page__snapshot-status-details-item"
-        disabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
-        onClick={() => duplicateActiveSnapshotMutation.mutate()}
-      />
-      <MenuItem
-        label="Perform"
-        renderIcon={Music}
-        className="juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--perform"
-        onClick={() => setShowPerformModal(true)}
-      />
-      <MenuItem
-        label="MIDI"
-        renderIcon={Music}
-        className={`juce-grid-page__snapshot-status-details-item juce-grid-page__snapshot-status-details-item--midi ${midiLearnActive || midiLearnInProgress ? 'is-learning' : ''}`}
-        title={midiLearnActive || midiLearnInProgress ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`}
-        onClick={() => setMidiModalOpen(true)}
-      />
-      <MenuItem
-        label="Version History"
-        renderIcon={Renew}
-        className="juce-grid-page__snapshot-status-details-item"
-        disabled={!activeSnapshot}
-        onClick={() => setShowVersionHistoryModal(true)}
-      />
-      <MenuItem
-        label="Shortcuts"
-        renderIcon={Information}
-        className="juce-grid-page__snapshot-status-details-item"
-        onClick={() => setShowKeyboardHelp(true)}
-      />
+      {buildSnapshotDetailsMenuModel({
+        activeSnapshot: Boolean(activeSnapshot),
+        snapshotEditingLocked,
+        flowSlotCount: flowSlots.length,
+        maxFlows: MAX_FLOWS,
+        liveRuntimeButtonLabel,
+        liveRuntimeActive,
+        midiLearnActive,
+        midiLearnInProgress,
+        midiMappingCountLabel,
+        duplicatePending: duplicateActiveSnapshotMutation.isPending,
+      }).map((item) => {
+        const className = item.iconClassName
+          ? `juce-grid-page__snapshot-status-details-item ${item.iconClassName}`
+          : 'juce-grid-page__snapshot-status-details-item'
+
+        const handleClick = () => {
+          switch (item.action) {
+            case 'add-flow':
+              addFlow()
+              return
+            case 'clear-flows':
+              setShowClearFlowsModal(true)
+              return
+            case 'open-network-routing':
+              setShowAudioNodesModal(true)
+              return
+            case 'open-live-runtime':
+              setShowLiveRuntimeModal(true)
+              return
+            case 'open-local-routing':
+              setShowRoutingTopologyModal(true)
+              return
+            case 'open-io-devices':
+              setShowSnapshotIoModal(true)
+              return
+            case 'open-output-reference':
+              setShowOutputReferenceModal(true)
+              return
+            case 'open-noise-gate-defaults':
+              setShowNoiseGateDefaultsModal(true)
+              return
+            case 'duplicate-snapshot':
+              duplicateActiveSnapshotMutation.mutate()
+              return
+            case 'open-perform':
+              setShowPerformModal(true)
+              return
+            case 'open-midi':
+              setMidiModalOpen(true)
+              return
+            case 'open-version-history':
+              setShowVersionHistoryModal(true)
+              return
+            case 'open-shortcuts':
+              setShowKeyboardHelp(true)
+          }
+        }
+
+        return (
+          <Fragment key={item.key}>
+            {item.dividerBefore ? <MenuItemDivider /> : null}
+            <MenuItem
+              label={item.label}
+              kind={item.kind}
+              renderIcon={
+                item.action === 'add-flow' ? Add
+                  : item.action === 'clear-flows' ? TrashCan
+                    : item.action === 'open-network-routing' ? Network_3
+                      : item.action === 'open-live-runtime' ? Launch
+                        : item.action === 'open-local-routing' ? Flow
+                          : item.action === 'open-io-devices' ? Headphones
+                            : item.action === 'open-output-reference' ? Meter
+                              : item.action === 'open-noise-gate-defaults' ? SettingsAdjust
+                                : item.action === 'duplicate-snapshot' ? Copy
+                                  : item.action === 'open-perform' ? Music
+                                    : item.action === 'open-midi' ? Music
+                                      : item.action === 'open-version-history' ? Renew
+                                        : Information
+              }
+              className={className}
+              disabled={item.disabled}
+              title={item.title}
+              onClick={handleClick}
+            />
+          </Fragment>
+        )
+      })}
     </MenuButton>
   )
 
@@ -7048,6 +7087,7 @@ export function SnapshotEditorPage() {
             liveSnapshot={activeSnapshot}
             editorSnapshotDraft={currentSnapshotDraft}
             runtimeLiveState={runtimeLiveState}
+            authoritativeAudioState={authoritativeAudioState}
             detailsAction={snapshotDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotNameEditing={editingSnapshotName}
@@ -7110,59 +7150,6 @@ export function SnapshotEditorPage() {
             monitoringStatusWarning={monitoringStatusWarning}
             outputLevelWarningMessage={outputLevelWarningMessage}
           />
-        </div>
-      </section>
-
-      <section className="juce-grid-page__signal-flow-shell juce-grid-page__session-notes-shell" aria-label="Snapshot session notes">
-        <div className="juce-grid-page__unified-block">
-          <Accordion align="start" className="juce-grid-page__session-notes-accordion">
-            <AccordionItem title={`Session Notes${activeSnapshot ? ` (${sessionNotes.length})` : ''}`}>
-              <div className="juce-grid-page__session-notes-panel">
-                <p className="juce-grid-page__dense-card-kicker">Append-only snapshot log</p>
-                <p className="juce-grid-page__session-notes-copy">
-                  {activeSnapshot
-                    ? 'Add dated gig or rehearsal notes to this snapshot. Entries are stored newest first and cannot be edited.'
-                    : 'Load or create a snapshot before adding session notes.'}
-                </p>
-                <TextArea
-                  id="snapshot-session-note-draft"
-                  labelText="New session note"
-                  rows={4}
-                  value={sessionNoteDraft}
-                  disabled={!activeSnapshot || addSessionNoteMutation.isPending}
-                  onChange={(event) => setSessionNoteDraft(event.currentTarget.value)}
-                  placeholder="Played the Ryman, this tone cut through perfectly at 110dB."
-                />
-                <div className="juce-grid-page__session-notes-actions">
-                  <Button
-                    size="sm"
-                    kind="primary"
-                    disabled={!activeSnapshot || !sessionNoteDraft.trim() || addSessionNoteMutation.isPending}
-                    onClick={submitSessionNote}
-                  >
-                    {addSessionNoteMutation.isPending ? 'Saving…' : 'Add note'}
-                  </Button>
-                </div>
-                <div className="juce-grid-page__session-notes-list" role="list">
-                  {sessionNotes.length > 0 ? sessionNotes.map((note) => {
-                    const formattedTimestamp = note.created_at
-                      ? SESSION_NOTES_TIMESTAMP_FORMATTER.format(new Date(note.created_at))
-                      : 'Unknown time'
-                    return (
-                      <article key={note.id} className="juce-grid-page__session-note" role="listitem">
-                        <p className="juce-grid-page__session-note-timestamp">{formattedTimestamp}</p>
-                        <p className="juce-grid-page__session-note-body">{note.body}</p>
-                      </article>
-                    )
-                  }) : (
-                    <p className="juce-grid-page__session-notes-empty">
-                      {activeSnapshot ? 'No session notes yet.' : 'No snapshot is active.'}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </AccordionItem>
-          </Accordion>
         </div>
       </section>
 

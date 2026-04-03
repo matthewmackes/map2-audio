@@ -1,6 +1,6 @@
-import type { SnapshotDetail, SnapshotRuntimeLiveState } from '../../map2/types'
+import type { AuthoritativeAudioState, SnapshotDetail } from '../../map2/types'
 import {
-  isSnapshotCurrentRuntimeLive,
+  isSnapshotCurrentAuthorityLive,
   resolveSnapshotGoLiveState,
 } from './snapshotGoLiveState'
 
@@ -18,27 +18,59 @@ function buildSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail 
   } as SnapshotDetail
 }
 
-function buildRuntimeLiveState(overrides: Partial<SnapshotRuntimeLiveState> = {}): SnapshotRuntimeLiveState {
+function buildAuthoritativeAudioState(overrides: Partial<AuthoritativeAudioState> = {}): AuthoritativeAudioState {
   return {
-    node_id: 'local-node',
-    seq: 1,
-    emitted_at: '2026-04-01T20:00:00Z',
-    state: 'stopped',
-    snapshot_id: null,
-    snapshot_revision: null,
-    snapshot_name: null,
-    triggered_by: 'ui',
-    live_snapshot_payload: null,
-    last_successful_request_id: null,
-    failure_reason: null,
-    runtime_metrics: {},
-    warning_threshold_seconds: 10,
-    offline_threshold_seconds: 15,
-    age_seconds: 0,
-    is_warning: false,
-    is_offline: false,
-    display_state: 'stopped',
-    display_label: 'Stopped',
+    schema_version: 1,
+    state_version: 7,
+    leader_epoch: 1,
+    committed_at: '2026-04-01T20:00:00Z',
+    origin_node_id: 'local-node',
+    source_snapshot: {
+      snapshot_id: 42,
+      snapshot_revision_id: 9,
+      name: 'Friday Night Drive',
+    },
+    desired: {
+      snapshot_id: 42,
+      snapshot_revision_id: 9,
+      compiled_at: '2026-04-01T19:59:59Z',
+      intent_version: 1,
+      io: {
+        requested_input_device: 'Input Alpha',
+        requested_output_device: 'Output Beta',
+        monitoring_output_index: null,
+      },
+      routing: {
+        mode: 'parallel_blend',
+        active_path_ids: [],
+        path_order: [],
+      },
+      deployment: {
+        placement_mode: 'local_only',
+        preferred_nodes: [],
+      },
+      chains: [],
+    },
+    observed_summary: {
+      effective_input_device: 'Input Alpha',
+      effective_output_device: 'Output Beta',
+    },
+    cluster: {
+      sync_status: 'synced',
+      applied_node_ids: ['local-node'],
+      degraded_node_ids: [],
+    },
+    engine: {
+      display_state: 'stopped',
+      is_warning: false,
+      is_offline: false,
+    },
+    paths: [],
+    derived: {
+      active_channel_count: 0,
+      total_channel_count: 0,
+      inactive_messages: [],
+    },
     ...overrides,
   }
 }
@@ -53,13 +85,13 @@ describe('snapshotGoLiveState', () => {
     })
   })
 
-  it('stays in activating until runtime live-state confirms the target snapshot is live', () => {
+  it('stays in activating until committed authority state confirms the target snapshot is live', () => {
     const snapshot = buildSnapshot()
 
     expect(resolveSnapshotGoLiveState({
       snapshot,
       pendingSnapshotId: snapshot.id,
-      runtimeLiveState: buildRuntimeLiveState(),
+      authoritativeAudioState: buildAuthoritativeAudioState(),
     })).toEqual({
       phase: 'activating',
       label: 'Activating…',
@@ -68,21 +100,21 @@ describe('snapshotGoLiveState', () => {
     })
   })
 
-  it('switches to live when runtime live-state matches the target snapshot', () => {
+  it('switches to live when committed authority state matches the target snapshot', () => {
     const snapshot = buildSnapshot()
-    const runtimeLiveState = buildRuntimeLiveState({
-      state: 'live',
-      snapshot_id: snapshot.id,
-      snapshot_name: snapshot.name,
-      display_state: 'live',
-      display_label: 'Live',
+    const authoritativeAudioState = buildAuthoritativeAudioState({
+      engine: {
+        display_state: 'live',
+        is_warning: false,
+        is_offline: false,
+      },
     })
 
-    expect(isSnapshotCurrentRuntimeLive(snapshot, runtimeLiveState)).toBe(true)
+    expect(isSnapshotCurrentAuthorityLive(snapshot, authoritativeAudioState)).toBe(true)
     expect(resolveSnapshotGoLiveState({
       snapshot,
       pendingSnapshotId: snapshot.id,
-      runtimeLiveState,
+      authoritativeAudioState,
     })).toEqual({
       phase: 'live',
       label: 'LIVE',
@@ -106,7 +138,7 @@ describe('snapshotGoLiveState', () => {
     })
   })
 
-  it('falls back to LIVE when the selected snapshot is already active and runtime state is unavailable', () => {
+  it('stays idle when no committed authority state marks the selected snapshot live', () => {
     const snapshot = buildSnapshot({
       is_active: true,
       live_state: {
@@ -117,9 +149,9 @@ describe('snapshotGoLiveState', () => {
     })
 
     expect(resolveSnapshotGoLiveState({ snapshot })).toEqual({
-      phase: 'live',
-      label: 'LIVE',
-      disabled: true,
+      phase: 'idle',
+      label: 'Go Live',
+      disabled: false,
       errorMessage: null,
     })
   })

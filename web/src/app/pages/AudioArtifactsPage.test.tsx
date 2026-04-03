@@ -8,6 +8,7 @@ import { AudioArtifactsPage } from './AudioArtifactsPage'
 const mockUseCluster = jest.fn()
 const mockUseNodePageContext = jest.fn()
 const mockUsePluginBrowser = jest.fn()
+const mockPushToast = jest.fn()
 const mockIrListCabinets = jest.fn()
 const mockIrListReverbs = jest.fn()
 const mockIrStatus = jest.fn()
@@ -32,6 +33,13 @@ jest.mock('../hooks/useNodePageContext', () => ({
 
 jest.mock('../hooks/usePluginBrowser', () => ({
   usePluginBrowser: () => mockUsePluginBrowser(),
+}))
+
+jest.mock('../components/Toasts', () => ({
+  useToasts: () => ({
+    pushToast: mockPushToast,
+    dismissToast: jest.fn(),
+  }),
 }))
 
 jest.mock('../components/artifacts/ArtifactDownloadModal', () => ({
@@ -137,6 +145,7 @@ function renderArtifacts(initialEntry: string) {
 
 describe('AudioArtifactsPage routed workspace', () => {
   beforeEach(() => {
+    mockPushToast.mockReset()
     mockUseCluster.mockReturnValue({
       activeNodeId: null,
       localNodeId: 'node-local',

@@ -26,7 +26,6 @@ import {
   TableToolbarContent,
   TableToolbarSearch,
   Tile,
-  ToastNotification,
 } from '@carbon/react'
 import type { CarbonIconType } from '@carbon/icons-react'
 import {
@@ -56,6 +55,7 @@ import { useNodePageContext } from '../hooks/useNodePageContext'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
+import { useToasts } from '../components/Toasts'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
@@ -108,13 +108,6 @@ interface SyncJob {
   status: 'queued' | 'syncing' | 'done' | 'error'
   error?: string
   startedAt: string
-}
-
-interface ToastMsg {
-  id: string
-  kind: 'error' | 'info' | 'success' | 'warning'
-  title: string
-  subtitle?: string
 }
 
 const DISCOVER_TAB_BY_CATEGORY: Record<ArtifactCategory, 'plugin-packs' | 'nam' | 'cabinet-irs' | 'reverb-irs' | 'soundfonts'> = {
@@ -596,10 +589,10 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>(loadSyncQueue)
-  const [toasts, setToasts] = useState<ToastMsg[]>([])
   const [primaryActionPending, setPrimaryActionPending] = useState(false)
   const [navAnimated, setNavAnimated] = useState(false)
   const [tableAnimated, setTableAnimated] = useState(false)
+  const { pushToast: pushGlobalToast } = useToasts()
 
   const selectedNodeId = viewedNodeParam || (activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId)
   const detailNodeId = selectedNodeId === localNodeId ? null : selectedNodeId
@@ -673,11 +666,10 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     saveSyncQueue(syncJobs)
   }, [syncJobs])
 
-  const pushToast = useCallback((kind: ToastMsg['kind'], title: string, subtitle?: string) => {
-    const id = `toast-${Date.now()}`
-    setToasts((prev) => [...prev, { id, kind, title, subtitle }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 6000)
-  }, [])
+  const pushToast = useCallback((kind: 'error' | 'info' | 'success' | 'warning', title: string, subtitle?: string) => {
+    const message = subtitle ? `${title} ${subtitle}` : title
+    pushGlobalToast(message, kind === 'warning' ? 'warn' : kind)
+  }, [pushGlobalToast])
 
   const artifactsRouteActive = useRouteActive(['/artifacts'])
   const artifactsStatusCadence = useRealtimeCadence({
@@ -1059,20 +1051,6 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
 
   return (
     <section className="aap">
-      {/* Toast notifications */}
-      <div className="aap-toasts" aria-live="polite">
-        {toasts.map((t) => (
-          <ToastNotification
-            key={t.id}
-            kind={t.kind}
-            title={t.title}
-            subtitle={t.subtitle}
-            onClose={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-            timeout={5000}
-          />
-        ))}
-      </div>
-
       <Layer className="aap__surface">
         {/* Page header */}
         <div className="aap__header">

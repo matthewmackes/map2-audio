@@ -6,7 +6,9 @@ import { ApiError } from '../../../map2/http'
 const mockPushToast = jest.fn()
 const mockSnapshotsList = jest.fn()
 const mockSnapshotsCreate = jest.fn()
-const mockSnapshotsActivate = jest.fn()
+const mockSnapshotsGet = jest.fn()
+const mockAudioStateActivateSnapshot = jest.fn()
+const mockAudioStateGetCommitted = jest.fn()
 const mockGetDevices = jest.fn()
 const mockUpdateSpecialSettings = jest.fn()
 let mockSpecialSettings = {
@@ -48,10 +50,17 @@ jest.mock('../../../map2/clients/snapshots', () => {
       ...actual.snapshotsApi,
       list: (...args: unknown[]) => mockSnapshotsList(...args),
       create: (...args: unknown[]) => mockSnapshotsCreate(...args),
-      activate: (...args: unknown[]) => mockSnapshotsActivate(...args),
+      get: (...args: unknown[]) => mockSnapshotsGet(...args),
     },
   }
 })
+
+jest.mock('../../../map2/clients/audioState', () => ({
+  audioStateApi: {
+    getCommitted: (...args: unknown[]) => mockAudioStateGetCommitted(...args),
+    activateSnapshot: (...args: unknown[]) => mockAudioStateActivateSnapshot(...args),
+  },
+}))
 
 jest.mock('./SnapshotImportDialog', () => ({
   SnapshotImportDialog: () => null,
@@ -99,6 +108,62 @@ function renderContent(props: Partial<React.ComponentProps<typeof SnapshotModalC
   )
 
   return { applySnapshotData, onRecall, queryClient }
+}
+
+function buildSnapshotDetail(id: number, name: string) {
+  return {
+    id,
+    name,
+    description: '',
+    tags: [],
+    program_number: null,
+    input_device: null,
+    output_device: null,
+    is_active: false,
+    is_favorite: false,
+    display_order: 0,
+    channels: [],
+    chains: [],
+    routing: {
+      mode: 'parallel_blend',
+      active_channel_key: null,
+      blend_positions: {},
+      morph_position: 0.5,
+      morph_source_channel_key: null,
+      morph_target_channel_key: null,
+      series_order: [],
+    },
+    midi_map: [],
+    paths: [],
+    io_bindings: {
+      input_device: null,
+      output_device: null,
+      remap_required: false,
+    },
+    controls: {
+      midi_map: [],
+      automation_lanes: [],
+      expression_mappings: [],
+    },
+    assets: [],
+    live_state: {
+      is_live: false,
+      activated_at: null,
+      paths: [],
+      runtime_chains: [],
+    },
+    lineage: {
+      derived_from_snapshot_id: null,
+    },
+    active_channel_index: 0,
+    channel_count: 0,
+    chain_count: 0,
+    community_shared: false,
+    community_download_count: 0,
+    community_rating: null,
+    community_rating_count: 0,
+    deployments: [],
+  }
 }
 
 describe('SnapshotModalContent', () => {
@@ -163,7 +228,6 @@ describe('SnapshotModalContent', () => {
         },
       ],
       count: 1,
-      active_id: null,
       available_tags: [],
     })
     mockGetDevices.mockResolvedValue({
@@ -172,6 +236,11 @@ describe('SnapshotModalContent', () => {
         { id: 2, name: 'Output Beta', nick: 'Output Beta', driver: '', bus: '', media_class: 'Audio/Device', is_default: false, properties: {} },
       ],
     })
+    mockSnapshotsGet.mockReset()
+    mockAudioStateActivateSnapshot.mockReset()
+    mockAudioStateGetCommitted.mockReset()
+    mockSnapshotsGet.mockResolvedValue(buildSnapshotDetail(5, 'Existing Snapshot'))
+    mockAudioStateGetCommitted.mockRejectedValue(new ApiError(404, 'Not Found', { detail: 'No committed authoritative audio state exists in etcd' }))
   })
 
   afterEach(() => {
@@ -241,7 +310,6 @@ describe('SnapshotModalContent', () => {
       return Promise.resolve({
         snapshots: tag ? snapshots.filter((snapshot) => snapshot.tags.includes(tag)) : snapshots,
         count: tag ? 1 : 2,
-        active_id: null,
         available_tags: ['delay', 'reverb'],
       })
     })
@@ -269,128 +337,135 @@ describe('SnapshotModalContent', () => {
       message: 'Created snapshot',
       snapshot: { id: 101 },
     })
-    mockSnapshotsActivate.mockResolvedValue({
-      status: 'success',
-      snapshot_id: 101,
+    mockAudioStateActivateSnapshot.mockResolvedValue({
+      namespace: '/map2/audio-state/v1',
+      key: '/map2/audio-state/v1/committed',
+      revision: 41,
+      value: {
+        source_snapshot: {
+          snapshot_id: 101,
+          name: 'FreshSnapshot',
+        },
+        desired: {
+          snapshot_id: 101,
+        },
+      },
+    })
+    mockSnapshotsGet.mockResolvedValue({
+      id: 101,
       name: 'FreshSnapshot',
-      snapshot_data: {
-        id: 101,
-        name: 'FreshSnapshot',
-        description: '',
-        tags: [],
-        program_number: null,
+      description: '',
+      tags: [],
+      program_number: null,
+      input_device: 'Input Alpha',
+      output_device: 'Output Beta',
+      is_active: true,
+      is_favorite: false,
+      display_order: 0,
+      channels: [
+        { id: 11, snapshot_id: 101, channel_key: 'ch_a', label: 'A', color: '#2563eb', muted: false, solo: false, dry_wet_mix: 100, order_index: 0, chain_id: 201 },
+        { id: 12, snapshot_id: 101, channel_key: 'ch_b', label: 'B', color: '#22c55e', muted: false, solo: false, dry_wet_mix: 100, order_index: 1, chain_id: 202 },
+      ],
+      chains: [
+        { id: 201, name: 'FreshSnapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
+        { id: 202, name: 'FreshSnapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
+      ],
+      routing: {
+        mode: 'series',
+        active_channel_key: 'ch_a',
+        blend_positions: { ch_a: 100, ch_b: 100 },
+        morph_position: 0.5,
+        morph_source_channel_key: 'ch_a',
+        morph_target_channel_key: 'ch_b',
+        series_order: ['ch_a', 'ch_b'],
+      },
+      midi_map: [],
+      paths: [
+        {
+          id: 'ch_a',
+          name: 'FreshSnapshot Path A',
+          label: 'A',
+          color: '#2563eb',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          order_index: 0,
+          snapshot_chain_id: 201,
+          runtime_chain_id: 301,
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
+        },
+        {
+          id: 'ch_b',
+          name: 'FreshSnapshot Path B',
+          label: 'B',
+          color: '#22c55e',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          order_index: 1,
+          snapshot_chain_id: 202,
+          runtime_chain_id: 302,
+          plugins: [],
+          loop_insertions: [],
+          effects_loops: [],
+        },
+      ],
+      io_bindings: {
         input_device: 'Input Alpha',
         output_device: 'Output Beta',
-        is_active: true,
-        is_favorite: false,
-        display_order: 0,
-        channels: [
-          { id: 11, snapshot_id: 101, channel_key: 'ch_a', label: 'A', color: '#2563eb', muted: false, solo: false, dry_wet_mix: 100, order_index: 0, chain_id: 201 },
-          { id: 12, snapshot_id: 101, channel_key: 'ch_b', label: 'B', color: '#22c55e', muted: false, solo: false, dry_wet_mix: 100, order_index: 1, chain_id: 202 },
-        ],
-        chains: [
-          { id: 201, name: 'FreshSnapshot Path A', plugins: [], loop_insertions: [], effects_loops: [] },
-          { id: 202, name: 'FreshSnapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
-        ],
-        routing: {
-          mode: 'series',
-          active_channel_key: 'ch_a',
-          blend_positions: { ch_a: 100, ch_b: 100 },
-          morph_position: 0.5,
-          morph_source_channel_key: 'ch_a',
-          morph_target_channel_key: 'ch_b',
-          series_order: ['ch_a', 'ch_b'],
-        },
-        midi_map: [],
-        paths: [
-          {
-            id: 'ch_a',
-            name: 'FreshSnapshot Path A',
-            label: 'A',
-            color: '#2563eb',
-            muted: false,
-            solo: false,
-            dry_wet_mix: 100,
-            order_index: 0,
-            snapshot_chain_id: 201,
-            runtime_chain_id: 301,
-            plugins: [],
-            loop_insertions: [],
-            effects_loops: [],
-          },
-          {
-            id: 'ch_b',
-            name: 'FreshSnapshot Path B',
-            label: 'B',
-            color: '#22c55e',
-            muted: false,
-            solo: false,
-            dry_wet_mix: 100,
-            order_index: 1,
-            snapshot_chain_id: 202,
-            runtime_chain_id: 302,
-            plugins: [],
-            loop_insertions: [],
-            effects_loops: [],
-          },
-        ],
-        io_bindings: {
-          input_device: 'Input Alpha',
-          output_device: 'Output Beta',
-          remap_required: false,
-        },
-        controls: {
-          midi_map: [],
-          automation_lanes: [],
-          expression_mappings: [],
-        },
-        assets: [],
-        live_state: {
-          is_live: true,
-          activated_at: '2026-03-29T12:00:00Z',
-          paths: [
-            { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
-            { path_id: 'ch_b', snapshot_chain_id: 202, runtime_chain_id: 302 },
-          ],
-          runtime_chains: [
-            {
-              id: 301,
-              name: 'FreshSnapshot Path A (A)',
-              is_active: true,
-              created_at: '2026-03-29T12:00:00Z',
-              updated_at: '2026-03-29T12:00:00Z',
-              plugins: [],
-              loop_insertions: [],
-              effects_loops: [],
-              runtime_sync: null,
-            },
-            {
-              id: 302,
-              name: 'FreshSnapshot Path B (B)',
-              is_active: true,
-              created_at: '2026-03-29T12:00:00Z',
-              updated_at: '2026-03-29T12:00:00Z',
-              plugins: [],
-              loop_insertions: [],
-              effects_loops: [],
-              runtime_sync: null,
-            },
-          ],
-        },
-        lineage: {
-          derived_from_snapshot_id: null,
-        },
-        active_channel_index: 0,
-        channel_count: 2,
-        chain_count: 2,
-        community_shared: false,
-        community_download_count: 0,
-        community_rating: null,
-        community_rating_count: 0,
-        deployments: [],
+        remap_required: false,
       },
-      params_applied: 0,
-      bypass_applied: 0,
+      controls: {
+        midi_map: [],
+        automation_lanes: [],
+        expression_mappings: [],
+      },
+      assets: [],
+      live_state: {
+        is_live: true,
+        activated_at: '2026-03-29T12:00:00Z',
+        paths: [
+          { path_id: 'ch_a', snapshot_chain_id: 201, runtime_chain_id: 301 },
+          { path_id: 'ch_b', snapshot_chain_id: 202, runtime_chain_id: 302 },
+        ],
+        runtime_chains: [
+          {
+            id: 301,
+            name: 'FreshSnapshot Path A (A)',
+            is_active: true,
+            created_at: '2026-03-29T12:00:00Z',
+            updated_at: '2026-03-29T12:00:00Z',
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+            runtime_sync: null,
+          },
+          {
+            id: 302,
+            name: 'FreshSnapshot Path B (B)',
+            is_active: true,
+            created_at: '2026-03-29T12:00:00Z',
+            updated_at: '2026-03-29T12:00:00Z',
+            plugins: [],
+            loop_insertions: [],
+            effects_loops: [],
+            runtime_sync: null,
+          },
+        ],
+      },
+      lineage: {
+        derived_from_snapshot_id: null,
+      },
+      active_channel_index: 0,
+      channel_count: 2,
+      chain_count: 2,
+      community_shared: false,
+      community_download_count: 0,
+      community_rating: null,
+      community_rating_count: 0,
+      deployments: [],
     })
 
     const { applySnapshotData, onRecall, queryClient } = renderContent()
@@ -405,7 +480,7 @@ describe('SnapshotModalContent', () => {
     fireEvent.change(await screen.findByLabelText('Output device'), { target: { value: 'Output Beta' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
-    await waitFor(() => expect(mockSnapshotsActivate).toHaveBeenCalledWith(101))
+    await waitFor(() => expect(mockAudioStateActivateSnapshot).toHaveBeenCalledWith(101, { triggered_by: 'snapshot_modal' }))
 
     expect(mockSnapshotsCreate).toHaveBeenCalledWith(expect.objectContaining({
       name: 'FreshSnapshot',
@@ -440,7 +515,7 @@ describe('SnapshotModalContent', () => {
         active_channel_key: 'ch_a',
       }),
     }))
-    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockSnapshotsActivate.mock.invocationCallOrder[0])
+    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockAudioStateActivateSnapshot.mock.invocationCallOrder[0])
 
     await waitFor(() => expect(applySnapshotData).toHaveBeenCalled())
     expect(applySnapshotData).toHaveBeenCalledWith(
@@ -452,12 +527,6 @@ describe('SnapshotModalContent', () => {
       }),
     )
     expect(onRecall).toHaveBeenCalled()
-    expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
-      expect.objectContaining({
-        id: 101,
-        name: 'FreshSnapshot',
-      }),
-    )
     expect(queryClient.getQueryData(['chains'])).toEqual(
       expect.objectContaining({
         count: 2,
@@ -471,11 +540,21 @@ describe('SnapshotModalContent', () => {
   })
 
   it('recalls an existing snapshot without invalidating freshly injected chains', async () => {
-    mockSnapshotsActivate.mockResolvedValue({
-      status: 'success',
-      snapshot_id: 5,
-      name: 'Existing Snapshot',
-      snapshot_data: {
+    mockAudioStateActivateSnapshot.mockResolvedValue({
+      namespace: '/map2/audio-state/v1',
+      key: '/map2/audio-state/v1/committed',
+      revision: 42,
+      value: {
+        source_snapshot: {
+          snapshot_id: 5,
+          name: 'Existing Snapshot',
+        },
+        desired: {
+          snapshot_id: 5,
+        },
+      },
+    })
+    mockSnapshotsGet.mockResolvedValue({
         id: 5,
         name: 'Existing Snapshot',
         description: '',
@@ -561,9 +640,6 @@ describe('SnapshotModalContent', () => {
         community_rating: null,
         community_rating_count: 0,
         deployments: [],
-      },
-      params_applied: 0,
-      bypass_applied: 0,
     })
 
     const { applySnapshotData, onRecall, queryClient } = renderContent()
@@ -572,7 +648,7 @@ describe('SnapshotModalContent', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Snapshot Library/i }))
     fireEvent.click(await screen.findByRole('button', { name: 'Recall' }))
 
-    await waitFor(() => expect(mockSnapshotsActivate).toHaveBeenCalledWith(5))
+    await waitFor(() => expect(mockAudioStateActivateSnapshot).toHaveBeenCalledWith(5, { triggered_by: 'snapshot_modal' }))
     expect(applySnapshotData).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
@@ -582,12 +658,6 @@ describe('SnapshotModalContent', () => {
       }),
     )
     expect(onRecall).toHaveBeenCalled()
-    expect(queryClient.getQueryData(['snapshots', 'live'])).toEqual(
-      expect.objectContaining({
-        id: 5,
-        name: 'Existing Snapshot',
-      }),
-    )
     expect(queryClient.getQueryData(['chains'])).toEqual(
       expect.objectContaining({
         count: 1,
@@ -600,7 +670,7 @@ describe('SnapshotModalContent', () => {
   })
 
   it('shows an amber activation failure toast with the snapshot name and backend reason', async () => {
-    mockSnapshotsActivate.mockRejectedValue(
+    mockAudioStateActivateSnapshot.mockRejectedValue(
       new ApiError(422, 'Unprocessable Entity', { detail: 'Channel Lead not loaded.' }),
     )
 
@@ -644,7 +714,69 @@ describe('SnapshotModalContent', () => {
         },
       ],
       count: 1,
-      active_id: 5,
+    })
+    mockAudioStateGetCommitted.mockResolvedValueOnce({
+      namespace: '/map2/audio-state/v1',
+      key: '/map2/audio-state/v1/committed',
+      revision: 41,
+      value: {
+        schema_version: 1,
+        state_version: 4,
+        leader_epoch: 2,
+        committed_at: '2026-04-03T12:00:00Z',
+        origin_node_id: 'node-a',
+        source_snapshot: {
+          snapshot_id: 5,
+          snapshot_revision_id: 7,
+          name: 'Existing Snapshot',
+        },
+        desired: {
+          snapshot_id: 5,
+          snapshot_revision_id: 7,
+          compiled_at: '2026-04-03T11:59:59Z',
+          intent_version: 1,
+          io: {
+            requested_input_device: null,
+            requested_output_device: null,
+            monitoring_output_index: null,
+          },
+          routing: {
+            mode: 'parallel_blend',
+            active_path_ids: [],
+            path_order: [],
+          },
+          deployment: {
+            placement_mode: 'local_only',
+            preferred_nodes: [],
+          },
+          chains: [],
+        },
+        observed_summary: {
+          effective_input_device: null,
+          effective_output_device: null,
+        },
+        cluster: {
+          sync_status: 'synced',
+          applied_node_ids: ['node-a'],
+          degraded_node_ids: [],
+        },
+        engine: {
+          display_state: 'live',
+          is_warning: false,
+          is_offline: false,
+        },
+        paths: [],
+        derived: {
+          active_channel_count: 0,
+          total_channel_count: 0,
+          inactive_messages: [],
+        },
+      },
+    })
+    mockSnapshotsGet.mockResolvedValueOnce({
+      ...buildSnapshotDetail(5, 'Existing Snapshot'),
+      is_active: true,
+      activated_at: '2026-03-29T12:00:00Z',
     })
 
     renderContent()
@@ -686,7 +818,6 @@ describe('SnapshotModalContent', () => {
         },
       ],
       count: 1,
-      active_id: null,
       available_tags: [],
     })
 
@@ -774,7 +905,6 @@ describe('SnapshotModalContent', () => {
         },
       ],
       count: 3,
-      active_id: null,
     })
 
     renderContent()

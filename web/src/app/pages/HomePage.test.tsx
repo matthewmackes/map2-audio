@@ -205,6 +205,9 @@ describe('HomePage landing', () => {
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Audio Table' }).closest('.hp2-launchers__tile--medium')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Platforms' }).closest('.hp2-launchers__tile--large')).toBeTruthy()
+    expect(screen.queryByText(/^small$/i)).toBeNull()
+    expect(screen.queryByText(/^medium$/i)).toBeNull()
+    expect(screen.queryByText(/^large$/i)).toBeNull()
 
     const landingTiles = screen.getAllByRole('listitem')
     expect(landingTiles[0]?.textContent).toContain('Platforms')
