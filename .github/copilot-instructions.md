@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (platforms rail utility grouping and Audio Table launcher removal documented)
+> **Last Updated**: April 3, 2026 (audio-engine graph workspace and expandable routing table contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1433,6 +1433,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/Platform/PlatformModal.test.tsx src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/pages/HomePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: During a routed shell hard cut, utilities must stay visibly separate from operational workspaces and retired routes must be removed from every shared navigation/launcher registry before the final route deletion lands.
 
+**47. Audio Engine Must Stay A Graph-First Workspace With Expandable Routing Detail, Not A Static Diagnostics Dashboard (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/components/AudioEngine/audioEngineWorkspaceGraph.ts`, `web/src/app/components/AudioEngine/AudioEngineWorkspaceGraph.tsx`, `web/src/app/pages/AudioEnginePage.tsx`, `web/src/app/pages/AudioEnginePage.css`
+- **Problem**: `/platforms/audio-engine` still behaved like a generic diagnostics page even after the hard cut plan, so the flagship JUCE workspace lacked a top-of-page React Flow current-state view, traffic pulses, and a direct path from graph selections into the routing tables and controls below.
+- **Root Cause**: The earlier Carbon rebuild focused on status cards, metering, and tables, but it never restructured the page around the hard-cut requirement that the graph be the dominant operator artifact and that dense detail live in expandable rows underneath it.
+- **Fix**: Query source-of-truth once at page level, build a dedicated audio-engine topology model/component with animated traffic edges and anchor-aware cards, add an `Audio Flow Workspace` hero to the top of the page, and convert routing tables to Carbon expandable rows with quick mute actions for observed source/sink nodes.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/AudioEngine/audioEngineWorkspaceGraph.test.ts src/app/pages/AudioEnginePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For `/platforms` hard-cut workspaces, the graph must lead and the tables must behave as anchored drill-down detail. If a page still reads like a flat dashboard, the migration is not actually complete.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1703,6 +1711,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - Audio Engine Graph Workspace And Expandable Routing Table Contract
+- **Section**: Gotchas & Learned Fixes (#47), Update Log
+- **Change**: Documented the graph-first `/platforms/audio-engine` workspace model, including animated runtime topology edges, source-of-truth anchoring, and expandable routing rows with direct node controls.
+- **Reason**: T701-subB had to turn the existing audio-engine dashboard into the first real React Flow-first runtime workspace of the hard cut instead of leaving the old diagnostics layout mostly intact.
+- **Impact**: Future assistants should preserve the graph hero, anchor-aware routing tables, and direct-detail row expansion pattern rather than regressing `/platforms/audio-engine` back into a static status page.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/components/AudioEngine/audioEngineWorkspaceGraph.ts`, `web/src/app/components/AudioEngine/AudioEngineWorkspaceGraph.tsx`, `web/src/app/pages/AudioEnginePage.tsx`, `web/src/app/pages/AudioEnginePage.css`
 
 ### [2026-04-03] - Platforms Rail Utility Grouping And Audio Table Launcher Removal
 - **Section**: Gotchas & Learned Fixes (#46), Update Log

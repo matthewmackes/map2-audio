@@ -12,14 +12,13 @@
  */
 
 import './AudioEnginePage.css'
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Accordion,
   AccordionItem,
   Button,
   Column,
-  DataTable,
   Dropdown,
   Grid,
   InlineLoading,
@@ -38,6 +37,9 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableExpandHeader,
+  TableExpandRow,
+  TableExpandedRow,
   TableHead,
   TableHeader,
   TableRow,
@@ -51,9 +53,7 @@ import {
   ChartLine,
   Chip,
   CheckmarkFilled,
-  DataTable as DataTableIcon,
   Misuse,
-  Network_4,
   Renew,
   SettingsAdjust,
   SettingsView,
@@ -85,16 +85,36 @@ import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
+import { AudioEngineWorkspaceGraph } from '../components/AudioEngine/AudioEngineWorkspaceGraph'
+import {
+  buildAudioEngineWorkspaceGraphModel,
+  type AudioEngineWorkspaceAnchorId,
+} from '../components/AudioEngine/audioEngineWorkspaceGraph'
 
 type TableCellValue = string | number | boolean | null | undefined
+
+type RoutingDetailItem = {
+  label: string
+  value: React.ReactNode
+}
+
+type RoutingAction = {
+  label: string
+  kind?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger--tertiary'
+  onClick: () => void
+}
+
 type RoutingRow = {
   id: string
-  [key: string]: TableCellValue
+  cells: Record<string, TableCellValue>
+  details: RoutingDetailItem[]
+  actions?: RoutingAction[]
 }
 
 type RoutingDefinition = {
   id: string
   title: string
+  anchorId: AudioEngineWorkspaceAnchorId
   headers: Array<{ key: string; header: string }>
   rows: RoutingRow[]
 }
@@ -192,17 +212,20 @@ function buildSparklinePaths(points: number[], maxValue = 100) {
   return { linePath, areaPath }
 }
 
-function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
-  const sourceOfTruthQuery = useQuery<AudioSourceTruthPayload>({
-    queryKey: ['audio-source-of-truth', nodeId ?? 'local'],
-    queryFn: () => audioApi.getSourceOfTruth(nodeId),
-    refetchInterval: 5000,
-    staleTime: 2000,
-  })
-
-  if (sourceOfTruthQuery.isLoading && !sourceOfTruthQuery.data) {
+function SourceOfTruthSection({
+  payload,
+  isLoading,
+  error,
+  highlighted = false,
+}: {
+  payload: AudioSourceTruthPayload | null
+  isLoading: boolean
+  error: unknown
+  highlighted?: boolean
+}) {
+  if (isLoading && !payload) {
     return (
-      <Tile className="audio-engine-page__section-tile">
+      <Tile className={`audio-engine-page__section-tile${highlighted ? ' is-highlighted' : ''}`}>
         <div className="audio-engine-page__section-header">
           <div>
             <h2 className="audio-engine-page__section-title">Source of truth</h2>
@@ -213,19 +236,25 @@ function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
     )
   }
 
-  if (!sourceOfTruthQuery.data) {
+  if (!payload) {
     return (
-      <InlineNotification
-        kind="error"
-        lowContrast
-        hideCloseButton
-        title="Source of truth unavailable"
-        subtitle={sourceOfTruthQuery.error instanceof Error ? sourceOfTruthQuery.error.message : 'Audio source-of-truth query failed.'}
-      />
+      <Tile className={`audio-engine-page__section-tile${highlighted ? ' is-highlighted' : ''}`}>
+        <div className="audio-engine-page__section-header">
+          <div>
+            <h2 className="audio-engine-page__section-title">Source of truth</h2>
+          </div>
+        </div>
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Source of truth unavailable"
+          subtitle={error instanceof Error ? error.message : 'Audio source-of-truth query failed.'}
+        />
+      </Tile>
     )
   }
 
-  const payload = sourceOfTruthQuery.data
   const tone = payload.status === 'aligned' ? 'green' : payload.status === 'warning' ? 'warm-gray' : 'red'
 
   const cells = [
@@ -242,7 +271,7 @@ function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
   ]
 
   return (
-    <Tile className="audio-engine-page__section-tile">
+    <Tile className={`audio-engine-page__section-tile${highlighted ? ' is-highlighted' : ''}`}>
       <div className="audio-engine-page__section-header">
         <div>
           <h2 className="audio-engine-page__section-title">Source of truth</h2>
@@ -386,79 +415,124 @@ function LatencyMonitorPanel({ pressure }: { pressure: ReturnType<typeof useLate
   )
 }
 
+function RoutingDetailsPanel({ row }: { row: RoutingRow }) {
+  return (
+    <div className="audio-engine-page__expanded-row">
+      <div className="audio-engine-page__expanded-grid">
+        {row.details.map((detail) => (
+          <div key={detail.label} className="audio-engine-page__expanded-card">
+            <span className="audio-engine-page__kv-label">{detail.label}</span>
+            <div className="audio-engine-page__expanded-value">{detail.value}</div>
+          </div>
+        ))}
+      </div>
+      {row.actions?.length ? (
+        <div className="audio-engine-page__expanded-actions">
+          {row.actions.map((action) => (
+            <Button key={action.label} kind={action.kind ?? 'tertiary'} size="sm" onClick={action.onClick}>
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function RoutingTable({
   definition,
   mobile,
+  highlighted = false,
   renderCell,
 }: {
   definition: RoutingDefinition
   mobile: boolean
-  renderCell?: (rowId: string, headerKey: string, value: TableCellValue) => React.ReactNode
+  highlighted?: boolean
+  renderCell?: (row: RoutingRow, headerKey: string, value: TableCellValue) => React.ReactNode
 }) {
+  const [expandedRowIds, setExpandedRowIds] = useState<Record<string, boolean>>({})
+
   const table = (
-    <DataTable rows={definition.rows} headers={definition.headers} useZebraStyles>
-      {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
-        <TableContainer
-          {...getTableContainerProps()}
-          title={definition.title}
-          className="audio-engine-page__table-container"
-        >
-          <TableToolbar {...getToolbarProps()}>
-            <TableToolbarContent>
-              <Tag type="cool-gray">{definition.rows.length} rows</Tag>
-            </TableToolbarContent>
-          </TableToolbar>
-          <Table {...getTableProps()} aria-label={definition.title}>
-            <TableHead>
-              <TableRow>
-                {headers.map((header) => {
-                  const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
-                  return (
-                    <TableHeader key={header.key} {...headerProps}>
-                      {header.header}
-                    </TableHeader>
-                  )
-                })}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row) => {
-                const { key: _rowKey, ...rowProps } = getRowProps({ row })
-                return (
-                  <TableRow key={row.id} {...rowProps}>
-                    {row.cells.map((cell) => (
-                      <TableCell key={cell.id}>
-                        {renderCell ? renderCell(row.id, cell.info.header, cell.value) : renderValue(cell.value)}
+    <TableContainer title={definition.title} className="audio-engine-page__table-container">
+      <TableToolbar>
+        <TableToolbarContent>
+          <Tag type="cool-gray">{definition.rows.length} rows</Tag>
+          <Tag type="green">Expandable detail</Tag>
+        </TableToolbarContent>
+      </TableToolbar>
+      <Table aria-label={definition.title}>
+        <TableHead>
+          <TableRow>
+            <TableExpandHeader aria-label={`Expand rows for ${definition.title}`} />
+            {definition.headers.map((header) => (
+              <TableHeader key={header.key}>{header.header}</TableHeader>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {definition.rows.map((row) => {
+            const isExpanded = expandedRowIds[row.id] ?? false
+            const expandedRowId = `${definition.id}:${row.id}:expanded`
+
+            return (
+              <Fragment key={row.id}>
+                <TableExpandRow
+                  aria-label={`Expand row for ${renderValue(row.cells[definition.headers[0]?.key])}`}
+                  aria-controls={expandedRowId}
+                  isExpanded={isExpanded}
+                  onExpand={() => {
+                    setExpandedRowIds((previous) => ({
+                      ...previous,
+                      [row.id]: !isExpanded,
+                    }))
+                  }}
+                >
+                  {definition.headers.map((header) => {
+                    const value = row.cells[header.key]
+
+                    return (
+                      <TableCell key={`${row.id}:${header.key}`}>
+                        {renderCell ? renderCell(row, header.key, value) : renderValue(value)}
                       </TableCell>
-                    ))}
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </DataTable>
+                    )
+                  })}
+                </TableExpandRow>
+                <TableExpandedRow id={expandedRowId} colSpan={definition.headers.length + 1}>
+                  <RoutingDetailsPanel row={row} />
+                </TableExpandedRow>
+              </Fragment>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 
   if (!mobile) {
-    return <Tile className="audio-engine-page__table-tile">{table}</Tile>
+    return (
+      <Tile id={definition.anchorId} className={`audio-engine-page__table-tile${highlighted ? ' is-highlighted' : ''}`}>
+        {table}
+      </Tile>
+    )
   }
 
   return (
-    <Accordion align="start" className="audio-engine-page__mobile-accordion">
-      <AccordionItem title={`${definition.title} (${definition.rows.length})`}>
-        <div className="audio-engine-page__accordion-body">{table}</div>
-      </AccordionItem>
-    </Accordion>
+    <div id={definition.anchorId}>
+      <Accordion align="start" className="audio-engine-page__mobile-accordion">
+        <AccordionItem title={`${definition.title} (${definition.rows.length})`}>
+          <div className="audio-engine-page__accordion-body">{table}</div>
+        </AccordionItem>
+      </Accordion>
+    </div>
   )
 }
 
 export function AudioEnginePage() {
   const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
+  const { viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
   const isMobile = useIsMobile()
+  const [selectedAnchorId, setSelectedAnchorId] = useState<AudioEngineWorkspaceAnchorId | null>(null)
   const localNode = nodes.find((node) => node.nodeId === localNodeId) ?? {
     nodeId: localNodeId,
     hostname: window.location.hostname || 'local',
@@ -493,8 +567,51 @@ export function AudioEnginePage() {
       }
     : detailNode
   const detailNodeId = detailNodeMeta.isLocal ? null : detailNodeMeta.nodeId
+  const sourceOfTruthQuery = useQuery<AudioSourceTruthPayload>({
+    queryKey: ['audio-source-of-truth', detailNodeId ?? 'local'],
+    queryFn: () => audioApi.getSourceOfTruth(detailNodeId),
+    refetchInterval: 5000,
+    staleTime: 2000,
+  })
   const pw = usePipeWire({ nodeId: detailNodeId })
   const latencyPressure = useLatencyPressure({ nodeId: detailNodeId })
+  const sourceOfTruth = sourceOfTruthQuery.data ?? null
+
+  const handleSelectWorkspaceAnchor = useCallback((anchorId: AudioEngineWorkspaceAnchorId) => {
+    setSelectedAnchorId(anchorId)
+    const target = document.getElementById(anchorId)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [])
+
+  const audioWorkspaceGraph = useMemo(() => buildAudioEngineWorkspaceGraphModel({
+    sourceOfTruth,
+    detailNodeLabel: detailNodeMeta.hostname,
+    devices: pw.devices,
+    nodes: pw.nodes,
+    streams: pw.streams,
+    links: pw.links,
+    effectiveRate: pw.effectiveRate,
+    effectiveQuantum: pw.effectiveQuantum,
+    totalLatencyMs: pw.totalLatencyMs,
+    xruns: pw.xruns,
+    pressurePercent: latencyPressure.pressurePercent,
+    selectedAnchorId,
+  }), [
+    detailNodeMeta.hostname,
+    latencyPressure.pressurePercent,
+    pw.devices,
+    pw.effectiveQuantum,
+    pw.effectiveRate,
+    pw.links,
+    pw.nodes,
+    pw.streams,
+    pw.totalLatencyMs,
+    pw.xruns,
+    selectedAnchorId,
+    sourceOfTruth,
+  ])
 
   const health = engineStatusTag(pw.overallStatus)
   const clusterHealth = clusterHealthType(nodes)
@@ -562,6 +679,7 @@ export function AudioEnginePage() {
   const devicesDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'devices',
     title: 'Audio devices',
+    anchorId: 'audio-engine-routing-devices',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'type', header: 'Type' },
@@ -571,11 +689,21 @@ export function AudioEnginePage() {
     ],
     rows: pw.devices.map((device: PipeWireDeviceInfo) => ({
       id: `device-${device.id}`,
-      name: device.nick || device.name,
-      type: device.bus || device.media_class,
-      rate: String(device.properties?.['audio.rate'] ?? pw.effectiveRate),
-      channels: String(device.properties?.['audio.channels'] ?? '—'),
-      status: device.is_default ? 'default' : 'available',
+      cells: {
+        name: device.nick || device.name,
+        type: device.bus || device.media_class,
+        rate: String(device.properties?.['audio.rate'] ?? pw.effectiveRate),
+        channels: String(device.properties?.['audio.channels'] ?? '—'),
+        status: device.is_default ? 'default' : 'available',
+      },
+      details: [
+        { label: 'Device ID', value: <span className="audio-engine-page__mono">{device.id}</span> },
+        { label: 'Driver', value: device.driver || '—' },
+        { label: 'Media class', value: device.media_class },
+        { label: 'Bus', value: device.bus || '—' },
+        { label: 'Clock source', value: device.is_default ? 'Default runtime device' : 'Standby / secondary' },
+        { label: 'Observed channels', value: renderValue(device.properties?.['audio.channels'] ?? '—') },
+      ],
     })),
   }), [pw.devices, pw.effectiveRate])
 
@@ -585,42 +713,89 @@ export function AudioEnginePage() {
   const sinksDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'sinks',
     title: 'Sink nodes',
+    anchorId: 'audio-engine-routing-sinks',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'channels', header: 'Channels' },
       { key: 'links', header: 'Links' },
       { key: 'state', header: 'State' },
     ],
-    rows: sinkNodes.map((node: PipeWireNodeInfo) => ({
-      id: `sink-${node.id}`,
-      name: node.nick || node.name,
-      channels: node.channels,
-      links: pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length,
-      state: node.state,
-    })),
-  }), [pw.links, sinkNodes])
+    rows: sinkNodes.map((node: PipeWireNodeInfo) => {
+      const linkCount = pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length
+
+      return {
+        id: `sink-${node.id}`,
+        cells: {
+          name: node.nick || node.name,
+          channels: node.channels,
+          links: linkCount,
+          state: node.state,
+        },
+        details: [
+          { label: 'Node ID', value: <span className="audio-engine-page__mono">{node.id}</span> },
+          { label: 'Media class', value: node.media_class },
+          { label: 'Sample rate', value: `${node.sample_rate ?? pw.effectiveRate} Hz` },
+          { label: 'Format', value: node.format || '—' },
+          { label: 'Volume', value: `${Math.round(node.volume * 100)}%` },
+          { label: 'Muted', value: node.muted ? 'Yes' : 'No' },
+        ],
+        actions: [
+          {
+            label: node.muted ? 'Unmute output node' : 'Mute output node',
+            onClick: () => {
+              void pw.setMute(node.id, !node.muted)
+            },
+          },
+        ],
+      }
+    }),
+  }), [pw.effectiveRate, pw.links, pw.setMute, sinkNodes])
 
   const sourcesDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'sources',
     title: 'Source nodes',
+    anchorId: 'audio-engine-routing-sources',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'channels', header: 'Channels' },
       { key: 'links', header: 'Links' },
       { key: 'state', header: 'State' },
     ],
-    rows: sourceNodes.map((node: PipeWireNodeInfo) => ({
-      id: `source-${node.id}`,
-      name: node.nick || node.name,
-      channels: node.channels,
-      links: pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length,
-      state: node.state,
-    })),
-  }), [pw.links, sourceNodes])
+    rows: sourceNodes.map((node: PipeWireNodeInfo) => {
+      const linkCount = pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length
+
+      return {
+        id: `source-${node.id}`,
+        cells: {
+          name: node.nick || node.name,
+          channels: node.channels,
+          links: linkCount,
+          state: node.state,
+        },
+        details: [
+          { label: 'Node ID', value: <span className="audio-engine-page__mono">{node.id}</span> },
+          { label: 'Media class', value: node.media_class },
+          { label: 'Sample rate', value: `${node.sample_rate ?? pw.effectiveRate} Hz` },
+          { label: 'Format', value: node.format || '—' },
+          { label: 'Volume', value: `${Math.round(node.volume * 100)}%` },
+          { label: 'Driver node', value: node.is_driver ? 'Yes' : 'No' },
+        ],
+        actions: [
+          {
+            label: node.muted ? 'Unmute input node' : 'Mute input node',
+            onClick: () => {
+              void pw.setMute(node.id, !node.muted)
+            },
+          },
+        ],
+      }
+    }),
+  }), [pw.effectiveRate, pw.links, pw.setMute, sourceNodes])
 
   const streamsDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'streams',
     title: 'Active streams',
+    anchorId: 'audio-engine-routing-streams',
     headers: [
       { key: 'path', header: 'Source → Sink' },
       { key: 'format', header: 'Format' },
@@ -629,16 +804,27 @@ export function AudioEnginePage() {
     ],
     rows: pw.streams.map((stream: PipeWireStreamInfo) => ({
       id: `stream-${stream.id}`,
-      path: `${stream.client_name} → ${stream.media_name}`,
-      format: `${stream.sample_rate ?? pw.effectiveRate} Hz / ${stream.channels} ch`,
-      latency: `${pw.totalLatencyMs.toFixed(2)} ms`,
-      state: stream.state || stream.direction,
+      cells: {
+        path: `${stream.client_name} → ${stream.media_name}`,
+        format: `${stream.sample_rate ?? pw.effectiveRate} Hz / ${stream.channels} ch`,
+        latency: `${pw.totalLatencyMs.toFixed(2)} ms`,
+        state: stream.state || stream.direction,
+      },
+      details: [
+        { label: 'Stream ID', value: <span className="audio-engine-page__mono">{stream.id}</span> },
+        { label: 'Client PID', value: <span className="audio-engine-page__mono">{stream.client_pid}</span> },
+        { label: 'Direction', value: stream.direction },
+        { label: 'Channels', value: `${stream.channels}` },
+        { label: 'Sample rate', value: `${stream.sample_rate ?? pw.effectiveRate} Hz` },
+        { label: 'Observed latency', value: `${pw.totalLatencyMs.toFixed(2)} ms` },
+      ],
     })),
   }), [pw.effectiveRate, pw.streams, pw.totalLatencyMs])
 
   const portsDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'ports',
     title: 'Port connections',
+    anchorId: 'audio-engine-routing-links',
     headers: [
       { key: 'source', header: 'Source port' },
       { key: 'dest', header: 'Dest port' },
@@ -647,10 +833,20 @@ export function AudioEnginePage() {
     ],
     rows: pw.links.map((link: PipeWireLinkInfo) => ({
       id: `link-${link.id}`,
-      source: `${link.output_node}:${link.output_port}`,
-      dest: `${link.input_node}:${link.input_port}`,
-      type: 'Audio',
-      state: link.state,
+      cells: {
+        source: `${link.output_node}:${link.output_port}`,
+        dest: `${link.input_node}:${link.input_port}`,
+        type: 'Audio',
+        state: link.state,
+      },
+      details: [
+        { label: 'Link ID', value: <span className="audio-engine-page__mono">{link.id}</span> },
+        { label: 'Output node', value: <span className="audio-engine-page__mono">{link.output_node}</span> },
+        { label: 'Output port', value: link.output_port },
+        { label: 'Input node', value: <span className="audio-engine-page__mono">{link.input_node}</span> },
+        { label: 'Input port', value: link.input_port },
+        { label: 'State', value: link.state },
+      ],
     })),
   }), [pw.links])
 
@@ -729,8 +925,32 @@ export function AudioEnginePage() {
             </AccordionItem>
           </Accordion>
         ) : (
-          <SourceOfTruthSection nodeId={detailNodeId} />
+          <div id="audio-engine-source-of-truth">
+            <SourceOfTruthSection
+              payload={sourceOfTruth}
+              isLoading={sourceOfTruthQuery.isLoading}
+              error={sourceOfTruthQuery.error}
+              highlighted={selectedAnchorId === 'audio-engine-source-of-truth'}
+            />
+          </div>
         )}
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-workspace">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-workspace" className="audio-engine-page__section-title">Audio Flow Workspace</h2>
+              <p className="audio-engine-page__muted">{audioWorkspaceGraph.pulseCopy}</p>
+            </div>
+            <div className="audio-engine-page__tag-row">
+              {audioWorkspaceGraph.summaryTags.map((tag) => (
+                <Tag key={tag.label} type={tag.type}>{tag.label}</Tag>
+              ))}
+            </div>
+          </div>
+          <Tile className="audio-engine-page__workspace-hero">
+            <AudioEngineWorkspaceGraph model={audioWorkspaceGraph} onSelectAnchor={handleSelectWorkspaceAnchor} />
+          </Tile>
+        </section>
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-metering">
           <div className="audio-engine-page__section-header">
@@ -812,7 +1032,10 @@ export function AudioEnginePage() {
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-routing">
           <div className="audio-engine-page__section-header">
-            <h2 id="audio-engine-routing" className="audio-engine-page__section-title">Signal Path &amp; Routing</h2>
+            <div>
+              <h2 id="audio-engine-routing" className="audio-engine-page__section-title">Signal Path &amp; Routing</h2>
+              <p className="audio-engine-page__muted">Each row expands for deeper diagnostics, quick mute actions, and the same device or node detail surfaced by the graph above.</p>
+            </div>
           </div>
 
           <Grid condensed fullWidth>
@@ -820,7 +1043,8 @@ export function AudioEnginePage() {
                 <RoutingTable
                   definition={devicesDefinition}
                   mobile={isMobile}
-                  renderCell={(_rowId, headerKey, value) => {
+                  highlighted={selectedAnchorId === devicesDefinition.anchorId}
+                  renderCell={(_row, headerKey, value) => {
                     if (headerKey === 'status') {
                       return <Tag type={String(value) === 'default' ? 'green' : 'cool-gray'}>{renderValue(value)}</Tag>
                     }
@@ -833,7 +1057,8 @@ export function AudioEnginePage() {
                 <RoutingTable
                   definition={sinksDefinition}
                   mobile={isMobile}
-                  renderCell={(_rowId, headerKey, value) => {
+                  highlighted={selectedAnchorId === sinksDefinition.anchorId}
+                  renderCell={(_row, headerKey, value) => {
                     if (headerKey === 'state') {
                       return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
                     }
@@ -846,7 +1071,8 @@ export function AudioEnginePage() {
                 <RoutingTable
                   definition={sourcesDefinition}
                   mobile={isMobile}
-                  renderCell={(_rowId, headerKey, value) => {
+                  highlighted={selectedAnchorId === sourcesDefinition.anchorId}
+                  renderCell={(_row, headerKey, value) => {
                     if (headerKey === 'state') {
                       return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
                     }
@@ -859,7 +1085,8 @@ export function AudioEnginePage() {
                 <RoutingTable
                   definition={streamsDefinition}
                   mobile={isMobile}
-                  renderCell={(_rowId, headerKey, value) => {
+                  highlighted={selectedAnchorId === streamsDefinition.anchorId}
+                  renderCell={(_row, headerKey, value) => {
                     if (headerKey === 'state') {
                       return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
                     }
@@ -872,7 +1099,8 @@ export function AudioEnginePage() {
                 <RoutingTable
                   definition={portsDefinition}
                   mobile={isMobile}
-                  renderCell={(_rowId, headerKey, value) => {
+                  highlighted={selectedAnchorId === portsDefinition.anchorId}
+                  renderCell={(_row, headerKey, value) => {
                     if (headerKey === 'state') {
                       return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
                     }
@@ -884,9 +1112,13 @@ export function AudioEnginePage() {
           </Grid>
         </section>
 
-        <section className="audio-engine-page__section" aria-labelledby="audio-engine-diagnostics">
+        <section
+          id="audio-engine-diagnostics"
+          className={`audio-engine-page__section${selectedAnchorId === 'audio-engine-diagnostics' ? ' is-highlighted' : ''}`}
+          aria-labelledby="audio-engine-diagnostics-title"
+        >
           <div className="audio-engine-page__section-header">
-            <h2 id="audio-engine-diagnostics" className="audio-engine-page__section-title">Diagnostics &amp; Controls</h2>
+            <h2 id="audio-engine-diagnostics-title" className="audio-engine-page__section-title">Diagnostics &amp; Controls</h2>
           </div>
 
           <Grid condensed fullWidth>

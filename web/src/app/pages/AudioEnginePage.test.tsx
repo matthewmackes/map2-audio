@@ -2,7 +2,7 @@ import '@testing-library/jest-dom'
 import fs from 'node:fs'
 import path from 'node:path'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AudioEnginePage } from './AudioEnginePage'
 
@@ -43,6 +43,11 @@ jest.mock('../../map2/api', () => ({
 jest.mock('../components/AudioEngine/ClusterEngineGrid', () => ({
   ClusterEngineGrid: () => <div data-testid="cluster-engine-grid">Cluster Engine Grid Mock</div>,
 }))
+
+jest.mock('../components/AudioEngine/AudioEngineWorkspaceGraph', () => ({
+  AudioEngineWorkspaceGraph: () => <div data-testid="audio-engine-workspace-graph">Audio Engine Workspace Graph Mock</div>,
+}))
+
 jest.mock('../components/Visualizations/SpectrumAnalyzer', () => ({
   SpectrumAnalyzer: () => <div>Spectrum Analyzer Mock</div>,
 }))
@@ -266,9 +271,11 @@ describe('AudioEnginePage', () => {
     const { container } = renderPage()
 
     await waitFor(() => {
+      expect(screen.getByText('Audio Flow Workspace')).toBeInTheDocument()
       expect(screen.getByText('Frequency Spectrum')).toBeInTheDocument()
     })
 
+    expect(screen.getByTestId('audio-engine-workspace-graph')).toBeInTheDocument()
     expect(screen.getByText('VU Meter Mock')).toBeInTheDocument()
     expect(screen.getByText('Loudness (LUFS)')).toBeInTheDocument()
     expect(screen.getByText('Phase Correlation')).toBeInTheDocument()
@@ -283,6 +290,20 @@ describe('AudioEnginePage', () => {
     expect(screen.getAllByText('Latency pressure').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Stable').length).toBeGreaterThanOrEqual(1)
     expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('09')
+  })
+
+  it('expands routing rows to reveal direct detail and controls', async () => {
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Expand row for USB Rack' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand row for USB Rack' }))
+
+    expect(screen.getByText('Default runtime device')).toBeInTheDocument()
+    expect(screen.getByText('alsa')).toBeInTheDocument()
+    expect(screen.getAllByText('Expandable detail').length).toBeGreaterThanOrEqual(1)
   })
 
   it('falls back to cluster nodes when topology omits nodes for a remote detail selection', async () => {

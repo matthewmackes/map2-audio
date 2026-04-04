@@ -76,6 +76,10 @@
   width: 100%;
 }
 
+.audio-engine-page__section.is-highlighted {
+  border-top-color: color-mix(in srgb, var(--cds-link-primary) 40%, var(--cds-border-subtle-01));
+}
+
 .audio-engine-page__section-header {
   display: flex;
   align-items: flex-start;
@@ -104,6 +108,11 @@
 .audio-engine-page__section-tile {
   padding: var(--cds-spacing-05);
   margin-bottom: var(--cds-spacing-05);
+}
+
+.audio-engine-page__section-tile.is-highlighted {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 45%, var(--cds-border-subtle-01));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-link-primary) 18%, transparent);
 }
 
 .audio-engine-page__kv-grid {
@@ -159,6 +168,29 @@
   box-sizing: border-box;
 }
 
+.audio-engine-page__workspace-hero {
+  padding: var(--cds-spacing-04);
+}
+
+.audio-engine-page__workspace-graph {
+  height: min(42rem, 70vh);
+  min-height: 30rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary) 11%, transparent), transparent 40%),
+    linear-gradient(180deg, var(--cds-layer-02), var(--cds-layer-01));
+}
+
+.audio-engine-page__workspace-graph-empty {
+  display: grid;
+  place-items: center;
+  min-height: 20rem;
+  padding: var(--cds-spacing-06);
+  color: var(--cds-text-secondary);
+  border: 1px dashed var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
 .audio-engine-page__panel-header {
   display: flex;
   align-items: center;
@@ -190,8 +222,49 @@
   overflow: hidden;
 }
 
+.audio-engine-page__table-tile.is-highlighted {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 45%, var(--cds-border-subtle-01));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-link-primary) 18%, transparent);
+}
+
 .audio-engine-page__table-container {
   overflow-x: auto;
+}
+
+.audio-engine-page__expanded-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-04) 0;
+}
+
+.audio-engine-page__expanded-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--cds-spacing-03);
+}
+
+.audio-engine-page__expanded-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-01);
+  min-width: 0;
+  padding: var(--cds-spacing-03);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.audio-engine-page__expanded-value {
+  color: var(--cds-text-primary);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.audio-engine-page__expanded-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
 }
 
 .audio-engine-page__mobile-accordion {

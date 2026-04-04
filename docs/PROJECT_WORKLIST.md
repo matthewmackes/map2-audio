@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 21:25 EDT - Closed T701-subA after reordering the `/platforms` rail, grouping utility workspaces at the bottom, and removing Audio Table from launcher/navigation data during the hard cut.
+Last updated: 2026-04-03 21:49 EDT - Closed T701-subB after turning `/platforms/audio-engine` into a React Flow-first runtime workspace with authority tags, routing anchors, and expandable direct-detail tables.
 
 ID: T697
 Status: [✓] Done
@@ -122,7 +122,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T701-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build `/platforms/audio-engine` as the JUCE current-state React Flow workspace
     Description:
     - Goal / acceptance criteria: Move JUCE current-state and control surfaces under `/platforms/audio-engine` with a read-only authority-backed React Flow canvas at the top, traffic pulses, graph-to-table anchoring, expandable Carbon rows, and JUCE controls below the canvas.
@@ -130,6 +130,15 @@ Subtasks:
     - Dependencies: T696
     - Estimated effort: High
     - Required outputs: audio-engine workspace refactor, authority-backed JUCE flow model, expandable-row table, diagnostic dialogs, tests.
+    - Completion notes:
+      - Added `web/src/app/components/AudioEngine/audioEngineWorkspaceGraph.ts` and `web/src/app/components/AudioEngine/AudioEngineWorkspaceGraph.tsx` so `/platforms/audio-engine` now renders an authority-tagged JUCE runtime topology canvas with animated traffic pulses, source-of-truth/runtime/control nodes, and click-through anchors into the matching table or diagnostics section.
+      - Refactored `web/src/app/pages/AudioEnginePage.tsx` so source-of-truth data is queried once, the new `Audio Flow Workspace` hero sits at the top of the page, graph selections scroll into routing/control anchors, and routing tables now use Carbon expandable rows with direct detail plus mute actions for observed source/sink nodes.
+      - Updated `web/src/app/pages/AudioEnginePage.css` to support the graph hero, expanded row cards, and anchor-highlight states that keep the graph-on-top/table-on-bottom contract visually coherent inside the routed Platforms shell.
+      - Added focused regression coverage in `web/src/app/components/AudioEngine/audioEngineWorkspaceGraph.test.ts` and extended `web/src/app/pages/AudioEnginePage.test.tsx` so the topology model, workspace hero, and expandable routing detail contract are all locked.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/AudioEngine/audioEngineWorkspaceGraph.test.ts src/app/pages/AudioEnginePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subC
     Status: [ ] Todo
     Title: Build `/platforms/avb-routing` React Flow workspace with Tesira-aware node detail
@@ -176,7 +185,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
 Assigned to: Codex
-Last updated: 2026-04-03 21:25 EDT - Codex
+Last updated: 2026-04-03 21:49 EDT - Codex
 
 ID: T695
 Status: [✓] Done
