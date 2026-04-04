@@ -3,6 +3,7 @@ import { Launch } from '@carbon/icons-react'
 import { Button, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraAvbStreams, useTesiraPTP } from '../hooks/useTesiraApi'
+import { buildAvbRoutingWorkspaceHref } from '../../AvbRouting/avbRoutingWorkspaceHref'
 import './TesiraCarbonChrome.css'
 
 interface TesiraAvbTabProps {
@@ -95,9 +96,10 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
                         size="sm"
                         kind="ghost"
                         renderIcon={Launch}
-                        onClick={() => navigate(
-                          `/avb-routing?focusTesiraDevice=${encodeURIComponent(deviceId)}&focusEntity=${encodeURIComponent(String(stream.entity_id || ''))}`,
-                        )}
+                        onClick={() => navigate(buildAvbRoutingWorkspaceHref({
+                          tesiraDeviceId: deviceId,
+                          entityId: stream.entity_id || null,
+                        }))}
                       >
                         Route
                       </Button>

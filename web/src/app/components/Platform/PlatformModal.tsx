@@ -57,6 +57,7 @@ import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
+import { AvbRoutingWorkspace } from '../AvbRouting/AvbRoutingWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -871,6 +872,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   const Icon = LAYER_ICONS[layer.id]
   const [selectedMidiRowId, setSelectedMidiRowId] = useState<string | null>(null)
   const isClusterLayer = layer.id === 'cluster-dashboard'
+  const isAvbLayer = layer.id === 'avb-routing'
   const isMidiLayer = layer.id === 'midi-cluster'
   const isSingleNodeLayer = layer.id === 'single-node'
 
@@ -899,6 +901,8 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
       )}
       {isClusterLayer ? (
         <ClusterDashboardWorkspace layer={layer} />
+      ) : isAvbLayer ? (
+        <AvbRoutingWorkspace layer={layer} />
       ) : (
         <>
           <LayerSummaryTiles items={layer.gridItems} />

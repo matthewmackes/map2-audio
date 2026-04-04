@@ -192,6 +192,25 @@ jest.mock('../../hooks/usePlatformShellData', () => ({
         error: null,
       },
       {
+        id: 'avb-routing',
+        label: 'AVB Routing',
+        shortLabel: 'AVB',
+        description: 'AVB Routing',
+        accent: 'var(--cds-support-info)',
+        health: 'healthy',
+        activityLevel: 0,
+        alertCount: 0,
+        summaryMetrics: [],
+        tableRows: [],
+        tableColumns: [],
+        tableTitle: 'AVB Routing',
+        tableDescription: 'AVB Routing',
+        gridItems: [],
+        notifications: [],
+        isLoading: false,
+        error: null,
+      },
+      {
         id: 'single-node',
         label: 'Single Node',
         shortLabel: 'Single Node',
@@ -245,6 +264,10 @@ jest.mock('../../hooks/useMidiCluster', () => ({
 
 jest.mock('../../hooks/useNodeOperations', () => ({
   useNodeOperations: () => mockUseNodeOperations(),
+}))
+
+jest.mock('../AvbRouting/AvbRoutingWorkspace', () => ({
+  AvbRoutingWorkspace: () => <div data-testid="avb-routing-workspace">AVB Routing Workspace Mock</div>,
 }))
 
 describe('PlatformModalContent', () => {
@@ -448,5 +471,22 @@ describe('PlatformModalContent', () => {
     expect(screen.getByText('Question 4 of 10')).toBeInTheDocument()
     expect(screen.getAllByText('Can the node prepare its local state safely?').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Stashing local changes before applying the update').length).toBeGreaterThan(0)
+  })
+
+  it('renders the dedicated AVB workspace when the avb-routing layer is active', () => {
+    mockActiveLayerId = 'avb-routing'
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} initialLayer="avb-routing" />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByTestId('avb-routing-workspace')).toBeInTheDocument()
   })
 })

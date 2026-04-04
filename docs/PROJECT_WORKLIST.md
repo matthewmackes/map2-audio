@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 21:49 EDT - Closed T701-subB after turning `/platforms/audio-engine` into a React Flow-first runtime workspace with authority tags, routing anchors, and expandable direct-detail tables.
+Last updated: 2026-04-03 22:20 EDT - Closed T701-subC after replacing `/platforms/avb-routing` with a graph-first AVB/Tesira workspace, routed deep-link focus handling, and expandable node detail panels.
 
 ID: T697
 Status: [✓] Done
@@ -140,7 +140,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T701-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build `/platforms/avb-routing` React Flow workspace with Tesira-aware node detail
     Description:
     - Goal / acceptance criteria: Add an AVB-focused React Flow canvas and bottom table to `/platforms/avb-routing`, route Tesira-linked objects there with correct node context, and populate per-node detail from the Tesira interface/API in addition to generic AVB data.
@@ -148,6 +148,16 @@ Subtasks:
     - Dependencies: Existing AVB/Tesira clients and routes
     - Estimated effort: High
     - Required outputs: AVB flow canvas, Tesira-aware detail binding, deep-link handling, diagnostics, tests.
+    - Completion notes:
+      - Added `web/src/app/components/AvbRouting/AvbRoutingWorkspace.tsx`, `web/src/app/components/AvbRouting/AvbRoutingWorkspaceGraph.tsx`, and `web/src/app/components/AvbRouting/AvbRoutingWorkspace.css` so the routed `/platforms/avb-routing` layer now renders a dedicated graph-first workspace with a React Flow hero, bottom expandable node table, anchor-aware interactions, and node-scoped detail panels.
+      - Added `web/src/app/components/AvbRouting/avbRoutingWorkspaceGraph.ts` to build the AVB/Tesira topology model with fabric, node, and device cards plus active-route edges and summary metadata, and covered the pure model with `web/src/app/components/AvbRouting/avbRoutingWorkspaceGraph.test.ts`.
+      - Added `web/src/app/components/AvbRouting/avbRoutingWorkspaceHref.ts` so physical-object handoffs can build canonical `/platforms/avb-routing` deep links with `focusTesiraDevice`, `focusEntity`, and `focusNodeId` query params, and locked the contract in `web/src/app/components/AvbRouting/avbRoutingWorkspaceHref.test.ts`.
+      - Updated `web/src/app/components/Platform/PlatformModal.tsx` so the `avb-routing` layer renders the dedicated workspace instead of the generic layer table chrome, and extended `web/src/app/components/Platform/PlatformModal.test.tsx` plus `web/src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx` to cover the routed shell integration and focus behavior.
+      - Updated `web/src/app/components/Tesira/components/TesiraAvbTab.tsx` and `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx` so Tesira launch points now deep-link into `/platforms/avb-routing` with the correct node/device context, and added focused regressions in `web/src/app/components/Tesira/components/TesiraAvbTab.test.tsx` and `web/src/app/components/Tesira/components/TesiraDeviceDashboard.test.tsx`.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/AvbRouting/avbRoutingWorkspaceHref.test.ts src/app/components/AvbRouting/avbRoutingWorkspaceGraph.test.ts src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx src/app/components/Tesira/components/TesiraAvbTab.test.tsx src/app/components/Tesira/components/TesiraDeviceDashboard.test.tsx src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subD
     Status: [ ] Todo
     Title: Build `/platforms/cluster-dashboard` React Flow workspace for cluster topology and activity
@@ -185,7 +195,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
 Assigned to: Codex
-Last updated: 2026-04-03 21:49 EDT - Codex
+Last updated: 2026-04-03 22:20 EDT - Codex
 
 ID: T695
 Status: [✓] Done

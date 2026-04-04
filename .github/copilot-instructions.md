@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (audio-engine graph workspace and expandable routing table contract documented)
+> **Last Updated**: April 3, 2026 (avb-routing graph workspace and Tesira deep-link focus contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1441,6 +1441,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/AudioEngine/audioEngineWorkspaceGraph.test.ts src/app/pages/AudioEnginePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: For `/platforms` hard-cut workspaces, the graph must lead and the tables must behave as anchored drill-down detail. If a page still reads like a flat dashboard, the migration is not actually complete.
 
+**48. AVB Routing Must Live Under `/platforms/avb-routing` With Tesira Focus Params, Not The Removed `/avb-routing` Path (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/components/AvbRouting/AvbRoutingWorkspace.tsx`, `web/src/app/components/AvbRouting/AvbRoutingWorkspaceGraph.tsx`, `web/src/app/components/AvbRouting/avbRoutingWorkspaceGraph.ts`, `web/src/app/components/AvbRouting/avbRoutingWorkspaceHref.ts`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Tesira/components/TesiraAvbTab.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`
+- **Problem**: Tesira AVB launch points were still aiming at the stale `/avb-routing` route while the routed Platforms AVB layer only rendered generic layer-table chrome, so AVB/Tesira objects could not land in a graph-first operator workspace with the correct node/device context.
+- **Root Cause**: The hard-cut shell migration created the routed `/platforms/avb-routing` destination, but the AVB layer never received its dedicated workspace implementation and deep-linking code still carried the pre-hard-cut path assumptions.
+- **Fix**: Render a dedicated `AvbRoutingWorkspace` from `PlatformModal.tsx`, build canonical deep links with `buildAvbRoutingWorkspaceHref(...)`, and preserve `focusTesiraDevice`, `focusEntity`, and `focusNodeId` query params so Tesira cards, graph nodes, and table expansions can all resolve the same operator context.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/AvbRouting/avbRoutingWorkspaceHref.test.ts src/app/components/AvbRouting/avbRoutingWorkspaceGraph.test.ts src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx src/app/components/Tesira/components/TesiraAvbTab.test.tsx src/app/components/Tesira/components/TesiraDeviceDashboard.test.tsx src/app/components/Platform/PlatformModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: During the `/platforms` hard cut, AVB/Tesira handoffs must target the routed shell destination, not legacy standalone paths, and all cross-workspace links need a shared focus-param contract or node context will drift between graph and table surfaces.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1711,6 +1719,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - AVB Routing Graph Workspace And Tesira Deep-Link Focus Contract
+- **Section**: Gotchas & Learned Fixes (#48), Update Log
+- **Change**: Documented the dedicated `/platforms/avb-routing` workspace, the shared deep-link helper for AVB/Tesira objects, and the focus-param contract that keeps graph, table, and Tesira launch points aligned.
+- **Reason**: T701-subC replaced the generic AVB layer chrome with a graph-first workspace and had to close the stale `/avb-routing` deep-link seam at the same time.
+- **Impact**: Future assistants should keep AVB/Tesira routing inside the Platforms shell and preserve `focusTesiraDevice`/`focusEntity`/`focusNodeId` when adding or refactoring physical-object links.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/components/AvbRouting/AvbRoutingWorkspace.tsx`, `web/src/app/components/AvbRouting/AvbRoutingWorkspaceGraph.tsx`, `web/src/app/components/AvbRouting/avbRoutingWorkspaceGraph.ts`, `web/src/app/components/AvbRouting/avbRoutingWorkspaceHref.ts`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Tesira/components/TesiraAvbTab.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`
 
 ### [2026-04-03] - Audio Engine Graph Workspace And Expandable Routing Table Contract
 - **Section**: Gotchas & Learned Fixes (#47), Update Log

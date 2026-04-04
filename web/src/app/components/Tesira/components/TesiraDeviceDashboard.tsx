@@ -6,7 +6,7 @@ import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
 import { TesiraDeployDialog } from './TesiraDeployDialog'
 import { TesiraQuickCommandPanel } from './TesiraQuickCommandPanel'
-import { buildPlatformHref } from '../../../platform/model'
+import { buildAvbRoutingWorkspaceHref } from '../../AvbRouting/avbRoutingWorkspaceHref'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDeviceDashboardProps {
@@ -81,7 +81,14 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
           <Button size="sm" kind="secondary" onClick={() => setDeployOpen(true)}>
             Export for SageVue
           </Button>
-          <Button size="sm" kind="tertiary" onClick={() => window.location.assign(buildPlatformHref('avb-routing'))}>
+          <Button
+            size="sm"
+            kind="tertiary"
+            onClick={() => navigate(buildAvbRoutingWorkspaceHref({
+              tesiraDeviceId: deviceId,
+              nodeId: device.source_node_id ?? null,
+            }))}
+          >
             AVB Routing
           </Button>
         </div>
