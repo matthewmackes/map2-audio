@@ -38,7 +38,6 @@ const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcess
 const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPage').then(m => ({ default: m.SnapshotEditorPage })))
-const AudioTablePage        = lazy(() => import('./pages/AudioTablePage').then(m => ({ default: m.AudioTablePage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
@@ -234,7 +233,6 @@ export function App() {
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/snapshot-editor" element={<SnapshotEditorPage />} />
-                                <Route path="/audio-table" element={<AudioTablePage />} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/dsp" element={<DSPPage />} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />

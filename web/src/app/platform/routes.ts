@@ -16,6 +16,31 @@ export function buildPlatformWorkspacePath(workspace: PlatformWorkspaceId = 'ove
   return `/platforms/${workspace}`
 }
 
+function normalizeSearchValue(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+export function buildPlatformNodeWorkspaceHref(
+  workspace: PlatformWorkspaceId = 'overview',
+  nodeId?: string | null,
+): string {
+  const normalizedNodeId = normalizeSearchValue(nodeId)
+  const basePath = buildPlatformWorkspacePath(workspace)
+
+  if (!normalizedNodeId) {
+    return basePath
+  }
+
+  const searchParams = new URLSearchParams()
+  searchParams.set('focusNodeId', normalizedNodeId)
+  return `${basePath}?${searchParams.toString()}`
+}
+
 export function resolvePlatformWorkspaceTarget(workspace: string | null | undefined): {
   layer?: PlatformLayerId
   panel?: StandalonePanel

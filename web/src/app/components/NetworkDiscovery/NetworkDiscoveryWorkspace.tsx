@@ -1,6 +1,6 @@
 import './NetworkDiscoveryWorkspace.css'
 
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Button,
   InlineLoading,
@@ -22,12 +22,13 @@ import {
   Tile,
 } from '@carbon/react'
 import { Launch } from '@carbon/icons-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useCluster } from '../../contexts/ClusterContext'
 import { usePeerDiscoveryStatus, usePeerLatencyHistory, type PeerDiscoveryPeer } from '../../hooks/usePeerDiscovery'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
-import { buildPlatformHref, type PlatformLayerData } from '../../platform/model'
+import type { PlatformLayerData } from '../../platform/model'
+import { buildPlatformNodeWorkspaceHref } from '../../platform/routes'
 import { useViewedNode, useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeSummary } from '../../types/node'
 import {
@@ -72,6 +73,15 @@ function formatLatencyMs(value: number | null | undefined): string {
     return '—'
   }
   return `${Number(value).toFixed(1)} ms`
+}
+
+function normalizeNodeId(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
 }
 
 function tagTypeForVisibility(record: DiscoveryWorkspaceRecord): 'green' | 'warm-gray' | 'red' | 'cool-gray' {
@@ -250,6 +260,7 @@ export function NetworkDiscoveryWorkspace({
   layer: PlatformLayerData
 }) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { setActiveNode } = useCluster()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const topologyQuery = useNodeTopology()
@@ -258,7 +269,9 @@ export function NetworkDiscoveryWorkspace({
   const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
   const localNode = nodes.find((node) => node.is_local) ?? nodes[0] ?? null
   const viewedNodeId = useViewedNode(NODE_PAGE_KEYS.platform, localNode?.node_id ?? 'local')
-  const sourceNode = nodes.find((node) => node.node_id === viewedNodeId) ?? localNode
+  const focusedNodeId = normalizeNodeId(searchParams.get('focusNodeId'))
+  const effectiveViewedNodeId = focusedNodeId ?? viewedNodeId
+  const sourceNode = nodes.find((node) => node.node_id === effectiveViewedNodeId) ?? localNode
   const [searchValue, setSearchValue] = useState('')
   const topologyNodeById = useMemo(
     () => new Map(nodes.map((node) => [node.node_id, node])),
@@ -292,8 +305,30 @@ export function NetworkDiscoveryWorkspace({
       })
   }, [discoveryQuery.data?.peers, nodes, topologyNodeById])
 
-  const [selectedPeerId, setSelectedPeerId] = useState<string | null>(records[0]?.id ?? null)
+  const [selectedPeerId, setSelectedPeerId] = useState<string | null>(focusedNodeId ?? records[0]?.id ?? null)
   const tableRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!focusedNodeId || !nodes.some((node) => node.node_id === focusedNodeId)) {
+      return
+    }
+
+    setViewedNode(NODE_PAGE_KEYS.platform, focusedNodeId)
+  }, [focusedNodeId, nodes, setViewedNode])
+
+  useEffect(() => {
+    const preferredPeerId = records.some((record) => record.id === focusedNodeId)
+      ? focusedNodeId
+      : records[0]?.id ?? null
+
+    setSelectedPeerId((current) => {
+      if (current && records.some((record) => record.id === current)) {
+        return current
+      }
+
+      return preferredPeerId
+    })
+  }, [focusedNodeId, records])
 
   const filteredRecords = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
@@ -354,7 +389,7 @@ export function NetworkDiscoveryWorkspace({
   const openWorkspace = useCallback((workspace: 'management' | 'cluster-dashboard' | 'avb-routing', nodeId: string) => {
     setViewedNode(NODE_PAGE_KEYS.platform, nodeId)
     setActiveNode(localNode && nodeId === localNode.node_id ? null : nodeId)
-    navigate(buildPlatformHref(workspace))
+    navigate(buildPlatformNodeWorkspaceHref(workspace, nodeId))
   }, [localNode, navigate, setActiveNode, setViewedNode])
 
   const discoveryError = discoveryQuery.error instanceof Error ? discoveryQuery.error.message : null

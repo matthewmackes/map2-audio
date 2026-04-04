@@ -98,6 +98,14 @@ describe('App routing', () => {
     expect(await screen.findByTestId('artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins|discover=no')
   })
 
+  it('does not keep /audio-table as a routed surface after the platforms hard cut', async () => {
+    window.history.pushState({}, '', '/audio-table')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
+  })
+
   it('redirects the bare /platforms route into the overview workspace', async () => {
     window.history.pushState({}, '', '/platforms')
 

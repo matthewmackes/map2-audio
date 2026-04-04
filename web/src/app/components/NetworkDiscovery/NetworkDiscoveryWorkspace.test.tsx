@@ -46,6 +46,25 @@ jest.mock('../../hooks/useNodeTopology', () => ({
           is_local: true,
           is_viewed: true,
         },
+        {
+          node_id: 'node-b',
+          hostname: 'rack-b',
+          display_label: 'Backup',
+          role: 'management_node',
+          status: 'warn',
+          cpu_percent: 22,
+          memory_percent: 39,
+          xrun_count: 0,
+          audio_latency_ms: 3.1,
+          services: {
+            backend: true,
+            juce_engine: true,
+            pipewire: true,
+          },
+          last_seen: '2026-04-03T22:00:00Z',
+          is_local: false,
+          is_viewed: false,
+        },
       ],
       audio_edges: [],
       network_edges: [],
@@ -204,6 +223,37 @@ describe('NetworkDiscoveryWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Management' }))
 
     expect(mockSetActiveNode).toHaveBeenCalledWith('node-b')
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management')
+    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management?focusNodeId=node-b')
+  })
+
+  it('hydrates the source-node context from focusNodeId query params', () => {
+    render(
+      <MemoryRouter initialEntries={['/platforms/network-discovery?focusNodeId=node-b']}>
+        <NetworkDiscoveryWorkspace
+          layer={{
+            id: 'network-discovery',
+            label: 'Network Discovery',
+            shortLabel: 'Discovery',
+            description: 'Network Discovery',
+            accent: 'var(--cds-support-info)',
+            health: 'healthy',
+            activityLevel: 0,
+            alertCount: 0,
+            isLoading: false,
+            error: null,
+            summaryMetrics: [],
+            gridItems: [],
+            tableColumns: [],
+            tableRows: [],
+            tableTitle: 'Network discovery telemetry',
+            tableDescription: 'Discovery detail',
+            notifications: [],
+          }}
+        />
+      </MemoryRouter>,
+    )
+
+    expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
+    expect(screen.getByText('Remote source selected')).toBeInTheDocument()
   })
 })

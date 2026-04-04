@@ -4,7 +4,7 @@ import { Button, Link, Tag } from '@carbon/react'
 import { Close } from '@carbon/icons-react'
 import { useNavigate } from 'react-router-dom'
 
-import { buildPlatformHref } from '../../platform/model'
+import { buildPlatformNodeWorkspaceHref } from '../../platform/routes'
 import { useNodeAlertStore } from '../../stores/nodeAlertStore'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeSummary } from '../../types/node'
@@ -31,7 +31,7 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
   const alerts = useNodeAlertStore((state) => state.alerts).filter((a) => a.node_id === node.node_id)
   const dismissAlert = useNodeAlertStore((state) => state.dismissAlert)
   const accentColor = getNodePresenceAccent(getNodePresence(node))
-  const managementHref = buildPlatformHref('management')
+  const managementHref = buildPlatformNodeWorkspaceHref('management', node.node_id)
   const healthPercent = computeNodeHealthPercent(node)
   const healthTone = getHealthPercentTone(healthPercent)
   const contextLabel = node.is_local ? 'Local studio view' : 'Remote live view'

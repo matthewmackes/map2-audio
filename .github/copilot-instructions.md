@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (management/network-discovery workspace contract and Platforms route-rename alias rules documented)
+> **Last Updated**: April 3, 2026 (node-aware Platforms deep-link contract and final `/audio-table` hard-cut removal documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1465,6 +1465,22 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/ManagementWorkspace/managementWorkspaceGraph.test.ts src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/NetworkDiscovery/networkDiscoveryWorkspaceGraph.test.ts src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/data/advancedMenuItems.test.ts src/app/components/NodeNav/NodeNavChip.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: Whenever a `/platforms` layer is renamed or moved, update `PLATFORM_LAYER_META`, route alias normalization, shared menu aliases, and every node/graph handoff in the same slice. Legacy aliases may remain for compatibility, but active shell IDs and operator-visible destinations must stay singular and consistent.
 
+**51. Physical-Object Platform Handoffs Must Carry `focusNodeId` In The URL And Hydrate Target Context On Load (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/platform/routes.ts`, `web/src/app/platform/routes.test.ts`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, `web/src/app/components/NodeNav/NodeMiniCard.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`
+- **Problem**: Graph and table objects could navigate into the right `/platforms/*` workspace while still losing the intended node context on reload or shareable deep links because the handoff depended on in-memory viewed-node state alone.
+- **Root Cause**: The hard-cut workspace migration fixed routed destinations first, but it had not yet standardized a URL-level node-context contract for cross-workspace physical-object launches.
+- **Fix**: Add a shared `buildPlatformNodeWorkspaceHref(...)` helper that emits `/platforms/*?focusNodeId=...`, preserve `focusNodeId` across legacy alias redirects, update graph/table launch points to use that builder, and hydrate Management/Network Discovery workspace node context from the query string on load.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/components/NodeNav/NodeNavChip.test.tsx src/app/platform/routes.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: If a physical object launches into another `/platforms` workspace, the node scope must travel in the URL, not only in Zustand or transient cluster state. Otherwise deep links are not cold-start safe and operator context will drift.
+
+**52. The `/audio-table` Hard Cut Is Not Complete Until The Route, Lazy Import, And Production Chunk Are Gone (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/App.tsx`, `web/src/app/App.platformRoute.test.tsx`, `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/AudioTablePage.test.tsx`, `web/src/app/pages/audioTableKeyboard.test.ts`, `web/src/app/components/AudioTable/*`
+- **Problem**: The Platforms migration had already removed shared menu/launcher exposure for `Audio Table`, but the production app still shipped a dedicated `AudioTablePage` chunk because the lazy route and page modules remained in the router tree.
+- **Root Cause**: Navigation cleanup landed earlier than the final route/file deletion, so the retired surface was hidden from normal entry points while still being directly reachable and still contributing bundle weight.
+- **Fix**: Remove the `/audio-table` lazy route from `App.tsx`, add a routing regression proving `/audio-table` no longer resolves to a dedicated page, delete the legacy page/tests/private helpers, and confirm the production build output no longer emits an `AudioTablePage` asset.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/data/launcherCatalog.test.tsx src/app/data/advancedMenuItems.test.ts src/app/pages/HomePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For a hard-cut retirement, hiding a route from menus is not enough. The route import, page modules, and emitted chunk must disappear together or the legacy surface is still part of the shipped product.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1735,6 +1751,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - AudioTable Route Deletion And Node-Aware Platforms Deep-Link Finalization
+- **Section**: Gotchas & Learned Fixes (#51, #52), Update Log
+- **Change**: Documented the shared `focusNodeId` URL contract for physical-object handoffs across `/platforms/*`, plus the final hard-cut rule that `/audio-table` is not retired until the route, lazy import, files, and production chunk are all gone.
+- **Reason**: T701-subF and T701-subG closed the last continuity and cleanup gaps in the Platforms hard cut: context-safe deep links and actual removal of the old Audio Table surface from the shipped bundle.
+- **Impact**: Future assistants should preserve URL-based node context for platform handoffs and should treat route retirement as incomplete unless the production build output proves the old chunk disappeared.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/platform/routes.ts`, `web/src/app/App.tsx`, `web/src/app/App.platformRoute.test.tsx`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, `web/src/app/components/NodeNav/NodeMiniCard.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`
 
 ### [2026-04-03] - Management And Network-Discovery Workspace Contract Plus Platforms Route-Rename Alias Rules
 - **Section**: Gotchas & Learned Fixes (#50), Update Log
@@ -2296,5 +2319,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 30, 2026
+**Last Updated**: April 3, 2026
 **Maintained by**: GitHub Copilot AI Assistants

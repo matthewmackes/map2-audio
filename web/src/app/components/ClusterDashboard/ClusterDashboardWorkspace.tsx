@@ -26,7 +26,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useCluster } from '../../contexts/ClusterContext'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
-import { buildPlatformHref, type PlatformHealth, type PlatformLayerData } from '../../platform/model'
+import type { PlatformHealth, PlatformLayerData } from '../../platform/model'
+import { buildPlatformNodeWorkspaceHref } from '../../platform/routes'
 import { useViewedNode, useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeAudioEdge, NodeNetworkEdge, NodeSummary } from '../../types/node'
 import {
@@ -416,6 +417,10 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
         ? previous
         : { ...previous, [preferredNodeId]: true }
     ))
+
+    if (normalizedFocusNodeId && knownNodeIds.has(normalizedFocusNodeId)) {
+      setViewedNode(NODE_PAGE_KEYS.platform, normalizedFocusNodeId)
+    }
   }, [activeNodeId, fallbackLocalId, nodeRecords, normalizedFocusNodeId, viewedNodeId])
 
   const filteredRecords = useMemo(() => {
@@ -483,7 +488,7 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
 
   const handleOpenManagementWorkspace = useCallback((nodeId: string) => {
     handleAdoptNodeContext(nodeId)
-    navigate(buildPlatformHref('management'))
+    navigate(buildPlatformNodeWorkspaceHref('management', nodeId))
   }, [handleAdoptNodeContext, navigate])
 
   const isLoading = topologyQuery.isLoading && nodes.length === 0

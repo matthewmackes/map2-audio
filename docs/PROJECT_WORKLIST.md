@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 23:18 EDT - Completed T701-subE for management/network-discovery workspaces and started T701-subF to harden node-correct `/platforms/*` deep links.
+Last updated: 2026-04-03 23:36 EDT - Completed T701 by removing the legacy `/audio-table` route/code; only blocked items remain in the canonical worklist.
 
 ID: T697
 Status: [✓] Done
@@ -93,7 +93,7 @@ Last updated: 2026-04-03 17:43 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T701
-Status: [>] In Progress
+Status: [✓] Done
 Title: Hard-cut Audio Table into `/platforms` workspaces with React Flow-first operator surfaces
 Description:
 - Goal / acceptance criteria: Hard-cut the standalone `/audio-table` route and move its surviving concepts into the correct `/platforms/*` workspace areas. The resulting flagship operator experience should pair a read-only JUCE current-state React Flow view with separate cluster/connectivity React Flow layers across adopted nodes (audio, management, AVB, cluster, network discovery, and related transport/control links, explicitly excluding MIDI from this interface), then back those views with advanced direct-edit tables appropriate to each workspace topic. The page layout should match the `/platforms` design pattern one-for-one, including the left-hand navigation and shared subpage chrome. Every operational/data `/platforms` submenu should receive its own React Flow canvas designed specifically for that dataset and view, except `/platforms/overview`, which should remain a supervisory landing surface with no flow canvas. Every React Flow-backed workspace should preserve the same graph-on-top, table-on-bottom composition. This first hard-cut implementation applies to all operational/data workspaces, not a phased subset. JUCE controls should live under `/platforms/audio-engine`. Utility workspaces such as `about`, `theme`, `host-machine`, and `workspace-catalog` should move to the bottom of the `/platforms` navigation and use Carbon green navigation buttons. After the hard cut, `/platforms/overview` should remain the default landing destination. Day one is expected to ship full direct-edit coverage for the in-scope entities rather than a reduced MVP subset, the page must serve performers, audio engineers, and cluster administrators together in one universal layout with no mode switching, and the overall shell should stay near-pure Carbon enterprise console. Table behavior should follow Carbon Data Table standards: scan-first presentation, toolbar-driven global actions, and progressive disclosure for denser row-level editing rather than always-on spreadsheet-style hot cells everywhere. Deep row editing should use expandable rows as the primary pattern rather than side inspectors. The page is desktop-only. The layout should make React Flow the hero: roughly 70% of the viewable page should be dedicated to the graph views, with the tables positioned underneath them rather than competing laterally as the primary surface. Demo-critical graph behavior must include visible traffic pulses that indicate activity volume through the topology rather than showing only static connectivity, plus diagnostic depth for MAP2 latency-pressure measurements, AVB audio-connection metrics, Biamp Tesira connectivity information, and network discovery data such as ping times and traceroute detail from the selected host perspective. All adopted MAP2 hosts must be available as the source for network discovery views, but that workspace should rely on telemetry already collected through node health, heartbeat, and related backend signals rather than launching new UI-triggered probes. Graph interactions should jump or anchor the operator to the relevant table section below, while dedicated dialogs remain available for deeper diagnostic drill-down. Every represented physical object must also expose a direct link into the correct `/platforms/*` page with the correct node context preloaded; Biamp Tesira-linked objects should route through `/platforms/avb-routing`, and that destination must use the Tesira interface/API to populate per-node detail. Reuse or interconnect with existing `/platforms` page information whenever possible instead of inventing duplicate data surfaces. Remove other platform-facing references to `audio-table`; this is a hard cut, not a coexistence phase, and the `/audio-table` route should be removed without a legacy redirect. Delete the old `AudioTable` component files and tests as part of the same hard-cut workstream rather than parking them as temporary legacy code. For the React Flow canvases themselves, use current best-in-class 2025-2026 React Flow visual patterns per dataset even when some canvas-level styling departs from strict Carbon compliance.
@@ -196,7 +196,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T701-subF
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Wire node-correct `/platforms/*` deep links from all represented physical objects
     Description:
     - Goal / acceptance criteria: Ensure every physical object rendered in React Flow or tables exposes a deep link to the correct `/platforms/*` workspace with the appropriate node context preloaded.
@@ -204,9 +204,18 @@ Subtasks:
     - Dependencies: T701-subB through T701-subE
     - Estimated effort: Medium
     - Required outputs: consistent link contract, node-context propagation, focused tests.
-    - Started after T701-subE locked the management/network-discovery route rename and legacy alias behavior; next pass is auditing every remaining graph/table physical-object launch point against the new node-correct `/platforms/*` destinations.
+    - Completion notes:
+      - Added `buildPlatformNodeWorkspaceHref(...)` in `web/src/app/platform/routes.ts` so node-aware platform handoffs share one canonical `/platforms/*?focusNodeId=...` builder and legacy layer redirects keep `focusNodeId` intact.
+      - Updated `web/src/app/components/NodeNav/NodeMiniCard.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, and `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx` so graph/table launches into management, cluster, and AVB workspaces carry the correct node context in the URL instead of relying only on in-memory store state.
+      - Hydrated `focusNodeId` inside `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx` and `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx` so node-scoped links are cold-start safe, shareable, and able to restore the viewed/source-node context directly from the route.
+      - Added focused route and workspace coverage in `web/src/app/platform/routes.test.ts`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx`, and `web/src/app/components/NodeNav/NodeNavChip.test.tsx`.
+      - Audited the hard-cut workspace handoff surfaces after validation to confirm the active physical-object launch points are now routing through the shared node-aware builder or the AVB/Tesira-specific workspace href helper.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/components/NodeNav/NodeNavChip.test.tsx src/app/platform/routes.test.ts` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subG
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove legacy `AudioTable` route, components, tests, and platform references
     Description:
     - Goal / acceptance criteria: Delete the `/audio-table` route with no redirect, remove old AudioTable components/tests, and scrub remaining platform-facing references so the hard cut is complete.
@@ -214,8 +223,20 @@ Subtasks:
     - Dependencies: T701-subA through T701-subF
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
+    - Completion notes:
+      - Removed the last `/audio-table` route entry and lazy import from `web/src/app/App.tsx`, then added `web/src/app/App.platformRoute.test.tsx` coverage proving `/audio-table` now falls through to the normal routed shell instead of loading a dedicated page.
+      - Deleted `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/AudioTablePage.test.tsx`, `web/src/app/pages/audioTableKeyboard.test.ts`, and the private `web/src/app/components/AudioTable/*` helper files because those modules were no longer referenced anywhere after the hard cut.
+      - Re-audited `web/src/app` for `AudioTablePage`, `components/AudioTable`, `audioTableKeyboard`, and `/audio-table` references so only absence assertions in shared navigation/home tests remain.
+      - Confirmed the rebuilt production asset list no longer emits an `AudioTablePage` chunk, which closes the last live ship path for the retired surface.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/data/launcherCatalog.test.tsx src/app/data/advancedMenuItems.test.ts src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-03 23:18 EDT - Codex
+Last updated: 2026-04-03 23:36 EDT - Codex
+- Completion notes:
+  - Closed the full T701 hard-cut migration by landing graph-first `/platforms` workspaces for audio, AVB/Tesira, cluster, management, and network discovery; preserving required legacy compatibility aliases only where explicitly needed; and deleting the retired standalone `/audio-table` route and code.
+  - The canonical worklist now has no remaining `[ ] Todo` or `[>] In Progress` entries, only `[✗] Blocked` tasks.
 
 ID: T695
 Status: [✓] Done

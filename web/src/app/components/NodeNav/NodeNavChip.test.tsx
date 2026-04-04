@@ -141,7 +141,7 @@ describe('NodeNavChip', () => {
     fireEvent.click(screen.getByText('View details'))
 
     expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/management')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/management?focusNodeId=node-b')
   })
 
   it('renders a single chip for n=1 mode and shows a skeleton while loading', () => {

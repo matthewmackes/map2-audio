@@ -179,6 +179,6 @@ describe('ClusterDashboardWorkspace', () => {
 
     expect(mockSetViewedNode).toHaveBeenCalledWith('nodes', 'node-remote')
     expect(mockSetActiveNode).toHaveBeenCalledWith('node-remote')
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management')
+    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management?focusNodeId=node-remote')
   })
 })

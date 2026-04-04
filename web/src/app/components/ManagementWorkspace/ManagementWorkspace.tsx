@@ -1,6 +1,6 @@
 import './ManagementWorkspace.css'
 
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   InlineLoading,
   InlineNotification,
@@ -20,11 +20,12 @@ import {
   Tag,
   Tile,
 } from '@carbon/react'
+import { useSearchParams } from 'react-router-dom'
 
 import { NodeContextPicker } from '../NodeContextPicker/NodeContextPicker'
 import type { PlatformHealth, PlatformLayerData, PlatformTableRow } from '../../platform/model'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
-import { useViewedNode } from '../../stores/viewedNodeStore'
+import { useViewedNode, useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeSummary } from '../../types/node'
 import {
   NODE_PAGE_KEYS,
@@ -83,6 +84,15 @@ function rowTagType(value: string | number | boolean | null | undefined): 'green
 
 function queryErrorMessage(error: unknown): string | null {
   return error instanceof Error ? error.message : null
+}
+
+function normalizeNodeId(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
 }
 
 function nodeSummaryRecord(node: NodeSummary) {
@@ -186,15 +196,27 @@ export function ManagementWorkspace({
 }: {
   layer: PlatformLayerData
 }) {
+  const [searchParams] = useSearchParams()
   const topologyQuery = useNodeTopology()
+  const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const topology = topologyQuery.data
   const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
   const localNode = nodes.find((node) => node.is_local) ?? nodes[0] ?? null
   const viewedNodeId = useViewedNode(NODE_PAGE_KEYS.platform, localNode?.node_id ?? 'local')
-  const selectedNode = nodes.find((node) => node.node_id === viewedNodeId) ?? localNode
+  const focusedNodeId = normalizeNodeId(searchParams.get('focusNodeId'))
+  const effectiveViewedNodeId = focusedNodeId ?? viewedNodeId
+  const selectedNode = nodes.find((node) => node.node_id === effectiveViewedNodeId) ?? localNode
   const [searchValue, setSearchValue] = useState('')
   const [selectedRowId, setSelectedRowId] = useState<string | null>(layer.tableRows[0]?.id ?? null)
   const tableRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!focusedNodeId || !nodes.some((node) => node.node_id === focusedNodeId)) {
+      return
+    }
+
+    setViewedNode(NODE_PAGE_KEYS.platform, focusedNodeId)
+  }, [focusedNodeId, nodes, setViewedNode])
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase()
