@@ -1799,17 +1799,33 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         reverbProcessor_.process(buffer);
     }
 
-    // Copy output
-    const int copyOutputChannels = std::min(safeOutputChannels, processChannels);
+    // Copy output to the selected monitoring pair so snapshot-level output
+    // selection can move the live stereo mix between hardware pairs.
+    int monitoringOutputStart = monitoringOutputIndex_.load(std::memory_order_acquire);
+    if (monitoringOutputStart < 0 || monitoringOutputStart >= safeOutputChannels) {
+        monitoringOutputStart = 0;
+    }
+    if (safeOutputChannels > 1) {
+        monitoringOutputStart -= monitoringOutputStart % 2;
+    } else {
+        monitoringOutputStart = 0;
+    }
+
+    const int availableMonitoringChannels = std::max(0, safeOutputChannels - monitoringOutputStart);
+    const int copyOutputChannels = std::min(processChannels, availableMonitoringChannels);
     for (int ch = 0; ch < copyOutputChannels; ++ch) {
-        if (outputs[ch] != nullptr) {
-            std::copy_n(buffer.getReadPointer(ch), processSamples, outputs[ch]);
+        const int outputIndex = monitoringOutputStart + ch;
+        if (outputs[outputIndex] != nullptr) {
+            std::copy_n(buffer.getReadPointer(ch), processSamples, outputs[outputIndex]);
             if (processSamples < safeNumSamples) {
-                std::fill_n(outputs[ch] + processSamples, safeNumSamples - processSamples, 0.0f);
+                std::fill_n(outputs[outputIndex] + processSamples, safeNumSamples - processSamples, 0.0f);
             }
         }
     }
-    for (int ch = copyOutputChannels; ch < safeOutputChannels; ++ch) {
+    for (int ch = 0; ch < safeOutputChannels; ++ch) {
+        if (ch >= monitoringOutputStart && ch < monitoringOutputStart + copyOutputChannels) {
+            continue;
+        }
         if (outputs[ch] != nullptr) {
             std::fill_n(outputs[ch], safeNumSamples, 0.0f);
         }
@@ -2068,6 +2084,27 @@ void Map2AudioEngine::setNumInputChannels(int channels) {
 
 void Map2AudioEngine::setNumOutputChannels(int channels) {
     numOutputChannels_ = std::max(1, std::min(channels, 32));  // Clamp to 1-32
+}
+
+bool Map2AudioEngine::setMonitoringOutputIndex(int index) {
+    int maxStartIndex = std::max(0, numOutputChannels_ - 1);
+    if (auto currentDevice = audioIO_.getCurrentDevice(); currentDevice.outputChannels > 0) {
+        maxStartIndex = std::max(0, currentDevice.outputChannels - 1);
+    }
+
+    int normalizedIndex = std::clamp(index, 0, maxStartIndex);
+    if (maxStartIndex > 0) {
+        normalizedIndex -= normalizedIndex % 2;
+    } else {
+        normalizedIndex = 0;
+    }
+
+    monitoringOutputIndex_.store(normalizedIndex, std::memory_order_release);
+    return true;
+}
+
+int Map2AudioEngine::getMonitoringOutputIndex() const {
+    return monitoringOutputIndex_.load(std::memory_order_acquire);
 }
 
 // ========================================

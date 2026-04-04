@@ -2299,6 +2299,11 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Set audio device")
         .def("get_audio_device", &Map2AudioEngine::getAudioDevice,
              "Get audio device name")
+        .def("set_monitoring_output_index", &Map2AudioEngine::setMonitoringOutputIndex,
+             py::arg("index"),
+             "Route the live monitoring mix to the selected hardware output pair")
+        .def("get_monitoring_output_index", &Map2AudioEngine::getMonitoringOutputIndex,
+             "Get the selected monitoring output pair start index")
         .def("set_lv2_path", &Map2AudioEngine::setLv2Path,
              py::arg("path"),
              "Set LV2 plugin search path")

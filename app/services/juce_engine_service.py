@@ -241,6 +241,29 @@ class JuceEngineService(Singleton):
         else:
             logger.warning("JUCE engine rejected audio device %s", normalized_device)
         return success
+
+    async def set_monitoring_output_index(self, index: int) -> bool:
+        """Route the live mix to a specific hardware output pair start index."""
+        normalized_index = max(0, int(index))
+        if not self._engine:
+            return False
+
+        handler = getattr(self._engine, "set_monitoring_output_index", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not support monitoring output selection")
+            return False
+
+        try:
+            result = await asyncio.to_thread(handler, normalized_index)
+        except Exception as exc:
+            logger.error(
+                "Failed to set monitoring output index %s: %s",
+                normalized_index,
+                exc,
+            )
+            return False
+
+        return True if result is None else bool(result)
     
     def is_audio_running(self) -> bool:
         """Check if audio is running.

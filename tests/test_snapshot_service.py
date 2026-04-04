@@ -1956,9 +1956,14 @@ def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_p
 
         def __init__(self) -> None:
             self.audio_device_calls: list[str] = []
+            self.monitoring_output_calls: list[int] = []
 
         async def set_audio_device(self, device_name: str) -> bool:
             self.audio_device_calls.append(device_name)
+            return True
+
+        async def set_monitoring_output_index(self, index: int) -> bool:
+            self.monitoring_output_calls.append(index)
             return True
 
         async def get_topology_mutation_stats(self):
@@ -2049,6 +2054,229 @@ def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_p
             assert updated is not None
             assert updated["output_device"] == "Monitor 2"
             assert engine_stub.audio_device_calls == ["House Left/Right", "Monitor 2"]
+
+    asyncio.run(_run())
+
+
+def test_activate_snapshot_applies_monitoring_output_binding(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _MonitoringOutputEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.audio_device_calls: list[str] = []
+            self.monitoring_output_calls: list[int] = []
+
+        async def set_audio_device(self, device_name: str) -> bool:
+            self.audio_device_calls.append(device_name)
+            return True
+
+        async def set_monitoring_output_index(self, index: int) -> bool:
+            self.monitoring_output_calls.append(index)
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _MonitoringOutputEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="MonitoringOut",
+                input_device="Stage Input",
+                output_device="House Left/Right",
+                controls_payload={"monitoring_output_index": 2},
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+
+            assert activated is not None
+            assert engine_stub.audio_device_calls == ["House Left/Right"]
+            assert engine_stub.monitoring_output_calls == [2]
+            assert activated["runtime_live_state"]["runtime_metrics"]["monitoring_output"] == {
+                "monitoring_output_index": 2,
+                "applied": True,
+                "reason": "applied",
+            }
+
+    asyncio.run(_run())
+
+
+def test_update_snapshot_reapplies_monitoring_output_for_live_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _MonitoringOutputEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.audio_device_calls: list[str] = []
+            self.monitoring_output_calls: list[int] = []
+
+        async def set_audio_device(self, device_name: str) -> bool:
+            self.audio_device_calls.append(device_name)
+            return True
+
+        async def set_monitoring_output_index(self, index: int) -> bool:
+            self.monitoring_output_calls.append(index)
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _MonitoringOutputEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveMonitoringOut",
+                input_device="Stage Input",
+                output_device="House Left/Right",
+                controls_payload={"monitoring_output_index": 0},
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            updated = await service.update_snapshot(
+                created["id"],
+                controls_payload={"monitoring_output_index": 4},
+            )
+
+            assert updated is not None
+            assert updated["controls"]["monitoring_output_index"] == 4
+            assert engine_stub.monitoring_output_calls == [0, 4]
 
     asyncio.run(_run())
 

@@ -872,6 +872,30 @@ class SnapshotService:
             "reason": "applied" if applied else "set_audio_device_failed",
         }
 
+    async def _apply_snapshot_monitoring_output_binding(self, detail: dict[str, Any]) -> dict[str, Any]:
+        controls = detail.get("controls") if isinstance(detail.get("controls"), dict) else {}
+        monitoring_output_index = _normalize_monitoring_output_index(
+            controls.get("monitoring_output_index")
+        )
+        result = {
+            "monitoring_output_index": monitoring_output_index,
+            "applied": False,
+            "reason": "not_configured",
+        }
+
+        if monitoring_output_index is None:
+            return result
+
+        service = get_audio_engine()
+        if service is None:
+            result["reason"] = "engine_unavailable"
+            return result
+
+        applied = await service.set_monitoring_output_index(int(monitoring_output_index))
+        result["applied"] = bool(applied)
+        result["reason"] = "applied" if applied else "set_monitoring_output_index_failed"
+        return result
+
     async def _apply_snapshot_output_safety_settings(self, detail: dict[str, Any]) -> dict[str, Any]:
         reference_dbfs = detail.get("output_level_reference_dbfs")
         warning_threshold_db = detail.get("output_level_warning_threshold_db")
@@ -1299,6 +1323,10 @@ class SnapshotService:
         revision_source = await self.get_snapshot(snapshot_id) if create_revision else None
         previous_input_device = snapshot.input_device
         previous_output_device = snapshot.output_device
+        previous_monitoring_output_index = self._normalize_controls_payload(
+            snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
+            None,
+        ).get("monitoring_output_index")
 
         if program_number is not UNSET and program_number != snapshot.program_number:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
@@ -1364,6 +1392,12 @@ class SnapshotService:
             (input_device is not UNSET and _normalize_device_name(previous_input_device) != _normalize_device_name(snapshot.input_device))
             or (output_device is not UNSET and _normalize_device_name(previous_output_device) != _normalize_device_name(snapshot.output_device))
         )
+        monitoring_output_changed = (
+            previous_monitoring_output_index
+            != _normalize_monitoring_output_index(
+                (detail.get("controls") or {}).get("monitoring_output_index")
+            )
+        )
         try:
             from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
@@ -1384,6 +1418,8 @@ class SnapshotService:
                 )
                 if device_binding_changed:
                     await self._apply_snapshot_audio_device_bindings(detail)
+                if monitoring_output_changed:
+                    await self._apply_snapshot_monitoring_output_binding(detail)
             except Exception as exc:
                 logger.debug("Snapshot runtime live-state sync skipped for %s: %s", snapshot.id, exc)
 
@@ -1636,6 +1672,7 @@ class SnapshotService:
         bypass_applied = 0
         topology_reused = False
         audio_device_binding_result: dict[str, Any] | None = None
+        monitoring_output_result: dict[str, Any] | None = None
         output_safety_result: dict[str, Any] | None = None
         midi_map_sync_result: dict[str, Any] | None = None
         previous_preload_state: dict[str, Any] = {}
@@ -1662,6 +1699,7 @@ class SnapshotService:
                 await get_audio_engine().get_topology_mutation_stats()
             )
             audio_device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
+            monitoring_output_result = await self._apply_snapshot_monitoring_output_binding(detail)
             output_safety_result = await self._apply_snapshot_output_safety_settings(detail)
             current_runtime_state = await runtime_state_service.get_live_state()
             previous_preload_state = self._extract_preload_state(current_runtime_state.get("runtime_metrics"))
@@ -1768,6 +1806,7 @@ class SnapshotService:
                     and _safe_int(previous_preload_state.get("target_snapshot_id")) == int(snapshot.id)
                 ),
                 "audio_device_binding": audio_device_binding_result or {},
+                "monitoring_output": monitoring_output_result or {},
                 "output_safety": output_safety_result or {},
                 "snapshot_midi_map": midi_map_sync_result or {},
                 "topology_mutation": activation_topology_metrics,

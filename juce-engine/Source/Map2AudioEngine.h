@@ -274,6 +274,9 @@ public:
     void setNumOutputChannels(int channels);
     int getNumOutputChannels() const { return numOutputChannels_; }
 
+    bool setMonitoringOutputIndex(int index);
+    int getMonitoringOutputIndex() const;
+
     // ========================================
     // Plugin Management
     // ========================================
@@ -1619,6 +1622,7 @@ private:
     int bufferSize_ = DEFAULT_BUFFER_SIZE;
     int numInputChannels_ = 2;
     int numOutputChannels_ = 2;
+    std::atomic<int> monitoringOutputIndex_{0};
     std::string audioDevice_ = "default";
     std::string lv2Path_ = "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2";
 

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 00:12 EDT - Closed T750, T752, and T753 with activation-time output safety application, live snapshot IO rebinding, and cluster deployment remote activation downgrade handling; T751/T749/T748 remain next in queue.
+Last updated: 2026-04-05 00:04 EDT - Closed T751 with runtime monitoring-output application and live snapshot reapply coverage after finishing the earlier T750/T752/T753 and T745/T746/T747 slices; T749/T748 remain next in queue.
 
 ID: T753
 Status: [✓] Done
@@ -51,7 +51,7 @@ Last updated: 2026-04-05 00:12 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_metrics.py app/services/snapshot_service.py app/services/snapshot_deployment_service.py tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
 
 ID: T751
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot monitoring_output_index never applied to engine
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, `controls.monitoring_output_index` must switch the engine's monitoring output to the specified index. Currently this value is stored in `controls_payload`, compiled into `AudioStateDesiredIO.monitoring_output_index`, but no engine method is called to apply it.
@@ -62,8 +62,16 @@ Description:
 - Dependencies: None (C++ binding addition required)
 - Estimated effort: Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 00:04 EDT - Codex
+- Completion notes:
+  - Added `setMonitoringOutputIndex()` / `getMonitoringOutputIndex()` to `juce-engine/Source/Map2AudioEngine.*`, exposed them through `juce-engine/Source/PythonBindings.cpp`, and wrapped them in `app/services/juce_engine_service.py::set_monitoring_output_index()` so snapshot runtime code can select the active hardware output pair explicitly.
+  - Updated the JUCE callback output copy path so the processed live mix follows the selected monitoring output pair instead of always remaining pinned to outputs `1/2`, which makes snapshot-level monitoring-output selection real runtime behavior rather than unused metadata.
+  - Added `_apply_snapshot_monitoring_output_binding()` in `app/services/snapshot_service.py`; activation now applies `controls.monitoring_output_index` and records a `runtime_metrics.monitoring_output` result, while live `update_snapshot(..., controls_payload={"monitoring_output_index": ...})` edits now reapply the binding immediately for the currently-live snapshot.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 'monitoring_output or audio_device_bindings or output_safety or snapshot_midi_map'` -> PASS
+  - `cmake --build build --target map2_audio_engine -j2` -> PASS
 
 ID: T750
 Status: [✓] Done
