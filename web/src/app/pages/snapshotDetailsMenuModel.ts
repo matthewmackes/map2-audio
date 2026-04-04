@@ -53,6 +53,7 @@ export function buildSnapshotDetailsMenuModel({
     {
       key: 'route-audio',
       label: 'Route audio',
+      disabled: snapshotEditingLocked,
       action: 'open-network-routing',
     },
     {
@@ -64,6 +65,7 @@ export function buildSnapshotDetailsMenuModel({
     {
       key: 'set-io-devices',
       label: 'Set I/O devices',
+      disabled: snapshotEditingLocked,
       action: 'open-io-devices',
     },
     {
@@ -101,6 +103,7 @@ export function buildSnapshotDetailsMenuModel({
       key: 'edit-midi-mappings',
       label: 'Edit MIDI mappings',
       iconClassName: `juce-grid-page__snapshot-status-details-item--midi ${midiLearning ? 'is-learning' : ''}`,
+      disabled: snapshotEditingLocked,
       title: midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`,
       action: 'open-midi',
     },

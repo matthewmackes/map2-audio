@@ -52,10 +52,13 @@ describe('buildSnapshotDetailsMenuModel', () => {
     })
 
     expect(items.find((item) => item.key === 'edit-local-routing')?.disabled).toBe(true)
+    expect(items.find((item) => item.key === 'route-audio')?.disabled).toBe(true)
+    expect(items.find((item) => item.key === 'set-io-devices')?.disabled).toBe(true)
     expect(items.find((item) => item.key === 'set-output-reference')?.disabled).toBe(true)
     expect(items.find((item) => item.key === 'add-signal-path')?.disabled).toBe(true)
     expect(items.find((item) => item.key === 'duplicate-snapshot')?.label).toBe('Duplicating…')
     expect(items.find((item) => item.key === 'duplicate-snapshot')?.disabled).toBe(true)
+    expect(items.find((item) => item.key === 'edit-midi-mappings')?.disabled).toBe(true)
     expect(items.find((item) => item.key === 'view-version-history')?.disabled).toBe(true)
     expect(items.find((item) => item.key === 'clear-signal-paths')?.kind).toBe('danger')
     expect(items.find((item) => item.key === 'clear-signal-paths')?.disabled).toBe(true)

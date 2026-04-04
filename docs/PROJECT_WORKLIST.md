@@ -6,7 +6,29 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 23:36 EDT - Completed T701 by removing the legacy `/audio-table` route/code; only blocked items remain in the canonical worklist.
+Last updated: 2026-04-04 10:54 EDT - Completed T702 by hard-gating Snapshot Editor chain activity behind loaded snapshot context while routing empty Add effect into immediate draft snapshot creation.
+
+ID: T702
+Status: [✓] Done
+Title: Gate Snapshot Editor chain activity behind loaded snapshot authority and route empty Add effect into draft snapshot creation
+Description:
+- Goal / acceptance criteria: When the Snapshot Editor has neither an authority-backed active snapshot nor an explicitly opened editor snapshot context, the chain editor must not allow flow selection, routing edits, chain assignment, block selection, block editing, automation edits, or per-snapshot I/O edits. The page should stay visible with inline empty-state messaging, and clicking the empty `Add effect` entry point in that state must immediately create a clean draft snapshot from the default blank editor state, hydrate the editor into that snapshot context, and continue into the normal add-effect workflow from there.
+- Why it matters: The platform source-of-truth model requires all operator-visible editing activity to happen inside a snapshot context. Persisted local residue or free-floating chain edits outside a snapshot create contradictory state and undermine authority-safe understanding of live audio flow.
+- Dependencies: T699, T700
+- Estimated effort: Medium
+- Required outputs: snapshot-entry gating updates in the Snapshot Editor page/canvas/menu surfaces, clean no-snapshot reset behavior, focused regressions for read-only add-entry and disabled no-snapshot actions, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 10:54 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so the editor now resets to a clean blank draft whenever neither control-plane authority nor an explicit editor snapshot context exists, clearing stale local block/editor activity instead of leaving residue active outside a snapshot.
+  - Kept the flow canvas visible in the no-snapshot state with inline empty-state messaging, but hard-disabled chain-editor interaction paths in that state: flow selection, routing buttons, assign/delete/mute/solo controls, routing modal entry, automation toggle, and other per-snapshot edit affordances now stay inert until a snapshot exists.
+  - Routed empty `Add effect` entry through immediate snapshot creation using a clean blank draft, then resumed normal add-effect workflow; for empty flows, browser Add actions now bootstrap and assign a chain automatically before inserting the first processor so the entry path no longer dead-ends on `No active chain`.
+  - Added focused coverage in `web/src/app/components/SnapshotEditor/snapshotEditorEntryDraft.test.ts` for the clean blank-draft and add-effect entry draft helpers, and extended `web/src/app/pages/snapshotDetailsMenuModel.test.ts` to lock the disabled no-snapshot action menu state.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/snapshotEditorEntryDraft.test.ts src/app/pages/snapshotDetailsMenuModel.test.ts src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T697
 Status: [✓] Done

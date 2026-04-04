@@ -1975,19 +1975,31 @@
 
 .juce-grid-page__snapshot-status-details-slot {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  align-items: flex-start;
   inline-size: 100%;
+  min-block-size: 9.5rem;
 }
 
 .juce-grid-page__snapshot-status-details-menu {
-  inline-size: auto;
+  display: flex;
+  justify-content: flex-end;
+  inline-size: 3rem;
+  min-inline-size: 3rem;
+  block-size: 9.5rem;
+  margin-inline-start: auto;
 }
 
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__container {
+  position: relative;
   inline-size: 100%;
+  block-size: 100%;
 }
 
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
   min-block-size: 3rem;
   min-inline-size: 9.5rem;
   justify-content: space-between;
@@ -1995,6 +2007,8 @@
   border-color: var(--cds-button-primary, #0f62fe);
   background: var(--cds-button-primary, #0f62fe);
   color: var(--cds-text-on-color, #ffffff);
+  transform: rotate(-90deg) translateX(-100%);
+  transform-origin: top right;
 }
 
 .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn:hover:not(:disabled),
@@ -2162,6 +2176,15 @@
 .juce-grid-page__snapshot-status-metadata-cell--action .juce-grid-page__snapshot-status-details-menu .cds--menu-button__container,
 .juce-grid-page__snapshot-status-metadata-cell--action .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn {
   inline-size: 100%;
+}
+
+.juce-grid-page__snapshot-status-metadata-cell--action .juce-grid-page__snapshot-status-details-menu {
+  min-inline-size: 0;
+  block-size: 100%;
+}
+
+.juce-grid-page__snapshot-status-metadata-cell--action .juce-grid-page__snapshot-status-details-menu .cds--menu-button__container {
+  min-block-size: 9.5rem;
 }
 
 .juce-grid-page__assignment-values {
@@ -5476,6 +5499,7 @@
   overflow: hidden;
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer, var(--surface));
+  box-shadow: none;
 }
 
 .juce-grid-page__signal-endpoint.has-avb {
@@ -5495,9 +5519,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.65rem 0.7rem;
-  background: color-mix(in srgb, var(--juce-grid-rail-accent) 12%, var(--cds-layer-hover, rgba(255, 255, 255, 0.06)));
-  border-right: 1px solid var(--cds-border-subtle, var(--border));
+  padding: 0.65rem 0.55rem 0.65rem 0.7rem;
+  background: color-mix(in srgb, var(--juce-grid-rail-accent) 5%, transparent);
+  border-right: none;
 }
 
 .juce-grid-page__signal-rail-label {
@@ -5533,10 +5557,10 @@
   gap: 0.35rem;
   min-width: 2.5rem;
   min-height: 2.25rem;
-  padding: 0 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--juce-grid-rail-accent) 24%, var(--cds-border-subtle, var(--border)));
+  padding: 0 0.35rem;
+  border: 1px solid transparent;
   border-radius: 0;
-  background: var(--cds-layer-hover, rgba(255, 255, 255, 0.08));
+  background: transparent;
   color: var(--juce-grid-rail-accent);
 }
 
@@ -7289,8 +7313,8 @@
   }
 
   .juce-grid-page__snapshot-status-details-menu .cds--menu-button__trigger.cds--btn {
-    width: 100%;
-    min-inline-size: 0;
+    width: auto;
+    min-inline-size: 8.75rem;
   }
 
   .juce-grid-page__bottom-editor-toggle.cds--btn {
@@ -7334,7 +7358,7 @@
   .juce-grid-page__snapshot-status-midi,
   .juce-grid-page__snapshot-status-details-slot {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .juce-grid-page__snapshot-status-midi-readout {
