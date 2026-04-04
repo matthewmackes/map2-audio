@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1097** TypeScript | **133** C++/H | **129** Docs | **1334** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1089** TypeScript | **133** C++/H | **129** Docs | **1337** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c8dc39be`](https://github.com/matthewmackes/map2-audio/commit/c8dc39be39324620a048677d3db2f1ad56ad7391) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
+| [`4d1d11a8`](https://github.com/matthewmackes/map2-audio/commit/4d1d11a8e93239099c5d8cb256b716ed1caa2370) | Complete T701 platforms hard cut | Map2 Audio | 2026-04-03 |
+| [`1262140e`](https://github.com/matthewmackes/map2-audio/commit/1262140e5b51cb8568a35e064bf18a51117078d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`1d3e4f7c`](https://github.com/matthewmackes/map2-audio/commit/1d3e4f7cf673abe49e2e55c2cdef8a831c287915) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
 | [`a6200f0c`](https://github.com/matthewmackes/map2-audio/commit/a6200f0cd678131aeb5d98447c118307f51aa94b) | Complete T701-subE management and discovery workspaces | Map2 Audio | 2026-04-03 |
 | [`7bb94262`](https://github.com/matthewmackes/map2-audio/commit/7bb94262284336d335bd56a3aacf272c175f6369) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`36634759`](https://github.com/matthewmackes/map2-audio/commit/3663475916c1ab491069996184d4f82ffa7d4025) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
 | [`1fca8372`](https://github.com/matthewmackes/map2-audio/commit/1fca83726ada22d6f8efd3ca8eb5edc84ed776af) | Build cluster dashboard workspace | Map2 Audio | 2026-04-03 |
-| [`714a3f22`](https://github.com/matthewmackes/map2-audio/commit/714a3f2249005febe3f2ace9ce7056dec48756ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
-| [`826d8070`](https://github.com/matthewmackes/map2-audio/commit/826d8070979f5312074a736c2517a1f046a82c68) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
-| [`6aa55bca`](https://github.com/matthewmackes/map2-audio/commit/6aa55bca4c61098aa3cb04cd5c4622acd5b4cd5b) | Build AVB routing workspace | Map2 Audio | 2026-04-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
