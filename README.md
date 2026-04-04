@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1069** TypeScript | **133** C++/H | **129** Docs | **1323** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1072** TypeScript | **133** C++/H | **129** Docs | **1325** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d0d75a0f`](https://github.com/matthewmackes/map2-audio/commit/d0d75a0f142c7e08d42e1b7113831c1644a6abc1) | Build audio engine graph workspace | Map2 Audio | 2026-04-03 |
+| [`16d413dd`](https://github.com/matthewmackes/map2-audio/commit/16d413dda972bad49889178a33b8f681e838d34e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`d4ea7478`](https://github.com/matthewmackes/map2-audio/commit/d4ea74782f0361c54d3ec1a7581918640cf50997) | Rework Platforms navigation for hard cut | Map2 Audio | 2026-04-03 |
 | [`cfb2ef42`](https://github.com/matthewmackes/map2-audio/commit/cfb2ef42f95ce2eb9126c8b8ec1166db3fd2597b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`d38d5818`](https://github.com/matthewmackes/map2-audio/commit/d38d5818726202f611380d92b4d42bce7e0e5f51) | Enforce authority-backed live path UI | Map2 Audio | 2026-04-03 |
 | [`c172175b`](https://github.com/matthewmackes/map2-audio/commit/c172175b936f25eeeb5acb89d054a357cbe027f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
 | [`7c415aeb`](https://github.com/matthewmackes/map2-audio/commit/7c415aeb01ad73ac2cefdb12ec78f5cbe531e7f4) | Update audio state authority and snapshot editor | Map2 Audio | 2026-04-03 |
 | [`8fd814e6`](https://github.com/matthewmackes/map2-audio/commit/8fd814e6ccca266384b6581b48cd4f70d00f2606) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
-| [`67d67ace`](https://github.com/matthewmackes/map2-audio/commit/67d67acead3f4d7164def2f24a3f7c7b6cffe891) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
-| [`071501ce`](https://github.com/matthewmackes/map2-audio/commit/071501ce2bd9eb1cc105ce87e89e01678b181a65) | Close T690 soak evidence and T691 frontend polish | Map2 Audio | 2026-04-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
