@@ -58,6 +58,7 @@ import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import { AvbRoutingWorkspace } from '../AvbRouting/AvbRoutingWorkspace'
+import { ClusterDashboardWorkspace } from '../ClusterDashboard/ClusterDashboardWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -391,19 +392,6 @@ function LayerDataTable({ layer, onRowSelect, selectedRowId }: {
       </DataTable>
       <Pagination page={page} pageSize={pageSize} pageSizes={PAGE_SIZES} totalItems={filteredRows.length} size="sm"
         onChange={({ page: p, pageSize: ps }) => { setPage(p); setPageSize(ps) }} />
-    </div>
-  )
-}
-
-// ── Cluster Dashboard ────────────────────────────────────────────────────────
-
-function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData }) {
-  return (
-    <div className="platform-shell__cluster-tabs">
-      <div className="platform-shell__cluster-tab-panel">
-        <LayerSummaryTiles items={layer.gridItems} />
-        <LayerDataTable layer={layer} />
-      </div>
     </div>
   )
 }

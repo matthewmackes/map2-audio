@@ -211,6 +211,25 @@ jest.mock('../../hooks/usePlatformShellData', () => ({
         error: null,
       },
       {
+        id: 'cluster-dashboard',
+        label: 'Cluster Dashboard',
+        shortLabel: 'Cluster',
+        description: 'Cluster Dashboard',
+        accent: 'var(--cds-text-primary)',
+        health: 'healthy',
+        activityLevel: 0,
+        alertCount: 0,
+        summaryMetrics: [],
+        tableRows: [],
+        tableColumns: [],
+        tableTitle: 'Cluster Dashboard',
+        tableDescription: 'Cluster Dashboard',
+        gridItems: [],
+        notifications: [],
+        isLoading: false,
+        error: null,
+      },
+      {
         id: 'single-node',
         label: 'Single Node',
         shortLabel: 'Single Node',
@@ -268,6 +287,10 @@ jest.mock('../../hooks/useNodeOperations', () => ({
 
 jest.mock('../AvbRouting/AvbRoutingWorkspace', () => ({
   AvbRoutingWorkspace: () => <div data-testid="avb-routing-workspace">AVB Routing Workspace Mock</div>,
+}))
+
+jest.mock('../ClusterDashboard/ClusterDashboardWorkspace', () => ({
+  ClusterDashboardWorkspace: () => <div data-testid="cluster-dashboard-workspace">Cluster Dashboard Workspace Mock</div>,
 }))
 
 describe('PlatformModalContent', () => {
@@ -488,5 +511,22 @@ describe('PlatformModalContent', () => {
     )
 
     expect(screen.getByTestId('avb-routing-workspace')).toBeInTheDocument()
+  })
+
+  it('renders the dedicated cluster workspace when the cluster-dashboard layer is active', () => {
+    mockActiveLayerId = 'cluster-dashboard'
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} initialLayer="cluster-dashboard" />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByTestId('cluster-dashboard-workspace')).toBeInTheDocument()
   })
 })

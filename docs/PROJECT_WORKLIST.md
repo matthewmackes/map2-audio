@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 22:20 EDT - Closed T701-subC after replacing `/platforms/avb-routing` with a graph-first AVB/Tesira workspace, routed deep-link focus handling, and expandable node detail panels.
+Last updated: 2026-04-03 22:43 EDT - Closed T701-subD after replacing `/platforms/cluster-dashboard` with a graph-first cluster topology workspace, peer-link telemetry edges, expandable node detail rows, and node-scoped platform links.
 
 ID: T697
 Status: [✓] Done
@@ -159,7 +159,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T701-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build `/platforms/cluster-dashboard` React Flow workspace for cluster topology and activity
     Description:
     - Goal / acceptance criteria: Replace the current cluster dashboard’s passive topology treatment with a React Flow-first cluster workspace that shows node relationships, activity pulses, and a Carbon-standard table below, while preserving node-scoped platform links.
@@ -167,6 +167,15 @@ Subtasks:
     - Dependencies: Existing node topology and cluster data hooks
     - Estimated effort: High
     - Required outputs: cluster flow canvas, table integration, node links, tests.
+    - Completion notes:
+      - Added `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, and `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css` so the routed `/platforms/cluster-dashboard` layer now renders a dedicated graph-first cluster workspace with a React Flow topology hero, Carbon summary tiles, and a bottom expandable node table.
+      - Added `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.ts` to build a pure cluster graph model from node-topology audio/network telemetry, including the cluster-fabric summary node, node-status cards, peer latency/audio-path edges, graph summary tags, and table-anchor selections, and covered the model with `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.test.ts`.
+      - Implemented expandable cluster node detail rows with service posture, peer-link summaries, and node-scoped handoff actions so operators can adopt a node context or jump directly into `/platforms/single-node` from the same selected cluster record.
+      - Updated `web/src/app/components/Platform/PlatformModal.tsx` so the `cluster-dashboard` layer renders the dedicated workspace instead of the old summary-tiles/table stub, and extended `web/src/app/components/Platform/PlatformModal.test.tsx` plus `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx` to lock the routed shell integration and single-node handoff behavior.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.test.ts src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subE
     Status: [ ] Todo
     Title: Build management and network-discovery React Flow workspaces from existing telemetry
@@ -195,7 +204,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
 Assigned to: Codex
-Last updated: 2026-04-03 22:20 EDT - Codex
+Last updated: 2026-04-03 22:43 EDT - Codex
 
 ID: T695
 Status: [✓] Done

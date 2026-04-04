@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (avb-routing graph workspace and Tesira deep-link focus contract documented)
+> **Last Updated**: April 3, 2026 (cluster-dashboard graph workspace and single-node handoff contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1449,6 +1449,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/AvbRouting/avbRoutingWorkspaceHref.test.ts src/app/components/AvbRouting/avbRoutingWorkspaceGraph.test.ts src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx src/app/components/Tesira/components/TesiraAvbTab.test.tsx src/app/components/Tesira/components/TesiraDeviceDashboard.test.tsx src/app/components/Platform/PlatformModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: During the `/platforms` hard cut, AVB/Tesira handoffs must target the routed shell destination, not legacy standalone paths, and all cross-workspace links need a shared focus-param contract or node context will drift between graph and table surfaces.
 
+**49. Cluster Dashboard Must Stay A Graph-First Workspace With Expandable Node Detail And Single-Node Handoff, Not The Old Summary/Table Stub (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.ts`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, `web/src/app/components/Platform/PlatformModal.tsx`
+- **Problem**: `/platforms/cluster-dashboard` still rendered the old summary-tile/table stub even after the hard-cut shell work, so the cluster layer had no graph hero, no peer-link telemetry view, and no direct node-scoped handoff into the routed Single Node workspace.
+- **Root Cause**: The routed shell existed, but the cluster layer never got its dedicated React Flow workspace implementation and kept relying on the inline generic `ClusterDashboardWorkspace` placeholder inside `PlatformModal.tsx`.
+- **Fix**: Replace the inline stub with a dedicated `ClusterDashboardWorkspace`, build the graph from `useNodeTopology()` audio/network edges plus node health data, use expandable Carbon rows for node detail, and wire explicit node-context adoption plus `/platforms/single-node` launch actions from expanded rows.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.test.ts src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: For `/platforms` hard-cut workspaces, a cluster layer is not complete until graph selection anchors into expandable detail rows and every selected node can hand operators straight into the correct routed node workspace without losing context.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1719,6 +1727,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - Cluster Dashboard Graph Workspace And Single-Node Handoff Contract
+- **Section**: Gotchas & Learned Fixes (#49), Update Log
+- **Change**: Documented the dedicated `/platforms/cluster-dashboard` workspace, the topology/peer-link graph model, and the rule that selected cluster nodes must offer direct context-preserving handoff into `/platforms/single-node`.
+- **Reason**: T701-subD replaced the old inline cluster stub with the next real graph-first `/platforms` workspace and had to lock the node-handoff behavior at the same time.
+- **Impact**: Future assistants should preserve the graph-on-top/table-on-bottom cluster layout, keep peer telemetry visible in the graph, and avoid regressing the cluster layer back into a generic summary table.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.ts`, `web/src/app/components/Platform/PlatformModal.tsx`
 
 ### [2026-04-03] - AVB Routing Graph Workspace And Tesira Deep-Link Focus Contract
 - **Section**: Gotchas & Learned Fixes (#48), Update Log
