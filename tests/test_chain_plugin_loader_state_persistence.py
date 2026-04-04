@@ -523,6 +523,51 @@ class _FakeRuntimeEngineService:
         return self._engine.get_current_pedalboard()
 
 
+class _FakeBypassEngineService:
+    def __init__(self) -> None:
+        self.generic_bypass_calls: list[tuple[int, bool]] = []
+        self.fixed_parameter_calls: list[tuple[str, str, float, int | None]] = []
+        self.nam_bypass_calls: list[tuple[int, bool]] = []
+        self.ir_bypass_calls: list[tuple[int, bool]] = []
+
+    @staticmethod
+    def get_instance():
+        return _FakeBypassEngineService._instance
+
+    def _get_instance_id_for_uri(self, plugin_uri: str, plugin_position: int | None):
+        if plugin_uri.startswith("urn:test:"):
+            return 700 + int(plugin_position or 0)
+        if plugin_uri in {"map2://juce/nam", "map2://juce/convolution/cabinet", "map2://juce/convolution/reverb"}:
+            return 800 + int(plugin_position or 0)
+        return None
+
+    async def set_bypass(self, instance_id: int, bypass: bool) -> bool:
+        self.generic_bypass_calls.append((instance_id, bypass))
+        return True
+
+    async def set_parameter(
+        self,
+        plugin_uri: str,
+        param_name: str,
+        value: float,
+        *,
+        plugin_position: int | None = None,
+    ) -> bool:
+        self.fixed_parameter_calls.append((plugin_uri, param_name, value, plugin_position))
+        return True
+
+    async def set_nam_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.nam_bypass_calls.append((instance_id, bypass))
+        return True
+
+    async def set_ir_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        self.ir_bypass_calls.append((instance_id, bypass))
+        return True
+
+
+_FakeBypassEngineService._instance = _FakeBypassEngineService()
+
+
 @pytest.mark.asyncio
 async def test_activate_chain_restores_persisted_loader_state_into_runtime_instances(tmp_path, monkeypatch):
     _init_temp_async_db(tmp_path, "chain-loader-runtime-restore.db")
@@ -594,6 +639,55 @@ async def test_activate_chain_restores_persisted_loader_state_into_runtime_insta
     assert fake_engine_service._engine.prewarm_calls == [101, 102]
     assert fake_engine_service._engine.topology_begin_calls == 0
     assert fake_engine_service._engine.topology_end_calls == 0
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_set_plugin_bypass_syncs_engine_for_generic_and_fixed_native_plugins(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-bypass-live-sync.db")
+    fake_engine_service = _FakeBypassEngineService()
+    _FakeBypassEngineService._instance = fake_engine_service
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeBypassEngineService)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(name="Bypass Sync", is_active=True)
+        session.add(chain)
+        await session.flush()
+        session.add_all(
+            [
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="urn:test:drive",
+                    position=0,
+                    bypass=False,
+                ),
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="map2://juce/delay",
+                    position=1,
+                    bypass=False,
+                ),
+            ]
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.set_plugin_bypass(chain.id, "urn:test:drive", True, plugin_position=0) is True
+        assert await service.set_plugin_bypass(chain.id, "map2://juce/delay", True, plugin_position=1) is True
+
+        result = await session.execute(
+            select(database_module.ChainPlugin)
+            .where(database_module.ChainPlugin.chain_id == chain.id)
+            .order_by(database_module.ChainPlugin.position.asc())
+        )
+        bypass_states = [plugin.bypass for plugin in result.scalars().all()]
+
+    assert bypass_states == [True, True]
+    assert fake_engine_service.generic_bypass_calls == [(700, True)]
+    assert fake_engine_service.fixed_parameter_calls == [
+        ("map2://juce/delay", "bypass", 1.0, 1),
+    ]
 
     await _dispose_db()
 

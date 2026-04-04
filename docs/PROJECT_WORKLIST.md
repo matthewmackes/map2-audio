@@ -114,7 +114,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-04 EDT
 
 ID: T747
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot MIDI map entries never registered with MIDI engine at activation
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, its MIDI map entries (stored in `SnapshotMidiMap.entries`) must be loaded into the MIDI engine's `_mapping_lookup` table so incoming MIDI CC messages trigger the mapped actions. Currently, `MIDIEngine.load_mappings_from_db()` only reads from the global `MIDIMapping` table — snapshot-specific MIDI maps are completely ignored.
@@ -125,11 +125,18 @@ Description:
 - Dependencies: None — engine `add_mapping()` API exists; only the snapshot-activation call site is missing.
 - Estimated effort: Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 00:39 EDT - Codex
+- Completion notes:
+  - Added snapshot-scoped MIDI command normalization and `_sync_snapshot_midi_map_to_engine()` in `app/services/snapshot_service.py`, which now combines global `midi_service` commands with actionable snapshot MIDI-map entries and pushes the merged set into `get_audio_engine().set_all_midi_commands(...)` during activation.
+  - Snapshot-only metadata entries such as `footswitch_label_map` are preserved in snapshot state but intentionally excluded from runtime command-trigger sync, while actionable entries like `load_snapshot` and `focus_block_note_range` now produce live engine triggers.
+  - The implementation route uses the repo’s actual JUCE MIDI command-trigger surface rather than mutating `MIDIEngineService._mapping_lookup` directly, because action execution in this codebase is already modeled through `midi_service` + `set_all_midi_commands`.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T746
-Status: [ ] Todo
+Status: [✓] Done
 Title: Live MIDI map edit on active snapshot does not update MIDI engine
 Description:
 - Goal / acceptance criteria: When `replace_midi_map()` is called on the currently-live snapshot, the MIDI engine must be updated immediately so CC mappings take effect without requiring snapshot reactivation.
@@ -140,11 +147,17 @@ Description:
 - Dependencies: T747 (must provide the MIDI engine registration API first)
 - Estimated effort: Small
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 00:39 EDT - Codex
+- Completion notes:
+  - `replace_midi_map()` now detects when the edited snapshot is currently live, syncs the refreshed live payload, and immediately reapplies the merged global+snapshot MIDI command batch to the engine instead of deferring the new entries until next activation.
+  - Added regression coverage in `tests/test_snapshot_service.py` proving a live snapshot replacement drops the old snapshot-scoped trigger, preserves the global command set, and installs the new snapshot-scoped trigger in the engine batch.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T745
-Status: [ ] Todo
+Status: [✓] Done
 Title: Bypass toggle in snapshot editor does not reach JUCE engine live
 Description:
 - Goal / acceptance criteria: When the user toggles bypass on a plugin in the snapshot editor, the engine must reflect the change immediately. Currently, the frontend calls `chainsApi.togglePluginBypass()` which routes to `POST /api/chains/{id}/plugins/{uri}/bypass`, and the chain service's `set_plugin_bypass()` (line 2126 in `chain_service.py`) writes to the DB only — no engine call.
@@ -156,8 +169,14 @@ Description:
 - Dependencies: None — `engine.set_bypass()` exists on `JuceEngineService`.
 - Estimated effort: Small
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 00:39 EDT - Codex
+- Completion notes:
+  - `app/services/chain_service.py::set_plugin_bypass()` now propagates bypass changes into the live engine path after the DB write, covering generic runtime instances via `set_bypass()`, fixed-native processors via direct `set_parameter(..., "bypass", ...)`, and NAM/IR instances via their dedicated bypass APIs.
+  - Added focused coverage in `tests/test_chain_plugin_loader_state_persistence.py` proving both a generic plugin and a fixed-native `map2://juce/delay` plugin now drive the corresponding runtime engine calls when bypass is toggled.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T744
 Status: [ ] Todo

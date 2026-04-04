@@ -2053,6 +2053,273 @@ def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_p
     asyncio.run(_run())
 
 
+def test_activate_snapshot_syncs_snapshot_midi_map_commands_to_engine(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _SnapshotMidiEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.command_batches: list[list[dict[str, object]]] = []
+
+        async def set_all_midi_commands(self, commands):
+            self.command_batches.append([dict(item) for item in commands])
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _SnapshotMidiEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            command_id = await midi_service.create_command(
+                MIDICommandDTO(
+                    command_type=CommandType.CC_TOGGLE,
+                    channel=1,
+                    data1=80,
+                    action_type=ActionType.TOGGLE_PLUGIN,
+                    target_plugin_uri="urn:test:plugin",
+                    target_plugin_position=0,
+                    action_data={"slot_index": 0},
+                    name="Slot 1 Toggle",
+                ),
+                session,
+            )
+            assert command_id is not None
+
+            created = await service.create_snapshot(
+                name="SnapshotMidiActivation",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [
+                        {"action": "load_snapshot", "program_number": 23, "channel": 1},
+                        {"action": "focus_block_note_range", "midi_channel": 2, "start_note": 60},
+                        {"action": "footswitch_label_map", "label_map": {"1": "Clean"}},
+                    ],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+
+            assert activated is not None
+            assert engine_stub.command_batches
+            synced_batch = engine_stub.command_batches[-1]
+            assert [command["action_type"] for command in synced_batch] == [
+                "toggle_plugin",
+                "load_snapshot",
+                "focus_block_note_range",
+            ]
+            assert synced_batch[1]["command_type"] == "program_change"
+            assert synced_batch[1]["channel"] == 1
+            assert synced_batch[1]["data1"] == 23
+            assert synced_batch[2]["command_type"] == "note_on"
+            assert synced_batch[2]["channel"] == 2
+            assert synced_batch[2]["data1"] == 60
+            assert activated["runtime_live_state"]["runtime_metrics"]["snapshot_midi_map"] == {
+                "synced": True,
+                "reason": "applied",
+                "global_command_count": 1,
+                "snapshot_command_count": 2,
+            }
+
+    asyncio.run(_run())
+
+
+def test_replace_midi_map_resyncs_live_snapshot_commands_to_engine(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _SnapshotMidiEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.command_batches: list[list[dict[str, object]]] = []
+
+        async def set_all_midi_commands(self, commands):
+            self.command_batches.append([dict(item) for item in commands])
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _SnapshotMidiEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            command_id = await midi_service.create_command(
+                MIDICommandDTO(
+                    command_type=CommandType.CC_TOGGLE,
+                    channel=1,
+                    data1=81,
+                    action_type=ActionType.TOGGLE_PLUGIN,
+                    target_plugin_uri="urn:test:plugin",
+                    target_plugin_position=1,
+                    action_data={"slot_index": 1},
+                    name="Slot 2 Toggle",
+                ),
+                session,
+            )
+            assert command_id is not None
+
+            created = await service.create_snapshot(
+                name="SnapshotMidiReplace",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [
+                        {"action": "load_snapshot", "program_number": 4},
+                    ],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert len(engine_stub.command_batches) == 1
+
+            replaced = await service.replace_midi_map(
+                created["id"],
+                [
+                    {"action": "focus_block_note_range", "midi_channel": 3, "start_note": 48},
+                ],
+            )
+
+            assert replaced is not None
+            assert len(engine_stub.command_batches) == 2
+            synced_batch = engine_stub.command_batches[-1]
+            assert [command["action_type"] for command in synced_batch] == [
+                "toggle_plugin",
+                "focus_block_note_range",
+            ]
+            assert synced_batch[1]["command_type"] == "note_on"
+            assert synced_batch[1]["channel"] == 3
+            assert synced_batch[1]["data1"] == 48
+
+    asyncio.run(_run())
+
+
 def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

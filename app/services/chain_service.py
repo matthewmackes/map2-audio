@@ -2163,6 +2163,44 @@ class ChainService:
             
             chain_plugin.bypass = bypass
             await self.session.flush()
+
+            try:
+                from app.services.juce_engine_service import JuceEngineService
+                from app.services.juce_parameter_schema import is_fixed_native_processor_uri
+
+                engine_service = JuceEngineService.get_instance()
+                plugin_position_value = (
+                    int(plugin_position)
+                    if plugin_position is not None
+                    else int(getattr(chain_plugin, "position", 0))
+                )
+
+                if plugin_uri in _NAM_PLUGIN_URIS:
+                    instance_id = engine_service._get_instance_id_for_uri(plugin_uri, plugin_position_value)
+                    if isinstance(instance_id, int) and instance_id > 0:
+                        await engine_service.set_nam_bypass_instance(instance_id, bool(bypass))
+                elif plugin_uri in _CABINET_IR_PLUGIN_URIS or plugin_uri in _REVERB_IR_PLUGIN_URIS:
+                    instance_id = engine_service._get_instance_id_for_uri(plugin_uri, plugin_position_value)
+                    if isinstance(instance_id, int) and instance_id > 0:
+                        await engine_service.set_ir_bypass_instance(instance_id, bool(bypass))
+                elif is_fixed_native_processor_uri(plugin_uri):
+                    await engine_service.set_parameter(
+                        plugin_uri,
+                        "bypass",
+                        1.0 if bool(bypass) else 0.0,
+                        plugin_position=plugin_position_value,
+                    )
+                else:
+                    instance_id = engine_service._get_instance_id_for_uri(plugin_uri, plugin_position_value)
+                    if isinstance(instance_id, int) and instance_id > 0:
+                        await engine_service.set_bypass(instance_id, bool(bypass))
+            except Exception as exc:
+                logger.debug(
+                    "Live bypass sync skipped for plugin %s in chain %s: %s",
+                    plugin_uri,
+                    chain_id,
+                    exc,
+                )
             
             logger.info(
                 "Set bypass=%s for plugin %s in chain %s (position=%s)",

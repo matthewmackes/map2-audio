@@ -921,6 +921,93 @@ class SnapshotService:
         return result
 
     @staticmethod
+    def _snapshot_midi_command_id(snapshot_id: int, index: int) -> int:
+        return 1_000_000_000 + (int(snapshot_id) * 1000) + int(index)
+
+    @staticmethod
+    def _snapshot_midi_entry_to_command(
+        snapshot_id: int,
+        index: int,
+        entry: dict[str, Any],
+    ) -> Optional[dict[str, Any]]:
+        action = str(entry.get("action") or "").strip()
+        if not action or action == "footswitch_label_map":
+            return None
+
+        command_type: str
+        data1: int
+        data2: int | None = None
+        if entry.get("program_number") is not None:
+            program_number = _safe_int(entry.get("program_number"))
+            if program_number is None or program_number < 0:
+                return None
+            command_type = "program_change"
+            data1 = program_number
+        else:
+            note_number = _safe_int(
+                entry.get("start_note", entry.get("startNote", entry.get("note", entry.get("note_number"))))
+            )
+            if note_number is not None and note_number >= 0:
+                command_type = "note_on"
+                data1 = note_number
+            else:
+                cc_number = _safe_int(
+                    entry.get("cc", entry.get("cc_number", entry.get("ccNumber", entry.get("control_number"))))
+                )
+                if cc_number is None or cc_number < 0:
+                    return None
+                command_type = "cc_toggle"
+                data1 = cc_number
+                data2 = _safe_int(entry.get("data2", entry.get("value_threshold")))
+
+        channel = _safe_int(entry.get("midi_channel", entry.get("midiChannel", entry.get("channel"))))
+        normalized_entry = dict(entry)
+        normalized_entry.setdefault("snapshot_id", int(snapshot_id))
+        return {
+            "id": SnapshotService._snapshot_midi_command_id(snapshot_id, index),
+            "command_type": command_type,
+            "channel": channel if channel is not None and channel > 0 else 0,
+            "data1": data1,
+            "data2": data2,
+            "action_type": action,
+            "target_chain_id": _safe_int(entry.get("target_chain_id", entry.get("targetChainId"))),
+            "target_plugin_uri": str(entry.get("target_plugin_uri", entry.get("targetPluginUri")) or ""),
+            "target_plugin_position": _safe_int(entry.get("target_plugin_position", entry.get("targetPluginPosition"))),
+            "action_data": normalized_entry,
+            "is_enabled": _normalize_bool(entry.get("is_enabled", entry.get("enabled")), True),
+        }
+
+    async def _sync_snapshot_midi_map_to_engine(
+        self,
+        snapshot_id: int,
+        entries: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        engine = get_audio_engine()
+        if engine is None:
+            return {
+                "synced": False,
+                "reason": "engine_unavailable",
+                "global_command_count": 0,
+                "snapshot_command_count": 0,
+            }
+
+        global_commands = await midi_service.get_all_commands(self.session)
+        snapshot_commands = [
+            command
+            for index, raw_entry in enumerate(entries or [])
+            if isinstance(raw_entry, dict)
+            for command in [self._snapshot_midi_entry_to_command(snapshot_id, index, raw_entry)]
+            if command is not None
+        ]
+        synced = await engine.set_all_midi_commands([*global_commands, *snapshot_commands])
+        return {
+            "synced": bool(synced),
+            "reason": "applied" if synced else "set_all_midi_commands_failed",
+            "global_command_count": len(global_commands),
+            "snapshot_command_count": len(snapshot_commands),
+        }
+
+    @staticmethod
     def _preflight_asset_label(
         loader_state: dict[str, Any],
         asset_path: str,
@@ -1550,6 +1637,7 @@ class SnapshotService:
         topology_reused = False
         audio_device_binding_result: dict[str, Any] | None = None
         output_safety_result: dict[str, Any] | None = None
+        midi_map_sync_result: dict[str, Any] | None = None
         previous_preload_state: dict[str, Any] = {}
         activation_topology_metrics = {
             "before": _normalize_topology_mutation_stats(None),
@@ -1647,6 +1735,23 @@ class SnapshotService:
                 )
             except Exception as exc:
                 logger.debug("Snapshot controller-display preview skipped for %s: %s", snapshot.id, exc)
+            try:
+                midi_map_sync_result = await self._sync_snapshot_midi_map_to_engine(
+                    snapshot.id,
+                    [
+                        dict(entry)
+                        for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
+                        if isinstance(entry, dict)
+                    ],
+                )
+            except Exception as exc:
+                logger.debug("Snapshot MIDI map sync skipped for %s: %s", snapshot.id, exc)
+                midi_map_sync_result = {
+                    "synced": False,
+                    "reason": f"sync_failed:{exc}",
+                    "global_command_count": 0,
+                    "snapshot_command_count": 0,
+                }
 
             runtime_metrics = {
                 "params_applied": params_applied,
@@ -1664,6 +1769,7 @@ class SnapshotService:
                 ),
                 "audio_device_binding": audio_device_binding_result or {},
                 "output_safety": output_safety_result or {},
+                "snapshot_midi_map": midi_map_sync_result or {},
                 "topology_mutation": activation_topology_metrics,
             }
             live_runtime_state = await runtime_state_service.confirm_live_intent(
@@ -2088,7 +2194,30 @@ class SnapshotService:
         )
         snapshot.updated_at = _utcnow()
         await self.session.flush()
-        return await self._reload_snapshot_detail(snapshot_id)
+        detail = await self._reload_snapshot_detail(snapshot_id)
+        if detail is None:
+            return None
+
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+            runtime_state_service = SnapshotRuntimeStateService(self.session)
+            current_runtime_payload = await runtime_state_service.get_live_snapshot_payload()
+            is_current_live_snapshot = (
+                isinstance(current_runtime_payload, dict)
+                and int(current_runtime_payload.get("id") or 0) == int(snapshot.id)
+            )
+            if is_current_live_snapshot:
+                await runtime_state_service.sync_live_snapshot_payload(
+                    snapshot_id=snapshot.id,
+                    live_snapshot_payload=detail,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                )
+                await self._sync_snapshot_midi_map_to_engine(snapshot.id, normalized_entries)
+        except Exception as exc:
+            logger.debug("Snapshot MIDI-map live sync skipped for %s: %s", snapshot.id, exc)
+
+        return detail
 
     async def export_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         detail = await self.get_snapshot(snapshot_id)
