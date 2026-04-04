@@ -61,6 +61,7 @@ INSTALL_STAGES = [
     InstallStage("services",   "Installing systemd services",      weight=1),
     InstallStage("juce_build", "Building JUCE audio engine",       weight=5),
     InstallStage("frontend",   "Building React frontend",          weight=2),
+    InstallStage("cluster_mgr","Installing cluster manager stack", weight=3),
     InstallStage("user",       "Configuring user account",         weight=1),
     InstallStage("post",       "Post-install configuration",       weight=1),
 ]
@@ -167,6 +168,7 @@ class InstallProgressScreen(BaseInstallerScreen):
         from installer.backend.grub     import GRUBConfig
         from installer.backend.services import ServiceManager
         from installer.backend.build    import JUCEBuilder, FrontendBuilder, PythonEnvBuilder
+        from installer.backend.cluster_manager import ClusterManagerInstaller
 
         log = self.query_one("#install-log", RichLog)
 
@@ -247,6 +249,10 @@ class InstallProgressScreen(BaseInstallerScreen):
             fb = FrontendBuilder(ex, install_dir)
             return [fb.install_deps(), fb.build()]
 
+        def run_cluster_mgr(ex):
+            installer = ClusterManagerInstaller(ex)
+            return installer.install(self.config)
+
         def run_user(ex):
             user = self.config.user
             results = []
@@ -276,6 +282,7 @@ class InstallProgressScreen(BaseInstallerScreen):
             "services":   run_services,
             "juce_build": run_juce_build,
             "frontend":   run_frontend,
+            "cluster_mgr": run_cluster_mgr,
             "user":       run_user,
             "post":       run_post,
         }

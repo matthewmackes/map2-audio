@@ -899,6 +899,101 @@ py::dict pitchPresetInfoToDict(const PitchShifterProcessor::PresetInfo& info) {
 }
 
 // ========================================
+// Delay Type Converters
+// ========================================
+
+py::dict delayParamsToDict(const DelayProcessor::Parameters& params) {
+    py::dict d;
+    d["delay_time_l"] = params.delayTimeL;
+    d["delay_time_r"] = params.delayTimeR;
+    d["feedback"] = params.feedback;
+    d["mix"] = params.mix;
+    d["tempo"] = params.tempo;
+    d["tempo_sync_l"] = static_cast<int>(params.tempoSyncL);
+    d["tempo_sync_r"] = static_cast<int>(params.tempoSyncR);
+    d["tap1_level"] = params.tap1Level;
+    d["tap2_level"] = params.tap2Level;
+    d["tap2_ratio"] = params.tap2Ratio;
+    d["tap3_level"] = params.tap3Level;
+    d["tap3_ratio"] = params.tap3Ratio;
+    d["tap4_level"] = params.tap4Level;
+    d["tap4_ratio"] = params.tap4Ratio;
+    d["stereo_mode"] = static_cast<int>(params.stereoMode);
+    d["stereo_spread"] = params.stereoSpread;
+    d["pan"] = params.pan;
+    d["mod_rate"] = params.modRate;
+    d["mod_depth"] = params.modDepth;
+    d["mod_waveform"] = static_cast<int>(params.modWaveform);
+    d["low_cut"] = params.lowCut;
+    d["high_cut"] = params.highCut;
+    d["filter_in_loop"] = params.filterInLoop;
+    d["diffusion"] = params.diffusion;
+    d["duck_threshold"] = params.duckThreshold;
+    d["duck_amount"] = params.duckAmount;
+    d["duck_release"] = params.duckRelease;
+    d["output_level"] = params.outputLevel;
+    d["spillover"] = params.spillover;
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+DelayProcessor::Parameters dictToDelayParams(const py::dict& d) {
+    DelayProcessor::Parameters params;
+    if (d.contains("delay_time_l")) params.delayTimeL = d["delay_time_l"].cast<float>();
+    if (d.contains("delay_time_r")) params.delayTimeR = d["delay_time_r"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("tempo")) params.tempo = d["tempo"].cast<float>();
+    if (d.contains("tempo_sync_l")) {
+        params.tempoSyncL = static_cast<DelayProcessor::TempoDivision>(d["tempo_sync_l"].cast<int>());
+    }
+    if (d.contains("tempo_sync_r")) {
+        params.tempoSyncR = static_cast<DelayProcessor::TempoDivision>(d["tempo_sync_r"].cast<int>());
+    }
+    if (d.contains("tap1_level")) params.tap1Level = d["tap1_level"].cast<float>();
+    if (d.contains("tap2_level")) params.tap2Level = d["tap2_level"].cast<float>();
+    if (d.contains("tap2_ratio")) params.tap2Ratio = d["tap2_ratio"].cast<float>();
+    if (d.contains("tap3_level")) params.tap3Level = d["tap3_level"].cast<float>();
+    if (d.contains("tap3_ratio")) params.tap3Ratio = d["tap3_ratio"].cast<float>();
+    if (d.contains("tap4_level")) params.tap4Level = d["tap4_level"].cast<float>();
+    if (d.contains("tap4_ratio")) params.tap4Ratio = d["tap4_ratio"].cast<float>();
+    if (d.contains("stereo_mode")) {
+        params.stereoMode = static_cast<DelayProcessor::StereoMode>(d["stereo_mode"].cast<int>());
+    }
+    if (d.contains("stereo_spread")) params.stereoSpread = d["stereo_spread"].cast<float>();
+    if (d.contains("pan")) params.pan = d["pan"].cast<float>();
+    if (d.contains("mod_rate")) params.modRate = d["mod_rate"].cast<float>();
+    if (d.contains("mod_depth")) params.modDepth = d["mod_depth"].cast<float>();
+    if (d.contains("mod_waveform")) {
+        params.modWaveform = static_cast<DelayProcessor::ModWaveform>(d["mod_waveform"].cast<int>());
+    }
+    if (d.contains("low_cut")) params.lowCut = d["low_cut"].cast<float>();
+    if (d.contains("high_cut")) params.highCut = d["high_cut"].cast<float>();
+    if (d.contains("filter_in_loop")) params.filterInLoop = d["filter_in_loop"].cast<bool>();
+    if (d.contains("diffusion")) params.diffusion = d["diffusion"].cast<float>();
+    if (d.contains("duck_threshold")) params.duckThreshold = d["duck_threshold"].cast<float>();
+    if (d.contains("duck_amount")) params.duckAmount = d["duck_amount"].cast<float>();
+    if (d.contains("duck_release")) params.duckRelease = d["duck_release"].cast<float>();
+    if (d.contains("output_level")) params.outputLevel = d["output_level"].cast<float>();
+    if (d.contains("spillover")) params.spillover = d["spillover"].cast<bool>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+py::dict delayMeteringToDict(const DelayProcessor::Metering& metering) {
+    py::dict d;
+    d["input_level_l"] = metering.inputLevelL;
+    d["input_level_r"] = metering.inputLevelR;
+    d["output_level_l"] = metering.outputLevelL;
+    d["output_level_r"] = metering.outputLevelR;
+    d["delay_level_l"] = metering.delayLevelL;
+    d["delay_level_r"] = metering.delayLevelR;
+    d["ducking_gain"] = metering.duckingGain;
+    d["mod_phase"] = metering.modPhase;
+    return d;
+}
+
+// ========================================
 // IntelliFX 8-Voice Chorus Type Converters
 // ========================================
 
@@ -2787,6 +2882,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("replace_chain", &Map2AudioEngine::replaceChain,
              py::arg("order"),
              "Replace the active chain order in one topology update")
+        .def("replace_chain_with_spillover", &Map2AudioEngine::replaceChainWithSpillover,
+             py::arg("order"),
+             "Replace the active chain order while preserving outgoing wet tails when possible")
         .def("add_to_chain", &Map2AudioEngine::addToChain,
              py::arg("instance_id"), py::arg("position") = -1,
              "Add plugin to chain at position")
@@ -2805,6 +2903,40 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("end_topology_update", [](Map2AudioEngine& self) {
             self.getAudioGraph().endTopologyUpdate();
         }, "Finish a batched topology update and rebuild connections once if needed")
+        .def("get_topology_mutation_stats", [](const Map2AudioEngine& self) {
+            const auto stats = self.getAudioGraph().getTopologyMutationStats();
+            py::dict d;
+            d["mutation_count"] = stats.mutationCount;
+            d["no_op_skip_count"] = stats.noOpSkipCount;
+            d["last_mutation_duration_ms"] = stats.lastMutationDurationMs;
+            d["peak_mutation_duration_ms"] = stats.peakMutationDurationMs;
+            d["avg_mutation_duration_ms"] = stats.avgMutationDurationMs;
+            d["last_removed_connection_count"] = stats.lastRemovedConnectionCount;
+            d["last_added_connection_count"] = stats.lastAddedConnectionCount;
+            d["last_chain_size"] = stats.lastChainSize;
+            d["last_parallel_group_count"] = stats.lastParallelGroupCount;
+            return d;
+        }, "Get JUCE graph topology-mutation timing and connection-count diagnostics")
+        .def("reset_topology_mutation_stats", [](Map2AudioEngine& self) {
+            self.getAudioGraph().resetTopologyMutationStats();
+        }, "Reset JUCE graph topology-mutation diagnostics")
+        .def("get_spillover_chain_states", [](const Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& chain : self.getSpilloverChainStates()) {
+                py::dict item;
+                item["id"] = chain.id;
+                item["remaining_samples"] = chain.remainingSamples;
+                item["expired"] = chain.expired;
+                item["estimated_tail_seconds"] = chain.estimatedTailSeconds;
+                py::list instanceIds;
+                for (const auto instanceId : chain.instanceIds) {
+                    instanceIds.append(instanceId);
+                }
+                item["instance_ids"] = std::move(instanceIds);
+                result.append(std::move(item));
+            }
+            return result;
+        }, "Get active spillover chain diagnostics")
 
         // ========================================
         // Sidechain Routing (NEW)
@@ -4070,6 +4202,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
         .def("get_audio_io_stats", [](const Map2AudioEngine& self) {
             auto stats = self.getAudioIOStats();
+            const auto topologyStats = self.getAudioGraph().getTopologyMutationStats();
             py::dict d;
             d["cpu_usage"] = stats.cpuUsage;
             d["xrun_count"] = stats.xrunCount;
@@ -4092,6 +4225,15 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["measured_round_trip_ms"] = stats.measuredRoundTripMs;
             d["measured_input_latency_ms"] = stats.measuredInputLatencyMs;
             d["measured_output_latency_ms"] = stats.measuredOutputLatencyMs;
+            d["topology_mutation_count"] = topologyStats.mutationCount;
+            d["topology_no_op_skip_count"] = topologyStats.noOpSkipCount;
+            d["topology_last_mutation_duration_ms"] = topologyStats.lastMutationDurationMs;
+            d["topology_peak_mutation_duration_ms"] = topologyStats.peakMutationDurationMs;
+            d["topology_avg_mutation_duration_ms"] = topologyStats.avgMutationDurationMs;
+            d["topology_last_removed_connection_count"] = topologyStats.lastRemovedConnectionCount;
+            d["topology_last_added_connection_count"] = topologyStats.lastAddedConnectionCount;
+            d["topology_last_chain_size"] = topologyStats.lastChainSize;
+            d["topology_last_parallel_group_count"] = topologyStats.lastParallelGroupCount;
             return d;
         }, "Get comprehensive audio I/O statistics with xrun/jitter analysis")
 
@@ -4866,6 +5008,74 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get all available pitch shifter presets (Van Halen songs)")
 
         // ========================================
+        // Stereo Delay
+        // ========================================
+
+        .def("set_delay_time_l", &Map2AudioEngine::setDelayTimeL, py::arg("ms"))
+        .def("get_delay_time_l", &Map2AudioEngine::getDelayTimeL)
+        .def("set_delay_time_r", &Map2AudioEngine::setDelayTimeR, py::arg("ms"))
+        .def("get_delay_time_r", &Map2AudioEngine::getDelayTimeR)
+        .def("set_delay_feedback", &Map2AudioEngine::setDelayFeedback, py::arg("percent"))
+        .def("get_delay_feedback", &Map2AudioEngine::getDelayFeedback)
+        .def("set_delay_mix", &Map2AudioEngine::setDelayMix, py::arg("percent"))
+        .def("get_delay_mix", &Map2AudioEngine::getDelayMix)
+        .def("set_delay_tempo", &Map2AudioEngine::setDelayTempo, py::arg("bpm"))
+        .def("get_delay_tempo", &Map2AudioEngine::getDelayTempo)
+        .def("set_delay_tempo_sync_l", &Map2AudioEngine::setDelayTempoSyncL, py::arg("division"))
+        .def("get_delay_tempo_sync_l", &Map2AudioEngine::getDelayTempoSyncL)
+        .def("set_delay_tempo_sync_r", &Map2AudioEngine::setDelayTempoSyncR, py::arg("division"))
+        .def("get_delay_tempo_sync_r", &Map2AudioEngine::getDelayTempoSyncR)
+        .def("set_delay_tap1_level", &Map2AudioEngine::setDelayTap1Level, py::arg("percent"))
+        .def("set_delay_tap2_level", &Map2AudioEngine::setDelayTap2Level, py::arg("percent"))
+        .def("set_delay_tap2_ratio", &Map2AudioEngine::setDelayTap2Ratio, py::arg("ratio"))
+        .def("set_delay_tap3_level", &Map2AudioEngine::setDelayTap3Level, py::arg("percent"))
+        .def("set_delay_tap3_ratio", &Map2AudioEngine::setDelayTap3Ratio, py::arg("ratio"))
+        .def("set_delay_tap4_level", &Map2AudioEngine::setDelayTap4Level, py::arg("percent"))
+        .def("set_delay_tap4_ratio", &Map2AudioEngine::setDelayTap4Ratio, py::arg("ratio"))
+        .def("set_delay_stereo_mode", &Map2AudioEngine::setDelayStereoMode, py::arg("mode"))
+        .def("get_delay_stereo_mode", &Map2AudioEngine::getDelayStereoMode)
+        .def("set_delay_stereo_spread", &Map2AudioEngine::setDelayStereoSpread, py::arg("percent"))
+        .def("get_delay_stereo_spread", &Map2AudioEngine::getDelayStereoSpread)
+        .def("set_delay_pan", &Map2AudioEngine::setDelayPan, py::arg("pan"))
+        .def("get_delay_pan", &Map2AudioEngine::getDelayPan)
+        .def("set_delay_mod_rate", &Map2AudioEngine::setDelayModRate, py::arg("hz"))
+        .def("get_delay_mod_rate", &Map2AudioEngine::getDelayModRate)
+        .def("set_delay_mod_depth", &Map2AudioEngine::setDelayModDepth, py::arg("percent"))
+        .def("get_delay_mod_depth", &Map2AudioEngine::getDelayModDepth)
+        .def("set_delay_mod_waveform", &Map2AudioEngine::setDelayModWaveform, py::arg("waveform"))
+        .def("get_delay_mod_waveform", &Map2AudioEngine::getDelayModWaveform)
+        .def("set_delay_low_cut", &Map2AudioEngine::setDelayLowCut, py::arg("hz"))
+        .def("get_delay_low_cut", &Map2AudioEngine::getDelayLowCut)
+        .def("set_delay_high_cut", &Map2AudioEngine::setDelayHighCut, py::arg("hz"))
+        .def("get_delay_high_cut", &Map2AudioEngine::getDelayHighCut)
+        .def("set_delay_filter_in_loop", &Map2AudioEngine::setDelayFilterInLoop, py::arg("enabled"))
+        .def("get_delay_filter_in_loop", &Map2AudioEngine::getDelayFilterInLoop)
+        .def("set_delay_diffusion", &Map2AudioEngine::setDelayDiffusion, py::arg("percent"))
+        .def("get_delay_diffusion", &Map2AudioEngine::getDelayDiffusion)
+        .def("set_delay_duck_threshold", &Map2AudioEngine::setDelayDuckThreshold, py::arg("db"))
+        .def("get_delay_duck_threshold", &Map2AudioEngine::getDelayDuckThreshold)
+        .def("set_delay_duck_amount", &Map2AudioEngine::setDelayDuckAmount, py::arg("percent"))
+        .def("get_delay_duck_amount", &Map2AudioEngine::getDelayDuckAmount)
+        .def("set_delay_duck_release", &Map2AudioEngine::setDelayDuckRelease, py::arg("ms"))
+        .def("get_delay_duck_release", &Map2AudioEngine::getDelayDuckRelease)
+        .def("set_delay_output_level", &Map2AudioEngine::setDelayOutputLevel, py::arg("db"))
+        .def("get_delay_output_level", &Map2AudioEngine::getDelayOutputLevel)
+        .def("set_delay_spillover", &Map2AudioEngine::setDelaySpillover, py::arg("enabled"))
+        .def("has_delay_spillover", &Map2AudioEngine::hasDelaySpillover)
+        .def("stage_delay_spillover", &Map2AudioEngine::stageDelaySpillover)
+        .def("set_delay_bypass", &Map2AudioEngine::setDelayBypass, py::arg("bypass"))
+        .def("is_delay_bypassed", &Map2AudioEngine::isDelayBypassed)
+        .def("get_delay_parameters", [](const Map2AudioEngine& self) {
+            return delayParamsToDict(self.getDelayParameters());
+        })
+        .def("set_delay_parameters", [](Map2AudioEngine& self, const py::dict& params) {
+            self.setDelayParameters(dictToDelayParams(params));
+        }, py::arg("params"))
+        .def("get_delay_metering", [](const Map2AudioEngine& self) {
+            return delayMeteringToDict(self.getDelayMetering());
+        })
+
+        // ========================================
         // Boss XS-1 Polyphonic Pitch Shifter
         // ========================================
 
@@ -5118,6 +5328,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Enable ShoeGaze spillover (tails when bypassed)")
         .def("has_shoegaze_spillover", &Map2AudioEngine::hasShoeGazeSpillover,
              "Check if ShoeGaze spillover is enabled")
+        .def("stage_shoegaze_spillover", &Map2AudioEngine::stageShoeGazeSpillover,
+             "Stage the current ShoeGaze state for snapshot spillover")
 
         // Bulk parameters
         .def("get_shoegaze_parameters", [](const Map2AudioEngine& self) {
@@ -5270,6 +5482,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Enable Lexi Love spillover (tails when bypassed)")
         .def("has_lexilove_spillover", &Map2AudioEngine::hasLexiLoveSpillover,
              "Check if Lexi Love spillover is enabled")
+        .def("stage_lexilove_spillover", &Map2AudioEngine::stageLexiLoveSpillover,
+             "Stage the current Lexi Love state for snapshot spillover")
 
         // Bulk parameters
         .def("get_lexilove_parameters", [](const Map2AudioEngine& self) {

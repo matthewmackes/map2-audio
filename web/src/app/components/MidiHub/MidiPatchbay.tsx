@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, InlineNotification, Layer, Tag, Toggle } from '@carbon/react'
+import { Button, InlineNotification, Tag, Toggle } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -8,6 +8,7 @@ import { normalizePatchbayTopologyNodeIds } from './patchbayTopology'
 import { readPorts } from './portUtils'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
+import { MidiHubSurface } from './MidiHubHelpPrimitives'
 
 type NodeInfo = {
   id: string
@@ -235,7 +236,7 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
         />
       ) : null}
 
-      <Layer className="midi-hub-connections-patchbay">
+      <MidiHubSurface className="midi-hub-connections-patchbay" tone="raised">
         <svg
           viewBox="0 0 1040 680"
           className="midi-hub-connections-patchbay__stage"
@@ -325,10 +326,10 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
             })}
           </g>
         </svg>
-      </Layer>
+      </MidiHubSurface>
 
       <div className="midi-hub-connections-detail-grid">
-        <Layer className="midi-hub-connections-detail-card">
+        <MidiHubSurface className="midi-hub-connections-detail-card" tone="raised">
           <p className="midi-hub-connections-detail-title">Patchbay workflow</p>
           <p>Select a source node first, then a destination node. Click a route line to inspect or disable it.</p>
           {selectedNode ? (
@@ -339,9 +340,9 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
           ) : (
             <p>Select a node to inspect its port identity.</p>
           )}
-        </Layer>
+        </MidiHubSurface>
 
-        <Layer className="midi-hub-connections-detail-card">
+        <MidiHubSurface className="midi-hub-connections-detail-card" tone="raised">
           {selectedRoute ? (
             <>
               <p className="midi-hub-connections-detail-title">Selected route</p>
@@ -359,7 +360,7 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
           ) : (
             <p>Select a route line to inspect or manage that connection.</p>
           )}
-        </Layer>
+        </MidiHubSurface>
       </div>
     </div>
   )

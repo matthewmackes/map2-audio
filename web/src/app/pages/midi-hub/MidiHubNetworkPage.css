@@ -7,7 +7,11 @@
 .midi-hub-network-page__grid {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-network-page__grid > * {
+  grid-column: span 6;
 }
 
 .midi-hub-network-panel {
@@ -80,7 +84,7 @@
 }
 
 @media (max-width: 1056px) {
-  .midi-hub-network-page__grid {
-    grid-template-columns: 1fr;
+  .midi-hub-network-page__grid > * {
+    grid-column: span 12;
   }
 }

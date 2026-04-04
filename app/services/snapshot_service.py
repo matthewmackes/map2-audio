@@ -8,6 +8,7 @@ existing clients can keep operating while the frontend migrates.
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import hashlib
 import io
@@ -42,6 +43,7 @@ from app.database import (
     SnapshotMidiMap,
     SnapshotRevision,
     SnapshotRouting,
+    get_session,
 )
 from app.services.juce_engine_service import get_audio_engine
 from app.services.maschine_encoder_map_service import normalize_maschine_encoder_map
@@ -83,12 +85,18 @@ SNAPSHOT_AUTO_TAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 _NAM_PLUGIN_URIS = {"map2://juce/nam", "urn:map2:nam-player"}
 _CABINET_IR_PLUGIN_URIS = {"map2://juce/convolution/cabinet", "urn:map2:ir-cabinet"}
 _REVERB_IR_PLUGIN_URIS = {"map2://juce/convolution/reverb", "urn:map2:ir-reverb"}
+_SNAPSHOT_SPILLOVER_NATIVE_URIS = (
+    "map2://juce/delay",
+    "map2://juce/multieffect/shoegaze",
+    "map2://juce/reverb/pcm70",
+)
 UNSET = object()
 SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = "snapshots.default_input_device"
 SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = "snapshots.default_output_device"
 SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = "snapshots.default_monitoring_output_index"
 SNAPSHOT_BUNDLE_MANIFEST_FILENAME = "snapshot.json"
 SNAPSHOT_BUNDLE_FORMAT_VERSION = 2
+_snapshot_preload_tasks: dict[str, asyncio.Task[None]] = {}
 
 
 def _stable_channel_label(index: int) -> str:
@@ -138,6 +146,39 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
     return fallback
 
 
+def _discard_snapshot_preload_task(node_id: str, task: asyncio.Task[None]) -> None:
+    current = _snapshot_preload_tasks.get(node_id)
+    if current is task:
+        _snapshot_preload_tasks.pop(node_id, None)
+
+
+def schedule_snapshot_preload_for_live_snapshot(snapshot_id: int) -> None:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    from app.services.snapshot_runtime_state_service import resolve_local_node_id
+
+    node_id = resolve_local_node_id()
+    current_task = _snapshot_preload_tasks.get(node_id)
+    if current_task is not None and not current_task.done():
+        current_task.cancel()
+
+    async def _runner() -> None:
+        try:
+            async with get_session() as session:
+                await SnapshotService(session).preload_next_snapshot_for_live_snapshot(snapshot_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.debug("Snapshot preload task failed for live snapshot %s: %s", snapshot_id, exc)
+
+    task = loop.create_task(_runner())
+    _snapshot_preload_tasks[node_id] = task
+    task.add_done_callback(lambda finished, node_id=node_id: _discard_snapshot_preload_task(node_id, finished))
+
+
 def _normalize_device_name(value: Any) -> Optional[str]:
     if value is None:
         return None
@@ -155,6 +196,48 @@ def _normalize_monitoring_output_index(value: Any) -> Optional[int]:
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _safe_int_metric(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _safe_float_metric(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _normalize_topology_mutation_stats(payload: Any) -> dict[str, Any]:
+    stats = payload if isinstance(payload, dict) else {}
+    return {
+        "mutation_count": _safe_int_metric(stats.get("mutation_count")),
+        "no_op_skip_count": _safe_int_metric(stats.get("no_op_skip_count")),
+        "last_mutation_duration_ms": _safe_float_metric(stats.get("last_mutation_duration_ms")),
+        "peak_mutation_duration_ms": _safe_float_metric(stats.get("peak_mutation_duration_ms")),
+        "avg_mutation_duration_ms": _safe_float_metric(stats.get("avg_mutation_duration_ms")),
+        "last_removed_connection_count": _safe_int_metric(stats.get("last_removed_connection_count")),
+        "last_added_connection_count": _safe_int_metric(stats.get("last_added_connection_count")),
+        "last_chain_size": _safe_int_metric(stats.get("last_chain_size")),
+        "last_parallel_group_count": _safe_int_metric(stats.get("last_parallel_group_count")),
+    }
+
+
+def _build_activation_topology_metrics(before: Any, after: Any) -> dict[str, Any]:
+    before_stats = _normalize_topology_mutation_stats(before)
+    after_stats = _normalize_topology_mutation_stats(after)
+    return {
+        "before": before_stats,
+        "after": after_stats,
+        "delta": {
+            "mutation_count": max(0, after_stats["mutation_count"] - before_stats["mutation_count"]),
+            "no_op_skip_count": max(0, after_stats["no_op_skip_count"] - before_stats["no_op_skip_count"]),
+        },
+    }
 
 
 def normalize_snapshot_name(value: Any) -> str:
@@ -342,6 +425,214 @@ class SnapshotService:
             for summary in summaries
             if tag_set.issubset({tag.lower() for tag in summary.get("tags", [])})
         ]
+
+    @staticmethod
+    def _extract_preload_state(runtime_metrics: Any) -> dict[str, Any]:
+        if not isinstance(runtime_metrics, dict):
+            return {}
+        preload = runtime_metrics.get("preload")
+        return dict(preload) if isinstance(preload, dict) else {}
+
+    async def _sync_live_snapshot_preload_state(
+        self,
+        *,
+        runtime_state_service: Any,
+        live_state: dict[str, Any],
+        preload_state: dict[str, Any],
+    ) -> Optional[dict[str, Any]]:
+        live_payload = live_state.get("live_snapshot_payload")
+        snapshot_id = _safe_int(live_state.get("snapshot_id"))
+        if snapshot_id is None or not isinstance(live_payload, dict):
+            return None
+
+        runtime_metrics = (
+            copy.deepcopy(live_state.get("runtime_metrics"))
+            if isinstance(live_state.get("runtime_metrics"), dict)
+            else {}
+        )
+        runtime_metrics["preload"] = copy.deepcopy(preload_state)
+        return await runtime_state_service.sync_live_snapshot_payload(
+            snapshot_id=snapshot_id,
+            live_snapshot_payload=copy.deepcopy(live_payload),
+            snapshot_revision=live_state.get("snapshot_revision"),
+            runtime_metrics=runtime_metrics,
+        )
+
+    async def _publish_snapshot_desired_state(self, detail: dict[str, Any]) -> None:
+        try:
+            from app.services.audio_state_authority import AudioStateAuthorityService
+            from app.services.audio_state_snapshot_compiler import compile_snapshot_detail_to_intent
+
+            await AudioStateAuthorityService().put_desired_state(
+                compile_snapshot_detail_to_intent(detail)
+            )
+        except Exception as exc:
+            logger.debug(
+                "Snapshot desired-state publish skipped for %s: %s",
+                detail.get("id"),
+                exc,
+            )
+
+    async def _resolve_next_preload_snapshot(
+        self,
+        current_snapshot: Snapshot,
+    ) -> tuple[Optional[Snapshot], Optional[str]]:
+        current_program_number = (
+            int(current_snapshot.program_number)
+            if current_snapshot.program_number is not None
+            else None
+        )
+        if current_program_number is not None:
+            result = await self.session.execute(
+                select(Snapshot)
+                .where(
+                    Snapshot.id != current_snapshot.id,
+                    Snapshot.program_number.is_not(None),
+                )
+                .order_by(Snapshot.program_number.asc(), Snapshot.created_at.asc(), Snapshot.id.asc())
+            )
+            candidates = result.scalars().all()
+            if candidates:
+                for candidate in candidates:
+                    if candidate.program_number is not None and int(candidate.program_number) > current_program_number:
+                        return candidate, "program_number"
+                return candidates[0], "program_number"
+
+        current_display_order = int(current_snapshot.display_order or 0)
+        result = await self.session.execute(
+            select(Snapshot)
+            .where(Snapshot.id != current_snapshot.id)
+            .order_by(Snapshot.display_order.asc(), Snapshot.created_at.asc(), Snapshot.id.asc())
+        )
+        candidates = result.scalars().all()
+        if not candidates:
+            return None, None
+        for candidate in candidates:
+            if int(candidate.display_order or 0) > current_display_order:
+                return candidate, "display_order"
+        return candidates[0], "display_order"
+
+    def _snapshot_preload_stage_plugins(self, snapshot: Snapshot) -> list[Any]:
+        chain_by_id = {chain.id: chain for chain in snapshot.chains}
+        stage_plugins: list[Any] = []
+        for channel in sorted(snapshot.channels, key=lambda item: int(item.order_index)):
+            source_chain = chain_by_id.get(channel.chain_id) if channel.chain_id is not None else None
+            if source_chain is None:
+                continue
+            for plugin in sorted(source_chain.plugins, key=lambda item: int(item.position)):
+                loader_state = dict(plugin.loader_state or {}) if isinstance(plugin.loader_state, dict) else {}
+                stage_plugins.append(
+                    ChainService.build_detached_stage_plugin(
+                        plugin_uri=str(plugin.plugin_uri or ""),
+                        position=int(plugin.position or 0),
+                        bypass=bool(plugin.bypass),
+                        loader_state=loader_state,
+                    )
+                )
+        return stage_plugins
+
+    async def preload_next_snapshot_for_live_snapshot(self, live_snapshot_id: int) -> Optional[dict[str, Any]]:
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state_service = SnapshotRuntimeStateService(self.session)
+        live_state = await runtime_state_service.get_live_state()
+        if str(live_state.get("state") or "").lower() != "live":
+            return None
+        if _safe_int(live_state.get("snapshot_id")) != int(live_snapshot_id):
+            return None
+
+        current_snapshot = await self._get_snapshot_model(live_snapshot_id)
+        if current_snapshot is None:
+            return None
+
+        existing_preload = self._extract_preload_state(live_state.get("runtime_metrics"))
+        existing_target_snapshot_id = _safe_int(existing_preload.get("target_snapshot_id"))
+        existing_instance_ids = [
+            int(instance_id)
+            for instance_id in existing_preload.get("staged_instance_ids", [])
+            if _safe_int(instance_id) is not None
+        ]
+
+        next_snapshot, reason = await self._resolve_next_preload_snapshot(current_snapshot)
+        if next_snapshot is None:
+            if existing_instance_ids:
+                await self.chain_service.release_detached_instance_ids(existing_instance_ids)
+            preload_state = {
+                "status": "idle",
+                "source_snapshot_id": int(live_snapshot_id),
+                "target_snapshot_id": None,
+                "target_snapshot_name": None,
+                "candidate_reason": None,
+                "staged_instance_ids": [],
+                "warnings": [],
+                "prepared_at": None,
+            }
+            await self._sync_live_snapshot_preload_state(
+                runtime_state_service=runtime_state_service,
+                live_state=live_state,
+                preload_state=preload_state,
+            )
+            return preload_state
+
+        if existing_target_snapshot_id == int(next_snapshot.id) and existing_instance_ids:
+            return existing_preload
+
+        if existing_instance_ids:
+            await self.chain_service.release_detached_instance_ids(existing_instance_ids)
+
+        warming_state = {
+            "status": "warming",
+            "source_snapshot_id": int(live_snapshot_id),
+            "target_snapshot_id": int(next_snapshot.id),
+            "target_snapshot_name": str(next_snapshot.name or f"Snapshot {next_snapshot.id}"),
+            "candidate_reason": reason,
+            "staged_instance_ids": [],
+            "warnings": [],
+            "prepared_at": None,
+        }
+        await self._sync_live_snapshot_preload_state(
+            runtime_state_service=runtime_state_service,
+            live_state=live_state,
+            preload_state=warming_state,
+        )
+
+        next_snapshot = await self._get_snapshot_model(next_snapshot.id)
+        if next_snapshot is None:
+            return None
+
+        stage_plugins = self._snapshot_preload_stage_plugins(next_snapshot)
+        staged = await self.chain_service.stage_detached_chain_plugins(stage_plugins)
+        staged_instance_ids = [
+            int(instance_id)
+            for instance_id in staged.get("staged_instance_ids", [])
+            if _safe_int(instance_id) is not None
+        ]
+
+        refreshed_live_state = await runtime_state_service.get_live_state()
+        if (
+            str(refreshed_live_state.get("state") or "").lower() != "live"
+            or _safe_int(refreshed_live_state.get("snapshot_id")) != int(live_snapshot_id)
+        ):
+            if staged_instance_ids:
+                await self.chain_service.release_detached_instance_ids(staged_instance_ids)
+            return None
+
+        ready_state = {
+            "status": staged.get("status", "ready"),
+            "source_snapshot_id": int(live_snapshot_id),
+            "target_snapshot_id": int(next_snapshot.id),
+            "target_snapshot_name": str(next_snapshot.name or f"Snapshot {next_snapshot.id}"),
+            "candidate_reason": reason,
+            "staged_instance_ids": staged_instance_ids,
+            "warnings": list(staged.get("warnings") or []),
+            "prepared_at": _utcnow().isoformat(),
+        }
+        await self._sync_live_snapshot_preload_state(
+            runtime_state_service=runtime_state_service,
+            live_state=refreshed_live_state,
+            preload_state=ready_state,
+        )
+        return ready_state
 
     def _derive_snapshot_tags_from_plugins(self, plugins: Iterable[dict[str, Any]]) -> list[str]:
         haystacks = [
@@ -581,6 +872,54 @@ class SnapshotService:
             "reason": "applied" if applied else "set_audio_device_failed",
         }
 
+    async def _apply_snapshot_output_safety_settings(self, detail: dict[str, Any]) -> dict[str, Any]:
+        reference_dbfs = detail.get("output_level_reference_dbfs")
+        warning_threshold_db = detail.get("output_level_warning_threshold_db")
+        result = {
+            "output_level_reference_dbfs": None if reference_dbfs is None else float(reference_dbfs),
+            "output_warning_threshold_db": None if warning_threshold_db is None else float(warning_threshold_db),
+            "reference_applied": False,
+            "warning_threshold_applied": False,
+            "reason": "not_configured",
+        }
+
+        service = get_audio_engine()
+        if reference_dbfs is not None:
+            if service is None:
+                result["reason"] = "engine_unavailable"
+            else:
+                await service.set_limiter_threshold(float(reference_dbfs))
+                result["reference_applied"] = True
+                result["reason"] = "applied"
+
+        if reference_dbfs is None and warning_threshold_db is None:
+            return result
+
+        if warning_threshold_db is not None:
+            try:
+                from app.services.performance_metrics import get_metrics_collector
+
+                collector = await get_metrics_collector()
+                collector.set_output_safety_settings(
+                    output_level_reference_dbfs=(
+                        None if reference_dbfs is None else float(reference_dbfs)
+                    ),
+                    output_warning_threshold_db=float(warning_threshold_db),
+                )
+                result["warning_threshold_applied"] = True
+                if result["reason"] == "not_configured":
+                    result["reason"] = "applied"
+            except Exception as exc:
+                logger.debug(
+                    "Snapshot output warning threshold update skipped for %s: %s",
+                    detail.get("id"),
+                    exc,
+                )
+                if not result["reference_applied"]:
+                    result["reason"] = "warning_threshold_update_failed"
+
+        return result
+
     @staticmethod
     def _preflight_asset_label(
         loader_state: dict[str, Any],
@@ -727,24 +1066,27 @@ class SnapshotService:
         return await self._serialize_snapshot_detail(snapshot)
 
     async def get_control_plane_snapshot_id(self) -> Optional[int]:
+        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
+        runtime_payload = runtime_state.get("live_snapshot_payload")
+        if runtime_state.get("state") == "live":
+            snapshot_id = _safe_int(runtime_state.get("snapshot_id"))
+            if snapshot_id is None and isinstance(runtime_payload, dict):
+                snapshot_id = _safe_int(runtime_payload.get("id"))
+            if snapshot_id is not None:
+                return snapshot_id
+
         try:
             from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
 
             committed = await AudioStateAuthorityService().get_committed_state()
             snapshot_id = committed.value.source_snapshot.snapshot_id if committed.value.source_snapshot else None
-            return int(snapshot_id) if snapshot_id is not None else None
+            if snapshot_id is not None:
+                return int(snapshot_id)
         except Exception as exc:
             if exc.__class__.__name__ != "AudioStateAuthorityError":
                 logger.debug("Control-plane snapshot lookup fell back to runtime compatibility path: %s", exc)
-
-        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-
-        runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
-        runtime_payload = runtime_state.get("live_snapshot_payload")
-        if runtime_state.get("state") == "live" and isinstance(runtime_payload, dict):
-            snapshot_id = _safe_int(runtime_payload.get("id"))
-            if snapshot_id is not None:
-                return snapshot_id
         return None
 
     async def get_control_plane_snapshot(self) -> Optional[dict[str, Any]]:
@@ -868,6 +1210,8 @@ class SnapshotService:
         if snapshot is None:
             return None
         revision_source = await self.get_snapshot(snapshot_id) if create_revision else None
+        previous_input_device = snapshot.input_device
+        previous_output_device = snapshot.output_device
 
         if program_number is not UNSET and program_number != snapshot.program_number:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
@@ -929,6 +1273,10 @@ class SnapshotService:
 
         current_runtime_payload: dict[str, Any] | None = None
         is_current_live_snapshot = False
+        device_binding_changed = (
+            (input_device is not UNSET and _normalize_device_name(previous_input_device) != _normalize_device_name(snapshot.input_device))
+            or (output_device is not UNSET and _normalize_device_name(previous_output_device) != _normalize_device_name(snapshot.output_device))
+        )
         try:
             from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
@@ -947,6 +1295,8 @@ class SnapshotService:
                     live_snapshot_payload=detail,
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
+                if device_binding_changed:
+                    await self._apply_snapshot_audio_device_bindings(detail)
             except Exception as exc:
                 logger.debug("Snapshot runtime live-state sync skipped for %s: %s", snapshot.id, exc)
 
@@ -1083,6 +1433,91 @@ class SnapshotService:
             apply_default_system_blocks=False,
         )
 
+    @staticmethod
+    def _snapshot_spillover_candidate_counts(detail: dict[str, Any] | None) -> dict[str, int]:
+        counts = {uri: 0 for uri in _SNAPSHOT_SPILLOVER_NATIVE_URIS}
+        if not isinstance(detail, dict):
+            return counts
+        for chain in detail.get("chains", []):
+            if not isinstance(chain, dict):
+                continue
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                if bool(plugin.get("bypass", False)):
+                    continue
+                uri = str(plugin.get("uri") or "")
+                if uri in counts:
+                    counts[uri] += 1
+        return counts
+
+    @staticmethod
+    def _snapshot_spillover_candidate_signatures(detail: dict[str, Any] | None) -> dict[str, list[str]]:
+        signatures = {uri: [] for uri in _SNAPSHOT_SPILLOVER_NATIVE_URIS}
+        if not isinstance(detail, dict):
+            return signatures
+        for chain in detail.get("chains", []):
+            if not isinstance(chain, dict):
+                continue
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                if bool(plugin.get("bypass", False)):
+                    continue
+                uri = str(plugin.get("uri") or "")
+                if uri not in signatures:
+                    continue
+                signature = {
+                    "parameters": plugin.get("parameters", {}),
+                    "loader_state": plugin.get("loader_state", {}),
+                    "mix": plugin.get("mix"),
+                    "plugin_position": plugin.get("plugin_position", plugin.get("position")),
+                }
+                signatures[uri].append(json.dumps(signature, sort_keys=True, default=str))
+        for uri in signatures:
+            signatures[uri].sort()
+        return signatures
+
+    async def _arm_live_spillover_processors(
+        self,
+        *,
+        current_live_detail: dict[str, Any] | None,
+        target_detail: dict[str, Any],
+    ) -> None:
+        current_counts = self._snapshot_spillover_candidate_counts(current_live_detail)
+        target_counts = self._snapshot_spillover_candidate_counts(target_detail)
+        current_signatures = self._snapshot_spillover_candidate_signatures(current_live_detail)
+        target_signatures = self._snapshot_spillover_candidate_signatures(target_detail)
+        outgoing_uris = [
+            uri
+            for uri, current_count in current_counts.items()
+            if current_count > 0
+            and (
+                target_counts.get(uri, 0) == 0
+                or current_signatures.get(uri, []) != target_signatures.get(uri, [])
+            )
+        ]
+        if not outgoing_uris:
+            return
+
+        engine = get_audio_engine()
+        if not engine.is_available or not engine.is_running:
+            return
+
+        actions = {
+            "map2://juce/delay": getattr(engine, "stage_delay_spillover", None),
+            "map2://juce/multieffect/shoegaze": getattr(engine, "stage_shoegaze_spillover", None),
+            "map2://juce/reverb/pcm70": getattr(engine, "stage_lexilove_spillover", None),
+        }
+        for uri in outgoing_uris:
+            stage_spillover = actions.get(uri)
+            if not callable(stage_spillover):
+                continue
+            try:
+                await stage_spillover()
+            except Exception as exc:
+                logger.debug("Snapshot spillover arm skipped for %s: %s", uri, exc)
+
     async def activate_snapshot(
         self,
         snapshot_id: int,
@@ -1114,6 +1549,16 @@ class SnapshotService:
         bypass_applied = 0
         topology_reused = False
         audio_device_binding_result: dict[str, Any] | None = None
+        output_safety_result: dict[str, Any] | None = None
+        previous_preload_state: dict[str, Any] = {}
+        activation_topology_metrics = {
+            "before": _normalize_topology_mutation_stats(None),
+            "after": _normalize_topology_mutation_stats(None),
+            "delta": {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+            },
+        }
         try:
             await self._validate_snapshot_activation_preflight(detail)
         except Exception as exc:
@@ -1125,14 +1570,26 @@ class SnapshotService:
             raise
 
         try:
+            activation_topology_metrics["before"] = _normalize_topology_mutation_stats(
+                await get_audio_engine().get_topology_mutation_stats()
+            )
             audio_device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
-            current_live_detail = await self.get_live_snapshot()
+            output_safety_result = await self._apply_snapshot_output_safety_settings(detail)
+            current_runtime_state = await runtime_state_service.get_live_state()
+            previous_preload_state = self._extract_preload_state(current_runtime_state.get("runtime_metrics"))
+            current_live_detail = await runtime_state_service.get_live_snapshot_payload()
+            if not isinstance(current_live_detail, dict):
+                current_live_detail = await self.get_live_snapshot()
             live_state_payload = await self._reuse_live_runtime_chains(
                 snapshot,
                 detail,
                 current_live_detail=current_live_detail,
             )
             if live_state_payload is None:
+                await self._arm_live_spillover_processors(
+                    current_live_detail=current_live_detail,
+                    target_detail=detail,
+                )
                 await self._clear_materialized_runtime_chains()
                 live_state_payload = await self._materialize_live_state(snapshot, detail)
             else:
@@ -1153,6 +1610,10 @@ class SnapshotService:
             legacy_payload = self.to_legacy_snapshot_data(refreshed_detail)
             params_applied, bypass_applied = await snapshot_runtime_service.apply_snapshot_to_engine(
                 copy.deepcopy(legacy_payload)
+            )
+            activation_topology_metrics = _build_activation_topology_metrics(
+                activation_topology_metrics["before"],
+                await get_audio_engine().get_topology_mutation_stats(),
             )
 
             activated_at = _utcnow()
@@ -1197,13 +1658,20 @@ class SnapshotService:
                     "total_count": channel_health["total_count"],
                     "inactive_channels": channel_health["inactive_channels"],
                 },
+                "preload_hit": (
+                    str(previous_preload_state.get("status") or "").lower() == "ready"
+                    and _safe_int(previous_preload_state.get("target_snapshot_id")) == int(snapshot.id)
+                ),
                 "audio_device_binding": audio_device_binding_result or {},
+                "output_safety": output_safety_result or {},
+                "topology_mutation": activation_topology_metrics,
             }
             live_runtime_state = await runtime_state_service.confirm_live_intent(
                 intent=intent,
                 live_snapshot_payload=refreshed_detail,
                 runtime_metrics=runtime_metrics,
             )
+            await self._publish_snapshot_desired_state(refreshed_detail)
             try:
                 from app.services.snapshot_runtime_state_service import schedule_post_activation_health_check
 
@@ -1282,6 +1750,11 @@ class SnapshotService:
         except Exception as exc:
             logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
 
+        try:
+            schedule_snapshot_preload_for_live_snapshot(snapshot.id)
+        except Exception as exc:
+            logger.debug("Snapshot preload scheduling skipped for %s: %s", snapshot.id, exc)
+
         return {
             "status": "success",
             "snapshot_id": snapshot.id,
@@ -1293,6 +1766,7 @@ class SnapshotService:
             "params_applied": params_applied,
             "bypass_applied": bypass_applied,
             "topology_reused": topology_reused,
+            "topology_mutation": activation_topology_metrics,
         }
 
     async def preview_snapshot(self, detail_payload: dict[str, Any]) -> dict[str, Any]:
@@ -1564,7 +2038,30 @@ class SnapshotService:
             routing.series_order = list(series_order) if isinstance(series_order, list) else []
         routing.updated_at = _utcnow()
         await self.session.flush()
-        return await self._reload_snapshot_detail(snapshot_id)
+        detail = await self._reload_snapshot_detail(snapshot_id)
+        if detail is None:
+            return None
+
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+            runtime_state_service = SnapshotRuntimeStateService(self.session)
+            current_runtime_payload = await runtime_state_service.get_live_snapshot_payload()
+            is_current_live_snapshot = (
+                isinstance(current_runtime_payload, dict)
+                and int(current_runtime_payload.get("id") or 0) == int(snapshot.id)
+            )
+            if is_current_live_snapshot:
+                await runtime_state_service.sync_live_snapshot_payload(
+                    snapshot_id=snapshot.id,
+                    live_snapshot_payload=detail,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                )
+                await self._publish_snapshot_desired_state(detail)
+        except Exception as exc:
+            logger.debug("Snapshot routing live-state/authority sync skipped for %s: %s", snapshot.id, exc)
+
+        return detail
 
     async def set_morph_position(self, snapshot_id: int, morph_position: float) -> Optional[dict[str, Any]]:
         return await self.update_routing(snapshot_id, {"morph_position": morph_position})

@@ -5,7 +5,7 @@
  * and MAP iconography-backed parameter grouping.
  */
 
-import type { Plugin, PluginParameter, OutputPort } from '../../../map2/types'
+import type { Plugin, PluginLoaderState, PluginParameter, OutputPort } from '../../../map2/types'
 import { getEffectIcon } from '../icons/effectIcons'
 import type { EffectIconComponent } from '../icons/effectIcons'
 import type { FC, SVGProps } from 'react'
@@ -25,6 +25,7 @@ export interface PluginCardProps {
   onParameterChange: (paramIndex: number, value: number) => void
   onParameterChangeEnd?: () => void
   onBypassToggle?: (bypassed: boolean) => void
+  onLoaderStateChange?: (patch: Partial<PluginLoaderState>) => void
   accentColor: string
   disabled?: boolean
   compact?: boolean
@@ -115,6 +116,11 @@ export interface ParameterGroupConfig {
   columns?: number
 }
 
+export interface GenerateParameterGroupsOptions {
+  /** Flatten tiny parameter sets into a single generic group. */
+  flattenSmallSets?: boolean
+}
+
 /** Standard parameter group types */
 export type StandardGroup =
   | 'INPUT'
@@ -155,7 +161,11 @@ export function categorizeParameter(param: PluginParameter): StandardGroup {
 }
 
 /** Auto-generate parameter groups for a plugin */
-export function generateParameterGroups(parameters: PluginParameter[]): ParameterGroupConfig[] {
+export function generateParameterGroups(
+  parameters: PluginParameter[],
+  options: GenerateParameterGroupsOptions = {},
+): ParameterGroupConfig[] {
+  const { flattenSmallSets = true } = options
   const grouped: Record<StandardGroup, PluginParameter[]> = {
     INPUT: [],
     OUTPUT: [],
@@ -203,7 +213,7 @@ export function generateParameterGroups(parameters: PluginParameter[]): Paramete
   }
 
   // If only one or two groups, flatten to single "All Parameters" group
-  if (configs.length <= 2 || parameters.length <= 8) {
+  if (flattenSmallSets && (configs.length <= 2 || parameters.length <= 8)) {
     return [{
       id: 'all',
       label: 'Parameters',

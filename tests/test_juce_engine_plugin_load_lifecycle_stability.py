@@ -49,6 +49,23 @@ def _run_plugin_lifecycle_case(repo_root: Path, module_dir: Path) -> subprocess.
             engine.shutdown()
             raise SystemExit(24)
 
+        # Replacing the chain detaches the graph node while the plugin stays loaded.
+        # Engine shutdown must destroy that wrapper before host-owned processors are freed.
+        if not engine.replace_chain([]):
+            engine.unload_plugin(plugin_id)
+            engine.shutdown()
+            raise SystemExit(240)
+
+        if list(engine.get_chain_order()):
+            engine.unload_plugin(plugin_id)
+            engine.shutdown()
+            raise SystemExit(241)
+
+        if not engine.add_to_chain(plugin_id, -1):
+            engine.unload_plugin(plugin_id)
+            engine.shutdown()
+            raise SystemExit(242)
+
         group_id = int(engine.create_parallel_group(-1, 2))
         if group_id < 0:
             engine.remove_from_chain(plugin_id)

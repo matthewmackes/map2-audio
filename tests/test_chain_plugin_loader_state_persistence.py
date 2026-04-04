@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sqlite3
 
 import pytest
@@ -337,6 +338,8 @@ class _FakeRuntimeEngine:
         self.loaded_plugins: list[dict] = []
         self.add_calls: list[tuple[int, int]] = []
         self.replace_chain_calls: list[list[int]] = []
+        self.replace_chain_with_spillover_calls: list[list[int]] = []
+        self.unload_calls: list[int] = []
         self.clear_chain_calls = 0
         self.prewarm_calls: list[int] = []
         self.topology_begin_calls = 0
@@ -384,8 +387,42 @@ class _FakeRuntimeEngine:
             )
         return True
 
+    def replace_chain_with_spillover(self, order):
+        ordered_ids = [int(instance_id) for instance_id in order]
+        self.replace_chain_with_spillover_calls.append(ordered_ids)
+        self.items = []
+        for position, instance_id in enumerate(ordered_ids):
+            loaded = next(
+                (plugin for plugin in self.loaded_plugins if plugin.get("instance_id") == instance_id),
+                {"instance_id": instance_id, "uri": "", "name": ""},
+            )
+            self.items.append(
+                {
+                    "instance_id": instance_id,
+                    "uri": loaded.get("uri", ""),
+                    "name": loaded.get("name", ""),
+                    "position": position,
+                }
+            )
+        return True
+
     def get_loaded_plugins(self):
         return list(self.loaded_plugins)
+
+    def unload_plugin(self, instance_id: int) -> bool:
+        self.unload_calls.append(instance_id)
+        before_count = len(self.loaded_plugins)
+        self.loaded_plugins = [
+            plugin
+            for plugin in self.loaded_plugins
+            if int(plugin.get("instance_id", -1)) != int(instance_id)
+        ]
+        self.items = [
+            item
+            for item in self.items
+            if int(item.get("instance_id", -1)) != int(instance_id)
+        ]
+        return len(self.loaded_plugins) != before_count
 
     def prewarm_plugin_node(self, instance_id: int) -> bool:
         self.prewarm_calls.append(instance_id)
@@ -431,11 +468,17 @@ class _FakeRuntimeEngineService:
     async def get_loaded_plugins(self):
         return self._engine.get_loaded_plugins()
 
+    async def unload_plugin(self, instance_id: int) -> bool:
+        return self._engine.unload_plugin(instance_id)
+
     async def clear_chain(self) -> None:
         self._engine.clear_chain()
 
     async def replace_chain(self, order) -> bool:
         return self._engine.replace_chain(order)
+
+    async def replace_chain_with_spillover(self, order) -> bool:
+        return self._engine.replace_chain_with_spillover(order)
 
     async def prewarm_plugin_node(self, instance_id: int) -> bool:
         return self._engine.prewarm_plugin_node(instance_id)
@@ -556,6 +599,139 @@ async def test_activate_chain_restores_persisted_loader_state_into_runtime_insta
 
 
 @pytest.mark.asyncio
+async def test_activate_snapshot_runtime_chain_uses_spillover_replace_when_available(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-spillover.db")
+    fake_engine_service = _FakeRuntimeEngineService()
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(
+            name="Snapshot Runtime Chain",
+            is_active=False,
+            config=json.dumps({"source_kind": "snapshot_path", "snapshot_id": 7, "path_id": "A"}),
+        )
+        session.add(chain)
+        await session.flush()
+        session.add(
+            database_module.ChainPlugin(
+                chain_id=chain.id,
+                plugin_uri="map2://juce/convolution/reverb",
+                position=0,
+                bypass=False,
+                selected_asset_path="/tmp/runtime-reverb.wav",
+                ir_mix=30.0,
+            )
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.activate_chain(chain.id) is True
+        payload = await service.get_chain(chain.id)
+
+    assert fake_engine_service._engine.replace_chain_calls == []
+    assert fake_engine_service._engine.replace_chain_with_spillover_calls == [[101]]
+    assert payload["runtime_sync"] == {
+        "enabled": True,
+        "status": "active",
+        "runtime_items": 1,
+        "warnings": [],
+        "restored_positions": [0],
+        "missing_positions": [],
+    }
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_stage_detached_chain_plugins_warms_instances_without_touching_live_chain(monkeypatch):
+    fake_engine_service = _FakeRuntimeEngineService()
+    fake_engine_service._engine.items = [
+        {"instance_id": 301, "uri": "map2://juce/nam", "name": "Live NAM", "position": 0},
+    ]
+    fake_engine_service._engine.loaded_plugins = [
+        {"instance_id": 301, "uri": "map2://juce/nam", "name": "Live NAM"},
+    ]
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    service = ChainService(None)
+    payload = await service.stage_detached_chain_plugins(
+        [
+            ChainService.build_detached_stage_plugin(
+                plugin_uri="map2://juce/nam",
+                position=0,
+                loader_state={"selected_asset_path": "/tmp/preloaded-a.nam"},
+            ),
+            ChainService.build_detached_stage_plugin(
+                plugin_uri="map2://juce/convolution/cabinet",
+                position=1,
+                loader_state={"selected_asset_path": "/tmp/preloaded-b.wav", "mix": 82.0},
+            ),
+        ]
+    )
+
+    assert payload["status"] == "ready"
+    assert payload["restored_positions"] == [0, 1]
+    assert payload["staged_instance_ids"] == [101, 102]
+    assert fake_engine_service.loaded_plugin_calls == [
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+    ]
+    assert fake_engine_service._engine.prewarm_calls == [101, 102]
+    assert fake_engine_service._engine.items == [
+        {"instance_id": 301, "uri": "map2://juce/nam", "name": "Live NAM", "position": 0},
+    ]
+    assert fake_engine_service.nam_load_calls == [(101, "/tmp/preloaded-a.nam")]
+    assert fake_engine_service.ir_load_calls == [("cabinet", 102, "/tmp/preloaded-b.wav")]
+    assert fake_engine_service.ir_mix_calls == [(102, 82.0)]
+
+
+@pytest.mark.asyncio
+async def test_release_detached_instance_ids_unloads_only_detached_instances(monkeypatch):
+    fake_engine_service = _FakeRuntimeEngineService()
+    fake_engine_service._engine.items = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "Live NAM", "position": 0},
+    ]
+    fake_engine_service._engine.loaded_plugins = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "Live NAM"},
+        {"instance_id": 402, "uri": "map2://juce/convolution/cabinet", "name": "Detached Cab"},
+    ]
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    payload = await ChainService(None).release_detached_instance_ids([401, 402, 999])
+
+    assert payload == {
+        "released_instance_ids": [402],
+        "skipped_active_instance_ids": [401],
+        "missing_instance_ids": [999],
+        "warnings": [],
+    }
+    assert fake_engine_service._engine.unload_calls == [402]
+    assert fake_engine_service._engine.loaded_plugins == [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "Live NAM"},
+    ]
+
+
+@pytest.mark.asyncio
 async def test_activate_chain_reuses_detached_loaded_instances_before_live_clear(tmp_path, monkeypatch):
     _init_temp_async_db(tmp_path, "chain-loader-runtime-reuse.db")
     fake_engine_service = _FakeRuntimeEngineService()
@@ -606,6 +782,74 @@ async def test_activate_chain_reuses_detached_loaded_instances_before_live_clear
         "runtime_items": 1,
         "warnings": [],
         "restored_positions": [0],
+        "missing_positions": [],
+    }
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_activate_chain_reuses_active_runtime_instances_for_reorder(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-active-reorder.db")
+    fake_engine_service = _FakeRuntimeEngineService()
+    fake_engine_service._engine.loaded_plugins = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "NAM"},
+        {"instance_id": 402, "uri": "map2://juce/convolution/cabinet", "name": "Cabinet"},
+    ]
+    fake_engine_service._engine.items = [
+        {"instance_id": 401, "uri": "map2://juce/nam", "name": "NAM", "position": 0},
+        {"instance_id": 402, "uri": "map2://juce/convolution/cabinet", "name": "Cabinet", "position": 1},
+    ]
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    class _FakeJuceEngineService:
+        @staticmethod
+        def get_instance():
+            return fake_engine_service
+
+    monkeypatch.setattr("app.services.juce_engine_service.JuceEngineService", _FakeJuceEngineService)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(name="Reuse Active Reorder", is_active=False)
+        session.add(chain)
+        await session.flush()
+        session.add_all(
+            [
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="map2://juce/convolution/cabinet",
+                    position=0,
+                    bypass=False,
+                    selected_asset_path="/tmp/reordered-cab.wav",
+                    ir_mix=55.0,
+                ),
+                database_module.ChainPlugin(
+                    chain_id=chain.id,
+                    plugin_uri="map2://juce/nam",
+                    position=1,
+                    bypass=True,
+                    selected_asset_path="/tmp/reordered.nam",
+                ),
+            ]
+        )
+        await session.flush()
+
+        service = ChainService(session)
+        assert await service.activate_chain(chain.id) is True
+        payload = await service.get_chain(chain.id)
+
+    assert fake_engine_service.loaded_plugin_calls == []
+    assert fake_engine_service._engine.prewarm_calls == []
+    assert fake_engine_service._engine.replace_chain_calls == [[402, 401]]
+    assert fake_engine_service._engine.clear_chain_calls == 0
+    assert fake_engine_service.ir_load_calls == [("cabinet", 402, "/tmp/reordered-cab.wav")]
+    assert fake_engine_service.nam_load_calls == [(401, "/tmp/reordered.nam")]
+    assert payload["runtime_sync"] == {
+        "enabled": True,
+        "status": "active",
+        "runtime_items": 2,
+        "warnings": [],
+        "restored_positions": [0, 1],
         "missing_positions": [],
     }
 

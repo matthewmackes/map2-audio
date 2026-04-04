@@ -12,6 +12,7 @@ import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
 import { FolderOpen, ChevronLeft, ChevronRight } from '@carbon/icons-react'
+import { getCategoryConfig } from '../types'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 
 export { type ParamSlot }
@@ -28,6 +29,9 @@ export interface ConvolutionCategoryLayoutProps {
 
   /* IR info */
   irName?: string
+  assetLabel?: string
+  assetStatus?: ReactNode
+  assetFacts?: ReactNode
   onBrowseIR?: () => void
   onPrevIR?: () => void
   onNextIR?: () => void
@@ -47,13 +51,16 @@ export interface ConvolutionCategoryLayoutProps {
 
 export function ConvolutionCategoryLayout({
   plugin,
-  accentColor = '#f97316',
+  accentColor: providedAccent,
   compact = false,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
   visualization,
   irName,
+  assetLabel = 'Loaded asset',
+  assetStatus,
+  assetFacts,
   onBrowseIR,
   onPrevIR,
   onNextIR,
@@ -65,6 +72,7 @@ export function ConvolutionCategoryLayout({
   advancedSections,
   extraContent,
 }: ConvolutionCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const renderKnob = (slot: ParamSlot | undefined) => {
     if (!slot) return null
     return (
@@ -105,33 +113,42 @@ export function ConvolutionCategoryLayout({
       <CarbonParameterSection title="Impulse Response" accentColor={accentColor}>
         <div className="carbon-asset-selector-stack">
           <div className="carbon-asset-selector">
-            {onPrevIR && (
-              <button type="button" className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
-                <ChevronLeft size={16} />
-              </button>
-            )}
-            <div
-              className={`carbon-asset-selector-value ${irName ? '' : 'empty'}`}
-              title={irName || 'No IR loaded'}
-            >
-              {irName || 'No IR loaded'}
+            <div className="carbon-asset-selector-main">
+              <div className="carbon-asset-selector-title-block">
+                <p className="carbon-asset-selector-kicker">{assetLabel}</p>
+                <div className="carbon-asset-selector-nav">
+                  {onPrevIR && (
+                    <button type="button" className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
+                      <ChevronLeft size={16} />
+                    </button>
+                  )}
+                  <div
+                    className={`carbon-asset-selector-value ${irName ? '' : 'empty'}`}
+                    title={irName || 'No IR loaded'}
+                  >
+                    {irName || 'No IR loaded'}
+                  </div>
+                  {onNextIR && (
+                    <button type="button" className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {assetStatus}
+              {assetFacts}
+              {assetSupportText ? <p className="carbon-asset-selector-support">{assetSupportText}</p> : null}
             </div>
             <div className="carbon-asset-selector-actions">
-              {onNextIR && (
-                <button type="button" className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
-                  <ChevronRight size={16} />
-                </button>
-              )}
               {onBrowseIR && (
                 <button type="button" className="carbon-toggle-btn" onClick={onBrowseIR}>
                   <FolderOpen size={14} style={{ marginRight: 4 }} />
-                  Library
+                  Select...
                 </button>
               )}
               {uploadControl}
             </div>
           </div>
-          {assetSupportText ? <p className="carbon-asset-selector-support">{assetSupportText}</p> : null}
         </div>
       </CarbonParameterSection>
 

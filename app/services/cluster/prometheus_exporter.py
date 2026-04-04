@@ -350,6 +350,7 @@ class PrometheusExporter:
         """Initialize exporter."""
         self.storage = MetricStorage()
         self.collectors: List[Callable[[], None]] = []
+        self.targets: Dict[str, Dict[str, Any]] = {}
     
     def register_collector(self, collector: Callable[[], None]) -> None:
         """
@@ -367,15 +368,35 @@ class PrometheusExporter:
         """Add a metric value."""
         self.storage.add_metric(metric_name, value, labels)
     
-    def collect(self) -> None:
-        """Run all collectors and gather metrics."""
-        self.storage.clear()
-        
+    def collect(self, clear: bool = True) -> None:
+        """Run all registered custom collectors and gather metrics."""
+        if clear:
+            self.storage.clear()
+
         for collector in self.collectors:
             try:
                 collector()
             except Exception as e:
                 logger.error(f"Error in collector: {e}")
+
+    def add_target(
+        self,
+        name: str,
+        address: str,
+        port: int = 8080,
+        metrics_path: str = "/api/metrics/prometheus",
+    ) -> None:
+        """Register a scrape target for management-plane monitoring."""
+        self.targets[name] = {
+            "name": name,
+            "address": address,
+            "port": int(port),
+            "metrics_path": metrics_path,
+        }
+
+    def get_targets(self) -> List[Dict[str, Any]]:
+        """Return the currently registered scrape targets."""
+        return list(self.targets.values())
     
     def generate_exposition(self) -> str:
         """
@@ -684,8 +705,9 @@ class MetricsManager:
     
     def collect_metrics(self) -> None:
         """Collect all metrics."""
+        self.exporter.storage.clear()
         self.collector.collect_all()
-        self.exporter.collect()
+        self.exporter.collect(clear=False)
     
     def get_exposition(self) -> str:
         """Get Prometheus text format exposition."""
@@ -696,3 +718,28 @@ class MetricsManager:
                    labels: Optional[Dict[str, str]] = None) -> None:
         """Add a custom metric."""
         self.exporter.add_metric(metric_name, value, labels)
+
+    def add_target(
+        self,
+        name: str,
+        address: str,
+        port: int = 8080,
+        metrics_path: str = "/api/metrics/prometheus",
+    ) -> None:
+        """Register a scrape target on the underlying exporter."""
+        self.exporter.add_target(name=name, address=address, port=port, metrics_path=metrics_path)
+
+    def get_targets(self) -> List[Dict[str, Any]]:
+        """Return known scrape targets."""
+        return self.exporter.get_targets()
+
+
+_metrics_manager: Optional[MetricsManager] = None
+
+
+def get_prometheus_exporter() -> MetricsManager:
+    """Get or create the shared MAP2 Prometheus metrics manager."""
+    global _metrics_manager
+    if _metrics_manager is None:
+        _metrics_manager = MetricsManager()
+    return _metrics_manager

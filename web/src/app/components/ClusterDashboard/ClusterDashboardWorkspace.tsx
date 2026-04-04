@@ -39,6 +39,7 @@ import {
   getNodeStatusLabel,
   getNodeStatusTagType,
 } from '../../utils/nodeDisplay'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
 import { ClusterDashboardWorkspaceGraph } from './ClusterDashboardWorkspaceGraph'
 import {
   buildClusterDashboardWorkspaceGraphModel,
@@ -468,6 +469,37 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
 
   const errorMessages = [queryErrorMessage(topologyQuery.error)].filter((message): message is string => Boolean(message))
   const activePeerLinkCount = Array.from(peerLinksByNodeId.values()).reduce((sum, peerLinks) => sum + peerLinks.length, 0) / 2
+  const averageCpuPercent = filteredRecords.length > 0
+    ? filteredRecords.reduce((sum, record) => sum + record.node.cpu_percent, 0) / filteredRecords.length
+    : null
+  const averageMemoryPercent = filteredRecords.length > 0
+    ? filteredRecords.reduce((sum, record) => sum + record.node.memory_percent, 0) / filteredRecords.length
+    : null
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => [
+    {
+      id: 'cluster-dashboard-fleet',
+      title: 'Fleet Runtime',
+      description: '24-hour fleet trend for aggregate load and active cluster audio paths.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'avgCpu', label: 'Avg CPU %', value: averageCpuPercent, color: 'var(--cds-link-primary)' },
+        { key: 'avgMemory', label: 'Avg Memory %', value: averageMemoryPercent, color: 'var(--cds-support-warning)' },
+        { key: 'audioPaths', label: 'Audio Paths', value: audioEdges.filter((edge) => edge.active).length, color: 'var(--cds-support-success)' },
+      ],
+    },
+    {
+      id: 'cluster-dashboard-focus',
+      title: 'Focused Node',
+      description: 'Selected node trend for health, peer-link density, latency, and xruns.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'healthPercent', label: 'Health %', value: selectedRecord?.healthPercent ?? null, color: 'var(--cds-support-success)' },
+        { key: 'peerLinks', label: 'Peer Links', value: selectedRecord?.peerLinks.length ?? null, color: 'var(--cds-text-primary)' },
+        { key: 'latencyMs', label: 'Latency ms', value: selectedRecord?.node.audio_latency_ms ?? null, color: 'var(--cds-support-info)' },
+        { key: 'xruns', label: 'XRuns', value: selectedRecord?.node.xrun_count ?? null, color: 'var(--cds-support-error)' },
+      ],
+    },
+  ], [audioEdges, averageCpuPercent, averageMemoryPercent, selectedRecord])
 
   const handleSelectNode = useCallback((nodeId: string) => {
     setSelectedNodeId(nodeId)
@@ -547,6 +579,8 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
           ))}
         </div>
       ) : null}
+
+      <PlatformGrafanaPanelDeck panels={grafanaPanels} />
 
       <section
         ref={tableSectionRef}

@@ -4,7 +4,6 @@ import {
   Button,
   CodeSnippet,
   DataTable,
-  Layer,
   Select,
   SelectItem,
   Table,
@@ -23,6 +22,7 @@ import {
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { MidiHubSurface } from './MidiHubHelpPrimitives'
 
 function sanitizeScriptId(raw: string): string {
   const normalized = raw.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-')
@@ -226,7 +226,7 @@ export function MidiScriptEditor() {
         )}
       </DataTable>
 
-      <Layer className="midi-hub-processing-editor-layer">
+      <MidiHubSurface className="midi-hub-processing-editor-layer" tone="raised">
         <div className="midi-hub-processing-toolbar">
           <Tag type={selectedScript?.enabled ? 'green' : 'cool-gray'}>{selectedScript?.enabled ? 'Enabled' : 'Draft'}</Tag>
           <Button
@@ -281,7 +281,7 @@ export function MidiScriptEditor() {
         <CodeSnippet className="midi-hub-processing-code-block" type="multi">
           {(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}
         </CodeSnippet>
-      </Layer>
+      </MidiHubSurface>
     </div>
   )
 }

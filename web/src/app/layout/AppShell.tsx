@@ -1,8 +1,9 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useRef, useEffect, useMemo } from 'react'
-import { ChevronDown, ChevronRight, ChevronUp, Close, Menu } from '@carbon/icons-react'
-import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
+import { ChevronRight, Close } from '@carbon/icons-react'
+import { Layer, Tag } from '@carbon/react'
+
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
@@ -13,13 +14,11 @@ import { LatencyPressureShellReadout } from '../components/LatencyPressureShellR
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
-  advancedMenuItems,
+  allPinnableNavigationItems,
   allRouteNavigationItems,
   defaultPinnedRoutes,
   findPinnableNavigationItem,
   hardwareInterfaceMenuItems,
-  homeNavigationItem,
-  homeNavigationSections,
   MAX_PINNED_NAV_ITEMS,
   normalizePinnedRoutes,
   type HardwareInterfaceMenuItem,
@@ -27,9 +26,7 @@ import {
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
-import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
-import { isBlockedAdvancedMenuItem } from './advancedMenuState'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { prefetchAppRoute } from '../routePrefetch'
 import './AppShell.css'
@@ -42,52 +39,13 @@ interface TopNavItem {
   description: string
   color: string
   maturity: NavigationMaturityState
-  gatedReason?: string
-  deviceType?: string
   kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
-  iconOnly?: boolean
-  target?: PlatformPinnedNavItem['target']
 }
 
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
-type MobileMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
-
-const ADVANCED_SECTION_ORDER = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware', 'Blocked / Lab'] as const
 
 function HeroHomeIcon() {
-  return <Map2BrandMark className="topbar-pro__hero-home-mark" />
-}
-
-function routeItemKey(item: MobileMenuItem): string {
-  return `${item.to}::${item.label}`
-}
-
-function isBlockedOrLabItem(item: MobileMenuItem): boolean {
-  return isBlockedAdvancedMenuItem(item) || item.maturity === 'experimental'
-}
-
-function getAdvancedSectionTitle(item: MobileMenuItem): typeof ADVANCED_SECTION_ORDER[number] {
-  return isBlockedOrLabItem(item) ? 'Blocked / Lab' : item.homeSection
-}
-
-function getAdvancedCardId(sectionTitle: string, item: MobileMenuItem): string {
-  return `advanced-${sectionTitle}-${routeItemKey(item)}`
-}
-
-function toTopNavItem(item: PinnedMenuItem): TopNavItem {
-  return {
-    to: item.to,
-    label: item.label,
-    shortLabel: item.shortLabel,
-    icon: item.icon,
-    description: item.description,
-    color: item.color,
-    maturity: item.maturity,
-    gatedReason: 'gatedReason' in item ? item.gatedReason : undefined,
-    deviceType: 'deviceType' in item ? item.deviceType : undefined,
-    kind: item.kind,
-    target: 'target' in item ? item.target : undefined,
-  }
+  return <Map2BrandMark className="window-titlebar__brand-mark" />
 }
 
 function isRouteMatch(pathname: string, to: string): boolean {
@@ -104,25 +62,26 @@ function normalizeMidiValue(value: number, max = 127): number {
   return clamp01(value / max)
 }
 
-function maturityTagType(maturity: NavigationMaturityState): 'green' | 'cyan' | 'purple' | 'warm-gray' | 'red' {
-  switch (maturity) {
-    case 'production':
-      return 'green'
-    case 'qualified-with-waiver':
-      return 'cyan'
-    case 'beta':
-      return 'warm-gray'
-    case 'experimental':
-      return 'purple'
-    case 'hardware-blocked':
-      return 'red'
-    default:
-      return 'warm-gray'
+function formatShellRouteHint(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length === 0) {
+    return 'landing'
   }
+
+  return segments.join(' / ')
 }
 
-function maturityTagLabel(maturity: NavigationMaturityState): string {
-  return maturity.replace(/-/g, ' ')
+function toTopNavItem(item: PinnedMenuItem): TopNavItem {
+  return {
+    to: item.to,
+    label: item.label,
+    shortLabel: item.shortLabel,
+    icon: item.icon,
+    description: item.description,
+    color: item.color,
+    maturity: item.maturity,
+    kind: item.kind,
+  }
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -131,12 +90,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
-  const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
-  const [expandedAdvancedCardId, setExpandedAdvancedCardId] = useState<string | null>(null)
-  const navMenuRef = useRef<HTMLDivElement>(null)
-  const advancedMenuRef = useRef<HTMLDivElement>(null)
   const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
   const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
+  const navMenuRef = useRef<HTMLDivElement>(null)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
   const topHardwareMenuRef = useRef<HTMLDivElement>(null)
 
@@ -173,52 +129,64 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const pinnedRouteSet = useMemo(() => new Set(pinnedRouteKeys), [pinnedRouteKeys])
 
-  const advancedLauncherKeySet = useMemo(
-    () => new Set(advancedMenuItems.map((item) => routeItemKey(item))),
-    [],
-  )
-
-  const pinnedTopNavItems = useMemo<TopNavItem[]>(() => {
-    return pinnedRouteKeys
+  const pinnedTopNavItems = useMemo<TopNavItem[]>(
+    () => pinnedRouteKeys
       .map((route) => findPinnableNavigationItem(route))
       .filter((item): item is PinnedMenuItem => Boolean(item))
-      .map(toTopNavItem)
-  }, [pinnedRouteKeys])
+      .map(toTopNavItem),
+    [pinnedRouteKeys],
+  )
 
-  const mobilePinnedItems = useMemo(
-    () => pinnedTopNavItems.filter((item) => item.kind !== 'hardware-submenu'),
+  const pinnedStartMenuItems = useMemo(
+    () => [...pinnedTopNavItems].sort((left, right) => left.label.localeCompare(right.label)),
     [pinnedTopNavItems],
   )
+  const shellQuickLaunchItem = useMemo(
+    () => pinnedTopNavItems.find((item) => item.kind === 'link' && !isRouteMatch(location.pathname, item.to))
+      ?? pinnedTopNavItems.find((item) => item.kind === 'link')
+      ?? null,
+    [location.pathname, pinnedTopNavItems],
+  )
 
-  const homeTopNavItem = useMemo<TopNavItem>(
-    () => ({
-      ...toTopNavItem(homeNavigationItem),
-      iconOnly: true,
-    }),
+  const hardwareSubmenuItems = useMemo(
+    () => hardwareInterfaceMenuItems.filter((hardwareItem) => hardwareItem.showInHardwareSubmenu !== false),
     [],
   )
-  const heroHomeTopNavItem = useMemo<TopNavItem>(
-    () => ({
-      ...homeTopNavItem,
-      icon: HeroHomeIcon,
-    }),
-    [homeTopNavItem],
-  )
-  const HomeIcon = homeTopNavItem.icon
+  const currentShellItem = useMemo(() => {
+    const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
+      .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
+      .filter((item) => isRouteMatch(location.pathname, item.to))
+      .sort((left, right) => right.to.length - left.to.length)
+
+    return candidates[0] ?? null
+  }, [location.pathname])
+  const shellWorkspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
+  const shellWorkspaceHint = formatShellRouteHint(location.pathname)
+  const shellAccentColor = currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)'
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isIntegratedWorkspaceRoute = location.pathname.startsWith('/platforms')
-  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/juce-grid' || isIntegratedWorkspaceRoute
-  const showMobileBottomTabbar = !isIntegratedWorkspaceRoute
+  const isPlatformWorkspaceRoute = location.pathname.startsWith('/platforms')
+  const isIntegratedWorkspaceRoute =
+    isPlatformWorkspaceRoute
+    || location.pathname.startsWith('/midi-hub')
+    || location.pathname.startsWith('/artifacts')
+    || location.pathname.startsWith('/audio-artifacts')
+  const isAudioGridWorkspaceRoute = location.pathname === '/juce-grid' || location.pathname === '/snapshot-editor'
+  const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
+  const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
+  const showDesktopWindowChrome = location.pathname !== '/'
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
+
+  const closeShellMenus = () => {
+    setNavOpen(false)
+    setMpx1MenuOpen(false)
+    setTopHardwareSubmenuOpen(false)
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
         setNavOpen(false)
-      }
-      if (advancedMenuRef.current && !advancedMenuRef.current.contains(event.target as Node)) {
-        setAdvancedMenuOpen(false)
       }
       if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
         setMpx1MenuOpen(false)
@@ -228,18 +196,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     }
 
-    if (navOpen || advancedMenuOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
+    if (navOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [advancedMenuOpen, navOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
+  }, [navOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
 
   useEffect(() => {
-    setAdvancedMenuOpen(false)
-    setMpx1MenuOpen(false)
-    setTopHardwareSubmenuOpen(false)
-    setExpandedAdvancedCardId(null)
+    closeShellMenus()
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!showDesktopWindowChrome) {
+      closeShellMenus()
+    }
+  }, [showDesktopWindowChrome])
 
   useEffect(() => {
     if (!pinnedRouteSet.has('/mpx1')) {
@@ -253,33 +224,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleMenuToggle = () => {
     const nextOpen = !navOpen
     setNavOpen(nextOpen)
-    setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
-    setExpandedAdvancedCardId(null)
   }
 
-  const closeMobileNavigation = () => {
-    setNavOpen(false)
-    setAdvancedMenuOpen(false)
-    setMpx1MenuOpen(false)
-    setTopHardwareSubmenuOpen(false)
-    setExpandedAdvancedCardId(null)
-  }
-
-  const closeTransientMenus = () => {
-    setAdvancedMenuOpen(false)
-    setMpx1MenuOpen(false)
-    setTopHardwareSubmenuOpen(false)
-    setExpandedAdvancedCardId(null)
-  }
-
-  const openAdvancedRoute = (item: MobileMenuItem) => {
-    if (isBlockedAdvancedMenuItem(item)) {
-      return
-    }
-    closeTransientMenus()
-    navigate(item.to)
+  const handleCloseWindow = () => {
+    closeShellMenus()
+    navigate('/')
   }
 
   const handleMpx1Rescan = async () => {
@@ -300,488 +251,243 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
-  const renderNavItem = (item: TopNavItem) => {
-    const Icon = item.icon
-    const isAudioGridTab = item.to === '/juce-grid'
-    return (
-      <NavLink
-        key={item.to}
-        to={item.to}
-        className={({ isActive }) => `nav-tab-item${item.iconOnly ? ' nav-tab-item--icon-only' : ''}${isAudioGridTab ? ' nav-tab-item--audio-grid' : ''}${isActive ? ' nav-tab-item--active' : ''}`}
-        aria-label={item.label}
-        title={`${item.description} • ${item.maturity}`}
-        style={{ '--tab-color': item.color } as CSSProperties}
-        onClick={() => {
-          closeTransientMenus()
-        }}
-        onMouseEnter={() => prefetchAppRoute(item.to)}
-        onFocus={() => prefetchAppRoute(item.to)}
-      >
-        <span className={`nav-tab-icon${isAudioGridTab ? ' nav-tab-icon--audio-grid' : ''}`}>
-          <Icon size={isAudioGridTab ? 20 : 16} aria-hidden />
-        </span>
-        {!item.iconOnly && <span className={`nav-tab-label${isAudioGridTab ? ' nav-tab-label--audio-grid' : ''}`}>{item.label}</span>}
-      </NavLink>
-    )
-  }
-
-  const renderMpx1MegaMenuTrigger = (item: TopNavItem) => {
-    const Icon = item.icon
-    const isRouteActive = isRouteMatch(location.pathname, '/mpx1')
-
-    return (
-      <div key={`mpx1-mega-${item.to}`} className="mpx1-nav-root" ref={mpx1MenuRef}>
-        <button
-          type="button"
-          className={`nav-tab-item nav-tab-item--menu${isRouteActive ? ' nav-tab-item--menu-active' : ''}${mpx1MenuOpen ? ' nav-tab-item--menu-open' : ''}`}
-          title={`${item.description} • ${item.maturity}`}
-          style={{ '--tab-color': item.color } as CSSProperties}
-          onClick={() => {
-            const nextOpen = !mpx1MenuOpen
-            setMpx1MenuOpen(nextOpen)
-            if (nextOpen) {
-              setTopHardwareSubmenuOpen(false)
-            }
-          }}
-          aria-haspopup="menu"
-          aria-expanded={mpx1MenuOpen}
-          aria-controls="mpx1-mega-menu"
+  const renderHardwareSubmenuPanel = () => (
+    <Layer id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
+      {hardwareSubmenuItems.map((hardwareItem) => (
+        <NavLink
+          key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
+          to={hardwareItem.to}
+          className="top-hardware-menu-link"
+          style={{ '--item-color': hardwareItem.color } as CSSProperties}
+          onClick={closeShellMenus}
         >
-          <span className="nav-tab-icon">
-            <Icon size={16} aria-hidden />
+          <hardwareItem.icon size={16} aria-hidden />
+          <span className="top-hardware-menu-meta">
+            <span>{hardwareItem.label}</span>
+            {hardwareLocationNotes[hardwareItem.to] ? (
+              <Tag type="cool-gray" size="sm" className="top-hardware-menu-location">
+                On {hardwareLocationNotes[hardwareItem.to]?.hostname}
+              </Tag>
+            ) : null}
           </span>
-          <span className="nav-tab-label">{item.label}</span>
-          <ChevronRight size={12} className={`nav-tab-advanced-caret${mpx1MenuOpen ? ' is-open' : ''}`} />
-        </button>
+        </NavLink>
+      ))}
+    </Layer>
+  )
 
-        {mpx1MenuOpen && (
-          <MPX1MegaMenu
-            menuId="mpx1-mega-menu"
-            connected={Boolean(mpx1State?.connected)}
-            currentProgram={currentProgram}
-            currentProgramName={currentProgramName}
-            mixMeter={mixMeter}
-            levelMeter={levelMeter}
-            hasMidiMappings={false}
-            onClose={() => setMpx1MenuOpen(false)}
-            onRescan={handleMpx1Rescan}
-            onDisconnect={handleMpx1Disconnect}
-            onProgramStep={async (delta) => {
-              const nextProgram = Math.max(0, currentProgram + delta)
-              try {
-                await setMpx1Program(nextProgram)
-              } catch (err) {
-                console.error('MPX1 program change failed:', err)
+  const renderStartMenuItem = (item: TopNavItem) => {
+    const Icon = item.icon
+    const isItemActive = item.kind === 'hardware-submenu'
+      ? hardwareSubmenuItems.some((hardwareItem) => isRouteMatch(location.pathname, hardwareItem.to))
+      : isRouteMatch(location.pathname, item.to)
+
+    if (item.kind === 'mpx1-mega-menu') {
+      return (
+        <div
+          key={`start-mpx1-${item.to}`}
+          className="start-menu-card-root start-menu-card-root--submenu"
+          ref={mpx1MenuRef}
+        >
+          <button
+            type="button"
+            className={`start-menu-card start-menu-card--submenu${isItemActive ? ' is-active' : ''}${mpx1MenuOpen ? ' is-open' : ''}`}
+            style={{ '--item-color': item.color } as CSSProperties}
+            title={`${item.description} • ${item.maturity}`}
+            onClick={() => {
+              const nextOpen = !mpx1MenuOpen
+              setMpx1MenuOpen(nextOpen)
+              if (nextOpen) {
+                setTopHardwareSubmenuOpen(false)
               }
             }}
-          />
-        )}
-      </div>
-    )
-  }
-
-  const renderHardwareSubmenuTrigger = (item: TopNavItem) => {
-    const Icon = item.icon
-    const hardwareSubmenuItems = hardwareInterfaceMenuItems.filter((hardwareItem) => hardwareItem.showInHardwareSubmenu !== false)
-    const isHardwareRouteActive = hardwareSubmenuItems.some((hardwareItem) =>
-      isRouteMatch(location.pathname, hardwareItem.to)
-    )
-
-    return (
-      <div key={`hardware-submenu-${item.to}`} className="top-hardware-nav-root" ref={topHardwareMenuRef}>
-        <button
-          type="button"
-          className={`nav-tab-item nav-tab-item--menu${isHardwareRouteActive ? ' nav-tab-item--menu-active' : ''}${topHardwareSubmenuOpen ? ' nav-tab-item--menu-open' : ''}`}
-          title={`${item.description} • ${item.maturity}`}
-          style={{ '--tab-color': item.color } as CSSProperties}
-          onClick={() => {
-            const nextOpen = !topHardwareSubmenuOpen
-            setTopHardwareSubmenuOpen(nextOpen)
-            if (nextOpen) {
-              setMpx1MenuOpen(false)
-            }
-          }}
-          aria-haspopup="menu"
-          aria-expanded={topHardwareSubmenuOpen}
-          aria-controls="top-hardware-menu"
-        >
-          <span className="nav-tab-icon">
-            <Icon size={16} aria-hidden />
-          </span>
-          <span className="nav-tab-label">{item.label}</span>
-          <ChevronRight size={12} className={`nav-tab-advanced-caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} />
-        </button>
-
-        {topHardwareSubmenuOpen && (
-          <Layer id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
-            {hardwareSubmenuItems.map((hardwareItem) => (
-              <NavLink
-                key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
-                to={hardwareItem.to}
-                className="top-hardware-menu-link"
-                style={{ '--item-color': hardwareItem.color } as CSSProperties}
-                onClick={() => setTopHardwareSubmenuOpen(false)}
-              >
-                <hardwareItem.icon size={16} aria-hidden />
-                <span className="top-hardware-menu-meta">
-                  <span>{hardwareItem.label}</span>
-                  {hardwareLocationNotes[hardwareItem.to] ? (
-                    <Tag type="cool-gray" size="sm" className="top-hardware-menu-location">
-                      On {hardwareLocationNotes[hardwareItem.to]?.hostname}
-                    </Tag>
-                  ) : null}
-                </span>
-              </NavLink>
-            ))}
-          </Layer>
-        )}
-      </div>
-    )
-  }
-
-  const renderMobileMenuItem = (item: MobileMenuItem, keyPrefix: string) => {
-    const Icon = item.icon
-    const isBlocked = isBlockedAdvancedMenuItem(item)
-    const hardwareLocation = hardwareLocationNotes[item.to]
-    const itemBody = (
-      <>
-        <Icon size={18} aria-hidden />
-        <div className="nav-mobile-item-text">
-          <div className="nav-mobile-item-heading">
-            <span className="nav-mobile-item-label">{item.label}</span>
-            <Tag type={maturityTagType(item.maturity)} size="sm" className="nav-mobile-item-maturity">
-              {maturityTagLabel(item.maturity)}
-            </Tag>
-          </div>
-          <span className="nav-mobile-item-desc">{item.description}</span>
-          {hardwareLocation && <span className="nav-mobile-item-note">On {hardwareLocation.hostname}</span>}
-          {item.gatedReason && <span className="nav-mobile-item-note">{item.gatedReason}</span>}
-        </div>
-      </>
-    )
-
-    if (isBlocked) {
-      return (
-        <div key={`${keyPrefix}-${item.to}`} className="nav-mobile-item-wrap">
-          <div
-            className="nav-mobile-item nav-mobile-item--blocked"
-            style={{ '--item-color': item.color } as CSSProperties}
-            role="note"
-            aria-disabled="true"
+            aria-haspopup="menu"
+            aria-expanded={mpx1MenuOpen}
+            aria-controls="mpx1-mega-menu"
           >
-            {itemBody}
-          </div>
+            <span className="start-menu-card__icon">
+              <Icon size={18} aria-hidden />
+            </span>
+            <span className="start-menu-card__label">{item.label}</span>
+            <ChevronRight size={14} className={`start-menu-card__caret${mpx1MenuOpen ? ' is-open' : ''}`} aria-hidden />
+          </button>
+
+          {mpx1MenuOpen && (
+            <MPX1MegaMenu
+              menuId="mpx1-mega-menu"
+              connected={Boolean(mpx1State?.connected)}
+              currentProgram={currentProgram}
+              currentProgramName={currentProgramName}
+              mixMeter={mixMeter}
+              levelMeter={levelMeter}
+              hasMidiMappings={false}
+              onClose={() => setMpx1MenuOpen(false)}
+              onRescan={handleMpx1Rescan}
+              onDisconnect={handleMpx1Disconnect}
+              onProgramStep={async (delta) => {
+                const nextProgram = Math.max(0, currentProgram + delta)
+                try {
+                  await setMpx1Program(nextProgram)
+                } catch (err) {
+                  console.error('MPX1 program change failed:', err)
+                }
+              }}
+            />
+          )}
+        </div>
+      )
+    }
+
+    if (item.kind === 'hardware-submenu') {
+      return (
+        <div
+          key={`start-hardware-${item.to}`}
+          className="start-menu-card-root start-menu-card-root--submenu"
+          ref={topHardwareMenuRef}
+        >
+          <button
+            type="button"
+            className={`start-menu-card start-menu-card--submenu${isItemActive ? ' is-active' : ''}${topHardwareSubmenuOpen ? ' is-open' : ''}`}
+            style={{ '--item-color': item.color } as CSSProperties}
+            title={`${item.description} • ${item.maturity}`}
+            onClick={() => {
+              const nextOpen = !topHardwareSubmenuOpen
+              setTopHardwareSubmenuOpen(nextOpen)
+              if (nextOpen) {
+                setMpx1MenuOpen(false)
+              }
+            }}
+            aria-haspopup="menu"
+            aria-expanded={topHardwareSubmenuOpen}
+            aria-controls="top-hardware-menu"
+          >
+            <span className="start-menu-card__icon">
+              <Icon size={18} aria-hidden />
+            </span>
+            <span className="start-menu-card__label">{item.label}</span>
+            <ChevronRight size={14} className={`start-menu-card__caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} aria-hidden />
+          </button>
+
+          {topHardwareSubmenuOpen && renderHardwareSubmenuPanel()}
         </div>
       )
     }
 
     return (
-      <div key={`${keyPrefix}-${item.to}`} className="nav-mobile-item-wrap">
-        <NavLink
-          to={item.to}
-          className={({ isActive }) => `nav-mobile-item${isActive ? ' active' : ''}`}
-          style={{ '--item-color': item.color } as CSSProperties}
-          title={item.description}
-          onClick={closeMobileNavigation}
-        >
-          {itemBody}
-        </NavLink>
-      </div>
-    )
-  }
-
-  const renderAdvancedSectionDetail = (item: MobileMenuItem, sectionTitle: string) => {
-    const cardId = getAdvancedCardId(sectionTitle, item)
-    const Icon = item.icon
-    const hardwareLocation = hardwareLocationNotes[item.to]
-    const profile = resolveHomeCardProfile(item)
-    const isActive = isRouteMatch(location.pathname, item.to)
-    const supportNotes = [
-      item.description,
-      hardwareLocation ? `On ${hardwareLocation.hostname}` : null,
-      item.gatedReason ?? null,
-    ].filter((note): note is string => Boolean(note))
-
-    return (
-      <div
-        id={`${cardId}-details`}
-        className="advanced-menu-control-panel__details"
-        role="note"
-        aria-label={`${item.label} details`}
+      <NavLink
+        key={`start-link-${item.to}`}
+        to={item.to}
+        className={({ isActive }) => `start-menu-card${isActive ? ' is-active' : ''}`}
+        style={{ '--item-color': item.color } as CSSProperties}
+        title={`${item.description} • ${item.maturity}`}
+        onClick={closeShellMenus}
+        onMouseEnter={() => prefetchAppRoute(item.to)}
+        onFocus={() => prefetchAppRoute(item.to)}
       >
-        <div className="advanced-menu-control-panel__details-header">
-          <div className="advanced-menu-control-panel__details-title-wrap">
-            <span className="advanced-menu-control-panel__details-icon" aria-hidden>
-              <Icon size={20} />
-            </span>
-            <div className="advanced-menu-control-panel__details-title-copy">
-              <p className="advanced-menu-control-panel__details-section">{sectionTitle}</p>
-              <h3 className="advanced-menu-control-panel__details-title">{item.label}</h3>
-            </div>
-          </div>
-          <div className="advanced-menu-control-panel__details-tags">
-            <Tag type={maturityTagType(item.maturity)} size="sm">
-              {maturityTagLabel(item.maturity)}
-            </Tag>
-            {isActive ? (
-              <Tag type="cool-gray" size="sm">
-                Current route
-              </Tag>
-            ) : null}
-            {hardwareLocation ? (
-              <Tag type="cool-gray" size="sm">
-                On {hardwareLocation.hostname}
-              </Tag>
-            ) : null}
-          </div>
-        </div>
-
-        <p className="advanced-menu-control-panel__details-summary">{profile.summary}</p>
-
-        {supportNotes.length > 0 ? (
-          <div className="advanced-menu-control-panel__details-notes">
-            {supportNotes.map((note) => (
-              <p key={`${cardId}-${note}`} className="advanced-menu-control-panel__details-note">
-                {note}
-              </p>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="advanced-menu-control-panel__details-grid">
-          <div className="advanced-menu-control-panel__details-block">
-            <p className="advanced-menu-control-panel__details-heading">Capabilities</p>
-            <ul className="advanced-menu-control-panel__details-list">
-              {profile.capabilities.slice(0, 4).map((capability) => (
-                <li key={`${cardId}-${capability}`}>{capability}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="advanced-menu-control-panel__details-block">
-            <p className="advanced-menu-control-panel__details-heading">Workflow notes</p>
-            <p className="advanced-menu-control-panel__details-body">{profile.learnMore}</p>
-          </div>
-
-          <div className="advanced-menu-control-panel__details-block">
-            <p className="advanced-menu-control-panel__details-heading">Best for</p>
-            <p className="advanced-menu-control-panel__details-body advanced-menu-control-panel__details-body--strong">
-              {profile.bestFor}
-            </p>
-          </div>
-        </div>
-      </div>
+        <span className="start-menu-card__icon">
+          <Icon size={18} aria-hidden />
+        </span>
+        <span className="start-menu-card__label">{item.label}</span>
+      </NavLink>
     )
   }
-
-  const renderAdvancedControlPanelItem = (item: MobileMenuItem, sectionTitle: string) => {
-    const cardId = getAdvancedCardId(sectionTitle, item)
-    const Icon = item.icon
-    const isBlocked = isBlockedAdvancedMenuItem(item)
-    const hardwareLocation = hardwareLocationNotes[item.to]
-    const isExpanded = expandedAdvancedCardId === cardId
-    const isActive = isRouteMatch(location.pathname, item.to)
-    const statusLabel = hardwareLocation
-      ? `On ${hardwareLocation.hostname}`
-      : isBlocked
-        ? 'Blocked'
-        : isActive
-          ? 'Current route'
-          : maturityTagLabel(item.maturity)
-
-    return (
-      <article
-        key={cardId}
-        role="listitem"
-        className={`platform-shell__cp-item advanced-menu-control-panel__item${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}${isExpanded ? ' is-expanded' : ''}`}
-        style={{ '--advanced-menu-item-accent': item.color } as CSSProperties}
-      >
-        <button
-          type="button"
-          className="platform-shell__cp-item-open advanced-menu-control-panel__item-open"
-          onClick={() => openAdvancedRoute(item)}
-          aria-label={isBlocked ? `${item.label} unavailable` : item.label}
-          title={item.description}
-          disabled={isBlocked}
-        >
-          <span className="platform-shell__cp-icon advanced-menu-control-panel__item-icon" aria-hidden>
-            <Icon size={45} />
-          </span>
-          <span className="platform-shell__cp-label advanced-menu-control-panel__item-label">{item.label}</span>
-        </button>
-
-        <div className="advanced-menu-control-panel__item-footer">
-          <span className="advanced-menu-control-panel__item-state">{statusLabel}</span>
-          <button
-            type="button"
-            className="advanced-menu-control-panel__details-btn"
-            aria-label={isExpanded ? `Hide details for ${item.label}` : `Show details for ${item.label}`}
-            aria-expanded={isExpanded}
-            aria-controls={`${cardId}-details`}
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              setExpandedAdvancedCardId((current) => (current === cardId ? null : cardId))
-            }}
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp size={12} aria-hidden /> Hide
-              </>
-            ) : (
-              <>
-                <ChevronDown size={12} aria-hidden /> Details
-              </>
-            )}
-          </button>
-        </div>
-      </article>
-    )
-  }
-
-  const advancedLauncherItems = useMemo(
-    () => allRouteNavigationItems.filter(
-      (item) => advancedLauncherKeySet.has(routeItemKey(item)) || isBlockedOrLabItem(item),
-    ),
-    [advancedLauncherKeySet],
-  )
-
-  const advancedSections = useMemo(() => {
-    const grouped = new Map<string, MobileMenuItem[]>()
-    for (const item of advancedLauncherItems) {
-      const sectionTitle = getAdvancedSectionTitle(item)
-      const existing = grouped.get(sectionTitle) ?? []
-      existing.push(item)
-      grouped.set(sectionTitle, existing)
-    }
-    return ADVANCED_SECTION_ORDER
-      .map((sectionTitle) => [sectionTitle, grouped.get(sectionTitle) ?? []] as const)
-      .filter(([, items]) => items.length > 0)
-  }, [advancedLauncherItems])
-
-  const currentAdvancedCardId = useMemo(() => {
-    for (const [sectionTitle, items] of advancedSections) {
-      const activeItem = items.find((item) => isRouteMatch(location.pathname, item.to))
-      if (activeItem) {
-        return getAdvancedCardId(sectionTitle, activeItem)
-      }
-    }
-    return null
-  }, [advancedSections, location.pathname])
-
-  useEffect(() => {
-    if (!advancedMenuOpen) {
-      setExpandedAdvancedCardId(null)
-      return
-    }
-    setExpandedAdvancedCardId(currentAdvancedCardId)
-  }, [advancedMenuOpen, currentAdvancedCardId])
 
   return (
-    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}`}>
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showDesktopWindowChrome ? ' app-shell--windowed' : ' app-shell--landing'}`}>
       {showMobileConnectionBanner && (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
           <span>Connection lost - reconnecting...</span>
         </div>
       )}
-      <Header className={`topbar-pro${isTabletTouchRoute ? ' topbar-pro--juce-grid-tablet' : ''}`} aria-label="MAP2 primary navigation shell">
-        <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
-          {renderNavItem(heroHomeTopNavItem)}
-        </HeaderNavigation>
 
-        <HeaderNavigation className="nav-tabs-center" aria-label="Pinned navigation">
-          {pinnedTopNavItems.map((item) => {
-            if (item.kind === 'mpx1-mega-menu') {
-              return renderMpx1MegaMenuTrigger(item)
-            }
-            if (item.kind === 'hardware-submenu') {
-              return renderHardwareSubmenuTrigger(item)
-            }
-            return renderNavItem(item)
-          })}
-        </HeaderNavigation>
-
-        <HeaderGlobalBar className="nav-tabs-right-container">
-          <HeaderMenuButton
-            className="nav-hamburger-btn"
-            onClick={handleMenuToggle}
-            isCollapsible
-            isActive={navOpen}
-            aria-label="Toggle navigation menu"
-          />
-
-          <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
-            <NodeNavBar />
-          </HeaderNavigation>
-          <LatencyPressureShellReadout />
-        </HeaderGlobalBar>
-
-        {navOpen && (
-          <div className="nav-mobile-menu" ref={navMenuRef}>
-            <div className="nav-mobile-menu-content">
-              {homeNavigationSections.map((section) => (
-                <section key={`mobile-home-${section.title}`} className="nav-mobile-advanced-group">
-                  <div className="nav-mobile-group-label">{section.title}</div>
-                  <div className="nav-mobile-group-grid">
-                    {section.items.map((item) => renderMobileMenuItem(item, `mobile-home-${section.title}`))}
-                  </div>
-                </section>
-              ))}
-            </div>
+      {showDesktopWindowChrome ? (
+        <div className="window-titlebar" aria-label="MAP2 window frame">
+          <div className="window-titlebar__brand" aria-hidden="true">
+            <HeroHomeIcon />
           </div>
-        )}
-      </Header>
+          <button
+            type="button"
+            className="window-titlebar__close"
+            onClick={handleCloseWindow}
+            aria-label="Close window and return home"
+          >
+            <Close size={16} aria-hidden />
+          </button>
+        </div>
+      ) : null}
 
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         <PageTransition>{children}</PageTransition>
       </main>
-      {showMobileBottomTabbar ? (
-        <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
-        <NavLink
-          key="mobile-home"
-          to={homeTopNavItem.to}
-          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
-          onClick={closeMobileNavigation}
-          title={`${homeTopNavItem.description} • ${homeTopNavItem.maturity}`}
-        >
-          <span className="mobile-bottom-tab-icon">
-            <HomeIcon size={16} aria-hidden />
-          </span>
-          <span>Home</span>
-        </NavLink>
-        {mobilePinnedItems.map((item) => {
-          const Icon = item.icon
 
-          return (
-            <NavLink
-              key={`mobile-pinned-${item.to}`}
-              to={item.to}
-              className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
-              onClick={closeMobileNavigation}
-              onMouseEnter={() => prefetchAppRoute(item.to)}
-              onFocus={() => prefetchAppRoute(item.to)}
-              title={`${item.description} • ${item.maturity}`}
-            >
-              <span className="mobile-bottom-tab-icon">
-                <Icon size={16} aria-hidden />
-              </span>
-              <span>{item.shortLabel ?? item.label}</span>
-            </NavLink>
-          )
-        })}
-        <button
-          type="button"
-          className={`mobile-bottom-tab${navOpen ? ' is-active' : ''}`}
-          onClick={handleMenuToggle}
-          aria-label="Toggle mobile menu"
+      {showDesktopWindowChrome ? (
+        <div
+          className="window-taskbar"
+          aria-label="Primary navigation shell"
+          style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
         >
-          <span className="mobile-bottom-tab-icon">
-            {navOpen ? <Close size={16} aria-hidden /> : <Menu size={16} aria-hidden />}
-          </span>
-          <span>Menu</span>
-        </button>
-        </nav>
+          <div className="window-taskbar__left">
+            <div className="window-taskbar__start-root" ref={navMenuRef}>
+              <button
+                type="button"
+                className={`window-taskbar__start-btn${navOpen ? ' is-active' : ''}`}
+                onClick={handleMenuToggle}
+                aria-label={navOpen ? 'Close Start menu' : 'Open Start menu'}
+                aria-haspopup="menu"
+                aria-expanded={navOpen}
+                aria-controls="start-menu-panel"
+              >
+                <span className="window-taskbar__start-mark" aria-hidden="true">
+                  <Map2BrandMark className="window-taskbar__start-mark-icon" />
+                </span>
+                <span>Start</span>
+              </button>
+
+              {navOpen && (
+                <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Pinned navigation">
+                  {pinnedStartMenuItems.length > 0 ? (
+                    <div className="start-menu-panel__grid">
+                      {pinnedStartMenuItems.map((item) => renderStartMenuItem(item))}
+                    </div>
+                  ) : (
+                    <div className="start-menu-panel__empty" role="note">
+                      No pinned routes selected.
+                    </div>
+                  )}
+                </Layer>
+              )}
+            </div>
+
+            {shellQuickLaunchItem ? (
+              <NavLink
+                to={shellQuickLaunchItem.to}
+                className={({ isActive }) => `window-taskbar__quick-launch${isActive ? ' is-active' : ''}`}
+                title={`Quick launch ${shellQuickLaunchItem.label}`}
+                aria-label={`Quick launch ${shellQuickLaunchItem.label}`}
+                onMouseEnter={() => prefetchAppRoute(shellQuickLaunchItem.to)}
+                onFocus={() => prefetchAppRoute(shellQuickLaunchItem.to)}
+              >
+                <shellQuickLaunchItem.icon size={14} aria-hidden />
+                <span>{shellQuickLaunchItem.shortLabel ?? shellQuickLaunchItem.label}</span>
+              </NavLink>
+            ) : null}
+          </div>
+
+          <div className="window-taskbar__workspace" title={`${shellWorkspaceLabel} • ${shellWorkspaceHint}`}>
+            <span className="window-taskbar__workspace-kicker">Live</span>
+            <span className="window-taskbar__workspace-name">{shellWorkspaceLabel}</span>
+            <span className="window-taskbar__workspace-path">{shellWorkspaceHint}</span>
+          </div>
+
+          <div className="window-taskbar__right">
+            <div className="window-taskbar__status window-taskbar__status--nodes">
+              <NodeNavBar />
+            </div>
+            <div className="window-taskbar__status window-taskbar__status--latency">
+              <LatencyPressureShellReadout />
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   )

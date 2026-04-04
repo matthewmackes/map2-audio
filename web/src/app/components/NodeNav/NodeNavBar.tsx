@@ -11,6 +11,8 @@ import { NodeAlertToast } from '../NodeAlerts/NodeAlertToast'
 import { NodeMiniCard } from './NodeMiniCard'
 import { NodeNavChip } from './NodeNavChip'
 
+const MAX_VISIBLE_NODE_CHIPS = 3
+
 export function NodeNavBar() {
   const location = useLocation()
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
@@ -26,6 +28,14 @@ export function NodeNavBar() {
       return left.hostname.localeCompare(right.hostname)
     })
   }, [topologyNodes])
+  const visibleNodes = nodes.slice(0, MAX_VISIBLE_NODE_CHIPS)
+  const overflowNodes = nodes.slice(MAX_VISIBLE_NODE_CHIPS)
+  const overflowTitle = overflowNodes.map((node) => node.hostname).join(', ')
+  const overflowTone = overflowNodes.some((node) => node.status === 'critical' || node.status === 'offline')
+    ? 'critical'
+    : overflowNodes.some((node) => node.status === 'warn')
+      ? 'warn'
+      : 'stable'
 
   if (nodeTopologyQuery.isLoading && nodes.length === 0) {
     return (
@@ -46,7 +56,7 @@ export function NodeNavBar() {
   return (
     <div className="node-nav-bar">
       <div className="node-nav-bar__chips" aria-label="Node navigation status">
-        {nodes.map((node) => {
+        {visibleNodes.map((node) => {
           const presence = getNodePresence(node, viewedNodeId)
 
           return (
@@ -77,6 +87,15 @@ export function NodeNavBar() {
             </Popover>
           )
         })}
+        {overflowNodes.length > 0 ? (
+          <span
+            className={`node-nav-bar__overflow node-nav-bar__overflow--${overflowTone}`}
+            aria-label={`${overflowNodes.length} more nodes: ${overflowTitle}`}
+            title={overflowTitle}
+          >
+            +{overflowNodes.length}
+          </span>
+        ) : null}
       </div>
       <NodeAlertToast />
     </div>

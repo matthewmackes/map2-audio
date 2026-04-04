@@ -23,6 +23,7 @@ import { ReverbCategoryLayout } from '../../Layouts/ReverbCategoryLayout'
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
 import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { Activity } from '@carbon/icons-react'
 
@@ -47,9 +48,10 @@ export function DragonflyRoomCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#a855f7',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
     parameterValues[PARAM_MAP[key]] ?? defaultVal
 

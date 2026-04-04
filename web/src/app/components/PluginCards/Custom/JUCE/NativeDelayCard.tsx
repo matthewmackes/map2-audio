@@ -15,6 +15,7 @@ import { ParameterKnob } from '../../../ParameterControl'
 import { DelayTapGrid } from '../../Visualizations/DelayTapGrid'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 
 const DELAY_URI = 'map2://juce/delay'
@@ -67,10 +68,11 @@ interface NativeDelayCardProps extends PluginCardProps {
 
 function NativeDelayCardBase({
   plugin,
-  accentColor = '#45b7d1',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: NativeDelayCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters, metering,
     effectiveDelayL, effectiveDelayR,

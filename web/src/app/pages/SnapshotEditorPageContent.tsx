@@ -36,6 +36,7 @@ import {
   Play,
   Recording,
   Renew,
+  Settings,
   SettingsAdjust,
   Stop,
   TrashCan,
@@ -56,9 +57,6 @@ import {
   Grid,
   InlineLoading,
   Layer,
-  MenuButton,
-  MenuItem,
-  MenuItemDivider,
   Modal,
   OverflowMenu,
   OverflowMenuItem,
@@ -124,7 +122,7 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { AuthoritativeAudioStateEnvelope, Chain, Plugin, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { AuthoritativeAudioStateEnvelope, Chain, Plugin, PluginLoaderState, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -139,7 +137,6 @@ import {
   normalizeSnapshotName,
   validateSnapshotName,
 } from '../utils/snapshotNames'
-import { buildSnapshotDetailsMenuModel } from './snapshotDetailsMenuModel'
 import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
   buildSnapshotActivationFailureToastMessage,
@@ -182,7 +179,8 @@ import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortMo
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
-import { SnapshotEditorToolbar } from '../components/SnapshotEditor/SnapshotEditorToolbar'
+import { SnapshotEditorMenuRail } from '../components/SnapshotEditor/SnapshotEditorMenuRail'
+import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
 import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
@@ -230,6 +228,7 @@ import {
   buildSnapshotGoLiveDiff,
 } from '../components/SnapshotEditor/snapshotEditorComparison'
 import {
+  applySnapshotDraftToChainsResponse,
   buildEffectiveLiveSnapshotChains,
   buildSnapshotEditorLiveSnapshotHydration,
 } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
@@ -299,6 +298,19 @@ function updateDraftChain(
   }
   draft.chains[chainKey] = updater(chain)
   return draft
+}
+
+function describeLoaderStateDraftChange(pluginUri: string): string {
+  if (pluginUri === 'map2://juce/nam' || pluginUri === 'urn:map2:nam-player') {
+    return 'Assign NAM model'
+  }
+  if (pluginUri === 'map2://juce/convolution/cabinet' || pluginUri === 'urn:map2:ir-cabinet') {
+    return 'Assign cabinet IR'
+  }
+  if (pluginUri === 'map2://juce/convolution/reverb' || pluginUri === 'urn:map2:ir-reverb') {
+    return 'Assign reverb IR'
+  }
+  return 'Update loader state'
 }
 
 function mergePreviewIntoSnapshotDetail(
@@ -405,7 +417,6 @@ interface FlowLevelControlProps {
   flowId: string
   flowLabel: string
   value: number
-  accentColor: string
   onChange: (value: number) => void
   disabled?: boolean
 }
@@ -414,7 +425,6 @@ function FlowLevelControl({
   flowId,
   flowLabel,
   value,
-  accentColor,
   onChange,
   disabled = false,
 }: FlowLevelControlProps) {
@@ -440,7 +450,7 @@ function FlowLevelControl({
             <SegmentedLedText
               value={`${clampedValue}%`}
               size="md"
-              color={FLOW_CARD_LED_COLOR}
+              color="var(--juce-grid-midi-led-color, #78a9ff)"
               className="juce-grid-page__flow-level-readout"
             />
           </div>
@@ -449,7 +459,7 @@ function FlowLevelControl({
         size="small"
         showLabel={false}
         showBounds={false}
-        accentColor={accentColor}
+        accentColor="var(--juce-grid-midi-led-color, #78a9ff)"
         disabled={disabled}
         className="juce-grid-page__flow-level-input"
       />
@@ -1043,6 +1053,7 @@ export function SnapshotEditorPage() {
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
+  const [showControlCenterModal, setShowControlCenterModal] = useState(false)
   const [showSnapshotIoModal, setShowSnapshotIoModal] = useState(false)
   const [showOutputReferenceModal, setShowOutputReferenceModal] = useState(false)
   const [showNoiseGateDefaultsModal, setShowNoiseGateDefaultsModal] = useState(false)
@@ -1919,14 +1930,12 @@ export function SnapshotEditorPage() {
     () => getSnapshotFootswitchLabelMap(snapshotMidiEntries),
     [snapshotMidiEntries],
   )
-  const effectiveChainsResponse = useMemo(
-    () => (
-      activeSnapshot
-        ? buildEffectiveLiveSnapshotChains(activeSnapshot, chainsQuery.data)
-        : (chainsQuery.data ?? { chains: [], count: 0 })
-    ),
-    [activeSnapshot, chainsQuery.data],
-  )
+  const effectiveChainsResponse = useMemo(() => {
+    const baseChainsResponse = activeSnapshot
+      ? buildEffectiveLiveSnapshotChains(activeSnapshot, chainsQuery.data)
+      : (chainsQuery.data ?? { chains: [], count: 0 })
+    return applySnapshotDraftToChainsResponse(baseChainsResponse, snapshotUndoRedo.current)
+  }, [activeSnapshot, chainsQuery.data, snapshotUndoRedo.current])
   const effectiveChains = effectiveChainsResponse.chains
   const controlPlaneChains = useMemo(
     () => (
@@ -2399,7 +2408,7 @@ export function SnapshotEditorPage() {
         throw new Error('No active snapshot to lock')
       }
       return snapshotsApi.update(activeSnapshot.id, {
-        is_locked: !Boolean(activeSnapshot.is_locked),
+        is_locked: !activeSnapshot.is_locked,
       })
     },
     onSuccess: (response) => {
@@ -3084,23 +3093,7 @@ export function SnapshotEditorPage() {
   }, [pluginMeta, pluginsQuery.data?.plugins?.length, pluginsQuery.status, selectedPlugin, selectedPluginMeta, selectedPluginUri])
 
   const selectedPluginCard = useMemo(() => {
-    if (!selectedPlugin || !selectedPluginMeta) {
-      return null
-    }
-
-    const selectedParameters = selectedPlugin.parameters || {}
-
-    return {
-      ...selectedPluginMeta,
-      name: selectedPluginMeta.name || selectedPlugin.name,
-      bypassed: selectedPlugin.bypassed,
-      instance_id: selectedPlugin.instance_id ?? selectedPluginMeta.instance_id,
-      latency_samples: selectedPlugin.latency_samples ?? selectedPluginMeta.latency_samples,
-      parameters: selectedPluginMeta.parameters.map((parameter) => ({
-        ...parameter,
-        value: selectedParameters[parameter.symbol] ?? parameter.value ?? parameter.default,
-      })),
-    }
+    return buildSnapshotEditorSelectedPluginCard(selectedPlugin, selectedPluginMeta)
   }, [selectedPlugin, selectedPluginMeta])
 
   const selectedPluginCardStrategy = useMemo(() => {
@@ -5126,6 +5119,54 @@ export function SnapshotEditorPage() {
     pendingParameterUndoDescriptionRef.current = null
   }, [markSnapshotsDirty, queryClient, recordSnapshotUndoRedoStep, snapshotEditorMutationDisabled])
 
+  const handleSelectedPluginLoaderStateChange = useCallback((patch: Partial<PluginLoaderState>) => {
+    if (snapshotEditorMutationDisabled) {
+      return
+    }
+    if (!selectedPlugin || !currentChain) {
+      return
+    }
+
+    const currentLoaderState = selectedPlugin.loader_state ?? {}
+    const nextLoaderState = {
+      ...currentLoaderState,
+      ...patch,
+    }
+    const loaderStateChanged = Object.entries(patch).some(([key, value]) => (
+      currentLoaderState[key as keyof PluginLoaderState] !== value
+    ))
+    const bypassChanged = typeof patch.bypass === 'boolean' && selectedPlugin.bypassed !== patch.bypass
+    if (!loaderStateChanged && !bypassChanged) {
+      return
+    }
+
+    const nextDraft = updateDraftChain(
+      cloneSnapshotDraftData(captureCurrentState()),
+      currentChain.id,
+      (chain) => ({
+        ...chain,
+        plugins: chain.plugins.map((plugin) => (
+          plugin.uri === selectedPlugin.uri && plugin.position === selectedPlugin.position
+            ? {
+              ...plugin,
+              bypass: typeof patch.bypass === 'boolean' ? patch.bypass : plugin.bypass,
+              loader_state: nextLoaderState,
+            }
+            : plugin
+        )),
+      }),
+    )
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, describeLoaderStateDraftChange(selectedPlugin.uri))
+  }, [
+    captureCurrentState,
+    currentChain,
+    recordSnapshotUndoRedoStep,
+    selectedPlugin,
+    setEditorSnapshotState,
+    snapshotEditorMutationDisabled,
+  ])
+
   const handleToggleSelectedBypass = useCallback(() => {
     if (snapshotEditorMutationDisabled) return
     if (!selectedPlugin || !currentChain) return
@@ -5541,12 +5582,57 @@ export function SnapshotEditorPage() {
 
     activateCurrentSnapshotMutation.mutate(activeSnapshot.id)
   }, [activateCurrentSnapshotMutation, activeSnapshot, snapshotGoLiveState.disabled, snapshotGoLiveState.phase])
+  const closeControlCenter = useCallback(() => {
+    setShowControlCenterModal(false)
+  }, [])
+  const openAudioRoutingWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowAudioNodesModal(true)
+  }, [])
+  const openLocalRoutingWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowRoutingTopologyModal(true)
+  }, [])
+  const openSnapshotIoWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowSnapshotIoModal(true)
+  }, [])
+  const openOutputReferenceWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowOutputReferenceModal(true)
+  }, [])
+  const openNoiseGateDefaultsWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowNoiseGateDefaultsModal(true)
+  }, [])
+  const openMidiMappingsWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setMidiModalOpen(true)
+  }, [])
+  const openLiveRuntimeWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowLiveRuntimeModal(true)
+  }, [])
+  const openPerformWorkspace = useCallback(() => {
+    setShowControlCenterModal(false)
+    setShowPerformModal(true)
+  }, [])
+  const openVersionHistoryWorkspace = useCallback(() => {
+    setShowVersionHistoryModal(true)
+  }, [])
+  const openControlCenter = useCallback(() => {
+    setShowControlCenterModal(true)
+  }, [])
+  const midiLearning = midiLearnActive || midiLearnInProgress
+  const addFlowDisabled = snapshotEditingLocked || flowSlots.length >= MAX_FLOWS
+  const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
+  const midiMappingsTitle = midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`
 
-  const renderSnapshotsToolbar = () => (
-    <SnapshotEditorToolbar
+  const renderEditorMenuRail = () => (
+    <SnapshotEditorMenuRail
+      prefersReducedMotion={prefersReducedMotion}
       title={snapshotWorkspaceTitle}
       dirty={snapshotsDirty}
-      prefersReducedMotion={prefersReducedMotion}
       onCreate={createCapturedSnapshot}
       createPending={createSnapshotFromEditorMutation.isPending}
       onSave={() => updateActiveSnapshotMutation.mutate()}
@@ -5561,6 +5647,8 @@ export function SnapshotEditorPage() {
       onDuplicate={() => duplicateActiveSnapshotMutation.mutate()}
       duplicatePending={duplicateActiveSnapshotMutation.isPending}
       duplicateDisabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
+      onOpenVersionHistory={openVersionHistoryWorkspace}
+      versionHistoryDisabled={!activeSnapshot}
       onToggleLock={activeSnapshot ? () => toggleActiveSnapshotLockMutation.mutate() : undefined}
       lockVisible={Boolean(activeSnapshot)}
       locked={snapshotEditingLocked}
@@ -5581,8 +5669,38 @@ export function SnapshotEditorPage() {
       favoriteActive={Boolean(activeSnapshot?.is_favorite)}
       favoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
       onOpenWorkspace={openArtifactsSnapshots}
+      onOpenControlCenter={openControlCenter}
+      controlCenterDisabled={false}
+      onAddFlow={addFlow}
+      addFlowDisabled={addFlowDisabled}
+      onOpenMidi={openMidiMappingsWorkspace}
+      midiDisabled={snapshotEditingLocked}
+      midiTitle={midiMappingsTitle}
+      midiLearning={midiLearning}
+      onOpenLiveRuntime={openLiveRuntimeWorkspace}
+      liveRuntimeLabel={
+        liveRuntimeDisplayState === 'live_warning'
+          ? 'View live state warning'
+          : liveRuntimeDisplayState === 'offline'
+            ? 'View offline live state'
+            : 'View live state'
+      }
+      liveRuntimeActive={liveRuntimeActive}
+      onOpenPerform={openPerformWorkspace}
+      onClearFlows={() => setShowClearFlowsModal(true)}
+      clearFlowsDisabled={clearFlowsDisabled}
     />
   )
+  const tabletDetailsAction = isTabletTouchLayout ? (
+    <Button
+      size="sm"
+      kind="secondary"
+      renderIcon={Settings}
+      onClick={openControlCenter}
+    >
+      Control center
+    </Button>
+  ) : undefined
 
   const renderTabletLoadButton = () => (
     <Button
@@ -6230,9 +6348,11 @@ export function SnapshotEditorPage() {
             else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
             else if (presetPendingDelete) setPresetPendingDelete(null)
             else if (showClearFlowsModal) setShowClearFlowsModal(false)
+            else if (showControlCenterModal) setShowControlCenterModal(false)
             else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
             else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
             else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
+            else if (showNoiseGateDefaultsModal) setShowNoiseGateDefaultsModal(false)
             else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
             else if (midiModalOpen) setMidiModalOpen(false)
             else if (routingInspectorId) setRoutingInspectorId(null)
@@ -6388,6 +6508,7 @@ export function SnapshotEditorPage() {
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
+        else if (showControlCenterModal) setShowControlCenterModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
         else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
         else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
@@ -6412,7 +6533,7 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
     deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showLiveRuntimeModal, showSnapshotIoModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showControlCenterModal, showLiveRuntimeModal, showSnapshotIoModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot, createCapturedSnapshot,
@@ -6811,7 +6932,6 @@ export function SnapshotEditorPage() {
                       flowId={flow.id}
                       flowLabel={flowLabel}
                       value={flow.dryWetMix}
-                      accentColor={flow.color}
                       onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
                       disabled={snapshotEditorMutationDisabled}
                     />
@@ -6912,7 +7032,6 @@ export function SnapshotEditorPage() {
                           flowId={flow.id}
                           flowLabel={flowLabel}
                           value={flow.dryWetMix}
-                          accentColor={flow.color}
                           onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
                           disabled={snapshotEditorMutationDisabled}
                         />
@@ -7099,6 +7218,7 @@ export function SnapshotEditorPage() {
         showAddToChain={false}
         compact={isTabletTouchLayout || Boolean(selectedPluginCardStrategy.forceCompact)}
         forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
+        onLoaderStateChange={handleSelectedPluginLoaderStateChange}
         disabled={snapshotEditorMutationDisabled}
       />
     ) : (
@@ -7130,105 +7250,17 @@ export function SnapshotEditorPage() {
       : liveRuntimeActive
         ? 'Live'
         : 'Live State'
-  const snapshotDetailsAction = (
-    <MenuButton
-      label="Actions"
-      size="sm"
-      kind="primary"
-      menuAlignment="top-end"
-      menuBorder
-      className="juce-grid-page__snapshot-status-details-menu"
-    >
-      {buildSnapshotDetailsMenuModel({
-        activeSnapshot: Boolean(activeSnapshot),
-        snapshotEditingLocked: snapshotEditorMutationDisabled,
-        flowSlotCount: flowSlots.length,
-        maxFlows: MAX_FLOWS,
-        liveRuntimeButtonLabel,
-        liveRuntimeActive,
-        midiLearnActive,
-        midiLearnInProgress,
-        midiMappingCountLabel,
-        duplicatePending: duplicateActiveSnapshotMutation.isPending,
-      }).map((item) => {
-        const className = item.iconClassName
-          ? `juce-grid-page__snapshot-status-details-item ${item.iconClassName}`
-          : 'juce-grid-page__snapshot-status-details-item'
-
-        const handleClick = () => {
-          switch (item.action) {
-            case 'add-flow':
-              addFlow()
-              return
-            case 'clear-flows':
-              setShowClearFlowsModal(true)
-              return
-            case 'open-network-routing':
-              setShowAudioNodesModal(true)
-              return
-            case 'open-live-runtime':
-              setShowLiveRuntimeModal(true)
-              return
-            case 'open-local-routing':
-              setShowRoutingTopologyModal(true)
-              return
-            case 'open-io-devices':
-              setShowSnapshotIoModal(true)
-              return
-            case 'open-output-reference':
-              setShowOutputReferenceModal(true)
-              return
-            case 'open-noise-gate-defaults':
-              setShowNoiseGateDefaultsModal(true)
-              return
-            case 'duplicate-snapshot':
-              duplicateActiveSnapshotMutation.mutate()
-              return
-            case 'open-perform':
-              setShowPerformModal(true)
-              return
-            case 'open-midi':
-              setMidiModalOpen(true)
-              return
-            case 'open-version-history':
-              setShowVersionHistoryModal(true)
-              return
-            case 'open-shortcuts':
-              setShowKeyboardHelp(true)
-          }
-        }
-
-        return (
-          <Fragment key={item.key}>
-            {item.dividerBefore ? <MenuItemDivider /> : null}
-            <MenuItem
-              label={item.label}
-              kind={item.kind}
-              renderIcon={
-                item.action === 'add-flow' ? Add
-                  : item.action === 'clear-flows' ? TrashCan
-                    : item.action === 'open-network-routing' ? Network_3
-                      : item.action === 'open-live-runtime' ? Launch
-                        : item.action === 'open-local-routing' ? Flow
-                          : item.action === 'open-io-devices' ? Headphones
-                            : item.action === 'open-output-reference' ? Meter
-                              : item.action === 'open-noise-gate-defaults' ? SettingsAdjust
-                                : item.action === 'duplicate-snapshot' ? Copy
-                                  : item.action === 'open-perform' ? Music
-                                    : item.action === 'open-midi' ? Music
-                                      : item.action === 'open-version-history' ? Renew
-                                        : Information
-              }
-              className={className}
-              disabled={item.disabled}
-              title={item.title}
-              onClick={handleClick}
-            />
-          </Fragment>
-        )
-      })}
-    </MenuButton>
-  )
+  const snapshotInputLabel = activeSnapshot?.io_bindings?.input_device
+    || activeSnapshot?.input_device
+    || snapshotIoDefaultsQuery.data?.input_device
+    || 'Default'
+  const snapshotOutputLabel = activeSnapshot?.io_bindings?.output_device
+    || activeSnapshot?.output_device
+    || snapshotIoDefaultsQuery.data?.output_device
+    || 'Default'
+  const monitoringOutputSummary = monitoringOutputOptions.find(
+    (option) => option.value === String(resolvedMonitoringOutputIndex),
+  )?.label ?? (resolvedMonitoringOutputIndex != null ? monitoringOutputLabel : 'Default')
 
   if (showViewportBlockScreen) {
     return (
@@ -7272,7 +7304,7 @@ export function SnapshotEditorPage() {
             editorSnapshotDraft={currentSnapshotDraft}
             runtimeLiveState={runtimeLiveState}
             authoritativeAudioState={authoritativeAudioState}
-            detailsAction={snapshotDetailsAction}
+            detailsAction={tabletDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotNameEditing={editingSnapshotName}
             snapshotNameDraft={renameSnapshotName}
@@ -7759,8 +7791,8 @@ export function SnapshotEditorPage() {
       )}
 
       {!isTabletTouchLayout && (
-        <div className="juce-grid-page__floating-actions" aria-label="Snapshots floating toolbar">
-          {renderSnapshotsToolbar()}
+        <div className="juce-grid-page__floating-actions" aria-label="Snapshot editor quick menu">
+          {renderEditorMenuRail()}
         </div>
       )}
 
@@ -7923,6 +7955,128 @@ export function SnapshotEditorPage() {
                 {outputLevelWarningMessage}
               </Tag>
             ) : null}
+          </div>
+        </Modal>
+      )}
+
+      {showControlCenterModal && (
+        <Modal
+          open
+          size="md"
+          modalHeading="Control Center"
+          modalLabel={activeSnapshot?.name || 'Snapshot workspace'}
+          primaryButtonText="Close"
+          onRequestClose={closeControlCenter}
+          onRequestSubmit={closeControlCenter}
+        >
+          <div className="juce-grid-page__form-modal-body juce-grid-page__control-center-modal">
+            <p className="juce-grid-page__modal-copy">
+              Unified routing, device defaults, runtime, and cleanup controls for the active snapshot workspace.
+            </p>
+
+            <div className="juce-grid-page__control-center-grid">
+              <section className="juce-grid-page__control-center-card">
+                <div className="juce-grid-page__control-center-card-copy">
+                  <p className="juce-grid-page__assignment-section-kicker">Routing</p>
+                  <h3>Signal routing workspaces</h3>
+                  <p>Open cluster audio routing or local topology editing from one place.</p>
+                </div>
+                <div className="juce-grid-page__compact-tags">
+                  <Tag type="cool-gray">{flowSlots.length} paths</Tag>
+                  <Tag type="blue">{routing.mode.replace(/_/g, ' ')}</Tag>
+                </div>
+                <div className="juce-grid-page__control-center-card-actions">
+                  <Button size="sm" kind="secondary" renderIcon={Network_3} onClick={openAudioRoutingWorkspace} disabled={snapshotEditingLocked}>
+                    Cluster routing
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={Flow} onClick={openLocalRoutingWorkspace} disabled={snapshotEditingLocked}>
+                    Local topology
+                  </Button>
+                </div>
+              </section>
+
+              <section className="juce-grid-page__control-center-card">
+                <div className="juce-grid-page__control-center-card-copy">
+                  <p className="juce-grid-page__assignment-section-kicker">Interfaces</p>
+                  <h3>Devices and defaults</h3>
+                  <p>Cleaned-up access to snapshot I/O bindings, monitoring outputs, reference level, and default gate behavior.</p>
+                </div>
+                <div className="juce-grid-page__compact-tags">
+                  <Tag type="cool-gray">In {snapshotInputLabel}</Tag>
+                  <Tag type="cool-gray">Out {snapshotOutputLabel}</Tag>
+                  <Tag type="warm-gray">Mon {monitoringOutputSummary}</Tag>
+                </div>
+                <div className="juce-grid-page__compact-tags">
+                  <Tag type="blue">
+                    Ref {activeSnapshot?.output_level_reference_dbfs != null ? `${activeSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS` : 'Unset'}
+                  </Tag>
+                  <Tag type="green">
+                    Gate {effectiveSystemNoiseGateDefaults.thresholdDb.toFixed(1)} dB / {effectiveSystemNoiseGateDefaults.releaseMs.toFixed(0)} ms
+                  </Tag>
+                </div>
+                <div className="juce-grid-page__control-center-card-actions">
+                  <Button size="sm" kind="secondary" renderIcon={Headphones} onClick={openSnapshotIoWorkspace}>
+                    I/O devices
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={Meter} onClick={openOutputReferenceWorkspace} disabled={!activeSnapshot}>
+                    Output reference
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={SettingsAdjust} onClick={openNoiseGateDefaultsWorkspace}>
+                    Noise gate defaults
+                  </Button>
+                </div>
+              </section>
+
+              <section className="juce-grid-page__control-center-card">
+                <div className="juce-grid-page__control-center-card-copy">
+                  <p className="juce-grid-page__assignment-section-kicker">Runtime</p>
+                  <h3>Live and perform tools</h3>
+                  <p>Inspect the live runtime state, MIDI mapping surface, and performance mode without leaving the editor.</p>
+                </div>
+                <div className="juce-grid-page__compact-tags">
+                  <Tag type={liveRuntimeActive ? 'green' : 'cool-gray'}>{liveRuntimeButtonLabel}</Tag>
+                  <Tag type={midiLearning ? 'magenta' : 'cool-gray'}>{midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`}</Tag>
+                  <Tag type="blue">Perform</Tag>
+                </div>
+                <div className="juce-grid-page__control-center-card-actions">
+                  <Button size="sm" kind="secondary" renderIcon={Launch} onClick={openLiveRuntimeWorkspace}>
+                    Live state
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={MachineLearningModel} onClick={openMidiMappingsWorkspace} disabled={snapshotEditingLocked}>
+                    MIDI mappings
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={Music} onClick={openPerformWorkspace}>
+                    Performance view
+                  </Button>
+                </div>
+              </section>
+
+              <section className="juce-grid-page__control-center-card juce-grid-page__control-center-card--danger">
+                <div className="juce-grid-page__control-center-card-copy">
+                  <p className="juce-grid-page__assignment-section-kicker">Cleanup</p>
+                  <h3>Reset the active layout</h3>
+                  <p>Remove all signal paths from the current editor snapshot when you need to rebuild the routing from scratch.</p>
+                </div>
+                <div className="juce-grid-page__compact-tags">
+                  <Tag type="red">{flowSlots.length} configured paths</Tag>
+                  <Tag type="warm-gray">{clearFlowsDisabled ? 'Clear unavailable' : 'Destructive action'}</Tag>
+                </div>
+                <div className="juce-grid-page__control-center-card-actions">
+                  <Button
+                    size="sm"
+                    kind="danger"
+                    renderIcon={TrashCan}
+                    onClick={() => {
+                      setShowControlCenterModal(false)
+                      setShowClearFlowsModal(true)
+                    }}
+                    disabled={clearFlowsDisabled}
+                  >
+                    Clear signal paths
+                  </Button>
+                </div>
+              </section>
+            </div>
           </div>
         </Modal>
       )}

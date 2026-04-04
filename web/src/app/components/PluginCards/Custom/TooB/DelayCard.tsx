@@ -8,6 +8,7 @@
 import { DelayCategoryLayout } from '../../Layouts/DelayCategoryLayout'
 import { DelayTapGrid } from '../../Visualizations/DelayTapGrid'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const PARAM_MAP = {
   time: 0,
@@ -21,9 +22,10 @@ function DelayCardBase({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#45b7d1',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
     parameterValues[PARAM_MAP[key]] ?? defaultVal
 

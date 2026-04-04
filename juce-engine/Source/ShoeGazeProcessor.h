@@ -14,6 +14,7 @@
 #include "Common.h"
 #include <atomic>
 #include <array>
+#include <memory>
 #include <vector>
 
 namespace map2 {
@@ -221,6 +222,7 @@ public:
 
     Parameters getParameters() const;
     void setParameters(const Parameters& params);
+    std::unique_ptr<ShoeGazeProcessor> cloneForSpillover() const;
 
     // ========================================
     // Preset Info

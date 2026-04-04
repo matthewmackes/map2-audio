@@ -27,6 +27,7 @@ import { useToasts } from '../../../Toasts'
 import { namApi } from '../../../../../map2/api'
 import type { NAMStatus as ApiNAMStatus } from '../../../../../map2/types'
 import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
+import { getPluginAccentConfig } from '../../../../utils/pluginAccent'
 
 // Plugin URI for MIDI mappings
 const NAM_URI = 'map2://juce/nam'
@@ -83,13 +84,23 @@ interface NAMCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
 }
 
+function isDraftOnlyFallbackError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+  return error.message.includes('Multiple active NAM loaders are configured without live runtime identity')
+    || error.message.includes('Configured NAM block is not active in the live runtime')
+}
+
 function NAMCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#ff6b6b',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
+  onLoaderStateChange,
 }: NAMCardProps) {
+  const accentColor = providedAccent || getPluginAccentConfig(plugin.uri, plugin.category).color
   const queryClient = useQueryClient()
   const [managerOpen, setManagerOpen] = useState(false)
   const { pushToast } = useToasts()
@@ -176,9 +187,12 @@ function NAMCardBase({
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
-  const displayModel = status?.activeModel || status?.configuredModel || null
-  const hasConfiguredModel = Boolean(status?.configuredModel)
-  const usingConfiguredFallback = Boolean(!status?.activeModel && status?.configuredModel)
+  const draftConfiguredModel = plugin.loader_state?.selected_asset_name ?? plugin.loader_state?.selected_model ?? null
+  const draftConfiguredPath = plugin.loader_state?.selected_asset_path ?? null
+  const displayModel = status?.activeModel || status?.configuredModel || draftConfiguredModel || null
+  const configuredModel = status?.configuredModel || draftConfiguredModel || null
+  const hasConfiguredModel = Boolean(configuredModel)
+  const usingConfiguredFallback = Boolean(!status?.activeModel && configuredModel)
   const usingLiveModel = Boolean(status?.activeModel)
   const currentModelDetails = useMemo(() => {
     const models = modelsQuery.data?.models ?? []
@@ -199,28 +213,50 @@ function NAMCardBase({
       if (!uploadResponse.ok) {
         throw new Error('Failed to upload NAM model')
       }
-      const data = await uploadResponse.json() as { model?: { name?: string } }
+      const data = await uploadResponse.json() as { model?: { name?: string; file_path?: string | null }; draft_only?: boolean }
       const uploadedName = data.model?.name
+      const uploadedPath = data.model?.file_path ?? draftConfiguredPath
+      if (uploadedName && onLoaderStateChange) {
+        onLoaderStateChange({
+          selected_model: uploadedName,
+          selected_asset_name: uploadedName,
+          selected_asset_path: uploadedPath ?? null,
+        })
+      }
       if (uploadedName) {
-        if (instanceId) {
-          await namApi.loadModelToInstance(uploadedName, instanceId)
-        } else if (resolvedPluginPosition !== undefined) {
-          await namApi.loadModelAtPosition(uploadedName, resolvedPluginPosition)
-        } else {
-          const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
-            method: 'POST',
-          })
-          if (!loadResponse.ok) {
-            throw new Error('Failed to load uploaded NAM model')
+        try {
+          if (instanceId) {
+            await namApi.loadModelToInstance(uploadedName, instanceId)
+          } else if (resolvedPluginPosition !== undefined) {
+            await namApi.loadModelAtPosition(uploadedName, resolvedPluginPosition)
+          } else {
+            const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
+              method: 'POST',
+            })
+            if (!loadResponse.ok) {
+              throw new Error('Failed to load uploaded NAM model')
+            }
+          }
+        } catch (error) {
+          if (!onLoaderStateChange || !isDraftOnlyFallbackError(error)) {
+            throw error
+          }
+          return {
+            ...data,
+            draft_only: true,
           }
         }
       }
       return data
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data: { model?: { name?: string }; draft_only?: boolean }) => {
       await queryClient.invalidateQueries({ queryKey: ['nam', 'models'] })
       await queryClient.invalidateQueries({ queryKey: statusQueryKey })
-      pushToast(`Loaded NAM model: ${data.model?.name || 'uploaded model'}`, 'success')
+      if (data.draft_only) {
+        pushToast(`Stored NAM model: ${data.model?.name || 'uploaded model'}. It will load when this block is active in the live runtime.`, 'info')
+      } else {
+        pushToast(`Loaded NAM model: ${data.model?.name || 'uploaded model'}`, 'success')
+      }
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),
   })
@@ -376,11 +412,51 @@ function NAMCardBase({
     >
       <div className="carbon-asset-selector-stack">
         <div className="carbon-asset-selector">
-          <div
-            className={`carbon-asset-selector-value ${displayModel ? '' : 'empty'}`}
-            title={displayModel || 'No model loaded'}
-          >
-            {status?.loading ? 'Loading...' : displayModel || 'No model loaded'}
+          <div className="carbon-asset-selector-main">
+            <div className="carbon-asset-selector-title-block">
+              <p className="carbon-asset-selector-kicker">Loaded model</p>
+              <div
+                className={`carbon-asset-selector-value ${displayModel ? '' : 'empty'}`}
+                title={displayModel || 'No model loaded'}
+              >
+                {status?.loading ? 'Loading...' : displayModel || 'No model loaded'}
+              </div>
+            </div>
+            <div className="carbon-asset-selector-status">
+              {usingLiveModel ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--accent">Live runtime</span> : null}
+              {hasConfiguredModel ? <span className="carbon-asset-selector-status-badge">Configured</span> : null}
+              {usingConfiguredFallback ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Stored only</span> : null}
+              {status?.runtimeWarning ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Runtime warning</span> : null}
+            </div>
+            <div className="carbon-asset-selector-fact-grid">
+              <div className="carbon-asset-selector-fact">
+                <span className="carbon-asset-selector-fact-label">Live</span>
+                <span className="carbon-asset-selector-fact-value">{status?.activeModel ?? 'Not active'}</span>
+              </div>
+              <div className="carbon-asset-selector-fact">
+                <span className="carbon-asset-selector-fact-label">Configured</span>
+                <span className="carbon-asset-selector-fact-value">{configuredModel ?? 'None'}</span>
+              </div>
+              <div className="carbon-asset-selector-fact">
+                <span className="carbon-asset-selector-fact-label">Type</span>
+                <span className="carbon-asset-selector-fact-value">{currentModelDetails?.type || 'Unknown'}</span>
+              </div>
+              <div className="carbon-asset-selector-fact">
+                <span className="carbon-asset-selector-fact-label">Size</span>
+                <span className="carbon-asset-selector-fact-value">
+                  {typeof currentModelDetails?.size_mb === 'number' ? `${currentModelDetails.size_mb.toFixed(1)} MB` : 'Unknown'}
+                </span>
+              </div>
+              <div className="carbon-asset-selector-fact">
+                <span className="carbon-asset-selector-fact-label">Library</span>
+                <span className="carbon-asset-selector-fact-value">
+                  {availableModelCount} model{availableModelCount === 1 ? '' : 's'}
+                </span>
+              </div>
+            </div>
+            <p className="carbon-asset-selector-support">
+              {status?.runtimeWarning || 'Upload a local `.nam` file or open the model library.'}
+            </p>
           </div>
           <div className="carbon-asset-selector-actions">
             <button
@@ -389,7 +465,7 @@ function NAMCardBase({
               onClick={() => setManagerOpen(true)}
               disabled={!status?.available || uploadMutation.isPending}
             >
-              Library
+              Select...
             </button>
             <AssetUploadButton
               accept={['.nam']}
@@ -400,21 +476,6 @@ function NAMCardBase({
             />
           </div>
         </div>
-        <p className="carbon-asset-selector-support">
-          {status?.runtimeWarning || 'Upload a local `.nam` file or open the model library.'}
-        </p>
-        {(usingLiveModel || hasConfiguredModel) && (
-          <div className="carbon-asset-selector-meta">
-            {usingLiveModel ? `Live: ${status?.activeModel}` : 'Live: not active'}
-            {hasConfiguredModel ? ` • Configured: ${status?.configuredModel}` : ''}
-            {usingConfiguredFallback ? ' • Stored configuration only' : ''}
-          </div>
-        )}
-        {availableModelCount > 0 && (
-          <div className="carbon-asset-selector-meta">
-            {availableModelCount} models available
-          </div>
-        )}
       </div>
     </CarbonParameterSection>
   )
@@ -435,14 +496,6 @@ function NAMCardBase({
         inputLevel={status?.inputLevel ?? 0}
         outputLevel={status?.outputLevel ?? 0}
         advancedSections={advancedSections}
-        extraContent={
-          currentModelDetails ? (
-            <div style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, color: '#666' }}>
-              {currentModelDetails.type ? `Type: ${currentModelDetails.type}` : 'Type: unknown'}
-              {typeof currentModelDetails.size_mb === 'number' ? ` • Size: ${currentModelDetails.size_mb.toFixed(1)} MB` : ''}
-            </div>
-          ) : undefined
-        }
       />
       <NAMManagerDialog
         open={managerOpen}
@@ -450,6 +503,17 @@ function NAMCardBase({
         onLoadNAM={() => setManagerOpen(false)}
         instanceId={instanceId}
         pluginPosition={resolvedPluginPosition}
+        assignedModelName={draftConfiguredModel}
+        assignedModelPath={draftConfiguredPath}
+        onAssignModel={onLoaderStateChange
+          ? (model) => {
+            onLoaderStateChange({
+              selected_model: model.name,
+              selected_asset_name: model.name,
+              selected_asset_path: model.filePath ?? null,
+            })
+          }
+          : undefined}
       />
     </>
   )

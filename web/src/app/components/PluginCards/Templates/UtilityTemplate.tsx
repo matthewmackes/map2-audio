@@ -24,7 +24,10 @@ export function UtilityTemplate({
   const accentColor = providedAccent || catConfig.color
   const params = plugin.parameters || []
 
-  const paramGroups = useMemo(() => generateParameterGroups(params), [params])
+  const paramGroups = useMemo(
+    () => generateParameterGroups(params, { flattenSmallSets: false }),
+    [params],
+  )
 
   const handleChange = useCallback(
     (index: number) => (value: number) => onParameterChange(index, value),
@@ -59,7 +62,6 @@ export function UtilityTemplate({
     return name.includes('freq') || name.includes('hz') || (name.includes('time') && param.max > 100)
   }
 
-  // First group is main content, rest go into advanced accordion
   const mainGroups = paramGroups.filter(g => !g.collapsible)
   const collapsibleGroups = paramGroups.filter(g => g.collapsible)
 

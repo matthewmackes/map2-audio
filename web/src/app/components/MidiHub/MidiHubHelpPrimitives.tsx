@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
 import { WarningAlt } from '@carbon/icons-react'
-import { Layer, Tag } from '@carbon/react'
+import { Tag } from '@carbon/react'
 
 export type MidiHubPanelId =
   | 'core'
@@ -166,6 +166,14 @@ interface MidiHubPanelShellProps {
   actionTag?: ReactNode
 }
 
+type MidiHubSurfaceProps = {
+  children: ReactNode
+  className?: string
+  as?: 'div' | 'section' | 'header'
+  tone?: 'base' | 'raised' | 'accent'
+  id?: string
+} & HTMLAttributes<HTMLElement>
+
 type MidiHubEmptyStateProps = {
   title: string
   description: string
@@ -173,11 +181,34 @@ type MidiHubEmptyStateProps = {
   icon?: ReactNode
 }
 
+function joinClasses(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(' ')
+}
+
+export function MidiHubSurface({
+  children,
+  className,
+  as: Element = 'div',
+  tone = 'base',
+  id,
+  ...rest
+}: MidiHubSurfaceProps) {
+  return (
+    <Element
+      className={joinClasses('midi-hub-surface', `midi-hub-surface--${tone}`, className)}
+      id={id}
+      {...rest}
+    >
+      {children}
+    </Element>
+  )
+}
+
 export function MidiHubPanelShell({ panelId, children, title, actionTag }: MidiHubPanelShellProps) {
   const panel = MIDI_HUB_PANEL_META[panelId]
 
   return (
-    <Layer className="midi-hub-panel-shell" id={`midi-hub-panel-${panelId}`}>
+    <MidiHubSurface className="midi-hub-panel-shell" id={`midi-hub-panel-${panelId}`}>
       <header className="midi-hub-panel-shell__header">
         <div className="midi-hub-panel-shell__copy">
           <div className="midi-hub-panel-shell__meta-row">
@@ -191,7 +222,7 @@ export function MidiHubPanelShell({ panelId, children, title, actionTag }: MidiH
       </header>
 
       <div className="midi-hub-panel-shell__content">{children}</div>
-    </Layer>
+    </MidiHubSurface>
   )
 }
 
@@ -202,7 +233,7 @@ export function MidiHubEmptyState({
   icon = <WarningAlt size={20} />,
 }: MidiHubEmptyStateProps) {
   return (
-    <Layer className="midi-hub-empty-state-card">
+    <MidiHubSurface className="midi-hub-empty-state-card" tone="raised">
       <div className="midi-hub-empty-state-card__icon" aria-hidden="true">
         {icon}
       </div>
@@ -211,6 +242,6 @@ export function MidiHubEmptyState({
         <p>{description}</p>
       </div>
       {action ? <div className="midi-hub-empty-state-card__action">{action}</div> : null}
-    </Layer>
+    </MidiHubSurface>
   )
 }

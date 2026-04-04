@@ -12,6 +12,7 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { formatSemitones } from '../../utils/formatters'
 
 
@@ -74,10 +75,11 @@ interface ShoeGazeCardProps extends PluginCardProps {
 function ShoeGazeCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#8e44ad', // Dreamy purple
+  accentColor: providedAccent, // Dreamy purple
   compact = false,
   onOpenMidiMappings,
 }: ShoeGazeCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,
@@ -280,7 +282,7 @@ function ShoeGazeCardBase({
             defaultValue={25}
             unit="%"
             onChange={setShimmer}
-            accentColor="#9b59b6"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER }}
           />
@@ -293,7 +295,7 @@ function ShoeGazeCardBase({
             unit=""
             valueFormatter={(v: number) => formatSemitones(Math.round(v))}
             onChange={(v) => setShimmerPitch(Math.round(v))}
-            accentColor="#9b59b6"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER_PITCH }}
           />
@@ -305,7 +307,7 @@ function ShoeGazeCardBase({
             defaultValue={35}
             unit="%"
             onChange={setShimmerFeedback}
-            accentColor="#9b59b6"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER_FEEDBACK }}
           />
@@ -326,7 +328,7 @@ function ShoeGazeCardBase({
             defaultValue={35}
             unit="%"
             onChange={setModulation}
-            accentColor="#3498db"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MODULATION }}
           />
@@ -339,7 +341,7 @@ function ShoeGazeCardBase({
             unit="Hz"
             onChange={setModRate}
             isLogarithmic
-            accentColor="#3498db"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MOD_RATE }}
           />
@@ -352,7 +354,7 @@ function ShoeGazeCardBase({
             unit=""
             step={1}
             onChange={(value) => setChorusVoices(Math.round(value))}
-            accentColor="#3498db"
+            accentColor={accentColor}
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.CHORUS_VOICES }}
           />
@@ -373,7 +375,7 @@ function ShoeGazeCardBase({
             defaultValue={200}
             unit="ms"
             onChange={setDelayTime}
-            accentColor="#1abc9c"
+            accentColor={accentColor}
             size={compact ? 'small' : 'small'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DELAY_TIME }}
           />
@@ -385,7 +387,7 @@ function ShoeGazeCardBase({
             defaultValue={30}
             unit="%"
             onChange={setDelayFeedback}
-            accentColor="#1abc9c"
+            accentColor={accentColor}
             size="small"
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DELAY_FEEDBACK }}
           />
@@ -397,7 +399,7 @@ function ShoeGazeCardBase({
             defaultValue={20}
             unit="%"
             onChange={setDelayMod}
-            accentColor="#1abc9c"
+            accentColor={accentColor}
             size="small"
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DELAY_MOD }}
           />
@@ -419,7 +421,7 @@ function ShoeGazeCardBase({
               defaultValue={15}
               unit="%"
               onChange={setDrive}
-              accentColor="#e67e22"
+              accentColor={accentColor}
               size="small"
               midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DRIVE }}
             />
@@ -432,7 +434,7 @@ function ShoeGazeCardBase({
               unit="Hz"
               onChange={setLowCut}
               isLogarithmic
-              accentColor="#e67e22"
+              accentColor={accentColor}
               size="small"
               midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.LOW_CUT }}
             />
@@ -446,7 +448,7 @@ function ShoeGazeCardBase({
               valueFormatter={(v: number) => v >= 10000 ? (v / 1000).toFixed(0) + 'k' : (v / 1000).toFixed(1) + 'k'}
               onChange={setHighCut}
               isLogarithmic
-              accentColor="#e67e22"
+              accentColor={accentColor}
               size="small"
               midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.HIGH_CUT }}
             />
@@ -460,7 +462,7 @@ function ShoeGazeCardBase({
               defaultValue={85}
               unit="%"
               onChange={setReverbDiffusion}
-              accentColor="#e67e22"
+              accentColor={accentColor}
               size="small"
               midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.REVERB_DIFFUSION }}
             />
@@ -472,7 +474,7 @@ function ShoeGazeCardBase({
               defaultValue={40}
               unit="%"
               onChange={setReverbDamping}
-              accentColor="#e67e22"
+              accentColor={accentColor}
               size="small"
               midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.REVERB_DAMPING }}
             />

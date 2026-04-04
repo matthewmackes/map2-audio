@@ -15,6 +15,7 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 // Plugin URI for MIDI mappings
 const INTELLIFX_URI = 'map2://juce/modulation/intellifx'
@@ -93,10 +94,11 @@ function IntelliFXCardBase({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#ff6b9d',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: IntelliFXCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [showPresets, setShowPresets] = useState(true)
 
   const getValue = (index: number, defaultVal: number) =>

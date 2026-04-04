@@ -78,6 +78,7 @@ import { useViewedNodeStore } from '../stores/viewedNodeStore'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../components/Platform/PlatformGrafanaPanel'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
 import { LatencyDisplay } from '../components/Visualizations/LatencyDisplay'
 import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrelationMeter'
@@ -86,10 +87,16 @@ import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMete
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { AudioEngineWorkspaceGraph } from '../components/AudioEngine/AudioEngineWorkspaceGraph'
+import { JuceSourceTruthGraph } from '../components/AudioEngine/JuceSourceTruthGraph'
 import {
   buildAudioEngineWorkspaceGraphModel,
   type AudioEngineWorkspaceAnchorId,
 } from '../components/AudioEngine/audioEngineWorkspaceGraph'
+import {
+  buildJuceSourceTruthGraphModel,
+  type JuceSourceTruthConnectionRow,
+  type JuceSourceTruthNodeId,
+} from '../components/AudioEngine/juceSourceTruthGraph'
 
 type TableCellValue = string | number | boolean | null | undefined
 
@@ -527,12 +534,119 @@ function RoutingTable({
   )
 }
 
+function JuceSourceTruthTable({
+  rows,
+  selectedNodeId,
+}: {
+  rows: JuceSourceTruthConnectionRow[]
+  selectedNodeId: JuceSourceTruthNodeId | null
+}) {
+  const [expandedRowIds, setExpandedRowIds] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    if (!selectedNodeId) {
+      return
+    }
+
+    const matchingRows = rows.filter((row) => row.sourceId === selectedNodeId || row.targetId === selectedNodeId)
+    if (matchingRows.length === 0) {
+      return
+    }
+
+    setExpandedRowIds(() => (
+      Object.fromEntries(
+        rows.map((row) => [row.id, matchingRows.some((match) => match.id === row.id)]),
+      )
+    ))
+
+    requestAnimationFrame(() => {
+      document.getElementById(`juce-source-truth-row-${matchingRows[0].id}`)?.scrollIntoView?.({
+        behavior: 'smooth',
+        block: 'nearest',
+      })
+    })
+  }, [rows, selectedNodeId])
+
+  return (
+    <TableContainer title="Connection details" className="audio-engine-page__table-container">
+      <TableToolbar>
+        <TableToolbarContent>
+          <Tag type="cool-gray">{rows.length} connections</Tag>
+          <Tag type={selectedNodeId ? 'green' : 'cool-gray'}>
+            {selectedNodeId ? `Node focus: ${selectedNodeId}` : 'Select a graph node'}
+          </Tag>
+        </TableToolbarContent>
+      </TableToolbar>
+      <Table aria-label="JUCE source-of-truth connections">
+        <TableHead>
+          <TableRow>
+            <TableExpandHeader aria-label="Expand source-of-truth connection row" />
+            <TableHeader>Source</TableHeader>
+            <TableHeader>Target</TableHeader>
+            <TableHeader>Relationship</TableHeader>
+            <TableHeader>Status</TableHeader>
+            <TableHeader>Summary</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rows.map((row) => {
+            const isExpanded = expandedRowIds[row.id] ?? false
+            const isLinked = selectedNodeId != null && (row.sourceId === selectedNodeId || row.targetId === selectedNodeId)
+            const expandedRowId = `juce-source-truth-expanded-${row.id}`
+
+            return (
+              <Fragment key={row.id}>
+                <TableExpandRow
+                  id={`juce-source-truth-row-${row.id}`}
+                  className={isLinked ? 'audio-engine-page__source-truth-row is-linked' : 'audio-engine-page__source-truth-row'}
+                  isExpanded={isExpanded}
+                  aria-controls={expandedRowId}
+                  aria-label={`Expand connection ${row.sourceLabel} to ${row.targetLabel}`}
+                  onExpand={() => {
+                    setExpandedRowIds((previous) => ({
+                      ...previous,
+                      [row.id]: !isExpanded,
+                    }))
+                  }}
+                >
+                  <TableCell>{row.sourceLabel}</TableCell>
+                  <TableCell>{row.targetLabel}</TableCell>
+                  <TableCell>{row.relationship}</TableCell>
+                  <TableCell>
+                    <Tag type={row.status === 'Aligned' ? 'green' : row.status === 'Critical' ? 'red' : row.status === 'Review' ? 'warm-gray' : 'cool-gray'}>
+                      {row.status}
+                    </Tag>
+                  </TableCell>
+                  <TableCell>{row.summary}</TableCell>
+                </TableExpandRow>
+                <TableExpandedRow id={expandedRowId} colSpan={6}>
+                  <div className="audio-engine-page__expanded-row">
+                    <div className="audio-engine-page__expanded-grid">
+                      {row.details.map((detail) => (
+                        <div key={`${row.id}-${detail.label}`} className="audio-engine-page__expanded-card">
+                          <span className="audio-engine-page__kv-label">{detail.label}</span>
+                          <div className="audio-engine-page__expanded-value">{detail.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TableExpandedRow>
+              </Fragment>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )
+}
+
 export function AudioEnginePage() {
   const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const { viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
   const isMobile = useIsMobile()
   const [selectedAnchorId, setSelectedAnchorId] = useState<AudioEngineWorkspaceAnchorId | null>(null)
+  const [selectedJuceSourceTruthNodeId, setSelectedJuceSourceTruthNodeId] = useState<JuceSourceTruthNodeId | null>(null)
   const localNode = nodes.find((node) => node.nodeId === localNodeId) ?? {
     nodeId: localNodeId,
     hostname: window.location.hostname || 'local',
@@ -612,6 +726,33 @@ export function AudioEnginePage() {
     selectedAnchorId,
     sourceOfTruth,
   ])
+  const juceSourceTruthGraph = useMemo(() => buildJuceSourceTruthGraphModel({
+    payload: sourceOfTruth,
+    selectedNodeId: selectedJuceSourceTruthNodeId,
+  }), [selectedJuceSourceTruthNodeId, sourceOfTruth])
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => [
+    {
+      id: 'audio-engine-runtime',
+      title: 'Engine Runtime',
+      description: '24-hour runtime trend for latency pressure, xruns, and effective transport latency.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'pressurePercent', label: 'Pressure %', value: latencyPressure.pressurePercent ?? null, color: 'var(--cds-support-warning)' },
+        { key: 'xruns', label: 'XRuns', value: pw.xruns, color: 'var(--cds-support-error)' },
+        { key: 'latencyMs', label: 'Latency ms', value: pw.totalLatencyMs, color: 'var(--cds-support-info)' },
+      ],
+    },
+    {
+      id: 'audio-engine-topology',
+      title: 'Signal Topology',
+      description: 'Node-context trend for device, stream, and link pressure inside the audio engine workspace.',
+      series: [
+        { key: 'devices', label: 'Devices', value: pw.devices.length, color: 'var(--cds-support-success)' },
+        { key: 'streams', label: 'Streams', value: pw.streams.length, color: 'var(--cds-link-primary)' },
+        { key: 'links', label: 'Links', value: pw.links.length, color: 'var(--cds-text-primary)' },
+      ],
+    },
+  ], [latencyPressure.pressurePercent, pw.devices.length, pw.links.length, pw.streams.length, pw.totalLatencyMs, pw.xruns])
 
   const health = engineStatusTag(pw.overallStatus)
   const clusterHealth = clusterHealthType(nodes)
@@ -950,6 +1091,54 @@ export function AudioEnginePage() {
           <Tile className="audio-engine-page__workspace-hero">
             <AudioEngineWorkspaceGraph model={audioWorkspaceGraph} onSelectAnchor={handleSelectWorkspaceAnchor} />
           </Tile>
+        </section>
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-juce-source-truth">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-juce-source-truth" className="audio-engine-page__section-title">JUCE Graph: Source of Truth</h2>
+              <p className="audio-engine-page__muted">{juceSourceTruthGraph.pulseCopy}</p>
+            </div>
+            <div className="audio-engine-page__tag-row">
+              {juceSourceTruthGraph.summaryTags.map((tag) => (
+                <Tag key={tag.label} type={tag.type}>{tag.label}</Tag>
+              ))}
+            </div>
+          </div>
+          <Tile className="audio-engine-page__source-truth-card">
+            <div className="audio-engine-page__source-truth-card-section">
+              <JuceSourceTruthGraph
+                model={juceSourceTruthGraph}
+                onSelectNode={setSelectedJuceSourceTruthNodeId}
+              />
+            </div>
+            <div className="audio-engine-page__source-truth-card-section audio-engine-page__source-truth-card-section--table">
+              {juceSourceTruthGraph.rows.length > 0 ? (
+                <JuceSourceTruthTable
+                  rows={juceSourceTruthGraph.rows}
+                  selectedNodeId={selectedJuceSourceTruthNodeId}
+                />
+              ) : (
+                <InlineNotification
+                  kind="error"
+                  lowContrast
+                  hideCloseButton
+                  title="Source-of-truth connections unavailable"
+                  subtitle={sourceOfTruthQuery.error instanceof Error ? sourceOfTruthQuery.error.message : 'No authority chain is available for this node yet.'}
+                />
+              )}
+            </div>
+          </Tile>
+        </section>
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-grafana-trends">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-grafana-trends" className="audio-engine-page__section-title">Grafana Trends</h2>
+              <p className="audio-engine-page__muted">Read-only 24-hour operator trends for the active audio-engine context.</p>
+            </div>
+          </div>
+          <PlatformGrafanaPanelDeck panels={grafanaPanels} />
         </section>
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-metering">

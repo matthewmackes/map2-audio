@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { Layer, Tag } from '@carbon/react'
+import { Tag } from '@carbon/react'
 import { Map2BrandMark } from '../../components/branding/map2Branding'
+import { MidiHubSurface } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { useMidiHubNavStore } from '../../stores/midiHubNavStore'
 import './MidiHubAreaPage.css'
 import './MidiHubAreaLayout.css'
@@ -39,7 +40,7 @@ export function MidiHubAreaLayout({
       className="midi-hub-area-page"
       onScroll={(event) => setScrollTop(routeKey, event.currentTarget.scrollTop)}
     >
-      <Layer className="midi-hub-area-page__hero">
+      <MidiHubSurface className="midi-hub-area-page__hero" as="header">
         <div className="midi-hub-area-page__hero-grid">
           <div className="midi-hub-area-page__hero-copy">
             <span className="midi-hub-area-page__eyebrow">MAP2 MIDI Hub</span>
@@ -62,9 +63,9 @@ export function MidiHubAreaLayout({
             </div>
           </div>
         </div>
-      </Layer>
+      </MidiHubSurface>
 
-      {children}
+      <div className="midi-hub-area-page__content">{children}</div>
     </div>
   )
 }

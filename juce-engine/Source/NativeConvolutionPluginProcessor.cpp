@@ -54,6 +54,10 @@ bool NativeConvolutionPluginProcessor::isBusesLayoutSupported(const BusesLayout&
     return output == layouts.getMainInputChannelSet();
 }
 
+double NativeConvolutionPluginProcessor::getTailLengthSeconds() const {
+    return processor_.getIRLengthSeconds();
+}
+
 void NativeConvolutionPluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
     juce::ScopedNoDenormals noDenormals;

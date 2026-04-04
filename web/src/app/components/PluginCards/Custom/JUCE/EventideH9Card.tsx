@@ -16,6 +16,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 
 // Plugin URI for MIDI mappings
@@ -36,10 +37,11 @@ interface EventideH9CardProps extends PluginCardProps {
 
 function EventideH9CardBase({
   plugin,
-  accentColor = '#ff1111', // Bright red for LED
+  accentColor: providedAccent, // Bright red for LED
   compact = false,
   onOpenMidiMappings,
 }: EventideH9CardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const { parameters, metering, algorithms, currentAlgorithm, setAlgorithm, setInputGain, setOutputGain, setMix, setBypass, isConnected } = useH9()
   const [currentAlgorithmIndex, setCurrentAlgorithmIndex] = useState(0)
 

@@ -7,7 +7,11 @@
 .midi-hub-processing-layout {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-processing-layout > * {
+  grid-column: span 6;
 }
 
 .midi-hub-processing-heading {
@@ -30,7 +34,11 @@
 .midi-hub-processing-choice-section {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-processing-choice-section > * {
+  grid-column: span 6;
 }
 
 .midi-hub-processing-choice-group {
@@ -68,9 +76,9 @@
 }
 
 @media (max-width: 1056px) {
-  .midi-hub-processing-layout,
-  .midi-hub-processing-choice-section {
-    grid-template-columns: 1fr;
+  .midi-hub-processing-layout > *,
+  .midi-hub-processing-choice-section > * {
+    grid-column: span 12;
   }
 }
 

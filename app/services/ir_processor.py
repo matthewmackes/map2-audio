@@ -313,6 +313,43 @@ class IRProcessor:
         # Create IR directory structure using centralized paths
         StoragePaths.get_ir_cabinet_dir().mkdir(parents=True, exist_ok=True)
         StoragePaths.get_ir_reverb_dir().mkdir(parents=True, exist_ok=True)
+
+    def _append_scanned_ir(
+        self,
+        irs: List[Dict[str, Any]],
+        ir_file: Path,
+        type_name: str,
+    ) -> None:
+        """Append a scanned IR entry while tolerating broken filesystem entries."""
+        try:
+            stats = ir_file.stat()
+        except (FileNotFoundError, PermissionError, OSError) as exc:
+            logger.warning("Skipping unreadable %s IR asset %s: %s", type_name, ir_file, exc)
+            return
+
+        irs.append({
+            "name": ir_file.stem,
+            "path": str(ir_file),
+            "type": type_name,
+            "size": stats.st_size,
+            "size_mb": stats.st_size / (1024 * 1024),
+        })
+
+    def _scan_ir_pattern(
+        self,
+        irs: List[Dict[str, Any]],
+        search_dir: Path,
+        pattern: str,
+        type_name: str,
+    ) -> None:
+        try:
+            matches = search_dir.glob(pattern)
+        except (PermissionError, OSError) as exc:
+            logger.warning("Skipping %s IR directory %s for pattern %s: %s", type_name, search_dir, pattern, exc)
+            return
+
+        for ir_file in matches:
+            self._append_scanned_ir(irs, ir_file, type_name)
     
     def scan_irs(self, ir_type: str = "all") -> List[Dict[str, Any]]:
         """Scan directories for IR files (.wav format).
@@ -355,22 +392,10 @@ class IRProcessor:
         for search_dir, type_name in search_dirs:
             if not search_dir.exists():
                 continue
-            for ir_file in search_dir.glob("**/*.wav"):
-                irs.append({
-                    "name": ir_file.stem,
-                    "path": str(ir_file),
-                    "type": type_name,
-                    "size_mb": ir_file.stat().st_size / (1024 * 1024)
-                })
+            self._scan_ir_pattern(irs, search_dir, "**/*.wav", type_name)
             # Also scan for .aif and .flac files
             for ext in ["*.aif", "*.aiff", "*.flac"]:
-                for ir_file in search_dir.glob(f"**/{ext}"):
-                    irs.append({
-                        "name": ir_file.stem,
-                        "path": str(ir_file),
-                        "type": type_name,
-                        "size_mb": ir_file.stat().st_size / (1024 * 1024)
-                    })
+                self._scan_ir_pattern(irs, search_dir, f"**/{ext}", type_name)
 
         logger.info(f"Found {len(irs)} IR files (type: {ir_type})")
         return irs

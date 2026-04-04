@@ -45,7 +45,10 @@ npm run build
 %install
 # Create application directories
 mkdir -p %{buildroot}/opt/map2/{app,web,tui,lib,scripts}
-mkdir -p %{buildroot}/etc/map2
+mkdir -p %{buildroot}/etc/map2/prometheus/targets
+mkdir -p %{buildroot}/etc/map2/grafana/provisioning/datasources
+mkdir -p %{buildroot}/etc/map2/grafana/provisioning/dashboards
+mkdir -p %{buildroot}/etc/map2/grafana/dashboards
 mkdir -p %{buildroot}/var/lib/map2/{backups,config-repo,logs}
 mkdir -p %{buildroot}/var/log/map2
 mkdir -p %{buildroot}/usr/lib/systemd/system
@@ -65,10 +68,20 @@ cp setup.py %{buildroot}/opt/map2/
 cp main.py %{buildroot}/opt/map2/
 cp -r scripts %{buildroot}/opt/map2/
 
+# Install observability configs
+install -m 644 config/prometheus.yml %{buildroot}/etc/map2/prometheus/prometheus.yml
+install -m 644 config/prometheus-targets/audio-nodes.json %{buildroot}/etc/map2/prometheus/targets/audio-nodes.json
+install -m 644 config/grafana/grafana.ini %{buildroot}/etc/map2/grafana/grafana.ini
+install -m 644 config/grafana/provisioning/datasources/prometheus.yml %{buildroot}/etc/map2/grafana/provisioning/datasources/prometheus.yml
+install -m 644 config/grafana/provisioning/dashboards/map2.yml %{buildroot}/etc/map2/grafana/provisioning/dashboards/map2.yml
+install -m 644 config/grafana-dashboards/*.json %{buildroot}/etc/map2/grafana/dashboards/
+
 # Install systemd units
 install -m 644 packaging/systemd/map2-backend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-frontend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-cluster.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-prometheus.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-grafana.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/

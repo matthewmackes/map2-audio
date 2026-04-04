@@ -8,10 +8,8 @@ import { useCallback, useMemo } from 'react'
 import type { PluginCardProps } from '../types'
 import { getCategoryConfig } from '../types'
 import { DynamicsCategoryLayout, type ParamSlot } from '../Layouts/DynamicsCategoryLayout'
-import type { AdvancedSection } from '../Base/CarbonCardShell'
-import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
+import { buildResidualParameterSections } from './buildResidualParameterSections'
 
 const THRESHOLD_PATTERNS = ['threshold', 'thresh', 'level']
 const RATIO_PATTERNS = ['ratio']
@@ -78,31 +76,15 @@ export function DynamicsTemplate({
   const formatRatio = (v: number) => (v >= 20 ? '\u221e' : v.toFixed(1))
   const formatMs = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(2)}s` : `${v.toFixed(1)}ms`)
 
-  const advancedSections: AdvancedSection[] = useMemo(() => {
-    if (otherParams.length === 0) return []
-    return [{
-      id: 'other',
-      title: 'Other',
-      children: (
-        <CarbonParameterSection>
-          {otherParams.map(p => (
-            <ParameterKnob
-              key={p.index}
-              label={p.name}
-              value={parameterValues[p.index] ?? p.default}
-              min={p.min}
-              max={p.max}
-              defaultValue={p.default}
-              onChange={(v) => onParameterChange(p.index, v)}
-              accentColor={accentColor}
-              isLogarithmic={p.is_log}
-              size="small"
-            />
-          ))}
-        </CarbonParameterSection>
-      ),
-    }]
-  }, [otherParams, parameterValues, onParameterChange, accentColor])
+  const advancedSections = useMemo(
+    () => buildResidualParameterSections({
+      params: otherParams,
+      parameterValues,
+      onParameterChange,
+      accentColor,
+    }),
+    [otherParams, parameterValues, onParameterChange, accentColor],
+  )
 
   return (
     <DynamicsCategoryLayout

@@ -11,3 +11,11 @@ export function getPluginAccentConfig(pluginUri: string | undefined, category: s
   }
   return getCategoryConfig(category)
 }
+
+export function resolvePluginAccentColor(
+  providedAccent: string | undefined,
+  pluginUri: string | undefined,
+  category: string | undefined,
+): string {
+  return providedAccent || getPluginAccentConfig(pluginUri, category).color
+}

@@ -626,13 +626,13 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     disabled={!onSubmitTempoBpm || tempoPending || snapshotLocked}
                     size="small"
                     showBounds={false}
-                    accentColor="#42be65"
+                    accentColor="var(--juce-grid-midi-led-color, #78a9ff)"
                     className="juce-grid-page__snapshot-status-bpm-input"
                     displayOverlay={(
                       <SegmentedLedText
                         value={storedTempoDisplay}
                         size="md"
-                        color="#42be65"
+                        color="var(--juce-grid-midi-led-color, #78a9ff)"
                         className="juce-grid-page__snapshot-status-bpm-overlay"
                       />
                     )}
@@ -648,7 +648,7 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                 <SegmentedLedText
                   value={midiReadout}
                   size="md"
-                  color={liveSnapshot ? '#78a9ff' : '#525252'}
+                  color={liveSnapshot ? 'var(--juce-grid-midi-led-color, #78a9ff)' : 'var(--juce-grid-midi-led-idle-color, #525252)'}
                   className={`juce-grid-page__snapshot-status-midi-readout ${liveSnapshot ? '' : 'is-idle'}`}
                 />
               </div>

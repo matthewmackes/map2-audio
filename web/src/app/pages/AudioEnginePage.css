@@ -191,6 +191,73 @@
   background: var(--cds-layer-02);
 }
 
+.audio-engine-page__source-truth-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.audio-engine-page__source-truth-card-section {
+  padding: var(--cds-spacing-04);
+}
+
+.audio-engine-page__source-truth-card-section--table {
+  border-top: 1px solid var(--cds-border-subtle-01);
+  background: linear-gradient(180deg, var(--cds-layer-01), var(--cds-layer-02));
+}
+
+.audio-engine-page__source-truth-graph {
+  height: min(36rem, 62vh);
+  min-height: 24rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-support-info) 12%, transparent), transparent 42%),
+    linear-gradient(180deg, var(--cds-layer-02), var(--cds-layer-01));
+}
+
+.audio-engine-page__source-truth-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+  padding: 0.85rem;
+  border-radius: 0.625rem;
+  color: var(--cds-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.audio-engine-page__source-truth-node-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cds-spacing-03);
+}
+
+.audio-engine-page__source-truth-node-eyebrow,
+.audio-engine-page__source-truth-node-tone {
+  color: var(--cds-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.audio-engine-page__source-truth-node-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.audio-engine-page__source-truth-node-caption {
+  color: var(--cds-text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.audio-engine-page__source-truth-node-metric {
+  color: var(--cds-link-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .audio-engine-page__panel-header {
   display: flex;
   align-items: center;
@@ -269,6 +336,11 @@
 
 .audio-engine-page__mobile-accordion {
   width: 100%;
+}
+
+.audio-engine-page__source-truth-row.is-linked > td,
+.audio-engine-page__source-truth-row.is-linked > th {
+  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer-01));
 }
 
 /* ── Latency monitor sub-panel ─────────────────────────────────────────── */
@@ -398,6 +470,10 @@
 @media (max-width: 66rem) {
   .audio-engine-page__surface {
     padding: var(--cds-spacing-05);
+  }
+
+  .audio-engine-page__source-truth-graph {
+    min-height: 22rem;
   }
 
   .audio-engine-page__latency-grid {

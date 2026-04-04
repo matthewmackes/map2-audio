@@ -2,6 +2,7 @@ import { useH3000, H3000_ALGORITHMS } from '../../../../hooks/useH3000'
 import { PitchCategoryLayout } from '../../Layouts/PitchCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { formatPitch, formatFreq } from '../../utils/formatters'
 import { VFDPitchDisplay } from '../../components/Visualizations/LCDDisplay'
 import { ParameterKnob } from '../../../ParameterControl'
@@ -41,10 +42,11 @@ interface H3000CardProps extends PluginCardProps {
 function H3000CardBase({
   plugin,
   pluginPosition,
-  accentColor = '#00aaff',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: H3000CardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,

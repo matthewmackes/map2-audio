@@ -168,47 +168,39 @@ describe('ThemePage', () => {
     })
   })
 
-  it('renders the dedicated Theme platform workspace as modal launchers', () => {
+  it('renders the dedicated Theme platform workspace as a unified editor workflow', () => {
     renderThemePage()
 
     expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open theme library/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open directions/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open theme studio/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open font modal/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open launcher organizer/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open category modal/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Desktop Themes' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Scheme' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Preview target' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Token studio' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Appearance assets' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Behavior and accessibility' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /open launcher organizer/i })).toBeNull()
   })
 
-  it('opens the launcher organizer from the Theme workspace and lists the catalog in a table', () => {
+  it('exposes a classic preview target radio group for the desktop preview', () => {
     renderThemePage()
 
-    fireEvent.click(screen.getByRole('button', { name: /open launcher organizer/i }))
+    const previewTargetGroup = screen.getByRole('radiogroup', { name: /preview target/i })
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Configure MIDI Hub' })).toBeInTheDocument()
+    expect(within(previewTargetGroup).getAllByRole('radio')).toHaveLength(4)
+    expect(within(previewTargetGroup).getByRole('radio', { name: /^Active window/i })).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('opens the special settings menu from the motion section', () => {
+  it('opens the special settings menu from the behavior section', () => {
     renderThemePage()
 
-    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     expect(screen.getByText('1 hidden plugin')).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: /open special settings menu/i }))
 
     expect(screen.getByTestId('special-settings-dialog')).toBeTruthy()
   })
 
-  it('persists category color overrides from the Theme workspace', async () => {
+  it('persists category color overrides from the appearance assets section', async () => {
     renderThemePage()
-    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
-
-    await waitFor(() => {
-      expect(screen.queryByText('Loading plugin catalog…')).toBeNull()
-    })
 
     const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
     fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
@@ -220,14 +212,11 @@ describe('ThemePage', () => {
   it('persists reduced-effects mode and GUI font changes', () => {
     renderThemePage()
 
-    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     const reduceEffectsToggle = screen.getByRole('switch', { name: /reduce effects mode/i })
     fireEvent.click(reduceEffectsToggle)
 
     expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
 
-    fireEvent.click(screen.getAllByRole('button', { name: /^close$/i }).at(-1) as HTMLButtonElement)
-    fireEvent.click(screen.getByRole('button', { name: /open font modal/i }))
     const interTile = screen.getByRole('radio', { name: /inter/i })
     fireEvent.click(interTile)
 
@@ -240,7 +229,6 @@ describe('ThemePage', () => {
   it('persists the selected page transition preset from the motion modal', async () => {
     renderThemePage()
 
-    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     fireEvent.click(screen.getByRole('radio', { name: /pager slide/i }))
 
     await waitFor(() => {
@@ -248,9 +236,8 @@ describe('ThemePage', () => {
     })
   })
 
-  it('saves and applies a custom theme from the theme studio modal', async () => {
+  it('saves and applies a custom theme from the integrated workbench', async () => {
     renderThemePage()
-    fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
     fireEvent.change(screen.getByLabelText(/custom theme name/i), {
       target: { value: 'Ops Deck' },
@@ -265,9 +252,8 @@ describe('ThemePage', () => {
 
   it('exposes radio semantics for the custom token palette picker', () => {
     renderThemePage()
-    fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
-    fireEvent.click(screen.getAllByRole('button', { name: /^Primary\b/i })[0])
+    fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
 
     const familyGroup = screen.getByRole('radiogroup', { name: 'Color family' })
     const shadeGroup = screen.getByRole('radiogroup', { name: /shades$/i })
@@ -276,16 +262,16 @@ describe('ThemePage', () => {
     expect(within(shadeGroup).getAllByRole('radio').length).toBeGreaterThan(0)
   })
 
-  it('shows plugin override controls inside the category workspace modal', async () => {
+  it('shows plugin override controls inside the appearance assets section', async () => {
     renderThemePage()
-    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
+    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
 
     await waitFor(() => {
       expect(mockDiscover).toHaveBeenCalled()
       expect(screen.queryByText('Loading plugin catalog…')).toBeNull()
     })
 
-    const modeGroup = screen.getByRole('group', { name: /category editor mode/i })
+    const modeGroup = screen.getByRole('group', { name: /appearance assets mode/i })
     expect(within(modeGroup).getByRole('button', { name: /plugin overrides/i })).toBeTruthy()
     expect(within(modeGroup).getByRole('button', { name: /category accents/i })).toBeTruthy()
   })
@@ -294,7 +280,6 @@ describe('ThemePage', () => {
     mockDiscover.mockRejectedValueOnce(new Error('Plugin inventory warming'))
 
     renderThemePage()
-    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
     fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
 
     await waitFor(() => {

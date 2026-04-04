@@ -171,6 +171,44 @@ class TestExecutor:
             ex.run(["false"], check=True)
 
 
+class TestClusterManagerInstaller:
+    def test_cluster_manager_role_resolution_management(self):
+        from installer.backend.cluster_manager import resolve_cluster_manager_role
+
+        cfg = InstallerConfig(mode=InstallMode.MANAGEMENT)
+        assert resolve_cluster_manager_role(cfg) == "MANAGEMENT-NODE"
+
+    def test_cluster_manager_role_resolution_audio_plus_cluster_is_all_in_one(self):
+        from installer.backend.cluster_manager import resolve_cluster_manager_role
+
+        cfg = InstallerConfig(mode=InstallMode.AUDIO)
+        cfg.software.install_cluster_mgr = True
+        cfg.software.install_juce_engine = True
+
+        assert resolve_cluster_manager_role(cfg) == "ALL-IN-ONE"
+
+    def test_cluster_manager_installer_dry_run_uses_repo_script(self):
+        from installer.backend.cluster_manager import ClusterManagerInstaller, INSTALL_SCRIPT
+        from installer.backend.executor import CommandExecutor
+
+        cfg = InstallerConfig(mode=InstallMode.MANAGEMENT)
+        ex = CommandExecutor(dry_run=True)
+        installer = ClusterManagerInstaller(ex)
+
+        command = installer.build_command(cfg)
+        assert command[:4] == ["bash", str(INSTALL_SCRIPT), "--node-role", "MANAGEMENT-NODE"]
+
+        env = installer.build_environment(cfg)
+        assert env["APP_DIR"] == str(cfg.storage.install_dir)
+        assert env["VENV_DIR"] == str(cfg.storage.venv_dir)
+        assert env["LOG_DIR"] == str(cfg.storage.log_dir)
+
+        results = installer.install(cfg)
+        assert len(results) == 1
+        assert results[0].ok
+        assert results[0].command == command
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Unattended runner (dry-run, no root needed)
 # ─────────────────────────────────────────────────────────────────────────────

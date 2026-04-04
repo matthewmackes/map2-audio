@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { shallow } from 'zustand/shallow'
 
 import type {
   PlatformAlert,
@@ -26,7 +27,41 @@ interface PlatformState {
   setSummaryMetrics: (metrics: PlatformSummaryMetric[]) => void
 }
 
-export const usePlatformStore = create<PlatformState>((set, get) => ({
+function arePlatformHealthRecordsEqual(
+  left: Record<PlatformLayerId, PlatformHealth>,
+  right: Record<PlatformLayerId, PlatformHealth>,
+): boolean {
+  return Object.keys(left).length === Object.keys(right).length
+    && Object.entries(left).every(([layerId, health]) => right[layerId as PlatformLayerId] === health)
+}
+
+function arePlatformAlertsEqual(left: PlatformAlert[], right: PlatformAlert[]): boolean {
+  return left.length === right.length
+    && left.every((alert, index) => {
+      const nextAlert = right[index]
+      return nextAlert
+        && nextAlert.id === alert.id
+        && nextAlert.layerId === alert.layerId
+        && nextAlert.severity === alert.severity
+        && nextAlert.title === alert.title
+        && nextAlert.subtitle === alert.subtitle
+    })
+}
+
+function arePlatformSummaryMetricsEqual(left: PlatformSummaryMetric[], right: PlatformSummaryMetric[]): boolean {
+  return left.length === right.length
+    && left.every((metric, index) => {
+      const nextMetric = right[index]
+      return nextMetric
+        && nextMetric.id === metric.id
+        && nextMetric.label === metric.label
+        && nextMetric.value === metric.value
+        && nextMetric.helper === metric.helper
+        && nextMetric.tone === metric.tone
+    })
+}
+
+export const usePlatformStore = create<PlatformState>((set) => ({
   currentView: 'stack',
   activeLayer: null,
   layerHealth: makePlatformHealthRecord(() => 'unknown'),
@@ -36,34 +71,74 @@ export const usePlatformStore = create<PlatformState>((set, get) => ({
     expandingLayer: null,
     collapsingLayer: null,
   },
-  openLayer: (layerId) => set({
-    currentView: 'layer',
-    activeLayer: layerId,
-    animationState: {
-      expandingLayer: layerId,
-      collapsingLayer: null,
-    },
+  openLayer: (layerId) => set((state) => {
+    if (
+      state.currentView === 'layer'
+      && state.activeLayer === layerId
+      && state.animationState.expandingLayer === layerId
+      && state.animationState.collapsingLayer === null
+    ) {
+      return state
+    }
+
+    return {
+      currentView: 'layer',
+      activeLayer: layerId,
+      animationState: {
+        expandingLayer: layerId,
+        collapsingLayer: null,
+      },
+    }
   }),
-  closeLayer: () => set({
-    currentView: 'stack',
-    activeLayer: null,
-    animationState: {
-      expandingLayer: null,
-      collapsingLayer: get().activeLayer,
-    },
+  closeLayer: () => set((state) => {
+    if (
+      state.currentView === 'stack'
+      && state.activeLayer === null
+      && state.animationState.expandingLayer === null
+      && state.animationState.collapsingLayer === null
+    ) {
+      return state
+    }
+
+    return {
+      currentView: 'stack',
+      activeLayer: null,
+      animationState: {
+        expandingLayer: null,
+        collapsingLayer: state.activeLayer,
+      },
+    }
   }),
-  clearAnimation: () => set({
-    animationState: {
-      expandingLayer: null,
-      collapsingLayer: null,
-    },
+  clearAnimation: () => set((state) => {
+    if (state.animationState.expandingLayer === null && state.animationState.collapsingLayer === null) {
+      return state
+    }
+
+    return {
+      animationState: {
+        expandingLayer: null,
+        collapsingLayer: null,
+      },
+    }
   }),
-  setLayerHealth: (layerHealth) => set({ layerHealth }),
-  setAlerts: (alerts) => set({ alerts }),
-  dismissAlert: (alertId) => set((state) => ({
-    alerts: state.alerts.filter((alert) => alert.id !== alertId),
-  })),
-  setSummaryMetrics: (summaryMetrics) => set({ summaryMetrics }),
+  setLayerHealth: (layerHealth) => set((state) => (
+    arePlatformHealthRecordsEqual(state.layerHealth, layerHealth) ? state : { layerHealth }
+  )),
+  setAlerts: (alerts) => set((state) => (
+    arePlatformAlertsEqual(state.alerts, alerts) ? state : { alerts }
+  )),
+  dismissAlert: (alertId) => set((state) => {
+    if (!state.alerts.some((alert) => alert.id === alertId)) {
+      return state
+    }
+
+    return {
+      alerts: state.alerts.filter((alert) => alert.id !== alertId),
+    }
+  }),
+  setSummaryMetrics: (summaryMetrics) => set((state) => (
+    arePlatformSummaryMetricsEqual(state.summaryMetrics, summaryMetrics) ? state : { summaryMetrics }
+  )),
 }))
 
 export const usePlatformView = () => usePlatformStore((state) => state.currentView)
@@ -80,4 +155,4 @@ export const usePlatformActions = () => usePlatformStore((state) => ({
   setAlerts: state.setAlerts,
   dismissAlert: state.dismissAlert,
   setSummaryMetrics: state.setSummaryMetrics,
-}))
+}), shallow)

@@ -322,9 +322,9 @@ describe('JUCE asset selector cards', () => {
       />,
     )
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Library' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Select...' })).toBeEnabled())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
 
     expect(screen.getByText('NAM manager open')).toBeInTheDocument()
   })
@@ -353,8 +353,8 @@ describe('JUCE asset selector cards', () => {
       </>,
     )
 
-    expect(await screen.findByText('Size: 512 KB')).toBeInTheDocument()
-    expect(screen.getByText('Size: 1260 KB')).toBeInTheDocument()
+    expect(await screen.findByText('512 KB')).toBeInTheDocument()
+    expect(screen.getByText('1260 KB')).toBeInTheDocument()
   })
 
   it('opens the shared cabinet IR manager from the Select action', async () => {
@@ -367,9 +367,9 @@ describe('JUCE asset selector cards', () => {
       />,
     )
 
-    await waitFor(() => expect(screen.getByText('Vintage 4x12')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Vintage 4x12').length).toBeGreaterThan(0))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
 
     expect(screen.getByText('Cabinet IR manager open')).toBeInTheDocument()
   })
@@ -384,9 +384,9 @@ describe('JUCE asset selector cards', () => {
       />,
     )
 
-    await waitFor(() => expect(screen.getByText('Studio Room')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Studio Room').length).toBeGreaterThan(0))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
 
     expect(screen.getByText('Reverb IR manager open')).toBeInTheDocument()
   })
@@ -644,12 +644,107 @@ describe('JUCE asset selector cards', () => {
     )
 
     expect((await screen.findAllByText('Stored Crunch')).length).toBeGreaterThan(0)
-    expect(screen.getByText('Live: not active • Configured: Stored Crunch • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getAllByText('Stored only').length).toBeGreaterThanOrEqual(3)
     expect(screen.getByText('Configured NAM block is not active in the live runtime')).toBeInTheDocument()
-    expect(screen.getByText('Live: not active • Configured: Stored Cab • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getAllByText('Stored Cab').length).toBeGreaterThan(0)
     expect(screen.getByText('Configured cabinet IR block is not active in the live runtime')).toBeInTheDocument()
-    expect(screen.getByText('Live: not active • Configured: Stored Hall • Stored configuration only')).toBeInTheDocument()
+    expect(screen.getAllByText('Stored Hall').length).toBeGreaterThan(0)
     expect(screen.getByText('Configured reverb IR block is not active in the live runtime')).toBeInTheDocument()
+  })
+
+  it('renders a draft-configured NAM model from plugin loader state when runtime status is still empty', async () => {
+    mockNAMGetStatus.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: null,
+      loading: false,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      input_gain: 0,
+      output_gain: 0,
+      normalize: true,
+      availableModels: ['Stored Draft Crunch'],
+      mix: 100,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+    })
+
+    renderCard(
+      <NAMCard
+        plugin={{
+          ...makePlugin('NAM', 'Amplifier'),
+          loader_state: {
+            selected_model: 'Stored Draft Crunch',
+            selected_asset_name: 'Stored Draft Crunch',
+            selected_asset_path: '/models/stored-draft-crunch.nam',
+          },
+        }}
+        parameterValues={{}}
+        onParameterChange={jest.fn()}
+        accentColor="#ff6b6b"
+      />,
+    )
+
+    expect((await screen.findAllByText('Stored Draft Crunch')).length).toBeGreaterThan(0)
+    expect(screen.getByText('Stored only')).toBeInTheDocument()
+    expect(screen.getByText('Not active')).toBeInTheDocument()
+  })
+
+  it('stores NAM uploads in loader state when scoped runtime loading is unavailable', async () => {
+    const onLoaderStateChange = jest.fn()
+    mockNAMGetStatusAtPosition.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: 'Stored Crunch',
+      runtimeWarning: 'Configured NAM block is not active in the live runtime',
+      mix: 100,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Stored Crunch'],
+    })
+    mockNAMLoadModelAtPosition.mockRejectedValue(
+      new Error('Multiple active NAM loaders are configured without live runtime identity; refusing global fallback for position: 4'),
+    )
+
+    renderCard(
+      <NAMCard
+        plugin={makePlugin('NAM', 'Amplifier')}
+        pluginPosition={4}
+        parameterValues={{}}
+        onParameterChange={jest.fn()}
+        onLoaderStateChange={onLoaderStateChange}
+        accentColor="#ff6b6b"
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Upload NAM model to selected block')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model to selected block'), {
+      target: {
+        files: [new File(['nam-data'], 'draft-upload.nam', { type: 'application/octet-stream' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(onLoaderStateChange).toHaveBeenCalledWith({
+        selected_model: 'Uploaded NAM',
+        selected_asset_name: 'Uploaded NAM',
+        selected_asset_path: null,
+      })
+    })
+    await waitFor(() => {
+      expect(mockNAMLoadModelAtPosition).toHaveBeenCalledWith('Uploaded NAM', 4)
+    })
+    expect(mockPushToast).toHaveBeenCalledWith(
+      'Stored NAM model: Uploaded NAM. It will load when this block is active in the live runtime.',
+      'info',
+    )
   })
 
   it('invalidates only the scoped status and list queries after selected-block asset uploads', async () => {

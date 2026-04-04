@@ -17,6 +17,7 @@ import {
   Reset,
 } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const PARAM_MAP = {
   note: 0,
@@ -54,9 +55,10 @@ export function GlitchShifterCard({
   parameterValues,
   onParameterChange,
   onParameterChangeEnd,
-  accentColor = '#06b6d4',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [grains, setGrains] = useState<Array<{ id: number; x: number; y: number; size: number; opacity: number }>>([])
 
   const getValue = useCallback(

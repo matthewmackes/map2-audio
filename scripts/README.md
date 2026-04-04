@@ -178,6 +178,8 @@ sudo ./deploy_cluster_node.sh \
 - `map2-health-sync.timer` - Health monitoring (30s)
 - `map2-failover-monitor` - Failover detection
 - `map2-fleet-update.timer` - Update scheduler (Sunday 3 AM)
+- `map2-prometheus` - Local Prometheus on management/all-in-one nodes only
+- `map2-grafana` - Local Grafana on management/all-in-one nodes only
 
 **Database Tables:**
 - `cluster_nodes` - Node registry
@@ -193,6 +195,13 @@ sudo ./deploy_cluster_node.sh \
 - Cryptography (TLS/SSL)
 - ZeroConf (mDNS)
 - Prometheus client
+
+**Observability Assets:**
+- `/etc/map2/prometheus/prometheus.yml` - local Prometheus config
+- `/etc/map2/prometheus/targets/audio-nodes.json` - remote node scrape targets
+- `/etc/map2/grafana/grafana.ini` - Grafana server config
+- `/etc/map2/grafana/provisioning/` - datasource and dashboard provisioning
+- `/etc/map2/grafana/dashboards/` - repo-shipped MAP2 dashboards
 
 ### Audio Node
 
@@ -220,6 +229,8 @@ sudo ./deploy_cluster_node.sh \
 # Management node
 sudo systemctl status map2-cluster-manager
 sudo journalctl -u map2-cluster-manager -n 20
+sudo systemctl status map2-prometheus
+sudo systemctl status map2-grafana
 
 # Audio node
 sudo systemctl status map2-node-client
@@ -247,6 +258,12 @@ curl -k https://localhost:8080/api/cluster/health
 
 # Network topology
 curl -k https://localhost:8080/api/cluster/topology
+
+# Prometheus readiness
+curl http://127.0.0.1:9090/-/ready
+
+# Grafana health
+curl http://127.0.0.1:3001/api/health
 ```
 
 ### Check Services

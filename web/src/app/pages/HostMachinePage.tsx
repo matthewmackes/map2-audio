@@ -24,6 +24,7 @@ import MachineSpecsCard from '../components/HostMachine/MachineSpecsCard'
 import DiskHealthCard from '../components/HostMachine/DiskHealthCard'
 import AudioNodeFeatures from '../components/HostMachine/AudioNodeFeatures'
 import PerformanceMetrics from '../components/HostMachine/PerformanceMetrics'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../components/Platform/PlatformGrafanaPanel'
 
 const TABS = ['Specifications', 'Disk Health', 'Audio Features', 'Performance', 'Service Info'] as const
 
@@ -168,6 +169,30 @@ export function HostMachinePage() {
   const brandingData = branding.data!
 
   const overallHealth = healthOverviewData?.overall_health ?? 'unknown'
+  const grafanaPanels: PlatformGrafanaPanelDefinition[] = [
+    {
+      id: 'host-machine-runtime',
+      title: 'Host Runtime',
+      description: '24-hour host trend for CPU, memory, and thermal posture on the selected machine.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'cpuUsage', label: 'CPU %', value: healthOverviewData?.cpu_usage_percent ?? null, color: 'var(--cds-link-primary)' },
+        { key: 'memoryUsage', label: 'Memory %', value: healthOverviewData?.memory_usage_percent ?? null, color: 'var(--cds-support-warning)' },
+        { key: 'cpuTemp', label: 'CPU Temp °C', value: healthOverviewData?.cpu_temp_celsius ?? null, color: 'var(--cds-support-error)' },
+      ],
+    },
+    {
+      id: 'host-machine-storage-power',
+      title: 'Storage and Power',
+      description: 'Disk utilization, lifespan estimate, and power load for the same host context.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'diskUse', label: 'Disk Use %', value: diskHealthData?.use_percent ?? diskHealthData?.disks?.[0]?.used_percent ?? null, color: 'var(--cds-support-info)' },
+        { key: 'lifespan', label: 'Disk Lifespan %', value: diskHealthData?.disks?.[0]?.estimated_lifespan_percent ?? null, color: 'var(--cds-support-success)' },
+        { key: 'powerLoad', label: 'Power Load %', value: healthOverviewData?.power.current_load_percent ?? null, color: 'var(--cds-text-primary)' },
+      ],
+    },
+  ]
 
   const healthTone =
     overallHealth === 'excellent' ? 'success'
@@ -248,6 +273,8 @@ export function HostMachinePage() {
           </div>
         </div>
       </div>
+
+      <PlatformGrafanaPanelDeck panels={grafanaPanels} />
 
       {/* ── Tabbed content ──────────────────────────────────────────── */}
       <div className="hm-tabs">

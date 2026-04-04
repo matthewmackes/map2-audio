@@ -11,6 +11,7 @@ import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
+import { getCategoryConfig } from '../types'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 
 export { type ParamSlot }
@@ -43,7 +44,7 @@ export interface InstrumentCategoryLayoutProps {
 
 export function InstrumentCategoryLayout({
   plugin,
-  accentColor = '#8b5cf6',
+  accentColor: providedAccent,
   compact = false,
   cardWidth,
   bypassed = false,
@@ -58,6 +59,7 @@ export function InstrumentCategoryLayout({
   presets,
   extraContent,
 }: InstrumentCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const footer = (
     <CarbonMeteringFooter inputLevel={inputLevel} outputLevel={outputLevel} />
   )

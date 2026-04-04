@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -43,6 +43,17 @@ interface Props {
   onLoadNAM?: (modelName: string) => void
   instanceId?: number
   pluginPosition?: number
+  assignedModelName?: string | null
+  assignedModelPath?: string | null
+  onAssignModel?: (model: { name: string; filePath?: string | null }) => void
+}
+
+interface NAMModelListItem {
+  name: string
+  type?: string
+  size_mb?: number
+  file_path?: string
+  path?: string
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -61,7 +72,26 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
-export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginPosition }: Props) {
+function resolveModelPath(model: Pick<NAMModelListItem, 'file_path' | 'path'>): string | null {
+  return model.file_path ?? model.path ?? null
+}
+
+function isDraftOnlyFallbackError(error: unknown): boolean {
+  const message = getErrorMessage(error, '')
+  return message.includes('Multiple active NAM loaders are configured without live runtime identity')
+    || message.includes('Configured NAM block is not active in the live runtime')
+}
+
+export function NAMManagerDialog({
+  open,
+  onClose,
+  onLoadNAM,
+  instanceId,
+  pluginPosition,
+  assignedModelName,
+  assignedModelPath,
+  onAssignModel,
+}: Props) {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
@@ -103,7 +133,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   })
 
   const activeModel = statusQuery.data?.activeModel
-  const configuredModel = statusQuery.data?.configuredModel
+  const configuredModel = statusQuery.data?.configuredModel ?? assignedModelName
   const runtimeWarning = statusQuery.data?.runtimeWarning
   const scopedRuntimeUnavailable = Boolean(
     (resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined)
@@ -112,17 +142,33 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
   )
 
   const loadMutation = useMutation({
-    mutationFn: (name: string) => (
-      resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
-        ? namApi.loadModelScoped(name, {
-          instanceId: resolvedInstanceId,
-          pluginPosition: resolvedPluginPosition,
-        })
-          : namApi.loadModel(name)
-    ),
-    onSuccess: (_, name) => {
+    mutationFn: async ({ name, allowDraftOnly }: { name: string; allowDraftOnly: boolean }) => {
+      try {
+        return {
+          draftOnly: false,
+          response: await (
+            resolvedInstanceId !== undefined || resolvedPluginPosition !== undefined
+              ? namApi.loadModelScoped(name, {
+                instanceId: resolvedInstanceId,
+                pluginPosition: resolvedPluginPosition,
+              })
+              : namApi.loadModel(name)
+          ),
+        }
+      } catch (error) {
+        if (allowDraftOnly && isDraftOnlyFallbackError(error)) {
+          return { draftOnly: true, response: null }
+        }
+        throw error
+      }
+    },
+    onSuccess: ({ draftOnly }, { name }) => {
       void queryClient.invalidateQueries({ queryKey: statusQueryKey })
-      pushToast(`Loaded NAM model: ${name}`, 'success')
+      if (draftOnly) {
+        pushToast(`Stored NAM model: ${name}. It will load when this block is active in the live runtime.`, 'info')
+      } else {
+        pushToast(`Loaded NAM model: ${name}`, 'success')
+      }
       onLoadNAM?.(name)
     },
     onError: (error) => pushToast(getErrorMessage(error, 'Failed to load NAM model'), 'error'),
@@ -133,19 +179,32 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
       setUploading(true)
       return namApi.upload(file)
     },
-    onSuccess: async (data: { model?: { name?: string } }) => {
+    onSuccess: async (data: { model?: { name?: string; file_path?: string | null } }) => {
       await queryClient.invalidateQueries({ queryKey: ['nam', 'models'] })
       await queryClient.invalidateQueries({ queryKey: statusQueryKey })
       const uploadedName = data.model?.name
+      const uploadedPath = data.model?.file_path ?? assignedModelPath
+      if (uploadedName && onAssignModel) {
+        onAssignModel({ name: uploadedName, filePath: uploadedPath ?? null })
+      }
       pushToast(`Uploaded: ${uploadedName || 'NAM model'}`, 'success')
       if (uploadedName && !scopedRuntimeUnavailable) {
         try {
-          await loadMutation.mutateAsync(uploadedName)
+          await loadMutation.mutateAsync({
+            name: uploadedName,
+            allowDraftOnly: Boolean(onAssignModel),
+          })
         } catch {
           // loadMutation surfaces its own error toast
         }
       } else if (uploadedName && scopedRuntimeUnavailable) {
-        pushToast('Selected block is not active in the live runtime; uploaded model was added to the library only.', 'warn')
+        pushToast(
+          onAssignModel
+            ? 'Selected block is not active in the live runtime; the uploaded model was stored in this snapshot draft.'
+            : 'Selected block is not active in the live runtime; uploaded model was added to the library only.',
+          onAssignModel ? 'info' : 'warn',
+        )
+        onLoadNAM?.(uploadedName)
       }
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),
@@ -207,6 +266,25 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
     preamp: 'Preamps',
     unknown: 'Other models',
   }
+
+  const handleModelAction = useCallback(async (model: NAMModelListItem) => {
+    const modelPath = resolveModelPath(model)
+    if (onAssignModel) {
+      onAssignModel({ name: model.name, filePath: modelPath })
+    }
+    if (scopedRuntimeUnavailable) {
+      pushToast(
+        `Stored NAM model: ${model.name}. It will load when this block is active in the live runtime.`,
+        'info',
+      )
+      onLoadNAM?.(model.name)
+      return
+    }
+    loadMutation.mutate({
+      name: model.name,
+      allowDraftOnly: Boolean(onAssignModel),
+    })
+  }, [loadMutation, onAssignModel, onLoadNAM, pushToast, scopedRuntimeUnavailable])
 
   return (
     <Modal
@@ -277,11 +355,15 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
         )}
         {scopedRuntimeUnavailable && (
           <InlineNotification
-            kind="info"
+            kind={onAssignModel ? 'info' : 'warning'}
             lowContrast
             hideCloseButton
-            title="Load unavailable"
-            subtitle="This selected block is configured but not active in the live runtime, so scoped model loads are disabled."
+            title={onAssignModel ? 'Runtime load unavailable' : 'Load unavailable'}
+            subtitle={
+              onAssignModel
+                ? 'This selected block is not active in the live runtime right now. Choosing a model will store it in the snapshot draft and apply it when the block goes live.'
+                : 'This selected block is configured but not active in the live runtime, so scoped model loads are disabled.'
+            }
           />
         )}
 
@@ -295,7 +377,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
               {featured.slice(0, 12).map((model) => {
                 const isActive = model.name === activeModel
                 const isConfigured = model.name === configuredModel
-                const isLoading = loadMutation.isPending && loadMutation.variables === model.name
+                const isLoading = loadMutation.isPending && loadMutation.variables?.name === model.name
 
                 return (
                   <article key={model.id} className="model-manager-dialog__featured-item">
@@ -313,10 +395,10 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                       <Button
                         kind="tertiary"
                         size="sm"
-                        onClick={() => loadMutation.mutate(model.name)}
-                        disabled={isLoading || loadMutation.isPending || scopedRuntimeUnavailable}
+                        onClick={() => { void handleModelAction(model) }}
+                        disabled={isLoading || loadMutation.isPending || (scopedRuntimeUnavailable && !onAssignModel)}
                       >
-                        {scopedRuntimeUnavailable ? 'Unavailable' : isLoading ? 'Loading...' : 'Load'}
+                        {scopedRuntimeUnavailable && onAssignModel ? 'Assign' : isLoading ? 'Loading...' : scopedRuntimeUnavailable ? 'Unavailable' : 'Load'}
                       </Button>
                     )}
                   </article>
@@ -363,7 +445,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                         {typeModels.map((model) => {
                           const isActive = model.name === activeModel
                           const isConfigured = model.name === configuredModel
-                          const isLoading = loadMutation.isPending && loadMutation.variables === model.name
+                          const isLoading = loadMutation.isPending && loadMutation.variables?.name === model.name
                           const sizeMb = model.size_mb ?? (model.size ? model.size / (1024 * 1024) : null)
 
                           return (
@@ -390,10 +472,10 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId, pluginP
                                 <Button
                                   kind="tertiary"
                                   size="sm"
-                                  onClick={() => loadMutation.mutate(model.name)}
-                                  disabled={isActive || loadMutation.isPending || scopedRuntimeUnavailable}
+                                  onClick={() => { void handleModelAction(model) }}
+                                  disabled={isActive || loadMutation.isPending || (scopedRuntimeUnavailable && !onAssignModel)}
                                 >
-                                  {scopedRuntimeUnavailable ? 'Unavailable' : isLoading ? 'Loading...' : 'Load'}
+                                  {scopedRuntimeUnavailable && onAssignModel ? 'Assign' : isLoading ? 'Loading...' : scopedRuntimeUnavailable ? 'Unavailable' : 'Load'}
                                 </Button>
                               </TableCell>
                             </TableRow>

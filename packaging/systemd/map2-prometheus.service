@@ -1,0 +1,21 @@
+[Unit]
+Description=MAP2 Prometheus Server
+After=network-online.target map2-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=map2
+Group=map2
+ExecStart=/usr/bin/prometheus \
+  --config.file=/etc/map2/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/map2/prometheus \
+  --storage.tsdb.retention.time=15d \
+  --web.listen-address=127.0.0.1:9090 \
+  --web.enable-lifecycle
+Restart=on-failure
+RestartSec=5
+StateDirectory=map2/prometheus
+
+[Install]
+WantedBy=multi-user.target

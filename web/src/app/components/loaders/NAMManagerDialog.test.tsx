@@ -40,7 +40,11 @@ jest.mock('../Toasts', () => ({
 import { NAMManagerDialog } from './NAMManagerDialog'
 import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 
-function renderDialog(instanceId?: number, pluginPosition?: number) {
+function renderDialog(
+  instanceId?: number,
+  pluginPosition?: number,
+  extraProps: Partial<React.ComponentProps<typeof NAMManagerDialog>> = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -52,7 +56,13 @@ function renderDialog(instanceId?: number, pluginPosition?: number) {
     queryClient,
     ...render(
       <QueryClientProvider client={queryClient}>
-        <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} pluginPosition={pluginPosition} />
+        <NAMManagerDialog
+          open
+          onClose={jest.fn()}
+          instanceId={instanceId}
+          pluginPosition={pluginPosition}
+          {...extraProps}
+        />
       </QueryClientProvider>,
     ),
   }
@@ -372,5 +382,56 @@ describe('NAMManagerDialog', () => {
       )
     })
     expect(mockLoadModelScoped).not.toHaveBeenCalled()
+  })
+
+  it('allows draft-only assignment when snapshot state supplies an assign callback', async () => {
+    const onAssignModel = jest.fn()
+    mockListModels.mockResolvedValue({
+      models: [
+        { name: 'Mesa Mark V', type: 'amp', size_mb: 42.6, file_path: '/models/mesa-mark-v.nam' },
+        { name: 'Tube Screamer OD', type: 'pedal', size_mb: 8.2, file_path: '/models/tube-screamer.nam' },
+      ],
+      total: 2,
+      limit: 100,
+      offset: 0,
+    })
+    mockGetScopedStatus.mockResolvedValue({
+      available: true,
+      activeModel: null,
+      configuredModel: 'Mesa Mark V',
+      runtimeWarning: 'Configured NAM block is not active in the live runtime',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
+
+    renderDialog(17, 9, {
+      assignedModelName: 'Mesa Mark V',
+      assignedModelPath: '/models/mesa-mark-v.nam',
+      onAssignModel,
+    })
+
+    const assignButtons = await screen.findAllByRole('button', { name: 'Assign' })
+    expect(assignButtons.length).toBeGreaterThan(0)
+    expect(assignButtons[0]).toBeEnabled()
+
+    fireEvent.click(assignButtons[0])
+
+    await waitFor(() => {
+      expect(onAssignModel).toHaveBeenCalledWith({
+        name: 'Tube Screamer OD',
+        filePath: null,
+      })
+    })
+    expect(mockLoadModelScoped).not.toHaveBeenCalled()
+    expect(mockPushToast).toHaveBeenCalledWith(
+      'Stored NAM model: Tube Screamer OD. It will load when this block is active in the live runtime.',
+      'info',
+    )
   })
 })

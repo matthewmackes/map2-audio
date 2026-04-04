@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Button, InlineNotification, Layer, Tab, TabList, Tabs, Tag } from '@carbon/react'
+import { Button, InlineNotification, Tab, TabList, Tabs, Tag } from '@carbon/react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { MidiHubConnectedDevicesReport } from '../../components/MidiHub/MidiHubConnectedDevicesReport'
-import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
+import { MidiHubPanelShell, MidiHubSurface } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiPatchbay } from '../../components/MidiHub/MidiPatchbay'
 import { MidiHubQuickRouter } from '../../components/MidiHub/MidiHubQuickRouter'
 import { MidiRoutingMatrix } from '../../components/MidiHub/MidiRoutingMatrix'
@@ -86,7 +86,7 @@ export function MidiHubConnectionsPage() {
       </section>
 
       <section className="midi-hub-connections-band midi-hub-connections-page__device-report">
-        <Layer className="midi-hub-connections-page__maschine-card" data-testid="maschine-summary-card">
+        <MidiHubSurface className="midi-hub-connections-page__maschine-card" tone="accent" data-testid="maschine-summary-card">
           <div className="midi-hub-connections-page__maschine-head">
             <div>
               <h3>Maschine MK1</h3>
@@ -104,7 +104,7 @@ export function MidiHubConnectionsPage() {
           <Button kind="tertiary" size="sm" onClick={() => navigate('/maschine')}>
             Configure →
           </Button>
-        </Layer>
+        </MidiHubSurface>
         <MidiHubConnectedDevicesReport
           ports={ports}
           routes={routes}

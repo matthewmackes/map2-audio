@@ -9,6 +9,7 @@ import { useDynamics } from '../../../../hooks/useDynamics'
 import { DynamicsCategoryLayout } from '../../Layouts/DynamicsCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const COMPRESSOR_URI = 'map2://juce/dynamics/compressor'
 
@@ -37,10 +38,11 @@ interface CompressorCardProps extends PluginCardProps {
 function CompressorCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#22c55e',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: CompressorCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     compressor,
     setCompressorThreshold,

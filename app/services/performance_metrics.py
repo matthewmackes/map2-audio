@@ -119,6 +119,31 @@ class MetricsCollector:
         
         # Thread pool for blocking operations
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="metrics")
+        self._output_safety_lock = threading.Lock()
+        self.output_level_reference_dbfs: Optional[float] = None
+        self.output_warning_threshold_db: Optional[float] = None
+
+    def set_output_safety_settings(
+        self,
+        *,
+        output_level_reference_dbfs: Optional[float] = None,
+        output_warning_threshold_db: Optional[float] = None,
+    ) -> None:
+        """Store the currently active snapshot output-safety settings."""
+        with self._output_safety_lock:
+            self.output_level_reference_dbfs = (
+                None if output_level_reference_dbfs is None else float(output_level_reference_dbfs)
+            )
+            self.output_warning_threshold_db = (
+                None if output_warning_threshold_db is None else float(output_warning_threshold_db)
+            )
+
+    def get_output_safety_settings(self) -> Dict[str, Optional[float]]:
+        with self._output_safety_lock:
+            return {
+                "output_level_reference_dbfs": self.output_level_reference_dbfs,
+                "output_warning_threshold_db": self.output_warning_threshold_db,
+            }
 
     async def start_collection(self, interval: float = 1.0) -> None:
         """Start collecting metrics.
@@ -165,6 +190,7 @@ class MetricsCollector:
                 "timestamp": datetime.utcnow().isoformat(),
                 "cpu_percent": cpu_percent,
                 "memory_percent": memory_percent,
+                "memory_mb": memory_used_mb,
                 "memory_used_mb": memory_used_mb,
                 "memory_total_mb": memory_total_mb,
                 "disk_percent": disk_percent,
@@ -536,6 +562,7 @@ class MetricsCollector:
                 "uptime_seconds": (datetime.utcnow() - self.start_time).total_seconds(),
                 "audio_xruns": 0,  # Placeholder - actual xrun count from JACK
                 "audio_latency_ms": 0.0,  # Placeholder - actual latency from JACK
+                **self.get_output_safety_settings(),
             }
         except Exception as e:
             logger.error(f"Error getting current metrics: {e}")
@@ -582,7 +609,8 @@ class MetricsCollector:
                 "cpu": calculate_stats(self.cpu_history),
                 "memory": calculate_stats(self.memory_history),
                 "latency": calculate_stats(self.latency_history),
-                "audio_samples": self.audio_samples_processed
+                "audio_samples": self.audio_samples_processed,
+                "output_safety": self.get_output_safety_settings(),
             }
         except Exception as e:
             logger.error(f"Error getting summary: {e}")
@@ -629,6 +657,10 @@ class MetricsCollector:
                 "# HELP map2_audio_xruns Total audio xruns",
                 "# TYPE map2_audio_xruns counter",
                 f"map2_audio_xruns {metrics.get('audio_xruns', 0)}",
+                "",
+                "# HELP map2_audio_latency_ms Current audio latency in milliseconds",
+                "# TYPE map2_audio_latency_ms gauge",
+                f"map2_audio_latency_ms {metrics.get('audio_latency_ms', 0)}",
                 "",
             ]
 

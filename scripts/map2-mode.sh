@@ -233,6 +233,41 @@ apply_systemd_override() {
     systemctl daemon-reload
 }
 
+has_unit_file() {
+    local unit="$1"
+    systemctl list-unit-files "$unit" --no-legend 2>/dev/null | grep -q "^${unit}[[:space:]]"
+}
+
+apply_observability_policy() {
+    local gfx_mode="$1"
+    local unit
+    local enable_stack=false
+
+    case "${gfx_mode,,}" in
+        management|all-in-one)
+            enable_stack=true
+            ;;
+    esac
+
+    for unit in map2-prometheus.service map2-grafana.service; do
+        if ! has_unit_file "$unit"; then
+            if [ "$enable_stack" = true ]; then
+                warn "${unit} is not installed on this host; observability stack remains unavailable"
+            fi
+            continue
+        fi
+
+        if [ "$enable_stack" = true ]; then
+            info "Enabling ${unit} for ${gfx_mode} mode"
+            systemctl enable "$unit" >/dev/null 2>&1 || warn "Could not enable ${unit}"
+            systemctl restart "$unit" >/dev/null 2>&1 || systemctl start "$unit" >/dev/null 2>&1 || warn "Could not start ${unit}"
+        else
+            info "Disabling ${unit} for ${gfx_mode} mode"
+            systemctl disable --now "$unit" >/dev/null 2>&1 || warn "Could not stop ${unit}"
+        fi
+    done
+}
+
 # ── Show rich status ─────────────────────────────────────────────────
 cmd_status() {
     local mode
@@ -287,7 +322,7 @@ cmd_status() {
 
     # Services
     echo -e "${C}─── Service Status ───────────────────────────────────────${NC}"
-    for svc in map2-boot-manager map2-backend map2-web map2-port80-proxy; do
+    for svc in map2-boot-manager map2-backend map2-web map2-port80-proxy map2-prometheus map2-grafana; do
         local state
         state=$(systemctl is-active "${svc}.service" 2>/dev/null || echo "inactive")
         case "$state" in
@@ -391,6 +426,8 @@ cmd_chart() {
     _chart_row "Database"             "✓ enabled"  "G" "✓ enabled"  "G" "✓ enabled"  "G"
     _chart_row "mDNS Discovery"       "✓ enabled"  "G" "✓ enabled"  "G" "✓ enabled"  "G"
     _chart_row "LCD Manager"          "✓ enabled"  "G" "✓ enabled"  "G" "✗ disabled" "D"
+    _chart_row "Prometheus"           "✗ disabled" "D" "✓ enabled"  "Y" "✓ enabled"  "G"
+    _chart_row "Grafana"              "✗ disabled" "D" "✓ enabled"  "Y" "✓ enabled"  "G"
 
     echo -e "${C}├─────────────────────────┼──────────────────┼──────────────────┼──────────────────┤${NC}"
 
@@ -442,6 +479,8 @@ cmd_chart() {
     _chart_row "map2-port80-proxy"    "✓"          "G" "✓"          "G" "✗"           "D"
     _chart_row "map2-lcd-boot"        "✓"          "G" "✓"          "G" "✗"           "D"
     _chart_row "map2-boot-manager"    "✓"          "G" "✓"          "G" "✓"           "G"
+    _chart_row "map2-prometheus"      "✗"          "D" "✓"          "Y" "✓"           "G"
+    _chart_row "map2-grafana"         "✗"          "D" "✓"          "Y" "✓"           "G"
     _chart_row "map2-cpu-governor"    "✓ required" "G" "✓ advised"  "Y" "optional"    "D"
     _chart_row "map2-disable-turbo"   "✓ required" "G" "optional"   "Y" "✗"           "D"
 
@@ -507,7 +546,10 @@ cmd_set() {
     # 2. Install correct systemd override
     apply_systemd_override "$gfx_mode"
 
-    # 3. Restart backend to apply
+    # 3. Align observability services with the selected mode
+    apply_observability_policy "$gfx_mode"
+
+    # 4. Restart backend to apply
     info "Restarting map2-backend.service"
     systemctl restart map2-backend.service || warn "Backend restart failed"
 
@@ -532,6 +574,7 @@ cmd_apply() {
 
     write_all_stores "$mode"
     apply_systemd_override "$mode"
+    apply_observability_policy "$mode"
 
     ok "Mode $mode re-applied to all config stores"
     echo -e "${D}  Run 'sudo systemctl restart map2-backend' to activate.${NC}"

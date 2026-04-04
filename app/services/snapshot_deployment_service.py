@@ -7,9 +7,11 @@ This is the snapshot-granularity replacement for the old flow orchestrator.
 from __future__ import annotations
 
 from datetime import datetime
+import os
 from pathlib import Path
 from typing import Any, Optional
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +23,8 @@ from app.services.snapshot_service import SnapshotService
 
 class SnapshotDeploymentService:
     """Persist and manage snapshot-level cluster deployment state."""
+
+    _LOCAL_API_BASE_URL = f"http://127.0.0.1:{os.getenv('MAP2_API_PORT', '8080')}"
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -84,6 +88,50 @@ class SnapshotDeploymentService:
             "results": results,
         }
 
+    async def _activate_snapshot_on_node(
+        self,
+        *,
+        snapshot_id: int,
+        node_id: str,
+    ) -> dict[str, Any]:
+        proxy_path = f"/api/node/{node_id}/proxy/api/snapshots/{snapshot_id}/activate"
+        url = f"{self._LOCAL_API_BASE_URL}{proxy_path}"
+        try:
+            async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
+                response = await client.post(url)
+        except httpx.HTTPError as exc:
+            return {
+                "activated": False,
+                "status_code": None,
+                "proxy_path": proxy_path,
+                "message": f"Remote activation request failed: {exc}",
+            }
+
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = None
+
+        if response.is_success:
+            return {
+                "activated": True,
+                "status_code": response.status_code,
+                "proxy_path": proxy_path,
+                "payload": payload,
+                "message": "Remote activation succeeded",
+            }
+
+        detail: Any = payload
+        if isinstance(payload, dict):
+            detail = payload.get("detail", payload.get("error", payload))
+        return {
+            "activated": False,
+            "status_code": response.status_code,
+            "proxy_path": proxy_path,
+            "payload": payload,
+            "message": f"Remote activation failed: {detail}",
+        }
+
     def select_best_node(
         self,
         *,
@@ -126,34 +174,48 @@ class SnapshotDeploymentService:
             snapshot_id=snapshot_id,
             target_node_ids=asset_targets,
         )
+        activation_result = await self._activate_snapshot_on_node(
+            snapshot_id=snapshot_id,
+            node_id=node_id,
+        )
+        deployment_status = "active" if activation_result["activated"] else "assets_only"
         deployment = await self.snapshot_service.create_deployment(
             snapshot_id,
             primary_node_id=node_id,
             standby_node_ids=standby_ids,
             assignment_strategy=assignment_strategy,
             redundancy_enabled=redundancy_enabled,
-            deployment_status="active",
+            deployment_status=deployment_status,
+            error_message=None if activation_result["activated"] else activation_result["message"],
         )
         if deployment is None:
             return None
+        asset_note = (
+            "Snapshot deployment created"
+            if asset_sync["asset_count"] == 0
+            else (
+                "Snapshot deployment created; bundled assets pushed to "
+                + ", ".join(
+                    f"{target}={'ok' if asset_sync['results'].get(target) else 'failed'}"
+                    for target in asset_targets
+                )
+            )
+        )
         await self.snapshot_service.add_deployment_history(
             deployment["id"],
             snapshot_id=snapshot_id,
             to_node_id=node_id,
             action="deployed",
             notes=(
-                "Snapshot deployment created"
-                if asset_sync["asset_count"] == 0
-                else (
-                    "Snapshot deployment created; bundled assets pushed to "
-                    + ", ".join(
-                        f"{target}={'ok' if asset_sync['results'].get(target) else 'failed'}"
-                        for target in asset_targets
-                    )
-                )
+                f"{asset_note}; remote activation={'ok' if activation_result['activated'] else 'failed'}"
+                f" ({activation_result['message']})"
             ),
         )
-        return await self.get_latest_deployment(snapshot_id)
+        latest = await self.get_latest_deployment(snapshot_id)
+        if latest is None:
+            return None
+        latest["remote_activation"] = activation_result
+        return latest
 
     async def get_latest_deployment(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         deployments = await self.snapshot_service.list_deployments(snapshot_id=snapshot_id)

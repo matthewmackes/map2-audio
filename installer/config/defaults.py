@@ -27,10 +27,10 @@ MODE_SOFTWARE_DEFAULTS: dict[InstallMode, SoftwareConfig] = {
         install_lv2_plugins=True,
         install_avb=False,
         install_nam=True,
-        install_frontend=False,   # No web UI needed on a headless audio node
+        install_frontend=False,   # No web UI or Grafana needed on a dedicated audio node
         install_juce_engine=True,
         install_lcd=False,
-        install_cluster_mgr=False,
+        install_cluster_mgr=False,  # Prometheus/Grafana stay on management/all-in-one nodes
     ),
     InstallMode.ALL_IN_ONE: SoftwareConfig(
         install_lv2_plugins=True,
@@ -145,6 +145,8 @@ MODE_DESCRIPTIONS: dict[InstallMode, dict] = {
         "detail":   (
             "Installs JUCE engine, LV2 plugins, NAM, PipeWire RT config, and CPU "
             "isolation for cores 4,5.  Target: <1.5 ms one-way latency.\n\n"
+            "Observability policy: this mode exports lightweight metrics for "
+            "remote scraping but does not host Grafana or Prometheus locally.\n\n"
             "PRO TIP: Use this mode for stage or studio hardware that only runs "
             "MAP2 — nothing else competes for the isolated CPU cores.\n\n"
             "COMMON PITFALL: Don't run a web browser or other GUI apps on this "
@@ -159,6 +161,9 @@ MODE_DESCRIPTIONS: dict[InstallMode, dict] = {
         "detail":   (
             "Full MAP2 stack on a single host.  Good for development, rehearsal "
             "rooms, or small venues where one machine does everything.\n\n"
+            "Observability policy: all-in-one nodes may host the local "
+            "Prometheus/Grafana stack because they already accept mixed "
+            "management and audio workload trade-offs.\n\n"
             "PRO TIP: Use a machine with ≥8 cores so the web server and audio "
             "engine don't compete.  A buffer size of 128 samples (2.67 ms) is "
             "safer than 64 in this mode due to background load.\n\n"
@@ -173,6 +178,8 @@ MODE_DESCRIPTIONS: dict[InstallMode, dict] = {
         "detail":   (
             "Installs the MAP2 web dashboard, cluster manager, and AVB network "
             "monitoring tools.  No JUCE engine or RT configuration.\n\n"
+            "Observability policy: Prometheus and Grafana belong here for "
+            "multi-node deployments so dedicated audio nodes stay lean.\n\n"
             "PRO TIP: Management nodes can be VMs or low-power hardware — they "
             "don't need real-time scheduling.\n\n"
             "COMMON PITFALL: Management nodes still need network connectivity to "

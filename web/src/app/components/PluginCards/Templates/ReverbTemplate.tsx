@@ -8,10 +8,8 @@ import { useMemo } from 'react'
 import type { PluginCardProps } from '../types'
 import { getCategoryConfig } from '../types'
 import { ReverbCategoryLayout, type ParamSlot } from '../Layouts/ReverbCategoryLayout'
-import type { AdvancedSection } from '../Base/CarbonCardShell'
-import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
+import { buildResidualParameterSections } from './buildResidualParameterSections'
 
 const DECAY_PATTERNS = ['decay', 'time', 'rt60', 'reverb_time', 'tail', 'length']
 const PREDELAY_PATTERNS = ['predelay', 'pre_delay', 'pre-delay', 'early_delay']
@@ -78,31 +76,15 @@ export function ReverbTemplate({
   const formatTime = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(2)}s` : `${v.toFixed(1)}ms`)
   const formatPercent = (v: number) => `${v.toFixed(0)}%`
 
-  const advancedSections: AdvancedSection[] = useMemo(() => {
-    if (otherParams.length === 0) return []
-    return [{
-      id: 'other',
-      title: 'More',
-      children: (
-        <CarbonParameterSection>
-          {otherParams.map(p => (
-            <ParameterKnob
-              key={p.index}
-              label={p.name}
-              value={parameterValues[p.index] ?? p.default}
-              min={p.min}
-              max={p.max}
-              defaultValue={p.default}
-              onChange={(v) => onParameterChange(p.index, v)}
-              accentColor={accentColor}
-              isLogarithmic={p.is_log}
-              size="small"
-            />
-          ))}
-        </CarbonParameterSection>
-      ),
-    }]
-  }, [otherParams, parameterValues, onParameterChange, accentColor])
+  const advancedSections = useMemo(
+    () => buildResidualParameterSections({
+      params: otherParams,
+      parameterValues,
+      onParameterChange,
+      accentColor,
+    }),
+    [otherParams, parameterValues, onParameterChange, accentColor],
+  )
 
   return (
     <ReverbCategoryLayout

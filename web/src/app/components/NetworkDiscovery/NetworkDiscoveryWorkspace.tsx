@@ -45,6 +45,7 @@ import {
   type NetworkDiscoveryRecord,
   type NetworkDiscoveryWorkspaceGraphSelection,
 } from './networkDiscoveryWorkspaceGraph'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
 
 type DiscoveryWorkspaceRecord = NetworkDiscoveryRecord & {
   lastSeen: string | null
@@ -394,6 +395,34 @@ export function NetworkDiscoveryWorkspace({
 
   const discoveryError = discoveryQuery.error instanceof Error ? discoveryQuery.error.message : null
   const topologyError = topologyQuery.error instanceof Error ? topologyQuery.error.message : null
+  const onlinePeerCount = records.filter((record) => record.isOnline).length
+  const routingReadyCount = records.filter((record) => record.routingReady).length
+  const registrationRequiredCount = records.filter((record) => record.registrationRequired).length
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => [
+    {
+      id: 'network-discovery-visibility',
+      title: 'Peer Visibility',
+      description: '24-hour discovery view for visible peers, routing-ready nodes, and registration pressure.',
+      series: [
+        { key: 'visiblePeers', label: 'Visible Peers', value: records.length, color: 'var(--cds-text-primary)' },
+        { key: 'onlinePeers', label: 'Online Peers', value: onlinePeerCount, color: 'var(--cds-support-success)' },
+        { key: 'routingReadyPeers', label: 'Routing Ready', value: routingReadyCount, color: 'var(--cds-link-primary)' },
+        { key: 'registrationRequired', label: 'Registration Required', value: registrationRequiredCount, color: 'var(--cds-support-warning)' },
+      ],
+    },
+    {
+      id: 'network-discovery-focus',
+      title: 'Focused Peer Latency',
+      description: 'Selected peer trend for latency, packet loss, and readiness state in the current node context.',
+      series: [
+        { key: 'latencyMs', label: 'Latency ms', value: selectedRecord?.latencyMs ?? null, color: 'var(--cds-support-info)' },
+        { key: 'packetLoss', label: 'Packet Loss %', value: latencyHistoryQuery.data?.packet_loss_percent ?? null, color: 'var(--cds-support-error)' },
+        { key: 'averageLatency', label: 'Average Latency ms', value: latencyHistoryQuery.data?.average_latency_ms ?? null, color: 'var(--cds-link-primary)' },
+        { key: 'readiness', label: 'Routing Ready', value: selectedRecord ? (selectedRecord.routingReady ? 1 : 0) * 100 : null, color: 'var(--cds-support-success)' },
+      ],
+      yAxisDomain: [0, 'auto'],
+    },
+  ], [latencyHistoryQuery.data?.average_latency_ms, latencyHistoryQuery.data?.packet_loss_percent, onlinePeerCount, records, registrationRequiredCount, routingReadyCount, selectedRecord])
 
   return (
     <div className="network-discovery-workspace">
@@ -476,6 +505,7 @@ export function NetworkDiscoveryWorkspace({
         className={`network-discovery-workspace__section${selectedRecord ? ' is-highlighted' : ''}`}
         aria-labelledby="network-discovery-workspace-peers"
       >
+        <PlatformGrafanaPanelDeck panels={grafanaPanels} />
         <div className="network-discovery-workspace__section-header">
           <div>
             <h3 id="network-discovery-workspace-peers" className="network-discovery-workspace__section-title">Peer visibility and latency detail</h3>

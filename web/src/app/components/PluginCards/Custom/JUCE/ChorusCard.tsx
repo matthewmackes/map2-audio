@@ -9,6 +9,7 @@ import { useChorus } from '../../../../hooks/useModulation'
 import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { HorizontalGlowGradient } from '../../components/SVGGradients'
 import { formatPercentage, formatRate } from '../../utils/formatters'
 
@@ -32,10 +33,11 @@ interface ChorusCardProps extends PluginCardProps {
 function ChorusCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#9b59b6',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: ChorusCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters, metering,
     setRate, setDepth, setCentreDelay, setFeedback, setMix, setSpread, setBypass,

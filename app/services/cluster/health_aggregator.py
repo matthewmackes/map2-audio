@@ -208,8 +208,10 @@ class HealthAggregator:
                 # Default to hostname
                 node_ip = node_id
             
-            # Query node metrics endpoint
-            metrics_url = f"http://{node_ip}:9090/metrics"
+            # Query the lightweight backend exporter directly. Audio nodes do
+            # not need to host local Prometheus; they only expose scrape-safe
+            # metrics over the FastAPI control plane.
+            metrics_url = f"http://{node_ip}:8080/api/metrics/prometheus"
             
             async with aiohttp.ClientSession() as session:
                 try:
@@ -228,12 +230,12 @@ class HealthAggregator:
                                     continue
                                 
                                 # Parse metric lines: metric_name{labels} value
-                                if 'node_cpu_percent' in line:
+                                if line.startswith('map2_cpu_percent '):
                                     try:
                                         cpu_percent = float(line.split()[-1])
                                     except Exception:
                                         pass
-                                elif 'node_memory_percent' in line:
+                                elif line.startswith('map2_memory_percent '):
                                     try:
                                         memory_percent = float(line.split()[-1])
                                     except Exception:
@@ -243,7 +245,7 @@ class HealthAggregator:
                                         dsp_load_percent = float(line.split()[-1])
                                     except Exception:
                                         pass
-                                elif 'jack_xruns_total' in line or 'xrun_count' in line:
+                                elif 'jack_xruns_total' in line or 'xrun_count' in line or line.startswith('map2_audio_xruns '):
                                     try:
                                         xrun_count = int(float(line.split()[-1]))
                                     except Exception:

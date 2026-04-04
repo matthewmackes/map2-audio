@@ -1,5 +1,6 @@
-import { Layer, Tag } from '@carbon/react'
+import { Tag } from '@carbon/react'
 import { useMidiHubOverview } from './useMidiHubOverview'
+import { MidiHubSurface } from './MidiHubHelpPrimitives'
 
 type MidiHubStatusBarProps = {
   apiNodeId: string | null
@@ -32,7 +33,7 @@ export function MidiHubStatusBar({ apiNodeId, scopeKey }: MidiHubStatusBarProps)
       : 'Event lists pending'
 
   return (
-    <Layer className="midi-hub-status-bar">
+    <MidiHubSurface className="midi-hub-status-bar" tone="raised">
       <div className="midi-hub-status-bar__rail">
         <Tag type={toneForHealth(health)}>{formatClockLabel(clockQuery.data?.bpm, clockQuery.data?.running)}</Tag>
         <Tag type="cool-gray">{`Preset ${activePresetName}`}</Tag>
@@ -42,6 +43,6 @@ export function MidiHubStatusBar({ apiNodeId, scopeKey }: MidiHubStatusBarProps)
         <Tag type="warm-gray">{`Sessions ${sessionsCount}`}</Tag>
         <Tag type={toneForHealth(health)}>{`System ${health}`}</Tag>
       </div>
-    </Layer>
+    </MidiHubSurface>
   )
 }

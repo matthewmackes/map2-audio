@@ -10,6 +10,7 @@ import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout
 import { LFOWaveform } from '../../Visualizations/LFOWaveform'
 import { ParameterKnob } from '../../../ParameterControl'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 
 const PARAM_MAP = {
@@ -24,9 +25,10 @@ function PhaserCardBase({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#f59e0b',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
     parameterValues[PARAM_MAP[key]] ?? defaultVal
 

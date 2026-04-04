@@ -12,6 +12,19 @@
 
 - **Role:** FastAPI backend for `/api/*`, `/ws`, and related services
 - **Server:** `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080`
+- **Metrics export:** `/api/metrics/prometheus` on every node for lightweight remote scraping
+
+### Port 9090
+
+- **Role:** Prometheus server
+- **Host policy:** Management and all-in-one nodes only
+- **Audio-node policy:** Do not host local Prometheus on dedicated audio nodes; scrape their backend exporter from a management-plane node instead
+
+### Port 3001
+
+- **Role:** Grafana UI
+- **Host policy:** Management and all-in-one nodes only
+- **Audio-node policy:** Reserved for Grafana when observability stack is enabled; dedicated audio nodes should leave it unused
 
 ## Required Workflow
 

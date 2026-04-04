@@ -55,6 +55,7 @@ COMPONENTS = [
         "Browser-based control interface for MAP2.\n"
         "Features: signal chain editor, MPX-1 panel, AVB diagnostics, metering.\n"
         "Served by the Python FastAPI backend on port 3000.\n"
+        "Grafana is a separate management-plane UI and should stay off dedicated audio nodes.\n"
         "Disk: ~500 MB (node_modules + bundle).  RAM: ~50 MB serving.",
         False,
     ),
@@ -80,7 +81,8 @@ COMPONENTS = [
         "install_cluster_mgr",
         "Cluster Manager",
         "Multi-node orchestration for MAP2 audio networks.\n"
-        "Features: node health, failover, flow assignment, load balancing.\n"
+        "Features: node health, failover, flow assignment, load balancing, and central observability hosting.\n"
+        "Prometheus/Grafana belong on management or all-in-one nodes, not dedicated audio nodes.\n"
         "Required for multi-node deployments; optional for single-node.\n"
         "Disk: ~50 MB.  RAM: ~30 MB.",
         False,

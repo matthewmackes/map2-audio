@@ -17,6 +17,7 @@ import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategory
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 // Plugin URI for MIDI mappings
 const INTERVAL_SHIFTER_URI = 'map2://juce/pitch/interval'
@@ -38,10 +39,11 @@ interface IntervalShifterCardProps extends PluginCardProps {
 function IntervalShifterCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#8b5cf6',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: IntervalShifterCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,

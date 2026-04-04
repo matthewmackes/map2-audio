@@ -12,6 +12,7 @@ import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategory
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 // Plugin URI for MIDI mappings
 const EVH_PITCH_URI = 'map2://juce/pitch/shifter'
@@ -38,10 +39,11 @@ interface EVHPitchShifterCardProps extends PluginCardProps {
 function EVHPitchShifterCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#ff6b35',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: EVHPitchShifterCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,
@@ -106,7 +108,7 @@ function EVHPitchShifterCardBase({
           <div className="evh-delay-bar">
             <div
               className="evh-delay-fill"
-              style={{ width: `${(parameters.delayL / 100) * 100}%`, background: '#4ecdc4' }}
+              style={{ width: `${(parameters.delayL / 100) * 100}%`, background: accentColor }}
             />
           </div>
           <span className="evh-delay-label">{parameters.delayL.toFixed(0)}ms</span>
@@ -120,7 +122,7 @@ function EVHPitchShifterCardBase({
           <div className="evh-delay-bar">
             <div
               className="evh-delay-fill"
-              style={{ width: `${(parameters.delayR / 100) * 100}%`, background: '#f59e0b' }}
+              style={{ width: `${(parameters.delayR / 100) * 100}%`, background: accentColor, opacity: 0.72 }}
             />
           </div>
           <span className="evh-delay-label">{parameters.delayR.toFixed(0)}ms</span>

@@ -23,6 +23,7 @@ import {
 import { useSearchParams } from 'react-router-dom'
 
 import { NodeContextPicker } from '../NodeContextPicker/NodeContextPicker'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
 import type { PlatformHealth, PlatformLayerData, PlatformTableRow } from '../../platform/model'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import { useViewedNode, useViewedNodeStore } from '../../stores/viewedNodeStore'
@@ -112,7 +113,6 @@ function ExpandedRow({
   selectedNode: NodeSummary | null
 }) {
   const selectedNodeSummary = selectedNode ? nodeSummaryRecord(selectedNode) : null
-
   return (
     <div className="management-workspace__expanded-row">
       <div className="management-workspace__expanded-grid">
@@ -252,6 +252,37 @@ export function ManagementWorkspace({
 
   const topologyError = queryErrorMessage(topologyQuery.error)
   const selectedNodeSummary = selectedNode ? nodeSummaryRecord(selectedNode) : null
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => {
+    const servicesOnline = selectedNode
+      ? Number(Boolean(selectedNode.services.backend))
+        + Number(Boolean(selectedNode.services.juce_engine))
+        + Number(Boolean(selectedNode.services.pipewire))
+      : null
+
+    return [
+      {
+        id: 'management-node-runtime',
+        title: 'Node Runtime',
+        description: 'Context-sensitive runtime trend for the currently viewed management node.',
+        yAxisDomain: [0, 100],
+        series: [
+          { key: 'healthPercent', label: 'Health %', value: selectedNodeSummary?.healthPercent ?? null, color: 'var(--cds-support-success)' },
+          { key: 'cpuPercent', label: 'CPU %', value: selectedNode?.cpu_percent ?? null, color: 'var(--cds-link-primary)' },
+          { key: 'memoryPercent', label: 'Memory %', value: selectedNode?.memory_percent ?? null, color: 'var(--cds-support-warning)' },
+        ],
+      },
+      {
+        id: 'management-audio-stability',
+        title: 'Audio Stability',
+        description: 'Latency, xruns, and service readiness for the same node context.',
+        series: [
+          { key: 'latencyMs', label: 'Latency ms', value: selectedNode?.audio_latency_ms ?? null, color: 'var(--cds-support-info)' },
+          { key: 'xruns', label: 'XRuns', value: selectedNode?.xrun_count ?? null, color: 'var(--cds-support-error)' },
+          { key: 'servicesOnline', label: 'Services Online', value: servicesOnline, color: 'var(--cds-text-primary)' },
+        ],
+      },
+    ]
+  }, [selectedNode, selectedNodeSummary?.healthPercent])
 
   return (
     <div className="management-workspace">
@@ -313,6 +344,7 @@ export function ManagementWorkspace({
         className={`management-workspace__section${selectedRowId ? ' is-highlighted' : ''}`}
         aria-labelledby="management-workspace-services"
       >
+        <PlatformGrafanaPanelDeck panels={grafanaPanels} />
         <div className="management-workspace__section-header">
           <div>
             <h3 id="management-workspace-services" className="management-workspace__section-title">Services and platform operations</h3>

@@ -53,6 +53,13 @@ def _build_change_summary(config) -> list[tuple[str, str]]:
     if sw.install_avb:         pkgs += ["ethtool", "iproute"]
     changes.append(("Packages", f"Install: {', '.join(pkgs)}"))
 
+    if sw.install_cluster_mgr:
+        changes.append((
+            "Observability Placement",
+            "Host Prometheus/Grafana only on management-plane nodes. "
+            "Dedicated audio nodes stay scrape-only via /api/metrics/prometheus.",
+        ))
+
     # PipeWire config
     changes.append(("PipeWire", (
         f"Write ~/.config/pipewire/pipewire.conf.d/99-map2-audio-latency.conf\n"
@@ -65,6 +72,15 @@ def _build_change_summary(config) -> list[tuple[str, str]]:
         "Install: map2-backend.service, map2-irq-affinity.service\n"
         "Enable: pipewire.service, wireplumber.service, rtkit-daemon.service"
     )))
+
+    if sw.install_cluster_mgr:
+        changes.append(("Cluster Manager", (
+            "Run scripts/install_cluster_manager.sh from Stage 09 to stage the\n"
+            "management-plane service/config stack.\n"
+            "Includes: map2-cluster-manager.service, cluster config, TLS material,\n"
+            "database bootstrap, and Prometheus/Grafana provisioning on\n"
+            "management or all-in-one hosts only."
+        )))
 
     # GRUB
     if rt.write_grub and rt.isolated_cores:

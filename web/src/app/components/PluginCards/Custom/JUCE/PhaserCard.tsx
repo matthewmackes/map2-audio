@@ -9,6 +9,7 @@ import { usePhaser } from '../../../../hooks/useModulation'
 import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { formatPercentage, formatRate } from '../../utils/formatters'
 
 // Plugin URI for MIDI mappings
@@ -32,10 +33,11 @@ interface PhaserCardProps extends PluginCardProps {
 function PhaserCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#e74c3c',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: PhaserCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,

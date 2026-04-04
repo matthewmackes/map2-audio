@@ -173,9 +173,9 @@ void DelayProcessor::process(juce::AudioBuffer<float>& buffer) {
 
     // Get current parameters
     const float feedback = feedback_.load() / 100.0f;
-    const float mix = bypassed ? 0.0f : (mix_.load() / 100.0f);
+    const float mix = mix_.load() / 100.0f;
     const float dryLevel = 1.0f;  // Keep dry at unity, wet is added
-    const float wetLevel = mix;
+    const float wetLevel = (bypassed && spillover_.load()) ? mix : (bypassed ? 0.0f : mix);
 
     // Get effective delay times (considering tempo sync)
     float targetDelayL = getEffectiveDelayTimeL() * sampleRate_ / 1000.0f;
@@ -205,7 +205,6 @@ void DelayProcessor::process(juce::AudioBuffer<float>& buffer) {
     const float pan = pan_.load() / 100.0f;
 
     // Get modulation parameters
-    const float modRate = modRate_.load();
     const float modDepth = modDepth_.load() / 100.0f;
 
     // Get ducking parameters
@@ -237,8 +236,10 @@ void DelayProcessor::process(juce::AudioBuffer<float>& buffer) {
         delaySamplesR += modOffsetR;
 
         // Get input
-        float inputL = dataL[i];
-        float inputR = numChannels > 1 ? dataR[i] : inputL;
+        const float dryInputL = dataL[i];
+        const float dryInputR = numChannels > 1 ? dataR[i] : dryInputL;
+        float inputL = bypassed ? 0.0f : dryInputL;
+        float inputR = bypassed ? 0.0f : dryInputR;
 
         // Apply input filtering if not in loop
         if (!filterInLoop) {
@@ -338,7 +339,7 @@ void DelayProcessor::process(juce::AudioBuffer<float>& buffer) {
         }
 
         // Apply ducking based on input level
-        float inputPeak = std::max(std::abs(inputL), std::abs(inputR));
+        float inputPeak = std::max(std::abs(dryInputL), std::abs(dryInputR));
         float inputDb = linearToDb(inputPeak);
         float duckGain = 1.0f;
 
@@ -382,9 +383,9 @@ void DelayProcessor::process(juce::AudioBuffer<float>& buffer) {
         wetPeakR = std::max(wetPeakR, std::abs(wetR));
 
         // Mix dry and wet
-        dataL[i] = inputL * dryLevel + wetL * wetLevel;
+        dataL[i] = dryInputL * dryLevel + wetL * wetLevel;
         if (numChannels > 1) {
-            dataR[i] = inputR * dryLevel + wetR * wetLevel;
+            dataR[i] = dryInputR * dryLevel + wetR * wetLevel;
         }
 
         // Store ducking for metering
@@ -765,6 +766,83 @@ void DelayProcessor::setParameters(const Parameters& p) {
     setOutputLevel(p.outputLevel);
     setSpillover(p.spillover);
     setBypass(p.bypass);
+}
+
+std::unique_ptr<DelayProcessor> DelayProcessor::cloneForSpillover() const {
+    auto clone = std::make_unique<DelayProcessor>();
+
+    auto copyAtomicFloat = [](std::atomic<float>& dst, const std::atomic<float>& src) {
+        dst.store(src.load());
+    };
+    auto copyAtomicBool = [](std::atomic<bool>& dst, const std::atomic<bool>& src) {
+        dst.store(src.load());
+    };
+
+    clone->delayBufferL_ = delayBufferL_;
+    clone->delayBufferR_ = delayBufferR_;
+    clone->writePos_ = writePos_;
+    clone->diffusionFiltersL_ = diffusionFiltersL_;
+    clone->diffusionFiltersR_ = diffusionFiltersR_;
+    clone->modPhase_ = modPhase_;
+    clone->randomModValue_ = randomModValue_;
+    clone->randomModTarget_ = randomModTarget_;
+    clone->randomModCounter_ = randomModCounter_;
+    clone->duckEnvelope_ = duckEnvelope_;
+    clone->smoothedDelayL_ = smoothedDelayL_;
+    clone->smoothedDelayR_ = smoothedDelayR_;
+
+    copyAtomicFloat(clone->delayTimeL_, delayTimeL_);
+    copyAtomicFloat(clone->delayTimeR_, delayTimeR_);
+    copyAtomicFloat(clone->feedback_, feedback_);
+    copyAtomicFloat(clone->mix_, mix_);
+    copyAtomicFloat(clone->tempo_, tempo_);
+    clone->tempoSyncL_.store(tempoSyncL_.load());
+    clone->tempoSyncR_.store(tempoSyncR_.load());
+    copyAtomicFloat(clone->tap1Level_, tap1Level_);
+    copyAtomicFloat(clone->tap2Level_, tap2Level_);
+    copyAtomicFloat(clone->tap2Ratio_, tap2Ratio_);
+    copyAtomicFloat(clone->tap3Level_, tap3Level_);
+    copyAtomicFloat(clone->tap3Ratio_, tap3Ratio_);
+    copyAtomicFloat(clone->tap4Level_, tap4Level_);
+    copyAtomicFloat(clone->tap4Ratio_, tap4Ratio_);
+    clone->stereoMode_.store(stereoMode_.load());
+    copyAtomicFloat(clone->stereoSpread_, stereoSpread_);
+    copyAtomicFloat(clone->pan_, pan_);
+    copyAtomicFloat(clone->modRate_, modRate_);
+    copyAtomicFloat(clone->modDepth_, modDepth_);
+    clone->modWaveform_.store(modWaveform_.load());
+    copyAtomicFloat(clone->lowCut_, lowCut_);
+    copyAtomicFloat(clone->highCut_, highCut_);
+    copyAtomicBool(clone->filterInLoop_, filterInLoop_);
+    copyAtomicFloat(clone->diffusion_, diffusion_);
+    copyAtomicFloat(clone->duckThreshold_, duckThreshold_);
+    copyAtomicFloat(clone->duckAmount_, duckAmount_);
+    copyAtomicFloat(clone->duckRelease_, duckRelease_);
+    copyAtomicFloat(clone->outputLevel_, outputLevel_);
+    copyAtomicBool(clone->spillover_, spillover_);
+    copyAtomicBool(clone->bypass_, bypass_);
+    copyAtomicFloat(clone->inputLevelL_, inputLevelL_);
+    copyAtomicFloat(clone->inputLevelR_, inputLevelR_);
+    copyAtomicFloat(clone->outputLevelL_, outputLevelL_);
+    copyAtomicFloat(clone->outputLevelR_, outputLevelR_);
+    copyAtomicFloat(clone->delayLevelL_, delayLevelL_);
+    copyAtomicFloat(clone->delayLevelR_, delayLevelR_);
+    copyAtomicFloat(clone->duckingGainDb_, duckingGainDb_);
+    copyAtomicFloat(clone->modPhaseOut_, modPhaseOut_);
+
+    clone->tapHistory_ = tapHistory_;
+    clone->tapCount_ = tapCount_;
+    clone->lastTapTime_ = lastTapTime_;
+    clone->sampleRate_ = sampleRate_;
+    clone->blockSize_ = blockSize_;
+    clone->numChannels_ = numChannels_;
+    clone->prepared_ = prepared_;
+    copyAtomicBool(clone->parametersChanged_, parametersChanged_);
+    clone->filtersNeedUpdate_.store(true);
+    clone->lastFeedbackL_ = lastFeedbackL_;
+    clone->lastFeedbackR_ = lastFeedbackR_;
+
+    return clone;
 }
 
 DelayProcessor::Metering DelayProcessor::getMetering() const {

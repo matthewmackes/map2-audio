@@ -105,6 +105,85 @@ export function upsertRuntimeChains(
   }
 }
 
+function takeDraftPluginRuntimeMatch(
+  remainingPlugins: Chain['plugins'],
+  draftPlugin: SnapshotDraftData['chains'][string]['plugins'][number],
+): Chain['plugins'][number] | undefined {
+  const exactIndex = remainingPlugins.findIndex((plugin) => pluginIdentityKey(plugin) === pluginIdentityKey(draftPlugin))
+  if (exactIndex >= 0) {
+    return remainingPlugins.splice(exactIndex, 1)[0]
+  }
+
+  const uriIndex = remainingPlugins.findIndex((plugin) => plugin.uri === draftPlugin.uri)
+  if (uriIndex >= 0) {
+    return remainingPlugins.splice(uriIndex, 1)[0]
+  }
+
+  return undefined
+}
+
+function mergeDraftChainIntoRuntimeChain(
+  runtimeChain: Chain | undefined,
+  chainId: number,
+  draftChain: SnapshotDraftData['chains'][string],
+): Chain {
+  const remainingPlugins = [...(runtimeChain?.plugins ?? [])]
+
+  return {
+    ...(runtimeChain ?? {
+      id: chainId,
+      name: draftChain.name,
+      is_active: false,
+      created_at: new Date(0).toISOString(),
+      updated_at: new Date(0).toISOString(),
+      plugins: [],
+      loop_insertions: [],
+      effects_loops: [],
+      runtime_sync: null,
+    }),
+    name: draftChain.name,
+    plugins: draftChain.plugins.map((plugin) => {
+      const runtimePlugin = takeDraftPluginRuntimeMatch(remainingPlugins, plugin)
+      return {
+        ...runtimePlugin,
+        uri: plugin.uri,
+        position: plugin.position,
+        bypassed: plugin.bypass,
+        parameters: { ...plugin.parameters },
+        loader_state: plugin.loader_state,
+      }
+    }),
+  }
+}
+
+export function applySnapshotDraftToChainsResponse(
+  current: ChainsResponse | undefined,
+  draft: SnapshotDraftData | null | undefined,
+): ChainsResponse {
+  if (!draft) {
+    return current ?? { chains: [], count: 0 }
+  }
+
+  const chainById = new Map<number, Chain>()
+  for (const chain of current?.chains ?? []) {
+    chainById.set(chain.id, chain)
+  }
+
+  for (const [chainKey, draftChain] of Object.entries(draft.chains ?? {})) {
+    const chainId = Number(chainKey)
+    if (!Number.isInteger(chainId) || chainId <= 0) {
+      continue
+    }
+    chainById.set(chainId, mergeDraftChainIntoRuntimeChain(chainById.get(chainId), chainId, draftChain))
+  }
+
+  const chains = [...chainById.values()]
+  return {
+    chains,
+    count: chains.length,
+  }
+}
+
 export function buildEffectiveLiveSnapshotChains(
   detail: SnapshotDetail,
   currentChains: ChainsResponse | undefined,

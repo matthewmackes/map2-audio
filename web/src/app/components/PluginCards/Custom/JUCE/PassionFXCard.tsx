@@ -16,6 +16,7 @@ import { ParameterKnob } from '../../../ParameterControl'
 import { ParameterControl } from '../../../ParameterControl'
 import { requireParameterDescriptor } from '../../../../data/parameterSchema'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 
 // Plugin URI for MIDI mappings
@@ -212,10 +213,11 @@ interface PassionFXCardProps extends PluginCardProps {
 
 function PassionFXCardBase({
   plugin,
-  accentColor = '#00c853', // Vai green
+  accentColor: providedAccent, // Vai green
   compact = false,
   onOpenMidiMappings,
 }: PassionFXCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,
@@ -373,7 +375,7 @@ function PassionFXCardBase({
               )}
               <button
                 className={`passionfx-chain-dot ${enabled ? 'active' : ''}`}
-                style={{ '--dot-color': module.color } as React.CSSProperties}
+                style={{ '--dot-color': accentColor } as React.CSSProperties}
                 onClick={() => moduleToggle[module.id](!enabled)}
                 title={`${module.label} (${module.mfr}) - Click to ${enabled ? 'disable' : 'enable'}`}
               >
@@ -424,7 +426,7 @@ function PassionFXCardBase({
             defaultValue={-40}
             unit="dB"
             onChange={setGateThreshold}
-            accentColor="#4caf50"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.GATE_THRESHOLD }}
           />
@@ -446,7 +448,7 @@ function PassionFXCardBase({
               defaultValue={-20}
               unit="dB"
               onChange={setCompThreshold}
-              accentColor="#66bb6a"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_THRESHOLD }}
             />
@@ -458,7 +460,7 @@ function PassionFXCardBase({
               defaultValue={4}
               unit=":1"
               onChange={setCompRatio}
-              accentColor="#66bb6a"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_RATIO }}
             />
@@ -467,7 +469,7 @@ function PassionFXCardBase({
             <button
               className={`passionfx-toggle-btn ${parameters.compGlassy ? 'active' : ''}`}
               onClick={() => setCompGlassy(!parameters.compGlassy)}
-              style={{ '--toggle-color': '#66bb6a' } as React.CSSProperties}
+              style={{ '--toggle-color': accentColor } as React.CSSProperties}
             >
               Glassy
             </button>
@@ -489,7 +491,7 @@ function PassionFXCardBase({
             defaultValue={50}
             unit="%"
             onChange={setWahPosition}
-            accentColor="#81c784"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.WAH_POSITION }}
           />
@@ -501,7 +503,7 @@ function PassionFXCardBase({
             defaultValue={3}
             unit=""
             onChange={setWahQ}
-            accentColor="#81c784"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.WAH_Q }}
           />
@@ -523,7 +525,7 @@ function PassionFXCardBase({
             unit="Hz"
             onChange={setPhaserRate}
             isLogarithmic
-            accentColor="#a5d6a7"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_RATE }}
           />
@@ -535,7 +537,7 @@ function PassionFXCardBase({
             defaultValue={50}
             unit="%"
             onChange={setPhaserDepth}
-            accentColor="#a5d6a7"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_DEPTH }}
           />
@@ -557,7 +559,7 @@ function PassionFXCardBase({
             unit="Hz"
             onChange={setChorusRate}
             isLogarithmic
-            accentColor="#00e676"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_RATE }}
           />
@@ -569,7 +571,7 @@ function PassionFXCardBase({
             defaultValue={40}
             unit="%"
             onChange={setChorusDepth}
-            accentColor="#00e676"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_DEPTH }}
           />
@@ -581,7 +583,7 @@ function PassionFXCardBase({
             defaultValue={50}
             unit="%"
             onChange={setChorusMix}
-            accentColor="#00e676"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_MIX }}
           />
@@ -603,7 +605,7 @@ function PassionFXCardBase({
             unit=""
             valueFormatter={(v: number) => pitchLabel(Math.round(v))}
             onChange={(v) => setPitchSemitones(Math.round(v))}
-            accentColor="#69f0ae"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PITCH_SEMITONES }}
           />
@@ -615,7 +617,7 @@ function PassionFXCardBase({
             defaultValue={50}
             unit="%"
             onChange={setPitchMix}
-            accentColor="#69f0ae"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PITCH_MIX }}
           />
@@ -637,7 +639,7 @@ function PassionFXCardBase({
             unit=""
             valueFormatter={(v: number) => intervalLabel(Math.round(v))}
             onChange={(v) => setHarmVoice1Interval(Math.round(v))}
-            accentColor="#00c853"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_VOICE1 }}
           />
@@ -650,7 +652,7 @@ function PassionFXCardBase({
             unit=""
             valueFormatter={(v: number) => intervalLabel(Math.round(v))}
             onChange={(v) => setHarmVoice2Interval(Math.round(v))}
-            accentColor="#00c853"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_VOICE2 }}
           />
@@ -662,7 +664,7 @@ function PassionFXCardBase({
             defaultValue={0}
             unit="c"
             onChange={setHarmDetuneCents}
-            accentColor="#00c853"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_DETUNE }}
           />
@@ -683,7 +685,7 @@ function PassionFXCardBase({
             defaultValue={375}
             unit="ms"
             onChange={setDelayTimeL}
-            accentColor="#00bfa5"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_TIME_L }}
           />
@@ -695,7 +697,7 @@ function PassionFXCardBase({
             defaultValue={35}
             unit="%"
             onChange={setDelayFeedback}
-            accentColor="#00bfa5"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_FEEDBACK }}
           />
@@ -707,7 +709,7 @@ function PassionFXCardBase({
             defaultValue={30}
             unit="%"
             onChange={setDelayMix}
-            accentColor="#00bfa5"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_MIX }}
           />
@@ -729,7 +731,7 @@ function PassionFXCardBase({
             unit="s"
             onChange={setReverbDecay}
             isLogarithmic
-            accentColor="#1de9b6"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_DECAY }}
           />
@@ -741,7 +743,7 @@ function PassionFXCardBase({
             defaultValue={0}
             unit="%"
             onChange={setReverbShimmerAmount}
-            accentColor="#1de9b6"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_SHIMMER }}
           />
@@ -753,7 +755,7 @@ function PassionFXCardBase({
             defaultValue={25}
             unit="%"
             onChange={setReverbMix}
-            accentColor="#1de9b6"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_MIX }}
           />
@@ -774,7 +776,7 @@ function PassionFXCardBase({
             defaultValue={0}
             unit="dB"
             onChange={setEqLowGain}
-            accentColor="#64ffda"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_LOW }}
           />
@@ -786,7 +788,7 @@ function PassionFXCardBase({
             defaultValue={0}
             unit="dB"
             onChange={setEqMidGain}
-            accentColor="#64ffda"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_MID }}
           />
@@ -798,7 +800,7 @@ function PassionFXCardBase({
             defaultValue={0}
             unit="dB"
             onChange={setEqHighGain}
-            accentColor="#64ffda"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_HIGH }}
           />
@@ -819,7 +821,7 @@ function PassionFXCardBase({
             defaultValue={30}
             unit="%"
             onChange={setExciterWarmth}
-            accentColor="#a7ffeb"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_WARMTH }}
           />
@@ -831,7 +833,7 @@ function PassionFXCardBase({
             defaultValue={40}
             unit="%"
             onChange={setExciterPresence}
-            accentColor="#a7ffeb"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_PRESENCE }}
           />
@@ -843,7 +845,7 @@ function PassionFXCardBase({
             defaultValue={20}
             unit="%"
             onChange={setExciterAir}
-            accentColor="#a7ffeb"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_AIR }}
           />
@@ -865,7 +867,7 @@ function PassionFXCardBase({
             unit="Hz"
             onChange={setTremRate}
             isLogarithmic
-            accentColor="#b9f6ca"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.TREM_RATE }}
           />
@@ -877,7 +879,7 @@ function PassionFXCardBase({
             defaultValue={50}
             unit="%"
             onChange={setTremDepth}
-            accentColor="#b9f6ca"
+            accentColor={accentColor}
             size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.TREM_DEPTH }}
           />
@@ -900,7 +902,7 @@ function PassionFXCardBase({
               unit="ms"
               onChange={setGateRelease}
               isLogarithmic
-              accentColor="#4caf50"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.GATE_RELEASE }}
             />
@@ -913,7 +915,7 @@ function PassionFXCardBase({
               unit="ms"
               onChange={setCompAttack}
               isLogarithmic
-              accentColor="#66bb6a"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_ATTACK }}
             />
@@ -926,7 +928,7 @@ function PassionFXCardBase({
               unit="ms"
               onChange={setCompRelease}
               isLogarithmic
-              accentColor="#66bb6a"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_RELEASE }}
             />
@@ -937,7 +939,7 @@ function PassionFXCardBase({
                 key={option.value}
                 className={`carbon-preset-btn ${parameters.wahMode === option.value ? 'active' : ''}`}
                 onClick={() => setWahMode(option.value)}
-                style={parameters.wahMode === option.value ? { background: '#81c784', borderColor: '#81c784' } : undefined}
+                style={parameters.wahMode === option.value ? { background: accentColor, borderColor: accentColor } : undefined}
               >
                 {option.label}
               </button>
@@ -959,7 +961,7 @@ function PassionFXCardBase({
               label="Stages"
               value={parameters.phaserStages}
               onLiveChange={setPhaserStages}
-              accentColor="#a5d6a7"
+              accentColor={accentColor}
               size={knobSize}
               showBounds={false}
             />
@@ -971,7 +973,7 @@ function PassionFXCardBase({
               defaultValue={30}
               unit="%"
               onChange={setPhaserFeedback}
-              accentColor="#a5d6a7"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_FEEDBACK }}
             />
@@ -984,7 +986,7 @@ function PassionFXCardBase({
               step={1}
               unit=""
               onChange={(value) => setChorusVoices(Math.round(value))}
-              accentColor="#00e676"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_VOICES }}
             />
@@ -998,7 +1000,7 @@ function PassionFXCardBase({
               defaultValue={50}
               unit="%"
               onChange={setHarmMix}
-              accentColor="#00c853"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_MIX }}
             />
@@ -1011,7 +1013,7 @@ function PassionFXCardBase({
               step={0.1}
               unit=""
               onChange={setEqTilt}
-              accentColor="#64ffda"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_TILT }}
             />
@@ -1034,7 +1036,7 @@ function PassionFXCardBase({
               defaultValue={500}
               unit="ms"
               onChange={setDelayTimeR}
-              accentColor="#00bfa5"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_TIME_R }}
             />
@@ -1046,7 +1048,7 @@ function PassionFXCardBase({
               defaultValue={0}
               unit="st"
               onChange={(value) => setDelayPitchShiftL(Math.round(value))}
-              accentColor="#00bfa5"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_PITCH_L }}
             />
@@ -1058,7 +1060,7 @@ function PassionFXCardBase({
               defaultValue={0}
               unit="st"
               onChange={(value) => setDelayPitchShiftR(Math.round(value))}
-              accentColor="#00bfa5"
+              accentColor={accentColor}
               size={knobSize}
               midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_PITCH_R }}
             />
@@ -1069,7 +1071,7 @@ function PassionFXCardBase({
                 key={option.value}
                 className={`carbon-preset-btn ${parameters.reverbType === option.value ? 'active' : ''}`}
                 onClick={() => setReverbType(option.value)}
-                style={parameters.reverbType === option.value ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+                style={parameters.reverbType === option.value ? { background: accentColor, borderColor: accentColor } : undefined}
               >
                 {option.label}
               </button>
@@ -1081,7 +1083,7 @@ function PassionFXCardBase({
                 key={option.value}
                 className={`carbon-preset-btn ${parameters.reverbShimmerInterval === option.value ? 'active' : ''}`}
                 onClick={() => setReverbShimmerInterval(option.value)}
-                style={parameters.reverbShimmerInterval === option.value ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+                style={parameters.reverbShimmerInterval === option.value ? { background: accentColor, borderColor: accentColor } : undefined}
               >
                 {option.label}
               </button>
@@ -1093,7 +1095,7 @@ function PassionFXCardBase({
                 key={option.value}
                 className={`carbon-preset-btn ${parameters.tremWaveform === option.value ? 'active' : ''}`}
                 onClick={() => setTremWaveform(option.value)}
-                style={parameters.tremWaveform === option.value ? { background: '#b9f6ca', borderColor: '#b9f6ca' } : undefined}
+                style={parameters.tremWaveform === option.value ? { background: accentColor, borderColor: accentColor } : undefined}
               >
                 {option.label}
               </button>
@@ -1103,14 +1105,14 @@ function PassionFXCardBase({
             <button
               className={`carbon-toggle-btn ${parameters.delayFreeze ? 'active' : ''}`}
               onClick={() => setDelayFreeze(!parameters.delayFreeze)}
-              style={parameters.delayFreeze ? { background: '#00bfa5', borderColor: '#00bfa5' } : undefined}
+              style={parameters.delayFreeze ? { background: accentColor, borderColor: accentColor } : undefined}
             >
               Delay Freeze
             </button>
             <button
               className={`carbon-toggle-btn ${parameters.reverbFreeze ? 'active' : ''}`}
               onClick={() => setReverbFreeze(!parameters.reverbFreeze)}
-              style={parameters.reverbFreeze ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+              style={parameters.reverbFreeze ? { background: accentColor, borderColor: accentColor } : undefined}
             >
               Reverb Freeze
             </button>

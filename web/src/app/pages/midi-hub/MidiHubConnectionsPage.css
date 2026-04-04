@@ -6,7 +6,15 @@
 .midi-hub-connections-page {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-connections-page > :first-child {
+  grid-column: span 8;
+}
+
+.midi-hub-connections-page > :last-child {
+  grid-column: span 4;
 }
 
 .midi-hub-connections-page__device-report .cds--table-container {
@@ -17,8 +25,6 @@
   display: grid;
   gap: var(--cds-spacing-05);
   padding: var(--cds-spacing-05);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-01) 82%, var(--cds-support-success) 18%), var(--cds-layer-01));
 }
 
 .midi-hub-connections-page__maschine-head {
@@ -113,11 +119,14 @@
   display: grid;
   gap: var(--cds-spacing-05);
   padding: var(--cds-spacing-05);
-  background: var(--cds-layer-01);
 }
 
 .midi-hub-connections-toggle-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-connections-toggle-grid > * {
+  grid-column: span 6;
 }
 
 .midi-hub-connections-toggle-card {
@@ -166,7 +175,11 @@
 }
 
 .midi-hub-connections-detail-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-connections-detail-grid > * {
+  grid-column: span 6;
 }
 
 .midi-hub-connections-detail-card code,
@@ -193,7 +206,13 @@
 
 @media (max-width: 1056px) {
   .midi-hub-connections-page {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .midi-hub-connections-page > *,
+  .midi-hub-connections-toggle-grid > *,
+  .midi-hub-connections-detail-grid > * {
+    grid-column: span 12;
   }
 }
 

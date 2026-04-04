@@ -12,6 +12,8 @@
 #include "ParallelMixerProcessor.h"
 #include "Common.h"
 
+#include <cstdint>
+
 namespace map2 {
 
 // SidechainConnection is defined in Common.h
@@ -28,6 +30,18 @@ namespace map2 {
  */
 class JuceAudioGraph {
 public:
+    struct TopologyMutationStats {
+        uint64_t mutationCount = 0;
+        uint64_t noOpSkipCount = 0;
+        double lastMutationDurationMs = 0.0;
+        double peakMutationDurationMs = 0.0;
+        double avgMutationDurationMs = 0.0;
+        int lastRemovedConnectionCount = 0;
+        int lastAddedConnectionCount = 0;
+        int lastChainSize = 0;
+        int lastParallelGroupCount = 0;
+    };
+
     JuceAudioGraph(JucePluginHost& host);
     ~JuceAudioGraph();
 
@@ -56,6 +70,11 @@ public:
      * Release resources (call when audio stops)
      */
     void releaseResources();
+
+    /**
+     * Destroy all graph-owned wrapper nodes while host-owned processors are still alive.
+     */
+    void shutdown();
 
     bool isInitialized() const { return initialized_; }
 
@@ -292,6 +311,9 @@ public:
     void setBufferSize(int bufferSize);
     int getBufferSize() const { return bufferSize_; }
 
+    TopologyMutationStats getTopologyMutationStats() const;
+    void resetTopologyMutationStats();
+
     // ========================================
     // Direct JUCE access
     // ========================================
@@ -330,6 +352,8 @@ private:
     int nextParallelGroupId_ = 1;
     int topologyUpdateDepth_ = 0;
     bool topologyDirty_ = false;
+    TopologyMutationStats topologyMutationStats_;
+    mutable std::mutex topologyMutationStatsMutex_;
 
     // Metering
     VuMeter inputMeter_;
@@ -344,6 +368,7 @@ private:
     // Helper methods
     void rebuildConnections();
     void markTopologyDirtyAndMaybeRebuildLocked();
+    void recordTopologyNoOpSkip();
     void createIONodes();
     juce::AudioProcessorGraph::NodeID addPluginNode(InstanceId instanceId);
     void removePluginNode(InstanceId instanceId);

@@ -45,6 +45,7 @@ import type {
   EndpointApiPayload,
 } from './types'
 import { buildAvbRoutingWorkspaceHref } from './avbRoutingWorkspaceHref'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
 import { AvbRoutingWorkspaceGraph } from './AvbRoutingWorkspaceGraph'
 import {
   buildAvbRoutingWorkspaceGraphModel,
@@ -805,6 +806,29 @@ export function AvbRoutingWorkspace({ layer }: { layer: PlatformLayerData }) {
 
   const isLoading = nodesQuery.isLoading || endpointsQuery.isLoading || connectionsQuery.isLoading
   const readyStreamCount = streams.filter((stream) => stream.health?.ready).length
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => [
+    {
+      id: 'avb-routing-fabric',
+      title: 'Fabric Throughput',
+      description: '24-hour AVB transport view for active routes, ready streams, and discovered endpoints.',
+      series: [
+        { key: 'activeRoutes', label: 'Active Routes', value: activeConnectionRecords.length, color: 'var(--cds-link-primary)' },
+        { key: 'readyStreams', label: 'Ready Streams', value: readyStreamCount, color: 'var(--cds-support-success)' },
+        { key: 'discoveredEndpoints', label: 'Endpoints', value: avbDevicesQuery.data?.discovered_count ?? null, color: 'var(--cds-text-primary)' },
+      ],
+    },
+    {
+      id: 'avb-routing-focus',
+      title: 'Focused Transport Node',
+      description: 'Selected node trend for endpoint inventory, route pressure, Tesira footprint, and timing offset.',
+      series: [
+        { key: 'endpoints', label: 'Endpoints', value: selectedNodeSummary?.endpoints.length ?? null, color: 'var(--cds-support-info)' },
+        { key: 'routes', label: 'Routes', value: selectedNodeSummary?.activeRoutes.length ?? null, color: 'var(--cds-link-primary)' },
+        { key: 'tesira', label: 'Tesira Devices', value: selectedNodeSummary?.tesiraDevices.length ?? null, color: 'var(--cds-support-warning)' },
+        { key: 'ptpOffsetNs', label: 'PTP Offset ns', value: selectedNodeSummary?.node.ptp?.offset_ns ?? null, color: 'var(--cds-support-error)' },
+      ],
+    },
+  ], [activeConnectionRecords.length, avbDevicesQuery.data?.discovered_count, readyStreamCount, selectedNodeSummary])
 
   return (
     <div className="avb-routing-workspace">
@@ -886,6 +910,8 @@ export function AvbRoutingWorkspace({ layer }: { layer: PlatformLayerData }) {
           ))}
         </div>
       ) : null}
+
+      <PlatformGrafanaPanelDeck panels={grafanaPanels} />
 
       <section
         id="avb-routing-nodes"

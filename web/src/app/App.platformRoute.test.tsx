@@ -10,6 +10,10 @@ jest.mock('./layout/AppShell', () => ({
   ),
 }))
 
+jest.mock('./components/ViewportPolicyGate', () => ({
+  ViewportPolicyGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 jest.mock('./components/Toasts', () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useToasts: () => ({
@@ -40,9 +44,17 @@ jest.mock('./pages/HomePage', () => ({
   HomePage: () => <div data-testid="home-route">Home Route</div>,
 }))
 
+jest.mock('./pages/PerformPage', () => ({
+  PerformPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="perform-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/PlatformWorkspacePage', () => ({
   PlatformWorkspacePage: () => {
-    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="platform-route">{`${location.pathname}${location.search}`}</div>
   },
@@ -50,7 +62,7 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
 
 jest.mock('./pages/PlatformWorkspaceCatalogPage', () => ({
   PlatformWorkspaceCatalogPage: () => {
-    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="platform-workspace-catalog-route">{`${location.pathname}${location.search}`}</div>
   },
@@ -58,7 +70,7 @@ jest.mock('./pages/PlatformWorkspaceCatalogPage', () => ({
 
 jest.mock('./pages/SynthForgePage', () => ({
   SynthForgePage: () => {
-    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="synthforge-route">{`${location.pathname}${location.search}`}</div>
   },
@@ -66,7 +78,7 @@ jest.mock('./pages/SynthForgePage', () => ({
 
 jest.mock('./pages/GroundControlProPage', () => ({
   GroundControlProPage: () => {
-    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="ground-control-pro-route">{`${location.pathname}${location.search}`}</div>
   },
@@ -74,13 +86,22 @@ jest.mock('./pages/GroundControlProPage', () => ({
 
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
-    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="artifacts-route">{`${location.pathname}${location.search}|discover=${discoverMode ? 'yes' : 'no'}`}</div>
   },
 }))
 
 describe('App routing', () => {
+  it('keeps /perform outside AppShell chrome', async () => {
+    window.history.pushState({}, '', '/perform')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('perform-route')).toHaveTextContent('/perform')
+    expect(screen.queryByTestId('app-shell')).toBeNull()
+  })
+
   it('redirects legacy /platform query routes into the canonical /platforms workspace path', async () => {
     window.history.pushState({}, '', '/platform?layer=overview')
 

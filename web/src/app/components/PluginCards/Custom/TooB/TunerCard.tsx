@@ -7,6 +7,7 @@
 
 import { CarbonCardShell } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
@@ -19,9 +20,10 @@ const OUTPUT_MAP = {
 function TunerCardBase({
   plugin,
   parameterValues,
-  accentColor = '#22c55e',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const frequency = parameterValues[OUTPUT_MAP.frequency] ?? 0
   const noteIndex = Math.round(parameterValues[OUTPUT_MAP.note] ?? 69)
   const cents = parameterValues[OUTPUT_MAP.cents] ?? 0

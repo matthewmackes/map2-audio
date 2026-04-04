@@ -13,28 +13,58 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 
+from app.services.juce_parameter_schema import (
+    actual_to_normalized,
+    coerce_actual_parameter_value,
+    get_parameter_specs,
+    is_fixed_native_processor_uri,
+    normalized_to_actual,
+    native_fixed_processor_slug,
+)
 from app.utils.singleton import Singleton
 from app.utils.dependencies import DependencyChecker
 from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-# FIX #5: Use relative path instead of hardcoded absolute path
-# This allows deployment to any location
-# Check both build directories: project-root/build (CMake default) and juce-engine/build (legacy)
+def _discover_juce_module_build_dirs(project_root: Path) -> list[Path]:
+    """Return candidate JUCE build dirs ordered by newest engine module first."""
+    candidates: list[tuple[float, Path]] = []
+    for build_dir in (project_root / "build", project_root / "juce-engine" / "build"):
+        module_files = list(build_dir.glob("map2_audio_engine*.so"))
+        if not module_files:
+            continue
+        newest_mtime = max(module_file.stat().st_mtime for module_file in module_files)
+        candidates.append((newest_mtime, build_dir))
+    return [path for _mtime, path in sorted(candidates, key=lambda item: item[0], reverse=True)]
+
+
+def _configure_juce_module_search_path(project_root: Path) -> list[str]:
+    """Insert candidate build dirs into sys.path with the freshest module first."""
+    ordered_dirs = _discover_juce_module_build_dirs(project_root)
+    ordered_paths = [str(path) for path in ordered_dirs]
+    for path in ordered_paths:
+        while path in sys.path:
+            sys.path.remove(path)
+    for path in reversed(ordered_paths):
+        sys.path.insert(0, path)
+    return ordered_paths
+
+
+# FIX #5: Use repo-relative build discovery instead of hardcoded import order.
+# When multiple build outputs exist, prefer the freshest engine module so stale
+# artifacts do not silently hide newer chain/topology APIs from the live service.
 _project_root = Path(__file__).parent.parent.parent
-juce_build_path = str(_project_root / "build")
-sys.path.insert(0, juce_build_path)
-# Legacy path (fallback)
-_legacy_build = str(_project_root / "juce-engine" / "build")
-if _legacy_build not in sys.path:
-    sys.path.insert(1, _legacy_build)
+_juce_build_paths = _configure_juce_module_search_path(_project_root)
 
 # Check JUCE availability using dependency checker
 JUCE_AVAILABLE, juce_engine = DependencyChecker.check('map2_audio_engine')
 
 if JUCE_AVAILABLE and juce_engine:
-    logger.info(f"JUCE Audio Engine loaded: {juce_engine.get_version()}")
+    logger.info(
+        f"JUCE Audio Engine loaded: {juce_engine.get_version()} "
+        f"from {getattr(juce_engine, '__file__', 'unknown')}"
+    )
 else:
     logger.warning("JUCE Audio Engine not available")
 
@@ -383,6 +413,18 @@ class JuceEngineService(Singleton):
             return False
         return await asyncio.to_thread(self._engine.replace_chain, list(order))
 
+    async def replace_chain_with_spillover(self, order: List[int]) -> bool:
+        """Replace the active chain order while preserving outgoing wet tails when possible."""
+        if not self._engine or not hasattr(self._engine, "replace_chain_with_spillover"):
+            return False
+        return await asyncio.to_thread(self._engine.replace_chain_with_spillover, list(order))
+
+    async def get_spillover_chain_states(self) -> List[Dict[str, Any]]:
+        """Return active spillover runtime diagnostics when the engine exposes them."""
+        if not self._engine or not hasattr(self._engine, "get_spillover_chain_states"):
+            return []
+        return list(await asyncio.to_thread(self._engine.get_spillover_chain_states))
+
     async def prewarm_plugin_node(self, instance_id: int) -> bool:
         """Prepare a detached graph node for a loaded plugin instance."""
         if not self._engine:
@@ -643,6 +685,79 @@ class JuceEngineService(Singleton):
 
         return enriched
 
+    @staticmethod
+    def _fixed_native_getter_candidates(plugin_uri: str, param_name: str) -> list[str]:
+        prefix = native_fixed_processor_slug(plugin_uri)
+        normalized_param = str(param_name or "").strip().lower()
+        candidates = [f"get_{prefix}_{normalized_param}"]
+        if normalized_param == "bypass":
+            candidates.insert(0, f"is_{prefix}_bypassed")
+            candidates.append(f"is_{prefix}_{normalized_param}")
+        elif normalized_param == "spillover":
+            candidates.insert(0, f"has_{prefix}_spillover")
+            candidates.append(f"is_{prefix}_{normalized_param}")
+        else:
+            candidates.append(f"is_{prefix}_{normalized_param}")
+        return candidates
+
+    async def _set_fixed_native_processor_parameter(
+        self,
+        plugin_uri: str,
+        param_name: str,
+        value: float,
+    ) -> Optional[bool]:
+        prefix = native_fixed_processor_slug(plugin_uri)
+        setter = getattr(self, f"set_{prefix}_{param_name}", None)
+        if not callable(setter):
+            return None
+
+        spec = get_parameter_specs(plugin_uri).get(param_name, {})
+        default_value = spec.get("default", 0.0)
+        actual_value = normalized_to_actual(plugin_uri, param_name, value, default_value)
+        coerced_value = coerce_actual_parameter_value(plugin_uri, param_name, actual_value)
+        try:
+            result = await setter(coerced_value)
+        except Exception as exc:
+            logger.debug(
+                f"Direct fixed-native parameter set failed for {plugin_uri}.{param_name} "
+                f"via {setter.__name__}: {exc}"
+            )
+            return False
+        return True if result is None else bool(result)
+
+    async def _get_fixed_native_processor_parameter(
+        self,
+        plugin_uri: str,
+        param_name: str,
+    ) -> Optional[float]:
+        for getter_name in self._fixed_native_getter_candidates(plugin_uri, param_name):
+            getter = getattr(self, getter_name, None)
+            if not callable(getter):
+                continue
+            try:
+                actual_value = await getter()
+            except Exception as exc:
+                logger.debug(
+                    f"Direct fixed-native parameter get failed for {plugin_uri}.{param_name} "
+                    f"via {getter_name}: {exc}"
+                )
+                return 0.0
+            return actual_to_normalized(plugin_uri, param_name, actual_value)
+        prefix = native_fixed_processor_slug(plugin_uri)
+        get_parameters = getattr(self, f"get_{prefix}_parameters", None)
+        if callable(get_parameters):
+            try:
+                params = await get_parameters()
+            except Exception as exc:
+                logger.debug(
+                    f"Direct fixed-native parameter batch get failed for {plugin_uri} "
+                    f"via {get_parameters.__name__}: {exc}"
+                )
+                return 0.0
+            if isinstance(params, dict) and param_name in params:
+                return actual_to_normalized(plugin_uri, param_name, params[param_name])
+        return None
+
     async def set_parameter(
         self,
         plugin_uri: str,
@@ -656,6 +771,11 @@ class JuceEngineService(Singleton):
         if not self._engine:
             logger.error("Cannot set parameter: engine not initialized")
             return False
+
+        if is_fixed_native_processor_uri(plugin_uri):
+            direct_result = await self._set_fixed_native_processor_parameter(plugin_uri, param_name, value)
+            if direct_result is not None:
+                return direct_result
 
         resolved_instance_id = instance_id
         if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
@@ -737,6 +857,12 @@ class JuceEngineService(Singleton):
         """Get a plugin parameter value"""
         if not self._engine:
             return 0.0
+
+        if is_fixed_native_processor_uri(plugin_uri):
+            direct_value = await self._get_fixed_native_processor_parameter(plugin_uri, param_name)
+            if direct_value is not None:
+                return direct_value
+
         resolved_instance_id = instance_id
         if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
             resolved_instance_id = await asyncio.to_thread(
@@ -1499,8 +1625,33 @@ class JuceEngineService(Singleton):
                 "measured_round_trip_ms": 0.0,
                 "measured_input_latency_ms": 0.0,
                 "measured_output_latency_ms": 0.0,
+                "topology_mutation_count": 0,
+                "topology_no_op_skip_count": 0,
+                "topology_last_mutation_duration_ms": 0.0,
+                "topology_peak_mutation_duration_ms": 0.0,
+                "topology_avg_mutation_duration_ms": 0.0,
+                "topology_last_removed_connection_count": 0,
+                "topology_last_added_connection_count": 0,
+                "topology_last_chain_size": 0,
+                "topology_last_parallel_group_count": 0,
             }
         return await asyncio.to_thread(self._engine.get_audio_io_stats)
+
+    async def get_topology_mutation_stats(self) -> Dict[str, Any]:
+        """Get cumulative JUCE graph topology-mutation diagnostics when supported."""
+        if not self._engine or not hasattr(self._engine, "get_topology_mutation_stats"):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+        return await asyncio.to_thread(self._engine.get_topology_mutation_stats)
 
     async def reset_xrun_counter(self) -> bool:
         """Reset xrun counter if supported by the engine runtime."""
@@ -2463,6 +2614,228 @@ class JuceEngineService(Singleton):
             return juce_engine.get_version()
         return "unavailable"
 
+    # ========================================
+    # Stereo Delay
+    # ========================================
+
+    async def set_delay_time_l(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_delay_time_l(ms)
+
+    async def set_delay_time_r(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_delay_time_r(ms)
+
+    async def set_delay_feedback(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_feedback(percent)
+
+    async def set_delay_mix(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_mix(percent)
+
+    async def set_delay_tempo(self, bpm: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tempo(bpm)
+
+    async def set_delay_tempo_sync_l(self, division: int) -> None:
+        if self._engine:
+            self._engine.set_delay_tempo_sync_l(division)
+
+    async def set_delay_tempo_sync_r(self, division: int) -> None:
+        if self._engine:
+            self._engine.set_delay_tempo_sync_r(division)
+
+    async def set_delay_tap1_level(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap1_level(percent)
+
+    async def set_delay_tap2_level(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap2_level(percent)
+
+    async def set_delay_tap2_ratio(self, ratio: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap2_ratio(ratio)
+
+    async def set_delay_tap3_level(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap3_level(percent)
+
+    async def set_delay_tap3_ratio(self, ratio: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap3_ratio(ratio)
+
+    async def set_delay_tap4_level(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap4_level(percent)
+
+    async def set_delay_tap4_ratio(self, ratio: float) -> None:
+        if self._engine:
+            self._engine.set_delay_tap4_ratio(ratio)
+
+    async def set_delay_stereo_mode(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_delay_stereo_mode(mode)
+
+    async def set_delay_stereo_spread(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_stereo_spread(percent)
+
+    async def set_delay_pan(self, pan: float) -> None:
+        if self._engine:
+            self._engine.set_delay_pan(pan)
+
+    async def set_delay_mod_rate(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_delay_mod_rate(hz)
+
+    async def set_delay_mod_depth(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_mod_depth(percent)
+
+    async def set_delay_mod_waveform(self, waveform: int) -> None:
+        if self._engine:
+            self._engine.set_delay_mod_waveform(waveform)
+
+    async def set_delay_low_cut(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_delay_low_cut(hz)
+
+    async def set_delay_high_cut(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_delay_high_cut(hz)
+
+    async def set_delay_filter_in_loop(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_delay_filter_in_loop(enabled)
+
+    async def set_delay_diffusion(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_diffusion(percent)
+
+    async def set_delay_duck_threshold(self, db: float) -> None:
+        if self._engine:
+            self._engine.set_delay_duck_threshold(db)
+
+    async def set_delay_duck_amount(self, percent: float) -> None:
+        if self._engine:
+            self._engine.set_delay_duck_amount(percent)
+
+    async def set_delay_duck_release(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_delay_duck_release(ms)
+
+    async def set_delay_output_level(self, db: float) -> None:
+        if self._engine:
+            self._engine.set_delay_output_level(db)
+
+    async def set_delay_spillover(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_delay_spillover(enabled)
+
+    async def has_delay_spillover(self) -> bool:
+        if not self._engine:
+            return True
+        return bool(self._engine.has_delay_spillover())
+
+    async def stage_delay_spillover(self) -> bool:
+        if not self._engine or not hasattr(self._engine, "stage_delay_spillover"):
+            return False
+        return bool(self._engine.stage_delay_spillover())
+
+    async def set_delay_bypass(self, bypass: bool) -> None:
+        if self._engine:
+            self._engine.set_delay_bypass(bypass)
+
+    async def is_delay_bypassed(self) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.is_delay_bypassed())
+
+    async def get_delay_parameters(self) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "delay_time_l": 500.0,
+                "delay_time_r": 500.0,
+                "feedback": 30.0,
+                "mix": 50.0,
+                "tempo": 120.0,
+                "tempo_sync_l": 0,
+                "tempo_sync_r": 0,
+                "tap1_level": 100.0,
+                "tap2_level": 0.0,
+                "tap2_ratio": 0.5,
+                "tap3_level": 0.0,
+                "tap3_ratio": 0.33,
+                "tap4_level": 0.0,
+                "tap4_ratio": 0.25,
+                "stereo_mode": 1,
+                "stereo_spread": 100.0,
+                "pan": 0.0,
+                "mod_rate": 0.5,
+                "mod_depth": 0.0,
+                "mod_waveform": 0,
+                "low_cut": 20.0,
+                "high_cut": 12000.0,
+                "filter_in_loop": True,
+                "diffusion": 0.0,
+                "duck_threshold": -20.0,
+                "duck_amount": 0.0,
+                "duck_release": 200.0,
+                "output_level": 0.0,
+                "spillover": True,
+                "bypass": False,
+            }
+        return dict(self._engine.get_delay_parameters())
+
+    async def get_delay_metering(self) -> Dict[str, float]:
+        if not self._engine:
+            return {
+                "input_level_l": -100.0,
+                "input_level_r": -100.0,
+                "output_level_l": -100.0,
+                "output_level_r": -100.0,
+                "delay_level_l": -100.0,
+                "delay_level_r": -100.0,
+                "ducking_gain": 0.0,
+                "mod_phase": 0.0,
+            }
+        return dict(self._engine.get_delay_metering())
+
+    async def get_delay_effective_times(self) -> Dict[str, float]:
+        params = await self.get_delay_parameters()
+        bpm = float(params.get("tempo", 120.0) or 120.0)
+        divisions = (
+            0.0,
+            4.0,
+            2.0,
+            1.0,
+            0.5,
+            0.25,
+            0.125,
+            6.0,
+            3.0,
+            1.5,
+            0.75,
+            0.375,
+            2.667,
+            1.333,
+            0.667,
+            0.333,
+            0.167,
+        )
+
+        def _effective_time(delay_key: str, sync_key: str) -> float:
+            division = int(params.get(sync_key, 0) or 0)
+            if division <= 0 or division >= len(divisions) or bpm <= 0.0:
+                return float(params.get(delay_key, 0.0) or 0.0)
+            return float(divisions[division] * 60000.0 / bpm)
+
+        return {
+            "delay_time_l": _effective_time("delay_time_l", "tempo_sync_l"),
+            "delay_time_r": _effective_time("delay_time_r", "tempo_sync_r"),
+        }
 
     # ========================================
     # Boss XS-1 Polyphonic Pitch Shifter (NEW)
@@ -2792,6 +3165,11 @@ class JuceEngineService(Singleton):
         """Set ShoeGaze spillover (reverb tails when bypassed)"""
         if self._engine:
             self._engine.set_shoegaze_spillover(enabled)
+
+    async def stage_shoegaze_spillover(self) -> bool:
+        if not self._engine or not hasattr(self._engine, "stage_shoegaze_spillover"):
+            return False
+        return bool(self._engine.stage_shoegaze_spillover())
 
     async def get_shoegaze_parameters(self) -> Dict[str, Any]:
         """Get all ShoeGaze parameters"""
@@ -3236,6 +3614,11 @@ class JuceEngineService(Singleton):
         """Set Lexi Love spillover (tail continues on bypass)"""
         if self._engine:
             self._engine.set_lexilove_spillover(enabled)
+
+    async def stage_lexilove_spillover(self) -> bool:
+        if not self._engine or not hasattr(self._engine, "stage_lexilove_spillover"):
+            return False
+        return bool(self._engine.stage_lexilove_spillover())
 
     async def get_lexilove_parameters(self) -> Dict[str, Any]:
         """Get all Lexi Love parameters"""

@@ -15,6 +15,7 @@ import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { irApi } from '../../../../../map2/api'
 import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
+import { getPluginAccentConfig } from '../../../../utils/pluginAccent'
 
 const CABINET_IR_URI = 'map2://juce/convolution/cabinet'
 
@@ -49,10 +50,11 @@ interface CabinetIRCardProps extends PluginCardProps {
 function CabinetIRCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#f97316',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: CabinetIRCardProps) {
+  const accentColor = providedAccent || getPluginAccentConfig(plugin.uri, plugin.category).color
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { pushToast } = useToasts()
@@ -190,7 +192,46 @@ function CabinetIRCardBase({
         bypassed={status?.bypass ?? false}
         onBypassToggle={() => setBypass(!status?.bypass)}
         onOpenMidiMappings={onOpenMidiMappings}
+        assetLabel="Loaded cabinet IR"
         irName={displayIR}
+        assetStatus={(
+          <div className="carbon-asset-selector-status">
+            {status?.loaded ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--accent">Live runtime</span> : null}
+            {status?.configuredIR ? <span className="carbon-asset-selector-status-badge">Configured</span> : null}
+            {usingConfiguredFallback ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Stored only</span> : null}
+            {status?.runtimeWarning ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Runtime warning</span> : null}
+          </div>
+        )}
+        assetFacts={(
+          <div className="carbon-asset-selector-fact-grid">
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Live</span>
+              <span className="carbon-asset-selector-fact-value">{status?.loaded ?? 'Not active'}</span>
+            </div>
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Configured</span>
+              <span className="carbon-asset-selector-fact-value">{status?.configuredIR ?? 'None'}</span>
+            </div>
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Size</span>
+              <span className="carbon-asset-selector-fact-value">{currentCabinetMeta?.size ?? 'Unknown'}</span>
+            </div>
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Rate</span>
+              <span className="carbon-asset-selector-fact-value">{currentCabinetMeta?.sampleRate ?? 'Unknown'}</span>
+            </div>
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Length</span>
+              <span className="carbon-asset-selector-fact-value">{currentCabinetMeta?.duration ?? 'Unknown'}</span>
+            </div>
+            <div className="carbon-asset-selector-fact">
+              <span className="carbon-asset-selector-fact-label">Library</span>
+              <span className="carbon-asset-selector-fact-value">
+                {cabinets.length} cabinet IR{cabinets.length === 1 ? '' : 's'}
+              </span>
+            </div>
+          </div>
+        )}
         onBrowseIR={() => setDialogOpen(true)}
         onPrevIR={() => navigate('prev')}
         onNextIR={() => navigate('next')}
@@ -212,27 +253,6 @@ function CabinetIRCardBase({
           onChange: setMix,
           midi: { pluginUri: CABINET_IR_URI, paramIndex: PARAM.MIX },
         }}
-        extraContent={
-          <>
-            {(status?.loaded || status?.configuredIR) && (
-              <div style={{ textAlign: 'center', padding: '8px 0 4px', fontSize: 10, color: '#666' }}>
-                {status?.loaded ? `Live: ${status.loaded}` : 'Live: not active'}
-                {status?.configuredIR ? ` • Configured: ${status.configuredIR}` : ''}
-                {usingConfiguredFallback ? ' • Stored configuration only' : ''}
-              </div>
-            )}
-            <div style={{ textAlign: 'center', padding: '4px 0 8px', fontSize: 10, color: '#666' }}>
-              {cabinets.length} cabinet IRs available
-            </div>
-            {currentCabinetMeta && (
-              <div style={{ textAlign: 'center', padding: '0 0 8px', fontSize: 10, color: '#666' }}>
-                {`Size: ${currentCabinetMeta.size}`}
-                {currentCabinetMeta.sampleRate ? ` • Rate: ${currentCabinetMeta.sampleRate}` : ''}
-                {currentCabinetMeta.duration ? ` • Length: ${currentCabinetMeta.duration}` : ''}
-              </div>
-            )}
-          </>
-        }
       />
       <CabinetIRManagerDialog
         open={dialogOpen}

@@ -26,6 +26,7 @@ describe('LatencyPressureShellReadout', () => {
       isAvailable: true,
       scoreDisplay: '04',
       tone: 'blue',
+      status: 'stable',
       toneColor: '#78a9ff',
       helperText: 'Score 04/10 · RTL p95 6.20 ms',
     })
@@ -53,6 +54,7 @@ describe('LatencyPressureShellReadout', () => {
       isAvailable: true,
       scoreDisplay: '03',
       tone: 'red',
+      status: 'critical',
       toneColor: '#fa4d56',
       helperText: 'Score 03/10 · RTL p95 9.80 ms',
     })
@@ -71,5 +73,31 @@ describe('LatencyPressureShellReadout', () => {
 
     expect(getByTestId('shell-latency-pressure-readout')).toHaveClass('topbar-pro__latency-pressure--critical')
     expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('03')
+  })
+
+  it('switches the shell display into the warning band for watch-state pressure', () => {
+    mockUseLatencyPressure.mockReturnValue({
+      isAvailable: true,
+      scoreDisplay: '06',
+      tone: 'blue',
+      status: 'watch',
+      toneColor: '#78a9ff',
+      helperText: 'Score 06/10 · Callback 63% of budget',
+    })
+
+    const { container, getByTestId } = render(
+      <MemoryRouter
+        initialEntries={['/platforms/audio-engine']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <LatencyPressureShellReadout />
+      </MemoryRouter>,
+    )
+
+    expect(getByTestId('shell-latency-pressure-readout')).toHaveClass('topbar-pro__latency-pressure--warning')
+    expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('06')
   })
 })

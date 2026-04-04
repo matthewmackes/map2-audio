@@ -57,6 +57,7 @@ import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { useToasts } from '../components/Toasts'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './AudioArtifactsPage.css'
@@ -1026,18 +1027,8 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   const showArtifactsAside = !discoverMode && activeCategory !== 'snapshots' && ((detailOpen && selectedItem !== null) || syncDrawerOpen)
   const discoverInitialTab = DISCOVER_TAB_BY_CATEGORY[activeCategory]
   const selectedNodeLabel = nodes.find((node) => node.nodeId === selectedNodeId)?.hostname ?? 'this node'
-  const sidebarNavItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => [
-    {
-      key: 'discover',
-      label: 'Download & Discover',
-      description: 'Open the route-native intake workspace for plugin packs, models, impulse responses, and SoundFonts.',
-      to: '/artifacts/discover',
-      icon: CloudUpload,
-      active: discoverMode,
-      onOpen: openDiscoverRoute,
-      stateLabel: discoverMode ? 'Current route' : 'Intake',
-    },
-    ...CATEGORIES.map((item) => ({
+  const { primaryNavItems, utilityNavItems } = useMemo(() => {
+    const items: UnifiedWorkspaceSideNavItem[] = CATEGORIES.map((item) => ({
       key: item.id,
       label: item.label,
       description: item.description,
@@ -1045,116 +1036,366 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
       icon: item.icon,
       active: !discoverMode && item.id === activeCategory,
       onOpen: () => openCategoryRoute(item.id),
-      stateLabel: !discoverMode && item.id === activeCategory ? `${totalItems} items` : item.primaryAction,
-    })),
-  ], [activeCategory, discoverMode, openCategoryRoute, openDiscoverRoute, totalItems])
+      meta: !discoverMode && item.id === activeCategory ? `${totalItems} items` : item.primaryAction,
+    }))
+
+    const utilities: UnifiedWorkspaceSideNavItem[] = [
+      {
+        key: 'discover',
+        label: 'Download & Discover',
+        description: 'Open the route-native intake workspace for plugin packs, models, impulse responses, and SoundFonts.',
+        to: '/artifacts/discover',
+        icon: CloudUpload,
+        active: discoverMode,
+        onOpen: openDiscoverRoute,
+        meta: discoverMode ? 'Current route' : 'Intake',
+        variant: 'utility',
+      },
+    ]
+
+    return { primaryNavItems: items, utilityNavItems: utilities }
+  }, [activeCategory, discoverMode, openCategoryRoute, openDiscoverRoute, totalItems])
+
+  const artifactsContent = (
+    <>
+      <div className="aap__header">
+        <div className="aap__header-left">
+          <div className="aap__header-icon" aria-hidden="true">
+            <Catalog size={32} />
+          </div>
+          <div>
+            <h1 className="aap__title">Audio Artifacts</h1>
+            <p className="aap__subtitle">
+              {discoverMode
+                ? 'Route-native discovery for plugin packs, models, impulse responses, and SoundFonts.'
+                : isClusterMode
+                  ? `${CATEGORIES.length} artifact types · node-aware · ${nodes.length} nodes`
+                  : `${CATEGORIES.length} artifact types — plugins, models, IRs, and instruments`}
+            </p>
+          </div>
+        </div>
+        <div className="aap__header-actions">
+          {discoverMode ? (
+            <Button kind="tertiary" size="sm" renderIcon={ChevronRight} onClick={closeDiscoverRoute}>
+              Return to library
+            </Button>
+          ) : (
+            <>
+              {activeSyncCount > 0 ? (
+                <Button
+                  kind="tertiary"
+                  size="sm"
+                  renderIcon={Network_4}
+                  onClick={() => setSyncDrawerOpen(true)}
+                >
+                  Sync queue ({activeSyncCount})
+                </Button>
+              ) : (
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  renderIcon={FolderDetails}
+                  onClick={() => setSyncDrawerOpen((prev) => !prev)}
+                >
+                  Sync queue
+                </Button>
+              )}
+              <Button
+                kind="secondary"
+                size="sm"
+                renderIcon={CloudUpload}
+                onClick={openDiscoverRoute}
+              >
+                Download &amp; Discover
+              </Button>
+              <Button
+                kind="primary"
+                size="sm"
+                renderIcon={Upload}
+                onClick={() => {
+                  if (activeCategory === 'snapshots') {
+                    pushToast('info', 'Use the Snapshots workspace actions', 'Create and import actions are available inside the Snapshots category.')
+                    return
+                  }
+                  setUploadModalOpen(true)
+                }}
+              >
+                {activeCategory === 'snapshots' ? 'Workspace actions' : 'Upload'}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="aap__mobile-nav">
+        <Select
+          id="aap-mobile-category"
+          labelText="Category"
+          value={mobileCategory}
+          onChange={(e) => openCategoryRoute(e.target.value as ArtifactCategory)}
+        >
+          {CATEGORIES.map((c) => (
+            <SelectItem key={c.id} value={c.id} text={c.label} />
+          ))}
+        </Select>
+        <Button
+          kind={discoverMode ? 'tertiary' : 'secondary'}
+          size="sm"
+          renderIcon={discoverMode ? ChevronRight : CloudUpload}
+          onClick={discoverMode ? closeDiscoverRoute : openDiscoverRoute}
+        >
+          {discoverMode ? 'Return to library' : 'Download & Discover'}
+        </Button>
+      </div>
+
+      {discoverMode ? (
+        <ArtifactDownloadModal
+          surface="embedded"
+          onClose={closeDiscoverRoute}
+          nodeId={detailNodeId}
+          initialTab={discoverInitialTab}
+        />
+      ) : (
+        <>
+          <div className="aap__category-header">
+            <div className="aap__category-header-left">
+              <h2 className="aap__category-title">{category.label}</h2>
+              <p className="aap__category-desc">{category.description}</p>
+            </div>
+            <div className="aap__category-header-right">
+              <Tag type="cool-gray">{selectedNodeLabel}</Tag>
+              <Tag type="cool-gray">{totalItems} items</Tag>
+              <Button
+                kind="ghost"
+                size="sm"
+                renderIcon={Renew}
+                iconDescription="Refresh"
+                hasIconOnly
+                onClick={() => {
+                  void queryClient.invalidateQueries({ queryKey: ['ir'] })
+                  void queryClient.invalidateQueries({ queryKey: ['nam'] })
+                  void queryClient.invalidateQueries({ queryKey: ['plugins'] })
+                  void queryClient.invalidateQueries({ queryKey: ['soundfonts'] })
+                }}
+              />
+            </div>
+          </div>
+
+          {activeCategory === 'snapshots' ? (
+            <SnapshotArtifactsWorkspace
+              searchQuery={searchQuery}
+              onSearchQueryChange={(value) => updateParams({ q: value || null, page: '1' })}
+              isClusterMode={isClusterMode}
+              nodes={nodes}
+              localNodeId={localNodeId}
+              onToast={pushToast}
+            />
+          ) : isLoading ? (
+            <Tile className="aap__table-tile">
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      {category.columns.map((col) => (
+                        <TableHeader key={col.key}>{col.header}</TableHeader>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <SkeletonRows columns={category.columns.length} />
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Tile>
+          ) : allRows.length === 0 ? (
+            <ArtifactEmptyState
+              category={category}
+              onUpload={() => setUploadModalOpen(true)}
+              isClusterMode={isClusterMode}
+              onBrowseNodes={() => {
+                const firstRemote = nodes.find((n) => !n.isLocal)
+                if (firstRemote) updateParams({ node: firstRemote.nodeId })
+              }}
+              onOpenDownload={openDiscoverRoute}
+              onScan={handleScan}
+              isScanning={isScanning}
+            />
+          ) : (
+            <Tile className="aap__table-tile">
+              <DataTable
+                rows={tableRows}
+                headers={category.columns}
+                isSortable
+                useZebraStyles
+              >
+                {({
+                  rows,
+                  headers,
+                  getHeaderProps,
+                  getRowProps,
+                  getTableProps,
+                  getTableContainerProps,
+                  getToolbarProps,
+                }) => (
+                  <TableContainer
+                    {...getTableContainerProps()}
+                    className="aap__table-container"
+                  >
+                    <TableToolbar {...getToolbarProps()}>
+                      <TableToolbarContent>
+                        <TableToolbarSearch
+                          persistent
+                          value={searchQuery}
+                          onChange={(_e, val) => updateParams({ q: val || null, page: '1' })}
+                          placeholder={`Search ${category.label}…`}
+                        />
+                      </TableToolbarContent>
+                    </TableToolbar>
+                    <Table {...getTableProps()} aria-label={`${category.label} table`}>
+                      <TableHead>
+                        <TableRow>
+                          {headers.map((header) => {
+                            const { key: _k, ...hProps } = getHeaderProps({ header })
+                            return (
+                              <TableHeader key={header.key} {...hProps}>
+                                {header.header}
+                              </TableHeader>
+                            )
+                          })}
+                          <TableHeader>Actions</TableHeader>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rows.map((row) => {
+                          const artifactRow = filteredRows.find((r) => r.id === row.id)
+                          if (!artifactRow) return null
+                          const { key: _k, ...rowProps } = getRowProps({ row })
+                          const isSelected = selectedItem?.id === row.id
+                          return (
+                            <TableRow
+                              key={row.id}
+                              {...rowProps}
+                              className={`aap__table-row${isSelected ? ' aap__table-row--selected' : ''}`}
+                              onClick={() => {
+                                setSelectedItem(artifactRow)
+                                setDetailOpen(true)
+                              }}
+                            >
+                              {row.cells.map((cell) => {
+                                if (cell.info.header === 'status') {
+                                  return (
+                                    <TableCell key={cell.id}>
+                                      <Tag type={category.statusType(artifactRow)}>
+                                        {category.statusLabel(artifactRow)}
+                                      </Tag>
+                                    </TableCell>
+                                  )
+                                }
+                                if (cell.info.header === 'format') {
+                                  return (
+                                    <TableCell key={cell.id}>
+                                      <Tag type="blue">{String(cell.value)}</Tag>
+                                    </TableCell>
+                                  )
+                                }
+                                if (cell.info.header === 'node') {
+                                  const isLocal = nodes.find((n) => n.hostname === String(cell.value))?.isLocal
+                                  return (
+                                    <TableCell key={cell.id}>
+                                      <Tag type={isLocal ? 'green' : 'teal'} size="sm">
+                                        {String(cell.value)}
+                                      </Tag>
+                                    </TableCell>
+                                  )
+                                }
+                                return <TableCell key={cell.id}>{String(cell.value ?? '—')}</TableCell>
+                              })}
+                              <TableCell>
+                                <Button
+                                  kind="ghost"
+                                  size="sm"
+                                  renderIcon={ChevronRight}
+                                  iconDescription="View details"
+                                  hasIconOnly
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedItem(artifactRow)
+                                    setDetailOpen(true)
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </DataTable>
+
+              {totalItems > pageSize ? (
+                <Pagination
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  pageSizes={PAGE_SIZE_OPTIONS}
+                  page={currentPage}
+                  onChange={({ page: p, pageSize: ps }) => {
+                    updateParams({ page: String(p), pageSize: String(ps) })
+                  }}
+                  className="aap__pagination"
+                />
+              ) : null}
+            </Tile>
+          )}
+        </>
+      )}
+    </>
+  )
+
+  const artifactsAside = showArtifactsAside ? (
+    <>
+      <ArtifactDetailPanel
+        open={detailOpen}
+        item={selectedItem}
+        category={category}
+        onClose={() => { setDetailOpen(false); setSelectedItem(null) }}
+        onPrimaryAction={(item) => { void handlePrimaryAction(item) }}
+        onPushToNode={(item, nodeId) => enqueueSyncJob(item, 'push', nodeId)}
+        onPullFromNode={(item, nodeId) => enqueueSyncJob(item, 'pull', nodeId)}
+        onDelete={(item) => { setDeleteConfirmItem(item); setDetailOpen(false) }}
+        nodes={nodes}
+        localNodeId={localNodeId}
+        primaryActionPending={primaryActionPending}
+      />
+
+      <SyncQueueDrawer
+        open={syncDrawerOpen}
+        onClose={() => setSyncDrawerOpen(false)}
+        jobs={syncJobs}
+        onDismissJob={(id) => setSyncJobs((prev) => prev.filter((j) => j.id !== id))}
+      />
+    </>
+  ) : undefined
 
   return (
     <section className="aap">
       <Layer className="aap__surface">
-        {/* Page header */}
-        <div className="aap__header">
-          <div className="aap__header-left">
-            <div className="aap__header-icon" aria-hidden="true">
-              <Catalog size={32} />
-            </div>
-            <div>
-              <h1 className="aap__title">Audio Artifacts</h1>
-              <p className="aap__subtitle">
-                {discoverMode
-                  ? 'Route-native discovery for plugin packs, models, impulse responses, and SoundFonts.'
-                  : isClusterMode
-                    ? `${CATEGORIES.length} artifact types · node-aware · ${nodes.length} nodes`
-                    : `${CATEGORIES.length} artifact types — plugins, models, IRs, and instruments`}
-              </p>
-            </div>
-          </div>
-          <div className="aap__header-actions">
-            {discoverMode ? (
-              <Button kind="tertiary" size="sm" renderIcon={ChevronRight} onClick={closeDiscoverRoute}>
-                Return to library
-              </Button>
-            ) : (
-              <>
-                {activeSyncCount > 0 ? (
-                  <Button
-                    kind="tertiary"
-                    size="sm"
-                    renderIcon={Network_4}
-                    onClick={() => setSyncDrawerOpen(true)}
-                  >
-                    Sync queue ({activeSyncCount})
-                  </Button>
-                ) : (
-                  <Button
-                    kind="ghost"
-                    size="sm"
-                    renderIcon={FolderDetails}
-                    onClick={() => setSyncDrawerOpen((prev) => !prev)}
-                  >
-                    Sync queue
-                  </Button>
-                )}
-                <Button
-                  kind="secondary"
-                  size="sm"
-                  renderIcon={CloudUpload}
-                  onClick={openDiscoverRoute}
-                >
-                  Download &amp; Discover
-                </Button>
-                <Button
-                  kind="primary"
-                  size="sm"
-                  renderIcon={Upload}
-                  onClick={() => {
-                    if (activeCategory === 'snapshots') {
-                      pushToast('info', 'Use the Snapshots workspace actions', 'Create and import actions are available inside the Snapshots category.')
-                      return
-                    }
-                    setUploadModalOpen(true)
-                  }}
-                >
-                  {activeCategory === 'snapshots' ? 'Workspace actions' : 'Upload'}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile category select */}
-        <div className="aap__mobile-nav">
-          <Select
-            id="aap-mobile-category"
-            labelText="Category"
-            value={mobileCategory}
-            onChange={(e) => openCategoryRoute(e.target.value as ArtifactCategory)}
-          >
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c.id} value={c.id} text={c.label} />
-            ))}
-          </Select>
-          <Button
-            kind={discoverMode ? 'tertiary' : 'secondary'}
-            size="sm"
-            renderIcon={discoverMode ? ChevronRight : CloudUpload}
-            onClick={discoverMode ? closeDiscoverRoute : openDiscoverRoute}
-          >
-            {discoverMode ? 'Return to library' : 'Download & Discover'}
-          </Button>
-        </div>
-
-        {/* Body layout: left nav + content + detail panel */}
-        <div className={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}>
-          {/* Left SideNav */}
-          <div className={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}>
+        <WorkspacePageTemplate
+          className="aap__template"
+          windowClassName={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}
+          sidebarClassName={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}
+          contentClassName={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}
+          asideClassName="aap__aside"
+          sidebar={(
             <UnifiedWorkspaceSideNav
               ariaLabel="Artifact categories"
               className="aap__carbon-sidenav"
               eyebrow="Navigation"
               title="Artifacts Library"
               description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
-              items={sidebarNavItems}
+              items={primaryNavItems}
+              footerTitle="Utilities"
+              footerItems={utilityNavItems}
               footer={(
                 <>
                   <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
@@ -1178,238 +1419,10 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
                 </>
               )}
             />
-          </div>
-
-          {/* Main content */}
-          <div className={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}>
-            {discoverMode ? (
-              <ArtifactDownloadModal
-                surface="embedded"
-                onClose={closeDiscoverRoute}
-                nodeId={detailNodeId}
-                initialTab={discoverInitialTab}
-              />
-            ) : (
-              <>
-                <div className="aap__category-header">
-                  <div className="aap__category-header-left">
-                    <h2 className="aap__category-title">{category.label}</h2>
-                    <p className="aap__category-desc">{category.description}</p>
-                  </div>
-                  <div className="aap__category-header-right">
-                    <Tag type="cool-gray">{selectedNodeLabel}</Tag>
-                    <Tag type="cool-gray">{totalItems} items</Tag>
-                    <Button
-                      kind="ghost"
-                      size="sm"
-                      renderIcon={Renew}
-                      iconDescription="Refresh"
-                      hasIconOnly
-                      onClick={() => {
-                        void queryClient.invalidateQueries({ queryKey: ['ir'] })
-                        void queryClient.invalidateQueries({ queryKey: ['nam'] })
-                        void queryClient.invalidateQueries({ queryKey: ['plugins'] })
-                        void queryClient.invalidateQueries({ queryKey: ['soundfonts'] })
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {activeCategory === 'snapshots' ? (
-                  <SnapshotArtifactsWorkspace
-                    searchQuery={searchQuery}
-                    onSearchQueryChange={(value) => updateParams({ q: value || null, page: '1' })}
-                    isClusterMode={isClusterMode}
-                    nodes={nodes}
-                    localNodeId={localNodeId}
-                    onToast={pushToast}
-                  />
-                ) : isLoading ? (
-                  <Tile className="aap__table-tile">
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            {category.columns.map((col) => (
-                              <TableHeader key={col.key}>{col.header}</TableHeader>
-                            ))}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          <SkeletonRows columns={category.columns.length} />
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Tile>
-                ) : allRows.length === 0 ? (
-                  <ArtifactEmptyState
-                    category={category}
-                    onUpload={() => setUploadModalOpen(true)}
-                    isClusterMode={isClusterMode}
-                    onBrowseNodes={() => {
-                      const firstRemote = nodes.find((n) => !n.isLocal)
-                      if (firstRemote) updateParams({ node: firstRemote.nodeId })
-                    }}
-                    onOpenDownload={openDiscoverRoute}
-                    onScan={handleScan}
-                    isScanning={isScanning}
-                  />
-                ) : (
-                  <Tile className="aap__table-tile">
-                    <DataTable
-                      rows={tableRows}
-                      headers={category.columns}
-                      isSortable
-                      useZebraStyles
-                    >
-                      {({
-                        rows,
-                        headers,
-                        getHeaderProps,
-                        getRowProps,
-                        getTableProps,
-                        getTableContainerProps,
-                        getToolbarProps,
-                      }) => (
-                        <TableContainer
-                          {...getTableContainerProps()}
-                          className="aap__table-container"
-                        >
-                          <TableToolbar {...getToolbarProps()}>
-                            <TableToolbarContent>
-                              <TableToolbarSearch
-                                persistent
-                                value={searchQuery}
-                                onChange={(_e, val) => updateParams({ q: val || null, page: '1' })}
-                                placeholder={`Search ${category.label}…`}
-                              />
-                            </TableToolbarContent>
-                          </TableToolbar>
-                          <Table {...getTableProps()} aria-label={`${category.label} table`}>
-                            <TableHead>
-                              <TableRow>
-                                {headers.map((header) => {
-                                  const { key: _k, ...hProps } = getHeaderProps({ header })
-                                  return (
-                                    <TableHeader key={header.key} {...hProps}>
-                                      {header.header}
-                                    </TableHeader>
-                                  )
-                                })}
-                                <TableHeader>Actions</TableHeader>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {rows.map((row) => {
-                                const artifactRow = filteredRows.find((r) => r.id === row.id)
-                                if (!artifactRow) return null
-                                const { key: _k, ...rowProps } = getRowProps({ row })
-                                const isSelected = selectedItem?.id === row.id
-                                return (
-                                  <TableRow
-                                    key={row.id}
-                                    {...rowProps}
-                                    className={`aap__table-row${isSelected ? ' aap__table-row--selected' : ''}`}
-                                    onClick={() => {
-                                      setSelectedItem(artifactRow)
-                                      setDetailOpen(true)
-                                    }}
-                                  >
-                                    {row.cells.map((cell) => {
-                                      if (cell.info.header === 'status') {
-                                        return (
-                                          <TableCell key={cell.id}>
-                                            <Tag type={category.statusType(artifactRow)}>
-                                              {category.statusLabel(artifactRow)}
-                                            </Tag>
-                                          </TableCell>
-                                        )
-                                      }
-                                      if (cell.info.header === 'format') {
-                                        return (
-                                          <TableCell key={cell.id}>
-                                            <Tag type="blue">{String(cell.value)}</Tag>
-                                          </TableCell>
-                                        )
-                                      }
-                                      if (cell.info.header === 'node') {
-                                        const isLocal = nodes.find((n) => n.hostname === String(cell.value))?.isLocal
-                                        return (
-                                          <TableCell key={cell.id}>
-                                            <Tag type={isLocal ? 'green' : 'teal'} size="sm">
-                                              {String(cell.value)}
-                                            </Tag>
-                                          </TableCell>
-                                        )
-                                      }
-                                      return <TableCell key={cell.id}>{String(cell.value ?? '—')}</TableCell>
-                                    })}
-                                    <TableCell>
-                                      <Button
-                                        kind="ghost"
-                                        size="sm"
-                                        renderIcon={ChevronRight}
-                                        iconDescription="View details"
-                                        hasIconOnly
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setSelectedItem(artifactRow)
-                                          setDetailOpen(true)
-                                        }}
-                                      />
-                                    </TableCell>
-                                  </TableRow>
-                                )
-                              })}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      )}
-                    </DataTable>
-
-                    {totalItems > pageSize ? (
-                      <Pagination
-                        totalItems={totalItems}
-                        pageSize={pageSize}
-                        pageSizes={PAGE_SIZE_OPTIONS}
-                        page={currentPage}
-                        onChange={({ page: p, pageSize: ps }) => {
-                          updateParams({ page: String(p), pageSize: String(ps) })
-                        }}
-                        className="aap__pagination"
-                      />
-                    ) : null}
-                  </Tile>
-                )}
-              </>
-            )}
-          </div>
-
-          {showArtifactsAside ? (
-            <div className="aap__aside" aria-label="Artifact workspace context">
-              <ArtifactDetailPanel
-                open={detailOpen}
-                item={selectedItem}
-                category={category}
-                onClose={() => { setDetailOpen(false); setSelectedItem(null) }}
-                onPrimaryAction={(item) => { void handlePrimaryAction(item) }}
-                onPushToNode={(item, nodeId) => enqueueSyncJob(item, 'push', nodeId)}
-                onPullFromNode={(item, nodeId) => enqueueSyncJob(item, 'pull', nodeId)}
-                onDelete={(item) => { setDeleteConfirmItem(item); setDetailOpen(false) }}
-                nodes={nodes}
-                localNodeId={localNodeId}
-                primaryActionPending={primaryActionPending}
-              />
-
-              <SyncQueueDrawer
-                open={syncDrawerOpen}
-                onClose={() => setSyncDrawerOpen(false)}
-                jobs={syncJobs}
-                onDismissJob={(id) => setSyncJobs((prev) => prev.filter((j) => j.id !== id))}
-              />
-            </div>
-          ) : null}
-        </div>
+          )}
+          content={artifactsContent}
+          aside={artifactsAside}
+        />
       </Layer>
 
       {/* Upload modal */}

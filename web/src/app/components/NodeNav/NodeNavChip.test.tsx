@@ -195,4 +195,39 @@ describe('NodeNavChip', () => {
 
     expect(screen.queryByRole('button', { name: /node /i })).not.toBeInTheDocument()
   })
+
+  it('collapses extra nodes into an overflow pill when the cluster is wider than the compact shell budget', () => {
+    mockUseNodePageContext.mockReturnValueOnce({
+      localNode: { hostname: 'node-a', display_label: null, role: 'all_in_one', node_id: 'node-a' },
+      topology: {
+        nodes: [
+          baseNode,
+          { ...baseNode, hostname: 'node-b', node_id: 'node-b', is_local: false, is_viewed: false, status: 'warn' },
+          { ...baseNode, hostname: 'node-c', node_id: 'node-c', is_local: false, is_viewed: false },
+          { ...baseNode, hostname: 'node-d', node_id: 'node-d', is_local: false, is_viewed: false },
+          { ...baseNode, hostname: 'node-e', node_id: 'node-e', is_local: false, is_viewed: false },
+        ],
+        audio_edges: [],
+        network_edges: [],
+      },
+      topologyNodes: [
+        baseNode,
+        { ...baseNode, hostname: 'node-b', node_id: 'node-b', is_local: false, is_viewed: false, status: 'warn' },
+        { ...baseNode, hostname: 'node-c', node_id: 'node-c', is_local: false, is_viewed: false },
+        { ...baseNode, hostname: 'node-d', node_id: 'node-d', is_local: false, is_viewed: false, status: 'critical' },
+        { ...baseNode, hostname: 'node-e', node_id: 'node-e', is_local: false, is_viewed: false },
+      ],
+      viewedNodeId: 'node-a',
+      nodeTopologyQuery: { isLoading: false, isError: false },
+    })
+
+    render(
+      <MemoryRouter>
+        <NodeNavBar />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getAllByRole('button', { name: /node /i })).toHaveLength(3)
+    expect(screen.getByText('+2')).toHaveClass('node-nav-bar__overflow--critical')
+  })
 })

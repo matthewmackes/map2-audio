@@ -14,6 +14,7 @@ import { NumberInput } from '../../../ParameterControl'
 import { ParameterKnob } from '../../../ParameterControl'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { formatSemitones, formatPitch, formatDetune, formatShift } from '../../utils/formatters'
 import { dbToNormalized } from '../../utils/metering'
 
@@ -48,10 +49,11 @@ interface BossXS1CardProps extends PluginCardProps {
 function BossXS1CardBase({
   plugin,
   pluginPosition,
-  accentColor = '#ff6600', // Boss orange
+  accentColor: providedAccent, // Boss orange
   compact = false,
   onOpenMidiMappings,
 }: BossXS1CardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,

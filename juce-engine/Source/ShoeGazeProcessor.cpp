@@ -235,11 +235,12 @@ void ShoeGazeProcessor::process(juce::AudioBuffer<float>& buffer) {
         meterInputR_.store(calculatePeakLevel(buffer.getReadPointer(1), numSamples));
     }
 
+    const bool bypassed = bypass_.load();
+    const bool spilloverEnabled = spillover_.load();
+
     // Handle bypass
-    if (bypass_.load()) {
-        if (!spillover_.load()) {
-            reset();
-        }
+    if (bypassed && !spilloverEnabled) {
+        reset();
         meterOutputL_.store(meterInputL_.load());
         meterOutputR_.store(meterInputR_.load());
         return;
@@ -292,12 +293,14 @@ void ShoeGazeProcessor::process(juce::AudioBuffer<float>& buffer) {
 
     for (int i = 0; i < numSamples; ++i) {
         float wet = smoothedMix_.getNextValue();
-        float dry = 1.0f - wet;
+        float dry = bypassed ? 1.0f : (1.0f - wet);
         float drive = smoothedDrive_.getNextValue();
         float delaySamples = smoothedDelayTime_.getNextValue();
 
-        float inputL = dataL[i];
-        float inputR = dataR != nullptr ? dataR[i] : inputL;
+        float dryInputL = dataL[i];
+        float dryInputR = dataR != nullptr ? dataR[i] : dryInputL;
+        float inputL = bypassed ? 0.0f : dryInputL;
+        float inputR = bypassed ? 0.0f : dryInputR;
 
         // Calculate ducking based on input level
         float inputLevel = std::max(std::abs(inputL), std::abs(inputR));
@@ -575,9 +578,9 @@ void ShoeGazeProcessor::process(juce::AudioBuffer<float>& buffer) {
         float wetL = widthL * duckGain;
         float wetR = widthR * duckGain;
 
-        dataL[i] = inputL * dry + wetL * wet;
+        dataL[i] = dryInputL * dry + wetL * wet;
         if (dataR != nullptr) {
-            dataR[i] = inputR * dry + wetR * wet;
+            dataR[i] = dryInputR * dry + wetR * wet;
         }
     }
 
@@ -1042,6 +1045,91 @@ void ShoeGazeProcessor::setParameters(const Parameters& params) {
     mix_.store(params.mix);
     spillover_.store(params.spillover);
     bypass_.store(params.bypass);
+}
+
+std::unique_ptr<ShoeGazeProcessor> ShoeGazeProcessor::cloneForSpillover() const {
+    auto clone = std::make_unique<ShoeGazeProcessor>();
+
+    auto copyAtomicFloat = [](std::atomic<float>& dst, const std::atomic<float>& src) {
+        dst.store(src.load());
+    };
+    auto copyAtomicBool = [](std::atomic<bool>& dst, const std::atomic<bool>& src) {
+        dst.store(src.load());
+    };
+
+    clone->delayBufferL_ = delayBufferL_;
+    clone->delayBufferR_ = delayBufferR_;
+    clone->delayWritePos_ = delayWritePos_;
+    clone->delayModLfoPhase_ = delayModLfoPhase_;
+    clone->delayDiffusersL_ = delayDiffusersL_;
+    clone->delayDiffusersR_ = delayDiffusersR_;
+    clone->shimmerBufferL_ = shimmerBufferL_;
+    clone->shimmerBufferR_ = shimmerBufferR_;
+    clone->shimmerWritePos_ = shimmerWritePos_;
+    clone->shimmerGrainsL_ = shimmerGrainsL_;
+    clone->shimmerGrainsR_ = shimmerGrainsR_;
+    clone->currentShimmerGrain_ = currentShimmerGrain_;
+    clone->shimmerGrainSize_ = shimmerGrainSize_;
+    clone->shimmerFeedbackL_ = shimmerFeedbackL_;
+    clone->shimmerFeedbackR_ = shimmerFeedbackR_;
+    clone->reverbTapsL_ = reverbTapsL_;
+    clone->reverbTapsR_ = reverbTapsR_;
+    clone->reverbDiffusersL_ = reverbDiffusersL_;
+    clone->reverbDiffusersR_ = reverbDiffusersR_;
+    clone->chorusVoicesL_ = chorusVoicesL_;
+    clone->chorusVoicesR_ = chorusVoicesR_;
+    clone->duckingEnvelope_ = duckingEnvelope_;
+    clone->smoothedMix_ = smoothedMix_;
+    clone->smoothedDrive_ = smoothedDrive_;
+    clone->smoothedDelayTime_ = smoothedDelayTime_;
+
+    copyAtomicFloat(clone->atmosphere_, atmosphere_);
+    copyAtomicFloat(clone->decay_, decay_);
+    copyAtomicFloat(clone->shimmer_, shimmer_);
+    copyAtomicFloat(clone->shimmerPitch_, shimmerPitch_);
+    copyAtomicFloat(clone->modulation_, modulation_);
+    copyAtomicFloat(clone->modRate_, modRate_);
+    copyAtomicFloat(clone->drive_, drive_);
+    copyAtomicFloat(clone->delayTime_, delayTime_);
+    copyAtomicFloat(clone->delayFeedback_, delayFeedback_);
+    copyAtomicFloat(clone->delayMod_, delayMod_);
+    copyAtomicFloat(clone->lowCut_, lowCut_);
+    copyAtomicFloat(clone->highCut_, highCut_);
+    copyAtomicFloat(clone->mix_, mix_);
+    copyAtomicFloat(clone->stereoWidth_, stereoWidth_);
+    copyAtomicFloat(clone->reverbDiffusion_, reverbDiffusion_);
+    copyAtomicFloat(clone->reverbDamping_, reverbDamping_);
+    copyAtomicFloat(clone->reverbSize_, reverbSize_);
+    copyAtomicFloat(clone->reverbModDepth_, reverbModDepth_);
+    copyAtomicFloat(clone->shimmerFeedback_, shimmerFeedback_);
+    copyAtomicFloat(clone->shimmerDelay_, shimmerDelay_);
+    clone->chorusVoices_.store(chorusVoices_.load());
+    copyAtomicFloat(clone->chorusSpread_, chorusSpread_);
+    copyAtomicFloat(clone->saturationTone_, saturationTone_);
+    copyAtomicFloat(clone->ducking_, ducking_);
+    clone->preset_.store(preset_.load());
+    copyAtomicBool(clone->spillover_, spillover_);
+    copyAtomicBool(clone->bypass_, bypass_);
+
+    copyAtomicFloat(clone->meterInputL_, meterInputL_);
+    copyAtomicFloat(clone->meterInputR_, meterInputR_);
+    copyAtomicFloat(clone->meterOutputL_, meterOutputL_);
+    copyAtomicFloat(clone->meterOutputR_, meterOutputR_);
+    copyAtomicFloat(clone->meterReverbL_, meterReverbL_);
+    copyAtomicFloat(clone->meterReverbR_, meterReverbR_);
+    copyAtomicFloat(clone->meterShimmer_, meterShimmer_);
+    copyAtomicFloat(clone->meterSaturation_, meterSaturation_);
+    copyAtomicFloat(clone->meterChorusPhase_, meterChorusPhase_);
+    copyAtomicFloat(clone->meterDelayModPhase_, meterDelayModPhase_);
+    copyAtomicFloat(clone->meterDuckingGain_, meterDuckingGain_);
+
+    clone->sampleRate_ = sampleRate_;
+    clone->blockSize_ = blockSize_;
+    clone->numChannels_ = numChannels_;
+    clone->prepared_ = prepared_;
+    clone->filtersNeedUpdate_.store(true);
+
+    return clone;
 }
 
 // ========================================

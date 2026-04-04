@@ -9,6 +9,7 @@ import {
   FavoriteFilled,
   FolderOpen,
   Locked,
+  RecentlyViewed,
   Redo,
   Renew,
   Undo,
@@ -38,6 +39,8 @@ interface SnapshotEditorToolbarProps {
   onDuplicate: () => void
   duplicatePending: boolean
   duplicateDisabled: boolean
+  onOpenVersionHistory: () => void
+  versionHistoryDisabled: boolean
   onToggleLock?: () => void
   lockVisible: boolean
   locked: boolean
@@ -73,6 +76,8 @@ export function SnapshotEditorToolbar({
   onDuplicate,
   duplicatePending,
   duplicateDisabled,
+  onOpenVersionHistory,
+  versionHistoryDisabled,
   onToggleLock,
   lockVisible,
   locked,
@@ -183,6 +188,18 @@ export function SnapshotEditorToolbar({
                     title={duplicatePending ? 'Duplicating snapshot' : 'Duplicate snapshot'}
                     onClick={onDuplicate}
                     disabled={duplicateDisabled}
+                  />
+                  <Button
+                    hasIconOnly
+                    size="sm"
+                    kind="ghost"
+                    className="snapshot-toolbar__button snapshot-toolbar__button--history"
+                    renderIcon={RecentlyViewed}
+                    iconDescription="View version history"
+                    aria-label="View version history"
+                    title="View version history"
+                    onClick={onOpenVersionHistory}
+                    disabled={versionHistoryDisabled}
                   />
                   <Button
                     hasIconOnly

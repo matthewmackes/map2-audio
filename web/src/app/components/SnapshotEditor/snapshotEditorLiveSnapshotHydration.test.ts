@@ -1,5 +1,6 @@
-import type { Chain, ChainsResponse, SnapshotDetail } from '../../../map2/types'
+import type { Chain, ChainsResponse, SnapshotDetail, SnapshotDraftData } from '../../../map2/types'
 import {
+  applySnapshotDraftToChainsResponse,
   buildEffectiveLiveSnapshotChains,
   buildSnapshotEditorLiveSnapshotHydration,
   upsertRuntimeChains,
@@ -419,6 +420,88 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
               system_block_role: 'noise_gate',
               system_block_locked: true,
               system_block_label: 'SYS',
+            },
+          }),
+        ],
+      }),
+    ])
+  })
+
+  it('overlays draft-only loader assignments onto the effective runtime chains', () => {
+    const current: ChainsResponse = {
+      chains: [
+        {
+          ...buildRuntimeChain(801, 'Runtime Path A'),
+          plugins: [
+            {
+              uri: 'map2://juce/nam',
+              name: 'Neural Amp Modeler',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      count: 1,
+    }
+    const draft: SnapshotDraftData = {
+      flowSlots: [
+        {
+          id: 'ch_a',
+          chainId: 801,
+          label: 'A',
+          color: '#2563eb',
+          muted: false,
+          solo: false,
+          dryWetMix: 100,
+        },
+      ],
+      routing: {
+        mode: 'parallel_blend',
+        activeSlotId: 'ch_a',
+        blendPositions: { ch_a: 100 },
+        morphProgress: 0.5,
+        morphSourceSlotId: null,
+        morphTargetSlotId: null,
+        seriesOrder: ['ch_a'],
+      },
+      activeFlowIndex: 0,
+      chains: {
+        '801': {
+          name: 'Draft Path A',
+          plugins: [
+            {
+              uri: 'map2://juce/nam',
+              position: 0,
+              bypass: false,
+              parameters: {},
+              loader_state: {
+                selected_model: 'George B',
+                selected_asset_name: 'George B',
+                selected_asset_path: '/models/george-b.nam',
+              },
+            },
+          ],
+        },
+      },
+    }
+
+    const next = applySnapshotDraftToChainsResponse(current, draft)
+
+    expect(next.chains).toEqual([
+      expect.objectContaining({
+        id: 801,
+        name: 'Draft Path A',
+        plugins: [
+          expect.objectContaining({
+            uri: 'map2://juce/nam',
+            name: 'Neural Amp Modeler',
+            position: 0,
+            loader_state: {
+              selected_model: 'George B',
+              selected_asset_name: 'George B',
+              selected_asset_path: '/models/george-b.nam',
             },
           }),
         ],

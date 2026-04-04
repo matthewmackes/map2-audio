@@ -1,7 +1,6 @@
 import {
   DataTable,
   InlineNotification,
-  Layer,
   Table,
   TableBody,
   TableCell,
@@ -13,6 +12,7 @@ import {
 } from '@carbon/react'
 import type { MidiHubRoute } from '../../../map2/api'
 import type { HubPort } from './portUtils'
+import { MidiHubSurface } from './MidiHubHelpPrimitives'
 
 type MidiHubConnectedDevicesReportProps = {
   ports: HubPort[]
@@ -132,7 +132,7 @@ export function MidiHubConnectedDevicesReport({
   })
 
   return (
-    <Layer className="midi-hub-connections-surface">
+    <MidiHubSurface className="midi-hub-connections-surface" tone="raised">
       <DataTable rows={rows} headers={[...HEADERS]} useZebraStyles>
         {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
           <TableContainer
@@ -191,7 +191,7 @@ export function MidiHubConnectedDevicesReport({
           </TableContainer>
         )}
       </DataTable>
-    </Layer>
+    </MidiHubSurface>
   )
 }
 

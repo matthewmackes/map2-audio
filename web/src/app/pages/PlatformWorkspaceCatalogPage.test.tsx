@@ -50,7 +50,13 @@ describe('PlatformWorkspaceCatalogPage', () => {
 
   it('boots PlatformModalContent in workspace-catalog mode and maps callbacks to route navigation', () => {
     render(
-      <MemoryRouter initialEntries={['/platforms/workspace-catalog']}>
+      <MemoryRouter
+        initialEntries={['/platforms/workspace-catalog']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route
             path="*"
@@ -84,4 +90,3 @@ describe('PlatformWorkspaceCatalogPage', () => {
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
   })
 })
-

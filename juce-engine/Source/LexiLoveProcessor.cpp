@@ -274,11 +274,12 @@ void LexiLoveProcessor::process(juce::AudioBuffer<float>& buffer) {
         meterInputR_.store(calculatePeakLevel(buffer.getReadPointer(1), numSamples));
     }
 
+    const bool bypassed = bypass_.load();
+    const bool spilloverEnabled = spillover_.load();
+
     // Handle bypass
-    if (bypass_.load()) {
-        if (!spillover_.load()) {
-            reset();
-        }
+    if (bypassed && !spilloverEnabled) {
+        reset();
         meterOutputL_.store(meterInputL_.load());
         meterOutputR_.store(meterInputR_.load());
         return;
@@ -324,11 +325,13 @@ void LexiLoveProcessor::process(juce::AudioBuffer<float>& buffer) {
 
     for (int i = 0; i < numSamples; ++i) {
         float wet = smoothedMix_.getNextValue();
-        float dry = 1.0f - wet;
+        float dry = bypassed ? 1.0f : (1.0f - wet);
         float currentPreDelay = smoothedPreDelay_.getNextValue();
 
-        float inputL = dataL[i];
-        float inputR = dataR != nullptr ? dataR[i] : inputL;
+        float dryInputL = dataL[i];
+        float dryInputR = dataR != nullptr ? dataR[i] : dryInputL;
+        float inputL = bypassed ? 0.0f : dryInputL;
+        float inputR = bypassed ? 0.0f : dryInputR;
 
         // ========================================
         // Stage 1: Pre-delay
@@ -485,9 +488,9 @@ void LexiLoveProcessor::process(juce::AudioBuffer<float>& buffer) {
         // ========================================
         // Final Mix
         // ========================================
-        dataL[i] = inputL * dry + wetL * wet;
+        dataL[i] = dryInputL * dry + wetL * wet;
         if (dataR != nullptr) {
-            dataR[i] = inputR * dry + wetR * wet;
+            dataR[i] = dryInputR * dry + wetR * wet;
         }
 
         // Update accumulators for metering
@@ -773,6 +776,68 @@ void LexiLoveProcessor::setParameters(const Parameters& params) {
 
     filtersNeedUpdate_.store(true);
     earlyTapsNeedUpdate_.store(true);
+}
+
+std::unique_ptr<LexiLoveProcessor> LexiLoveProcessor::cloneForSpillover() const {
+    auto clone = std::make_unique<LexiLoveProcessor>();
+
+    auto copyAtomicFloat = [](std::atomic<float>& dst, const std::atomic<float>& src) {
+        dst.store(src.load());
+    };
+    auto copyAtomicBool = [](std::atomic<bool>& dst, const std::atomic<bool>& src) {
+        dst.store(src.load());
+    };
+
+    clone->preDelayBufferL_ = preDelayBufferL_;
+    clone->preDelayBufferR_ = preDelayBufferR_;
+    clone->preDelayWritePos_ = preDelayWritePos_;
+    clone->earlyTaps_ = earlyTaps_;
+    clone->earlyBufferL_ = earlyBufferL_;
+    clone->earlyBufferR_ = earlyBufferR_;
+    clone->earlyWritePos_ = earlyWritePos_;
+    clone->inputDiffusersL_ = inputDiffusersL_;
+    clone->inputDiffusersR_ = inputDiffusersR_;
+    clone->reverbTapsL_ = reverbTapsL_;
+    clone->reverbTapsR_ = reverbTapsR_;
+    clone->smoothedMix_ = smoothedMix_;
+    clone->smoothedPreDelay_ = smoothedPreDelay_;
+
+    clone->algorithm_.store(algorithm_.load());
+    copyAtomicFloat(clone->preDelay_, preDelay_);
+    copyAtomicFloat(clone->decayTime_, decayTime_);
+    copyAtomicFloat(clone->diffusion_, diffusion_);
+    copyAtomicFloat(clone->mix_, mix_);
+    copyAtomicFloat(clone->highCut_, highCut_);
+    copyAtomicFloat(clone->lowCut_, lowCut_);
+    copyAtomicFloat(clone->lowDecayMult_, lowDecayMult_);
+    copyAtomicFloat(clone->highDecayMult_, highDecayMult_);
+    copyAtomicFloat(clone->lowCrossover_, lowCrossover_);
+    copyAtomicFloat(clone->highCrossover_, highCrossover_);
+    copyAtomicFloat(clone->earlyLevel_, earlyLevel_);
+    copyAtomicFloat(clone->earlyPattern_, earlyPattern_);
+    copyAtomicFloat(clone->modDepth_, modDepth_);
+    copyAtomicFloat(clone->modRate_, modRate_);
+    copyAtomicBool(clone->spillover_, spillover_);
+    copyAtomicBool(clone->bypass_, bypass_);
+
+    copyAtomicFloat(clone->meterInputL_, meterInputL_);
+    copyAtomicFloat(clone->meterInputR_, meterInputR_);
+    copyAtomicFloat(clone->meterOutputL_, meterOutputL_);
+    copyAtomicFloat(clone->meterOutputR_, meterOutputR_);
+    copyAtomicFloat(clone->meterReverbL_, meterReverbL_);
+    copyAtomicFloat(clone->meterReverbR_, meterReverbR_);
+    copyAtomicFloat(clone->meterEarlyLevel_, meterEarlyLevel_);
+    copyAtomicFloat(clone->meterLateLevel_, meterLateLevel_);
+    copyAtomicFloat(clone->meterModPhase_, meterModPhase_);
+
+    clone->sampleRate_ = sampleRate_;
+    clone->blockSize_ = blockSize_;
+    clone->numChannels_ = numChannels_;
+    clone->prepared_ = prepared_;
+    clone->filtersNeedUpdate_.store(true);
+    copyAtomicBool(clone->earlyTapsNeedUpdate_, earlyTapsNeedUpdate_);
+
+    return clone;
 }
 
 // ========================================

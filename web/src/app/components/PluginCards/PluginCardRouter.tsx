@@ -9,11 +9,12 @@
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { pluginsApi, chainsApi } from '../../../map2/api'
-import type { Plugin } from '../../../map2/types'
+import type { Plugin, PluginLoaderState } from '../../../map2/types'
 import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { getPluginCardComponent, getTemplateCardComponent } from './registry'
-import { getCategoryConfig, type PluginCardProps, type PluginCardTemplate, type PluginRealtimeData } from './types'
+import { type PluginCardProps, type PluginCardTemplate, type PluginRealtimeData } from './types'
 import { usePluginOutput } from '../../hooks/usePluginOutputs'
+import { getPluginAccentConfig } from '../../utils/pluginAccent'
 
 interface PluginCardRouterProps {
   plugin: Plugin
@@ -29,6 +30,8 @@ interface PluginCardRouterProps {
   pluginPosition?: number
   /** Callback when bypass state changes */
   onBypassChange?: (pluginUri: string, bypassed: boolean) => void
+  /** Callback when loader-state-backed asset selections change */
+  onLoaderStateChange?: (patch: Partial<PluginLoaderState>) => void
 }
 
 /**
@@ -45,10 +48,10 @@ export function PluginCardRouter({
   chainId,
   pluginPosition,
   onBypassChange,
+  onLoaderStateChange,
 }: PluginCardRouterProps) {
   const queryClient = useQueryClient()
-  const catConfig = getCategoryConfig(plugin.category)
-  const accentColor = catConfig.color
+  const accentColor = getPluginAccentConfig(plugin.uri, plugin.category).color
 
   // Parameter values state
   const [parameterValues, setParameterValues] = useState<Record<number, number>>({})
@@ -175,6 +178,7 @@ export function PluginCardRouter({
     onParameterChange: handleParameterChange,
     onParameterChangeEnd: handleParameterChangeEnd,
     onBypassToggle: handleBypassToggle,
+    onLoaderStateChange,
     accentColor,
     disabled,
     compact,

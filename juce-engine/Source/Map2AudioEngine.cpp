@@ -9,6 +9,7 @@
  */
 
 #include "Map2AudioEngine.h"
+#include "NativeConvolutionPluginProcessor.h"
 #ifdef HAS_AVB
 #include "AvbAudioIODevice.h"
 #endif
@@ -50,6 +51,76 @@ bool isTruthy(const char* value) {
         normalized.begin(),
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+}
+
+double getProcessorTailSeconds(const juce::AudioProcessor* processor) {
+    if (processor == nullptr) {
+        return 0.0;
+    }
+
+    if (auto* convolution = dynamic_cast<const NativeConvolutionPluginProcessor*>(processor)) {
+        return std::max(0.0, convolution->getIRInfo().lengthSeconds);
+    }
+
+    return std::max(0.0, processor->getTailLengthSeconds());
+}
+
+bool processorSupportsSnapshotSpillover(const juce::AudioProcessor* processor) {
+    return getProcessorTailSeconds(processor) > 0.0;
+}
+
+bool processorIsLocallyBypassed(const juce::AudioProcessor* processor) {
+    if (processor == nullptr) {
+        return false;
+    }
+
+    if (auto* convolution = dynamic_cast<const NativeConvolutionPluginProcessor*>(processor)) {
+        return convolution->isBypassedLocally();
+    }
+
+    return false;
+}
+
+double estimateFeedbackTailSeconds(double baseDelaySeconds, double feedbackFraction) {
+    if (baseDelaySeconds <= 0.0) {
+        return 0.0;
+    }
+    if (feedbackFraction <= 0.0) {
+        return baseDelaySeconds;
+    }
+
+    const double clampedFeedback = std::clamp(feedbackFraction, 0.001, 0.9995);
+    const double repeatsUntilMinus60Db = std::log(0.001) / std::log(clampedFeedback);
+    return std::max(baseDelaySeconds, baseDelaySeconds * repeatsUntilMinus60Db);
+}
+
+double estimateDelayTailSeconds(const DelayProcessor::Parameters& params) {
+    const double delayLeftMs =
+        params.tempoSyncL == DelayProcessor::TempoDivision::Off
+            ? static_cast<double>(params.delayTimeL)
+            : static_cast<double>(DelayProcessor::divisionToMs(params.tempoSyncL, params.tempo));
+    const double delayRightMs =
+        params.tempoSyncR == DelayProcessor::TempoDivision::Off
+            ? static_cast<double>(params.delayTimeR)
+            : static_cast<double>(DelayProcessor::divisionToMs(params.tempoSyncR, params.tempo));
+    const double baseDelaySeconds = std::max(delayLeftMs, delayRightMs) / 1000.0;
+    return estimateFeedbackTailSeconds(baseDelaySeconds, static_cast<double>(params.feedback) / 100.0);
+}
+
+double estimateShoeGazeTailSeconds(const ShoeGazeProcessor::Parameters& params) {
+    const double delayTailSeconds = estimateFeedbackTailSeconds(
+        static_cast<double>(params.delayTime) / 1000.0,
+        static_cast<double>(params.delayFeedback) / 100.0);
+    return std::max({
+        0.0,
+        static_cast<double>(params.decay),
+        delayTailSeconds,
+        static_cast<double>(params.shimmerDelay) / 1000.0,
+    });
+}
+
+double estimateLexiLoveTailSeconds(const LexiLoveProcessor::Parameters& params) {
+    return std::max(0.0, static_cast<double>(params.preDelay) / 1000.0 + static_cast<double>(params.decayTime));
 }
 
 std::string readAvbMarkerValue(const std::string& key) {
@@ -284,6 +355,8 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     // Pre-allocate callback buffer to avoid heap allocation in RT thread
     callbackBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                             false, false, true);
+    spilloverBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                             false, false, true);
 
     // ============================================================================
     // REALTIME OPTIMIZATION: Lock ALL memory to RAM to prevent page faults
@@ -364,6 +437,7 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     chorus_.prepare(sampleRate_, bufferSize_, 2);
     phaser_.prepare(sampleRate_, bufferSize_, 2);
     pitchShifter_.prepare(sampleRate_, bufferSize_, 2);
+    delay_.prepare(sampleRate_, bufferSize_, 2);
     intellifx_.prepare(sampleRate_, bufferSize_, 2);
     shoegaze_.prepare(sampleRate_, bufferSize_, 2);
     lexiLove_.prepare(sampleRate_, bufferSize_, 2);
@@ -535,6 +609,9 @@ void Map2AudioEngine::shutdown() {
     }
 
     midiHandler_.shutdown();
+    clearAllSpilloverChains();
+    clearAllNativeSpillovers();
+    audioGraph_->shutdown();
 
     // Reset non-owning hardware processor pointers before host teardown.
     lexiconProcessor_ = nullptr;
@@ -1645,6 +1722,8 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
+    processSpilloverChains(buffer, processSamples);
+    processNativeSpillovers(buffer, processSamples);
 
     // Apply external loop insertions directly in callback path so
     // loop blend/crossfade/compensation is sample-accurate.
@@ -1665,13 +1744,16 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     if (!phaser_.isBypassed()) {
         phaser_.process(buffer);          // Then phaser
     }
+    if (!delay_.isBypassed() || delay_.getSpillover()) {
+        delay_.process(buffer);           // Stereo delay with audible spillover tails
+    }
     if (!intellifx_.isBypassed()) {
         intellifx_.process(buffer);       // IntelliFX 8-voice chorus
     }
 
     // FIX #2: Add the 7 missing processors that were never called
     // These are now wired into the signal chain
-    if (!shoegaze_.isBypassed()) {
+    if (!shoegaze_.isBypassed() || shoegaze_.hasSpillover()) {
         shoegaze_.process(buffer);        // ShoeGaze reverb/fuzz
     }
     if (!passionFX_.isBypassed()) {
@@ -1689,7 +1771,7 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     if (bossXS1_.isActive()) {
         bossXS1_.process(buffer);         // Boss XS-1 multi-effect
     }
-    if (!lexiLove_.isBypassed()) {
+    if (!lexiLove_.isBypassed() || lexiLove_.hasSpillover()) {
         lexiLove_.process(buffer);        // Algorithmic reverb
     }
 
@@ -1908,6 +1990,8 @@ void Map2AudioEngine::setBufferSize(int size) {
         audioGraph_->setBufferSize(size);
         callbackBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                 false, false, true);
+        spilloverBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                 false, false, true);
 
         // Re-prepare all processors with new buffer size
         prepareAllProcessors(sampleRate_, size, 2);
@@ -1949,6 +2033,7 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     chorus_.prepare(sampleRate, bufferSize, numChannels);
     phaser_.prepare(sampleRate, bufferSize, numChannels);
     pitchShifter_.prepare(sampleRate, bufferSize, numChannels);
+    delay_.prepare(sampleRate, bufferSize, numChannels);
     intellifx_.prepare(sampleRate, bufferSize, numChannels);
     
     // FIX #4: Prepare the 7 missing processors (were never re-prepared on config change)
@@ -2062,11 +2147,35 @@ std::vector<InstanceId> Map2AudioEngine::getChainOrder() const {
 }
 
 void Map2AudioEngine::clearChain() {
+    clearAllSpilloverChains();
     audioGraph_->clearChain();
 }
 
 bool Map2AudioEngine::replaceChain(const std::vector<InstanceId>& order) {
+    cleanupExpiredSpilloverChains();
     return audioGraph_->replaceChain(order);
+}
+
+bool Map2AudioEngine::replaceChainWithSpillover(const std::vector<InstanceId>& order) {
+    cleanupExpiredSpilloverChains();
+
+    auto spillover = buildSpilloverChainFromCurrentOrder(order);
+    const bool replaced = audioGraph_->replaceChain(order);
+    if (!replaced) {
+        if (spillover) {
+            for (const auto instanceId : spillover->instanceIds) {
+                pluginHost_.unloadPlugin(instanceId);
+            }
+        }
+        return false;
+    }
+
+    if (spillover) {
+        std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+        spilloverChains_.push_back(std::move(spillover));
+    }
+
+    return true;
 }
 
 bool Map2AudioEngine::addToChain(InstanceId instanceId, int position) {
@@ -2083,6 +2192,322 @@ bool Map2AudioEngine::reorderChain(const std::vector<InstanceId>& order) {
 
 bool Map2AudioEngine::prewarmPluginNode(InstanceId instanceId) {
     return audioGraph_->prewarmPluginNode(instanceId);
+}
+
+std::vector<Map2AudioEngine::SpilloverChainState> Map2AudioEngine::getSpilloverChainStates() const {
+    std::vector<SpilloverChainState> result;
+    std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+    result.reserve(spilloverChains_.size());
+    for (const auto& chain : spilloverChains_) {
+        if (!chain) {
+            continue;
+        }
+        SpilloverChainState state;
+        state.id = chain->id;
+        state.instanceIds = chain->instanceIds;
+        state.remainingSamples = chain->remainingSamples.load(std::memory_order_relaxed);
+        state.expired = chain->expired.load(std::memory_order_relaxed);
+        state.estimatedTailSeconds = chain->estimatedTailSeconds;
+        result.push_back(std::move(state));
+    }
+    return result;
+}
+
+void Map2AudioEngine::cleanupExpiredSpilloverChains() {
+    std::vector<std::shared_ptr<SpilloverChain>> expiredChains;
+    {
+        std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+        auto it = std::remove_if(
+            spilloverChains_.begin(),
+            spilloverChains_.end(),
+            [&expiredChains](const std::shared_ptr<SpilloverChain>& chain) {
+                if (!chain) {
+                    return true;
+                }
+                const bool expired = chain->expired.load(std::memory_order_relaxed)
+                    || chain->remainingSamples.load(std::memory_order_relaxed) <= 0;
+                if (expired) {
+                    expiredChains.push_back(chain);
+                }
+                return expired;
+            });
+        spilloverChains_.erase(it, spilloverChains_.end());
+    }
+
+    for (const auto& chain : expiredChains) {
+        for (const auto instanceId : chain->instanceIds) {
+            pluginHost_.unloadPlugin(instanceId);
+        }
+    }
+}
+
+void Map2AudioEngine::clearAllSpilloverChains() {
+    std::vector<std::shared_ptr<SpilloverChain>> chains;
+    {
+        std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+        chains.swap(spilloverChains_);
+    }
+
+    for (const auto& chain : chains) {
+        if (!chain) {
+            continue;
+        }
+        chain->expired.store(true, std::memory_order_relaxed);
+        for (const auto instanceId : chain->instanceIds) {
+            pluginHost_.unloadPlugin(instanceId);
+        }
+    }
+}
+
+void Map2AudioEngine::processSpilloverChains(juce::AudioBuffer<float>& buffer, int numSamples) {
+    std::vector<std::shared_ptr<SpilloverChain>> chains;
+    {
+        std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+        chains = spilloverChains_;
+    }
+
+    if (chains.empty()) {
+        return;
+    }
+
+    const int numChannels = buffer.getNumChannels();
+    if (spilloverBuffer_.getNumChannels() < numChannels || spilloverBuffer_.getNumSamples() < numSamples) {
+        return;
+    }
+
+    juce::MidiBuffer spilloverMidi;
+    for (const auto& chain : chains) {
+        if (!chain) {
+            continue;
+        }
+        if (chain->expired.load(std::memory_order_relaxed) || chain->remainingSamples.load(std::memory_order_relaxed) <= 0) {
+            chain->expired.store(true, std::memory_order_relaxed);
+            continue;
+        }
+
+        juce::AudioBuffer<float> spilloverBuffer(
+            spilloverBuffer_.getArrayOfWritePointers(),
+            numChannels,
+            numSamples);
+        spilloverBuffer.clear();
+        spilloverMidi.clear();
+
+        for (const auto instanceId : chain->instanceIds) {
+            pluginHost_.process(instanceId, spilloverBuffer, spilloverMidi);
+        }
+
+        for (int ch = 0; ch < numChannels; ++ch) {
+            buffer.addFrom(ch, 0, spilloverBuffer, ch, 0, numSamples);
+        }
+
+        const auto remaining = chain->remainingSamples.fetch_sub(numSamples, std::memory_order_relaxed) - numSamples;
+        if (remaining <= 0) {
+            chain->expired.store(true, std::memory_order_relaxed);
+        }
+    }
+}
+
+void Map2AudioEngine::cleanupExpiredNativeSpillovers() {
+    std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+    auto eraseExpired = [](auto& spillovers) {
+        spillovers.erase(
+            std::remove_if(
+                spillovers.begin(),
+                spillovers.end(),
+                [](const auto& spillover) {
+                    return !spillover
+                        || spillover->expired.load(std::memory_order_relaxed)
+                        || spillover->remainingSamples.load(std::memory_order_relaxed) <= 0
+                        || spillover->processor == nullptr;
+                }),
+            spillovers.end());
+    };
+    eraseExpired(delaySpillovers_);
+    eraseExpired(shoegazeSpillovers_);
+    eraseExpired(lexiLoveSpillovers_);
+}
+
+void Map2AudioEngine::clearAllNativeSpillovers() {
+    std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+    auto clearList = [](auto& spillovers) {
+        for (const auto& spillover : spillovers) {
+            if (spillover) {
+                spillover->expired.store(true, std::memory_order_relaxed);
+            }
+        }
+        spillovers.clear();
+    };
+    clearList(delaySpillovers_);
+    clearList(shoegazeSpillovers_);
+    clearList(lexiLoveSpillovers_);
+}
+
+void Map2AudioEngine::processNativeSpillovers(juce::AudioBuffer<float>& buffer, int numSamples) {
+    std::vector<std::shared_ptr<DelaySpilloverState>> delaySpillovers;
+    std::vector<std::shared_ptr<ShoeGazeSpilloverState>> shoegazeSpillovers;
+    std::vector<std::shared_ptr<LexiLoveSpilloverState>> lexiLoveSpillovers;
+    {
+        std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+        delaySpillovers = delaySpillovers_;
+        shoegazeSpillovers = shoegazeSpillovers_;
+        lexiLoveSpillovers = lexiLoveSpillovers_;
+    }
+
+    if (delaySpillovers.empty() && shoegazeSpillovers.empty() && lexiLoveSpillovers.empty()) {
+        return;
+    }
+
+    const int numChannels = buffer.getNumChannels();
+    if (spilloverBuffer_.getNumChannels() < numChannels || spilloverBuffer_.getNumSamples() < numSamples) {
+        return;
+    }
+
+    auto processList = [&](const auto& spillovers) {
+        for (const auto& spillover : spillovers) {
+            if (!spillover || !spillover->processor) {
+                continue;
+            }
+            if (spillover->expired.load(std::memory_order_relaxed)
+                || spillover->remainingSamples.load(std::memory_order_relaxed) <= 0) {
+                spillover->expired.store(true, std::memory_order_relaxed);
+                continue;
+            }
+
+            juce::AudioBuffer<float> spilloverBuffer(
+                spilloverBuffer_.getArrayOfWritePointers(),
+                numChannels,
+                numSamples);
+            spilloverBuffer.clear();
+            spillover->processor->process(spilloverBuffer);
+            for (int ch = 0; ch < numChannels; ++ch) {
+                buffer.addFrom(ch, 0, spilloverBuffer, ch, 0, numSamples);
+            }
+
+            const auto remaining =
+                spillover->remainingSamples.fetch_sub(numSamples, std::memory_order_relaxed) - numSamples;
+            if (remaining <= 0) {
+                spillover->expired.store(true, std::memory_order_relaxed);
+            }
+        }
+    };
+
+    processList(delaySpillovers);
+    processList(shoegazeSpillovers);
+    processList(lexiLoveSpillovers);
+}
+
+bool Map2AudioEngine::stageSpilloverFromCurrentChain(const std::vector<InstanceId>& nextOrder) {
+    cleanupExpiredSpilloverChains();
+
+    auto spillover = buildSpilloverChainFromCurrentOrder(nextOrder);
+    if (!spillover) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(spilloverChainsMutex_);
+    spilloverChains_.push_back(std::move(spillover));
+    return true;
+}
+
+std::shared_ptr<Map2AudioEngine::SpilloverChain> Map2AudioEngine::buildSpilloverChainFromCurrentOrder(
+    const std::vector<InstanceId>& nextOrder
+) {
+    const auto currentOrder = audioGraph_->getChainOrder();
+    if (currentOrder.empty() || currentOrder == nextOrder) {
+        return {};
+    }
+
+    const std::unordered_set<InstanceId> nextInstances(nextOrder.begin(), nextOrder.end());
+    int spilloverStart = -1;
+    for (size_t index = 0; index < currentOrder.size(); ++index) {
+        const auto instanceId = currentOrder[index];
+        if (nextInstances.find(instanceId) != nextInstances.end()) {
+            continue;
+        }
+
+        const auto* processor = pluginHost_.getProcessor(instanceId);
+        if (!processorSupportsSnapshotSpillover(processor)
+            || pluginHost_.isBypassed(instanceId)
+            || processorIsLocallyBypassed(processor)) {
+            continue;
+        }
+
+        spilloverStart = static_cast<int>(index);
+        break;
+    }
+
+    if (spilloverStart < 0) {
+        return {};
+    }
+
+    auto spillover = std::make_shared<SpilloverChain>();
+    spillover->id = nextSpilloverChainId_++;
+
+    double estimatedTailSeconds = 0.0;
+    for (size_t index = static_cast<size_t>(spilloverStart); index < currentOrder.size(); ++index) {
+        auto cloneId = clonePluginInstanceForSpillover(currentOrder[index]);
+        if (!cloneId.has_value()) {
+            for (const auto instanceId : spillover->instanceIds) {
+                pluginHost_.unloadPlugin(instanceId);
+            }
+            return {};
+        }
+
+        spillover->instanceIds.push_back(*cloneId);
+        estimatedTailSeconds = std::max(
+            estimatedTailSeconds,
+            getProcessorTailSeconds(pluginHost_.getProcessor(*cloneId)));
+    }
+
+    if (spillover->instanceIds.empty() || estimatedTailSeconds <= 0.0) {
+        for (const auto instanceId : spillover->instanceIds) {
+            pluginHost_.unloadPlugin(instanceId);
+        }
+        return {};
+    }
+
+    spillover->estimatedTailSeconds = estimatedTailSeconds;
+    spillover->remainingSamples.store(
+        static_cast<int64_t>(std::ceil(estimatedTailSeconds * sampleRate_)),
+        std::memory_order_relaxed);
+    spillover->expired.store(false, std::memory_order_relaxed);
+    return spillover;
+}
+
+std::optional<InstanceId> Map2AudioEngine::clonePluginInstanceForSpillover(InstanceId sourceInstanceId) {
+    std::string uri;
+    for (const auto& plugin : pluginHost_.getLoadedPlugins()) {
+        if (plugin.id == sourceInstanceId) {
+            uri = plugin.uri;
+            break;
+        }
+    }
+
+    if (uri.empty()) {
+        return std::nullopt;
+    }
+
+    const auto cloneId = pluginHost_.loadPlugin(uri, sampleRate_, bufferSize_);
+    if (cloneId == INVALID_INSTANCE_ID) {
+        return std::nullopt;
+    }
+
+    auto* cloneProcessor = pluginHost_.getProcessor(cloneId);
+    if (cloneProcessor == nullptr) {
+        pluginHost_.unloadPlugin(cloneId);
+        return std::nullopt;
+    }
+
+    cloneProcessor->setRateAndBufferSizeDetails(sampleRate_, bufferSize_);
+    cloneProcessor->setNonRealtime(false);
+    cloneProcessor->prepareToPlay(sampleRate_, bufferSize_);
+
+    const auto state = pluginHost_.getPluginState(sourceInstanceId);
+    if (!state.empty()) {
+        pluginHost_.setPluginState(cloneId, state);
+    }
+    pluginHost_.setBypass(cloneId, pluginHost_.isBypassed(sourceInstanceId));
+    return cloneId;
 }
 
 // ========================================
@@ -3164,6 +3589,117 @@ Map2AudioEngine::getIntelliFXMetering() const {
 }
 
 // ========================================
+// Stereo Delay
+// ========================================
+
+void Map2AudioEngine::setDelayTimeL(float ms) { delay_.setDelayTimeL(ms); }
+float Map2AudioEngine::getDelayTimeL() const { return delay_.getDelayTimeL(); }
+void Map2AudioEngine::setDelayTimeR(float ms) { delay_.setDelayTimeR(ms); }
+float Map2AudioEngine::getDelayTimeR() const { return delay_.getDelayTimeR(); }
+void Map2AudioEngine::setDelayFeedback(float percent) { delay_.setFeedback(percent); }
+float Map2AudioEngine::getDelayFeedback() const { return delay_.getFeedback(); }
+void Map2AudioEngine::setDelayMix(float percent) { delay_.setMix(percent); }
+float Map2AudioEngine::getDelayMix() const { return delay_.getMix(); }
+void Map2AudioEngine::setDelayTempo(float bpm) { delay_.setTempo(bpm); }
+float Map2AudioEngine::getDelayTempo() const { return delay_.getTempo(); }
+void Map2AudioEngine::setDelayTempoSyncL(int division) {
+    delay_.setTempoSyncL(static_cast<DelayProcessor::TempoDivision>(std::clamp(division, 0, 16)));
+}
+int Map2AudioEngine::getDelayTempoSyncL() const {
+    return static_cast<int>(delay_.getTempoSyncL());
+}
+void Map2AudioEngine::setDelayTempoSyncR(int division) {
+    delay_.setTempoSyncR(static_cast<DelayProcessor::TempoDivision>(std::clamp(division, 0, 16)));
+}
+int Map2AudioEngine::getDelayTempoSyncR() const {
+    return static_cast<int>(delay_.getTempoSyncR());
+}
+void Map2AudioEngine::setDelayTap1Level(float percent) { delay_.setTap1Level(percent); }
+void Map2AudioEngine::setDelayTap2Level(float percent) { delay_.setTap2Level(percent); }
+void Map2AudioEngine::setDelayTap2Ratio(float ratio) { delay_.setTap2Ratio(ratio); }
+void Map2AudioEngine::setDelayTap3Level(float percent) { delay_.setTap3Level(percent); }
+void Map2AudioEngine::setDelayTap3Ratio(float ratio) { delay_.setTap3Ratio(ratio); }
+void Map2AudioEngine::setDelayTap4Level(float percent) { delay_.setTap4Level(percent); }
+void Map2AudioEngine::setDelayTap4Ratio(float ratio) { delay_.setTap4Ratio(ratio); }
+void Map2AudioEngine::setDelayStereoMode(int mode) {
+    delay_.setStereoMode(static_cast<DelayProcessor::StereoMode>(std::clamp(mode, 0, 3)));
+}
+int Map2AudioEngine::getDelayStereoMode() const {
+    return static_cast<int>(delay_.getStereoMode());
+}
+void Map2AudioEngine::setDelayStereoSpread(float percent) { delay_.setStereoSpread(percent); }
+float Map2AudioEngine::getDelayStereoSpread() const { return delay_.getStereoSpread(); }
+void Map2AudioEngine::setDelayPan(float pan) { delay_.setPan(pan); }
+float Map2AudioEngine::getDelayPan() const { return delay_.getPan(); }
+void Map2AudioEngine::setDelayModRate(float hz) { delay_.setModRate(hz); }
+float Map2AudioEngine::getDelayModRate() const { return delay_.getModRate(); }
+void Map2AudioEngine::setDelayModDepth(float percent) { delay_.setModDepth(percent); }
+float Map2AudioEngine::getDelayModDepth() const { return delay_.getModDepth(); }
+void Map2AudioEngine::setDelayModWaveform(int waveform) {
+    delay_.setModWaveform(static_cast<DelayProcessor::ModWaveform>(std::clamp(waveform, 0, 2)));
+}
+int Map2AudioEngine::getDelayModWaveform() const {
+    return static_cast<int>(delay_.getModWaveform());
+}
+void Map2AudioEngine::setDelayLowCut(float hz) { delay_.setLowCut(hz); }
+float Map2AudioEngine::getDelayLowCut() const { return delay_.getLowCut(); }
+void Map2AudioEngine::setDelayHighCut(float hz) { delay_.setHighCut(hz); }
+float Map2AudioEngine::getDelayHighCut() const { return delay_.getHighCut(); }
+void Map2AudioEngine::setDelayFilterInLoop(bool enabled) { delay_.setFilterInLoop(enabled); }
+bool Map2AudioEngine::getDelayFilterInLoop() const { return delay_.getFilterInLoop(); }
+void Map2AudioEngine::setDelayDiffusion(float percent) { delay_.setDiffusion(percent); }
+float Map2AudioEngine::getDelayDiffusion() const { return delay_.getDiffusion(); }
+void Map2AudioEngine::setDelayDuckThreshold(float db) { delay_.setDuckThreshold(db); }
+float Map2AudioEngine::getDelayDuckThreshold() const { return delay_.getDuckThreshold(); }
+void Map2AudioEngine::setDelayDuckAmount(float percent) { delay_.setDuckAmount(percent); }
+float Map2AudioEngine::getDelayDuckAmount() const { return delay_.getDuckAmount(); }
+void Map2AudioEngine::setDelayDuckRelease(float ms) { delay_.setDuckRelease(ms); }
+float Map2AudioEngine::getDelayDuckRelease() const { return delay_.getDuckRelease(); }
+void Map2AudioEngine::setDelayOutputLevel(float db) { delay_.setOutputLevel(db); }
+float Map2AudioEngine::getDelayOutputLevel() const { return delay_.getOutputLevel(); }
+void Map2AudioEngine::setDelaySpillover(bool enabled) { delay_.setSpillover(enabled); }
+bool Map2AudioEngine::hasDelaySpillover() const { return delay_.getSpillover(); }
+void Map2AudioEngine::setDelayBypass(bool bypass) { delay_.setBypass(bypass); }
+bool Map2AudioEngine::isDelayBypassed() const { return delay_.isBypassed(); }
+DelayProcessor::Parameters Map2AudioEngine::getDelayParameters() const { return delay_.getParameters(); }
+void Map2AudioEngine::setDelayParameters(const DelayProcessor::Parameters& params) { delay_.setParameters(params); }
+bool Map2AudioEngine::stageDelaySpillover() {
+    cleanupExpiredNativeSpillovers();
+
+    const auto params = delay_.getParameters();
+    if (params.bypass || !params.spillover || params.mix <= 0.0f) {
+        return false;
+    }
+
+    auto processor = delay_.cloneForSpillover();
+    if (!processor) {
+        return false;
+    }
+
+    const double estimatedTailSeconds = estimateDelayTailSeconds(params);
+    if (estimatedTailSeconds <= 0.0) {
+        return false;
+    }
+
+    processor->setSpillover(true);
+    processor->setBypass(true);
+
+    auto spillover = std::make_shared<DelaySpilloverState>();
+    spillover->id = nextNativeSpilloverId_++;
+    spillover->processor = std::move(processor);
+    spillover->estimatedTailSeconds = estimatedTailSeconds;
+    spillover->remainingSamples.store(
+        static_cast<int64_t>(std::ceil(estimatedTailSeconds * sampleRate_)),
+        std::memory_order_relaxed);
+    spillover->expired.store(false, std::memory_order_relaxed);
+
+    std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+    delaySpillovers_.push_back(std::move(spillover));
+    return true;
+}
+DelayProcessor::Metering Map2AudioEngine::getDelayMetering() const { return delay_.getMetering(); }
+
+// ========================================
 // Boss XS-1 Polyphonic Pitch Shifter
 // ========================================
 
@@ -3487,6 +4023,41 @@ bool Map2AudioEngine::hasShoeGazeSpillover() const {
     return shoegaze_.hasSpillover();
 }
 
+bool Map2AudioEngine::stageShoeGazeSpillover() {
+    cleanupExpiredNativeSpillovers();
+
+    const auto params = shoegaze_.getParameters();
+    if (params.bypass || !params.spillover || params.mix <= 0.0f) {
+        return false;
+    }
+
+    auto processor = shoegaze_.cloneForSpillover();
+    if (!processor) {
+        return false;
+    }
+
+    const double estimatedTailSeconds = estimateShoeGazeTailSeconds(params);
+    if (estimatedTailSeconds <= 0.0) {
+        return false;
+    }
+
+    processor->setSpillover(true);
+    processor->setBypass(true);
+
+    auto spillover = std::make_shared<ShoeGazeSpilloverState>();
+    spillover->id = nextNativeSpilloverId_++;
+    spillover->processor = std::move(processor);
+    spillover->estimatedTailSeconds = estimatedTailSeconds;
+    spillover->remainingSamples.store(
+        static_cast<int64_t>(std::ceil(estimatedTailSeconds * sampleRate_)),
+        std::memory_order_relaxed);
+    spillover->expired.store(false, std::memory_order_relaxed);
+
+    std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+    shoegazeSpillovers_.push_back(std::move(spillover));
+    return true;
+}
+
 // Bulk parameters
 ShoeGazeProcessor::Parameters Map2AudioEngine::getShoeGazeParameters() const {
     return shoegaze_.getParameters();
@@ -3658,6 +4229,41 @@ void Map2AudioEngine::setLexiLoveSpillover(bool enabled) {
 
 bool Map2AudioEngine::hasLexiLoveSpillover() const {
     return lexiLove_.hasSpillover();
+}
+
+bool Map2AudioEngine::stageLexiLoveSpillover() {
+    cleanupExpiredNativeSpillovers();
+
+    const auto params = lexiLove_.getParameters();
+    if (params.bypass || !params.spillover || params.mix <= 0.0f) {
+        return false;
+    }
+
+    auto processor = lexiLove_.cloneForSpillover();
+    if (!processor) {
+        return false;
+    }
+
+    const double estimatedTailSeconds = estimateLexiLoveTailSeconds(params);
+    if (estimatedTailSeconds <= 0.0) {
+        return false;
+    }
+
+    processor->setSpillover(true);
+    processor->setBypass(true);
+
+    auto spillover = std::make_shared<LexiLoveSpilloverState>();
+    spillover->id = nextNativeSpilloverId_++;
+    spillover->processor = std::move(processor);
+    spillover->estimatedTailSeconds = estimatedTailSeconds;
+    spillover->remainingSamples.store(
+        static_cast<int64_t>(std::ceil(estimatedTailSeconds * sampleRate_)),
+        std::memory_order_relaxed);
+    spillover->expired.store(false, std::memory_order_relaxed);
+
+    std::lock_guard<std::mutex> lock(nativeSpilloverMutex_);
+    lexiLoveSpillovers_.push_back(std::move(spillover));
+    return true;
 }
 
 // Bulk parameters

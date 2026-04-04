@@ -13,6 +13,7 @@ import { NumberInput, ParameterKnob } from '../../../ParameterControl'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
 import type { DrumKit, DrumMachineState, DrumTransportState } from '@/map2/types'
@@ -138,11 +139,12 @@ interface DrumMachineCardProps extends PluginCardProps {
 
 function DrumMachineCardBase({
   plugin,
-  accentColor = '#24a148',
+  accentColor: providedAccent,
   compact = true,
   onBypassToggle,
   onOpenMidiMappings,
 }: DrumMachineCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const stateQuery = useQuery({
     queryKey: ['drums', 'state'],
     queryFn: drumsApi.getState,

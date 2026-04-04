@@ -12,6 +12,7 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { ParameterKnob } from '../../../ParameterControl'
 import { Activity, MagicWand } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const PARAM_MAP = {
   dryLevel: 0,
@@ -42,9 +43,10 @@ export function REEVRCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#8b5cf6',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
@@ -176,7 +178,7 @@ export function REEVRCard({
             label="Early" value={getValue('earlyLevel', 80)}
             min={0} max={100} defaultValue={80} unit="%"
             onChange={(v) => setValue('earlyLevel', v)}
-            accentColor="#6b7280" size="small"
+            accentColor={accentColor} size="small"
           />
           <ParameterKnob
             label="Late" value={getValue('lateLevel', 100)}

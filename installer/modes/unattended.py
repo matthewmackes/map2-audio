@@ -95,6 +95,7 @@ class UnattendedRunner:
         from installer.backend.grub     import GRUBConfig
         from installer.backend.services import ServiceManager
         from installer.backend.build    import JUCEBuilder, FrontendBuilder, PythonEnvBuilder
+        from installer.backend.cluster_manager import ClusterManagerInstaller
 
         install_dir = str(config.storage.install_dir)
         success_all = True
@@ -142,6 +143,7 @@ class UnattendedRunner:
         from installer.backend.grub     import GRUBConfig
         from installer.backend.services import ServiceManager
         from installer.backend.build    import JUCEBuilder, FrontendBuilder, PythonEnvBuilder
+        from installer.backend.cluster_manager import ClusterManagerInstaller
 
         sw = config.software
         au = config.audio
@@ -198,6 +200,10 @@ class UnattendedRunner:
                 return []
             fb = FrontendBuilder(executor, install_dir)
             return [fb.install_deps(), fb.build()]
+
+        elif key == "cluster_mgr":
+            installer = ClusterManagerInstaller(executor)
+            return installer.install(config)
 
         elif key == "user":
             user = config.user

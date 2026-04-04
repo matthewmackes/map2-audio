@@ -3,8 +3,13 @@ import io
 import json
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from app import database as database_module
+from app.services import audio_state_authority as audio_state_authority_module
+from app.services import performance_metrics as performance_metrics_module
 from app.services import snapshot_runtime_service
 from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
@@ -45,6 +50,11 @@ def _count_system_noise_gates(snapshot_detail: dict[str, object]) -> int:
         and isinstance(plugin.get("loader_state"), dict)
         and plugin["loader_state"].get("system_block_role") == "noise_gate"
     )
+
+
+@pytest.fixture(autouse=True)
+def _disable_background_snapshot_preload(monkeypatch):
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda _snapshot_id: None)
 
 
 def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
@@ -583,6 +593,9 @@ def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tm
             applied_devices.append(device_name)
             return True
 
+        async def get_topology_mutation_stats(self):
+            return None
+
     async def _passthrough(snapshot_data):
         return snapshot_data
 
@@ -958,6 +971,505 @@ def test_activate_snapshot_reuses_runtime_chains_for_same_topology(tmp_path, mon
     asyncio.run(_run())
 
 
+def test_activate_snapshot_reuses_runtime_chains_when_authority_has_no_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    applied_payloads: list[dict[str, object]] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(snapshot_data):
+        applied_payloads.append(json.loads(json.dumps(snapshot_data)))
+        return 1, 1
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityWithoutCommittedSnapshot:
+        async def get_committed_state(self):
+            return SimpleNamespace(value=SimpleNamespace(source_snapshot=None))
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityWithoutCommittedSnapshot(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            current_live = await service.create_snapshot(
+                name="CurrentAuthorityGap",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Clean",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Drive Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.25},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated_live = await service.activate_snapshot(current_live["id"])
+            assert activated_live is not None
+            assert activated_live["topology_reused"] is False
+            runtime_chain_id = activated_live["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"]
+            assert runtime_chain_id is not None
+
+            live_snapshot = await service.get_live_snapshot()
+            assert live_snapshot is not None
+            assert live_snapshot["id"] == current_live["id"]
+
+            next_snapshot = await service.create_snapshot(
+                name="NextAuthorityGap",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-b",
+                            "label": "Lead",
+                            "color": "#fa4d56",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": True,
+                                    "parameters": {"gain": 0.85},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-b",
+                        "blend_positions": {"channel-b": 100.0},
+                        "series_order": ["channel-b"],
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated_next = await service.activate_snapshot(next_snapshot["id"])
+            assert activated_next is not None
+            assert activated_next["topology_reused"] is True
+            assert activated_next["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] == runtime_chain_id
+            assert applied_payloads[-1]["flowSlots"][0]["label"] == "Lead"
+
+    asyncio.run(_run())
+
+
+def test_activate_snapshot_schedules_background_preload(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    scheduled_preloads: list[int] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda snapshot_id: scheduled_preloads.append(int(snapshot_id)))
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveNow",
+                program_number=10,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Drive", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+    asyncio.run(_run())
+    assert scheduled_preloads == [1]
+
+
+def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="AuthorityLive",
+                program_number=12,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "parallel_blend", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+    asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    desired = published_desired[0]
+    assert desired.snapshot_id == 1
+    assert desired.routing.mode == "parallel_blend"
+    assert desired.routing.active_path_ids == ["channel-a"]
+
+
+def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="RoutingLive",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "parallel_blend", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            published_desired.clear()
+
+            updated = await service.update_routing(
+                created["id"],
+                {
+                    "mode": "series",
+                    "active_channel_key": "channel-a",
+                    "series_order": ["channel-a"],
+                },
+            )
+            assert updated is not None
+            assert updated["routing"]["mode"] == "series"
+
+            runtime_payload = await SnapshotRuntimeStateService(session).get_live_snapshot_payload()
+            assert runtime_payload is not None
+            assert runtime_payload["routing"]["mode"] == "series"
+
+    asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    desired = published_desired[0]
+    assert desired.routing.mode == "series"
+    assert desired.routing.path_order == ["channel-a"]
+
+
+def test_preload_next_snapshot_records_ready_runtime_metrics_for_program_order(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    staged_payloads: list[list[dict[str, object]]] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_stage_detached(self, chain_plugins):
+        staged_payloads.append(
+            [
+                {
+                    "plugin_uri": str(getattr(plugin, "plugin_uri", "")),
+                    "position": int(getattr(plugin, "position", 0)),
+                    "selected_asset_path": getattr(plugin, "selected_asset_path", None),
+                }
+                for plugin in chain_plugins
+            ]
+        )
+        return {
+            "enabled": True,
+            "status": "ready",
+            "runtime_items": 0,
+            "warnings": [],
+            "restored_positions": [0],
+            "missing_positions": [],
+            "staged_instance_ids": [601],
+        }
+
+    async def _fake_release_detached(self, instance_ids):
+        return {
+            "released_instance_ids": list(instance_ids),
+            "skipped_active_instance_ids": [],
+            "missing_instance_ids": [],
+            "warnings": [],
+        }
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda _snapshot_id: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(ChainService, "stage_detached_chain_plugins", _fake_stage_detached)
+    monkeypatch.setattr(ChainService, "release_detached_instance_ids", _fake_release_detached)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            live_snapshot = await service.create_snapshot(
+                name="VerseA",
+                program_number=10,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            next_snapshot = await service.create_snapshot(
+                name="VerseB",
+                program_number=11,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-b", "label": "B", "chain_id": 1}],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain B",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "position": 0,
+                                    "loader_state": {"selected_asset_path": "/tmp/preloaded-next.nam"},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {"mode": "series", "active_channel_key": "channel-b", "series_order": ["channel-b"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(live_snapshot["id"])
+            assert activated is not None
+
+            preload = await service.preload_next_snapshot_for_live_snapshot(live_snapshot["id"])
+            assert preload == {
+                "status": "ready",
+                "source_snapshot_id": live_snapshot["id"],
+                "target_snapshot_id": next_snapshot["id"],
+                "target_snapshot_name": "VerseB",
+                "candidate_reason": "program_number",
+                "staged_instance_ids": [601],
+                "warnings": [],
+                "prepared_at": preload["prepared_at"],
+            }
+            assert preload["prepared_at"]
+
+            runtime_state = await SnapshotRuntimeStateService(session).get_live_state()
+            assert runtime_state["runtime_metrics"]["preload"]["target_snapshot_id"] == next_snapshot["id"]
+            assert runtime_state["runtime_metrics"]["preload"]["target_snapshot_name"] == "VerseB"
+            assert runtime_state["runtime_metrics"]["preload"]["candidate_reason"] == "program_number"
+            assert runtime_state["runtime_metrics"]["preload"]["staged_instance_ids"] == [601]
+
+    asyncio.run(_run())
+
+    assert staged_payloads == [[
+        {
+            "plugin_uri": "map2://juce/nam",
+            "position": 0,
+            "selected_asset_path": "/tmp/preloaded-next.nam",
+        }
+    ]]
+
+
+def test_preload_next_snapshot_falls_back_to_display_order_when_program_numbers_missing(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_stage_detached(self, chain_plugins):
+        return {
+            "enabled": True,
+            "status": "ready",
+            "runtime_items": 0,
+            "warnings": [],
+            "restored_positions": [int(getattr(chain_plugins[0], "position", 0))] if chain_plugins else [],
+            "missing_positions": [],
+            "staged_instance_ids": [777],
+        }
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda _snapshot_id: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(ChainService, "stage_detached_chain_plugins", _fake_stage_detached)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            first = await service.create_snapshot(
+                name="OrderOne",
+                detail_payload={
+                    "channels": [{"channel_key": "a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "a", "series_order": ["a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            second = await service.create_snapshot(
+                name="OrderTwo",
+                detail_payload={
+                    "channels": [{"channel_key": "b", "label": "B", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "B", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "b", "series_order": ["b"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            await service.update_snapshot(first["id"], display_order=10)
+            await service.update_snapshot(second["id"], display_order=20)
+
+            activated = await service.activate_snapshot(first["id"])
+            assert activated is not None
+
+            preload = await service.preload_next_snapshot_for_live_snapshot(first["id"])
+            assert preload is not None
+            assert preload["target_snapshot_id"] == second["id"]
+            assert preload["candidate_reason"] == "display_order"
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_activation_rejects_missing_runtime_channels(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 
@@ -1170,6 +1682,373 @@ def test_snapshot_runtime_health_refresh_marks_live_channels_not_loaded_when_run
             assert live_payload is not None
             assert live_payload["live_state"]["paths"][0]["activation_status"] == "not_loaded"
             assert live_payload["live_state"]["runtime_chains"][0]["runtime_sync"]["status"] == "inactive"
+
+    asyncio.run(_run())
+
+
+def test_snapshot_service_activation_records_topology_mutation_metrics(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _TopologyStatsEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self):
+            self._responses = [
+                {
+                    "mutation_count": 4,
+                    "no_op_skip_count": 1,
+                    "last_mutation_duration_ms": 1.1,
+                    "peak_mutation_duration_ms": 2.2,
+                    "avg_mutation_duration_ms": 1.5,
+                    "last_removed_connection_count": 6,
+                    "last_added_connection_count": 8,
+                    "last_chain_size": 2,
+                    "last_parallel_group_count": 0,
+                },
+                {
+                    "mutation_count": 5,
+                    "no_op_skip_count": 3,
+                    "last_mutation_duration_ms": 4.25,
+                    "peak_mutation_duration_ms": 5.5,
+                    "avg_mutation_duration_ms": 2.4,
+                    "last_removed_connection_count": 14,
+                    "last_added_connection_count": 16,
+                    "last_chain_size": 3,
+                    "last_parallel_group_count": 1,
+                },
+            ]
+
+        async def get_topology_mutation_stats(self):
+            if len(self._responses) > 1:
+                return self._responses.pop(0)
+            return self._responses[0]
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 2, 1
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 1,
+            "total_count": 1,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            engine_stub = _TopologyStatsEngineStub()
+
+            monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+            monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+            monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+            monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+            monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+            monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+            monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+
+            created = await service.create_snapshot(
+                name="TopologyMetrics",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.75},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+
+            assert activated is not None
+            assert activated["topology_mutation"]["delta"]["mutation_count"] == 1
+            assert activated["topology_mutation"]["delta"]["no_op_skip_count"] == 2
+            assert activated["topology_mutation"]["after"]["last_mutation_duration_ms"] == 4.25
+            assert activated["runtime_live_state"]["runtime_metrics"]["topology_mutation"]["before"]["mutation_count"] == 4
+            assert activated["runtime_live_state"]["runtime_metrics"]["topology_mutation"]["after"]["last_chain_size"] == 3
+            assert activated["runtime_live_state"]["runtime_metrics"]["topology_mutation"]["delta"]["no_op_skip_count"] == 2
+
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            refreshed = await runtime_state_service.get_live_state()
+            assert refreshed is not None
+            assert refreshed["runtime_metrics"]["topology_mutation"]["delta"]["mutation_count"] == 1
+            assert refreshed["runtime_metrics"]["topology_mutation"]["after"]["last_added_connection_count"] == 16
+
+    asyncio.run(_run())
+
+
+def test_activate_snapshot_applies_output_safety_settings(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _OutputSafetyCollector:
+        def __init__(self) -> None:
+            self.reference_dbfs = None
+            self.warning_threshold_db = None
+
+        def set_output_safety_settings(
+            self,
+            *,
+            output_level_reference_dbfs=None,
+            output_warning_threshold_db=None,
+        ) -> None:
+            self.reference_dbfs = output_level_reference_dbfs
+            self.warning_threshold_db = output_warning_threshold_db
+
+    class _OutputSafetyEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.audio_device_calls: list[str] = []
+            self.limiter_threshold_calls: list[float] = []
+
+        async def set_audio_device(self, device_name: str) -> bool:
+            self.audio_device_calls.append(device_name)
+            return True
+
+        async def set_limiter_threshold(self, db: float) -> None:
+            self.limiter_threshold_calls.append(db)
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    collector = _OutputSafetyCollector()
+    engine_stub = _OutputSafetyEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+    monkeypatch.setattr(
+        performance_metrics_module,
+        "get_metrics_collector",
+        lambda: asyncio.sleep(0, result=collector),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="OutputSafety",
+                output_level_reference_dbfs=-8.5,
+                output_level_warning_threshold_db=2.75,
+                input_device="Stage Input",
+                output_device="House Left/Right",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+
+            assert activated is not None
+            assert engine_stub.audio_device_calls == ["House Left/Right"]
+            assert engine_stub.limiter_threshold_calls == [-8.5]
+            assert collector.reference_dbfs == -8.5
+            assert collector.warning_threshold_db == 2.75
+            assert activated["runtime_live_state"]["runtime_metrics"]["output_safety"] == {
+                "output_level_reference_dbfs": -8.5,
+                "output_warning_threshold_db": 2.75,
+                "reference_applied": True,
+                "warning_threshold_applied": True,
+                "reason": "applied",
+            }
+
+    asyncio.run(_run())
+
+
+def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _AudioBindingEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.audio_device_calls: list[str] = []
+
+        async def set_audio_device(self, device_name: str) -> bool:
+            self.audio_device_calls.append(device_name)
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _AudioBindingEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveDeviceBinding",
+                input_device="Stage Input",
+                output_device="House Left/Right",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "Lead",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Lead Chain",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0},
+                        "series_order": ["channel-a"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            updated = await service.update_snapshot(
+                created["id"],
+                output_device="Monitor 2",
+            )
+
+            assert updated is not None
+            assert updated["output_device"] == "Monitor 2"
+            assert engine_stub.audio_device_calls == ["House Left/Right", "Monitor 2"]
 
     asyncio.run(_run())
 
@@ -1512,3 +2391,99 @@ def test_delete_snapshot_ignores_stale_runtime_live_state_when_control_plane_poi
             assert await service.get_snapshot(created["id"]) is None
 
     asyncio.run(_run())
+
+
+class _FakeSnapshotSpilloverEngine:
+    is_available = True
+    is_running = True
+
+    def __init__(self):
+        self.calls: list[str] = []
+
+    async def stage_delay_spillover(self):
+        self.calls.append("delay")
+
+    async def stage_shoegaze_spillover(self):
+        self.calls.append("shoegaze")
+
+    async def stage_lexilove_spillover(self):
+        self.calls.append("lexilove")
+
+def test_arm_live_spillover_processors_stages_outgoing_native_wet_effects(monkeypatch):
+    engine = _FakeSnapshotSpilloverEngine()
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine)
+
+    service = SnapshotService(None)
+    current_live_detail = {
+        "chains": [
+            {
+                "plugins": [
+                    {"uri": "map2://juce/delay", "bypass": False},
+                    {"uri": "map2://juce/reverb/pcm70", "bypass": False},
+                    {"uri": "map2://juce/multieffect/shoegaze", "bypass": False},
+                ]
+            }
+        ]
+    }
+    target_detail = {
+        "chains": [
+            {
+                "plugins": [
+                    {"uri": "map2://juce/multieffect/shoegaze", "bypass": False},
+                ]
+            }
+        ]
+    }
+
+    asyncio.run(
+        service._arm_live_spillover_processors(  # noqa: SLF001 - targeted unit coverage
+            current_live_detail=current_live_detail,
+            target_detail=target_detail,
+        )
+    )
+
+    assert engine.calls == ["delay", "lexilove"]
+
+
+def test_arm_live_spillover_processors_stages_same_uri_native_wet_state_changes(monkeypatch):
+    engine = _FakeSnapshotSpilloverEngine()
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine)
+
+    service = SnapshotService(None)
+    current_live_detail = {
+        "chains": [
+            {
+                "plugins": [
+                    {
+                        "uri": "map2://juce/delay",
+                        "bypass": False,
+                        "parameters": {"0": 0.25, "1": 0.5},
+                        "position": 2,
+                    }
+                ]
+            }
+        ]
+    }
+    target_detail = {
+        "chains": [
+            {
+                "plugins": [
+                    {
+                        "uri": "map2://juce/delay",
+                        "bypass": False,
+                        "parameters": {"0": 0.9, "1": 0.1},
+                        "position": 2,
+                    }
+                ]
+            }
+        ]
+    }
+
+    asyncio.run(
+        service._arm_live_spillover_processors(  # noqa: SLF001 - targeted unit coverage
+            current_live_detail=current_live_detail,
+            target_detail=target_detail,
+        )
+    )
+
+    assert engine.calls == ["delay"]

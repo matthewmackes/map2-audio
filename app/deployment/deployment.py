@@ -34,6 +34,12 @@ class ServicePolicy(Enum):
     DEGRADED = "degraded"  # Running but with reduced resources
 
 
+MONITORING_HOST_MODES = {
+    DeploymentMode.ALL_IN_ONE,
+    DeploymentMode.CONTROL_NODE,
+}
+
+
 # Define which services run in each mode
 SERVICE_POLICIES = {
     DeploymentMode.ALL_IN_ONE: {
@@ -46,6 +52,9 @@ SERVICE_POLICIES = {
         "database": ServicePolicy.ENABLED,
         "mdns_discovery": ServicePolicy.ENABLED,
         "lcd_manager": ServicePolicy.ENABLED,
+        "metrics_exporter": ServicePolicy.ENABLED,
+        "prometheus": ServicePolicy.ENABLED,
+        "grafana": ServicePolicy.ENABLED,
     },
     DeploymentMode.AUDIO_NODE: {
         "juce_engine": ServicePolicy.ENABLED,
@@ -57,6 +66,9 @@ SERVICE_POLICIES = {
         "database": ServicePolicy.ENABLED,
         "mdns_discovery": ServicePolicy.ENABLED,
         "lcd_manager": ServicePolicy.ENABLED,
+        "metrics_exporter": ServicePolicy.ENABLED,
+        "prometheus": ServicePolicy.DISABLED,
+        "grafana": ServicePolicy.DISABLED,
     },
     DeploymentMode.CONTROL_NODE: {
         "juce_engine": ServicePolicy.DISABLED,
@@ -68,6 +80,9 @@ SERVICE_POLICIES = {
         "database": ServicePolicy.ENABLED,
         "mdns_discovery": ServicePolicy.ENABLED,
         "lcd_manager": ServicePolicy.DISABLED,
+        "metrics_exporter": ServicePolicy.ENABLED,
+        "prometheus": ServicePolicy.ENABLED,
+        "grafana": ServicePolicy.ENABLED,
     },
     DeploymentMode.FRONTEND_ONLY: {
         "juce_engine": ServicePolicy.DISABLED,
@@ -79,6 +94,9 @@ SERVICE_POLICIES = {
         "database": ServicePolicy.DISABLED,
         "mdns_discovery": ServicePolicy.ENABLED,
         "lcd_manager": ServicePolicy.DISABLED,
+        "metrics_exporter": ServicePolicy.DEGRADED,
+        "prometheus": ServicePolicy.DISABLED,
+        "grafana": ServicePolicy.DISABLED,
     },
 }
 
@@ -212,6 +230,30 @@ class DeploymentConfig:
         """Check if service is in degraded mode"""
         policy = self.get_service_policy(service)
         return policy == ServicePolicy.DEGRADED
+
+    def hosts_monitoring_stack(self) -> bool:
+        """
+        Return True when this node should host Prometheus/Grafana locally.
+
+        Monitoring is intentionally kept off dedicated audio nodes so they only
+        export lightweight scrape endpoints and avoid unnecessary background
+        CPU, memory, and disk pressure.
+        """
+        return (
+            self.mode in MONITORING_HOST_MODES
+            and self.is_service_enabled("prometheus")
+            and self.is_service_enabled("grafana")
+        )
+
+    def exports_node_metrics(self) -> bool:
+        """
+        Return True when this node should expose lightweight metrics exports.
+
+        Audio nodes stay in this category even when they do not host the full
+        monitoring stack, which lets management-plane Prometheus instances
+        scrape them remotely without running local Prometheus/Grafana.
+        """
+        return self.get_service_policy("metrics_exporter") != ServicePolicy.DISABLED
     
     def to_dict(self) -> Dict:
         """Export configuration as dictionary"""

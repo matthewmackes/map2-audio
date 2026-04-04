@@ -469,6 +469,8 @@ describe('PlatformModalContent', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Open Workspace Catalog' }))
 
     expect(screen.getAllByText('Workspace Catalog').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Carbon storefront for MAP2 workspaces' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Featured' })).toBeInTheDocument()
     expect(screen.getAllByText('MIDI Hub').length).toBeGreaterThan(0)
   })
 
@@ -502,7 +504,10 @@ describe('PlatformModalContent', () => {
     )
 
     fireEvent.click(screen.getByRole('link', { name: 'Open Workspace Catalog' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Launch MIDI Hub' }))
+    const catalogHeading = screen.getByRole('heading', { name: 'Full Catalog' })
+    const catalogSection = catalogHeading.closest('section')
+    expect(catalogSection).not.toBeNull()
+    fireEvent.click(within(catalogSection as HTMLElement).getByRole('button', { name: 'Launch MIDI Hub' }))
 
     expect(handleLaunchRoute).toHaveBeenCalledWith('/midi-hub')
   })

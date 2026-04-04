@@ -114,6 +114,17 @@ jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
       <p>{description}</p>
     </div>
   ),
+  MidiHubSurface: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode
+    className?: string
+  }) => (
+    <div className={className}>
+      {children}
+    </div>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/useMidiHubOverview', () => ({

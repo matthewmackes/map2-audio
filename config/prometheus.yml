@@ -4,9 +4,23 @@ global:
   external_labels:
     monitor: 'map2-audio'
 
+# Management/all-in-one nodes host Prometheus and scrape the lightweight
+# FastAPI exporter from themselves plus remote audio nodes. Dedicated audio
+# nodes should not run local Prometheus or Grafana.
 scrape_configs:
-  - job_name: 'map2-backend'
+  - job_name: 'map2-local-backend'
     static_configs:
-      - targets: ['backend:8080']
+      - targets: ['127.0.0.1:8080']
+    metrics_path: '/api/metrics/prometheus'
+    scrape_interval: 5s
+
+  # Management/all-in-one nodes should maintain the cluster target list as
+  # JSON files under /etc/map2/prometheus/targets/. This keeps remote audio
+  # nodes scrapeable without running Prometheus locally on each one.
+  - job_name: 'map2-cluster-nodes'
+    file_sd_configs:
+      - files:
+          - '/etc/map2/prometheus/targets/*.json'
+        refresh_interval: 30s
     metrics_path: '/api/metrics/prometheus'
     scrape_interval: 5s

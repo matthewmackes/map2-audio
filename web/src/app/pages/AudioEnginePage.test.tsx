@@ -48,6 +48,17 @@ jest.mock('../components/AudioEngine/AudioEngineWorkspaceGraph', () => ({
   AudioEngineWorkspaceGraph: () => <div data-testid="audio-engine-workspace-graph">Audio Engine Workspace Graph Mock</div>,
 }))
 
+jest.mock('../components/AudioEngine/JuceSourceTruthGraph', () => ({
+  JuceSourceTruthGraph: ({ onSelectNode }: any) => (
+    <div>
+      <div data-testid="juce-source-truth-graph">JUCE Source Truth Graph Mock</div>
+      <button type="button" onClick={() => onSelectNode('juce-runtime')}>
+        Focus JUCE Runtime
+      </button>
+    </div>
+  ),
+}))
+
 jest.mock('../components/Visualizations/SpectrumAnalyzer', () => ({
   SpectrumAnalyzer: () => <div>Spectrum Analyzer Mock</div>,
 }))
@@ -233,6 +244,13 @@ describe('AudioEnginePage', () => {
         configurable: true,
       })
     }
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      writable: true,
+      value: (callback: FrameRequestCallback) => {
+        callback(0)
+        return 1
+      },
+    })
   })
 
   it('renders without crash in single-node mode and hides the cluster grid', async () => {
@@ -243,6 +261,26 @@ describe('AudioEnginePage', () => {
     })
 
     expect(screen.queryByTestId('cluster-engine-grid')).not.toBeInTheDocument()
+  })
+
+  it('renders the JUCE source-of-truth card and syncs graph selection into the connection table', async () => {
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('JUCE Graph: Source of Truth')).toBeInTheDocument()
+    })
+
+    expect(screen.getByTestId('juce-source-truth-graph')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Applies engine settings')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Focus JUCE Runtime' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Node focus: juce-runtime')).toBeInTheDocument()
+      expect(screen.getByText('Runtime device')).toBeInTheDocument()
+    })
   })
 
   it('renders cluster mode controls and the cluster engine grid', async () => {

@@ -21,6 +21,9 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 # Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,6 +41,39 @@ LOG_DIR="${LOG_DIR:-/var/log/map2}"
 VENV_DIR="${VENV_DIR:-/opt/map2/venv}"
 INSTALL_SYSTEMD=true
 INSTALL_FIREWALL=true
+
+is_monitoring_host_role() {
+    case "${NODE_ROLE^^}" in
+        MANAGEMENT-NODE|MANAGEMENT|CONTROL-NODE|STANDBY-NODE|ALL-IN-ONE)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+resolve_dnf_package() {
+    local candidate
+    for candidate in "$@"; do
+        if dnf -q info "$candidate" > /dev/null 2>&1; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+deployment_mode_for_role() {
+    case "${NODE_ROLE^^}" in
+        ALL-IN-ONE)
+            echo "ALL-IN-ONE"
+            ;;
+        *)
+            echo "CONTROL-NODE"
+            ;;
+    esac
+}
 
 # ============================================================================
 # Helper Functions
@@ -198,6 +234,23 @@ install_system_dependencies() {
         netcat \
         bind-utils \
         > /dev/null
+
+    if is_monitoring_host_role; then
+        local prometheus_pkg=""
+        local grafana_pkg=""
+
+        prometheus_pkg="$(resolve_dnf_package prometheus2 prometheus || true)"
+        grafana_pkg="$(resolve_dnf_package grafana || true)"
+
+        if [ -n "$prometheus_pkg" ] || [ -n "$grafana_pkg" ]; then
+            log "Installing monitoring packages for management-plane observability..."
+            dnf install -y ${prometheus_pkg:+$prometheus_pkg} ${grafana_pkg:+$grafana_pkg} > /dev/null
+        else
+            warning "Prometheus/Grafana packages not found in configured DNF repositories; repo configs and units will still be installed"
+        fi
+    else
+        log "Skipping Prometheus/Grafana packages on non-management node role: $NODE_ROLE"
+    fi
     
     success "System dependencies installed"
 }
@@ -221,8 +274,13 @@ setup_directories_and_user() {
     # Create directories
     log "Creating required directories..."
     mkdir -p "$CONFIG_DIR"/{ssl,ssh}
+    mkdir -p "$CONFIG_DIR"/prometheus/targets
+    mkdir -p "$CONFIG_DIR"/grafana/provisioning/{datasources,dashboards}
+    mkdir -p "$CONFIG_DIR"/grafana/dashboards
     mkdir -p "$DATA_DIR"/{backups,database,logs}
+    mkdir -p "$DATA_DIR"/{prometheus,grafana}
     mkdir -p "$LOG_DIR"
+    mkdir -p "$LOG_DIR"/grafana
     mkdir -p "$APP_DIR"/{scripts,config,venv}
     
     # Set permissions
@@ -231,6 +289,8 @@ setup_directories_and_user() {
     chmod 755 "$CONFIG_DIR"
     chmod 755 "$DATA_DIR"
     chmod 755 "$LOG_DIR"
+    chmod 755 "$CONFIG_DIR"/prometheus "$CONFIG_DIR"/prometheus/targets
+    chmod 755 "$CONFIG_DIR"/grafana "$CONFIG_DIR"/grafana/dashboards
     
     success "Directories and user setup complete"
 }
@@ -429,6 +489,8 @@ EOF
 
 create_config_files() {
     log "Creating configuration files..."
+    local deployment_mode
+    deployment_mode="$(deployment_mode_for_role)"
     
     # Create main configuration
     cat > "$CONFIG_DIR/cluster.conf" << EOF
@@ -482,12 +544,16 @@ DEBUG=false
 
 CLUSTER_NAME=$CLUSTER_NAME
 NODE_ROLE=$NODE_ROLE
+MAP2_DEPLOYMENT_MODE=$deployment_mode
 
 DATABASE_URL=sqlite:///$DATA_DIR/database/cluster.db
 LOG_DIR=$LOG_DIR
 
 CONFIG_DIR=$CONFIG_DIR
 DATA_DIR=$DATA_DIR
+PROMETHEUS_CONFIG_DIR=$CONFIG_DIR/prometheus
+PROMETHEUS_TARGETS_DIR=$CONFIG_DIR/prometheus/targets
+GRAFANA_CONFIG_DIR=$CONFIG_DIR/grafana
 
 # Security
 SSL_CERT=$CONFIG_DIR/ssl/node-cert.pem
@@ -504,6 +570,51 @@ EOF
     chown map2:map2 "$CONFIG_DIR"/{cluster.conf,.env}
     
     success "Configuration files created"
+}
+
+# ============================================================================
+# Observability Configuration
+# ============================================================================
+
+create_observability_files() {
+    if ! is_monitoring_host_role; then
+        log "Skipping Prometheus/Grafana config staging for non-management node role: $NODE_ROLE"
+        return
+    fi
+
+    log "Staging Prometheus and Grafana configuration..."
+
+    install -m 644 "$REPO_ROOT/config/prometheus.yml" "$CONFIG_DIR/prometheus/prometheus.yml"
+    install -m 644 "$REPO_ROOT/config/prometheus-targets/audio-nodes.json" "$CONFIG_DIR/prometheus/targets/audio-nodes.json"
+
+    install -m 644 "$REPO_ROOT/config/grafana/grafana.ini" "$CONFIG_DIR/grafana/grafana.ini"
+    install -m 644 "$REPO_ROOT/config/grafana/provisioning/datasources/prometheus.yml" \
+        "$CONFIG_DIR/grafana/provisioning/datasources/prometheus.yml"
+    install -m 644 "$REPO_ROOT/config/grafana/provisioning/dashboards/map2.yml" \
+        "$CONFIG_DIR/grafana/provisioning/dashboards/map2.yml"
+
+    local dashboard
+    for dashboard in "$REPO_ROOT"/config/grafana-dashboards/*.json; do
+        install -m 644 "$dashboard" "$CONFIG_DIR/grafana/dashboards/"
+    done
+
+    if [ ! -f "$CONFIG_DIR/grafana/grafana.env" ]; then
+        local grafana_password
+        grafana_password="$(openssl rand -hex 16)"
+        cat > "$CONFIG_DIR/grafana/grafana.env" << EOF
+GF_SECURITY_ADMIN_USER=map2-admin
+GF_SECURITY_ADMIN_PASSWORD=${grafana_password}
+EOF
+        chmod 600 "$CONFIG_DIR/grafana/grafana.env"
+        chown map2:map2 "$CONFIG_DIR/grafana/grafana.env"
+        success "Generated Grafana admin credentials at $CONFIG_DIR/grafana/grafana.env"
+    else
+        log "Grafana credential file already exists, preserving it"
+    fi
+
+    chown -R map2:map2 "$CONFIG_DIR/prometheus" "$CONFIG_DIR/grafana" "$DATA_DIR/prometheus" "$DATA_DIR/grafana" "$LOG_DIR/grafana"
+
+    success "Observability configuration staged"
 }
 
 # ============================================================================
@@ -628,6 +739,11 @@ ExecStart=$VENV_DIR/bin/python3 -m app.services.cluster.failover_monitor
 Restart=always
 RestartSec=5
 EOF
+
+    if is_monitoring_host_role; then
+        install -m 644 "$REPO_ROOT/packaging/systemd/map2-prometheus.service" /etc/systemd/system/map2-prometheus.service
+        install -m 644 "$REPO_ROOT/packaging/systemd/map2-grafana.service" /etc/systemd/system/map2-grafana.service
+    fi
     
     # Reload systemd
     systemctl daemon-reload
@@ -652,6 +768,11 @@ configure_firewall() {
         firewall-cmd --permanent --add-port=8080/tcp > /dev/null
         firewall-cmd --permanent --add-port=5353/udp > /dev/null  # mDNS
         firewall-cmd --permanent --add-service=ssh > /dev/null
+
+        if is_monitoring_host_role; then
+            firewall-cmd --permanent --add-port=3001/tcp > /dev/null
+            firewall-cmd --permanent --add-port=9090/tcp > /dev/null
+        fi
         
         # Allow zeroconf/mDNS
         firewall-cmd --permanent --add-service=mdns > /dev/null
@@ -769,6 +890,17 @@ run_health_checks() {
             ((CHECKS_FAILED++))
         fi
     fi
+
+    if is_monitoring_host_role; then
+        log "Checking observability assets..."
+        if [ -f "$CONFIG_DIR/prometheus/prometheus.yml" ] && [ -f "$CONFIG_DIR/grafana/grafana.ini" ]; then
+            success "  ✓ Prometheus/Grafana config staged"
+            ((CHECKS_PASSED++))
+        else
+            error "  ✗ Prometheus/Grafana config missing"
+            ((CHECKS_FAILED++))
+        fi
+    fi
     
     echo ""
     log "Health check results: ${GREEN}${CHECKS_PASSED} passed${NC}, ${RED}${CHECKS_FAILED} failed${NC}"
@@ -815,13 +947,35 @@ ${BLUE}Next Steps:${NC}
    sudo systemctl enable map2-failover-monitor
    sudo systemctl enable map2-fleet-update.timer
 
-4. ${YELLOW}View Logs${NC}
+EOF
+
+    if is_monitoring_host_role; then
+        cat << EOF
+   sudo systemctl enable map2-prometheus
+   sudo systemctl enable map2-grafana
+
+4. ${YELLOW}Start the Observability Stack${NC}
+   sudo systemctl start map2-prometheus
+   sudo systemctl start map2-grafana
+
+5. ${YELLOW}Review Grafana Credentials${NC}
+   sudo cat $CONFIG_DIR/grafana/grafana.env
+
+6. ${YELLOW}Manage Remote Scrape Targets${NC}
+   sudo nano $CONFIG_DIR/prometheus/targets/audio-nodes.json
+
+EOF
+    fi
+
+    cat << EOF
+
+7. ${YELLOW}View Logs${NC}
    sudo journalctl -u map2-cluster-manager -f
 
-5. ${YELLOW}Test the API${NC}
+8. ${YELLOW}Test the API${NC}
    curl -k https://localhost:8080/api/cluster/status
 
-6. ${YELLOW}Deploy Audio Nodes${NC}
+9. ${YELLOW}Deploy Audio Nodes${NC}
    Run: ./deploy_cluster_node.sh on each audio node
 
 ${BLUE}Configuration Files:${NC}
@@ -858,6 +1012,7 @@ main() {
     setup_certificate_authority
     setup_database
     create_config_files
+    create_observability_files
     install_systemd_units
     configure_firewall
     configure_selinux

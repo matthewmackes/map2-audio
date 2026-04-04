@@ -2,6 +2,7 @@ import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
+
 import { AppShell } from './AppShell'
 
 const mockUpdateSettings = jest.fn()
@@ -86,7 +87,7 @@ function LocationProbe() {
   return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
-describe('AppShell navigation', () => {
+describe('AppShell desktop window chrome', () => {
   beforeEach(() => {
     mockUpdateSettings.mockReset()
     mockSpecialSettings.pinnedRoutes = []
@@ -117,58 +118,71 @@ describe('AppShell navigation', () => {
     }
   })
 
-  it('renders only Home and shell controls when no routes are pinned', () => {
+  it('keeps the landing route free of window chrome', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
+      ['/'],
     )
 
-    expect(screen.getByLabelText('Home')).toBeTruthy()
-    expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
-    expect(screen.queryByLabelText('Open special settings')).toBeNull()
-    expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
-    expect(screen.queryByLabelText('Open Platforms and Labs window')).toBeNull()
-    expect(screen.queryByLabelText('Open advanced menu')).toBeNull()
-    expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
-    expect(screen.queryByText('Guide')).toBeNull()
-    expect(screen.queryByText('About')).toBeNull()
-    expect(container.querySelector('.topbar-pro__hero-home-mark')).toBeTruthy()
-    expect(container.querySelector('.nav-active-title')).toBeNull()
-    expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
-    expect(container.querySelector('.nav-tabs-right-container')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+    expect(screen.queryByLabelText('MAP2 window frame')).toBeNull()
+    expect(screen.queryByLabelText('Primary navigation shell')).toBeNull()
+    expect(screen.queryByLabelText('Open Start menu')).toBeNull()
+    expect(container.querySelector('.window-titlebar')).toBeNull()
+    expect(container.querySelector('.window-taskbar')).toBeNull()
   })
 
-  it('uses the compact shell treatment only for touch-tablet /juce-grid', () => {
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      writable: true,
-      value: 1024,
-    })
-    Object.defineProperty(window.navigator, 'maxTouchPoints', {
-      configurable: true,
-      value: 5,
-    })
-    Object.defineProperty(window, 'ontouchstart', {
-      configurable: true,
-      writable: true,
-      value: true,
-    })
-
+  it('renders the desktop title bar and bottom taskbar on non-landing routes', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/juce-grid'],
+      ['/intelfx'],
     )
 
-    expect(container.querySelector('.app-shell--juce-grid-tablet')).toBeTruthy()
-    expect(container.querySelector('.topbar-pro--juce-grid-tablet')).toBeTruthy()
-    expect(container.querySelector('.nav-tabs-right-container')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
-    expect(container.querySelector('.nav-tabs-right')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
+    expect(screen.getByLabelText('MAP2 window frame')).toBeTruthy()
+    expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
+    expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
+    expect(screen.getByLabelText('Close window and return home')).toBeTruthy()
+    expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
+    expect(screen.getByText('IntelFX Rack')).toBeTruthy()
+    expect(screen.getByText('intelfx')).toBeTruthy()
+    expect(container.querySelector('.window-titlebar__brand-mark')).toBeTruthy()
+    expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
+    expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
+    expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
   })
 
-  it('preserves manual pinned-route order and caps desktop pins at four items', () => {
+  it('uses the first non-active pinned route as the quick-launch slot', () => {
+    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/midi-hub', '/juce-grid']
+
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Quick launch MIDI Hub'))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/midi-hub')
+  })
+
+  it('routes back to landing when the title-bar close button is pressed', () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Close window and return home'))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
+  })
+
+  it('shows pinned routes only inside the Start menu and sorts them visually', () => {
     mockSpecialSettings.pinnedRoutes = ['/intelfx', '/juce-grid', '/midi-hub', '/perform', '/audio-artifacts', '/platform']
 
     const { container } = renderInRouter(
@@ -178,51 +192,47 @@ describe('AppShell navigation', () => {
       ['/intelfx'],
     )
 
-    const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['IntelFX Rack', 'Audio Grid', 'MIDI Hub', 'Stage Mode'])
+    expect(container.querySelectorAll('.start-menu-card').length).toBe(0)
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+
+    const labels = Array.from(container.querySelectorAll('.start-menu-card__label')).map((node) => node.textContent)
+    expect(labels).toEqual(['Audio Grid', 'IntelFX Rack', 'MIDI Hub', 'Stage Mode'])
   })
 
-  it('renders MPX1 as a mega-menu trigger when it is pinned', () => {
+  it('renders MPX1 as a Start menu card that opens its pinned mega menu', () => {
     mockSpecialSettings.pinnedRoutes = ['/mpx1']
 
-    const { container } = renderInRouter(
+    renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
+      ['/intelfx'],
     )
 
-    expect(container.querySelector('.mpx1-nav-root')).toBeTruthy()
-    expect(screen.getAllByText('MPX1 Rack').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByRole('button', { name: /MPX1 Rack/i }))
+
+    expect(screen.getByTestId('mpx1-mega-menu')).toBeTruthy()
   })
 
-  it('renders pinned platform deep links in the top nav as direct routed links', () => {
+  it('renders pinned platform deep links inside the Start menu as direct routed links', () => {
     mockSpecialSettings.pinnedRoutes = ['/platforms/overview']
 
     renderInRouter(
       <AppShell>
         <LocationProbe />
       </AppShell>,
+      ['/intelfx'],
     )
 
-    fireEvent.click(screen.getAllByRole('link', { name: 'Overview' })[0])
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getAllByRole('link', { name: /Overview/i })[0])
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
   })
 
-  it('hides the mobile bottom tabbar on integrated platform routes', () => {
-    mockSpecialSettings.pinnedRoutes = ['/platforms/overview']
-
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-      ['/platforms/overview'],
-    )
-
-    expect(screen.queryByLabelText('Mobile quick navigation')).toBeNull()
-  })
-
-  it('shows only remaining hardware-submenu items inside the Audio Interfaces submenu', () => {
+  it('shows hardware submenu entries from the Start menu card', () => {
     mockSpecialSettings.pinnedRoutes = ['/hardware-interfaces']
     mockHardwareLocationNotes['/hotone-jogg'] = { hostname: 'rack-b' }
 
@@ -230,8 +240,10 @@ describe('AppShell navigation', () => {
       <AppShell>
         <div>shell content</div>
       </AppShell>,
+      ['/intelfx'],
     )
 
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
     fireEvent.click(screen.getByRole('button', { name: /Audio Interfaces/i }))
 
     expect(screen.queryByText('Edirol UA-1000')).toBeNull()

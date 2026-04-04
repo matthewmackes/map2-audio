@@ -13,6 +13,7 @@ import { ParameterKnob } from '../../../ParameterControl'
 import { TunerDisplay } from '../../Visualizations/TunerDisplay'
 import { Flash, Music } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const PARAM_MAP = {
   correction: 0,
@@ -61,9 +62,10 @@ export function OutotuneCard({
   parameterValues,
   onParameterChange,
   realtimeData,
-  accentColor = '#00d4aa',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [selectedKey, setSelectedKey] = useState(0)
   const [selectedScale, setSelectedScale] = useState(0)
   const [noteEnables, setNoteEnables] = useState<boolean[]>(Array(12).fill(true))
@@ -229,7 +231,7 @@ export function OutotuneCard({
             label="Formant" value={getValue('formant', 80)}
             min={0} max={100} defaultValue={80} unit="%"
             onChange={(v) => setValue('formant', v)}
-            accentColor="#f59e0b" size="small"
+            accentColor={accentColor} size="small"
           />
         </div>
       ),

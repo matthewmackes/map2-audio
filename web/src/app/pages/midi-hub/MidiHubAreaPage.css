@@ -1,18 +1,21 @@
 .midi-hub-area-page {
   height: 100%;
   overflow-y: auto;
-  padding: 0 var(--cds-spacing-06) var(--cds-spacing-09);
+  padding: 0 0 var(--cds-spacing-09);
 }
 
 .midi-hub-area-page__hero {
   margin: 0 0 var(--cds-spacing-07);
   padding: clamp(2rem, 3vw, 2.5rem);
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
 }
 
 .midi-hub-area-page__hero::before {
   content: none;
+}
+
+.midi-hub-area-page__content {
+  display: grid;
+  gap: var(--cds-spacing-07);
 }
 
 .midi-hub-area-page__hero-grid {
@@ -43,7 +46,7 @@
 }
 
 .midi-hub-area-page__hero-copy p {
-  max-width: 54rem;
+  max-width: 72rem;
   margin: 0;
   color: var(--cds-text-secondary);
   font-size: var(--cds-body-01-font-size, 0.875rem);
@@ -81,8 +84,6 @@
   display: grid;
   gap: var(--cds-spacing-06);
   padding: var(--cds-spacing-06);
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
 }
 
 .midi-hub-area-page__placeholder p {
@@ -97,10 +98,6 @@
 }
 
 @media (max-width: 672px) {
-  .midi-hub-area-page {
-    padding-inline: var(--cds-spacing-05);
-  }
-
   .midi-hub-area-page__hero-grid {
     grid-template-columns: 1fr;
   }

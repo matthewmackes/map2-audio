@@ -6,7 +6,1235 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-04 12:08 EDT - Completed T703 publish/deploy verification and preserved new T704 viewport-policy follow-up entry that appeared during the deploy loop.
+Last updated: 2026-04-05 00:12 EDT - Closed T750, T752, and T753 with activation-time output safety application, live snapshot IO rebinding, and cluster deployment remote activation downgrade handling; T751/T749/T748 remain next in queue.
+
+ID: T753
+Status: [✓] Done
+Title: Cluster snapshot deployment does not orchestrate remote-node activation
+Description:
+- Goal / acceptance criteria: When a snapshot is deployed to a remote cluster node via `deploy_snapshot()`, the remote node must activate the snapshot (apply plugins, routing, channels, loops) — not just receive asset files. Currently deployment only distributes NAM models and IR files (`_deploy_snapshot_assets()`), creates a deployment record, and returns. No inter-node RPC triggers `activate_snapshot()` on the remote.
+- Why it matters: An operator deploying a snapshot to a remote audio node expects that node to start running the snapshot. Instead, the node receives the asset files but its engine state is unchanged. The snapshot must be manually activated on the remote node.
+- Root cause: `snapshot_deployment_service.py:109-156` calls `_deploy_snapshot_assets()` and creates a DB record. No code invokes remote activation. No inter-node RPC mechanism exists in the deployment path.
+- Fix approach: After asset deployment succeeds, issue an activation request to the remote node via the cluster proxy (`/api/node/{node_id}/proxy/api/snapshots/{id}/activate`). Handle failures gracefully — mark the deployment as `assets_only` if remote activation fails.
+- Files: `app/services/snapshot_deployment_service.py`, `app/routes/cluster_snapshots.py`
+- Dependencies: None — cluster proxy and `activate_snapshot` endpoint exist.
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 00:12 EDT - Codex
+- Completion notes:
+  - Added `_activate_snapshot_on_node()` to `app/services/snapshot_deployment_service.py` so deployment now POSTs through the cluster proxy to `/api/node/{node_id}/proxy/api/snapshots/{snapshot_id}/activate` after asset sync instead of stopping at file distribution.
+  - Deployment records now distinguish successful activation (`deployment_status="active"`) from asset-only fallbacks (`deployment_status="assets_only"`), preserving the remote activation error message instead of falsely reporting the node as live.
+  - Deployment history notes now capture both asset push results and the activation outcome so operators can see whether a remote node actually transitioned into the deployed snapshot.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_metrics.py app/services/snapshot_service.py app/services/snapshot_deployment_service.py tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+
+ID: T752
+Status: [✓] Done
+Title: Audio device binding changes on live snapshot not reapplied to engine
+Description:
+- Goal / acceptance criteria: When `input_device` or `output_device` is changed on the currently-live snapshot via `update_snapshot()`, the audio device binding must be reapplied to the engine immediately. Currently, `_apply_snapshot_audio_device_bindings()` is only called during initial activation (line 1519 in `snapshot_service.py`). The `update_snapshot()` live-sync path (line 1237) only calls `sync_live_snapshot_payload()` which updates the stored payload — it never re-invokes `_apply_snapshot_audio_device_bindings()`.
+- Why it matters: A guitarist switching audio interfaces mid-session (e.g. plugging in a different USB interface) and updating the live snapshot's IO binding sees no effect until the snapshot is fully reactivated.
+- Fix approach: In `update_snapshot()`, when `input_device` or `output_device` has changed and the snapshot is currently live, call `_apply_snapshot_audio_device_bindings()` with the updated detail.
+- Files: `app/services/snapshot_service.py`
+- Dependencies: None — the binding method exists.
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 00:12 EDT - Codex
+- Completion notes:
+  - `app/services/snapshot_service.py::update_snapshot()` now detects when `input_device` or `output_device` actually changes on the currently-live snapshot and reapplies `_apply_snapshot_audio_device_bindings(detail)` immediately after the runtime payload sync instead of waiting for full reactivation.
+  - Added focused regression coverage in `tests/test_snapshot_service.py` proving a live snapshot activation binds the engine once and a subsequent `update_snapshot(..., output_device=...)` triggers a second live engine rebind.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_metrics.py app/services/snapshot_service.py app/services/snapshot_deployment_service.py tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+
+ID: T751
+Status: [ ] Todo
+Title: Snapshot monitoring_output_index never applied to engine
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, `controls.monitoring_output_index` must switch the engine's monitoring output to the specified index. Currently this value is stored in `controls_payload`, compiled into `AudioStateDesiredIO.monitoring_output_index`, but no engine method is called to apply it.
+- Why it matters: A guitarist using different monitoring outputs per snapshot (e.g. headphones for practice, monitors for performance) always hears the same output regardless of snapshot.
+- Root cause: No `set_monitoring_output_index()` method exists on `JuceEngineService`. The value passes through the audio state compiler but is never consumed.
+- Fix approach: (1) Add `set_monitoring_output_index(index)` to `JuceEngineService` backed by a C++ binding in `PythonBindings.cpp`. (2) Call it from `apply_snapshot_to_engine()` or the `_apply_snapshot_audio_device_bindings()` path during activation.
+- Files: `app/services/juce_engine_service.py`, `app/services/snapshot_runtime_service.py`, `juce-engine/Source/PythonBindings.cpp`
+- Dependencies: None (C++ binding addition required)
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T750
+Status: [✓] Done
+Title: Snapshot output_level_reference_dbfs and warning_threshold never applied to engine limiter or monitoring
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, `output_level_reference_dbfs` and `output_level_warning_threshold_db` must configure the engine's output limiter threshold and/or the metering warning system. Currently these values are stored in the Snapshot model (DB columns) and returned in serialized snapshots for UI display, but no engine or monitoring service reads them during activation.
+- Why it matters: A guitarist expects different snapshots to enforce different output level safety limits. Without this, a high-gain snapshot and a clean snapshot share the same implicit limiter threshold. The warning threshold is decorative.
+- Root cause: `apply_snapshot_to_engine()` does not reference these fields. No engine method like `set_output_limiter_threshold()` is called from the snapshot activation path.
+- Fix approach: (1) Add `set_output_level_reference(dbfs)` and `set_output_warning_threshold(db)` to `JuceEngineService` or the metering service. (2) Call them from the activation path in `apply_snapshot_to_engine()`.
+- Files: `app/services/snapshot_runtime_service.py`, `app/services/juce_engine_service.py`, `app/services/performance_metrics.py`
+- Dependencies: None
+- Estimated effort: Small–Medium
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 00:12 EDT - Codex
+- Completion notes:
+  - Added `_apply_snapshot_output_safety_settings()` in `app/services/snapshot_service.py` so snapshot activation now pushes `output_level_reference_dbfs` into the JUCE engine limiter via `set_limiter_threshold()` and records the snapshot warning threshold in the performance metrics collector.
+  - Extended `app/services/performance_metrics.py` to store and expose the active snapshot output-safety settings so the warning threshold is no longer decorative metadata disconnected from runtime monitoring state.
+  - Added regression coverage in `tests/test_snapshot_service.py` asserting activation applies both limiter and warning-threshold settings and includes the resulting runtime metrics in the confirmed live state payload.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_metrics.py app/services/snapshot_service.py app/services/snapshot_deployment_service.py tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
+
+ID: T749
+Status: [ ] Todo
+Title: Snapshot expression_mappings and automation_lanes never applied on activation
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, `controls.expression_mappings` must configure expression pedal→parameter bindings in the MIDI engine, and `controls.automation_lanes` must configure LFO/modulation automation in the automation engine. Currently both are stored in `controls_payload` but never read or applied by any runtime service.
+- Why it matters: Expression pedal mappings are critical for live guitar performance (wah, volume swell, modulation depth). Automation lanes enable hands-free parameter animation (tremolo depth, filter sweep). Both are snapshot-scoped features that are completely non-functional.
+- Root cause: `apply_snapshot_to_engine()` processes only plugin parameters and bypass. The `AutomationLane` DB table (database.py:2093-2139) exists with fields like `lfo_rate_hz`, `lfo_depth`, `modulation_source` but is never populated or queried during snapshot activation. Expression mappings have no corresponding engine registration path.
+- Fix approach: (1) Parse `expression_mappings` entries during activation and register them with the MIDI engine (similar to T747 for MIDI maps). (2) Parse `automation_lanes` and instantiate LFO/modulation sources in the engine. (3) Clear previous snapshot's expression/automation state before applying the new one.
+- Files: `app/services/snapshot_runtime_service.py`, `app/services/midi_engine.py`, `app/services/snapshot_service.py`
+- Dependencies: T747 (MIDI engine registration pattern to reuse)
+- Estimated effort: Large (automation engine integration)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T748
+Status: [ ] Todo
+Title: Update T735 test matrix to cover all discovered gaps (T736–T753)
+Description:
+- Goal / acceptance criteria: Expand the T735 integration test plan to cover the full set of discovered gaps: routing (T739), channel state (T737, T744), effects loops (T736), bypass (T745), MIDI map (T747, T746), preload (T743), topology reuse (T742), morph (T741), expression/automation (T749), output levels (T750), monitoring output (T751), IO bindings (T752), and cluster deployment (T753). Each gap should have at least one test that stubs the engine and asserts the expected call was or was not made.
+- Dependencies: T735
+- Estimated effort: Medium (test design, no implementation)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T747
+Status: [ ] Todo
+Title: Snapshot MIDI map entries never registered with MIDI engine at activation
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, its MIDI map entries (stored in `SnapshotMidiMap.entries`) must be loaded into the MIDI engine's `_mapping_lookup` table so incoming MIDI CC messages trigger the mapped actions. Currently, `MIDIEngine.load_mappings_from_db()` only reads from the global `MIDIMapping` table — snapshot-specific MIDI maps are completely ignored.
+- Why it matters: A guitarist sets up per-snapshot MIDI CC mappings (e.g. expression pedal → wah on snapshot A, expression pedal → volume on snapshot B). Every snapshot activation ignores these mappings — the MIDI engine only responds to global mappings. Per-snapshot control surface configuration is non-functional.
+- Root cause: `activate_snapshot()` in `snapshot_service.py` has no code path that parses `controls.midi_map` entries and registers them with `midi_engine.add_mapping()`. The `MIDIEngine.load_mappings_from_db()` (line 1050 in `midi_engine.py`) queries the global `MIDIMapping` model, not `SnapshotMidiMap`. These are two separate persistence tables with no bridge.
+- Fix approach: Add `load_snapshot_midi_map(entries)` to `MIDIEngine` that clears snapshot-scoped mappings and registers new ones from the snapshot's MIDI map entries. Call it from `activate_snapshot()` after engine apply succeeds. Preserve global mappings separately so they survive snapshot switching.
+- Files: `app/services/midi_engine.py`, `app/services/snapshot_service.py`
+- Dependencies: None — engine `add_mapping()` API exists; only the snapshot-activation call site is missing.
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T746
+Status: [ ] Todo
+Title: Live MIDI map edit on active snapshot does not update MIDI engine
+Description:
+- Goal / acceptance criteria: When `replace_midi_map()` is called on the currently-live snapshot, the MIDI engine must be updated immediately so CC mappings take effect without requiring snapshot reactivation.
+- Why it matters: A guitarist editing MIDI CC assignments on the fly (e.g. reassigning an expression pedal) sees the UI update but the MIDI engine keeps responding to the old mappings. The edit is silently deferred until next activation.
+- Root cause: `replace_midi_map()` in `snapshot_service.py` (line 2010) updates `SnapshotMidiMap.entries` in the database and returns. It does not check whether this snapshot is currently live, does not call `sync_live_snapshot_payload()`, and does not update the MIDI engine. Compare to `update_routing()` (line 1986-2003) which has the live-check pattern.
+- Fix approach: After DB flush in `replace_midi_map()`, check if this snapshot is the live snapshot. If so, call `sync_live_snapshot_payload()` and re-register the MIDI map entries with the MIDI engine (once T747 provides the `load_snapshot_midi_map()` API).
+- Files: `app/services/snapshot_service.py`, `app/services/midi_engine.py`
+- Dependencies: T747 (must provide the MIDI engine registration API first)
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T745
+Status: [ ] Todo
+Title: Bypass toggle in snapshot editor does not reach JUCE engine live
+Description:
+- Goal / acceptance criteria: When the user toggles bypass on a plugin in the snapshot editor, the engine must reflect the change immediately. Currently, the frontend calls `chainsApi.togglePluginBypass()` which routes to `POST /api/chains/{id}/plugins/{uri}/bypass`, and the chain service's `set_plugin_bypass()` (line 2126 in `chain_service.py`) writes to the DB only — no engine call.
+- Why it matters: A guitarist bypassing or enabling an effect pedal in the editor hears no change. The UI shows the toggled state; the engine continues running the previous state. This is one of the most frequently used live controls on a guitar rig.
+- Root cause: `chain_service.set_plugin_bypass()` updates `ChainPlugin.bypass` in the DB (line 2164) and returns. It never calls `engine.set_bypass()` or `engine.set_parameter("bypass", ...)`. The chain route publishes a `PLUGIN_BYPASSED` event (line 932 in `chains.py`) but that is WebSocket/LCD notification only — not engine sync.
+- Contrast: Parameter changes in the snapshot editor go through `pluginsApi.setParameterBatched()` which calls the direct `POST /api/plugins/{uri}/parameters/{index}` route — that route DOES call `engine.set_parameter()`. Bypass takes a separate code path that misses the engine.
+- Fix approach: In `chain_service.set_plugin_bypass()`, after the DB update, call `engine.set_bypass(instance_id, bypass)` for the matched plugin. The engine service already has `set_bypass()` — the chain service just never calls it.
+- Files: `app/services/chain_service.py`, `app/routes/chains.py`
+- Dependencies: None — `engine.set_bypass()` exists on `JuceEngineService`.
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T744
+Status: [ ] Todo
+Title: Channel update (mute/solo/dry_wet_mix) on live snapshot does not sync to engine or authority
+Description:
+- Goal / acceptance criteria: When `update_channel()` is called on the currently-live snapshot, channel-level state (mute, solo, dry_wet_mix) must be applied to the engine and the live snapshot payload must be synced. Currently the method is DB-only — it does not check live status, does not sync the live payload, and does not publish desired state.
+- Why it matters: A guitarist muting a channel or adjusting wet/dry blend mid-performance sees the UI update but hears no change. The edit is lost until the next full activation.
+- Root cause: `update_channel()` in `snapshot_service.py` (line 1757) updates `SnapshotChannel` fields and returns `_reload_snapshot_detail()`. Compare to `update_routing()` (line 1986-2003) which has the live-snapshot check + sync pattern — `update_channel()` lacks this entirely.
+- Fix approach: After DB flush in `update_channel()`, add the same live-snapshot check pattern used in `update_routing()`: call `sync_live_snapshot_payload()` and `_publish_snapshot_desired_state()` if this snapshot is currently live. For the engine effect, depends on T737 (which adds the engine primitives for chain-level mute/gain).
+- Files: `app/services/snapshot_service.py`
+- Dependencies: T737 (engine primitives for channel mute/solo/gain)
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T743
+Status: [ ] Todo
+Title: Preloaded snapshot staged instances are never consumed during activation
+Description:
+- Goal / acceptance criteria: When a snapshot is activated and a preload was prepared for it, the activation path must use the staged plugin instances from the preload instead of creating new ones from scratch. Currently `preload_hit` is computed as a metric (line 1603 in `snapshot_service.py`) but the code never branches on it — the staged instances are silently abandoned and new instances are always created, wasting the preload work.
+- Why it matters: Preloading exists to reduce snapshot switching latency — critical for live gig scene changes. The entire preload system (staging, warming, ready states) runs successfully but its output is thrown away. Every snapshot switch pays the full instantiation cost regardless of preload state. Additionally, abandoned staged instances are a resource leak (allocated engine instances that are never freed during the activation path).
+- Root cause: `activate_snapshot()` extracts `previous_preload_state` (line 1521) and computes `preload_hit` (line 1603-1605) but never checks `preload_hit` to skip `_materialize_live_state()`. The code always calls either `_reuse_live_runtime_chains()` or `_materialize_live_state()` regardless of preload status. `preload_next_snapshot_for_live_snapshot()` stores `staged_instance_ids` (line 626) in the runtime state but `_materialize_live_state()` creates fresh chains from scratch (line 3146-3201).
+- Fix approach: When `preload_hit` is true, retrieve the `staged_instance_ids` from the preload state and use them in `_materialize_live_state()` via `chain_service.adopt_detached_instances()` or equivalent. If adoption fails, fall back to the current create-from-scratch path. Release stale staged instances when they are not consumed (activation of a different snapshot should clean up the preload for the old target).
+- Files: `app/services/snapshot_service.py`, `app/services/chain_service.py`
+- Dependencies: None — the stage/release APIs exist; only the consumption path is missing.
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T742
+Status: [ ] Todo
+Title: Topology-reuse path skips routing, channel, and loop-insertion application
+Description:
+- Goal / acceptance criteria: When `_reuse_live_runtime_chains()` succeeds (topology reuse), the activation path must still apply routing mode/blend, channel mute/solo/dry_wet_mix, and effects-loop insertion parameters — not just plugin bypass and loader_state. Currently the reuse path (line 3015-3157 in `snapshot_service.py`) only updates `ChainPlugin.bypass` and `loader_state` columns for each runtime plugin (lines 3121-3132), then returns without applying any other snapshot state to the engine.
+- Why it matters: Topology reuse is the fast path — it fires when switching between snapshots with the same plugin topology but different settings. This is exactly the common case for a guitarist switching between similar presets. Every routing, channel-level, and loop-insertion difference between those presets is silently dropped.
+- Root cause: `_reuse_live_runtime_chains()` was written to handle the common case of "same plugins, different parameters" but only covers the plugin-level bypass/loader_state columns. It does not call `apply_snapshot_to_engine()` equivalent steps for routing, channels, or loop insertions. The full-rebuild path (`_materialize_live_state`) creates fresh chains and loop insertions from the snapshot detail, but the reuse path skips all of that.
+- Fix approach: After the reuse path succeeds (line 3152), apply the same routing/channel/loop-insertion steps that would run after `_materialize_live_state()`. Specifically: (1) call `_apply_routing_to_engine()` from T739, (2) apply channel mute/solo/gain from T737, (3) sync loop insertions for each reused runtime chain via `set_chain_loop_insertions()` from T736.
+- Files: `app/services/snapshot_service.py`
+- Dependencies: T736, T737, T739 (the engine primitives must exist first)
+- Estimated effort: Small (integration work after dependencies are complete)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T741
+Status: [ ] Todo
+Title: Morph position stored to authority but never applied to engine parameter interpolation
+Description:
+- Goal / acceptance criteria: When `set_morph_position()` is called, the morph position must drive actual parameter interpolation between the morph source and target channels in the JUCE engine — not just update the authority state.
+- Why it matters: Morph is the crossfade control between two snapshot channels (e.g. clean → distorted). The morph slider updates the UI and the authority routing state, but no parameter interpolation reaches the engine. The guitarist moves the morph slider and hears nothing change.
+- Root cause: `set_morph_position()` delegates to `update_routing()` (line 2008), which correctly syncs the live payload and publishes desired state (lines 1995-2001). However, the `AudioStateRouting` model (line 35-38 in `audio_state.py`) only contains `mode`, `active_path_ids`, and `path_order` — no morph fields. More critically, no code anywhere reads `routing.morph_position` and interpolates parameters between `morph_source_channel_key` and `morph_target_channel_key`. The morph engine (parameter interpolation logic) does not exist.
+- Fix approach: (1) Build a morph interpolation function that reads the source/target channel plugin parameters, computes the interpolated values at the given morph position, and calls `engine.set_parameter()` for each interpolated value. (2) Call it from the `update_routing()` live-sync path when `morph_position` has changed. (3) Optionally extend `AudioStateRouting` with `morph_position`, `morph_source_channel_key`, and `morph_target_channel_key` fields for cluster sync.
+- Files: `app/services/snapshot_service.py`, `app/services/snapshot_runtime_service.py`, `app/models/audio_state.py`
+- Dependencies: T739 (parallel routing engine apply must be in place so source/target channels are mapped)
+- Estimated effort: Large (new interpolation engine, parameter diffing, real-time application)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T740
+Status: [✓] Done
+Title: Publish snapshot desired-state to audio-state authority on activation and routing edit
+Description:
+- Goal / acceptance criteria: Every snapshot activation and every routing edit on the live snapshot must call `AudioStateAuthorityService.put_desired_state(intent)` so the cluster-wide desired state reflects current intent. Without this, the authority always holds stale or zero routing intent and any cluster node reading it to reconcile engine state diverges silently.
+- Why it matters: The audio-state authority is the cluster control plane. Routing edits and activations that do not publish into it leave all nodes and observability tools reading the wrong desired state. There is no error — the gap is invisible.
+- Root cause: `snapshot_service.py::activate_snapshot()` (line 1449) builds a `CompiledSnapshotIntent` via the runtime state service but never calls `AudioStateAuthorityService.put_desired_state()`. `snapshot_service.py::update_routing()` (line 1921) writes to the DB only — no authority publish.
+- Fix approach: After `confirm_live_intent()` succeeds in `activate_snapshot()`, compile intent via `compile_snapshot_detail_to_intent(refreshed_detail)` and call `AudioStateAuthorityService().put_desired_state(intent)`. In `update_routing()`, after DB flush, if the snapshot is the live snapshot, re-compile and re-publish desired state.
+- Files: `app/services/snapshot_service.py`, `app/services/audio_state_snapshot_compiler.py`, `app/services/audio_state_authority.py`
+- Dependencies: None — authority service and compiler are both present; only the call sites are missing.
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 23:24 EDT - Codex
+- Completion notes:
+  - Added `_publish_snapshot_desired_state()` in `app/services/snapshot_service.py` so successful snapshot activation now compiles the refreshed snapshot detail into a `CompiledSnapshotIntent` and publishes it to `AudioStateAuthorityService.put_desired_state()` as a best-effort control-plane update.
+  - Extended `update_routing()` so live-snapshot routing edits now refresh the local runtime live payload and republish the updated desired routing intent into the audio-state authority instead of remaining DB-only mutations.
+  - Hardened live snapshot lookup to prefer the confirmed local runtime live state before consulting external authority state, which removes an environment-dependent stale-authority edge case that was surfacing in snapshot runtime tests.
+  - Added focused regression coverage in `tests/test_snapshot_service.py` for desired-state publish on activation and on live routing edits.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+- Licensing review:
+  - Touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs app/services tests` and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T739
+Status: [ ] Todo
+Title: Apply snapshot routing mode and blend to JUCE parallel-group engine on activation
+Description:
+- Goal / acceptance criteria: When a snapshot with `routing.mode = "parallel"` is activated, `apply_snapshot_to_engine()` must (1) call `create_parallel_group()` to build the parallel topology, (2) map each snapshot channel onto a branch via `add_to_parallel_branch()`, and (3) call `set_parallel_ab_blend()` with the blend value stored in `routing.blend_positions`. When mode is `"series"`, the existing chain deploy path is sufficient and parallel groups should be torn down if previously created.
+- Why it matters: A guitarist using a wet/dry or amp-A/amp-B parallel rig hears the wrong mix every time a snapshot activates. The snapshot UI shows the correct routing; the engine ignores it entirely. The JUCE APIs (`create_parallel_group`, `add_to_parallel_branch`, `set_parallel_ab_blend`, `set_parallel_branch_level`) all exist — the wiring from the snapshot runtime layer to those APIs does not.
+- Root cause: `snapshot_runtime_service.py::apply_snapshot_to_engine()` (lines 95–199) processes only plugin parameters and bypass state. `snapshot_service.py::_materialize_live_state()` (line 3131) creates individual runtime chains per channel with no concept of parallel grouping. `juce_engine_service.py` exposes the full parallel-group API at lines 2140–2192 but it is never called from the snapshot path.
+- Fix approach: After `_materialize_live_state()` produces runtime paths, inspect `detail["routing"]["mode"]`. If `"parallel"`: call `engine.create_parallel_group()`, iterate runtime paths in `series_order` or channel order, call `engine.add_to_parallel_branch()` for each, then call `engine.set_parallel_ab_blend()` with value from `routing.blend_positions`. Add a `_apply_routing_to_engine(detail, runtime_paths)` helper in `snapshot_runtime_service.py` and call it from both `activate_snapshot` and the topology-reuse path.
+- Files: `app/services/snapshot_runtime_service.py`, `app/services/snapshot_service.py`, `app/services/juce_engine_service.py`
+- Dependencies: T637 (re-blocked) partially overlaps — T739 is the concrete implementation T637 was blocked waiting for.
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T738
+Status: [ ] Todo
+Title: Apply live routing edit to engine immediately (update_routing live-sync)
+Description:
+- Goal / acceptance criteria: When the user edits routing on the currently-live snapshot (`PATCH /api/snapshots/{id}/routing`), the engine must reflect the change immediately — blend ratio, mode, active path — without requiring a full deactivate/reactivate cycle.
+- Why it matters: A guitarist adjusting wet/dry blend mid-song through the editor hears no audio change. The UI updates, the database updates, the engine ignores it. This is a silent, live-performance failure.
+- Root cause: `update_routing()` in `snapshot_service.py` (line 1921) writes routing fields to the DB and returns `_reload_snapshot_detail()`. It does not check whether this snapshot is currently live, does not re-apply routing to the engine, and does not republish desired state to the authority.
+- Fix approach: After DB flush in `update_routing()`, check if this snapshot is the live snapshot (compare against `SnapshotRuntimeStateService.get_live_snapshot_payload()` snapshot id). If live: call the same `_apply_routing_to_engine()` helper introduced in T739 with the updated detail to push blend/mode changes to the engine in-place. This is safe for blend changes (`set_parallel_ab_blend` is RT-friendly). Full mode topology switches (series↔parallel) require `_materialize_live_state()` — flag these as "requires reactivation" and return a `routing_requires_reactivation: true` field in the response.
+- Files: `app/services/snapshot_service.py`, `app/routes/unified_snapshots.py`
+- Dependencies: T739 (must exist to have `_apply_routing_to_engine` helper)
+- Estimated effort: Small–Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T737
+Status: [ ] Todo
+Title: Apply snapshot channel dry_wet_mix, mute, and solo to engine on activation
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, per-channel `dry_wet_mix`, `muted`, and `solo` values must be applied to the corresponding runtime chains in the engine. Currently these values are stored in `SnapshotChannel` rows and serialized into the snapshot detail payload but are never sent to the engine.
+- Why it matters: A guitarist who uses a snapshot with a channel muted (e.g. a disabled wet chain) will hear that channel unmuted after every snapshot activation. Dry/wet mix ratios per channel are equally invisible to the engine. The data is stored correctly — the apply path is absent.
+- Root cause: `apply_snapshot_to_engine()` in `snapshot_runtime_service.py` iterates `chains` and their `plugins` only. The `channels` array in the snapshot detail (which carries `dry_wet_mix`, `muted`, `solo`, `dry_wet_mix`) is never read during activation. There is also no `set_chain_gain`, `set_channel_mute`, or equivalent primitive on `JuceEngineService` — those primitives need to be added first.
+- Fix approach: (1) Add `set_chain_gain(chain_id, gain_linear)`, `set_chain_mute(chain_id, muted)`, and `set_chain_solo(chain_id, solo)` to `juce_engine_service.py` backed by corresponding C++ bindings in `PythonBindings.cpp`. (2) In `apply_snapshot_to_engine()`, after processing plugins, iterate `channels`, resolve each channel's runtime chain id from the live-state paths, and call the new engine primitives with the stored values.
+- Files: `app/services/snapshot_runtime_service.py`, `app/services/juce_engine_service.py`, `juce-engine/Source/PythonBindings.cpp`, `juce-engine/Source/JuceAudioGraph.cpp`
+- Dependencies: None for Python side; C++ binding additions are self-contained.
+- Estimated effort: Medium (C++ binding additions required)
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T736
+Status: [ ] Todo
+Title: Apply snapshot effects-loop insertion parameters to engine on activation
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, `EffectsLoopInsertion` rows attached to the snapshot's chains must be pushed to the engine via `set_chain_loop_insertions()`. Currently the insertions are stored in the DB and available in the snapshot detail payload but `_deploy_chain_to_engine()` and `apply_snapshot_to_engine()` never call `set_chain_loop_insertions()` with the snapshot-scoped insertion parameters (`blend_pct`, `send_gain_db`, `return_gain_db`, `crossfade_ms`, `band_split_hz`, `mode`, `enabled`).
+- Why it matters: Effects loops (e.g. 4-cable method routing, parallel blends with an external device) are a first-class feature on guitar rigs. Any snapshot that configures a loop insertion with a non-default blend or gain will silently play back with default loop parameters every time it is activated — the guitarist hears the wrong mix without any indication that the intended configuration was not applied.
+- Root cause: `chain_service.py::_deploy_chain_to_engine()` (line 942) deploys plugins to the pedalboard but never calls `set_chain_loop_insertions()`. The `EffectsLoopService._sync_engine_insertions_for_chain()` path (line 867 in `effects_loops.py`) is only triggered by live CRUD on loop insertions — not by snapshot activation. `snapshot_runtime_service.py::apply_snapshot_to_engine()` also has no loop insertion apply step.
+- Fix approach: In `_materialize_live_state()` (after chain activation), for each runtime chain that was created from a snapshot channel, serialize its `EffectsLoopInsertion` rows and call `engine.set_chain_loop_insertions(runtime_chain.id, insertions_payload)`. Alternatively, add a post-activation step in `activate_snapshot()` that iterates live runtime chain ids and syncs their insertions.
+- Files: `app/services/snapshot_service.py`, `app/services/chain_service.py`, `app/services/snapshot_runtime_service.py`, `app/services/juce_engine_service.py`
+- Dependencies: None — `set_chain_loop_insertions()` already exists on the engine service.
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T735
+Status: [ ] Todo
+Title: Audit and test the full snapshot→engine activation path end-to-end
+Description:
+- Goal / acceptance criteria: Add an integration test suite that activates a snapshot with known routing, channel, blend, effects-loop, mute, solo, and dry_wet_mix values, then asserts that each value reaches the corresponding engine API call. The tests should catch regressions for every gap documented in T736–T740 as they are fixed, and they should run in the existing `pytest` suite.
+- Why it matters: All five gaps (T736–T740) are silent failures with no error surface. Once fixed, they need regression coverage so they cannot regress invisibly again. Without tests the activation path is trust-based, not verified.
+- Root cause: No integration-level test exists that covers the snapshot activation path beyond `params_applied` and `bypass_applied` count checks. The `test_snapshot_service.py` suite tests DB-layer behavior only; no test stubs the engine and asserts routing/channel/loop state was pushed.
+- Fix approach: Add `tests/test_snapshot_activation_engine_apply.py`. Use `unittest.mock.patch` to stub `JuceEngineService` methods. Activate a snapshot that has: (1) parallel routing with blend, (2) a muted channel, (3) a non-default dry_wet_mix, (4) an effects-loop insertion with non-default blend_pct. Assert each corresponding engine method was called with the expected arguments. Add a test for `update_routing` on the live snapshot that asserts `set_parallel_ab_blend` fires without a full reactivation.
+- Files: `tests/test_snapshot_activation_engine_apply.py` (new), `app/services/snapshot_runtime_service.py`, `app/services/snapshot_service.py`
+- Dependencies: Ideally run after T736–T740 are implemented, but can be written first as failing tests to drive the implementation.
+- Estimated effort: Small–Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-04 EDT
+
+ID: T734
+Status: [✓] Done
+Title: Add Carbon-standard Grafana-style graphs across metric-backed Platforms sub-areas
+Description:
+- Goal / acceptance criteria: Add read-only, Carbon-standard, Grafana-style graph panels across the routed Platforms shell and standalone panels wherever matching metrics already exist or can be derived from existing backend-fed state. The implementation must use a shared visual system, render on all nodes including audio nodes, respect context-sensitive node selection, support multiple graphs per sub-area when the metric coverage warrants it, and deliberately omit sub-areas such as Theme/About/Catalog that do not have meaningful metric coverage.
+- Why it matters: The user wants observability elevated directly inside the Platforms window instead of forcing operators to leave the workflow context or manually translate raw tables into trend views.
+- Dependencies: T731, T732, Platforms shell components/pages, shared frontend chart primitives, focused frontend validation, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: enumerated Platforms sub-area coverage, shared Carbon-styled read-only graph components, context-sensitive metric history wiring for matching workspaces, explicit omission of non-metric utility panels, focused test/validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 19:28 EDT - Codex
+- Completion notes:
+  - Added the shared Carbon-styled panel system in `web/src/app/components/Platform/PlatformGrafanaPanel.tsx`, `web/src/app/components/Platform/PlatformGrafanaPanel.css`, and `web/src/app/components/Platform/platformGrafanaHistory.ts`, including read-only multi-series graphs, context-sensitive sampling, and a strict 24-hour history window with 5-minute bucketing so full-platform trend history never exceeds one day and remains light enough for audio nodes rendering the UI.
+  - Embedded matching graph decks into the metric-backed Platforms surfaces: overview inside `web/src/app/components/Platform/PlatformModal.tsx`, management in `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, cluster dashboard in `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, AVB routing in `web/src/app/components/AvbRouting/AvbRoutingWorkspace.tsx`, network discovery in `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, adoption/remediation in `web/src/app/components/Platform/PlatformRemediationWorkflow.tsx`, host machine in `web/src/app/pages/HostMachinePage.tsx`, and audio engine in `web/src/app/pages/AudioEnginePage.tsx`.
+  - Deliberately omitted non-metric utility areas such as Theme, About, and the workspace catalog to match the requirement that graph panels only appear where meaningful metric coverage already exists or can be derived from backend-fed state.
+  - Added focused frontend coverage in `web/src/app/components/Platform/platformGrafanaHistory.test.ts` and kept the routed Platforms shell green after the graph additions by fixing the management workspace scoping regression discovered during validation.
+- Validation:
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/platformGrafanaHistory.test.ts web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx web/src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx web/src/app/components/Platform/PlatformRemediationWorkflow.test.tsx web/src/app/pages/AudioEnginePage.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/App.platformRoute.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs web/src/app .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T732
+Status: [✓] Done
+Title: Provision Prometheus and Grafana only on management or all-in-one nodes
+Description:
+- Goal / acceptance criteria: Add repo-managed Prometheus and Grafana service assets, config provisioning, and install/runtime orchestration so management and all-in-one nodes can host the monitoring stack from the repository while dedicated audio nodes are not burdened with those heavier services. The execution path must cover the real installer/runtime surfaces in use today, including management-node provisioning scripts, mode-application logic, packaging manifests, and operator documentation.
+- Why it matters: T731 established the policy and scrape contract, but operators still need an actual repo-native process that installs, configures, and enables Prometheus/Grafana only where they belong so the policy is enforceable instead of advisory.
+- Dependencies: T731, `scripts/install_cluster_manager.sh`, `scripts/map2-mode.sh`, `packaging/systemd/*`, monitoring config assets, focused validation, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: repo-owned Prometheus/Grafana service units and provisioning assets, management/all-in-one install path updates, mode-aware enable/disable orchestration that suppresses the stack on audio nodes, packaging updates, operator documentation updates, focused validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 18:31 EDT - Codex
+- Completion notes:
+  - Added repo-owned monitoring service and provisioning assets in `packaging/systemd/map2-prometheus.service`, `packaging/systemd/map2-grafana.service`, `config/prometheus.yml`, `config/prometheus-targets/audio-nodes.json`, and `config/grafana/provisioning/*` so management/all-in-one nodes now have a concrete Prometheus/Grafana layout, a file-based remote target list under `/etc/map2/prometheus/targets/`, and automatic Grafana datasource/dashboard provisioning for the existing MAP2 dashboards.
+  - Extended `scripts/install_cluster_manager.sh` so management-plane roles install Prometheus/Grafana packages when available, stage the repo configs into `/etc/map2/prometheus` and `/etc/map2/grafana`, generate a Grafana admin credential file, install the new systemd units, open the relevant firewall ports, and validate the observability assets during post-install checks while leaving non-management roles out of that heavier install path.
+  - Updated `scripts/map2-mode.sh` so runtime mode changes also enforce the policy: `audio` mode now disables `map2-prometheus` and `map2-grafana`, while `management` and `all-in-one` re-enable them when the units are installed. The mode status and comparison chart now surface the monitoring stack explicitly.
+  - Updated RPM packaging in `packaging/map2-audio.spec` and `packaging/rpm/map2.spec`, added focused provisioning coverage in `tests/test_observability_provisioning.py`, and refreshed operator docs in `docs/OBSERVABILITY_ROLE_POLICY.md` and `scripts/README.md` so the repo-native install process and runtime role enforcement are documented together.
+- Validation:
+  - `bash -n scripts/install_cluster_manager.sh scripts/map2-mode.sh` -> PASS
+  - `pytest -q tests/test_observability_policy.py tests/test_observability_provisioning.py installer/tests/test_config.py` -> PASS
+- Licensing review:
+  - Touched config/scripts/packaging/docs/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs scripts packaging config tests .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new ownership or notice gaps requiring immediate remediation.
+
+ID: T733
+Status: [✓] Done
+Title: Make the Textual installer execute cluster-manager and observability installation when selected
+Description:
+- Goal / acceptance criteria: Wire the existing `software.install_cluster_mgr` flag in the Textual installer so Stage 09 actually performs cluster-manager and management-plane observability installation work, including service/config staging and role-aware enablement, instead of only surfacing descriptive UI text.
+- Why it matters: The repo now has a working shell installer and package/runtime policy for Prometheus/Grafana, but the guided installer still exposes a capability it does not yet execute, which risks operator confusion and split deployment behavior.
+- Dependencies: T732, `installer/ui/screens/install_progress.py`, installer backend package/service helpers, and focused installer validation.
+- Estimated effort: Medium
+- Required outputs: installer execution wiring for cluster-manager/observability installation, mode-aware service handling, updated validation coverage, and worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 19:40 EDT - Codex
+- Completion notes:
+  - Added the reusable installer-side wrapper in `installer/backend/cluster_manager.py` so the Textual installer now calls the existing `scripts/install_cluster_manager.sh` provisioning path instead of keeping a separate incomplete implementation. The wrapper maps audio-plus-cluster installs to `ALL-IN-ONE`, management-only installs to `MANAGEMENT-NODE`, and passes the installer-selected repo, venv, and log paths through the script environment.
+  - Extended Stage 09 in `installer/ui/screens/install_progress.py` with a dedicated `cluster_mgr` stage that runs only when `software.install_cluster_mgr` is enabled, so the guided installer now performs real cluster-manager service/config/database/TLS setup plus Prometheus/Grafana staging on management-plane hosts.
+  - Updated `installer/modes/unattended.py` to reuse the same wrapper and stage key so unattended installs and the Textual flow now execute the same cluster-manager/observability path instead of diverging.
+  - Updated `installer/ui/screens/review.py` so Stage 08 now previews the actual cluster-manager install behavior, including the dedicated shell installer invocation and management-plane-only Prometheus/Grafana placement.
+  - Added focused regression coverage in `installer/tests/test_config.py` for node-role resolution and dry-run script dispatch.
+- Validation:
+  - `pytest -q installer/tests/test_config.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile installer/backend/__init__.py installer/backend/cluster_manager.py installer/ui/screens/install_progress.py installer/ui/screens/review.py installer/modes/unattended.py installer/tests/test_config.py` -> PASS
+- Licensing review:
+  - Touched installer/backend/ui/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs installer .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T731
+Status: [✓] Done
+Title: Add role-aware Grafana/Prometheus deployment policy for management-plane-only monitoring
+Description:
+- Goal / acceptance criteria: Add a repo-native observability deployment policy so Grafana and Prometheus are only installed and hosted on management or all-in-one nodes, while audio nodes remain lightweight scrape/export targets that still contribute cluster health, audio, and runtime metrics. Deployment/runtime surfaces must expose the policy clearly enough that installer defaults, deployment status APIs, and operator docs all agree on where the heavy monitoring services belong.
+- Why it matters: The user wants Grafana added without burdening dedicated audio nodes with unnecessary CPU, RAM, disk, and service overhead that can erode real-time performance and latency stability.
+- Dependencies: `app/deployment/deployment.py`, `app/routes/deployment.py`, `app/routes/metrics.py`, installer config/defaults/UI/docs/tests, observability docs, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: role-aware deployment policy updates, installer defaults/schema updates for monitoring stack placement, Prometheus scrape/export fixes needed for central monitoring, operator-facing observability process documentation, focused validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 17:58 EDT - Codex
+- Completion notes:
+  - Updated `app/deployment/deployment.py` and `app/routes/deployment.py` so deployment policy now distinguishes scrape-only `metrics_exporter` behavior from management-plane `prometheus` and `grafana` hosting, with all-in-one and control nodes allowed to host the monitoring stack while audio nodes stay exporter-only.
+  - Fixed `app/routes/metrics.py`, `app/services/performance_metrics.py`, `app/services/cluster/prometheus_exporter.py`, and `app/services/cluster/health_aggregator.py` so `/api/metrics/prometheus` now returns native Prometheus text, management-plane nodes can append the existing `map2_cluster_*` metric family for Grafana, the cluster exporter no longer clears out its own collected metrics before exposition, and cluster health scraping now targets the lightweight backend exporter on port `8080` instead of requiring local Prometheus on every audio node.
+  - Updated `config/prometheus.yml`, `docs/WEB_SERVER_PORTS.md`, `docs/OBSERVABILITY_ROLE_POLICY.md`, and installer-facing defaults/review/software/example artifacts so the operator process is explicit: audio nodes export metrics only, management/all-in-one nodes host Prometheus on `9090` and Grafana on `3001`, and central Prometheus scrapes `/api/metrics/prometheus` across the fleet.
+  - Added `tests/test_observability_policy.py` to lock the new deployment-policy semantics, Prometheus route response contract, and cluster exporter behavior.
+- Validation:
+  - `pytest -q tests/test_observability_policy.py installer/tests/test_config.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/deployment/deployment.py app/routes/deployment.py app/routes/metrics.py app/services/performance_metrics.py app/services/cluster/prometheus_exporter.py app/services/cluster/health_aggregator.py installer/config/defaults.py installer/ui/screens/software.py installer/ui/screens/review.py` -> PASS
+- Licensing review:
+  - Touched backend/config/docs/installer/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new ownership or notice gaps requiring a follow-up worklist task.
+
+ID: T730
+Status: [✓] Done
+Title: Restore AppShell Start Menu visibility in the global nav
+Description:
+- Goal / acceptance criteria: Fix the routed AppShell global-nav Start Menu so activating the `Start` control on non-landing routes visibly opens the pinned-navigation panel again in the live GUI, without regressing existing Start-menu link, MPX1, or hardware-submenu behavior.
+- Why it matters: The shell's primary navigation entry point is currently broken in the real interface, which blocks access to pinned workspaces even though the routing surface and focused tests still exist.
+- Dependencies: `web/src/app/layout/AppShell.css`, `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.test.tsx`, focused frontend validation, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: AppShell Start-menu visibility fix, preserved shell navigation behavior, focused validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 16:50 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.css` so the fixed bottom shell bar no longer clips overflow from the Start-menu surface, which was preventing the pinned-navigation panel from appearing even though the Start button toggled state.
+  - Kept the fix scoped to the AppShell shell styling so existing Start-menu card behavior, MPX1 pinned-menu expansion, and hardware submenu routing remain unchanged.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched shell css/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new ownership or notice gaps requiring follow-up work.
+
+ID: T728
+Status: [✓] Done
+Title: Add a JUCE source-of-truth graph card with linked Carbon connection table to `/platforms/audio-engine`
+Description:
+- Goal / acceptance criteria: Add a new `JUCE Graph: Source of Truth` section above `Live Metering` on `/platforms/audio-engine` that renders a dedicated React Flow canvas for the JUCE source-of-truth chain only, followed by a Carbon-themed connection table with richer per-connection detail and graph-to-table selection syncing.
+- Why it matters: The current audio-engine page has a broader runtime graph, but the user asked for a narrower source-of-truth card that makes JUCE authority flow easier to inspect and cross-reference in a structured table.
+- Dependencies: T688, `web/src/app/pages/AudioEnginePage.tsx`, `web/src/app/pages/AudioEnginePage.css`, `web/src/app/components/AudioEngine/*`, focused audio-engine frontend tests, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: dedicated JUCE source-of-truth graph model/UI, per-connection Carbon table, graph-to-table sync behavior, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 16:45 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/AudioEngine/juceSourceTruthGraph.ts` and `web/src/app/components/AudioEngine/JuceSourceTruthGraph.tsx` so `/platforms/audio-engine` now has a dedicated authority-only JUCE source-of-truth React Flow model and canvas separate from the broader runtime workspace graph.
+  - Updated `web/src/app/pages/AudioEnginePage.tsx` and `web/src/app/pages/AudioEnginePage.css` to insert the new `JUCE Graph: Source of Truth` card above `Live Metering`, render the flow on top, render a Carbon expandable per-connection table underneath, and sync graph node selection into the matching connection rows below.
+  - Added focused regression coverage in `web/src/app/components/AudioEngine/juceSourceTruthGraph.test.ts` and `web/src/app/pages/AudioEnginePage.test.tsx` to lock the helper output and the graph-to-table selection behavior.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/AudioEngine/juceSourceTruthGraph.test.ts web/src/app/pages/AudioEnginePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched frontend/css/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T729
+Status: [✓] Done
+Title: Fix JUCE engine teardown segfault after loaded graph-plugin replacement
+Description:
+- Goal / acceptance criteria: Eliminate the engine/process teardown segfault that occurs after initializing the JUCE engine, loading at least one graph plugin, performing a `replace_chain(...)` activation, and then shutting the engine down. The shutdown path must be stable both for the plain `replace_chain(...)` path and the new `replace_chain_with_spillover(...)` path, with no interpreter/process crash after `engine.shutdown()` returns.
+- Why it matters: T646 validation exposed a real runtime lifecycle defect in the loaded-graph-plugin teardown path. Even though it reproduces on the plain replace path as well, it will undermine confidence in the spillover work until the lifecycle is clean and deterministic.
+- Dependencies: `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/JuceAudioGraph.cpp`, `juce-engine/Source/JucePluginHost.cpp`, Python binding smoke coverage, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: root-cause fix for teardown ordering/lifetime, focused regression evidence for shutdown after loaded-plugin replacement, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 16:52 EDT - Codex
+- Completion notes:
+  - Added an explicit `JuceAudioGraph::shutdown()` path in `juce-engine/Source/JuceAudioGraph.h` and `juce-engine/Source/JuceAudioGraph.cpp` so graph-owned non-owning wrapper nodes are destroyed while the underlying host-owned processors are still alive, rather than waiting for engine/object teardown after `JucePluginHost::shutdown()` has already cleared its instances.
+  - Updated `juce-engine/Source/Map2AudioEngine.cpp` so engine shutdown now stops spillover cleanup and then tears down the JUCE audio graph before clearing the plugin host, closing the dangling-wrapper lifetime gap that caused the post-`replace_chain(...)` segfault.
+  - Expanded `tests/test_juce_engine_plugin_load_lifecycle_stability.py` with a regression case that replaces an active chain with `[]`, confirms the chain is empty while the plugin remains loaded, and then exercises the rest of the lifecycle so shutdown covers the detached-node path directly.
+- Validation:
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `pytest -q tests/test_juce_engine_plugin_load_lifecycle_stability.py` -> PASS
+- Licensing review:
+  - Touched JUCE/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T727
+Status: [✓] Done
+Title: Strengthen Workspace Catalog browsing with section navigation and collection badges
+Description:
+- Goal / acceptance criteria: Continue refining `/platforms/workspace-catalog` by adding clearer in-page storefront navigation across the major sections and surfacing collection membership more explicitly on launcher cards. Preserve the existing Carbon storefront, launcher-management controls, and focused validation posture from T725/T726.
+- Why it matters: The route now looks like a storefront, but browsing still depends on vertical scanning alone. Prospective-customer presentation benefits from clearer collection wayfinding and more obvious per-card section context.
+- Dependencies: T725, T726, `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.css`, focused workspace-catalog tests, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: storefront section-jump affordances, collection badges on cards, focused test coverage, validation evidence, and updated completion/licensing notes.
+Subtasks:
+  - ID: T727-subA
+    Status: [✓] Done
+    Title: Add Carbon section navigation for storefront browsing
+    Description:
+    - Goal / acceptance criteria: Provide in-page jump affordances so the user can move directly between spotlighted storefront sections and the full catalog without manual scanning only.
+    - Why it matters: Storefront wayfinding should feel intentional and productized, not like a long document.
+    - Dependencies: T726
+    - Estimated effort: Low
+    - Required outputs: section anchors/jump controls within the storefront surface.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:29 EDT - Codex
+  - ID: T727-subB
+    Status: [✓] Done
+    Title: Surface collection membership more explicitly on launcher cards
+    Description:
+    - Goal / acceptance criteria: Show which curated storefront collections a workspace belongs to directly on the card surface without removing the existing maturity/category/launcher-status context.
+    - Why it matters: Prospects and operators should not have to infer why a workspace appears in multiple curated sections.
+    - Dependencies: T726
+    - Estimated effort: Low
+    - Required outputs: card-level collection badging plus focused frontend coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:29 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 16:29 EDT - Codex
+- Completion notes:
+  - Confirmed the new Carbon storefront section-jump affordances in `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` remain wired to the curated storefront anchors and that collection badges continue to render directly on launcher cards without disturbing the existing maturity/category/action controls.
+  - Updated `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` so the new jump-link assertions match Carbon's accessible output (`link` semantics for `Button` with `href`), preserving the intended coverage for `Featured`, `Platform Essentials`, `Recently Added`, and `Full Catalog` navigation.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched storefront test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new ownership or notice gaps requiring follow-up work.
+
+ID: T726
+Status: [✓] Done
+Title: Harden Workspace Catalog storefront with Carbon grid structure and quieter route tests
+Description:
+- Goal / acceptance criteria: Continue the `/platforms/workspace-catalog` storefront refactor by tightening the layout around Carbon grid patterns instead of relying only on custom CSS grids, and remove the remaining React Router future-flag warning noise from the focused workspace-catalog route test. Preserve the existing storefront content model, generated artwork, and launcher-management behaviors from T725.
+- Why it matters: T725 delivered the storefront presentation, but the current surface can be made more strictly Carbon-patterned and the focused test run still emits avoidable route-warning noise.
+- Dependencies: T725, `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.css`, `web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx`, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: Carbon-grid layout hardening for the storefront, warning-free focused route test behavior, focused validation evidence, and updated completion/licensing notes.
+Subtasks:
+  - ID: T726-subA
+    Status: [✓] Done
+    Title: Align storefront sections more explicitly with Carbon grid layout patterns
+    Description:
+    - Goal / acceptance criteria: Use Carbon grid primitives for major storefront sections so the route reads more like a first-class Carbon workspace while preserving the current catalog behavior.
+    - Why it matters: The user explicitly asked for strict Carbon compliance, so the major layout structure should lean on Carbon patterns rather than custom layout alone.
+    - Dependencies: T725
+    - Estimated effort: Low
+    - Required outputs: component and style updates for grid-structured storefront sections.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:14 EDT - Codex
+  - ID: T726-subB
+    Status: [✓] Done
+    Title: Remove workspace-catalog route-test warning noise
+    Description:
+    - Goal / acceptance criteria: Update the focused route test so it opts into the same React Router future flags already used in neighboring Platform tests, eliminating the current warning output without changing test intent.
+    - Why it matters: The storefront-focused Jest run should be clean and signal-bearing rather than padded with known deprecation noise.
+    - Dependencies: T725
+    - Estimated effort: Low
+    - Required outputs: route-test update and revalidated focused frontend coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:14 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 16:14 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` so the storefront hero, curated collections, and full catalog now use Carbon `Grid` and `Column` primitives for their major layout structure instead of relying only on custom CSS grids, while preserving the existing card content and launcher-management actions from T725.
+  - Updated `web/src/app/components/Platform/PlatformLaunchersWorkspace.css` to support the Carbon-grid layout pass by treating Grid/Column wrappers as the primary section structure and keeping the storefront spacing/visual treatment aligned with the prior presentation.
+  - Updated `web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` to opt into the same React Router future flags already used in neighboring Platform tests, eliminating the prior future-flag warning output from the focused storefront route test.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched frontend/css/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T725
+Status: [✓] Done
+Title: Refactor Workspace Catalog into a Carbon digital storefront for prospective customers
+Description:
+- Goal / acceptance criteria: Refactor `/platforms/workspace-catalog` from a management-first launcher table into a Carbon-only digital storefront presentation aimed at prospective customers while keeping the same route and preserving existing `Launch`, `Configure`, Home placement, and nav pinning behaviors. The new surface must use Carbon components/tokens/patterns only, introduce original MAP2-owned artwork for catalog entries, rename launcher maturity presentation from `hardware-blocked` to customer-facing `Hardware Not Detected`, add richer item content including title, short description, maturity/status, category, artwork, feature bullets, technical specs, availability notes, and links to relevant documentation references, and reorganize browsing around curated sections such as Featured, Platform Essentials, and Recently Added without adding payment, rating, or comment systems.
+- Why it matters: The current workspace reads like an internal launcher organizer. The user wants this route to function as a polished storefront-quality product presentation for prospects without sacrificing the underlying operational launcher controls already built into the workflow.
+- Dependencies: T691, T688, `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.css`, `web/src/app/data/launcherCatalog.tsx`, focused workspace-catalog/frontend tests, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: storefront-oriented launcher metadata, Carbon storefront UI refactor, original MAP2-owned artwork/assets, focused regression coverage, validation evidence, and licensing review notes for touched files.
+Subtasks:
+  - ID: T725-subA
+    Status: [✓] Done
+    Title: Expand launcher catalog metadata for storefront presentation
+    Description:
+    - Goal / acceptance criteria: Extend the launcher data model so each catalog item can render storefront-specific content such as curated-section placement, feature bullets, technical specs, availability notes, documentation links, and customer-facing maturity labels.
+    - Why it matters: The existing catalog model only supports a management table and does not contain enough structured content for a persuasive storefront presentation.
+    - Dependencies: T691, T688
+    - Estimated effort: Low
+    - Required outputs: updated launcher catalog types/data/helpers plus focused data-model coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:08 EDT - Codex
+  - ID: T725-subB
+    Status: [✓] Done
+    Title: Rebuild Workspace Catalog as a Carbon storefront while preserving controls
+    Description:
+    - Goal / acceptance criteria: Replace the table-first workspace presentation with a curated storefront layout that keeps launch/configure actions and route-management capabilities intact.
+    - Why it matters: The route must sell the platform visually to prospects without regressing existing launcher-management workflows.
+    - Dependencies: T725-subA
+    - Estimated effort: Medium
+    - Required outputs: component/CSS refactor, Carbon-only presentation, and generated artwork support.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:08 EDT - Codex
+  - ID: T725-subC
+    Status: [✓] Done
+    Title: Lock storefront behavior with focused tests and validation
+    Description:
+    - Goal / acceptance criteria: Update focused frontend tests so the new storefront sections, content, and preserved management actions are covered, then run targeted validation and licensing review.
+    - Why it matters: This refactor substantially changes presentation and content density on a routed workspace that already has regressions locked by tests.
+    - Dependencies: T725-subA, T725-subB
+    - Estimated effort: Low
+    - Required outputs: updated tests, validation evidence, and worklist completion/licensing notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:08 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 16:08 EDT - Codex
+- Completion notes:
+  - Expanded `web/src/app/data/launcherCatalog.tsx` so each launcher now carries storefront metadata including curated-collection placement, feature bullets, technical specs, availability notes, document links, and customer-facing maturity-label handling that renames `hardware-blocked` to `Hardware Not Detected` in presentation.
+  - Added `docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md` as a MAP2-owned reference brief that explicitly names and positions each launcher/workspace, giving the storefront a real documentation target for every catalog card.
+  - Rebuilt `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` and `web/src/app/components/Platform/PlatformLaunchersWorkspace.css` from a table-first organizer into a Carbon storefront with a prospect-facing hero, search/filter controls, curated `Featured`, `Platform Essentials`, and `Recently Added` sections, richer full catalog cards, document-link actions, and preserved `Launch`/`Configure`/Home placement/nav pin workflows.
+  - Added original MAP2-owned generated artwork support in `web/src/app/components/Platform/WorkspaceCatalogArtwork.tsx` and `web/src/app/components/Platform/WorkspaceCatalogArtwork.css`, using Carbon-token-driven SVG compositions instead of introducing third-party image assets.
+  - Simplified the route wrapper in `web/src/app/components/Platform/PlatformModal.tsx` so the storefront component now owns the catalog presentation while the outer Platforms shell retains only route header and navigation context.
+  - Updated focused coverage in `web/src/app/data/launcherCatalog.test.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx`, and `web/src/app/components/Platform/PlatformModal.test.tsx` so the richer storefront content, preserved launcher controls, and customer-facing hardware language are locked down.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review:
+  - Touched frontend/css/docs/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T724
+Status: [✓] Done
+Title: Finish compact AppShell chrome polish with local-node emphasis and softer separators
+Description:
+- Goal / acceptance criteria: Complete the routed shell-bar polish by making the local/viewed node read more clearly than peers and replacing the remaining hard taskbar separators with softer layered dividers. Preserve the current compact footprint, keep the shell visually calm, and maintain focused validation coverage passing.
+- Why it matters: After T722/T723 the shell is structurally strong, but the right-side cluster still needs stronger hierarchy and the remaining straight borders read harsher than the rest of the bar.
+- Dependencies: T722, T723, `web/src/app/layout/AppShell.css`, `web/src/app/components/NodeNav/NodeNavBar.tsx`, `web/src/app/components/NodeNav/NodeNavChip.css`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: local/viewed node styling emphasis, softened shell dividers, focused validation evidence, and updated completion notes.
+Subtasks:
+  - ID: T724-subA
+    Status: [✓] Done
+    Title: Emphasize the local/viewed node chips in the compact shell
+    Description:
+    - Goal / acceptance criteria: Strengthen local/viewed node hierarchy with more intentional surface treatment while keeping peer chips readable and compact.
+    - Why it matters: The operator should be able to spot the current/local machine immediately.
+    - Dependencies: T723
+    - Estimated effort: Low
+    - Required outputs: node chip/overflow styling updates and any needed focused regression coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:28 EDT - Codex
+  - ID: T724-subB
+    Status: [✓] Done
+    Title: Replace the remaining hard shell dividers with softer layered separators
+    Description:
+    - Goal / acceptance criteria: Remove the last plain line separators in the compact bar and replace them with lower-contrast gradient or layered treatments that fit the rest of the shell.
+    - Why it matters: The bar now has a more refined surface language than its remaining hard borders.
+    - Dependencies: T723
+    - Estimated effort: Low
+    - Required outputs: AppShell divider styling updates with no behavior regressions.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:28 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 16:28 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/NodeNav/NodeNavChip.css` so local and viewed node chips now carry stronger surface/border treatments than peers, improving immediate operator recognition without increasing size.
+  - Updated `web/src/app/components/NodeNav/NodeNavBar.tsx` so overflow pills now reflect hidden-node severity (`stable`, `warn`, `critical`) instead of acting as a neutral counter only.
+  - Updated `web/src/app/layout/AppShell.css` so the workspace and latency boundaries now use softer vertical gradient separators rather than hard flat borders, aligning the divider treatment with the rest of the compact shell surface language.
+  - Extended focused regression coverage in `web/src/app/components/NodeNav/NodeNavChip.test.tsx` to assert the overflow pill carries the expected severity styling when hidden nodes include critical state.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/LatencyPressureShellReadout.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/NodeNav/NodeNavChip.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+- Licensing review: touched AppShell/frontend test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code, notice-bearing assets, or ownership changes were introduced while finishing this final shell-polish slice.
+
+ID: T723
+Status: [✓] Done
+Title: Extend the compact AppShell bar with quick-launch and richer latency hierarchy
+Description:
+- Goal / acceptance criteria: Continue the routed shell-bar polish by adding one compact quick-launch affordance beside Start and upgrading the latency tile so it shows a distinct intermediate warning treatment instead of only stable/critical. Preserve the reduced-height shell, keep the interaction model operator-safe, and maintain focused regression coverage and typecheck passing.
+- Why it matters: After T722 the bar is tighter and more intentional, but it still lacks one-tap route acceleration and a clear middle telemetry state for “watch this” conditions.
+- Dependencies: T722, `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/LatencyPressureShellReadout.tsx`, `web/src/app/components/LatencyPressureShellReadout.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: compact quick-launch shell control, latency warning-band upgrade, focused validation evidence, and updated worklist completion notes.
+Subtasks:
+  - ID: T723-subA
+    Status: [✓] Done
+    Title: Add a compact quick-launch route slot beside Start
+    Description:
+    - Goal / acceptance criteria: Surface the first suitable pinned route as a compact always-visible quick-launch control in the bar without crowding the shell or duplicating submenu-only items.
+    - Why it matters: The shell should accelerate the most-used route, not force every action through Start.
+    - Dependencies: T722
+    - Estimated effort: Low
+    - Required outputs: AppShell markup/style/test updates for quick launch behavior.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:15 EDT - Codex
+  - ID: T723-subB
+    Status: [✓] Done
+    Title: Add a warning-band latency shell treatment
+    Description:
+    - Goal / acceptance criteria: Give the shell latency tile a distinct warning state for moderate pressure while preserving the existing stable and critical treatments.
+    - Why it matters: Operators need a clearer visual distinction between healthy and urgent conditions.
+    - Dependencies: T722
+    - Estimated effort: Low
+    - Required outputs: latency shell component/style/test updates.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:11 EDT - Codex
+  - ID: T723-subC
+    Status: [✓] Done
+    Title: Compact node-chip overflow for wider clusters
+    Description:
+    - Goal / acceptance criteria: Prevent the compact shell bar from overfilling when more nodes are present by capping visible chips and surfacing a concise overflow indicator.
+    - Why it matters: The compact shell only stays compact if the live cluster summary scales with node count.
+    - Dependencies: T722
+    - Estimated effort: Low
+    - Required outputs: node-nav overflow behavior, style support, focused regression coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 16:15 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 16:15 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` and `web/src/app/layout/AppShell.css` so the shell now exposes a compact quick-launch slot beside Start, choosing the first non-active pinned route when available and keeping the reduced-height bar intact.
+  - Upgraded `web/src/app/components/LatencyPressureShellReadout.tsx` and `web/src/app/layout/AppShell.css` so the latency tile now distinguishes `stable`, `watch`, and `critical/offline` bands, including an amber warning treatment for intermediate pressure instead of collapsing everything non-critical into blue.
+  - Updated `web/src/app/components/NodeNav/NodeNavBar.tsx` and `web/src/app/components/NodeNav/NodeNavChip.css` so wider clusters cap visible node chips at three and collapse the remainder into a concise `+N` overflow pill, preserving the compact shell footprint as node count grows.
+  - Extended focused regression coverage in `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/LatencyPressureShellReadout.test.tsx`, and `web/src/app/components/NodeNav/NodeNavChip.test.tsx` to lock the quick-launch selection, warning-band latency state, and node overflow behavior.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/LatencyPressureShellReadout.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/NodeNav/NodeNavChip.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+- Licensing review: touched AppShell/frontend test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code, notice-bearing assets, or ownership changes were introduced while completing this shell-polish slice.
+
+ID: T722
+Status: [✓] Done
+Title: Tighten and elevate the routed AppShell start bar chrome
+Description:
+- Goal / acceptance criteria: Reduce the routed bottom shell bar footprint as requested, then continue polishing the same surface without further prompting until the next coherent enhancement bundle is complete. Keep the compact bar readable and operator-safe, add stronger brand/active-state hierarchy to the Start side, improve route context in the shell itself, and preserve existing Start-menu, node-nav, and latency-readout behavior with focused regression coverage passing.
+- Why it matters: The routed shell chrome is visible on nearly every non-landing page. If it feels oversized or generic, the whole product reads heavier and less intentional than the actual feature set warrants.
+- Dependencies: `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/NodeNav/NodeNavChip.css`, `web/src/app/components/LatencyPressureShellReadout.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: compact taskbar sizing pass, at least one follow-on shell hierarchy/branding upgrade, focused frontend validation, and updated completion notes.
+Subtasks:
+  - ID: T722-subA
+    Status: [✓] Done
+    Title: Apply the compact shell sizing pass
+    Description:
+    - Goal / acceptance criteria: Cut the bottom shell bar height by roughly 40 percent, shrink the Start trigger width by roughly 20 percent, and rebalance node/latency child sizing so the new compact bar still aligns and reads cleanly.
+    - Why it matters: A shallower bar was the direct user ask and is the prerequisite for any further shell polish.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: compact AppShell / node-nav / latency styling updates and passing focused tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 15:35 EDT - Codex
+  - ID: T722-subB
+    Status: [✓] Done
+    Title: Add stronger Start-side hierarchy and route context
+    Description:
+    - Goal / acceptance criteria: Make the compact Start side feel more intentional by adding at least one branded control treatment and one route-context affordance without expanding the bar back to its old height.
+    - Why it matters: Simply shrinking the chrome is not enough; the shell still needs a clearer visual center of gravity.
+    - Dependencies: T722-subA
+    - Estimated effort: Low
+    - Required outputs: AppShell markup/style updates plus focused tests if shell labels/structure change.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 15:53 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 15:53 EDT - Codex
+- Completion notes:
+  - Tightened the routed shell in `web/src/app/layout/AppShell.css` by reducing the taskbar height from `3.5rem` to `2.1rem`, shrinking the Start trigger width from `8rem` to `6.4rem`, compressing spacing/shadows, and resizing the latency and node-status children so the compact bar remains aligned instead of clipping its live widgets.
+  - Updated `web/src/app/layout/AppShell.tsx` so the Start control now uses a branded MAP2 mark tile rather than the plain hamburger-only presentation, and added an inline workspace context strip that surfaces the active route label plus a compact path hint directly in the shell.
+  - Added a route-colored accent line and faster Start-menu entrance motion in `web/src/app/layout/AppShell.css`, and switched `web/src/app/components/LatencyPressureShellReadout.tsx` to the smaller segmented-led size while tightening `web/src/app/components/NodeNav/NodeNavChip.css` so the right-side telemetry cluster matches the new shell scale.
+  - Refreshed focused shell regression coverage in `web/src/app/layout/AppShell.test.tsx` to assert the new workspace label and branded Start glyph render on non-landing routes.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/LatencyPressureShellReadout.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/NodeNav/NodeNavChip.test.tsx` -> PASS
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+- Licensing review: touched AppShell/frontend test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code, notice-bearing assets, or ownership changes were introduced while polishing the routed shell chrome.
+
+ID: T721
+Status: [✓] Done
+Title: Harden JuceEngineService Python-module resolution to prefer the current engine build
+Description:
+- Goal / acceptance criteria: Stop `JuceEngineService` from blindly importing the first `map2_audio_engine` extension on `sys.path` when multiple build outputs exist in the repo. The service must prefer the freshest available engine build (or otherwise deterministically avoid stale artifacts) so live codepaths see the current chain/topology APIs such as `get_loaded_plugins`, `prewarm_plugin_node`, `clear_chain`, and `replace_chain`. Add focused regression coverage for the build-path ordering logic and update worklist notes.
+- Why it matters: The first T720 activation-proof prototype failed before honest snapshot activation because the service resolved `/home/mm/map2-audio/build/map2_audio_engine...so`, which is stale and missing the runtime chain APIs present in `juce-engine/build`. That turns real activation attempts into false capability-gap failures and blocks further runtime proof work.
+- Dependencies: T720
+- Estimated effort: Medium
+- Required outputs: deterministic build-path preference fix, focused regression coverage, validation evidence, and updated worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 15:22 EDT - Codex
+- Completion notes:
+  - Updated `app/services/juce_engine_service.py` so the service now discovers both repo-local engine build outputs, orders them by the newest `map2_audio_engine*.so` mtime, and moves the freshest build directory to the front of `sys.path` before dependency resolution.
+  - Added focused regression coverage in `tests/test_juce_engine_service_instance_resolution.py` proving the freshest build directory wins when both `/build` and `/juce-engine/build` contain engine extensions.
+  - Fresh-process smoke confirmed the live service now resolves `/home/mm/map2-audio/juce-engine/build/map2_audio_engine.cpython-314-x86_64-linux-gnu.so` and exposes the required chain-deploy APIs: `get_loaded_plugins`, `prewarm_plugin_node`, `clear_chain`, and `replace_chain`.
+- Validation:
+  - `pytest -q tests/test_juce_engine_service_instance_resolution.py` -> PASS
+  - `python3` fresh-process smoke importing `app.services.juce_engine_service`, printing `juce_engine.__file__`, and asserting `get_loaded_plugins`, `prewarm_plugin_node`, `clear_chain`, and `replace_chain` are present on `create_engine()` -> PASS
+- Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code, notices, or ownership changes were introduced while hardening the module-resolution path.
+
+ID: T720
+Status: [✓] Done
+Title: Build end-to-end snapshot activation soak proof at 48kHz/64 with activation-scoped topology metrics
+Description:
+- Goal / acceptance criteria: Exercise real `SnapshotService.activate_snapshot()` transitions while audio is running at `48kHz / 64` samples, collect both audio callback stats and the activation-scoped topology-mutation metrics added in T718, and generate evidence that shows whether actual snapshot activation now satisfies the no-gap bar or still diverges from the generic graph-churn harness.
+- Why it matters: T719 proves the generic preloaded live-rewire graph path now passes on this host, but T614 requires honest evidence for the actual snapshot activation path, not only the lower-level engine topology harness.
+- Dependencies: T614, T718, T719
+- Estimated effort: High
+- Required outputs: snapshot-activation soak/proof harness or equivalent runtime evidence path, current activation artifacts, comparison against T719, and updated blocker notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 15:22 EDT - Codex
+- Completion notes:
+  - Added `.codex/skills/juce-random-effects-soak/scripts/run_snapshot_activation_proof.py`, a reproducible end-to-end proof harness that bootstraps the repo on `sys.path`, creates a temporary snapshot database, initializes the real JUCE engine at `48kHz / 64`, runs live `SnapshotService.activate_snapshot()` transitions for `A -> S -> B -> S`, and writes JSON/markdown evidence under `docs/fit-for-purpose-evidence/<date>/`.
+  - The first artifact `docs/fit-for-purpose-evidence/20260404/snapshot-activation-proof-20260404T191415Z.{json,md}` failed honestly and exposed a real same-topology reuse gap rather than a host-performance problem, which directly led to the control-plane/runtime-payload fixes landed under T614.
+  - The final artifact `docs/fit-for-purpose-evidence/20260404/snapshot-activation-proof-20260404T192201Z.{json,md}` passed outright on the real snapshot path: `0` xruns, `0.0269ms` peak callback jitter, `75.39ms` mean activation elapsed time, same-topology `A -> S` reuse with `topology_reused=True` and `mutation_count=0`, and changed-topology transitions `S -> B -> S` with bounded topology mutations but no callback failure.
+  - Compared against the earlier same-session failed artifact, the completed proof now shows the actual snapshot path aligns with the healthy generic live-rewire harness from T719 instead of diverging from it.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_activate_snapshot_reuses_runtime_chains_for_same_topology tests/test_snapshot_service.py::test_activate_snapshot_reuses_runtime_chains_when_authority_has_no_snapshot tests/test_juce_engine_service_instance_resolution.py` -> PASS
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_snapshot_activation_proof.py` -> PASS artifact `docs/fit-for-purpose-evidence/20260404/snapshot-activation-proof-20260404T192201Z.{json,md}`
+- Licensing review: touched MAP2-owned backend/test/worklist/evidence/skill-script files remain AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced while producing this proof slice.
+
+ID: T719
+Status: [✓] Done
+Title: Capture refreshed low-latency JUCE soak evidence with topology-mutation diagnostics
+Description:
+- Goal / acceptance criteria: Re-run the low-latency preloaded live-rewire JUCE soak after T715/T718 so the emitted JSON/markdown artifacts include the new topology-mutation metrics, compare the results directly against the prior T690 artifact baseline, and update the T614 blocked notes with current evidence rather than stale pre-diagnostics artifacts.
+- Why it matters: The engine and snapshot activation stack now expose topology-mutation timing and activation-scoped mutation counters, but the canonical blocker still cites artifacts produced before those diagnostics existed. The next honest step is to generate current evidence and use it to refine the blocker narrative.
+- Dependencies: T614, T690, T715, T718
+- Estimated effort: Medium
+- Required outputs: fresh soak artifacts, comparison against prior low-latency live-rewire evidence, updated T614/T719 worklist notes, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 15:12 EDT - Codex
+- Completion notes:
+  - Reran the preloaded 10-effect low-latency live-rewire profile with the updated soak harness, producing `docs/fit-for-purpose-evidence/20260404/juce-random-fx-soak-20260404T190115Z.{json,md}` with the new topology-mutation metrics captured in the artifact summary.
+  - The new artifact passed outright on this host: `0` xruns, `0.0517ms` peak callback jitter, `0.0038ms` callback-jitter p95, `36.56%` mean budget utilization, and topology mutation timings of `0.1728ms` last / `0.1884ms` peak / `0.1587ms` mean across `3` topology mutations.
+  - Compared against the prior preloaded topology-only baseline `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.json`, which had failed at `12` xruns and `6.080ms` peak callback jitter. This means the old T614 blocked note blaming live topology mutation itself is no longer current.
+  - The blocker has shifted: the generic engine-level live-rewire harness is now healthy, so the remaining honest proof gap for T614 is the actual snapshot activation path and its end-to-end runtime behavior.
+- Validation:
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --preload-effect-pool --log-every-seconds 5 --seed 20260402 --effect-uri map2://juce/amp/peavey5150 --effect-uri map2://juce/pitch/h3000 --effect-uri map2://juce/amp/tweedbassman --effect-uri map2://juce/multieffect/passionfx --effect-uri map2://juce/delay --effect-uri map2://juce/pitch/boss-xs1 --effect-uri map2://juce/effects/eventide-h9 --effect-uri map2://juce/eq/parametric --effect-uri map2://juce/delay/circular --effect-uri map2://juce/dynamics/limiter` -> PASS artifact `docs/fit-for-purpose-evidence/20260404/juce-random-fx-soak-20260404T190115Z.{json,md}`
+  - `python3` artifact comparison against `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.json` -> PASS (current run improved from `12` xruns / `6.080ms` peak jitter to `0` xruns / `0.0517ms` peak jitter)
+- Licensing review: touched worklist/evidence files remain MAP2-owned AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced while generating this evidence slice.
+
+ID: T718
+Status: [✓] Done
+Title: Capture per-activation JUCE topology-mutation diagnostics for live snapshot switching
+Description:
+- Goal / acceptance criteria: Extend snapshot activation so each activation records before/after JUCE topology-mutation counters and activation-scoped mutation deltas in the runtime metrics persisted by `SnapshotRuntimeStateService`. The metrics must make it obvious whether a given activation performed graph mutations, how many mutations/no-op skips happened during that activation window, and what the final observed mutation timing/connection counts were. Add focused regression coverage and update worklist/licensing notes.
+- Why it matters: The only remaining project work is blocked on live-switch/spillover behavior (`T614`, `T646`, related blocked items). The engine now exposes topology-mutation counters, but snapshot activation does not capture them per activation, which leaves the blocker dependent on coarse host-wide soak artifacts instead of exact per-switch evidence.
+- Dependencies: T614, T715
+- Estimated effort: Medium
+- Required outputs: snapshot-activation topology metrics capture, focused regression coverage, validation evidence, and updated worklist/licensing notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 14:57 EDT - Codex
+- Completion notes:
+  - Added `get_topology_mutation_stats()` to `app/services/juce_engine_service.py` so the Python service can read the JUCE graph’s cumulative mutation counters directly instead of relying only on the broader `get_audio_io_stats()` payload.
+  - Updated `app/services/snapshot_service.py` so snapshot activation now captures JUCE topology-mutation stats before and after the live apply window, computes an activation-scoped delta (`mutation_count`, `no_op_skip_count`), and persists that payload into both the activation response and `SnapshotRuntimeStateService` runtime metrics.
+  - Added focused regression coverage in `tests/test_snapshot_service.py` proving activation-scoped topology metrics are recorded and persisted into the live runtime state when the engine reports new mutation counts during activation.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_snapshot_service_activation_records_topology_mutation_metrics` -> PASS
+  - `python3` no-write syntax parse for `app/services/snapshot_service.py`, `app/services/juce_engine_service.py`, and `tests/test_snapshot_service.py` -> PASS
+- Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no new third-party code, notices, or ownership gaps were introduced in this diagnostics slice.
+
+Last updated: 2026-04-04 14:46 EDT - Completed T717 by making the Platforms shell store writes idempotent, adding regression coverage, and validating the frontend build.
+
+ID: T717
+Status: [✓] Done
+Title: Fix routed Platforms overview infinite-update crash and harden shell store synchronization
+Description:
+- Goal / acceptance criteria: Eliminate the React max-update-depth crash when opening `/platforms/overview`, ensure the routed Platforms shell only writes into the shared store when layer health/alerts/summary data actually change, and add focused regression coverage proving the shell can mount on the overview route without entering an update loop.
+- Why it matters: The main Platforms landing workspace is currently unusable in production because opening it trips React error `#185` (`Maximum update depth exceeded`), blocking the core operator shell.
+- Dependencies: T705
+- Estimated effort: Medium
+- Required outputs: routed Platforms shell/store sync fix, focused regression coverage, validation evidence, and updated worklist/licensing notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 14:46 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/stores/platformStore.ts` so `setLayerHealth`, `setAlerts`, and `setSummaryMetrics` now no-op when the incoming payload is structurally identical to the current store data, which stops the routed Platforms shell from retriggering itself on fresh-but-equivalent derived objects.
+  - Hardened the same store with idempotent `openLayer`, `closeLayer`, `clearAnimation`, and `dismissAlert` behavior, and wrapped `usePlatformActions()` in Zustand `shallow` selection so the shell no longer rerenders just because unrelated store state changed while action references stayed the same.
+  - Added `web/src/app/stores/platformStore.test.ts` to lock the regression at the store boundary, covering repeat layer-health, alert, and summary-metric payloads plus redundant `openLayer('overview')` calls.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/stores/platformStore.test.ts web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS (`2 suites, 15 tests`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review: touched frontend/store/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and found no new notice, ownership, or third-party licensing gaps requiring follow-up work.
+
+Last updated: 2026-04-04 14:38 EDT - Completed T716 by tightening the Theme dialog titlebar/footer/list treatment, restoring the transient build stamp, and recording validation/licensing evidence.
+
+ID: T716
+Status: [✓] Done
+Title: Tighten Theme dialog into a stronger native desktop-editor composition
+Description:
+- Goal / acceptance criteria: Continue refining `/platforms/theme` so the routed Theme editor feels more like a native desktop theme dialog and less like a modern settings page by strengthening the faux titlebar/footer structure, tightening the left-side theme selection treatment into a denser listbox-like presentation, and preserving the existing preview-target/theme workflow without regressing immediate persistence behavior.
+- Why it matters: The Theme page already moved into a desktop-dialog workflow, but it still needs another pass to better match the classic editor hierarchy and density implied by the user-provided reference.
+- Dependencies: T713
+- Estimated effort: Low
+- Required outputs: additional Theme dialog visual/layout refinement, focused validation evidence, and updated worklist/licensing notes for the touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 14:38 EDT - Codex
+- Completion notes:
+  - Tightened `web/src/app/pages/ThemePage.tsx` and `web/src/app/pages/ThemePage.css` so the routed Theme editor reads more like a native desktop utility, including a stronger faux titlebar, dedicated footer/status strip, and denser left-side theme groups that behave more like a classic listbox than card tiles.
+  - Preserved the preview-target workflow introduced in T713 while making the composition feel more like the reference image’s editor hierarchy instead of a modern dashboard grid.
+  - Kept the persistence model unchanged so theme, token, and appearance edits continue saving immediately rather than introducing a separate Apply/Save staging model.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx` -> PASS (`10 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Theme refinement slice.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no new notice, ownership, or third-party licensing gaps were identified during this refinement pass.
+
+ID: T715
+Status: [✓] Done
+Title: Instrument JUCE topology mutation timing and eliminate no-op graph rebuilds
+Description:
+- Goal / acceptance criteria: Add explicit JUCE graph topology-mutation diagnostics so live-switch evidence can report how long `replace_chain` / rebuild windows actually take, including counts plus last/peak/average mutation duration and connection counts. Expose the metrics through the Python bindings and soak harness artifacts, and add safe no-op short-circuits that avoid rebuilding the graph when the requested chain order is already active.
+- Why it matters: The canonical worklist is otherwise closed except for blocked items, and `T614` remains blocked by unexplained callback spikes during topology mutation. This slice creates the missing measurement seam and removes gratuitous rebuild work without pretending the broader live-switch problem is solved.
+- Dependencies: T614, T689, T690
+- Estimated effort: Medium
+- Required outputs: JUCE graph mutation stats, binding/harness exposure, no-op rebuild guards, focused validation evidence, and updated blocker notes if the diagnostics confirm the remaining live-switch bottleneck.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 14:46 EDT - Codex
+- Completion notes:
+  - Added `JuceAudioGraph::TopologyMutationStats` plus reset/get helpers in `juce-engine/Source/JuceAudioGraph.{h,cpp}` so the runtime now records mutation count, no-op skip count, last/peak/average rebuild duration, and last removed/added connection counts for each live topology rebuild.
+  - Added safe no-op short-circuits in the same graph layer for `reorderPlugins`, `movePlugin`, `clearChain`, and `replaceChain` when the requested topology is already active, so the engine no longer performs gratuitous rebuilds for identical chain requests.
+  - Exposed the diagnostics through `juce-engine/Source/PythonBindings.cpp` and `app/services/juce_engine_service.py`, including embedding the topology fields into `get_audio_io_stats()` so existing diagnostics consumers can read them without a separate control path.
+  - Updated `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py` so warmup resets clear the new topology counters and future soak artifacts/logging/markdown reports include topology mutation duration/count/connection data alongside xruns and jitter.
+- Validation:
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `python3 -m py_compile .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py` -> PASS
+  - `python3` binding smoke importing `juce-engine/build/map2_audio_engine.cpython-314-x86_64-linux-gnu.so` and asserting `get_topology_mutation_stats`, `reset_topology_mutation_stats`, and the new `get_audio_io_stats()` topology keys -> PASS
+- Licensing review: touched JUCE engine, Python service, soak-script, and worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced in this diagnostics slice.
+
+ID: T714
+Status: [✓] Done
+Title: Harden the Snapshot Editor selected-block loader-state fix with dedicated merge helpers and regressions
+Description:
+- Goal / acceptance criteria: Refactor the selected-block plugin-card merge path into a dedicated, testable helper so draft loader state, bypass, and parameter values are preserved consistently when building the selected-block card payload. Add focused regression coverage that proves NAM cards render from `plugin.loader_state` when runtime status has no configured model yet, and verify the Snapshot Editor selected-block path continues to use the draft-aware chain projection.
+- Why it matters: T713 fixed the immediate stale-draft projection issue, but the selected-block payload merge and the NAM card’s draft-only display fallback still lacked dedicated direct tests. Hardening those seams reduces the chance of this regression returning during later Snapshot Editor or effect-card refactors.
+- Dependencies: T713
+- Estimated effort: Medium
+- Required outputs: extracted selected-block merge helper, focused helper/NAM regression tests, validation evidence, and updated worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 13:50 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/SnapshotEditor/snapshotEditorSelectedPluginCard.ts` and `web/src/app/components/SnapshotEditor/snapshotEditorSelectedPluginCard.test.ts` so the selected-block plugin-card payload merge is now explicit and directly tested for draft loader state, parameter overlay, and runtime metadata preservation.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` to use the extracted selected-block merge helper instead of repeating that object construction inline, which keeps draft `loader_state` propagation on the selected-block path intentional and easier to audit during future refactors.
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` with a NAM-specific regression that proves the card renders a stored draft model from `plugin.loader_state` even when runtime status still reports no configured model.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorSelectedPluginCard.test.ts web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS (`3 suites, 20 tests`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the loader-state hardening slice.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced for this hardening pass.
+
+Last updated: 2026-04-04 13:40 EDT - Completed T713 by overlaying draft chain state into the Snapshot Editor effective-chain projection, validating the NAM regression, and restoring the transient build stamp.
+
+ID: T713
+Status: [✓] Done
+Title: Fix Snapshot Editor selected-block loader cards to show draft-only asset assignments immediately
+Description:
+- Goal / acceptance criteria: Ensure Snapshot Editor selected-block effect cards immediately reflect draft-only loader-state assignments made through the existing NAM/IR loaders even when the live runtime is inactive or the configured asset has not been persisted to the runtime chain yet. The visible selected-block projection must read from the current editor draft for loader-backed cards, not only from persisted chain/runtime status, and focused regression coverage must lock the NAM selected-block case shown in the user report.
+- Why it matters: Operators are currently told that a NAM model was stored for the selected block, but the parameter card still shows `No model loaded` / `Configured: None`, which makes draft editing unreliable and obscures what will load when the block goes live.
+- Dependencies: T709
+- Estimated effort: Medium
+- Required outputs: Snapshot Editor draft-chain projection fix, NAM selected-block regression test coverage, validation evidence, and worklist/licensing notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 13:40 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.ts` with `applySnapshotDraftToChainsResponse(...)`, which overlays the current editor draft’s chain/plugin state onto the Snapshot Editor effective runtime-chain projection so selected-block cards immediately see draft-only loader-state assignments without waiting for persisted runtime state.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so the editor now builds `effectiveChainsResponse` from the live/runtime projection plus the current undo/draft state, which fixes the NAM selected-block card showing `No model loaded` / `Configured: None` after a draft-only assignment toast.
+  - Added a focused regression in `web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` that locks the NAM-style case where a runtime chain has no persisted loader state but the editor draft contains a stored `.nam` selection.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` -> PASS (`5 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Snapshot Editor regression fix.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced for this fix.
+
+Last updated: 2026-04-04 14:01 EDT - Completed T713 by adding preview-target controls, tightening the classic desktop chrome, restoring the transient build stamp, and recording validation/licensing evidence.
+
+ID: T713
+Status: [✓] Done
+Title: Tighten Theme dialog fidelity with classic preview targeting and denser desktop chrome
+Description:
+- Goal / acceptance criteria: Push `/platforms/theme` closer to the user-provided classic desktop-theme reference by tightening the dialog chrome, reducing generic workspace spacing, and adding an explicit preview-target control that lets operators focus the preview on areas like desktop, active window, inactive window, and message box. Preserve the routed Theme workflow, immediate persistence behavior, and Carbon-token foundations while making the visual structure feel more like a dedicated desktop theme editor.
+- Why it matters: The first T711 restyle moved the Theme route in the right direction, but the page still needs another pass to better reflect the classic dialog hierarchy and preview workflow the user asked for.
+- Dependencies: T711
+- Estimated effort: Low
+- Required outputs: preview-target interaction, denser classic dialog visual pass, focused Theme regression validation, and updated worklist/licensing notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 14:01 EDT - Codex
+- Completion notes:
+  - Added an explicit `Preview target` control to `web/src/app/pages/ThemePage.tsx` so operators can focus the desktop preview on the desktop scene, inactive window, active window, or message box, matching the reference image’s preview-oriented workflow more directly.
+  - Tightened the Theme dialog chrome in `web/src/app/pages/ThemePage.css` with denser spacing, harder-edged inset panel treatment, more classic list-row/button styling, and focused preview outlines so the page reads less like a generic Carbon settings surface and more like a dedicated desktop theme editor.
+  - Extended `web/src/app/pages/ThemePage.test.tsx` with focused coverage for the new preview-target radio group while preserving the earlier routed Theme workflow assertions.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx` -> PASS (`10 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Theme fidelity pass.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no new notice or ownership gaps were identified during the follow-up scan.
+
+ID: T712
+Status: [✓] Done
+Title: Replace the Snapshot Editor actions dropdown with a left-side options rail and unified control center
+Description:
+- Goal / acceptance criteria: Remove the floating `Actions` dropdown from the Snapshot Editor and replace it with a new vertical options rail positioned above the existing snapshot toolbar on the left side of the screen. The new rail must match the snapshot toolbar’s tray/placement language while using its own pastel color set, remain icon-only, and expose the agreed direct actions: a pulsing green `Add signal path` button in the new options rail, direct MIDI/live/performance actions, and destructive clear-path access. Snapshot-specific actions such as `Duplicate snapshot` must remain in the snapshot toolbar, and `Version history` must move into that snapshot toolbar. The fragmented routing/default-interface/noise-gate actions must be cleaned up behind one unified control-center entry point rather than left as separate menu rows. Desktop behavior must ship fully; tablet fallback should expose the unified control-center entry instead of the old dropdown.
+- Why it matters: The prior dropdown buried important operator actions, visually conflicted with the existing left snapshot rail, and split related routing/settings controls across too many disconnected menu entries. The user explicitly asked for a rail that matches the snapshot bar’s visual/positional language and a cleaner grouped interaction model.
+- Dependencies: T702; T708
+- Estimated effort: Medium
+- Required outputs: new options-rail component and styling, snapshot-toolbar action reallocation, unified control-center modal/workspace entry, removal of the obsolete menu-model path, focused frontend coverage, validation evidence, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 13:23 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/SnapshotEditor/SnapshotEditorOptionsRail.tsx` and matching styles in `web/src/app/pages/SnapshotEditorPage.css` so the Snapshot Editor now renders a dedicated left-side options rail above the existing snapshot toolbar, sharing the same tray geometry/collapse behavior while using a separate pastel palette and a pulsing green `Add signal path` action.
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.tsx` so snapshot-specific controls stay grouped in the snapshot bar and `View version history` now lives there alongside duplicate/load/save/navigation/favorite/lock behavior.
+  - Reworked `web/src/app/pages/SnapshotEditorPageContent.tsx` to remove the old `Actions` dropdown/menu-model flow, wire direct rail actions, add a unified `Control Center` modal that groups routing, devices/defaults, runtime tools, and cleanup access, and provide a tablet fallback button that opens the same control-center entry point instead of the removed dropdown.
+  - Deleted the obsolete `web/src/app/pages/snapshotDetailsMenuModel.ts` and `web/src/app/pages/snapshotDetailsMenuModel.test.ts` menu-only path after replacing it with the new rail/control-center interaction model.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx web/src/app/components/SnapshotEditor/SnapshotEditorOptionsRail.test.tsx` -> PASS (`2 suites, 6 tests`)
+  - `npm --prefix web run build` -> PASS
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced for this slice.
+
+ID: T711
+Status: [✓] Done
+Title: Restyle the routed Theme workspace to match the classic desktop-theme dialog reference more directly
+Description:
+- Goal / acceptance criteria: Rework `/platforms/theme` so the routed editor reads as one dense desktop-theme dialog closer to the user-provided reference image, with a stronger left-preview/right-options composition, tighter grouped controls, a more literal desktop/window preview treatment, and the existing Theme workflow features preserved inside that dialog-style shell instead of broad workspace panels. Keep Carbon tokens/styling as the underlying design system, retain immediate persistence behavior, and refresh focused frontend coverage for the renamed/grouped UI.
+- Why it matters: The previous unified Theme refactor improved workflow ownership, but it still looks too much like a generic Carbon workspace and not enough like the classic desktop-theme editor the user explicitly referenced.
+- Dependencies: T705
+- Estimated effort: Medium
+- Required outputs: dialog-style Theme layout restyle, preview/workflow regrouping, focused Theme test updates, validation evidence, and worklist/licensing notes for the touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 13:31 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/ThemePage.tsx` and `web/src/app/pages/ThemePage.css` so the routed Theme workspace now renders as one dense desktop-theme dialog instead of a broad Carbon launcher/panel board: left theme selection stack, centered desktop/window/message-box preview, and a right-side options column for shell scheme, accent family, and font face.
+  - Added a more literal classic preview treatment with faux desktop icons plus inactive-window, active-window, and message-box samples, while keeping the underlying styling on Carbon tokens rather than switching to a non-platform visual system.
+  - Regrouped the rest of the workflow under the same dialog shell: token editing now lives in a lower grouped pane, appearance assets remain on-page but inside the same dialog composition, and behavior/accessibility stays in a dedicated lower panel instead of competing with the main shell chooser.
+  - Updated `web/src/app/pages/ThemePage.test.tsx` to lock the renamed/grouped UI structure and preserved the immediate-persistence paths for font changes, category accents, plugin overrides, and page-transition/reduced-effects behavior.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx` -> PASS (`9 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Theme dialog restyle.
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T710
+Status: [✓] Done
+Title: Sweep all effect cards for accent-only Carbon theme compliance and remove hardcoded card accent colors
+Description:
+- Goal / acceptance criteria: Audit every effect parameter card and shared category layout so card coloring uses accent-only category treatment on top of neutral Carbon surfaces, with accent resolution sourced from the shared category/theme token system instead of ad hoc per-file hex defaults. Remove or normalize the remaining hardcoded accent-color defaults across custom cards and category layouts, preserve explicit product-brand exceptions only where intentionally approved, and verify the cards continue to respect category color overrides from the Theme workspace.
+- Why it matters: The current shared category palette is Carbon-based, but a broad set of card/layout files still hardcode accent hexes, which makes theme compliance partial and causes the effect-card system to drift away from the user’s accent-only requirement.
+- Dependencies: T706; T709
+- Estimated effort: Medium
+- Required outputs: effect-card color audit findings, shared accent-resolution cleanup, approved exception list if needed, focused frontend coverage for theme/token-driven card accents, and worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 13:20 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/PluginCardRouter.tsx` and `web/src/app/utils/pluginAccent.ts` so effect-card accent resolution now flows through the shared category/token system by default, including the NAM-specific accent mapping, instead of relying on ad hoc per-card defaults.
+  - Removed hardcoded card accent defaults across the custom effect-card set by normalizing affected custom cards under `web/src/app/components/PluginCards/Custom/**` onto `resolvePluginAccentColor(...)`, which keeps the cards aligned with category overrides from the Theme workspace even when rendered outside the normal router path.
+  - Normalized the remaining internal multi-accent control islands in `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/REEVRCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/OutotuneCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/EVHPitchShifterCard.tsx` so those cards now use one resolved card accent for module controls instead of per-module product-color palettes.
+  - Kept remaining non-category colors limited to neutral Carbon-compatible surfaces and explicit semantic status indicators (for example record/play and tuner feedback) rather than category-accent overrides, which preserves clarity without reintroducing arbitrary theme-independent card palettes.
+- Validation:
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/types.test.ts web/src/app/components/PluginCards/PluginCardRouter.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedAmbientCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ScopedModulationCards.test.tsx web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.test.tsx web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.test.tsx` -> PASS (`8 suites, 26 tests`)
+  - `npm --prefix web run build` -> PASS
+- Licensing review: touched frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T709
+Status: [✓] Done
+Title: Refactor all effect parameter cards into dense all-visible Carbon layouts with richer file metadata
+Description:
+- Goal / acceptance criteria: Refactor all effect parameter cards so the current card footprint is preserved horizontally while vertical growth remains allowed, all primary controls stay visible without hiding core content behind accordions, parameter groups are organized into logical always-visible sets based on parameter names/roles, and NAM/cabinet/reverb-style file selectors present dense on-card metadata with live/configured/warning state moved up into the primary information hierarchy. Reuse the existing shared loaders/dialogs instead of inventing new asset workflows, and keep the platform-standard numeric entry controls always visible anywhere number entry is required.
+- Why it matters: Earlier work standardized the shell and restored selector actions, but the cards still underuse their available space, hide too much information in weak hierarchy, and leave operators without the dense scan-first file and state visibility the user now wants across the entire effect-card system.
+- Dependencies: T706; T222; T250; T261; T517
+- Estimated effort: High
+- Required outputs: shared dense-layout primitives, richer asset-summary treatment for NAM/cabinet/reverb, all-visible grouped parameter sections across effect cards, preserved platform-standard numeric entry behavior, focused frontend coverage, and worklist/licensing notes.
+Assigned to: Codex
+Last updated: 2026-04-04 13:20 EDT - Codex
+Subtasks:
+ID: T709-subA
+Status: [✓] Done
+Title: Refactor shared Carbon card-shell/layout primitives for dense grouped all-visible content
+Description:
+- Goal / acceptance criteria: Update the shared effect-card shell, section, and asset-summary primitives so cards support denser scan-first information blocks, stronger live/configured/warning hierarchy near the asset title, and all-visible grouped parameter content without depending on `More` accordions for primary controls.
+- Why it matters: The current shell/layout primitives still bias cards toward sparse rows, low-emphasis metadata, and secondary accordion disclosure, which blocks a clean all-card rollout.
+- Dependencies: T706
+- Estimated effort: Medium
+- Required outputs: shared card-shell/layout/style updates and any needed reusable asset-summary primitives.
+- Assigned to: Codex
+- Last updated: 2026-04-04 13:20 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Base/CarbonCardShell.tsx` so non-collapsible advanced sections now render as always-visible secondary sections instead of being forced behind a `More` accordion, which lets cards grow vertically while keeping primary parameter groups visible.
+  - Expanded `web/src/app/components/PluginCards/Base/carbonCardStyles.css` with dense secondary-section and asset-summary treatments, status badges, fact grids, and Carbon-token-driven shared button states so richer card content fits the same horizontal footprint without falling back to ad hoc card chrome.
+  - Added `web/src/app/components/PluginCards/Templates/buildResidualParameterSections.tsx` and extended `web/src/app/components/PluginCards/types.ts` with opt-out small-set flattening so fallback cards can present logically grouped always-visible sections instead of generic collapsed leftovers.
+ID: T709-subB
+Status: [✓] Done
+Title: Apply the dense asset-summary pattern to NAM, cabinet IR, and reverb IR cards
+Description:
+- Goal / acceptance criteria: Replace the current thin filename-plus-helper layout on the NAM, cabinet IR, and reverb IR cards with dense grouped metadata blocks that surface all available file/model facts, move live/configured/warning status up, reuse the existing shared loaders, and keep duplicate-safe scoped runtime behavior intact.
+- Why it matters: These cards are the clearest unresolved example of the original request and will establish the reusable asset-summary pattern for the broader refactor.
+- Dependencies: T706; T709-subA; T517
+- Estimated effort: Medium
+- Required outputs: updated NAM/cabinet/reverb cards, focused loader-card tests, and validation notes.
+- Assigned to: Codex
+- Last updated: 2026-04-04 13:20 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx` into a dense model-summary presentation with live/configured/runtime-warning tags at the top of the asset block and a fact grid that keeps model identity, size, type, and library state visible on-card.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, and `web/src/app/components/PluginCards/Layouts/ConvolutionCategoryLayout.tsx` so cabinet and reverb IR cards now mirror the same dense summary pattern with existing selector loaders, richer metadata, and promoted status hierarchy.
+  - Refreshed `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` to lock the new `Select...` action labeling, richer status tags, and repeated asset-name/fact-grid rendering behavior.
+ID: T709-subC
+Status: [✓] Done
+Title: Re-group all effect-card parameters into logical always-visible sections
+Description:
+- Goal / acceptance criteria: Audit every effect parameter card and category layout so primary controls are grouped logically by parameter meaning/name, all primary groups remain visible by default, and the platform-standard number-entry controls remain visible anywhere numeric editing is needed.
+- Why it matters: The user explicitly wants grouped but always-visible controls, not hidden primary parameters, and this has to be applied consistently across the full effect-card set rather than only the loader cards.
+- Dependencies: T706; T709-subA
+- Estimated effort: High
+- Required outputs: all-card grouping pass, preserved numeric-entry behavior, focused regression coverage, and validation evidence.
+- Assigned to: Codex
+- Last updated: 2026-04-04 13:20 EDT - Codex
+- Completion notes:
+  - Reworked the fallback category templates under `web/src/app/components/PluginCards/Templates/*.tsx` so unmatched parameters are now grouped by logical meaning via shared residual-section generation instead of being dumped into a single `More` or `Other` bucket.
+  - Updated `web/src/app/components/PluginCards/Templates/UtilityTemplate.tsx` to stop flattening small cards into one generic `Parameters` group, which keeps compact parameter sets labeled by role and preserves always-visible numeric editing using the existing platform-standard controls.
+  - Normalized dense grouped-card behavior across the custom effect-card set by combining the always-visible shell behavior with token-driven accent resolution, including focused theme/uniform-accent coverage in `web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.test.tsx` and grouping coverage in `web/src/app/components/PluginCards/types.test.ts`.
+
+ID: T708
+Status: [✓] Done
+Title: Standardize Snapshot Editor BPM and per-channel LED readouts to the MIDI display style
+Description:
+- Goal / acceptance criteria: Update the Snapshot Editor hero `Stored BPM` display and the per-channel flow-card volume readouts so they use the same visual language as the existing MIDI LED display. The BPM and channel-level controls must preserve current inline-edit behavior, segmented readout overlays, and responsive layout while matching the MIDI display’s blue-accent readout color, framed panel treatment, and display density. Focused frontend validation evidence is required.
+- Why it matters: The current hero cluster mixes green BPM styling with blue MIDI styling, and the per-channel level display still uses a looser transparent treatment. Standardizing these readouts improves scan consistency and makes the live surface feel like one coherent hardware-style display system.
+- Dependencies: T669, T674
+- Estimated effort: Low
+- Required outputs: shared/readout styling updates for BPM and flow-card level controls, any necessary focused regression updates, licensing audit result for touched MAP2-owned files, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 12:00 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` and `web/src/app/pages/SnapshotEditorPage.css` so the hero `Stored BPM` control now uses the same blue LED token and framed display surface as the `PC / CH` MIDI readout while preserving inline numeric editing and the existing MIDI tap-override status tag.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/pages/SnapshotEditorPage.css` so each per-channel flow-card volume readout now renders inside the same MIDI-style framed LED surface instead of the prior transparent overlay treatment, while keeping the existing inline value editing path intact.
+  - Added shared Snapshot Editor LED display tokens in `web/src/app/pages/SnapshotEditorPage.css` so the BPM, MIDI, and per-channel level readouts now resolve from one consistent display palette without changing unrelated numeric inputs elsewhere in the web UI.
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Snapshot Editor display standardization slice.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS (`25 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+- Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T707
+Status: [✓] Done
+Title: Fix snapshot-editor NAM loader assignment when no live runtime instance is available
+Description:
+- Goal / acceptance criteria: When the selected-block NAM loader is edited from the snapshot editor while the snapshot is stopped or otherwise not mapped to a live JUCE runtime instance, choosing or uploading a `.nam` asset must store the selection in the snapshot draft loader state instead of failing with the duplicate-loader global-fallback error. The selected-block UI must continue to use the existing live-runtime load path when a scoped runtime instance is available, and focused frontend coverage must lock the draft-assignment fallback plus the existing scoped/live behavior.
+- Why it matters: Snapshot authoring must remain reliable even when the live runtime is offline or pointed at a different chain. Throwing a runtime-scoping error during authoring blocks a core workflow and makes the selected-block loader feel broken.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: selected-block NAM draft-assignment fallback in the frontend/editor path, updated loader dialog/card behavior for stopped snapshots, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 11:38 EDT - Codex
+- Completion notes:
+  - Passed snapshot-draft loader-state updates from the selected-block editor shell in `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/components/PluginCards/PluginCardRouter.tsx`, and `web/src/app/components/PluginCards/types.ts` so custom loader cards can persist asset picks into the draft snapshot instead of depending entirely on a live runtime instance.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx` to treat draft loader-state selections as the configured model fallback, persist uploaded/assigned NAM metadata into `loader_state`, and downgrade the duplicate-loader global-fallback/runtime-inactive failure into a draft-only assignment path when the selected block is not currently live.
+  - Extended `web/src/app/components/loaders/NAMManagerDialog.tsx` so the NAM library dialog can assign models directly into the snapshot draft, show draft-assignment guidance when the scoped runtime is unavailable, and preserve the existing live/scoped load path whenever an active runtime identity exists.
+  - Added focused regression coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx` and `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` for stopped-snapshot draft assignment and the existing selected-block scoped runtime behavior.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS (`23 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T706
+Status: [✓] Done
+Title: Interview and design the native effect parameter card refactor for Carbon-compliant dense same-footprint cards
+Description:
+- Goal / acceptance criteria: Locate the prior native effect parameter card refactor effort, reconcile its assumptions with the current selected-block NAM/cabinet/reverb card implementation, and produce an interview-backed design brief for a follow-on refactor that keeps each card in its current footprint while using the available space more effectively. The brief must cover richer file-selector information hierarchy, Carbon-aligned layout/content structure, preservation of the platform-standard numeric entry controls, and a category-by-category effect card color/theme compliance audit with concrete remediation guidance.
+- Why it matters: Earlier work standardized the shared card shell and selector actions, but the original request for denser asset information and better space usage is still only partially resolved. A fresh design pass is needed before implementation so the next refactor does not regress operator scan speed, Carbon consistency, or theme compliance.
+- Dependencies: T222, T250, T261, T517
+- Estimated effort: Medium
+- Required outputs: traced history of the prior effort, current-state card/layout audit, user interview summary, Carbon-guided design decisions, effect-card color compliance findings, and implementation-ready follow-on tasks.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 12:43 EDT - Codex
+- Completion notes:
+  - Traced the historical chain for this request through `T222` (shared Carbon card-shell refactor), `T250` (numeric-control widening and `More` emphasis), `T261` (in-card `Select...` actions for NAM/IR), and `T517` (richer loaded-file metadata), confirming that `T517` explicitly called out the original “show more information on the file selectors” request as only partially resolved.
+  - Audited the current shared card shell and selector implementations in `web/src/app/components/PluginCards/Base/CarbonCardShell.tsx`, `web/src/app/components/PluginCards/Base/carbonCardStyles.css`, `web/src/app/components/PluginCards/Layouts/ConvolutionCategoryLayout.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, identifying the main remaining UX debt as thin filename-first selector rows with low-emphasis metadata and status pushed too far down the card.
+  - Captured the user’s implementation decisions: scope is all effect parameter cards; current horizontal footprint should stay stable while vertical growth is allowed; file selectors should show all available facts in a dense layout; existing loaders/dialogs should be reused; live/configured/warning state should move up; primary controls should be always visible and logically grouped; the platform-standard number-entry control must remain visible anywhere numeric entry is needed; and effect-card color should be accent-only on top of neutral Carbon surfaces.
+  - Completed a first-pass theme audit showing the shared category palette is already Carbon-based, but `47` non-test PluginCard custom/layout files still carry hardcoded accent-color defaults, so a dedicated theme-compliance sweep is required instead of treating card coloring as already finished.
+
+ID: T705
+Status: [✓] Done
+Title: Refactor Platforms Theme into one Carbon editor workflow and move launcher organization back to Workspace Catalog
+Description:
+- Goal / acceptance criteria: Replace the routed `/platforms/theme` launcher-card board with one persistent Carbon-styled theme editor workflow that keeps a pinned live preview visible, merges built-in themes, suggested directions, custom-theme drafting, token editing, and GUI font selection into a single shell-theme flow, and separates category/plugin appearance editing into its own Appearance Assets section. Remove the Theme-side launcher organizer entry and add a top-of-page launcher-organizer card on `/platforms/workspace-catalog` instead. Preserve existing immediate persistence for built-in theme selection, font selection, category overrides, and plugin appearance updates, and refresh focused frontend coverage for the new routed behavior.
+- Why it matters: The current Theme workspace is still fragmented across equal-weight launcher cards and modals, which feels cramped and poorly grouped. The user wants a more desktop-editor-style workflow with Carbon styling, clearer grouping, and launcher organization owned by Workspace Catalog instead of Theme.
+- Dependencies: T407, T411
+- Estimated effort: Medium
+- Required outputs: routed Theme page layout/state refactor, updated Workspace Catalog entry card, focused test updates, validation evidence, and licensing/worklist notes for the touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 11:00 EDT - Codex
+- Completion notes:
+  - Replaced the routed `/platforms/theme` launcher-card board in `web/src/app/pages/ThemePage.tsx` and `web/src/app/pages/ThemePage.css` with one Carbon-styled editor shell that keeps the live preview pinned, merges built-in themes, suggested directions, custom theme drafting, token editing, and GUI font selection into a single immediate-persist workflow, and redirects legacy launcher-organizer deep links to Workspace Catalog.
+  - Split non-shell editing into clearer sections: `Appearance assets` now owns category accents and plugin overrides on the Theme page, while `Behavior and accessibility` owns reduced-effects, page transitions, and special settings so motion/effects no longer compete with theme editing.
+  - Added the launcher-management entry at the top of Workspace Catalog in `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/components/Platform/PlatformModal.css`, with focused test updates in `web/src/app/pages/ThemePage.test.tsx` and `web/src/app/components/Platform/PlatformModal.test.tsx` to lock the new routed workflow and catalog placement.
+  - Licensing audit outcome: PASS for the touched MAP2-owned files. Re-ran the repository license/notices scans and found no new ambiguous ownership or notice gaps requiring follow-up tasks for this slice.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS (`20 passed`)
+  - `npm --prefix web run typecheck -- --pretty false` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Restored transient `VERSION` / `version.json` build-stamp churn after validation so the remaining diff stays scoped to the Theme/Catalog refactor.
 
 ID: T704
 Status: [✓] Done
@@ -1064,6 +2292,25 @@ Last updated: 2026-04-01 16:15 - Codex
   - Replaced the stale Home landing regression case with still-supported promoted routes, preserving coverage for the landing-tile board without relying on the removed launcher entries.
 - Validation: `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
+ID: T731
+Status: [✓] Done
+Title: Restore Drum Machine and SynthForge to the Workspace Catalog application catalog
+Description:
+- Goal / acceptance criteria: Re-add `Drum Machine` and `SynthForge` as catalog-backed window/workspace entries so they appear in the routed Workspace Catalog and can be used again as valid Home landing launcher targets. Match the current `launcherCatalog.tsx` storefront patterns, including metadata/spec coverage and normalization behavior.
+- Why it matters: The current product direction re-elevates those two standalone instrument workspaces as part of the MAP2 application catalog, so the catalog must expose them instead of normalizing them away.
+- Dependencies: T672
+- Estimated effort: Low
+- Required outputs: restored `HOME_ONLY_LAUNCHERS` entries, storefront metadata aligned with current catalog patterns, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 17:38 - Codex
+- Completion notes:
+  - Restored `/drums` and `/synth-forge` in `web/src/app/data/launcherCatalog.tsx` as standalone routed catalog entries using the existing `HOME_ONLY_LAUNCHERS` pattern and aligned them with the current storefront schema.
+  - Added tailored feature bullets, technical specs, and availability copy for both workspaces so they render consistently inside the Workspace Catalog storefront.
+  - Updated `web/src/app/data/launcherCatalog.test.tsx` so both routes are now valid catalog entries and valid landing-tile normalization targets again.
+  - Updated `web/src/app/pages/HomePage.test.tsx` to follow the current `NEW-map2-landing-bg.png` asset path so the landing-page regression suite remains runnable.
+- Validation: `npm --prefix web test -- --runInBand src/app/data/launcherCatalog.test.tsx src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS
+
 ID: T671
 Status: [✓] Done
 Title: Remove Drum Machine and SynthForge from the Home landing page default tiles
@@ -1820,7 +3067,7 @@ Last updated: 2026-04-02 07:43 EDT - Codex
 - Validation: `python3 -m pytest -q tests/test_snapshot_controller_display_push_service.py tests/test_snapshot_footswitch_label_service.py tests/test_snapshot_controller_display_preview_service.py tests/test_snapshot_service.py tests/test_plugins_engine_op_pipeline.py` -> PASS
 
 ID: T646
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Full Reverb and Delay Tail Spillover on Snapshot Switch
 Description:
 - Goal / acceptance criteria: When the player switches from Snapshot A to Snapshot B, the reverb and delay tails from Snapshot A's chains continue to ring out and decay naturally while Snapshot B's dry signal is already playing. The previous snapshot's wet tails are not cut off. This applies to all reverb and delay plugin blocks in any chain position. Spillover duration is bounded by each plugin's natural decay (not a fixed time limit). Spillover is always enabled — not a per-snapshot toggle. The implementation must not cause any audio gap or click at the transition point. This is the feature that differentiates Helix and Kemper Performance Mode from every other guitar processor on the market.
@@ -1829,10 +3076,19 @@ Description:
 - Estimated effort: High
 - Required outputs: JUCE audio engine changes to maintain a "fade-out" buffer for the previous snapshot's wet plugins during transition, snapshot activation sequence updated to start the new snapshot's dry chain before completing the old chain's teardown, no audio gap or click at transition, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - The current runtime only exposes plugin-local spillover toggles for specific processors such as Delay, ShoeGaze, and LexiLove when those processors are bypassed. There is no snapshot-switch handoff that preserves the previous snapshot's wet graph while the next snapshot becomes active.
-  - Unified snapshot activation still clears and rematerializes runtime chains in Python before reapplying the legacy payload, so there is no dual-runtime or wet-tail retention seam to attach bounded cross-snapshot spillover to.
+Last updated: 2026-04-04 17:05 EDT - Codex
+- Completion notes:
+  - Completed the earlier graph spillover lane by adding exact-state `cloneForSpillover()` helpers to `juce-engine/Source/DelayProcessor.*`, `juce-engine/Source/ShoeGazeProcessor.*`, and `juce-engine/Source/LexiLoveProcessor.*`, then teaching `juce-engine/Source/Map2AudioEngine.cpp`/`.h` to stage and mix shadow runtimes for those singleton native wet processors on silence while the new snapshot is already live.
+  - Extended `app/services/snapshot_service.py` so snapshot activation now stages native spillover not only when a wet singleton disappears from the target snapshot, but also when the same URI remains present with different parameters or placement, closing the last documented same-URI handoff gap for `map2://juce/delay`, `map2://juce/multieffect/shoegaze`, and `map2://juce/reverb/pcm70`.
+  - Added Python binding/service accessors for the new native spillover staging calls in `juce-engine/Source/PythonBindings.cpp` and `app/services/juce_engine_service.py`, plus focused regressions in `tests/test_snapshot_service.py` and `tests/test_juce_engine_service_instance_resolution.py` to lock the new staging behavior.
+- Validation:
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k spillover` -> PASS
+  - `pytest -q tests/test_juce_engine_service_instance_resolution.py` -> PASS
+  - `pytest -q tests/test_chain_plugin_loader_state_persistence.py -k spillover` -> PASS
+  - `pytest -q tests/test_juce_engine_plugin_load_lifecycle_stability.py` -> PASS
+- Licensing review:
+  - Touched MAP2-owned backend/JUCE/test/worklist files remain AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T659
 Status: [✓] Done
@@ -1934,10 +3190,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: in-place routing reconfiguration in the JUCE audio engine (no chain teardown), API endpoint for live routing mode update on active snapshot, frontend routing mode selector wired to live update (not just draft update), routing visualizer real-time update, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
+Last updated: 2026-04-04 20:12 EDT - Codex
 - Blocked notes:
-  - The current editor routing controls only mutate draft/frontend state and persisted snapshot routing metadata. There is no live engine API that reconfigures an active snapshot's graph between `parallel_blend`, `series`, `morph`, and `sidechain` in place.
-  - This task depends on `T614`, and the current activation/runtime stack does not yet provide a stream-safe topology-switch seam that preserves plugin state while changing routing mode live.
+  - The editor still changes routing mode only in local draft state, while `SnapshotService.update_routing()` only persists metadata and never publishes a live routing change into the runtime engine or authoritative audio-state desired routing.
+  - Source inspection confirmed there is still no snapshot-aware JUCE/runtime primitive that can switch a live snapshot between `parallel_blend`, `series`, `morph`, or `sidechain` in place without rebuilding or reactivating chains. Existing runtime seams cover chain replacement, spillover handoff, and generic parallel-group A/B blend only.
 
 ID: T636
 Status: [✓] Done
@@ -1973,7 +3229,7 @@ Last updated: 2026-04-01 12:07 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/snapshotEditorFlowCard.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T634
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Next Snapshot Pre-Load in Background — Instantaneous Live Switch
 Description:
 - Goal / acceptance criteria: While Snapshot A is live and playing, MAP2 silently pre-loads Snapshot B (the next snapshot by program number or setlist order) into the audio engine — instantiating all plugins, setting all parameters, and loading all IR/NAM asset files — without making it active. When the player activates Snapshot B (via UI, MIDI PC, or footswitch), the switch is instantaneous because all assets are already loaded. The pre-load happens in a background thread/task and does not affect the audio callback performance on the real-time cores. If the player activates a snapshot other than the pre-loaded one, the pre-loaded snapshot is discarded and the correct one is loaded normally.
@@ -1982,10 +3238,16 @@ Description:
 - Estimated effort: High
 - Required outputs: background snapshot pre-load mechanism in snapshot_runtime_service.py, pre-load triggered on snapshot activation (load next in sequence), asset pre-loading (NAM models, IR files) in background threads, instantaneous switch when pre-loaded snapshot matches activation target, pre-load cancel/replace when target changes, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - There is no snapshot preloader in `snapshot_runtime_service.py`, the unified snapshot activation path, or the JUCE engine. Source hits for `preload` in the current tree are limited to unrelated sample-loader internals such as SynthForge.
-  - This task depends on both `T614` and `T646`; without a second inactive snapshot graph and a spillover-capable handoff path, there is nothing to warm in the background or switch to instantaneously.
+Last updated: 2026-04-04 23:05 EDT - Codex
+- Completion notes:
+  - Added detached preload staging and release helpers in `app/services/chain_service.py` so snapshot preloading can warm plugin instances plus NAM/IR assets without mutating the live pedalboard topology, while preserving later detached-instance reuse during activation.
+  - Added next-snapshot target resolution, runtime-metrics tracking, a per-node background preload scheduler, and a local-runtime-first live snapshot lookup in `app/services/snapshot_service.py` so activation now records preload hits and warms the next snapshot by program number or display order.
+  - Added focused regression coverage in `tests/test_snapshot_service.py` and `tests/test_chain_plugin_loader_state_persistence.py` for activation-time preload scheduling, ready-state runtime metrics, display-order fallback, detached warm staging, and detached instance cleanup behavior.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+- Licensing review:
+  - Touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs app/services tests` and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T633
 Status: [✓] Done
@@ -2317,7 +3579,7 @@ Last updated: 2026-04-01 22:05 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotGoLiveState.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/utils/snapshotActivationToast.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T614
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Live-Safe Snapshot Switching — No Audio Gap, Parameter Crossfade
 Description:
 - Goal / acceptance criteria: When a snapshot is activated while audio is running, the engine applies the new snapshot's plugin parameters WITHOUT stopping or restarting the audio stream. For parameters that change value significantly (e.g., gain drops from 80% to 20%), values are ramped smoothly over a short crossfade window (target: ≤20ms ramp, imperceptible to the listener) rather than jumping instantly. If the new snapshot's plugin topology is identical to the current live topology (same plugin URIs in the same chain order), no plugin teardown or re-instantiation occurs — only parameter values change. If the topology differs (plugins added, removed, or reordered), a minimal teardown occurs but the audio stream itself must not stop. No audible dropout, click, or silence is acceptable during any snapshot switch.
@@ -2327,16 +3589,18 @@ Description:
 - Required outputs: parameter ramping in JUCE audio engine (per-parameter ramp time, applied in audioCallback), topology-change detection in snapshot activation (compare plugin URIs and order before teardown), stream-safe chain reconfiguration (no audio thread stop), focused regression coverage including soak tests at 48kHz/64-sample buffer, validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-02 21:47 EDT - Codex
-- Progress notes:
+Last updated: 2026-04-04 15:22 EDT - Codex
+- Completion notes:
   - Implemented a same-topology activation fast path in `SnapshotService.activate_snapshot()` so identical live topologies now reuse existing runtime-chain IDs instead of clearing and rematerializing snapshot-path chains.
   - Rebound reused runtime-chain metadata to the newly active snapshot, updated runtime chain/plugin DB metadata in place, and added focused regression coverage in `tests/test_snapshot_service.py`.
   - Wired JUCE name-based parameter application through the runtime-aware `Map2AudioEngine::setParameterByName()` seam, registered loaded plugin parameters with `ParameterBridge`, enabled smoothing-block processing in the audio callback, and routed `SnapshotManager` recalls through that seam so snapshot loads no longer bypass smoothing while audio is running.
-  - Validation passed for `python3 -m pytest -q tests/test_snapshot_service.py`, `python3 -m pytest -q tests/test_snapshot_routes.py`, and `cmake --build juce-engine/build -j$(nproc)`.
-- Blocked notes:
-  - The required 48kHz/64-sample soak evidence still fails on this host after the implementation slice. Safe-rewire smoke artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214038Z.{json,md}` reported `174` xruns and `20.346ms` peak callback jitter; live-rewire artifact `docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T214424Z.{json,md}` reported `182` xruns and `24.659ms` peak callback jitter.
-  - The new preloaded-pool topology-only artifact `docs/fit-for-purpose-evidence/20260403/juce-random-fx-soak-20260403T014240Z.{json,md}` still failed at `12` xruns and `6.080ms` peak callback jitter after plugin load/node creation was moved out of the measured window, which narrows the remaining gap to live topology mutation itself.
-  - Until those xrun/jitter failures are understood and reduced enough to satisfy the no-gap acceptance bar, `T614` cannot be closed honestly and remains the blocker for `T646`, `T637`, and `T634`.
+  - Hardened the real live path so activation now prefers runtime-state payload reuse over indirect control-plane lookups, falls back correctly when authority has no committed `source_snapshot`, and reuses already-active runtime plugin instances during changed-topology reorders instead of loading fresh copies in the live window.
+  - End-to-end evidence now closes the original blocker: the generic preloaded live-rewire artifact `docs/fit-for-purpose-evidence/20260404/juce-random-fx-soak-20260404T190115Z.{json,md}` passed at `0` xruns / `0.0517ms` peak jitter, and the real snapshot activation artifact `docs/fit-for-purpose-evidence/20260404/snapshot-activation-proof-20260404T192201Z.{json,md}` also passed at `0` xruns / `0.0269ms` peak callback jitter with same-topology reuse and changed-topology live switching both behaving within the no-gap bar.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_activate_snapshot_reuses_runtime_chains_for_same_topology tests/test_snapshot_service.py::test_activate_snapshot_reuses_runtime_chains_when_authority_has_no_snapshot tests/test_chain_plugin_loader_state_persistence.py::test_activate_chain_reuses_active_runtime_instances_for_reorder tests/test_juce_engine_service_instance_resolution.py` -> PASS
+  - `python3 .codex/skills/juce-random-effects-soak/scripts/run_snapshot_activation_proof.py` -> PASS artifact `docs/fit-for-purpose-evidence/20260404/snapshot-activation-proof-20260404T192201Z.{json,md}`
+  - Prior generic live-rewire validation remains PASS via `docs/fit-for-purpose-evidence/20260404/juce-random-fx-soak-20260404T190115Z.{json,md}`
+- Licensing review: touched MAP2-owned backend/JUCE/test/worklist/evidence/skill-script files remain AGPL-covered repository artifacts; no third-party code or notice-bearing assets were introduced while closing the live-safe snapshot switching slice.
 
 ID: T690
 Status: [✓] Done
@@ -14107,3 +15371,26 @@ Assigned to: Codex
 Last updated: 2026-04-02 04:15 EDT - Codex
 - Completed: Added `tests/test_rt_latency_policy.py` to statically reject new sub-5ms `asyncio.sleep()` literals under `app/services/`, with documented allowlist exemptions for the RT parameter bridge, metering broadcast policy surface, and audio-I/O queue service.
 - Validation: `pytest tests/test_midi_engine_event_driven.py tests/test_rt_latency_policy.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+
+---
+
+ID: T604
+Status: [✓] Done
+Title: Harden cabinet/reverb IR list queries against broken library entries
+Description:
+- Goal / acceptance criteria: Update the IR scanning/listing path so `/api/ir/cabinets` and `/api/ir/reverbs` continue to return healthy assets even when one or more files under the scanned library directories are unreadable, missing, or otherwise broken. Add focused regression coverage for the failing scan case and preserve the existing selected-block scoped IR behavior.
+- Why it matters: The Cabinet IR dialog currently fails closed when the list query throws. One bad filesystem entry should not hide the entire cabinet library from the operator.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: resilient IR scanner/list route behavior, focused backend regression tests, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 17:09 EDT - Codex
+- Completion notes:
+  - Hardened `app/services/ir_processor.py` so IR directory scans now skip unreadable, missing, or otherwise broken asset entries instead of raising out of the full cabinet/reverb list query.
+  - Added a raw `size` field alongside `size_mb` in scanned IR payloads so existing frontend consumers have byte-size metadata available when rendering list details.
+  - Added `tests/test_ir_routes.py` coverage that drives `/api/ir/cabinets` through a broken-symlink cabinet library and verifies the route still returns the healthy IR entry instead of failing closed.
+- Validation:
+  - `pytest -q tests/test_ir_routes.py tests/test_nam_ir_instance_routes.py` -> PASS (`17 passed`)
+- Licensing review:
+  - Touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.

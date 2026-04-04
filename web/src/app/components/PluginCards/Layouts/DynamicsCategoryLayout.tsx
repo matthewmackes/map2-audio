@@ -13,6 +13,7 @@ import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
 import { GainReductionMeter } from '../../Dynamics/GainReductionMeter'
 import { TransferCurve } from '../Visualizations/TransferCurve'
+import { getCategoryConfig } from '../types'
 
 /** Parameter slot for a knob in the layout */
 export interface ParamSlot {
@@ -72,7 +73,7 @@ export interface DynamicsCategoryLayoutProps {
 
 export function DynamicsCategoryLayout({
   plugin,
-  accentColor = '#22c55e',
+  accentColor: providedAccent,
   compact = false,
   bypassed = false,
   onBypassToggle,
@@ -94,6 +95,7 @@ export function DynamicsCategoryLayout({
   extraContent,
   presets,
 }: DynamicsCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const visualization = (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
       <GainReductionMeter gainReduction={gainReduction} height={compact ? 120 : 140} />

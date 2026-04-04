@@ -14,6 +14,7 @@ import { GearImage } from './celestial/GearImages'
 import { ArtistGrid } from './celestial/ArtistGrid'
 import { TOPOLOGY_LABELS, TOPOLOGY_COLORS, TOPOLOGY_GEAR_NAMES } from './celestial/types'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { CelestialPreset } from './celestial/types'
 import { Music } from '@carbon/icons-react'
@@ -39,10 +40,11 @@ interface CelestialCompressorCardProps extends PluginCardProps {
 
 function CelestialCompressorCardBase({
   plugin,
-  accentColor = '#d4a574',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: CelestialCompressorCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     selectedPreset,
     selectedPresetId,

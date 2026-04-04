@@ -11,6 +11,7 @@ import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
+import { getCategoryConfig } from '../types'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 
 export { type ParamSlot }
@@ -53,7 +54,7 @@ export interface DelayCategoryLayoutProps {
 
 export function DelayCategoryLayout({
   plugin,
-  accentColor = '#45b7d1',
+  accentColor: providedAccent,
   compact = false,
   cardWidth,
   bypassed = false,
@@ -76,6 +77,7 @@ export function DelayCategoryLayout({
   presets,
   extraContent,
 }: DelayCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const renderKnob = (slot: ParamSlot | undefined, size: 'small' | 'medium' = 'medium') => {
     if (!slot) return null
     return (

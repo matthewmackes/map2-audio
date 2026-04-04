@@ -30,6 +30,7 @@ import {
   usePlatformRemediationSummary,
   useRemediationNodesByState,
 } from '../../hooks/usePlatformRemediation'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import './PlatformRemediationWorkflow.css'
 
 type AdoptionCandidate = {
@@ -246,6 +247,37 @@ export function PlatformRemediationWorkflow({
     />
   )
 
+  const grafanaPanels = useMemo<PlatformGrafanaPanelDefinition[]>(() => {
+    const adoptionCounts = summary?.counts.adoption ?? {}
+    const syncCounts = summary?.counts.sync ?? {}
+    const cloneCounts = summary?.counts.clone ?? {}
+
+    return [
+      {
+        id: 'platform-remediation-adoption',
+        title: 'Adoption Pressure',
+        description: '24-hour workflow view for candidate, claimable, adopted, and ready node counts.',
+        series: [
+          { key: 'candidate', label: 'Candidate', value: adoptionCounts.candidate ?? 0, color: 'var(--cds-support-warning)' },
+          { key: 'claimable', label: 'Claimable', value: adoptionCounts.claimable ?? 0, color: 'var(--cds-support-info)' },
+          { key: 'adopted', label: 'Adopted', value: adoptionCounts.adopted ?? 0, color: 'var(--cds-link-primary)' },
+          { key: 'ready', label: 'Ready', value: adoptionCounts.ready ?? 0, color: 'var(--cds-support-success)' },
+        ],
+      },
+      {
+        id: 'platform-remediation-sync-clone',
+        title: 'Sync and Clone Posture',
+        description: 'Release-sync and clone-recovery state counts for the current platform remediation summary.',
+        series: [
+          { key: 'outdated', label: 'Outdated', value: syncCounts.outdated ?? 0, color: 'var(--cds-support-warning)' },
+          { key: 'rollbackAvailable', label: 'Rollback', value: syncCounts.rollback_available ?? 0, color: 'var(--cds-support-info)' },
+          { key: 'suspectedClone', label: 'Suspected Clone', value: cloneCounts.suspected_clone ?? 0, color: 'var(--cds-support-error)' },
+          { key: 'confirmedClone', label: 'Confirmed Clone', value: cloneCounts.confirmed_clone ?? 0, color: 'var(--cds-text-primary)' },
+        ],
+      },
+    ]
+  }, [summary?.counts.adoption, summary?.counts.clone, summary?.counts.sync])
+
   const body = (
     <div className="platform-remediation">
       <div className="platform-remediation__header">
@@ -272,6 +304,7 @@ export function PlatformRemediationWorkflow({
         <ProgressStep label="Sync" description="Source, hold, rollback, fix" />
         <ProgressStep label="Clone" description="Recover and rejoin cloned nodes" />
       </ProgressIndicator>
+      <PlatformGrafanaPanelDeck panels={grafanaPanels} />
       {summaryQuery.isLoading && !providedSummary ? <InlineLoading description="Loading remediation status…" /> : null}
       {summaryQuery.error && !providedSummary ? (
         <InlineNotification

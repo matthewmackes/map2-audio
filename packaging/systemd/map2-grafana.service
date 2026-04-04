@@ -1,0 +1,22 @@
+[Unit]
+Description=MAP2 Grafana Server
+After=network-online.target map2-prometheus.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=map2
+Group=map2
+EnvironmentFile=-/etc/map2/grafana/grafana.env
+ExecStart=/usr/sbin/grafana-server \
+  --homepath=/usr/share/grafana \
+  --config=/etc/map2/grafana/grafana.ini \
+  cfg:default.paths.data=/var/lib/map2/grafana \
+  cfg:default.paths.logs=/var/log/map2/grafana \
+  cfg:default.paths.plugins=/var/lib/map2/grafana/plugins \
+  cfg:default.paths.provisioning=/etc/map2/grafana/provisioning
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

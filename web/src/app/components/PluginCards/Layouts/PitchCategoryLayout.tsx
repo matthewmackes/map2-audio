@@ -11,6 +11,7 @@ import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
+import { getCategoryConfig } from '../types'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 
 export { type ParamSlot }
@@ -51,7 +52,7 @@ export interface PitchCategoryLayoutProps {
 
 export function PitchCategoryLayout({
   plugin,
-  accentColor = '#06b6d4',
+  accentColor: providedAccent,
   compact = false,
   bypassed = false,
   onBypassToggle,
@@ -72,6 +73,7 @@ export function PitchCategoryLayout({
   presets,
   extraContent,
 }: PitchCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const renderKnob = (slot: ParamSlot | undefined, sz: 'small' | 'medium' = 'medium') => {
     if (!slot) return null
     return (

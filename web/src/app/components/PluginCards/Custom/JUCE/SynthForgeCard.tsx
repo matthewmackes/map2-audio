@@ -25,6 +25,7 @@ import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/Instrume
 import { NumberInput, ParameterKnob } from '../../../ParameterControl'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import {
   soundfontApi,
   synthforgeApi,
@@ -734,11 +735,12 @@ interface SynthForgeCardProps extends PluginCardProps {
 
 function SynthForgeCardBase({
   plugin,
-  accentColor = '#38d6c4',
+  accentColor: providedAccent,
   compact = false,
   onBypassToggle,
   onOpenMidiMappings,
 }: SynthForgeCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   useWebSocketConnection()
 
   const queryClient = useQueryClient()

@@ -73,9 +73,9 @@ class DeploymentHealthResponse(BaseModel):
 
 
 MODE_DESCRIPTIONS = {
-    "ALL-IN-ONE": "Single device running all services",
-    "AUDIO-NODE": "Dedicated audio processing node with API",
-    "CONTROL-NODE": "Control/UI node without audio processing",
+    "ALL-IN-ONE": "Single device running audio, UI, and local monitoring stack",
+    "AUDIO-NODE": "Dedicated audio processing node with lightweight metrics export only",
+    "CONTROL-NODE": "Control/UI/observability node without audio processing",
     "FRONTEND-ONLY": "Lightweight frontend mode with minimal backend",
 }
 
@@ -223,6 +223,8 @@ async def _get_service_status(service: str) -> ServiceStatusResponse:
         elif service == "api_server":
             # If this endpoint is serving, API is operational.
             resolved_status = "running"
+        elif service == "metrics_exporter":
+            resolved_status = "running" if config.exports_node_metrics() else "stopped"
         elif service == "web_ui":
             # Probe frontend production endpoint quickly.
             def _probe_web_ui() -> bool:
@@ -233,6 +235,24 @@ async def _get_service_status(service: str) -> ServiceStatusResponse:
                     return False
             web_ok = await asyncio.to_thread(_probe_web_ui)
             resolved_status = "running" if web_ok else "stopped"
+        elif service == "prometheus":
+            def _probe_prometheus() -> bool:
+                try:
+                    with urlopen("http://127.0.0.1:9090/-/ready", timeout=1.5) as resp:
+                        return 200 <= resp.status < 500
+                except Exception:
+                    return False
+            prom_ok = await asyncio.to_thread(_probe_prometheus)
+            resolved_status = "running" if prom_ok else "stopped"
+        elif service == "grafana":
+            def _probe_grafana() -> bool:
+                try:
+                    with urlopen("http://127.0.0.1:3001/api/health", timeout=1.5) as resp:
+                        return 200 <= resp.status < 500
+                except Exception:
+                    return False
+            grafana_ok = await asyncio.to_thread(_probe_grafana)
+            resolved_status = "running" if grafana_ok else "stopped"
     except Exception as e:
         logger.debug(f"Service-specific status lookup failed for {service}: {e}")
 

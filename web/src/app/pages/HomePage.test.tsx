@@ -19,7 +19,7 @@ const mockSpecialSettingsState = {
   reload: jest.fn(),
 }
 
-jest.mock('../../assets/map2-landing-bg.png', () => 'map2-landing-bg.png')
+jest.mock('../../assets/NEW-map2-landing-bg.png', () => 'NEW-map2-landing-bg.png')
 
 class ResizeObserverMock {
   observe() {}

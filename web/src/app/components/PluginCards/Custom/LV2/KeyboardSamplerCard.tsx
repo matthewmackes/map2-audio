@@ -26,6 +26,7 @@ import {
   StarFilled,
 } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import api from '../../../../../map2/api'
 
 const PARAM_MAP = {
@@ -56,9 +57,10 @@ export function KeyboardSamplerCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#3b82f6',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [showBrowser, setShowBrowser] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)

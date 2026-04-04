@@ -18,6 +18,7 @@ from app.services.chain_service import (
     _REVERB_IR_PLUGIN_URIS,
     _default_loader_state_for_plugin,
 )
+from app.services.juce_parameter_schema import is_fixed_native_processor_uri
 
 logger = logging.getLogger(__name__)
 
@@ -113,47 +114,56 @@ async def apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int, 
             bypass = plugin.get("bypass", False)
             try:
                 instance_id = engine._get_instance_id_for_uri(plugin_uri, plugin_position)
-                if instance_id is not None:
-                    loader_state = snapshot_loader_state(plugin)
-                    if plugin_uri in _NAM_PLUGIN_URIS:
-                        defaults = _default_loader_state_for_plugin(plugin_uri)
-                        model_path = loader_state.get("selected_asset_path")
-                        if isinstance(model_path, str) and model_path.strip():
-                            await engine.load_nam_model_instance(instance_id, model_path)
-                        await engine.set_nam_input_gain_instance(
-                            instance_id,
-                            float(loader_state.get("input_gain", defaults.get("input_gain", 0.0)) or 0.0),
-                        )
-                        await engine.set_nam_output_gain_instance(
-                            instance_id,
-                            float(loader_state.get("output_gain", defaults.get("output_gain", 0.0)) or 0.0),
-                        )
-                        await engine.set_nam_normalize_instance(
-                            instance_id,
-                            bool(loader_state.get("normalize", defaults.get("normalize", True))),
-                        )
-                        await engine.set_nam_bypass_instance(
-                            instance_id,
-                            bool(loader_state.get("bypass", bypass)),
-                        )
-                    elif plugin_uri in _CABINET_IR_PLUGIN_URIS or plugin_uri in _REVERB_IR_PLUGIN_URIS:
-                        defaults = _default_loader_state_for_plugin(plugin_uri)
-                        ir_path = loader_state.get("selected_asset_path")
-                        if isinstance(ir_path, str) and ir_path.strip():
-                            if plugin_uri in _CABINET_IR_PLUGIN_URIS:
-                                await engine.load_cabinet_ir_instance(instance_id, ir_path)
-                            else:
-                                await engine.load_reverb_ir_instance(instance_id, ir_path)
-                        await engine.set_ir_mix_instance(
-                            instance_id,
-                            float(loader_state.get("mix", defaults.get("mix", 100.0)) or defaults.get("mix", 100.0)),
-                        )
-                        await engine.set_ir_bypass_instance(
-                            instance_id,
-                            bool(loader_state.get("bypass", bypass)),
-                        )
-                    else:
-                        await engine.set_bypass(instance_id, bypass)
+                loader_state = snapshot_loader_state(plugin)
+                if plugin_uri in _NAM_PLUGIN_URIS and instance_id is not None:
+                    defaults = _default_loader_state_for_plugin(plugin_uri)
+                    model_path = loader_state.get("selected_asset_path")
+                    if isinstance(model_path, str) and model_path.strip():
+                        await engine.load_nam_model_instance(instance_id, model_path)
+                    await engine.set_nam_input_gain_instance(
+                        instance_id,
+                        float(loader_state.get("input_gain", defaults.get("input_gain", 0.0)) or 0.0),
+                    )
+                    await engine.set_nam_output_gain_instance(
+                        instance_id,
+                        float(loader_state.get("output_gain", defaults.get("output_gain", 0.0)) or 0.0),
+                    )
+                    await engine.set_nam_normalize_instance(
+                        instance_id,
+                        bool(loader_state.get("normalize", defaults.get("normalize", True))),
+                    )
+                    await engine.set_nam_bypass_instance(
+                        instance_id,
+                        bool(loader_state.get("bypass", bypass)),
+                    )
+                    bypass_applied += 1
+                elif (plugin_uri in _CABINET_IR_PLUGIN_URIS or plugin_uri in _REVERB_IR_PLUGIN_URIS) and instance_id is not None:
+                    defaults = _default_loader_state_for_plugin(plugin_uri)
+                    ir_path = loader_state.get("selected_asset_path")
+                    if isinstance(ir_path, str) and ir_path.strip():
+                        if plugin_uri in _CABINET_IR_PLUGIN_URIS:
+                            await engine.load_cabinet_ir_instance(instance_id, ir_path)
+                        else:
+                            await engine.load_reverb_ir_instance(instance_id, ir_path)
+                    await engine.set_ir_mix_instance(
+                        instance_id,
+                        float(loader_state.get("mix", defaults.get("mix", 100.0)) or defaults.get("mix", 100.0)),
+                    )
+                    await engine.set_ir_bypass_instance(
+                        instance_id,
+                        bool(loader_state.get("bypass", bypass)),
+                    )
+                    bypass_applied += 1
+                elif is_fixed_native_processor_uri(plugin_uri):
+                    await engine.set_parameter(
+                        plugin_uri,
+                        "bypass",
+                        1.0 if bool(bypass) else 0.0,
+                        plugin_position=plugin_position,
+                    )
+                    bypass_applied += 1
+                elif instance_id is not None:
+                    await engine.set_bypass(instance_id, bypass)
                     bypass_applied += 1
             except Exception as exc:
                 logger.debug("Could not set bypass for %s: %s", plugin_uri, exc)

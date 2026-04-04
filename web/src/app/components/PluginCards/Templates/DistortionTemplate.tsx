@@ -8,10 +8,8 @@ import { useMemo } from 'react'
 import type { PluginCardProps } from '../types'
 import { getCategoryConfig } from '../types'
 import { AmplifierCategoryLayout, type ParamSlot } from '../Layouts/AmplifierCategoryLayout'
-import type { AdvancedSection } from '../Base/CarbonCardShell'
-import { CarbonParameterSection } from '../Base/CarbonParameterSection'
-import { ParameterKnob } from '../../ParameterControl'
 import type { PluginParameter } from '../../../../map2/types'
+import { buildResidualParameterSections } from './buildResidualParameterSections'
 
 const DRIVE_PATTERNS = ['drive', 'gain', 'input', 'amount', 'distortion', 'overdrive', 'saturation']
 const TONE_PATTERNS = ['tone', 'color', 'bright', 'filter', 'eq', 'presence']
@@ -73,31 +71,15 @@ export function DistortionTemplate({
 
   const formatDb = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`
 
-  const advancedSections: AdvancedSection[] = useMemo(() => {
-    if (otherParams.length === 0) return []
-    return [{
-      id: 'other',
-      title: 'More',
-      children: (
-        <CarbonParameterSection>
-          {otherParams.map(p => (
-            <ParameterKnob
-              key={p.index}
-              label={p.name}
-              value={parameterValues[p.index] ?? p.default}
-              min={p.min}
-              max={p.max}
-              defaultValue={p.default}
-              onChange={(v) => onParameterChange(p.index, v)}
-              accentColor={accentColor}
-              isLogarithmic={p.is_log}
-              size="small"
-            />
-          ))}
-        </CarbonParameterSection>
-      ),
-    }]
-  }, [otherParams, parameterValues, onParameterChange, accentColor])
+  const advancedSections = useMemo(
+    () => buildResidualParameterSections({
+      params: otherParams,
+      parameterValues,
+      onParameterChange,
+      accentColor,
+    }),
+    [otherParams, parameterValues, onParameterChange, accentColor],
+  )
 
   return (
     <AmplifierCategoryLayout

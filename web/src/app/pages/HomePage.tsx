@@ -19,7 +19,7 @@ import {
   REQUIRED_HOME_LAUNCHER_ROUTE,
 } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
-import landingBg from '../../assets/map2-landing-bg.png'
+import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import './HomePage.css'
 
 // ── Node status for Platforms card ──────────────────────────────────────────

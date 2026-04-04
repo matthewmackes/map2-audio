@@ -26,21 +26,35 @@ jest.mock('../../../ParameterControl', () => ({
     label,
     descriptor,
     onLiveChange,
+    accentColor,
   }: {
     label?: string
     descriptor: { step?: number; largeStep?: number }
     onLiveChange?: (value: number) => void
+    accentColor?: string
   }) => (
     <button
       type="button"
       data-step={descriptor.step}
       data-large-step={descriptor.largeStep}
+      data-testid="accented-control"
+      data-accent={accentColor ?? ''}
       onClick={() => onLiveChange?.(6)}
     >
       {label}
     </button>
   ),
-  ParameterKnob: ({ label }: { label: string }) => <div>{label}</div>,
+  ParameterKnob: ({
+    label,
+    accentColor,
+  }: {
+    label: string
+    accentColor?: string
+  }) => (
+    <div data-testid="accented-control" data-accent={accentColor ?? ''}>
+      {label}
+    </div>
+  ),
 }))
 
 jest.mock('../../../../hooks/usePassionFX', () => ({
@@ -223,5 +237,24 @@ describe('PassionFXCard parameter-control migration', () => {
     fireEvent.click(stagesControl)
 
     expect(mockSetPhaserStages).toHaveBeenCalledWith(6)
+  })
+
+  it('applies the provided card accent consistently across module controls', () => {
+    render(
+      <PassionFXCard
+        plugin={{ uri: 'map2://juce/multieffect/passionfx', name: 'PassionFX', parameters: [] } as any}
+        parameterValues={{}}
+        onParameterChange={() => {}}
+        accentColor="#00c853"
+      />,
+    )
+
+    const accentValues = screen
+      .getAllByTestId('accented-control')
+      .map((node) => node.getAttribute('data-accent'))
+      .filter((value): value is string => Boolean(value))
+
+    expect(accentValues.length).toBeGreaterThan(0)
+    expect(new Set(accentValues)).toEqual(new Set(['#00c853']))
   })
 })

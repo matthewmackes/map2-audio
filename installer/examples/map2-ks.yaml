@@ -50,7 +50,7 @@ software:
   install_frontend: false    # Set true for all-in-one
   install_juce_engine: true
   install_lcd: false
-  install_cluster_mgr: false
+  install_cluster_mgr: false # Set true for management/all-in-one; host Prometheus/Grafana there
   extra_packages: []
 
 # ── Audio Interface ───────────────────────────────────────────────────────

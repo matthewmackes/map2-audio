@@ -11,6 +11,7 @@ import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
 import { ParameterKnob } from '../../ParameterControl'
+import { getCategoryConfig } from '../types'
 import type { ParamSlot } from './DynamicsCategoryLayout'
 
 export { type ParamSlot }
@@ -51,7 +52,7 @@ export interface EQCategoryLayoutProps {
 
 export function EQCategoryLayout({
   plugin,
-  accentColor = '#4ecdc4',
+  accentColor: providedAccent,
   compact = false,
   bypassed = false,
   onBypassToggle,
@@ -64,6 +65,7 @@ export function EQCategoryLayout({
   advancedSections,
   extraContent,
 }: EQCategoryLayoutProps) {
+  const accentColor = providedAccent || getCategoryConfig(plugin.category).color
   const renderKnob = (slot: ParamSlot, sz: 'small' | 'medium' = 'small') => (
     <ParameterKnob
       label={slot.label}

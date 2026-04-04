@@ -11,6 +11,7 @@
 #include "Common.h"
 #include <atomic>
 #include <array>
+#include <memory>
 #include <vector>
 
 namespace map2 {
@@ -261,6 +262,7 @@ public:
     // Bulk parameter access
     Parameters getParameters() const;
     void setParameters(const Parameters& params);
+    std::unique_ptr<DelayProcessor> cloneForSpillover() const;
 
     // ========================================
     // Tap Tempo

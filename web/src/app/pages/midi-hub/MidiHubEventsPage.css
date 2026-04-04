@@ -7,7 +7,15 @@
 .midi-hub-events-layout {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-events-layout > :first-child {
+  grid-column: span 7;
+}
+
+.midi-hub-events-layout > :last-child {
+  grid-column: span 5;
 }
 
 .midi-hub-events-heading {
@@ -51,8 +59,8 @@
 }
 
 @media (max-width: 1056px) {
-  .midi-hub-events-layout {
-    grid-template-columns: 1fr;
+  .midi-hub-events-layout > * {
+    grid-column: span 12;
   }
 }
 

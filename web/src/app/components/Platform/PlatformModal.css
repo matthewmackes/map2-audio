@@ -1,6 +1,11 @@
 /* ── Page shell ──────────────────────────────────────────── */
 .platform-shell-page {
   --platform-menu-scale: 1.4;
+  --workspace-page-template-padding-block: calc(2rem * var(--platform-menu-scale));
+  --workspace-page-template-padding-inline: calc(2.5rem * var(--platform-menu-scale));
+  --workspace-page-template-gap: calc(1.25rem * var(--platform-menu-scale));
+  --workspace-page-template-sidebar-min: 16rem;
+  --workspace-page-template-sidebar-max: 20rem;
   min-height: calc(100vh - 3rem);
   background: var(--cds-background);
   display: flex;
@@ -12,24 +17,7 @@
   background: transparent;
 }
 
-.platform-shell__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: calc(2rem * var(--platform-menu-scale)) calc(2.5rem * var(--platform-menu-scale));
-}
-
-.platform-shell__window {
-  display: grid;
-  width: 100%;
-  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
-  gap: calc(1.25rem * var(--platform-menu-scale));
-  min-height: 100%;
-  align-items: start;
-}
-
-.platform-modal__body--expanded .platform-shell__window {
+.platform-modal__body--expanded .workspace-page-template__window {
   gap: calc(0.625rem * var(--platform-menu-scale));
 }
 
@@ -441,9 +429,52 @@
   color: var(--cds-text-secondary);
 }
 
+.platform-shell__catalog-intro-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.platform-shell__catalog-intro-copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.platform-shell__catalog-intro-eyebrow {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__catalog-intro-title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__catalog-intro-summary {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
+}
+
 .platform-shell__ws-back {
   flex-shrink: 0;
   margin-left: auto;
+}
+
+@media (max-width: 42rem) {
+  .platform-shell__catalog-intro-card {
+    flex-direction: column;
+  }
 }
 
 /* ── Notification strip ──────────────────────────────────── */
@@ -629,7 +660,7 @@
     --platform-menu-scale: 1.2;
   }
 
-  .platform-shell__window {
+  .platform-shell-page .workspace-page-template__window {
     grid-template-columns: 1fr;
   }
 
@@ -646,10 +677,8 @@
 @media (max-width: 720px) {
   .platform-shell-page {
     --platform-menu-scale: 1.08;
-  }
-
-  .platform-shell__content {
-    padding: 1.25rem 1rem;
+    --workspace-page-template-padding-block: 1.25rem;
+    --workspace-page-template-padding-inline: 1rem;
   }
 
   .platform-shell__cp-grid {

@@ -11,6 +11,7 @@ import { DynamicsCategoryLayout } from '../../Layouts/DynamicsCategoryLayout'
 import { GainReductionMeter } from '../../../Dynamics/GainReductionMeter'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const GATE_URI = 'map2://juce/dynamics/gate'
 
@@ -28,10 +29,11 @@ interface GateCardProps extends PluginCardProps {
 function GateCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#22c55e',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: GateCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     gate,
     setGateThreshold,

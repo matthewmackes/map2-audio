@@ -22,6 +22,8 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof SnapshotEd
     onDuplicate: jest.fn(),
     duplicatePending: false,
     duplicateDisabled: false,
+    onOpenVersionHistory: jest.fn(),
+    versionHistoryDisabled: false,
     onToggleLock: jest.fn(),
     lockVisible: true,
     locked: false,
@@ -56,6 +58,7 @@ describe('SnapshotEditorToolbar', () => {
     expect(screen.getByRole('button', { name: 'New snapshot' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Load snapshot' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Duplicate snapshot' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'View version history' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Update snapshot' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Redo' })).toBeInTheDocument()
@@ -67,10 +70,11 @@ describe('SnapshotEditorToolbar', () => {
     expect(screen.queryByRole('button', { name: 'Go Live' })).not.toBeInTheDocument()
   })
 
-  it('routes update, load, undo, redo, and navigation actions through the provided callbacks', () => {
+  it('routes update, load, version history, undo, redo, and navigation actions through the provided callbacks', () => {
     const props = renderToolbar()
 
     fireEvent.click(screen.getByRole('button', { name: 'Load snapshot' }))
+    fireEvent.click(screen.getByRole('button', { name: 'View version history' }))
     fireEvent.click(screen.getByRole('button', { name: 'Update snapshot' }))
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }))
@@ -78,6 +82,7 @@ describe('SnapshotEditorToolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Forward' }))
 
     expect(props.onOpenWorkspace).toHaveBeenCalledTimes(1)
+    expect(props.onOpenVersionHistory).toHaveBeenCalledTimes(1)
     expect(props.onSave).toHaveBeenCalledTimes(1)
     expect(props.onUndo).toHaveBeenCalledTimes(1)
     expect(props.onRedo).toHaveBeenCalledTimes(1)

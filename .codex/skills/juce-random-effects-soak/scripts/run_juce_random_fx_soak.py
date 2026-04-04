@@ -543,6 +543,10 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
         f"- Callback jitter p95 ms: `{summary['callback_jitter_p95_ms']}`",
         f"- Peak callback jitter ms: `{summary['peak_callback_jitter_ms']}`",
         f"- Budget utilization percent (min/max/mean): `{summary['budget_utilization_percent']}`",
+        f"- Topology mutation duration ms (last/peak/mean): `{summary['topology_mutation_duration_ms']}`",
+        f"- Topology mutation count: `{summary['topology_mutation_count']}`",
+        f"- Topology no-op skips: `{summary['topology_no_op_skip_count']}`",
+        f"- Topology connection counts (removed/added): `{summary['topology_connection_counts']}`",
         "",
         "## Blend Type Usage",
     ]
@@ -822,6 +826,9 @@ def run() -> int:
             reset_xruns = getattr(engine, "reset_xrun_counter", None)
             if callable(reset_xruns):
                 reset_xruns()
+            reset_topology_stats = getattr(engine, "reset_topology_mutation_stats", None)
+            if callable(reset_topology_stats):
+                reset_topology_stats()
 
         start_monotonic = time.monotonic()
         next_flow_at = start_monotonic
@@ -994,6 +1001,13 @@ def run() -> int:
                         "avg_callback_duration_ms": get_float(audio_stats, "avg_callback_duration_ms"),
                         "peak_callback_duration_ms": get_float(audio_stats, "peak_callback_duration_ms"),
                         "budget_utilization_percent": get_float(audio_stats, "budget_utilization"),
+                        "topology_mutation_count": get_int(audio_stats, "topology_mutation_count"),
+                        "topology_no_op_skip_count": get_int(audio_stats, "topology_no_op_skip_count"),
+                        "topology_last_mutation_duration_ms": get_float(audio_stats, "topology_last_mutation_duration_ms"),
+                        "topology_peak_mutation_duration_ms": get_float(audio_stats, "topology_peak_mutation_duration_ms"),
+                        "topology_avg_mutation_duration_ms": get_float(audio_stats, "topology_avg_mutation_duration_ms"),
+                        "topology_last_removed_connection_count": get_int(audio_stats, "topology_last_removed_connection_count"),
+                        "topology_last_added_connection_count": get_int(audio_stats, "topology_last_added_connection_count"),
                     }
                 )
                 next_sample_at = now + max(0.05, args.sample_interval_seconds)
@@ -1011,6 +1025,7 @@ def run() -> int:
                         f" xruns={latest['xrun_count']}"
                         f" cpu={latest['cpu_total_percent']:.2f}%"
                         f" jitter_peak={latest['peak_callback_jitter_ms']:.3f}ms"
+                        f" topo_peak={latest['topology_peak_mutation_duration_ms']:.3f}ms"
                     )
                 last_log = elapsed
 
@@ -1052,6 +1067,8 @@ def run() -> int:
     jitter_values = [s["callback_jitter_ms"] for s in samples]
     peak_jitter_values = [s["peak_callback_jitter_ms"] for s in samples]
     budget_values = [s["budget_utilization_percent"] for s in samples]
+    topology_last_duration_values = [s["topology_last_mutation_duration_ms"] for s in samples]
+    topology_peak_duration_values = [s["topology_peak_mutation_duration_ms"] for s in samples]
 
     final_xrun_count = samples[-1]["xrun_count"]
     xrun_rate_per_second = final_xrun_count / actual_duration if actual_duration > 0 else float(final_xrun_count)
@@ -1139,6 +1156,17 @@ def run() -> int:
             "callback_jitter_p95_ms": callback_jitter_p95_ms,
             "peak_callback_jitter_ms": max(peak_jitter_values),
             "budget_utilization_percent": summarize_float(budget_values),
+            "topology_mutation_duration_ms": {
+                "last": samples[-1]["topology_last_mutation_duration_ms"],
+                "peak": max(topology_peak_duration_values),
+                "mean": summarize_float(topology_last_duration_values)["mean"],
+            },
+            "topology_mutation_count": samples[-1]["topology_mutation_count"],
+            "topology_no_op_skip_count": samples[-1]["topology_no_op_skip_count"],
+            "topology_connection_counts": {
+                "removed": samples[-1]["topology_last_removed_connection_count"],
+                "added": samples[-1]["topology_last_added_connection_count"],
+            },
             "flow_apply_error_count": len(flow_apply_failures),
             "blend_type_usage": blend_usage,
             "checks": checks,

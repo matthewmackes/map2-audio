@@ -18,6 +18,7 @@ import logging
 import os
 import time
 from collections import Counter, defaultdict, deque
+from types import SimpleNamespace
 from typing import List, Dict, Any, Optional, ClassVar
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -692,6 +693,8 @@ class ChainService:
         self,
         engine_service: Any,
         chain_plugins: List[Any],
+        *,
+        allow_active_reuse: bool = True,
     ) -> tuple[List[tuple[Any, int]], List[str]]:
         loaded_plugins = await engine_service.get_loaded_plugins()
         pedalboard = await engine_service.get_current_pedalboard()
@@ -702,6 +705,15 @@ class ChainService:
             for instance_id in [self._runtime_instance_id(item)]
             if instance_id is not None
         }
+        active_by_uri: Dict[str, deque[int]] = defaultdict(deque)
+        for item in pedalboard.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            instance_id = self._runtime_instance_id(item)
+            plugin_uri = str(item.get("uri") or "")
+            if instance_id is None or not plugin_uri:
+                continue
+            active_by_uri[plugin_uri].append(instance_id)
 
         detached_by_uri: Dict[str, deque[int]] = defaultdict(deque)
         for plugin in loaded_plugins:
@@ -723,9 +735,15 @@ class ChainService:
                 continue
 
             instance_id: Optional[int] = None
+            reused_active_instance = False
             bucket = detached_by_uri.get(plugin_uri)
             if bucket:
                 instance_id = bucket.popleft()
+            if instance_id is None and allow_active_reuse:
+                active_bucket = active_by_uri.get(plugin_uri)
+                if active_bucket:
+                    instance_id = active_bucket.popleft()
+                    reused_active_instance = True
 
             if instance_id is None:
                 instance_id = await engine_service.load_plugin(plugin_uri)
@@ -733,7 +751,7 @@ class ChainService:
                     warnings.append(f"Failed to load plugin {plugin_uri} at position {chain_plugin.position}")
                     continue
 
-            if not await engine_service.prewarm_plugin_node(instance_id):
+            if not reused_active_instance and not await engine_service.prewarm_plugin_node(instance_id):
                 warnings.append(f"Failed to prewarm plugin {plugin_uri} at position {chain_plugin.position}")
 
             warnings.extend(await self._apply_persisted_loader_state(engine_service, chain_plugin, instance_id))
@@ -741,7 +759,192 @@ class ChainService:
 
         return staged_instances, warnings
 
-    async def _deploy_chain_to_engine(self, chain_plugins: List[Any]) -> Dict[str, Any]:
+    @classmethod
+    def build_detached_stage_plugin(
+        cls,
+        *,
+        plugin_uri: str,
+        position: int,
+        bypass: bool = False,
+        loader_state: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Build a lightweight plugin object for detached preload staging."""
+        normalized_uri = str(plugin_uri or "").strip()
+        payload = (
+            dict(loader_state)
+            if isinstance(loader_state, dict)
+            else {}
+        )
+        return SimpleNamespace(
+            plugin_uri=normalized_uri,
+            position=int(position),
+            bypass=bool(bypass),
+            **cls._chain_plugin_loader_columns(normalized_uri, payload),
+        )
+
+    async def stage_detached_chain_plugins(self, chain_plugins: List[Any]) -> Dict[str, Any]:
+        """Load and prewarm plugins without mutating the live pedalboard topology."""
+        if not _ENABLE_ENGINE_CHAIN_DEPLOY:
+            return self._build_runtime_sync_payload(
+                enabled=False,
+                status="capability_gap",
+                reason="engine_chain_deploy_disabled",
+                warnings=["MAP2_ENABLE_ENGINE_CHAIN_DEPLOY is disabled"],
+            ) | {"staged_instance_ids": []}
+
+        try:
+            from app.services.juce_engine_service import JuceEngineService
+
+            engine_service = JuceEngineService.get_instance()
+        except Exception as e:
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_service_unavailable",
+                warnings=[f"JUCE engine service unavailable: {e}"],
+            ) | {"staged_instance_ids": []}
+
+        engine = getattr(engine_service, "_engine", None) if engine_service else None
+        if engine is None:
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_not_initialized",
+                warnings=["JUCE engine is not initialized"],
+            ) | {"staged_instance_ids": []}
+
+        required_methods = [
+            "get_loaded_plugins",
+            "prewarm_plugin_node",
+        ]
+        missing_methods = [
+            method
+            for method in required_methods
+            if not hasattr(engine_service, method)
+        ]
+        if missing_methods:
+            _warn_chain_deploy_api_once(missing_methods)
+            return self._build_runtime_sync_payload(
+                enabled=True,
+                status="capability_gap",
+                reason="engine_missing_chain_apis",
+                warnings=[f"Engine missing required preload APIs: {', '.join(missing_methods)}"],
+            ) | {"staged_instance_ids": []}
+
+        staged_instances, warnings = await self._stage_runtime_chain_instances(
+            engine_service,
+            list(chain_plugins or []),
+            allow_active_reuse=False,
+        )
+        staged_instance_ids = [instance_id for _, instance_id in staged_instances]
+        staged_positions = [
+            int(getattr(chain_plugin, "position", 0))
+            for chain_plugin, _ in staged_instances
+        ]
+        return self._build_runtime_sync_payload(
+            enabled=True,
+            status="ready",
+            warnings=warnings,
+            runtime_items=0,
+            restored_positions=staged_positions,
+            missing_positions=[],
+        ) | {"staged_instance_ids": staged_instance_ids}
+
+    async def release_detached_instance_ids(self, instance_ids: List[int]) -> Dict[str, Any]:
+        """Unload detached preloaded instances while leaving active topology intact."""
+        normalized_ids = []
+        for raw_value in instance_ids or []:
+            try:
+                instance_id = int(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if instance_id > 0 and instance_id not in normalized_ids:
+                normalized_ids.append(instance_id)
+
+        if not normalized_ids:
+            return {
+                "released_instance_ids": [],
+                "skipped_active_instance_ids": [],
+                "missing_instance_ids": [],
+                "warnings": [],
+            }
+
+        try:
+            from app.services.juce_engine_service import JuceEngineService
+
+            engine_service = JuceEngineService.get_instance()
+        except Exception as e:
+            return {
+                "released_instance_ids": [],
+                "skipped_active_instance_ids": [],
+                "missing_instance_ids": normalized_ids,
+                "warnings": [f"JUCE engine service unavailable: {e}"],
+            }
+
+        if not hasattr(engine_service, "get_current_pedalboard") or not hasattr(engine_service, "unload_plugin"):
+            return {
+                "released_instance_ids": [],
+                "skipped_active_instance_ids": [],
+                "missing_instance_ids": normalized_ids,
+                "warnings": ["Engine missing detached-release APIs"],
+            }
+
+        pedalboard = await engine_service.get_current_pedalboard()
+        active_instance_ids = {
+            instance_id
+            for item in (pedalboard.get("items", []) if isinstance(pedalboard, dict) else [])
+            if isinstance(item, dict)
+            for instance_id in [self._runtime_instance_id(item)]
+            if instance_id is not None
+        }
+
+        loaded_plugins = (
+            await engine_service.get_loaded_plugins()
+            if hasattr(engine_service, "get_loaded_plugins")
+            else []
+        )
+        loaded_instance_ids = {
+            instance_id
+            for item in loaded_plugins if isinstance(item, dict)
+            for instance_id in [self._runtime_instance_id(item)]
+            if instance_id is not None
+        }
+
+        released_instance_ids: list[int] = []
+        skipped_active_instance_ids: list[int] = []
+        missing_instance_ids: list[int] = []
+        warnings: list[str] = []
+
+        for instance_id in normalized_ids:
+            if instance_id in active_instance_ids:
+                skipped_active_instance_ids.append(instance_id)
+                continue
+            if instance_id not in loaded_instance_ids:
+                missing_instance_ids.append(instance_id)
+                continue
+            try:
+                released = await engine_service.unload_plugin(instance_id)
+            except Exception as exc:
+                warnings.append(f"Failed to unload detached instance {instance_id}: {exc}")
+                continue
+            if released:
+                released_instance_ids.append(instance_id)
+            else:
+                warnings.append(f"Engine rejected detached unload for instance {instance_id}")
+
+        return {
+            "released_instance_ids": released_instance_ids,
+            "skipped_active_instance_ids": skipped_active_instance_ids,
+            "missing_instance_ids": missing_instance_ids,
+            "warnings": warnings,
+        }
+
+    async def _deploy_chain_to_engine(
+        self,
+        chain_plugins: List[Any],
+        *,
+        enable_snapshot_spillover: bool = False,
+    ) -> Dict[str, Any]:
         if not _ENABLE_ENGINE_CHAIN_DEPLOY:
             return self._build_runtime_sync_payload(
                 enabled=False,
@@ -805,8 +1008,19 @@ class ChainService:
         ordered_instance_ids = [instance_id for _, instance_id in ordered_staged_instances]
 
         replace_chain = getattr(engine_service, "replace_chain", None) if hasattr(engine, "replace_chain") else None
+        replace_chain_with_spillover = (
+            getattr(engine_service, "replace_chain_with_spillover", None)
+            if hasattr(engine, "replace_chain_with_spillover")
+            else None
+        )
         replaced_in_one_call = False
-        if callable(replace_chain):
+        if enable_snapshot_spillover and callable(replace_chain_with_spillover):
+            replaced_in_one_call = bool(await replace_chain_with_spillover(ordered_instance_ids))
+            if not replaced_in_one_call and ordered_instance_ids:
+                warnings.append(
+                    "Engine replace_chain_with_spillover returned false; falling back to clear/add runtime rebuild"
+                )
+        elif callable(replace_chain):
             replaced_in_one_call = bool(await replace_chain(ordered_instance_ids))
             if not replaced_in_one_call and ordered_instance_ids:
                 warnings.append("Engine replace_chain returned false; falling back to clear/add runtime rebuild")
@@ -1585,8 +1799,14 @@ class ChainService:
                 .order_by(ChainPlugin.position)
             )
             chain_plugins = plugins_result.scalars().all()
-            runtime_sync = await self._deploy_chain_to_engine(chain_plugins)
             chain_config = self._parse_chain_config(chain.config)
+            runtime_sync = await self._deploy_chain_to_engine(
+                chain_plugins,
+                enable_snapshot_spillover=(
+                    isinstance(chain_config, dict)
+                    and chain_config.get("source_kind") == "snapshot_path"
+                ),
+            )
             chain_config["runtime_sync"] = runtime_sync
             chain.config = json.dumps(chain_config)
             await self.session.flush()

@@ -4,6 +4,8 @@
 
 #include "JuceAudioGraph.h"
 
+#include <chrono>
+
 namespace map2 {
 
 JuceAudioGraph::JuceAudioGraph(JucePluginHost& host)
@@ -12,8 +14,7 @@ JuceAudioGraph::JuceAudioGraph(JucePluginHost& host)
 }
 
 JuceAudioGraph::~JuceAudioGraph() {
-    releaseResources();
-    graph_->clear();
+    shutdown();
 }
 
 void JuceAudioGraph::initialize(double sampleRate, int bufferSize, int numChannels) {
@@ -51,6 +52,34 @@ void JuceAudioGraph::prepareToPlay(double sampleRate, int samplesPerBlock) {
 
 void JuceAudioGraph::releaseResources() {
     graph_->releaseResources();
+}
+
+void JuceAudioGraph::shutdown() {
+    std::lock_guard<std::mutex> chainLock(chainMutex_);
+
+    {
+        std::lock_guard<std::mutex> meterLock(meterMutex_);
+        pluginMeters_.clear();
+    }
+
+    sidechainConnections_.clear();
+    chain_.clear();
+    parallelGroups_.clear();
+    parallelMixers_.clear();
+    parallelMixerNodes_.clear();
+    nodeMap_.clear();
+    topologyUpdateDepth_ = 0;
+    topologyDirty_ = false;
+    nextParallelGroupId_ = 1;
+    initialized_ = false;
+
+    const juce::SpinLock::ScopedLockType graphLock(graphLock_);
+    graph_->releaseResources();
+    graph_->clear();
+    audioInputNode_ = juce::AudioProcessorGraph::NodeID();
+    audioOutputNode_ = juce::AudioProcessorGraph::NodeID();
+    midiInputNode_ = juce::AudioProcessorGraph::NodeID();
+    midiOutputNode_ = juce::AudioProcessorGraph::NodeID();
 }
 
 void JuceAudioGraph::createIONodes() {
@@ -189,6 +218,11 @@ bool JuceAudioGraph::reorderPlugins(const std::vector<InstanceId>& order) {
         return false;
     }
 
+    if (order == chain_) {
+        recordTopologyNoOpSkip();
+        return true;
+    }
+
     std::set<InstanceId> currentSet(chain_.begin(), chain_.end());
     std::set<InstanceId> newSet(order.begin(), order.end());
 
@@ -210,6 +244,14 @@ bool JuceAudioGraph::movePlugin(InstanceId instanceId, int newPosition) {
     auto it = std::find(chain_.begin(), chain_.end(), instanceId);
     if (it == chain_.end()) {
         return false;
+    }
+
+    const auto currentIndex = static_cast<int>(std::distance(chain_.begin(), it));
+    if (newPosition == currentIndex
+        || ((newPosition < 0 || newPosition >= static_cast<int>(chain_.size()) - 1)
+            && currentIndex == static_cast<int>(chain_.size()) - 1)) {
+        recordTopologyNoOpSkip();
+        return true;
     }
 
     // Remove from current position
@@ -250,6 +292,15 @@ int JuceAudioGraph::getChainSize() const {
 void JuceAudioGraph::clearChain() {
     std::lock_guard<std::mutex> lock(chainMutex_);
 
+    if (chain_.empty()) {
+        {
+            std::lock_guard<std::mutex> meterLock(meterMutex_);
+            pluginMeters_.clear();
+        }
+        recordTopologyNoOpSkip();
+        return;
+    }
+
     chain_.clear();
 
     {
@@ -274,6 +325,11 @@ bool JuceAudioGraph::replaceChain(const std::vector<InstanceId>& order) {
         if (addPluginNode(instanceId) == juce::AudioProcessorGraph::NodeID()) {
             return false;
         }
+    }
+
+    if (chain_ == order) {
+        recordTopologyNoOpSkip();
+        return true;
     }
 
     chain_ = order;
@@ -309,6 +365,16 @@ void JuceAudioGraph::endTopologyUpdate() {
         topologyDirty_ = false;
         rebuildConnections();
     }
+}
+
+JuceAudioGraph::TopologyMutationStats JuceAudioGraph::getTopologyMutationStats() const {
+    std::lock_guard<std::mutex> lock(topologyMutationStatsMutex_);
+    return topologyMutationStats_;
+}
+
+void JuceAudioGraph::resetTopologyMutationStats() {
+    std::lock_guard<std::mutex> lock(topologyMutationStatsMutex_);
+    topologyMutationStats_ = TopologyMutationStats{};
 }
 
 juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId instanceId) {
@@ -458,26 +524,32 @@ void JuceAudioGraph::removeDetachedPluginNode(InstanceId instanceId) {
 }
 
 void JuceAudioGraph::rebuildConnections() {
+    const auto start = std::chrono::steady_clock::now();
     const juce::SpinLock::ScopedLockType lock(graphLock_);
     constexpr auto updateKind = juce::AudioProcessorGraph::UpdateKind::none;
 
     // Remove all existing connections
-    for (auto& conn : graph_->getConnections()) {
+    const auto existingConnections = graph_->getConnections();
+    const int removedConnectionCount = static_cast<int>(existingConnections.size());
+    int addedConnectionCount = 0;
+    for (const auto& conn : existingConnections) {
         graph_->removeConnection(conn, updateKind);
     }
 
-    auto connectAudio = [this, updateKind](juce::AudioProcessorGraph::NodeID src,
-                                           juce::AudioProcessorGraph::NodeID dst) {
+    auto connectAudio = [this, updateKind, &addedConnectionCount](juce::AudioProcessorGraph::NodeID src,
+                                                                  juce::AudioProcessorGraph::NodeID dst) {
         for (int ch = 0; ch < numChannels_; ++ch) {
             graph_->addConnection({{src, ch}, {dst, ch}}, updateKind);
+            ++addedConnectionCount;
         }
     };
 
-    auto connectMidi = [this, updateKind](juce::AudioProcessorGraph::NodeID src,
-                                          juce::AudioProcessorGraph::NodeID dst) {
+    auto connectMidi = [this, updateKind, &addedConnectionCount](juce::AudioProcessorGraph::NodeID src,
+                                                                 juce::AudioProcessorGraph::NodeID dst) {
         graph_->addConnection({{src, juce::AudioProcessorGraph::midiChannelIndex},
                                {dst, juce::AudioProcessorGraph::midiChannelIndex}},
                               updateKind);
+        ++addedConnectionCount;
     };
 
     juce::AudioProcessorGraph::NodeID currentNode = audioInputNode_;
@@ -550,6 +622,7 @@ void JuceAudioGraph::rebuildConnections() {
                 const int mixerChannel =
                     mixerProcessor->getChannelIndexInProcessBlockBuffer(true, static_cast<int>(branchIndex), ch);
                 graph_->addConnection({{branchTail, ch}, {mixerNodeId, mixerChannel}}, updateKind);
+                ++addedConnectionCount;
             }
             routedAnyBranch = true;
         }
@@ -559,6 +632,7 @@ void JuceAudioGraph::rebuildConnections() {
             for (int ch = 0; ch < numChannels_; ++ch) {
                 const int mixerChannel = mixerProcessor->getChannelIndexInProcessBlockBuffer(true, 0, ch);
                 graph_->addConnection({{currentNode, ch}, {mixerNodeId, mixerChannel}}, updateKind);
+                ++addedConnectionCount;
             }
         }
 
@@ -583,12 +657,30 @@ void JuceAudioGraph::rebuildConnections() {
                     graph_->addConnection({{srcIt->second, ch},
                                            {dstIt->second, mainChannels + ch}},
                                           updateKind);
+                    ++addedConnectionCount;
                 }
             }
         }
     }
 
     graph_->rebuild();
+
+    const auto end = std::chrono::steady_clock::now();
+    const double mutationDurationMs = std::chrono::duration<double, std::milli>(end - start).count();
+    {
+        std::lock_guard<std::mutex> statsLock(topologyMutationStatsMutex_);
+        topologyMutationStats_.mutationCount += 1;
+        topologyMutationStats_.lastMutationDurationMs = mutationDurationMs;
+        topologyMutationStats_.peakMutationDurationMs =
+            std::max(topologyMutationStats_.peakMutationDurationMs, mutationDurationMs);
+        const double count = static_cast<double>(topologyMutationStats_.mutationCount);
+        topologyMutationStats_.avgMutationDurationMs =
+            ((topologyMutationStats_.avgMutationDurationMs * (count - 1.0)) + mutationDurationMs) / count;
+        topologyMutationStats_.lastRemovedConnectionCount = removedConnectionCount;
+        topologyMutationStats_.lastAddedConnectionCount = addedConnectionCount;
+        topologyMutationStats_.lastChainSize = static_cast<int>(chain_.size());
+        topologyMutationStats_.lastParallelGroupCount = static_cast<int>(parallelGroups_.size());
+    }
 }
 
 void JuceAudioGraph::markTopologyDirtyAndMaybeRebuildLocked() {
@@ -597,6 +689,11 @@ void JuceAudioGraph::markTopologyDirtyAndMaybeRebuildLocked() {
         return;
     }
     rebuildConnections();
+}
+
+void JuceAudioGraph::recordTopologyNoOpSkip() {
+    std::lock_guard<std::mutex> lock(topologyMutationStatsMutex_);
+    topologyMutationStats_.noOpSkipCount += 1;
 }
 
 bool JuceAudioGraph::connectSidechain(InstanceId sourcePlugin, InstanceId destPlugin, int destSidechainBus) {

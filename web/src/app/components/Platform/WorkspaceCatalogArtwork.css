@@ -1,0 +1,85 @@
+.platform-launchers-art {
+  --platform-launchers-art-accent: var(--cds-border-interactive);
+  --platform-launchers-art-fill: var(--cds-layer-accent-01);
+  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
+  --platform-launchers-art-signal: var(--cds-icon-primary);
+  --platform-launchers-art-pulse: var(--cds-support-info);
+  --platform-launchers-art-frame: var(--cds-border-subtle-01);
+}
+
+.platform-launchers-art--platform {
+  --platform-launchers-art-accent: var(--cds-support-success);
+  --platform-launchers-art-fill: var(--cds-layer-accent-01);
+  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
+  --platform-launchers-art-signal: var(--cds-icon-primary);
+  --platform-launchers-art-pulse: var(--cds-support-success);
+}
+
+.platform-launchers-art--audio {
+  --platform-launchers-art-accent: var(--cds-support-info);
+  --platform-launchers-art-fill: var(--cds-layer-selected-inverse);
+  --platform-launchers-art-fill-alt: var(--cds-layer-accent-01);
+  --platform-launchers-art-signal: var(--cds-support-info);
+  --platform-launchers-art-pulse: var(--cds-support-info);
+}
+
+.platform-launchers-art--human {
+  --platform-launchers-art-accent: var(--cds-support-warning);
+  --platform-launchers-art-fill: var(--cds-layer-accent-01);
+  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
+  --platform-launchers-art-signal: var(--cds-support-warning);
+  --platform-launchers-art-pulse: var(--cds-support-warning);
+}
+
+.platform-launchers-art--hardware {
+  --platform-launchers-art-accent: var(--cds-support-error);
+  --platform-launchers-art-fill: color-mix(in srgb, var(--cds-support-error) 10%, var(--cds-layer-01));
+  --platform-launchers-art-fill-alt: color-mix(in srgb, var(--cds-support-error) 18%, var(--cds-layer-01));
+  --platform-launchers-art-signal: var(--cds-support-error);
+  --platform-launchers-art-pulse: var(--cds-support-error);
+}
+
+.platform-launchers-art,
+.platform-launchers-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.platform-launchers-art__frame {
+  fill: color-mix(in srgb, var(--platform-launchers-art-fill) 42%, var(--cds-layer-01));
+  stroke: var(--platform-launchers-art-frame);
+  stroke-width: 1.5;
+}
+
+.platform-launchers-art__signal {
+  fill: none;
+  stroke: var(--platform-launchers-art-signal);
+  stroke-linecap: round;
+  stroke-width: 4;
+  opacity: 0.88;
+}
+
+.platform-launchers-art__column {
+  fill: var(--platform-launchers-art-fill);
+  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 34%, transparent);
+  stroke-width: 1.25;
+}
+
+.platform-launchers-art__column--alt {
+  fill: var(--platform-launchers-art-fill-alt);
+}
+
+.platform-launchers-art__pulse {
+  fill: color-mix(in srgb, var(--platform-launchers-art-pulse) 22%, transparent);
+  stroke: var(--platform-launchers-art-pulse);
+  stroke-width: 1.5;
+}
+
+.platform-launchers-art__label {
+  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 22%, transparent);
+}
+
+.platform-launchers-art__label--wide {
+  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 14%, transparent);
+}

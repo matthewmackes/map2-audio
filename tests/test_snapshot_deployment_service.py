@@ -32,9 +32,33 @@ def _init_temp_db(tmp_path):
 def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     deployed_assets: list[tuple[str, str, tuple[str, ...]]] = []
+    activation_urls: list[str] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
+
+    class _FakeResponse:
+        def __init__(self, status_code: int, payload: dict[str, object]) -> None:
+            self.status_code = status_code
+            self._payload = payload
+            self.is_success = 200 <= status_code < 300
+
+        def json(self):
+            return self._payload
+
+    class _SuccessfulAsyncClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def post(self, url: str):
+            activation_urls.append(url)
+            return _FakeResponse(200, {"status": "success"})
 
     class _FakeDistributor:
         async def deploy_nam_model(self, model_path: str, target_node_ids: list[str]):
@@ -47,6 +71,7 @@ def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tm
 
     monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
     monkeypatch.setattr(deployment_service_module, "get_content_distributor", lambda: _FakeDistributor())
+    monkeypatch.setattr(deployment_service_module.httpx, "AsyncClient", _SuccessfulAsyncClient)
     monkeypatch.setattr("app.services.snapshot_runtime_service.enrich_snapshot_data", _passthrough)
 
     async def _run():
@@ -108,8 +133,13 @@ def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tm
             assert deployed is not None
             assert deployed["primary_node_id"] == "node-a"
             assert deployed["standby_node_ids"] == ["node-b", "node-c"]
+            assert deployed["deployment_status"] == "active"
+            assert deployed["remote_activation"]["activated"] is True
             assert deployed_assets == [
                 ("nam", str(model_path), ("node-a", "node-b", "node-c")),
+            ]
+            assert activation_urls == [
+                f"http://127.0.0.1:8080/api/node/node-a/proxy/api/snapshots/{snapshot_id}/activate",
             ]
 
             deployments_on_primary = await service.list_deployments(primary_node_id="node-a")
@@ -137,5 +167,88 @@ def test_snapshot_deployment_service_handles_deploy_failover_and_reassignment(tm
 
             best_node = service.select_best_node(excluded_node_ids={"node-c"})
             assert best_node == "node-b"
+
+    asyncio.run(_run())
+
+
+def test_snapshot_deployment_service_marks_assets_only_when_remote_activation_fails(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    class _FakeDistributor:
+        async def deploy_nam_model(self, model_path: str, target_node_ids: list[str]):
+            return {node_id: True for node_id in target_node_ids}
+
+        async def deploy_ir(self, ir_path: str, target_node_ids: list[str]):
+            return {node_id: True for node_id in target_node_ids}
+
+    class _FailedResponse:
+        status_code = 503
+        is_success = False
+
+        def json(self):
+            return {"detail": "remote node unavailable"}
+
+    class _FailingAsyncClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def post(self, _url: str):
+            return _FailedResponse()
+
+    monkeypatch.setattr(deployment_service_module, "get_cluster_registry", lambda: _FakeRegistry())
+    monkeypatch.setattr(deployment_service_module, "get_content_distributor", lambda: _FakeDistributor())
+    monkeypatch.setattr(deployment_service_module.httpx, "AsyncClient", _FailingAsyncClient)
+    monkeypatch.setattr("app.services.snapshot_runtime_service.enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            snapshot_service = SnapshotService(session)
+            created = await snapshot_service.create_snapshot(
+                name="AssetsOnlySnapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [],
+                            "loop_insertions": [],
+                            "effects_loops": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            service = SnapshotDeploymentService(session)
+            deployed = await service.deploy_snapshot(created["id"], node_id="node-a")
+
+            assert deployed is not None
+            assert deployed["deployment_status"] == "assets_only"
+            assert deployed["error_message"] == "Remote activation failed: remote node unavailable"
+            assert deployed["remote_activation"]["activated"] is False
+            assert deployed["remote_activation"]["status_code"] == 503
 
     asyncio.run(_run())

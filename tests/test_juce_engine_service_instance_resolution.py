@@ -1,6 +1,12 @@
 import asyncio
+import sys
+from pathlib import Path
 
-from app.services.juce_engine_service import JuceEngineService
+from app.services.juce_engine_service import (
+    JuceEngineService,
+    _configure_juce_module_search_path,
+    _discover_juce_module_build_dirs,
+)
 
 
 class _FakePedalboardEngine:
@@ -161,6 +167,108 @@ def test_get_nam_status_instance_reads_duplicate_safe_instance_info():
     }
 
 
+class _FakeFixedNativeEngine:
+    def __init__(self):
+        self.delay_mix = 0.0
+        self.delay_bypass = False
+        self.delay_staged = False
+        self.lexilove_mix = 0.0
+        self.lexilove_bypass = False
+        self.lexilove_staged = False
+        self.shoegaze_mix = 0.0
+        self.shoegaze_bypass = False
+        self.shoegaze_staged = False
+
+    def set_delay_mix(self, percent: float):
+        self.delay_mix = percent
+
+    def get_delay_parameters(self):
+        return {"mix": self.delay_mix, "bypass": self.delay_bypass, "spillover": True}
+
+    def set_delay_bypass(self, bypass: bool):
+        self.delay_bypass = bypass
+
+    def is_delay_bypassed(self):
+        return self.delay_bypass
+
+    def has_delay_spillover(self):
+        return True
+
+    def stage_delay_spillover(self):
+        self.delay_staged = True
+        return True
+
+    def set_lexilove_mix(self, percent: float):
+        self.lexilove_mix = percent
+
+    def get_lexilove_parameters(self):
+        return {"mix": self.lexilove_mix, "bypass": self.lexilove_bypass, "spillover": True}
+
+    def set_lexilove_bypass(self, bypass: bool):
+        self.lexilove_bypass = bypass
+
+    def is_lexilove_bypassed(self):
+        return self.lexilove_bypass
+
+    def stage_lexilove_spillover(self):
+        self.lexilove_staged = True
+        return True
+
+    def set_shoegaze_mix(self, percent: float):
+        self.shoegaze_mix = percent
+
+    def get_shoegaze_parameters(self):
+        return {"mix": self.shoegaze_mix, "bypass": self.shoegaze_bypass, "spillover": True}
+
+    def set_shoegaze_bypass(self, bypass: bool):
+        self.shoegaze_bypass = bypass
+
+    def is_shoegaze_bypassed(self):
+        return self.shoegaze_bypass
+
+    def stage_shoegaze_spillover(self):
+        self.shoegaze_staged = True
+        return True
+
+
+def _write_fake_engine_module(build_dir: Path, *, mtime: int) -> Path:
+    build_dir.mkdir(parents=True, exist_ok=True)
+    module_path = build_dir / "map2_audio_engine.cpython-314-x86_64-linux-gnu.so"
+    module_path.write_bytes(b"fake")
+    module_path.touch()
+    module_path.chmod(0o644)
+    import os
+
+    os.utime(module_path, (mtime, mtime))
+    return module_path
+
+
+def test_discover_juce_module_build_dirs_prefers_newest_build(tmp_path):
+    old_build = tmp_path / "build"
+    new_build = tmp_path / "juce-engine" / "build"
+    _write_fake_engine_module(old_build, mtime=10)
+    _write_fake_engine_module(new_build, mtime=20)
+
+    ordered = _discover_juce_module_build_dirs(tmp_path)
+
+    assert ordered == [new_build, old_build]
+
+
+def test_configure_juce_module_search_path_moves_freshest_build_to_front(tmp_path, monkeypatch):
+    old_build = tmp_path / "build"
+    new_build = tmp_path / "juce-engine" / "build"
+    _write_fake_engine_module(old_build, mtime=10)
+    _write_fake_engine_module(new_build, mtime=20)
+
+    monkeypatch.setattr(sys, "path", [str(old_build), "/tmp/existing", str(new_build)])
+
+    ordered = _configure_juce_module_search_path(tmp_path)
+
+    assert ordered == [str(new_build), str(old_build)]
+    assert sys.path[0] == str(new_build)
+    assert sys.path[1] == str(old_build)
+
+
 def test_nam_instance_status_helpers_return_safe_defaults_without_engine():
     service = JuceEngineService()
 
@@ -172,3 +280,37 @@ def test_nam_instance_status_helpers_return_safe_defaults_without_engine():
     assert asyncio.run(service.get_nam_output_gain_instance(77)) == 0.0
     assert asyncio.run(service.get_nam_input_level_instance(77)) == -100.0
     assert asyncio.run(service.get_nam_output_level_instance(77)) == -100.0
+
+
+def test_fixed_native_parameter_fallback_uses_direct_service_methods():
+    service = JuceEngineService()
+    service._engine = _FakeFixedNativeEngine()  # noqa: SLF001 - explicit unit isolation
+
+    assert asyncio.run(service.set_parameter("map2://juce/delay", "mix", 0.25))
+    assert service._engine.delay_mix == 25.0  # noqa: SLF001
+    assert asyncio.run(service.get_parameter("map2://juce/delay", "mix")) == 0.25
+
+    assert asyncio.run(service.set_parameter("map2://juce/reverb/pcm70", "mix", 0.5))
+    assert service._engine.lexilove_mix == 50.0  # noqa: SLF001
+    assert asyncio.run(service.get_parameter("map2://juce/reverb/pcm70", "mix")) == 0.5
+    assert asyncio.run(service.set_parameter("map2://juce/reverb/pcm70", "bypass", 1.0))
+    assert asyncio.run(service.get_parameter("map2://juce/reverb/pcm70", "bypass")) == 1.0
+
+    assert asyncio.run(service.set_parameter("map2://juce/multieffect/shoegaze", "mix", 0.75))
+    assert service._engine.shoegaze_mix == 75.0  # noqa: SLF001
+    assert asyncio.run(service.get_parameter("map2://juce/multieffect/shoegaze", "mix")) == 0.75
+    assert asyncio.run(service.set_parameter("map2://juce/multieffect/shoegaze", "bypass", 0.0))
+    assert asyncio.run(service.get_parameter("map2://juce/multieffect/shoegaze", "bypass")) == 0.0
+
+
+def test_fixed_native_spillover_stage_helpers_use_direct_engine_methods():
+    service = JuceEngineService()
+    service._engine = _FakeFixedNativeEngine()  # noqa: SLF001 - explicit unit isolation
+
+    assert asyncio.run(service.stage_delay_spillover()) is True
+    assert asyncio.run(service.stage_shoegaze_spillover()) is True
+    assert asyncio.run(service.stage_lexilove_spillover()) is True
+
+    assert service._engine.delay_staged is True  # noqa: SLF001
+    assert service._engine.shoegaze_staged is True  # noqa: SLF001
+    assert service._engine.lexilove_staged is True  # noqa: SLF001

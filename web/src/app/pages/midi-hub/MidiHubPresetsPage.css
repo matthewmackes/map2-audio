@@ -8,7 +8,15 @@
 .midi-hub-presets-layout {
   display: grid;
   gap: var(--cds-spacing-06);
-  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.midi-hub-presets-layout > :first-child {
+  grid-column: span 8;
+}
+
+.midi-hub-presets-layout > :last-child {
+  grid-column: span 4;
 }
 
 .midi-hub-presets-summary,
@@ -40,8 +48,8 @@
 }
 
 @media (max-width: 1056px) {
-  .midi-hub-presets-layout {
-    grid-template-columns: 1fr;
+  .midi-hub-presets-layout > * {
+    grid-column: span 12;
   }
 }
 

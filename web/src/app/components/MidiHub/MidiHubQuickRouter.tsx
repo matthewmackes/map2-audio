@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   InlineNotification,
-  Layer,
   Select,
   SelectItem,
   Tag,
@@ -13,6 +12,7 @@ import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 import { readPorts } from './portUtils'
+import { MidiHubSurface } from './MidiHubHelpPrimitives'
 
 function routePayloadFromExisting(route: MidiHubRoute, destinationPorts: string[]) {
   return {
@@ -116,7 +116,7 @@ export function MidiHubQuickRouter() {
     routes.some((route) => route.enabled && route.source_port === source && route.destination_ports.includes(destination))
 
   return (
-    <Layer className="midi-hub-connections-surface">
+    <MidiHubSurface className="midi-hub-connections-surface" tone="raised">
       <div className="midi-hub-connections-surface__header">
         <div>
           <h4>Quick router</h4>
@@ -153,7 +153,7 @@ export function MidiHubQuickRouter() {
 
           <div className="midi-hub-connections-toggle-grid">
             {destinationPorts.map((port) => (
-              <Layer key={port.port_id} className="midi-hub-connections-toggle-card">
+              <MidiHubSurface key={port.port_id} className="midi-hub-connections-toggle-card" tone="base">
                 <div className="midi-hub-connections-toggle-card__copy">
                   <span className="midi-hub-connections-toggle-card__title">{port.name}</span>
                   <span>{port.kind}</span>
@@ -174,7 +174,7 @@ export function MidiHubQuickRouter() {
                     })
                   }}
                 />
-              </Layer>
+              </MidiHubSurface>
             ))}
           </div>
 
@@ -185,7 +185,7 @@ export function MidiHubQuickRouter() {
           </div>
         </>
       )}
-    </Layer>
+    </MidiHubSurface>
   )
 }
 

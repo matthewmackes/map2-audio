@@ -10,6 +10,7 @@ import { EQCategoryLayout, type EQBandConfig } from '../../Layouts/EQCategoryLay
 import { EQCurveDisplay } from '../../Visualizations/EQCurveDisplay'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const EQ_URI = 'map2://juce/eq/parametric'
 
@@ -74,10 +75,11 @@ interface ParametricEQCardProps extends PluginCardProps {
 function ParametricEQCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#4ecdc4',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: ParametricEQCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
   const resolvedPluginPosition = typeof pluginPosition === 'number' && pluginPosition >= 0 ? pluginPosition : undefined
 

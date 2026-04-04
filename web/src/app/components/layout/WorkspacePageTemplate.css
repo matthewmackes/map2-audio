@@ -1,0 +1,63 @@
+.workspace-page-template {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100%;
+  --workspace-page-template-padding-block: 2rem;
+  --workspace-page-template-padding-inline: 2.5rem;
+  --workspace-page-template-gap: 1.25rem;
+  --workspace-page-template-sidebar-min: 16rem;
+  --workspace-page-template-sidebar-max: 20rem;
+  --workspace-page-template-aside-min: 18rem;
+  --workspace-page-template-aside-width: 24rem;
+}
+
+.workspace-page-template__inner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100%;
+  padding: var(--workspace-page-template-padding-block) var(--workspace-page-template-padding-inline);
+}
+
+.workspace-page-template__window {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  align-items: start;
+  gap: var(--workspace-page-template-gap);
+  grid-template-columns: minmax(var(--workspace-page-template-sidebar-min), var(--workspace-page-template-sidebar-max)) minmax(0, 1fr);
+}
+
+.workspace-page-template__window--with-aside {
+  grid-template-columns:
+    minmax(var(--workspace-page-template-sidebar-min), var(--workspace-page-template-sidebar-max))
+    minmax(0, 1fr)
+    minmax(var(--workspace-page-template-aside-min), var(--workspace-page-template-aside-width));
+}
+
+.workspace-page-template__sidebar,
+.workspace-page-template__content,
+.workspace-page-template__aside {
+  min-width: 0;
+}
+
+.workspace-page-template__sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-page-template__sidebar--sticky {
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+
+.workspace-page-template__content,
+.workspace-page-template__aside {
+  display: flex;
+  flex-direction: column;
+}

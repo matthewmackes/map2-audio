@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Recording, PlayFilled, TrashCan } from '@carbon/icons-react'
 import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/InstrumentCategoryLayout'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 
 const TRACKS = 4
@@ -25,9 +26,10 @@ function LooperCardBase({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#8b5cf6',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [selectedTrack, setSelectedTrack] = useState(0)
 
   const getValue = (track: number, param: 'record' | 'play' | 'volume' | 'clear', defaultVal: number) =>

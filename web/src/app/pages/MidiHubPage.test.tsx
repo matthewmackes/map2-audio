@@ -89,6 +89,15 @@ jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
 
+jest.mock('../theme', () => ({
+  useTheme: () => ({
+    theme: { carbonTheme: 'g100' },
+    themeId: 'default',
+    setTheme: jest.fn(),
+    themes: {},
+  }),
+}))
+
 jest.mock('../components/MidiHub/MidiRoutingMatrix', () => ({
   MidiRoutingMatrix: () => <div>Routing Matrix Mock</div>,
 }))
@@ -139,6 +148,9 @@ jest.mock('../components/MidiHub/MidiInnovationPanel', () => ({
 
 jest.mock('../components/MidiHub/MidiHubHelpPrimitives', () => ({
   MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  MidiHubSurface: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
 }))
 
 jest.mock('../components/MidiHub/MidiHubQuickRouter', () => ({

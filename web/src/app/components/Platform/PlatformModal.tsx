@@ -45,6 +45,8 @@ import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, 
 import { useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
+import { WorkspacePageTemplate } from '../layout/WorkspacePageTemplate'
+import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import {
   isPlatformUtilityPanel,
   platformPanelItems,
@@ -152,6 +154,62 @@ function renderCellValue(headerKey: string, value: PlatformTableValue) {
     return <span className={`platform-shell__table-alert${text === 'Clear' ? ' is-clear' : ''}`}>{text}</span>
   }
   return text
+}
+
+function parseMetricNumber(value: string | number | null | undefined): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const ratioMatch = value.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/)
+  if (ratioMatch) {
+    const left = Number(ratioMatch[1])
+    const right = Number(ratioMatch[2])
+    return right > 0 ? (left / right) * 100 : null
+  }
+
+  const numericMatch = value.match(/-?\d+(?:\.\d+)?/)
+  return numericMatch ? Number(numericMatch[0]) : null
+}
+
+function buildOverviewGrafanaPanels(layer: PlatformLayerData): PlatformGrafanaPanelDefinition[] {
+  if (layer.id !== 'overview') {
+    return []
+  }
+
+  const nodesOnline = parseMetricNumber(layer.summaryMetrics.find((metric) => metric.id === 'overview-nodes')?.value)
+  const clusterScore = parseMetricNumber(layer.summaryMetrics.find((metric) => metric.id === 'overview-health')?.value)
+  const activeStreams = parseMetricNumber(layer.summaryMetrics.find((metric) => metric.id === 'overview-audio')?.value)
+  const activeAlerts = parseMetricNumber(layer.gridItems.find((item) => item.id === 'active-alerts')?.metric)
+  const activeNodes = parseMetricNumber(layer.gridItems.find((item) => item.id === 'active-nodes')?.metric)
+  const clusterCapacity = parseMetricNumber(layer.gridItems.find((item) => item.id === 'cluster-capacity')?.metric)
+
+  return [
+    {
+      id: 'platform-overview-health',
+      title: 'Cluster Reachability',
+      description: '24-hour operational view for node availability, aggregate health score, and remaining cluster capacity.',
+      yAxisDomain: [0, 100],
+      series: [
+        { key: 'nodesOnline', label: 'Nodes Online %', value: nodesOnline, color: 'var(--cds-support-success)' },
+        { key: 'clusterScore', label: 'Cluster Score %', value: clusterScore, color: 'var(--cds-support-info)' },
+        { key: 'clusterCapacity', label: 'Capacity %', value: clusterCapacity, color: 'var(--cds-support-warning)' },
+      ],
+    },
+    {
+      id: 'platform-overview-signals',
+      title: 'Cross-Layer Signals',
+      description: 'Alert and traffic pressure across the main Platforms overview surface.',
+      series: [
+        { key: 'activeStreams', label: 'Active Streams', value: activeStreams, color: 'var(--cds-link-primary)' },
+        { key: 'activeAlerts', label: 'Active Alerts', value: activeAlerts, color: 'var(--cds-support-error)' },
+        { key: 'activeNodes', label: 'Active Nodes %', value: activeNodes, color: 'var(--cds-text-primary)' },
+      ],
+    },
+  ]
 }
 
 function updateProgressTagType(status: string): 'green' | 'warm-gray' | 'red' | 'cool-gray' | 'blue' {
@@ -804,6 +862,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   const isAvbLayer = layer.id === 'avb-routing'
   const isManagementLayer = layer.id === 'management'
   const isNetworkDiscoveryLayer = layer.id === 'network-discovery'
+  const overviewGrafanaPanels = buildOverviewGrafanaPanels(layer)
 
   return (
     <motion.section key={layer.id} className="platform-shell__workspace"
@@ -835,6 +894,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
         <NetworkDiscoveryWorkspace layer={layer} />
       ) : (
         <>
+          <PlatformGrafanaPanelDeck panels={overviewGrafanaPanels} />
           <LayerSummaryTiles items={layer.gridItems} />
           <LayerDataTable layer={layer} />
         </>
@@ -865,16 +925,18 @@ function WorkspaceCatalogWorkspace({
           <span className="platform-shell__ws-header-eyebrow">Catalog</span>
           <h2 className="platform-shell__ws-header-title">Workspace Catalog</h2>
           <p className="platform-shell__ws-header-summary">
-            Launcher Organizer now lives as one native Platforms section.
+            Present MAP2 workspaces as a Carbon storefront while preserving launcher-management controls inside Platforms.
           </p>
         </div>
       </div>
-      <PlatformLaunchersWorkspace
-        settings={settings}
-        isLoading={isLoading}
-        updateSettings={updateSettings}
-        onLaunchRoute={onLaunchRoute}
-      />
+      <div id="platform-launcher-organizer">
+        <PlatformLaunchersWorkspace
+          settings={settings}
+          isLoading={isLoading}
+          updateSettings={updateSettings}
+          onLaunchRoute={onLaunchRoute}
+        />
+      </div>
     </motion.section>
   )
 }
@@ -1012,49 +1074,50 @@ export function PlatformModalContent({
   const activeId = activeWorkspaceCatalog ? 'workspace-catalog' : (activePanel ?? activeLayerId)
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
-      <div className="platform-shell__content">
-        <div className="platform-shell__window">
+      <WorkspacePageTemplate
+        sidebar={(
           <SidebarNavigation
             activeId={activeId}
             onOpenLayer={handleOpenLayer}
             onOpenStandalone={handleOpenStandalone}
             onOpenWorkspaceCatalog={handleOpenWorkspaceCatalog}
           />
-          <div className="platform-shell__panel">
-            <AnimatePresence mode="wait">
-              {activeWorkspaceCatalog && (
-                <WorkspaceCatalogWorkspace
-                  key="workspace-catalog"
-                  settings={specialSettings}
-                  isLoading={specialSettingsLoading}
-                  updateSettings={updateSpecialSettings}
-                  onLaunchRoute={handleLaunchRoute}
-                />
-              )}
-              {showStandalone && activePanel && (
-                <StandaloneWorkspace key={activePanel} panel={activePanel} />
-              )}
-              {showLayer && activeLayer && (
-                <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
-              )}
-              {!activeWorkspaceCatalog && !showStandalone && !showLayer && (
-                <motion.section
-                  key="platform-loading"
-                  className="platform-shell__workspace platform-shell__workspace--empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.16, ease: 'easeOut' }}
-                >
-                  <div className="platform-shell__table-state">
-                    <InlineLoading description="Loading platform workspace" status="active" />
-                  </div>
-                </motion.section>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
+        )}
+        contentClassName="platform-shell__panel"
+        content={(
+          <AnimatePresence mode="wait">
+            {activeWorkspaceCatalog && (
+              <WorkspaceCatalogWorkspace
+                key="workspace-catalog"
+                settings={specialSettings}
+                isLoading={specialSettingsLoading}
+                updateSettings={updateSpecialSettings}
+                onLaunchRoute={handleLaunchRoute}
+              />
+            )}
+            {showStandalone && activePanel && (
+              <StandaloneWorkspace key={activePanel} panel={activePanel} />
+            )}
+            {showLayer && activeLayer && (
+              <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
+            )}
+            {!activeWorkspaceCatalog && !showStandalone && !showLayer && (
+              <motion.section
+                key="platform-loading"
+                className="platform-shell__workspace platform-shell__workspace--empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+              >
+                <div className="platform-shell__table-state">
+                  <InlineLoading description="Loading platform workspace" status="active" />
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+        )}
+      />
     </div>
   )
 

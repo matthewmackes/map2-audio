@@ -8,6 +8,7 @@
 import { ReverbCategoryLayout } from '../../Layouts/ReverbCategoryLayout'
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 // Parameter indices for Dragonfly Plate Reverb
 const PARAM_MAP = {
@@ -25,9 +26,10 @@ export function DragonflyPlateCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#ec4899',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
     parameterValues[PARAM_MAP[key]] ?? defaultVal
 

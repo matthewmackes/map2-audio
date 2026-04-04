@@ -165,6 +165,12 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
                 parameters.append(_normalize_juce_parameter_definition(param, param_index))
                 param_index += 1
 
+            multi_tap = proc.get("multi_tap")
+            if isinstance(multi_tap, dict):
+                for tap_param in multi_tap.get("taps", []):
+                    parameters.append(_normalize_juce_parameter_definition(tap_param, param_index))
+                    param_index += 1
+
             # Add band parameters for EQ
             if "band_parameters" in proc:
                 band_config = proc["band_parameters"]

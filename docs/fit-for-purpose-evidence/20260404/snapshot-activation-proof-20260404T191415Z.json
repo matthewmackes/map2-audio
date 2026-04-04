@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "started_at_utc": "2026-04-04T19:14:15+00:00",
+    "ended_at_utc": "2026-04-04T19:14:17+00:00"
+  },
+  "config": {
+    "sample_rate_hz": 48000,
+    "buffer_size_samples": 64,
+    "audio_device": "Default ALSA Output",
+    "effects": [
+      "map2://juce/amp/peavey5150",
+      "map2://juce/pitch/h3000",
+      "map2://juce/amp/tweedbassman",
+      "map2://juce/multieffect/passionfx",
+      "map2://juce/delay",
+      "map2://juce/pitch/boss-xs1",
+      "map2://juce/effects/eventide-h9",
+      "map2://juce/eq/parametric",
+      "map2://juce/delay/circular",
+      "map2://juce/dynamics/limiter"
+    ],
+    "transition_sequence": [
+      "A",
+      "S",
+      "B",
+      "S"
+    ]
+  },
+  "thresholds": {
+    "max_xruns": 0,
+    "max_peak_callback_jitter_ms": 0.35
+  },
+  "summary": {
+    "final_xrun_count": 0,
+    "peak_callback_jitter_ms": 0.024680666666666573,
+    "activation_elapsed_ms": {
+      "min": 72.75263400515541,
+      "max": 166.06038599275053,
+      "mean": 98.13657950144261
+    },
+    "callback_jitter_ms": {
+      "min": 0.024680666666666573,
+      "max": 0.024680666666666573,
+      "mean": 0.024680666666666573
+    },
+    "topology_last_mutation_duration_ms": {
+      "min": 0.012754,
+      "max": 0.027859,
+      "mean": 0.01894125
+    },
+    "same_topology_deltas": [
+      {
+        "from": "A",
+        "to": "S",
+        "mutation_count": 1,
+        "no_op_skip_count": 0
+      }
+    ],
+    "changed_topology_deltas": [
+      {
+        "from": "S",
+        "to": "B",
+        "mutation_count": 1,
+        "no_op_skip_count": 0
+      },
+      {
+        "from": "B",
+        "to": "S",
+        "mutation_count": 1,
+        "no_op_skip_count": 0
+      }
+    ],
+    "checks": {
+      "xruns_ok": true,
+      "jitter_ok": true,
+      "runtime_live_ok": true,
+      "same_topology_reuse_observed": false,
+      "changed_topology_mutation_observed": true
+    },
+    "overall_pass": false
+  },
+  "events": [
+    {
+      "timestamp_utc": "2026-04-04T19:14:17+00:00",
+      "from_label": null,
+      "to_label": "A",
+      "transition_type": "initial",
+      "snapshot_id": 1,
+      "activation_elapsed_ms": 166.06038599275053,
+      "runtime_state": "live",
+      "xrun_count": 0,
+      "peak_callback_jitter_ms": 0.024680666666666573,
+      "avg_callback_duration_ms": 0.4829439939103972,
+      "budget_utilization_percent": 36.22079954327979,
+      "topology_delta_mutation_count": 1,
+      "topology_delta_no_op_skip_count": 0,
+      "topology_after_last_mutation_duration_ms": 0.012754,
+      "topology_after_peak_mutation_duration_ms": 0.012754
+    },
+    {
+      "timestamp_utc": "2026-04-04T19:14:17+00:00",
+      "from_label": "A",
+      "to_label": "S",
+      "transition_type": "same_topology",
+      "snapshot_id": 2,
+      "activation_elapsed_ms": 80.70447301724926,
+      "runtime_state": "live",
+      "xrun_count": 0,
+      "peak_callback_jitter_ms": 0.024680666666666573,
+      "avg_callback_duration_ms": 0.49302468999177684,
+      "budget_utilization_percent": 36.976851749383265,
+      "topology_delta_mutation_count": 1,
+      "topology_delta_no_op_skip_count": 0,
+      "topology_after_last_mutation_duration_ms": 0.027859,
+      "topology_after_peak_mutation_duration_ms": 0.027859
+    },
+    {
+      "timestamp_utc": "2026-04-04T19:14:17+00:00",
+      "from_label": "S",
+      "to_label": "B",
+      "transition_type": "changed_topology",
+      "snapshot_id": 3,
+      "activation_elapsed_ms": 73.02882499061525,
+      "runtime_state": "live",
+      "xrun_count": 0,
+      "peak_callback_jitter_ms": 0.024680666666666573,
+      "avg_callback_duration_ms": 0.4838941370031165,
+      "budget_utilization_percent": 36.29206027523374,
+      "topology_delta_mutation_count": 1,
+      "topology_delta_no_op_skip_count": 0,
+      "topology_after_last_mutation_duration_ms": 0.020312,
+      "topology_after_peak_mutation_duration_ms": 0.027859
+    },
+    {
+      "timestamp_utc": "2026-04-04T19:14:17+00:00",
+      "from_label": "B",
+      "to_label": "S",
+      "transition_type": "changed_topology",
+      "snapshot_id": 2,
+      "activation_elapsed_ms": 72.75263400515541,
+      "runtime_state": "live",
+      "xrun_count": 0,
+      "peak_callback_jitter_ms": 0.024680666666666573,
+      "avg_callback_duration_ms": 0.5149343328064409,
+      "budget_utilization_percent": 38.620074960483066,
+      "topology_delta_mutation_count": 1,
+      "topology_delta_no_op_skip_count": 0,
+      "topology_after_last_mutation_duration_ms": 0.014839999999999999,
+      "topology_after_peak_mutation_duration_ms": 0.027859
+    }
+  ]
+}

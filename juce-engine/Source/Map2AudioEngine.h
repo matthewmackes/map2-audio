@@ -40,6 +40,7 @@ class AvbAudioIODevice;
 #include "ChorusProcessor.h"
 #include "PhaserProcessor.h"
 #include "PitchShifterProcessor.h"
+#include "DelayProcessor.h"
 #include "IntelliFX8VoiceChorusProcessor.h"
 #include "BossXS1PolyShifterProcessor.h"
 #include "ShoeGazeProcessor.h"
@@ -293,10 +294,21 @@ public:
     std::vector<InstanceId> getChainOrder() const;
     void clearChain();
     bool replaceChain(const std::vector<InstanceId>& order);
+    bool replaceChainWithSpillover(const std::vector<InstanceId>& order);
     bool addToChain(InstanceId instanceId, int position = -1);
     bool removeFromChain(InstanceId instanceId);
     bool reorderChain(const std::vector<InstanceId>& order);
     bool prewarmPluginNode(InstanceId instanceId);
+
+    struct SpilloverChainState {
+        int id = 0;
+        std::vector<InstanceId> instanceIds;
+        int64_t remainingSamples = 0;
+        bool expired = false;
+        double estimatedTailSeconds = 0.0;
+    };
+
+    std::vector<SpilloverChainState> getSpilloverChainStates() const;
 
     // ========================================
     // Lexicon MPX-1 Hardware Plugin
@@ -748,6 +760,69 @@ public:
     IntelliFX8VoiceChorusProcessor& getIntelliFX() { return intellifx_; }
 
     // ========================================
+    // Stereo Delay
+    // ========================================
+
+    void setDelayTimeL(float ms);
+    float getDelayTimeL() const;
+    void setDelayTimeR(float ms);
+    float getDelayTimeR() const;
+    void setDelayFeedback(float percent);
+    float getDelayFeedback() const;
+    void setDelayMix(float percent);
+    float getDelayMix() const;
+    void setDelayTempo(float bpm);
+    float getDelayTempo() const;
+    void setDelayTempoSyncL(int division);
+    int getDelayTempoSyncL() const;
+    void setDelayTempoSyncR(int division);
+    int getDelayTempoSyncR() const;
+    void setDelayTap1Level(float percent);
+    void setDelayTap2Level(float percent);
+    void setDelayTap2Ratio(float ratio);
+    void setDelayTap3Level(float percent);
+    void setDelayTap3Ratio(float ratio);
+    void setDelayTap4Level(float percent);
+    void setDelayTap4Ratio(float ratio);
+    void setDelayStereoMode(int mode);
+    int getDelayStereoMode() const;
+    void setDelayStereoSpread(float percent);
+    float getDelayStereoSpread() const;
+    void setDelayPan(float pan);
+    float getDelayPan() const;
+    void setDelayModRate(float hz);
+    float getDelayModRate() const;
+    void setDelayModDepth(float percent);
+    float getDelayModDepth() const;
+    void setDelayModWaveform(int waveform);
+    int getDelayModWaveform() const;
+    void setDelayLowCut(float hz);
+    float getDelayLowCut() const;
+    void setDelayHighCut(float hz);
+    float getDelayHighCut() const;
+    void setDelayFilterInLoop(bool enabled);
+    bool getDelayFilterInLoop() const;
+    void setDelayDiffusion(float percent);
+    float getDelayDiffusion() const;
+    void setDelayDuckThreshold(float db);
+    float getDelayDuckThreshold() const;
+    void setDelayDuckAmount(float percent);
+    float getDelayDuckAmount() const;
+    void setDelayDuckRelease(float ms);
+    float getDelayDuckRelease() const;
+    void setDelayOutputLevel(float db);
+    float getDelayOutputLevel() const;
+    void setDelaySpillover(bool enabled);
+    bool hasDelaySpillover() const;
+    void setDelayBypass(bool bypass);
+    bool isDelayBypassed() const;
+    DelayProcessor::Parameters getDelayParameters() const;
+    void setDelayParameters(const DelayProcessor::Parameters& params);
+    bool stageDelaySpillover();
+    DelayProcessor::Metering getDelayMetering() const;
+    DelayProcessor& getDelay() { return delay_; }
+
+    // ========================================
     // Boss XS-1 Polyphonic Pitch Shifter (NEW)
     // ========================================
 
@@ -835,6 +910,7 @@ public:
     bool isShoeGazeBypassed() const;
     void setShoeGazeSpillover(bool enabled);
     bool hasShoeGazeSpillover() const;
+    bool stageShoeGazeSpillover();
 
     // Bulk parameters
     ShoeGazeProcessor::Parameters getShoeGazeParameters() const;
@@ -900,6 +976,7 @@ public:
     bool isLexiLoveBypassed() const;
     void setLexiLoveSpillover(bool enabled);
     bool hasLexiLoveSpillover() const;
+    bool stageLexiLoveSpillover();
 
     // Bulk parameters
     LexiLoveProcessor::Parameters getLexiLoveParameters() const;
@@ -1288,6 +1365,7 @@ public:
 
     JucePluginHost& getPluginHost() { return pluginHost_; }
     JuceAudioGraph& getAudioGraph() { return *audioGraph_; }
+    const JuceAudioGraph& getAudioGraph() const { return *audioGraph_; }
     MidiHandler& getMidiHandler() { return midiHandler_; }
     ParameterBridge& getParameterBridge() { return parameterBridge_; }
     SnapshotManager& getSnapshotManager() { return *snapshotManager_; }
@@ -1326,11 +1404,54 @@ public:
 #endif
 
 private:
+    struct SpilloverChain {
+        int id = 0;
+        std::vector<InstanceId> instanceIds;
+        std::atomic<int64_t> remainingSamples{0};
+        std::atomic<bool> expired{false};
+        double estimatedTailSeconds = 0.0;
+    };
+
+    struct DelaySpilloverState {
+        int id = 0;
+        std::unique_ptr<DelayProcessor> processor;
+        std::atomic<int64_t> remainingSamples{0};
+        std::atomic<bool> expired{false};
+        double estimatedTailSeconds = 0.0;
+    };
+
+    struct ShoeGazeSpilloverState {
+        int id = 0;
+        std::unique_ptr<ShoeGazeProcessor> processor;
+        std::atomic<int64_t> remainingSamples{0};
+        std::atomic<bool> expired{false};
+        double estimatedTailSeconds = 0.0;
+    };
+
+    struct LexiLoveSpilloverState {
+        int id = 0;
+        std::unique_ptr<LexiLoveProcessor> processor;
+        std::atomic<int64_t> remainingSamples{0};
+        std::atomic<bool> expired{false};
+        double estimatedTailSeconds = 0.0;
+    };
+
+    void cleanupExpiredSpilloverChains();
+    void clearAllSpilloverChains();
+    void processSpilloverChains(juce::AudioBuffer<float>& buffer, int numSamples);
+    bool stageSpilloverFromCurrentChain(const std::vector<InstanceId>& nextOrder);
+    std::shared_ptr<SpilloverChain> buildSpilloverChainFromCurrentOrder(const std::vector<InstanceId>& nextOrder);
+    std::optional<InstanceId> clonePluginInstanceForSpillover(InstanceId sourceInstanceId);
+    void cleanupExpiredNativeSpillovers();
+    void clearAllNativeSpillovers();
+    void processNativeSpillovers(juce::AudioBuffer<float>& buffer, int numSamples);
+
     // JUCE Components (NEW)
     JuceAudioIO audioIO_;
     JucePluginHost pluginHost_;
     std::unique_ptr<JuceAudioGraph> audioGraph_;
     juce::AudioBuffer<float> callbackBuffer_;
+    juce::AudioBuffer<float> spilloverBuffer_;
 
     // Lexicon MPX-1 Hardware Plugin
     // Raw pointer (non-owning) — lifetime managed by pluginHost_.hardwareInstances_
@@ -1353,6 +1474,7 @@ private:
     ChorusProcessor chorus_;
     PhaserProcessor phaser_;
     PitchShifterProcessor pitchShifter_;
+    DelayProcessor delay_;
     IntelliFX8VoiceChorusProcessor intellifx_;
     BossXS1PolyShifterProcessor bossXS1_;
     ShoeGazeProcessor shoegaze_;
@@ -1391,6 +1513,14 @@ private:
     LufsMeter lufsMeter_;
     PhaseCorrelationMeter phaseCorrelation_;
     CPUMonitor cpuMonitor_;
+    mutable std::mutex spilloverChainsMutex_;
+    std::vector<std::shared_ptr<SpilloverChain>> spilloverChains_;
+    int nextSpilloverChainId_ = 1;
+    mutable std::mutex nativeSpilloverMutex_;
+    std::vector<std::shared_ptr<DelaySpilloverState>> delaySpillovers_;
+    std::vector<std::shared_ptr<ShoeGazeSpilloverState>> shoegazeSpillovers_;
+    std::vector<std::shared_ptr<LexiLoveSpilloverState>> lexiLoveSpillovers_;
+    int nextNativeSpilloverId_ = 1;
     
     // Metering thread and lock-free ring buffer (Option 3 - RT-safe)
     std::thread meteringThread_;

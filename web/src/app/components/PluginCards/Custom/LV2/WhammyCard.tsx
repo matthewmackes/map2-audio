@@ -12,6 +12,7 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { NumberInput } from '../../../ParameterControl'
 import { ArrowDown, ArrowUp, Link, Unlink } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 
 const PARAM_MAP = {
   pitch: 0,
@@ -49,9 +50,10 @@ export function WhammyCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#ef4444',
+  accentColor: providedAccent,
   compact = false,
 }: PluginCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const [selectedMode, setSelectedMode] = useState(6)
   const [isHarmonyMode, setIsHarmonyMode] = useState(false)
   const [pedalPosition, setPedalPosition] = useState(100)

@@ -2,6 +2,7 @@ import { useLexiLove, LEXI_ALGORITHMS } from '../../../../hooks/useLexiLove'
 import { ReverbCategoryLayout } from '../../Layouts/ReverbCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { formatDecay, formatFreq } from '../../utils/formatters'
 import { LCDDisplay } from '../../components/Visualizations/LCDDisplay'
 import { ParameterKnob } from '../../../ParameterControl'
@@ -43,10 +44,11 @@ interface LexiLoveCardProps extends PluginCardProps {
 function LexiLoveCardBase({
   plugin,
   pluginPosition,
-  accentColor = '#00cc00',
+  accentColor: providedAccent,
   compact = false,
   onOpenMidiMappings,
 }: LexiLoveCardProps) {
+  const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const {
     parameters,
     metering,

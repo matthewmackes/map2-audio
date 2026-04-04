@@ -41,6 +41,7 @@ export interface AdvancedSection {
   icon?: ReactNode
   children: ReactNode
   defaultOpen?: boolean
+  collapsible?: boolean
 }
 
 interface CarbonCardShellProps {
@@ -96,6 +97,8 @@ export function CarbonCardShell({
   }, [bypassed, onBypassToggle])
 
   const hasOverflowActions = onOpenMidiMappings || onCopyParams || onResetParams
+  const visibleSections = advancedSections?.filter((section) => !section.collapsible) ?? []
+  const collapsibleSections = advancedSections?.filter((section) => section.collapsible) ?? []
 
   return (
     <section
@@ -217,11 +220,36 @@ export function CarbonCardShell({
         {children}
       </div>
 
-      {/* Advanced Sections (Carbon Accordion) */}
-      {advancedSections && advancedSections.length > 0 && (
+      {/* Secondary Sections */}
+      {visibleSections.length > 0 && (
+        <div className="carbon-card-secondary-sections">
+          {visibleSections.map((section) => {
+            const normalizedTitle = section.title.trim().toLowerCase() === 'more'
+              ? 'Additional parameters'
+              : section.title
+
+            return (
+              <section key={section.id} className="carbon-card-secondary-section">
+                <div className="carbon-card-secondary-section-header">
+                  <span className="carbon-card-accordion-title">
+                    {section.icon}
+                    {normalizedTitle}
+                  </span>
+                </div>
+                <div className="carbon-card-secondary-section-body">
+                  {section.children}
+                </div>
+              </section>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Explicitly Collapsible Sections */}
+      {collapsibleSections.length > 0 && (
         <div className="carbon-card-advanced">
           <Accordion>
-            {advancedSections.map((section) => {
+            {collapsibleSections.map((section) => {
               const isMoreSection = section.title.trim().toLowerCase() === 'more'
 
               return (

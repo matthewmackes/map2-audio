@@ -31,15 +31,28 @@ python3 -m pip install -e .
 
 %install
 mkdir -p %{buildroot}/usr/lib/map2
+mkdir -p %{buildroot}/etc/map2/prometheus/targets
+mkdir -p %{buildroot}/etc/map2/grafana/provisioning/datasources
+mkdir -p %{buildroot}/etc/map2/grafana/provisioning/dashboards
+mkdir -p %{buildroot}/etc/map2/grafana/dashboards
 cp -r app %{buildroot}/usr/lib/map2/
 cp -r tui %{buildroot}/usr/lib/map2/
 cp -r lcd %{buildroot}/usr/lib/map2/
 cp -r scripts %{buildroot}/usr/lib/map2/
 cp pyproject.toml %{buildroot}/usr/lib/map2/
 
+install -m 644 config/prometheus.yml %{buildroot}/etc/map2/prometheus/prometheus.yml
+install -m 644 config/prometheus-targets/audio-nodes.json %{buildroot}/etc/map2/prometheus/targets/audio-nodes.json
+install -m 644 config/grafana/grafana.ini %{buildroot}/etc/map2/grafana/grafana.ini
+install -m 644 config/grafana/provisioning/datasources/prometheus.yml %{buildroot}/etc/map2/grafana/provisioning/datasources/prometheus.yml
+install -m 644 config/grafana/provisioning/dashboards/map2.yml %{buildroot}/etc/map2/grafana/provisioning/dashboards/map2.yml
+install -m 644 config/grafana-dashboards/*.json %{buildroot}/etc/map2/grafana/dashboards/
+
 mkdir -p %{buildroot}/usr/lib/systemd/system
 install -m 644 packaging/systemd/map2-backend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-tui.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-prometheus.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-grafana.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/
@@ -54,8 +67,11 @@ useradd -r -s /bin/false map2 2>/dev/null || true
 
 %files
 /usr/lib/map2/
+/etc/map2/
 /usr/lib/systemd/system/map2-backend.service
 /usr/lib/systemd/system/map2-tui.service
+/usr/lib/systemd/system/map2-prometheus.service
+/usr/lib/systemd/system/map2-grafana.service
 /usr/lib/systemd/system/map2-ptp4l.service
 /usr/lib/systemd/system/map2-phc2sys.service
 /usr/lib/systemd/system/map2-srpd.service

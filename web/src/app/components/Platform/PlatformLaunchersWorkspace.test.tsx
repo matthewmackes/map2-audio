@@ -15,6 +15,13 @@ function buildSettings(overrides: Partial<SpecialSettings> = {}): SpecialSetting
   }
 }
 
+function getCatalogSection() {
+  const heading = screen.getByRole('heading', { name: 'Full Catalog' })
+  const section = heading.closest('section')
+  expect(section).not.toBeNull()
+  return section as HTMLElement
+}
+
 describe('PlatformLaunchersWorkspace', () => {
   const originalWindowOpen = window.open
 
@@ -49,10 +56,10 @@ describe('PlatformLaunchersWorkspace', () => {
     })
   })
 
-  it('launches rows directly from the table and configures placement in a sub-modal', async () => {
+  it('renders a storefront surface, launches routes, and configures placement from the catalog region', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
-    const { container } = render(
+    render(
       <PlatformLaunchersWorkspace
         settings={buildSettings({ pinnedRoutes: ['/artifacts'] })}
         isLoading={false}
@@ -60,23 +67,26 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Launch MIDI Hub' }))
+    expect(screen.getByRole('heading', { name: 'Carbon storefront for MAP2 workspaces' })).toBeInTheDocument()
+    expect(screen.getByText('Storefront spotlight')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Workspace catalog section navigation' })).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Launcher catalog' })).not.toBeInTheDocument()
+
+    const catalog = getCatalogSection()
+    fireEvent.click(within(catalog).getByRole('button', { name: 'Launch MIDI Hub' }))
 
     expect(window.open).toHaveBeenCalledWith('/midi-hub', '_blank', 'noopener,noreferrer')
-    expect(screen.getByRole('table', { name: 'Launcher catalog' })).toBeInTheDocument()
-    expect(screen.queryByText('Launcher organizer')).not.toBeInTheDocument()
-    expect(screen.queryByText(/Use one Carbon-style table to browse every launcher/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Hero title' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Category' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
+    fireEvent.click(within(catalog).getByRole('button', { name: 'Configure MIDI Hub' }))
 
     const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByText('Human Interface')).toBeInTheDocument()
-    expect(within(dialog).getByText('Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration.')).toBeInTheDocument()
-    expect(screen.getByText('Landing tile')).toBeInTheDocument()
-    expect(within(container).queryByText('Landing tile')).not.toBeInTheDocument()
+    expect(within(dialog).getAllByText('Human Interface').length).toBeGreaterThan(0)
+    expect(within(dialog).getByText('Availability')).toBeInTheDocument()
+    expect(within(dialog).getByRole('link', { name: 'Storefront brief' })).toHaveAttribute(
+      'href',
+      '/api/system/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md',
+    )
+
     fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
@@ -111,7 +121,7 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Configure MIDI Hub' }))
+    fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure MIDI Hub' }))
     fireEvent.click(screen.getByRole('button', { name: 'small' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
@@ -124,7 +134,7 @@ describe('PlatformLaunchersWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Nav full' })).toBeDisabled()
   })
 
-  it('filters launcher rows by category before opening a route', () => {
+  it('filters launcher cards by category and search terms', () => {
     render(
       <PlatformLaunchersWorkspace
         settings={buildSettings()}
@@ -133,13 +143,51 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
+    const catalog = getCatalogSection()
+    expect(within(catalog).getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /^Audio Interface \(/ }))
 
-    expect(screen.queryByRole('button', { name: 'Launch MIDI Hub' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Launch Audio Interfaces' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Launch Edirol UA-1000' })).toBeInTheDocument()
+    expect(within(catalog).queryByRole('button', { name: 'Launch MIDI Hub' })).toBeNull()
+    expect(within(catalog).getByRole('button', { name: 'Launch Audio Interfaces' })).toBeInTheDocument()
+    expect(within(catalog).getByRole('button', { name: 'Launch Edirol UA-1000' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^All \(/ }))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search workspaces' }), {
+      target: { value: 'Hardware Not Detected' },
+    })
+
+    expect(within(getCatalogSection()).getByRole('button', { name: 'Launch LCD Console' })).toBeInTheDocument()
+    expect(within(getCatalogSection()).queryByRole('button', { name: 'Launch Edirol UA-1000' })).toBeNull()
+  })
+
+  it('shows collection badges and section jump links for storefront browsing', () => {
+    render(
+      <PlatformLaunchersWorkspace
+        settings={buildSettings()}
+        isLoading={false}
+        updateSettings={jest.fn().mockResolvedValue(undefined)}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: 'Featured' })).toHaveAttribute('href', '#workspace-catalog-featured')
+    expect(screen.getByRole('link', { name: 'Platform Essentials' })).toHaveAttribute(
+      'href',
+      '#workspace-catalog-platform-essentials',
+    )
+    expect(screen.getByRole('link', { name: 'Recently Added' })).toHaveAttribute(
+      'href',
+      '#workspace-catalog-recently-added',
+    )
+    expect(screen.getByRole('link', { name: 'Full Catalog' })).toHaveAttribute(
+      'href',
+      '#workspace-catalog-full-catalog',
+    )
+
+    const catalog = getCatalogSection()
+    const midiHubCard = within(catalog).getByRole('heading', { name: 'MIDI Hub' }).closest('.platform-launchers__card')
+    expect(midiHubCard).not.toBeNull()
+    expect(within(midiHubCard as HTMLElement).getByText('Featured')).toBeInTheDocument()
   })
 
   it('keeps Platforms locked on Home and first in landing order', async () => {
@@ -158,7 +206,7 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Configure Overview' }))
+    fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure Overview' }))
 
     expect(screen.getByRole('button', { name: 'Required on landing' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Move down' })).toBeDisabled()
