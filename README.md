@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1093** TypeScript | **133** C++/H | **129** Docs | **1346** total commits | **3** stars | **0** forks | **0** open issues
+**966** Python | **1107** TypeScript | **133** C++/H | **131** Docs | **1348** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Observability Role Policy](https://github.com/matthewmackes/map2-audio/blob/master/docs/OBSERVABILITY_ROLE_POLICY.md) | 2026-04-04 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-04 |
+| [Web Server Port Configuration](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_PORTS.md) | 2026-04-04 |
+| [Workspace Catalog Storefront Reference](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md) | 2026-04-04 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-02 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-01 |
-| [Ground Control Pro Reverse Engineering](https://github.com/matthewmackes/map2-audio/blob/master/docs/ground-control-pro-reverse-engineering.md) | 2026-03-30 |
-| [MAP2 Memory Index](https://github.com/matthewmackes/map2-audio/blob/master/docs/MEMORY.md) | 2026-03-29 |
-| [MAP2 Audio Platform — AVB Standards Performance & Compatibility Rating Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_STANDARDS_RATING_REPORT.md) | 2026-03-28 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fe20d228`](https://github.com/matthewmackes/map2-audio/commit/fe20d228d6de3d6e17fc4dc3b5427fb56f88a8ad) | Advance snapshot runtime and platform backlog | Map2 Audio | 2026-04-04 |
+| [`a1466620`](https://github.com/matthewmackes/map2-audio/commit/a1466620a438ed31a8cde27084b989b284de86f1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`278389ab`](https://github.com/matthewmackes/map2-audio/commit/278389ab3a9a8aa347e3c35308c7e4effc507c49) | update: commit all current GUI viewport policy changes | Map2 Audio | 2026-04-04 |
 | [`6003d496`](https://github.com/matthewmackes/map2-audio/commit/6003d4962d099f53960d57db6da563360f09d673) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`8aefb8f4`](https://github.com/matthewmackes/map2-audio/commit/8aefb8f4950c7b84fe62b316516fc5f06cfa28ae) | docs: record T703 deploy verification and preserve T704 | Map2 Audio | 2026-04-04 |
 | [`b4a18596`](https://github.com/matthewmackes/map2-audio/commit/b4a185962cdfe03835447b1b52e85500ff3b338f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`a3f85441`](https://github.com/matthewmackes/map2-audio/commit/a3f8544110b0dc95ce5600e92927839860092ef2) | T703: sweep GUI theme compliance across shared window chrome | Map2 Audio | 2026-04-04 |
 | [`657a108e`](https://github.com/matthewmackes/map2-audio/commit/657a108e4f8e22eec5f0d1b1f4a00d687f0a1e36) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
-| [`84059806`](https://github.com/matthewmackes/map2-audio/commit/84059806ef045d58f0f83b9b02d7f825b5f78fcd) | feat(snapshot-editor): expand empty-state workflow | Map2 Audio | 2026-04-04 |
-| [`87e229ba`](https://github.com/matthewmackes/map2-audio/commit/87e229ba7dc65b498a0b0d9deefc5d1372a0353b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
