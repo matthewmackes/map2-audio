@@ -156,7 +156,7 @@
   }
 
   .mobile-bottom-tab.is-active {
-    background: rgba(37, 99, 235, 0.16);
+    background: color-mix(in srgb, var(--interactive) 16%, var(--surface));
     color: var(--text-primary);
   }
 
@@ -183,7 +183,7 @@
     align-items: center;
     animation: blink 1.4s linear infinite;
     background: var(--danger);
-    color: #fff;
+    color: var(--text-inverse);
     display: inline-flex;
     font-size: var(--type-body);
     font-weight: 700;
@@ -201,7 +201,7 @@
   }
 
   .mobile-connection-banner-dot {
-    background: #fff;
+    background: var(--text-inverse);
     border-radius: 999px;
     display: inline-flex;
     height: 10px;
@@ -279,10 +279,10 @@
 
   .metering-fullscreen-button {
     align-items: center;
-    background: rgba(37, 99, 235, 0.2);
-    border: 1px solid rgba(59, 130, 246, 0.45);
+    background: color-mix(in srgb, var(--interactive) 16%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--interactive) 45%, var(--border));
     border-radius: 10px;
-    color: #bfdbfe;
+    color: var(--text-primary);
     display: inline-flex;
     font-size: var(--type-body);
     font-weight: 700;
@@ -317,7 +317,7 @@
   }
 
   .lv2-management-table .lv2-management-row {
-    border: 1px solid rgba(71, 85, 105, 0.45);
+    border: 1px solid color-mix(in srgb, var(--border-strong) 45%, transparent);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -354,7 +354,7 @@
   }
 
   .installed-assets-table .installed-assets-row {
-    border: 1px solid rgba(71, 85, 105, 0.45);
+    border: 1px solid color-mix(in srgb, var(--border-strong) 45%, transparent);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -407,8 +407,8 @@
   }
 
   .installed-assets-mobile-details-grid {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: color-mix(in srgb, var(--surface-2) 78%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--interactive) 20%, var(--border));
     border-radius: 8px;
     display: grid;
     gap: 6px;
@@ -685,7 +685,7 @@
   .chains-page .table tr,
   .snapshots-page .table tr,
   .midi-page .table tr {
-    border: 1px solid rgba(71, 85, 105, 0.45);
+    border: 1px solid color-mix(in srgb, var(--border-strong) 45%, transparent);
     border-radius: 10px;
     display: flex;
     flex-direction: column;

@@ -20,7 +20,7 @@
   padding: 0.25rem 0.75rem 0.25rem 0;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: #0f62fe;
+  color: var(--interactive);
   text-align: right;
   white-space: pre-wrap;
   word-break: break-all;
@@ -78,15 +78,15 @@
 
 /* Color by status tier */
 .api-overlay__line--2xx {
-  color: #0f62fe; /* Carbon Blue 60 */
+  color: var(--interactive);
 }
 
 .api-overlay__line--4xx {
-  color: #f1c21b; /* Carbon Yellow 30 / amber */
+  color: var(--support-warning);
 }
 
 .api-overlay__line--5xx {
-  color: #da1e28; /* Carbon Red 60 */
+  color: var(--support-danger);
 }
 
 .api-overlay__line--dim-ts {
@@ -94,13 +94,13 @@
 }
 
 .api-overlay__ts {
-  color: rgba(82, 82, 82, 0.7);
+  color: color-mix(in srgb, var(--text-secondary) 72%, transparent);
   font-size: 9px;
 }
 
 /* Hovered line highlight */
 .api-overlay__line--hovered {
-  color: #4589ff; /* Carbon Blue 50 — slightly lighter for hover */
+  color: color-mix(in srgb, var(--interactive) 72%, var(--text-primary));
 }
 
 /* Toggle button — lives outside the overlay, inside the page */
@@ -110,9 +110,9 @@
   right: 0.5rem;
   z-index: 101;
   background: transparent;
-  border: 1px solid rgba(15, 98, 254, 0.35);
+  border: 1px solid color-mix(in srgb, var(--interactive) 35%, var(--border));
   border-radius: 2px;
-  color: #0f62fe;
+  color: var(--interactive);
   font-family: var(--font-mono);
   font-size: 9px;
   padding: 2px 6px;

@@ -40,7 +40,7 @@
 .hp2-hero__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.20);
+  background: color-mix(in srgb, var(--bg) 20%, transparent);
   pointer-events: none;
 }
 

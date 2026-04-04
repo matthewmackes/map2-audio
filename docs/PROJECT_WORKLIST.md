@@ -6,7 +6,30 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-04 10:54 EDT - Completed T702 by hard-gating Snapshot Editor chain activity behind loaded snapshot context while routing empty Add effect into immediate draft snapshot creation.
+Last updated: 2026-04-04 11:18 EDT - Started T703 for repeated GUI theme-compliance sweeps, publish loops, and port-3000 redeploy verification.
+
+ID: T703
+Status: [✓] Done
+Title: Sweep the GUI for non-theme-controlled window/page colors with repeated publish/redeploy cycles
+Description:
+- Goal / acceptance criteria: Audit the GUI for remaining hard-coded or non-theme-controlled window/page/chrome colors, migrate those surfaces onto the shared theme/token system, and execute three focused sweep cycles with validation after each cycle. After the final cycle, commit all current changes, push `master` to `origin`, `gitlab`, and `local`, rebuild/restart the production web server on port `3000`, verify the live bundle, and update this worklist with the exact evidence. If the sweep uncovers additional concrete non-blocked remediation slices, capture them here and continue until only blocked work remains.
+- Why it matters: The user wants the GUI pages and window chrome to obey the active theme instead of leaving isolated hard-coded surfaces behind. This needs a deliberate repeat-audit loop so the obvious fixes do not leave secondary chrome islands unaddressed.
+- Dependencies: T269, T645
+- Estimated effort: Medium
+- Required outputs: tokenized/theme-compliant frontend CSS or component updates, focused validation/build evidence for each cycle, synchronized git publish, verified port-3000 restart evidence, and worklist notes that record whether any non-blocked follow-up remains.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 11:48 EDT - Codex
+- Completion notes:
+  - Cycle 1 theme sweep moved the shared shell/window chrome onto theme tokens in `web/src/index.css` and `web/src/app/layout/AppShell.css`, then retuned operator-facing page chrome in `ApiActivityOverlay.css`, `NodeContextBanner.css`, `NumericInput.css`, `HomePage.css`, and `web/src/styles/mobile.css` so those surfaces no longer carried fixed dark-blue or black values independent of the active theme.
+  - Cycle 2 theme sweep cleared additional mobile/table/workspace highlight islands by replacing hard-coded highlight backgrounds and borders in `web/src/styles/mobile.css`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.css`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, and `web/src/app/components/ClusterDashboard/MultiNodeMonitoringTab.css` with theme/support-token mixes.
+  - Cycle 3 theme sweep finished the shared routed-workspace pass by tokenizing remaining AVB and cluster workspace highlight states in `web/src/app/components/AvbRouting/AvbRoutingWorkspace.css` and `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, and by removing the remaining hard-coded fallback colors from `MultiNodeMonitoringTab.css`.
+  - Re-ran `npm --prefix web run typecheck` after each sweep slice and completed the authoritative `npm --prefix web run build` successfully. Reverted the generated `VERSION` / `version.json` timestamp churn so the source commit stays scoped to the GUI theme-compliance work rather than the transient build stamp.
+  - The canonical worklist remains in blocked-only state after this task; no new non-blocked follow-up tasks were required from the sweep.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS (after cycle 1)
+  - `npm --prefix web run typecheck` -> PASS (after cycle 2)
+  - `npm --prefix web run build` -> PASS
 
 ID: T702
 Status: [✓] Done

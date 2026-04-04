@@ -1,9 +1,9 @@
 .multi-node-monitoring-tab__comparison-table {
-  border: 1px solid var(--cds-border-subtle, #393939);
+  border: 1px solid var(--cds-border-subtle);
 }
 
 .multi-node-monitoring-tab__table-header {
-  color: var(--cds-text-primary, #161616);
+  color: var(--cds-text-primary);
   font-weight: 600;
 }
 
@@ -12,19 +12,19 @@
 }
 
 .multi-node-monitoring-tab__comparison-row.is-highest {
-  background: rgba(218, 30, 40, 0.08);
+  background: color-mix(in srgb, var(--support-danger) 8%, var(--cds-layer));
 }
 
 .multi-node-monitoring-tab__comparison-row.is-lowest {
-  background: rgba(36, 161, 72, 0.1);
+  background: color-mix(in srgb, var(--support-success) 10%, var(--cds-layer));
 }
 
 .multi-node-monitoring-tab__comparison-row.is-average {
-  background: var(--cds-layer-hover, #f4f4f4);
+  background: var(--cds-layer-hover);
 }
 
 .multi-node-monitoring-tab__system-cell {
-  color: var(--cds-text-primary, #161616);
+  color: var(--cds-text-primary);
   font-weight: 500;
 }
 
@@ -37,6 +37,6 @@
 }
 
 .multi-node-monitoring-tab__average-cell {
-  color: var(--cds-link-primary, #0f62fe);
+  color: var(--cds-link-primary);
   font-weight: 600;
 }

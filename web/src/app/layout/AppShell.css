@@ -5,19 +5,27 @@
   min-width: 4.9rem;
   height: 58px;
   padding: 0 0.8rem 0 0.7rem;
-  border-inline: 1px solid rgba(69, 137, 255, 0.18);
+  border-inline: 1px solid color-mix(in srgb, var(--interactive) 24%, var(--border));
   background:
-    linear-gradient(180deg, rgba(8, 16, 30, 0.98) 0%, rgba(12, 20, 36, 0.98) 100%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--interactive) 10%, var(--surface)) 0%,
+      color-mix(in srgb, var(--interactive) 6%, var(--surface-2)) 100%
+    );
 }
 
 .topbar-pro__latency-pressure--critical {
-  border-inline-color: rgba(250, 77, 86, 0.34);
+  border-inline-color: color-mix(in srgb, var(--support-danger) 34%, var(--border));
   background:
-    linear-gradient(180deg, rgba(45, 12, 18, 0.96) 0%, rgba(28, 10, 14, 0.98) 100%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--support-danger) 16%, var(--surface)) 0%,
+      color-mix(in srgb, var(--support-danger) 10%, var(--surface-2)) 100%
+    );
 }
 
 .topbar-pro__latency-pressure-label {
-  color: rgba(244, 244, 244, 0.52);
+  color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
   font-size: 0.56rem;
   font-weight: 600;
   letter-spacing: 0.18em;

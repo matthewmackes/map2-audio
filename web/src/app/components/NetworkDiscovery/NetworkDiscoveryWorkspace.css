@@ -12,7 +12,7 @@
 
 .network-discovery-workspace__section.is-highlighted {
   border-radius: 1rem;
-  box-shadow: inset 0 0 0 2px rgba(15, 98, 254, 0.18);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--interactive) 18%, transparent);
   padding: 0.5rem;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .network-discovery-workspace__table-row.is-highlighted td {
-  background: rgba(15, 98, 254, 0.08);
+  background: color-mix(in srgb, var(--interactive) 8%, var(--cds-layer));
 }
 
 .network-discovery-workspace__expanded-row {
