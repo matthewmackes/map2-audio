@@ -70,6 +70,90 @@ jest.mock('reactflow', () => {
 
 const mockUseIsMobile = jest.fn(() => false)
 let currentMidiMappingsResponse: { mappings: Array<Record<string, unknown>>; count: number } = { mappings: [], count: 0 }
+
+const buildMockCommittedAudioState = () => ({
+  schema_version: 1,
+  state_version: 7,
+  leader_epoch: 1,
+  committed_at: '2026-04-03T18:00:00Z',
+  origin_node_id: 'local-node',
+  source_snapshot: {
+    snapshot_id: 1,
+    snapshot_revision_id: 3,
+    name: 'Startup',
+  },
+  desired: {
+    snapshot_id: 1,
+    snapshot_revision_id: 3,
+    compiled_at: '2026-04-03T18:00:00Z',
+    intent_version: 1,
+    io: {},
+    routing: {
+      mode: 'parallel_blend',
+      active_path_ids: ['channel-a'],
+      path_order: ['channel-a'],
+    },
+    deployment: {
+      placement_mode: 'local_only',
+      preferred_nodes: ['local-node'],
+    },
+    chains: [],
+  },
+  observed_summary: {},
+  cluster: {
+    sync_status: 'synced',
+    applied_node_ids: ['local-node'],
+    degraded_node_ids: [],
+  },
+  engine: {
+    display_state: 'live',
+    is_warning: false,
+    is_offline: false,
+  },
+  paths: [
+    {
+      path_id: 'channel-a',
+      label: 'A',
+      snapshot_chain_id: 1,
+      runtime_chain_id: 1,
+      status: 'active',
+      status_reason: null,
+    },
+  ],
+  derived: {
+    active_channel_count: 1,
+    total_channel_count: 1,
+    inactive_messages: [],
+  },
+})
+
+const buildMockAuthoritySnapshotDetail = () => ({
+  paths: [
+    {
+      id: 'channel-a',
+      name: 'Main',
+      label: 'A',
+      color: '#2563eb',
+      muted: false,
+      solo: false,
+      dry_wet_mix: 100,
+      order_index: 0,
+      snapshot_chain_id: 1,
+      runtime_chain_id: 1,
+      plugins: [
+        { uri: 'urn:test:reverb', name: 'Reverb', position: 0, bypass: false, parameters: { mix: 0.5 } },
+        { uri: 'urn:test:delay', name: 'Delay', position: 1, bypass: true, parameters: { time: 0.3, mode: 1 } },
+      ],
+      loop_insertions: [],
+      effects_loops: [],
+    },
+  ],
+})
+
+let mockCommittedAudioStateResponse: { value: ReturnType<typeof buildMockCommittedAudioState> } | undefined = {
+  value: buildMockCommittedAudioState(),
+}
+
 const mockUseCluster = jest.fn(() => ({
   activeNodeId: null,
   localNodeId: 'local-node',
@@ -260,6 +344,24 @@ const mockMidiApiV2 = {
 
 const mockSnapshotsApi = {
   list: jest.fn(async () => ({ snapshots: [{ id: 1, name: 'Startup' }], count: 1 })),
+  get: jest.fn(async () => buildMockAuthoritySnapshotDetail()),
+}
+
+const mockAudioStateApi = {
+  putDesired: jest.fn(async (request: any) => ({
+    namespace: '/map2/audio-state/v1',
+    key: '/map2/audio-state/v1/committed',
+    revision: 42,
+    value: {
+      ...buildMockCommittedAudioState(),
+      state_version: request.state_version,
+      committed_at: request.committed_at,
+      desired: request.desired,
+      cluster: request.cluster,
+      paths: request.paths,
+      derived: request.derived,
+    },
+  })),
 }
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
@@ -312,7 +414,18 @@ jest.mock('../../map2/api', () => {
 jest.mock('../../map2/clients/snapshots', () => ({
   snapshotsApi: {
     list: (...args: unknown[]) => mockSnapshotsApi.list(...args),
+    get: (...args: unknown[]) => mockSnapshotsApi.get(...args),
   },
+}))
+
+jest.mock('../../map2/clients/audioState', () => ({
+  audioStateApi: {
+    putDesired: (...args: unknown[]) => mockAudioStateApi.putDesired(...args),
+  },
+}))
+
+jest.mock('../hooks/useAuthoritativeAudioState', () => ({
+  useCommittedAudioState: () => ({ data: mockCommittedAudioStateResponse }),
 }))
 
 jest.mock('../hooks/useIsMobile', () => ({
@@ -436,6 +549,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockScrollIntoView.mockReset()
   currentMidiMappingsResponse = { mappings: [], count: 0 }
+  mockCommittedAudioStateResponse = { value: buildMockCommittedAudioState() }
   mockUseIsMobile.mockReturnValue(false)
   mockUsePluginOutputs.mockReturnValue(createMockPluginOutputState())
   mockUseCluster.mockReturnValue({
@@ -1193,8 +1307,30 @@ describe('AudioTablePage — Toolbar', () => {
     fireEvent.click(killButton)
 
     await waitFor(() => {
-      expect(mockChainsApi.deactivate).toHaveBeenCalledWith(1)
+      expect(mockAudioStateApi.putDesired).toHaveBeenCalledWith(expect.objectContaining({
+        requested_by: 'audio_table_kill_live_path',
+        desired: expect.objectContaining({
+          routing: expect.objectContaining({
+            active_path_ids: [],
+            path_order: [],
+          }),
+        }),
+        paths: [],
+      }))
     })
+  })
+
+  it('renders an empty control-plane modal when no snapshot is loaded', async () => {
+    mockCommittedAudioStateResponse = undefined
+
+    renderPage()
+
+    expect(screen.queryByText('Mismatch')).not.toBeInTheDocument()
+
+    fireEvent.click(getToolbarButton('Live paths'))
+
+    expect(await screen.findByText('No control-plane live paths currently reported.')).toBeInTheDocument()
+    expect(screen.queryByText(/Select one live path, then use Kill Live Path/i)).not.toBeInTheDocument()
   })
 })
 

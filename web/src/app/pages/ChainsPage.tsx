@@ -23,7 +23,6 @@ import {
   Add,
   CheckmarkFilled,
   Flow,
-  Launch,
   Renew,
 } from '@carbon/icons-react'
 import type { Chain, ChainsResponse } from '../../map2/types'
@@ -46,6 +45,8 @@ type ClusterChainsFanoutResponse = {
 }
 
 type MetricTone = 'gray' | 'green' | 'warm-gray'
+
+const RUNTIME_CHAIN_CONTROL_NOTICE = 'These controls switch runtime chains directly. Control-plane snapshot truth lives in Audio Grid.'
 
 function AudioGridActionIcon(props: { className?: string }) {
   return <MapAudioGridIcon {...props} size={16} />
@@ -163,18 +164,18 @@ export function ChainsPage() {
     mutationFn: (id: number) => chainsApi.activate(id, apiNodeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain activated', 'success')
+      pushToast('Runtime chain activated', 'success')
     },
-    onError: () => pushToast('Failed to activate chain', 'error'),
+    onError: () => pushToast('Failed to activate runtime chain', 'error'),
   })
 
   const deactivateChain = useMutation({
     mutationFn: (id: number) => chainsApi.deactivate(id, apiNodeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain deactivated', 'info')
+      pushToast('Runtime chain stopped', 'info')
     },
-    onError: () => pushToast('Failed to deactivate chain', 'error'),
+    onError: () => pushToast('Failed to stop runtime chain', 'error'),
   })
 
   const deleteChain = useMutation({
@@ -268,7 +269,7 @@ export function ChainsPage() {
               <Flow size={32} aria-hidden="true" className="chains-page__title-icon" />
               <div>
                 <h1 className="chains-page__title">Chains</h1>
-                <p className="chains-page__subtitle">Cluster-wide chain inventory and active selection comparison</p>
+                <p className="chains-page__subtitle">Cluster-wide runtime chain inventory and direct runtime-selection comparison</p>
               </div>
             </div>
             <div className="chains-page__actions">
@@ -282,14 +283,22 @@ export function ChainsPage() {
             <div className="chains-page__scope-label">Chain scope</div>
             <strong className="chains-page__scope-title">All nodes cluster comparison</strong>
             <p className="chains-page__scope-copy">
-              Compare chain counts, active chains, and plugin footprint across the cluster, then inspect one node to manage its inventory directly.
+              Compare chain counts, runtime-active chains, and plugin footprint across the cluster, then inspect one node to manage direct runtime chain switching.
             </p>
           </div>
+
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Runtime-only chain controls"
+            subtitle={RUNTIME_CHAIN_CONTROL_NOTICE}
+          />
         </Layer>
 
         <div className="chains-page__metrics-grid">
           <ChainsMetricCard label="Total chains" value={totalClusterChains} helper="Across all nodes" />
-          <ChainsMetricCard label="Nodes with active chain" value={nodesWithActiveChains} helper="Live selection" tone="green" />
+          <ChainsMetricCard label="Nodes with runtime-active chain" value={nodesWithActiveChains} helper="Runtime selection" tone="green" />
           <ChainsMetricCard label="Plugins across chains" value={totalClusterPlugins} helper="Cluster footprint" />
         </div>
 
@@ -318,7 +327,7 @@ export function ChainsPage() {
                   <TableRow>
                     <TableHeader>Node</TableHeader>
                     <TableHeader>Chains</TableHeader>
-                    <TableHeader>Active chain</TableHeader>
+                    <TableHeader>Runtime-active chain</TableHeader>
                     <TableHeader>Plugins</TableHeader>
                     <TableHeader>Status</TableHeader>
                     <TableHeader className="chains-page__table-cell--actions">Action</TableHeader>
@@ -334,7 +343,7 @@ export function ChainsPage() {
                         <div className="chains-page__row-secondary">{row.node.nodeId}</div>
                       </TableCell>
                       <TableCell>{row.chainCount}</TableCell>
-                      <TableCell>{row.activeName ?? 'None selected'}</TableCell>
+                      <TableCell>{row.activeName ?? 'None runtime-active'}</TableCell>
                       <TableCell>{row.totalPlugins}</TableCell>
                       <TableCell>
                         <Tag type={statusTagType(row.statusCode)}>{row.statusCode === 200 ? 'Online' : 'Unavailable'}</Tag>
@@ -372,8 +381,8 @@ export function ChainsPage() {
               <h1 className="chains-page__title">{remoteSelected ? `Chains - ${selectedNode?.hostname ?? viewedNodeId}` : 'Chains'}</h1>
               <p className="chains-page__subtitle">
                 {remoteSelected
-                  ? `Curate and activate processing chains on ${selectedNode?.hostname ?? viewedNodeId}.`
-                  : 'Curate and activate processing chains for this node.'}
+                  ? `Inspect and runtime-switch processing chains on ${selectedNode?.hostname ?? viewedNodeId}.`
+                  : 'Inspect and runtime-switch processing chains for this node.'}
               </p>
             </div>
           </div>
@@ -399,11 +408,19 @@ export function ChainsPage() {
             <strong className="chains-page__scope-title">{remoteSelected ? selectedNode?.hostname ?? viewedNodeId : 'Local node'}</strong>
             <p className="chains-page__scope-copy">
               {remoteSelected
-                ? `Chain actions are proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
-                : 'This page edits the local node. Select all nodes for comparison, or switch to a peer node to manage remote chain inventory.'}
+                ? `Runtime chain actions are proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
+                : 'This page edits local runtime chain inventory. Select all nodes for comparison, or switch to a peer node to manage remote runtime chain inventory.'}
             </p>
           </div>
         ) : null}
+
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Runtime-only chain controls"
+          subtitle={RUNTIME_CHAIN_CONTROL_NOTICE}
+        />
       </Layer>
 
       <div className="chains-page__metrics-grid">
@@ -413,9 +430,9 @@ export function ChainsPage() {
           helper={chainsQuery.isFetching ? 'Refreshing' : 'Inventory'}
         />
         <ChainsMetricCard
-          label="Active chain"
-          value={activeChain?.name ?? 'None selected'}
-          helper={activeChain ? 'Live' : 'Select one'}
+          label="Runtime-active chain"
+          value={activeChain?.name ?? 'None runtime-active'}
+          helper={activeChain ? 'Runtime only' : 'Direct switch'}
           tone={activeChain ? 'green' : 'warm-gray'}
         />
         <ChainsMetricCard label="Plugins across chains" value={totalPlugins} helper="Footprint" />
@@ -425,7 +442,7 @@ export function ChainsPage() {
         <div className="chains-page__panel-header">
           <div>
             <h2 className="chains-page__panel-title">All chains</h2>
-            <p className="chains-page__panel-subtitle">Search, activate, deploy, and manage chain inventory.</p>
+            <p className="chains-page__panel-subtitle">Search, deploy, and manage runtime chain inventory.</p>
           </div>
           <Search
             id="chains-search"
@@ -616,10 +633,10 @@ function ChainRow({
           {chain.is_active ? (
             <span className="chains-page__tag-with-icon">
               <CheckmarkFilled size={14} aria-hidden="true" />
-              Active
+              Runtime active
             </span>
           ) : (
-            'Idle'
+            'Runtime standby'
           )}
         </Tag>
       </TableCell>
@@ -633,9 +650,9 @@ function ChainRow({
           disabled={disableActions}
         >
           {!chain.is_active ? (
-            <OverflowMenuItem itemText="Activate" onClick={onActivate} disabled={disableActions} />
+            <OverflowMenuItem itemText="Set runtime active" onClick={onActivate} disabled={disableActions} />
           ) : (
-            <OverflowMenuItem itemText="Deactivate" onClick={onDeactivate} disabled={disableActions} />
+            <OverflowMenuItem itemText="Stop runtime chain" onClick={onDeactivate} disabled={disableActions} />
           )}
           {canDeploy && onDeploy ? (
             <OverflowMenuItem itemText="Deploy" onClick={onDeploy} disabled={disableActions} />

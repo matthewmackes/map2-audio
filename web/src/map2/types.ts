@@ -2312,6 +2312,21 @@ export interface DesiredAudioStateEnvelope {
   value: CompiledSnapshotIntent;
 }
 
+export interface SubmitDesiredAudioStateRequest {
+  requested_by?: string;
+  leader_epoch: number;
+  state_version: number;
+  committed_at: string;
+  origin_node_id: string;
+  source_snapshot?: AudioStateSnapshotRef | null;
+  desired: CompiledSnapshotIntent;
+  observed_summary?: AudioStateObservedIOSummary;
+  cluster?: AudioStateClusterStatus;
+  engine?: AudioStateEngineSummary;
+  paths?: AudioStatePathRecord[];
+  derived?: AudioStateDerivedStatus;
+}
+
 export interface AudioStateObservation {
   node_id: string;
   observed_state_version: number;

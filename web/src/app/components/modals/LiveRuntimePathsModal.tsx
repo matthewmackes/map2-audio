@@ -102,9 +102,9 @@ export function LiveRuntimePathsModal({
     ? (
       selectionEnabled
         ? 'Select one live path, then use Kill Live Path to deactivate its runtime chain.'
-        : 'Read-only live path inventory sourced from backend runtime truth. Each live path maps to a runtime chain while active.'
+        : 'Read-only live path inventory sourced from committed control-plane state. Each path reflects the authority-backed runtime view while active.'
     )
-    : 'No live or degraded paths are currently reported by the backend runtime.'
+    : 'No live or degraded paths are currently committed by the audio control plane.'
 
   const handleKillLivePath = () => {
     if (!selectedProjection || !onKillLivePath) {
@@ -142,7 +142,7 @@ export function LiveRuntimePathsModal({
       size="lg"
       passiveModal
       hasScrollingContent
-      modalLabel="Backend truth"
+      modalLabel="Control-plane truth"
       modalHeading="Live paths"
       onRequestClose={onClose}
     >
@@ -175,11 +175,11 @@ export function LiveRuntimePathsModal({
           <div className="live-runtime-paths-modal__mismatch">
             <div className="live-runtime-paths-modal__mismatch-copy">
               <p className="live-runtime-paths-modal__kicker">Workspace mismatch</p>
-              <h3>Local workspace and backend live truth diverge</h3>
+              <h3>Local workspace and control-plane live truth diverge</h3>
               <p>
                 {overflow
-                  ? 'Backend live truth currently exceeds the local path capacity. Update Live remains available, but Revert Workspace is disabled until the live path count drops.'
-                  : 'Update Live pushes the local path set into the platform. Revert Workspace rebuilds the local path assignments from the current backend live truth.'}
+                  ? 'Committed live truth currently exceeds the local path capacity. Update Live remains available, but Revert Workspace is disabled until the live path count drops.'
+                  : 'Update Live pushes the local path set into the platform. Revert Workspace rebuilds the local path assignments from the current control-plane path set.'}
               </p>
             </div>
             <div className="live-runtime-paths-modal__actions">
@@ -211,7 +211,7 @@ export function LiveRuntimePathsModal({
 
         {projections.length === 0 ? (
           <div className="live-runtime-paths-modal__empty">
-            <p>No backend-live paths currently reported.</p>
+            <p>No control-plane live paths currently reported.</p>
           </div>
         ) : summaryOnly ? (
           <div

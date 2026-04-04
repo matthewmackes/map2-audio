@@ -8,12 +8,17 @@ import type {
   AudioStateRouteStatus,
   AuthoritativeAudioStateEnvelope,
   DesiredAudioStateEnvelope,
+  SubmitDesiredAudioStateRequest,
 } from '../types'
 
 export const audioStateApi = {
   getStatus: () => fetchJson<AudioStateRouteStatus>(`${API_BASE}/audio/state/status`),
   getCommitted: () => fetchJson<AuthoritativeAudioStateEnvelope>(`${API_BASE}/audio/state/committed`),
   getDesired: () => fetchJson<DesiredAudioStateEnvelope>(`${API_BASE}/audio/state/desired`),
+  putDesired: (request: SubmitDesiredAudioStateRequest) => fetchJson<AuthoritativeAudioStateEnvelope>(`${API_BASE}/audio/state/desired`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+  }),
   getObserved: (stateVersion?: number) => fetchJson<AudioStateObservationListResponse>(
     `${API_BASE}/audio/state/observed${typeof stateVersion === 'number' ? `?state_version=${encodeURIComponent(String(stateVersion))}` : ''}`,
   ),

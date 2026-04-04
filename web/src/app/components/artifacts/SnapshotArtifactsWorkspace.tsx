@@ -37,7 +37,6 @@ import { useRouteActive } from '../../hooks/useRouteActive'
 import {
   useClusterSnapshotRuntimeLiveState,
   useSnapshotActivationEvents,
-  useSnapshotRuntimeLiveState,
 } from '../../hooks/useSnapshotRuntimeState'
 import { ApiError } from '../../../map2/http'
 import { invalidateAuthorityAwareLiveSnapshot } from '../../pages/snapshotLiveState'
@@ -253,9 +252,6 @@ export function SnapshotArtifactsWorkspace({
     retry: false,
     refetchInterval: snapshotCadence,
   })
-  const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
-    refetchInterval: snapshotCadence,
-  })
   const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({
     enabled: isClusterMode,
     refetchInterval: deploymentCadence,
@@ -282,7 +278,6 @@ export function SnapshotArtifactsWorkspace({
   })
 
   const snapshots = snapshotsQuery.data?.snapshots ?? []
-  const runtimeState = runtimeStateQuery.data
   const committedAudioState = committedAudioStateQuery.data?.value ?? null
   const controlPlaneSnapshot = resolveControlPlaneSnapshot({
     committedAudioState,
@@ -291,7 +286,6 @@ export function SnapshotArtifactsWorkspace({
   const selectedId = selectedSnapshotId ?? resolveControlPlaneSnapshotId({
     controlPlaneSnapshot,
     authoritySnapshotId,
-    runtimeLiveState: runtimeState ?? null,
   }) ?? snapshots[0]?.id ?? null
 
   const selectedSnapshotQuery = useQuery({

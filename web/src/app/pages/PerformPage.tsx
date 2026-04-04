@@ -49,6 +49,7 @@ const C = {
 const API = import.meta.env.VITE_API_BASE as string || '/api'
 const STAGE_ORDER_KEY = 'map2.perform.stage_order.v1'
 const STAGE_COLOR_KEY = 'map2.perform.accent_colors.v1'
+const STAGE_RUNTIME_NOTICE = 'Runtime-only chain switching. Snapshot control-plane state lives in Audio Grid.'
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, { cache: 'no-store', ...init })
@@ -1286,7 +1287,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
           Stage Mode
         </span>
         <span style={{ fontFamily: C.sans, fontSize: 13, fontWeight: 500, color: C.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {activeChain?.name ?? '—'}
+          Runtime chain: {activeChain?.name ?? '—'}
           {activatingId != null && <span style={{ color: C.muted, marginLeft: 8, fontSize: 11 }}>switching…</span>}
         </span>
         <button
@@ -1302,6 +1303,20 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         >
           EXIT (F11)
         </button>
+      </div>
+
+      <div style={{
+        padding: '6px 16px',
+        borderBottom: `1px solid ${C.border}`,
+        background: C.surface2,
+        color: C.muted,
+        fontFamily: C.mono,
+        fontSize: 10,
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
+        flexShrink: 0,
+      }}>
+        {STAGE_RUNTIME_NOTICE}
       </div>
 
       {/* ── Main content ──────────────────────────────────────────────── */}

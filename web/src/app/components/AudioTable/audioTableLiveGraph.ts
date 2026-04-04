@@ -200,8 +200,8 @@ export function buildAudioTableLiveGraphModel(args: {
       degradedPathCount: 0,
       syntheticPathCount: 0,
       routingTruthLabel: 'Workspace only',
-      routingCaption: 'No backend-live paths are currently reported by the runtime.',
-      emptyCopy: 'No backend-live paths are currently reported by the runtime.',
+      routingCaption: 'No control-plane live paths are currently committed.',
+      emptyCopy: 'No control-plane live paths are currently committed.',
     }
   }
 
@@ -373,6 +373,6 @@ export function buildAudioTableLiveGraphModel(args: {
     syntheticPathCount,
     routingTruthLabel: 'Workspace only',
     routingCaption: 'Final routing/merge state is shown as workspace-derived because the runtime does not expose authoritative routing truth here.',
-    emptyCopy: 'No backend-live paths are currently reported by the runtime.',
+    emptyCopy: 'No control-plane live paths are currently committed.',
   }
 }

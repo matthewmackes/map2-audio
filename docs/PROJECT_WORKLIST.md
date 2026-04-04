@@ -6,7 +6,213 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 13:42 EDT - Closed T694 after removing the last active `Snapshot.is_active` read/write behavior from snapshot-service live paths and making snapshot summaries/details runtime-aware for live activation metadata and tempo state. No unblocked epics remain open in the canonical worklist.
+Last updated: 2026-04-03 21:11 EDT - Validated T695 through T700 and left T701 as the remaining unblocked hard-cut epic after the authority-only live-path read/write cleanup.
+
+ID: T697
+Status: [✓] Done
+Title: Audit GUI for remaining live-state source-of-truth violations after the live-path modal fix
+Description:
+- Goal / acceptance criteria: Review the frontend for other operator-facing places where live snapshot/path/channel status can still be inferred from legacy chain activity, runtime residue, or direct chain APIs instead of committed authority state. Produce a concrete findings list with file references and severity so follow-up remediation can be prioritized without missing any remaining contradictory live-status surfaces.
+- Why it matters: T695 corrected one visible contradiction, but channel control remains the highest-priority safety concern. The GUI still needs a targeted audit so no other surface can claim live audio when the control plane says nothing is loaded.
+- Dependencies: T695
+- Estimated effort: Medium
+- Required outputs: focused frontend audit notes, file-level findings, any new follow-up tasks captured in this worklist, and validation/search evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 15:46 EDT - Codex
+- Completion notes:
+  - Audited the GUI for remaining operator-facing reads and writes that still use legacy `chain.is_active`, `runtime_sync`, `runtimeLiveState`, or direct `chainsApi.activate/deactivate` instead of committed authority state.
+  - Confirmed one already-known high-severity write seam remains in the primary live-path controls (`SnapshotEditorPageContent.tsx` and `AudioTablePage.tsx`), which stays tracked under T696.
+  - Identified a second high-severity cluster in operator-facing chain control surfaces (`PerformPage.tsx`, `ChainsPage.tsx`, and `ChainManagementCard.tsx`) that still derive active state and direct power controls from runtime chain activity rather than the authority model.
+  - Identified a medium-severity residual read seam where snapshot-facing helpers and badges still fall back to runtime snapshot residue (`resolveControlPlaneSnapshotId`, `resolvePreferredLiveRuntimeDisplayState`, `SnapshotArtifactsWorkspace.tsx`, and a channel-activity fallback in `SnapshotChainManagementCard.tsx`).
+  - Opened T698 and T699 to track those newly confirmed follow-up remediation areas explicitly.
+
+ID: T698
+Status: [✓] Done
+Title: Move legacy chain-control surfaces onto authority-safe live control semantics
+Description:
+- Goal / acceptance criteria: Remove or explicitly quarantine the remaining operator-facing chain control surfaces that still present `chain.is_active` as live truth and call `chainsApi.activate(...)` / `chainsApi.deactivate(...)` directly in generic control UIs. At minimum, `PerformPage.tsx`, `ChainsPage.tsx`, and `ChainManagementCard.tsx` must stop presenting those runtime chain toggles as the platform's authoritative live status. Replace them with authority-safe commands, or relabel them as scoped runtime-only/emergency controls with clear separation from control-plane state.
+- Why it matters: These pages are still capable of asserting or mutating live audio outside the committed authority model, which means the modal fix is not enough by itself. Control of audio channels is safety-critical and cannot depend on stale runtime chain flags in operator surfaces.
+- Dependencies: T695, T697
+- Estimated effort: Medium
+- Required outputs: ownership decision for each surface (authority control vs explicit runtime-only utility), implementation updates, copy/UX clarification, and focused regression coverage.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 17:32 EDT - Codex
+- Completion notes:
+  - Confirmed there is no authority-native chain activation command in the current frontend/client surface, so this slice took the allowed quarantine path instead of inventing a false authority adapter.
+  - Updated `web/src/app/pages/ChainsPage.tsx` so operator copy, metrics, table headers, status tags, overflow actions, and toast text now describe these controls as runtime-only chain switching rather than authoritative live/control-plane state.
+  - Added an explicit runtime-only warning banner to `web/src/app/pages/ChainsPage.tsx` so the page now tells operators that control-plane snapshot truth lives in Audio Grid.
+  - Updated `web/src/app/pages/PerformPage.tsx` so Stage Mode now labels its current selection as a runtime chain and shows an explicit runtime-only control-plane warning strip.
+  - Updated `web/src/app/components/ChainManagementCard.tsx` so the compact chain grid now presents itself as `Runtime Chains`, carries a runtime-only note, and relabels direct power actions/status affordances accordingly.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T699
+Status: [✓] Done
+Title: Remove residual runtime snapshot fallback from shared authority selectors and channel badges
+Description:
+- Goal / acceptance criteria: Eliminate the remaining snapshot/UI read paths that still fall back to legacy runtime snapshot residue when authority is empty or non-matching. Tighten `snapshotAuthorityState.ts`, `SnapshotArtifactsWorkspace.tsx`, and `SnapshotChainManagementCard.tsx` so control-plane snapshot selection, live-state affordances, and channel activity badges resolve from committed authority or explicit saved-state semantics only.
+- Why it matters: Even after T695, a stale runtime payload can still auto-select a snapshot or mark channels/live-state affordances as active in some snapshot surfaces. That leaves room for quieter contradictions even when the control plane says nothing is loaded.
+- Dependencies: T695, T697
+- Estimated effort: Medium
+- Required outputs: stricter helper contracts, updated consumers/tests, and a no-authority regression that proves runtime residue no longer drives live snapshot/channel labeling.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 17:32 EDT - Codex
+- Completion notes:
+  - Tightened `web/src/app/pages/snapshotAuthorityState.ts` so shared live-state selectors no longer fall back to legacy runtime websocket residue when authority is absent: control-plane snapshot id now resolves from committed authority only, and preferred live display helpers now return authority-only data.
+  - Updated `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` so snapshot selection no longer issues or depends on the local runtime live-state query just to infer a control-plane snapshot id when authority is empty.
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx` so channel-activity badges now resolve from committed authority when present, and otherwise degrade to explicit saved-state semantics (`N channels saved`) instead of interpreting stale runtime payloads or offline websocket residue as live channel truth.
+  - Added focused regressions in `web/src/app/pages/snapshotAuthorityState.test.ts` and `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` to lock the no-authority case and prove runtime residue no longer drives snapshot/channel labeling.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/pages/snapshotAuthorityState.test.ts src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T700
+Status: [✓] Done
+Title: Restore Snapshot Editor hero metadata when authority is absent but an editor snapshot context still exists
+Description:
+- Goal / acceptance criteria: Fix the regression where the Snapshot Editor hero loses stored metadata such as the top-right BPM readout after the authority-selector tightening, even though the editor still has an explicitly loaded snapshot context. Preserve authority-safe live semantics, but keep the editor’s selected snapshot detail available for non-live metadata rendering and edit actions when control-plane authority is temporarily absent.
+- Why it matters: T699 intentionally removed runtime residue as live/control-plane truth, but the editor hero should not blank out stored snapshot metadata just because authority is empty. Losing the BPM readout and related snapshot detail makes the editor feel broken and obscures the currently loaded draft context.
+- Dependencies: T699
+- Estimated effort: Low
+- Required outputs: page-state fix, focused regression coverage for the no-authority editor-context case, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 17:43 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` to retain an explicit editor snapshot context across hydrate/cache-sync paths, so the Snapshot Editor hero keeps stored metadata like BPM visible even when control-plane authority temporarily drops to no active snapshot.
+  - Extended `web/src/app/pages/snapshotAuthorityState.ts` so editor snapshot resolution can fall back to persisted editor context only after authority-backed control-plane selection and explicit editor override have both been considered, preserving the authority-safe precedence rules introduced in T699.
+  - Added focused regressions in `web/src/app/pages/snapshotAuthorityState.test.ts` covering the no-authority persisted-editor case and confirming control-plane authority still outranks stored editor context.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/pages/snapshotAuthorityState.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T701
+Status: [ ] Todo
+Title: Hard-cut Audio Table into `/platforms` workspaces with React Flow-first operator surfaces
+Description:
+- Goal / acceptance criteria: Hard-cut the standalone `/audio-table` route and move its surviving concepts into the correct `/platforms/*` workspace areas. The resulting flagship operator experience should pair a read-only JUCE current-state React Flow view with separate cluster/connectivity React Flow layers across adopted nodes (audio, management, AVB, cluster, network discovery, and related transport/control links, explicitly excluding MIDI from this interface), then back those views with advanced direct-edit tables appropriate to each workspace topic. The page layout should match the `/platforms` design pattern one-for-one, including the left-hand navigation and shared subpage chrome. Every operational/data `/platforms` submenu should receive its own React Flow canvas designed specifically for that dataset and view, except `/platforms/overview`, which should remain a supervisory landing surface with no flow canvas. Every React Flow-backed workspace should preserve the same graph-on-top, table-on-bottom composition. This first hard-cut implementation applies to all operational/data workspaces, not a phased subset. JUCE controls should live under `/platforms/audio-engine`. Utility workspaces such as `about`, `theme`, `host-machine`, and `workspace-catalog` should move to the bottom of the `/platforms` navigation and use Carbon green navigation buttons. After the hard cut, `/platforms/overview` should remain the default landing destination. Day one is expected to ship full direct-edit coverage for the in-scope entities rather than a reduced MVP subset, the page must serve performers, audio engineers, and cluster administrators together in one universal layout with no mode switching, and the overall shell should stay near-pure Carbon enterprise console. Table behavior should follow Carbon Data Table standards: scan-first presentation, toolbar-driven global actions, and progressive disclosure for denser row-level editing rather than always-on spreadsheet-style hot cells everywhere. Deep row editing should use expandable rows as the primary pattern rather than side inspectors. The page is desktop-only. The layout should make React Flow the hero: roughly 70% of the viewable page should be dedicated to the graph views, with the tables positioned underneath them rather than competing laterally as the primary surface. Demo-critical graph behavior must include visible traffic pulses that indicate activity volume through the topology rather than showing only static connectivity, plus diagnostic depth for MAP2 latency-pressure measurements, AVB audio-connection metrics, Biamp Tesira connectivity information, and network discovery data such as ping times and traceroute detail from the selected host perspective. All adopted MAP2 hosts must be available as the source for network discovery views, but that workspace should rely on telemetry already collected through node health, heartbeat, and related backend signals rather than launching new UI-triggered probes. Graph interactions should jump or anchor the operator to the relevant table section below, while dedicated dialogs remain available for deeper diagnostic drill-down. Every represented physical object must also expose a direct link into the correct `/platforms/*` page with the correct node context preloaded; Biamp Tesira-linked objects should route through `/platforms/avb-routing`, and that destination must use the Tesira interface/API to populate per-node detail. Reuse or interconnect with existing `/platforms` page information whenever possible instead of inventing duplicate data surfaces. Remove other platform-facing references to `audio-table`; this is a hard cut, not a coexistence phase, and the `/audio-table` route should be removed without a legacy redirect. Delete the old `AudioTable` component files and tests as part of the same hard-cut workstream rather than parking them as temporary legacy code. For the React Flow canvases themselves, use current best-in-class 2025-2026 React Flow visual patterns per dataset even when some canvas-level styling departs from strict Carbon compliance.
+- Why it matters: The current Audio Table route and references now conflict with the desired information architecture. The user wants the React Flow-first operator model absorbed into `/platforms` as the canonical shell, which means the migration must be intentional and complete rather than leaving duplicate navigation, duplicate concepts, or legacy route ownership behind.
+- Dependencies: T686, T696, current audio-state/observations APIs, cluster topology data, AVB runtime data, and user interview decisions on scope and permissions
+- Estimated effort: High
+- Required outputs: interview summary, source-of-truth decision record, flagship layout/design brief, staged implementation plan, and follow-on implementation tasks for the `/platforms` hard-cut migration. Interview decisions so far: use the platform source-of-truth system as the canonical operator-facing model for graph data, keep the JUCE-state React Flow canvas read-only while allowing selection-driven inspector edits, present the cluster/connectivity view as separate canvases or tabs per layer instead of one unified graph, exclude MIDI from this interface, target full day-one direct-edit coverage instead of a reduced feature subset, design for all core operator personas in one universal layout rather than mode switching, keep the overall shell near-pure Carbon enterprise console, match the `/platforms` shell pattern including left navigation, make every operational/data `/platforms` submenu a separate React Flow-backed subpage except `/platforms/overview`, include all operational/data workspaces in the first hard cut, place JUCE controls under `/platforms/audio-engine`, move `about`, `theme`, `host-machine`, and `workspace-catalog` to the bottom of `/platforms` navigation with Carbon green buttons, keep `/platforms/overview` as the default landing destination and a no-flow supervisory surface, follow Carbon Data Table standards with scan-first rows and progressive disclosure for dense editing, use expandable rows for deep row editing, make React Flow the dominant visual surface with the tables underneath, show traffic pulses that communicate live activity volume through the graphs, provide latency-pressure, AVB, Biamp Tesira, cluster, and network-discovery diagnostic depth, source network-discovery views from existing node-health and heartbeat telemetry rather than UI-triggered probes, use graph interactions to jump to the relevant table section below, keep dedicated dialogs for deeper drill-down, give every represented physical object a direct link to the correct node-scoped `/platforms/*` page, route Tesira-linked objects through `/platforms/avb-routing` with Tesira API-backed node detail, allow all adopted MAP2 hosts as network-discovery sources, interconnect with existing `/platforms` data where possible, keep the flagship surface desktop-only, remove platform-facing `audio-table` references as part of the hard cut, remove the `/audio-table` route with no legacy redirect, delete the old `AudioTable` code and tests in the same workstream, and allow best-in-class React Flow canvas visuals even when they are not strictly Carbon compliant.
+Subtasks:
+  - ID: T701-subA
+    Status: [ ] Todo
+    Title: Rework `/platforms` shell navigation ordering, coloring, and landing behavior for the hard cut
+    Description:
+    - Goal / acceptance criteria: Make `/platforms/overview` the default landing route after the hard cut, move `about`, `theme`, `host-machine`, and `workspace-catalog` to the bottom of the `/platforms` navigation, and restyle those utility entries with Carbon green buttons while removing platform-facing `audio-table` navigation and route references.
+    - Why it matters: The shell and navigation are part of the product decision, not a cosmetic afterthought, and the hard cut fails if stale route affordances survive.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: platform nav/data updates, route/default updates, removal of `audio-table` entry points, focused navigation coverage.
+  - ID: T701-subB
+    Status: [ ] Todo
+    Title: Build `/platforms/audio-engine` as the JUCE current-state React Flow workspace
+    Description:
+    - Goal / acceptance criteria: Move JUCE current-state and control surfaces under `/platforms/audio-engine` with a read-only authority-backed React Flow canvas at the top, traffic pulses, graph-to-table anchoring, expandable Carbon rows, and JUCE controls below the canvas.
+    - Why it matters: JUCE state is the primary surviving descendant of the old Audio Table concept and anchors the runtime/operator workflow.
+    - Dependencies: T696
+    - Estimated effort: High
+    - Required outputs: audio-engine workspace refactor, authority-backed JUCE flow model, expandable-row table, diagnostic dialogs, tests.
+  - ID: T701-subC
+    Status: [ ] Todo
+    Title: Build `/platforms/avb-routing` React Flow workspace with Tesira-aware node detail
+    Description:
+    - Goal / acceptance criteria: Add an AVB-focused React Flow canvas and bottom table to `/platforms/avb-routing`, route Tesira-linked objects there with correct node context, and populate per-node detail from the Tesira interface/API in addition to generic AVB data.
+    - Why it matters: AVB and Tesira are explicit centerpiece requirements and the main deep-link target for physical transport objects.
+    - Dependencies: Existing AVB/Tesira clients and routes
+    - Estimated effort: High
+    - Required outputs: AVB flow canvas, Tesira-aware detail binding, deep-link handling, diagnostics, tests.
+  - ID: T701-subD
+    Status: [ ] Todo
+    Title: Build `/platforms/cluster-dashboard` React Flow workspace for cluster topology and activity
+    Description:
+    - Goal / acceptance criteria: Replace the current cluster dashboard’s passive topology treatment with a React Flow-first cluster workspace that shows node relationships, activity pulses, and a Carbon-standard table below, while preserving node-scoped platform links.
+    - Why it matters: The cluster view is one of the major new operator canvases requested by the user.
+    - Dependencies: Existing node topology and cluster data hooks
+    - Estimated effort: High
+    - Required outputs: cluster flow canvas, table integration, node links, tests.
+  - ID: T701-subE
+    Status: [ ] Todo
+    Title: Build management and network-discovery React Flow workspaces from existing telemetry
+    Description:
+    - Goal / acceptance criteria: Provide management-focused and network-discovery workspaces using existing node-health, heartbeat, and related telemetry, with no UI-triggered probes, and keep the same graph-on-top/table-on-bottom pattern plus host-source selection across adopted nodes.
+    - Why it matters: Management and discovery are explicitly in scope for the shell-wide React Flow migration and need to fit the same operator model.
+    - Dependencies: Existing cluster/node telemetry routes
+    - Estimated effort: High
+    - Required outputs: management/discovery canvases, telemetry-backed tables, source-node handling, tests.
+  - ID: T701-subF
+    Status: [ ] Todo
+    Title: Wire node-correct `/platforms/*` deep links from all represented physical objects
+    Description:
+    - Goal / acceptance criteria: Ensure every physical object rendered in React Flow or tables exposes a deep link to the correct `/platforms/*` workspace with the appropriate node context preloaded.
+    - Why it matters: Cross-workspace continuity is a hard requirement and the graphs lose operational value without precise handoff links.
+    - Dependencies: T701-subB through T701-subE
+    - Estimated effort: Medium
+    - Required outputs: consistent link contract, node-context propagation, focused tests.
+  - ID: T701-subG
+    Status: [ ] Todo
+    Title: Remove legacy `AudioTable` route, components, tests, and platform references
+    Description:
+    - Goal / acceptance criteria: Delete the `/audio-table` route with no redirect, remove old AudioTable components/tests, and scrub remaining platform-facing references so the hard cut is complete.
+    - Why it matters: The user explicitly rejected legacy coexistence and temporary parking of old code.
+    - Dependencies: T701-subA through T701-subF
+    - Estimated effort: Medium
+    - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
+Assigned to: Codex
+Last updated: 2026-04-03 21:04 EDT - Codex
+
+ID: T695
+Status: [✓] Done
+Title: Reconcile live-path modal and editor surfaces against authority truth when no control-plane snapshot is loaded
+Description:
+- Goal / acceptance criteria: Stop operator-facing live-path surfaces from treating legacy `chain.is_active` / `runtime_sync` state as live truth when the committed authority object has no active `source_snapshot` and no committed paths. The Audio Grid live-path modal, mismatch indicators, and related editor/table live projections must read committed authority state first, render empty/non-live when authority says `no snapshot loaded`, and avoid presenting orphan runtime-chain residue as live backend truth. Add focused regressions that lock the no-snapshot-loaded case and the authority-backed path projection behavior.
+- Why it matters: The current modal can report degraded/live-only paths even while the snapshot control plane says no snapshot is loaded. That is an unsafe contradiction in the platform's most critical audio-control area and undermines the declared authority model where operator-visible live status must come from the committed audio-state object.
+- Dependencies: T692, T694
+- Estimated effort: Medium
+- Required outputs: shared authority-backed live-path projection/mismatch logic, frontend updates in the live-path modal consumers, focused Jest coverage, and validation evidence recorded here.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 14:49 EDT - Codex
+- Completion notes:
+  - Investigated the user-reported discrepancy and confirmed the current `LiveRuntimePathsModal` consumers in `AudioTablePage.tsx` and `SnapshotEditorPageContent.tsx` still derive backend live-path inventory from `chainsApi.list()` plus `chain.is_active` / `runtime_sync`, not from committed authority state.
+  - Added shared authority-backed projection helpers in `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts` so live-path inventory can be built from committed `AuthoritativeAudioState.paths` plus authoritative snapshot path metadata instead of legacy runtime-chain activation residue, and extended mismatch/revert helpers so runtime-chain IDs and snapshot-chain IDs both map cleanly during authority hydration.
+  - Updated `web/src/app/pages/AudioTablePage.tsx` and `web/src/app/pages/SnapshotEditorPageContent.tsx` so their live-path modal projections and mismatch alarms now resolve from committed authority state first and suppress operator-facing live-path truth entirely when no control-plane snapshot is loaded.
+  - Relabeled the modal and Audio Table live rail copy from generic backend wording to explicit control-plane truth wording in `web/src/app/components/modals/LiveRuntimePathsModal.tsx`, `web/src/app/components/AudioTable/audioTableLiveGraph.ts`, and `web/src/app/components/AudioTable/AudioTableLiveGraphRail.tsx`.
+  - Added focused regression coverage in `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts`, `web/src/app/components/modals/LiveRuntimePathsModal.test.tsx`, and `web/src/app/pages/AudioTablePage.test.tsx`, including the exact no-snapshot-loaded empty-modal case that originally contradicted the Snapshot Editor hero.
+- Validation:
+  - `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts web/src/app/components/modals/LiveRuntimePathsModal.test.tsx web/src/app/pages/AudioTablePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T696
+Status: [✓] Done
+Title: Remove remaining direct chain activation writes from primary live-path controls and route them through the authority model
+Description:
+- Goal / acceptance criteria: Eliminate the remaining primary-UI live-path write actions that still call `chainsApi.activate(...)` / `chainsApi.deactivate(...)` directly from `SnapshotEditorPageContent.tsx` and related live-path controls. Replace them with authority-aware control-plane commands or explicitly scoped emergency-stop flows whose operator state reconciles back into committed authority without creating read/write truth divergence.
+- Why it matters: T695 fixed the operator-facing read contradiction for the no-snapshot-loaded case, but the main editor still carries direct runtime chain activation/deactivation paths that can mutate live state outside the declared authority control plane. The platform needs one write authority as well as one read authority.
+- Dependencies: T695
+- Estimated effort: Medium
+- Required outputs: write-path inventory, selected authority-safe replacement or emergency-stop contract, frontend/backend implementation, and focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-03 18:31 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/utils/audioStateLivePaths.ts` so the frontend can derive authority-safe `PUT /api/audio/state/desired` payloads from the committed audio state plus control-plane snapshot path metadata, preserving path identity and optimistic committed-state reconciliation without falling back to direct runtime chain writes.
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` so the editor live-path sync, kill-live-path action, and selected-chain live toggle all submit desired-state authority updates instead of calling `chainsApi.activate(...)` / `chainsApi.deactivate(...)` directly, while optimistic caches now update both `['chains']` and `['audio-state', 'committed']`.
+  - Updated `web/src/app/pages/AudioTablePage.tsx` so the Audio Table live-path modal now uses the same authority desired-state submission path for update/kill actions, and refreshed `web/src/app/pages/AudioTablePage.test.tsx` to assert the authority write instead of a direct runtime deactivation call.
+  - Added focused regression coverage in `web/src/app/utils/audioStateLivePaths.test.ts` for path mapping, pending-apply seeding, and no-authority guardrails so the new shared authority builder is locked independently of the page shells.
+- Validation:
+  - `rg -n "chainsApi\\.(activate|deactivate)" web/src/app/pages/SnapshotEditorPageContent.tsx web/src/app/pages/AudioTablePage.tsx` -> no matches
+  - `npm --prefix web test -- --runInBand src/app/utils/audioStateLivePaths.test.ts src/app/pages/AudioTablePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T692
 Status: [✓] Done

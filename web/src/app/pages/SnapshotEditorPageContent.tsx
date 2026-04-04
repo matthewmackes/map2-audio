@@ -124,11 +124,12 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type { AuthoritativeAudioStateEnvelope, Chain, Plugin, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { canonicalizePluginUri } from '../utils/pluginUris'
+import { buildAuthorityLivePathSelectionUpdate } from '../utils/audioStateLivePaths'
 import {
   sortFavoriteSnapshotsForSetlist,
   sortSnapshotsByProgramNumber,
@@ -209,9 +210,10 @@ import {
 import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
   applyOptimisticJuceGridLiveChainSet,
-  buildJuceGridLiveChainProjection,
+  buildAuthoritativeJuceGridLiveChainProjection,
   buildJuceGridRevertedStateFromLiveProjection,
   getJuceGridDesiredLiveChainIds,
+  hasCommittedAuthorityLivePaths,
   hasJuceGridLiveChainMismatch,
 } from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
@@ -1080,6 +1082,7 @@ export function SnapshotEditorPage() {
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
   const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
+  const [editorSnapshotContext, setEditorSnapshotContext] = useState<SnapshotDetail | null>(null)
   const [pendingGoLiveSnapshotId, setPendingGoLiveSnapshotId] = useState<number | null>(null)
   const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
   const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
@@ -1419,8 +1422,9 @@ export function SnapshotEditorPage() {
     () => resolveEditorActiveSnapshot({
       editorSnapshotOverride,
       controlPlaneSnapshot,
+      persistedEditorSnapshot: editorSnapshotContext,
     }),
-    [controlPlaneSnapshot, editorSnapshotOverride],
+    [controlPlaneSnapshot, editorSnapshotContext, editorSnapshotOverride],
   )
   const setControlPlaneSnapshotCaches = useCallback((snapshot: SnapshotDetail) => {
     setAuthorityAwareLiveSnapshot(queryClient, snapshot, authoritySnapshotId)
@@ -1429,7 +1433,7 @@ export function SnapshotEditorPage() {
   const invalidateControlPlaneSnapshotCaches = useCallback((options?: { includeDesired?: boolean }) => {
     invalidateAuthorityAwareLiveSnapshot(queryClient, options)
   }, [queryClient])
-  const currentEditorSnapshotId = editorSnapshotOverride?.id ?? controlPlaneSnapshot?.id ?? authoritySnapshotId ?? null
+  const currentEditorSnapshotId = activeSnapshot?.id ?? authoritySnapshotId ?? null
   const snapshotRevisionsQuery = useQuery({
     queryKey: ['snapshots', 'revisions', currentEditorSnapshotId],
     queryFn: () => snapshotsApi.listRevisions(currentEditorSnapshotId!),
@@ -1906,14 +1910,27 @@ export function SnapshotEditorPage() {
     [activeSnapshot, chainsQuery.data],
   )
   const effectiveChains = effectiveChainsResponse.chains
+  const controlPlaneChains = useMemo(
+    () => (
+      controlPlaneSnapshot
+        ? buildEffectiveLiveSnapshotChains(controlPlaneSnapshot, chainsQuery.data).chains
+        : (chainsQuery.data?.chains ?? [])
+    ),
+    [controlPlaneSnapshot, chainsQuery.data],
+  )
   const effectiveChainById = useMemo(
     () => new Map(effectiveChains.map((chain) => [chain.id, chain] as const)),
     [effectiveChains],
   )
   const presets = presetsQuery.data?.presets || []
   const liveChainProjection = useMemo(
-    () => buildJuceGridLiveChainProjection(effectiveChains, flowSlots),
-    [effectiveChains, flowSlots],
+    () => buildAuthoritativeJuceGridLiveChainProjection({
+      chains: controlPlaneChains,
+      flowSlots,
+      authoritativeAudioState: committedAudioState,
+      authoritySnapshotPaths: controlPlaneSnapshot?.paths ?? null,
+    }),
+    [committedAudioState, controlPlaneChains, controlPlaneSnapshot?.paths, flowSlots],
   )
   const pruneLiveSnapshotCache = useCallback((chainIds: readonly number[]) => {
     if (chainIds.length === 0) {
@@ -1931,9 +1948,24 @@ export function SnapshotEditorPage() {
     () => getJuceGridDesiredLiveChainIds(flowSlots),
     [flowSlots],
   )
+  const authorityLiveChainIds = useMemo(
+    () => liveChainProjection.map((projection) => projection.chainId),
+    [liveChainProjection],
+  )
+  const authorityLiveChainIdSet = useMemo(
+    () => new Set(
+      liveChainProjection.flatMap((projection) => [
+        projection.chainId,
+        projection.runtimeChainId,
+        projection.snapshotChainId,
+      ].filter((value): value is number => typeof value === 'number' && Number.isFinite(value))),
+    ),
+    [liveChainProjection],
+  )
   const liveChainMismatch = useMemo(
-    () => hasJuceGridLiveChainMismatch(liveChainProjection, flowSlots),
-    [flowSlots, liveChainProjection],
+    () => hasCommittedAuthorityLivePaths(committedAudioState)
+      && hasJuceGridLiveChainMismatch(liveChainProjection, flowSlots),
+    [committedAudioState, flowSlots, liveChainProjection],
   )
   const liveChainProjectionOverflow = liveChainProjection.length > MAX_FLOWS
   const showLiveChainSummaryOnly = isCompactLayout || isTabletTouchLayout
@@ -2628,6 +2660,12 @@ export function SnapshotEditorPage() {
     if (authoritySnapshotId === snapshot.id) {
       queryClient.setQueryData(['snapshots', 'detail', 'authority-active', authoritySnapshotId], snapshot)
     }
+    setEditorSnapshotContext((current) => {
+      if (current?.id === snapshot.id || controlPlaneSnapshot?.id === snapshot.id || editorSnapshotOverride?.id === snapshot.id) {
+        return snapshot
+      }
+      return current
+    })
     if (controlPlaneSnapshot?.id === snapshot.id) {
       setControlPlaneSnapshotCaches(snapshot)
       setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? null : current))
@@ -2635,7 +2673,7 @@ export function SnapshotEditorPage() {
     }
 
     setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? snapshot : current))
-  }, [authoritySnapshotId, controlPlaneSnapshot?.id, queryClient, setControlPlaneSnapshotCaches])
+  }, [authoritySnapshotId, controlPlaneSnapshot?.id, editorSnapshotOverride?.id, queryClient, setControlPlaneSnapshotCaches])
 
   const hydrateEditorFromSnapshot = useCallback((
     detail: SnapshotDetail,
@@ -2647,6 +2685,7 @@ export function SnapshotEditorPage() {
       resetUndoHistory?: boolean
     },
   ) => {
+    setEditorSnapshotContext(detail)
     const hydration = buildSnapshotEditorLiveSnapshotHydration(
       detail,
       queryClient.getQueryData<ChainsResponse>(['chains']),
@@ -2776,6 +2815,7 @@ export function SnapshotEditorPage() {
     if (!activeFlow) return null
     return activeFlow.chainId !== null ? effectiveChainById.get(activeFlow.chainId) ?? null : null
   }, [activeFlow, effectiveChainById])
+  const currentChainAuthorityActive = currentChain ? authorityLiveChainIdSet.has(currentChain.id) : false
   const blockFocusPlugins = currentChain?.plugins ?? []
   const maxBlockFocusStartNote = Math.max(0, 127 - Math.max(0, blockFocusPlugins.length - 1))
   const blockFocusStartNote = Math.max(0, Math.min(127, Math.trunc(blockFocusStartNoteDraft)))
@@ -3785,7 +3825,19 @@ export function SnapshotEditorPage() {
 
   type ChainActivationMutationContext = {
     previousChains?: ChainsResponse
+    previousCommittedAudioState?: AuthoritativeAudioStateEnvelope
     previousAuthorityActiveSnapshot?: SnapshotDetail | null
+  }
+
+  type AuthorityLiveChainMutationVariables = {
+    nextActiveChainIds: number[]
+    nextCommittedState: AuthoritativeAudioStateEnvelope['value']
+    request: ReturnType<typeof buildAuthorityLivePathSelectionUpdate>['request']
+    pruneChainIds: number[]
+    successMessage: string
+    successKind: 'success' | 'info'
+    errorMessage: string
+    markDirty?: boolean
   }
 
   const deleteMutation = useMutation({
@@ -3839,7 +3891,7 @@ export function SnapshotEditorPage() {
       }
       pushToast('Plugin removed', 'success')
     },
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
@@ -3912,7 +3964,7 @@ export function SnapshotEditorPage() {
       }
       pushToast('Plugin added', 'success')
     },
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
@@ -3930,179 +3982,50 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const activateMutation = useMutation({
-    mutationFn: (chainId: number) => chainsApi.activate(chainId),
-    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
+  const updateAuthorityLiveChainsMutation = useMutation({
+    mutationFn: (variables: AuthorityLiveChainMutationVariables) => audioStateApi.putDesired(variables.request),
+    onMutate: async (variables): Promise<ChainActivationMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active)
-          .map((chain) => chain.id),
-      )
-      nextActiveChainIds.add(chainId)
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
-      ))
-      return { previousChains }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      invalidateControlPlaneSnapshotCaches()
-      markSnapshotsDirty()
-      pushToast('Chain activated', 'success')
-    },
-    onError: (error, _chainId, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      pushToast(`Failed to activate: ${error}`, 'error')
-    },
-  })
-
-  const deactivateMutation = useMutation({
-    mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
-    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
+      await queryClient.cancelQueries({ queryKey: ['audio-state', 'committed'] })
       await cancelControlPlaneSnapshotCaches()
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const previousCommittedAudioState = queryClient.getQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'])
       const previousAuthorityActiveSnapshot = authoritySnapshotId != null
         ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
         : undefined
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active && chain.id !== chainId)
-          .map((chain) => chain.id),
-      )
       queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
+        applyOptimisticJuceGridLiveChainSet(current, variables.nextActiveChainIds)
       ))
-      pruneLiveSnapshotCache([chainId])
-      return { previousChains, previousAuthorityActiveSnapshot }
+      if (previousCommittedAudioState) {
+        queryClient.setQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'], {
+          ...previousCommittedAudioState,
+          value: variables.nextCommittedState,
+        })
+      }
+      pruneLiveSnapshotCache(variables.pruneChainIds)
+      return { previousChains, previousCommittedAudioState, previousAuthorityActiveSnapshot }
     },
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(['audio-state', 'committed'], response)
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      invalidateControlPlaneSnapshotCaches()
-      markSnapshotsDirty()
-      pushToast('Chain deactivated', 'info')
+      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
+      if (variables.markDirty) {
+        markSnapshotsDirty()
+      }
+      pushToast(variables.successMessage, variables.successKind)
     },
-    onError: (error, _chainId, context) => {
+    onError: (error, variables, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
+      }
+      if (context?.previousCommittedAudioState) {
+        queryClient.setQueryData(['audio-state', 'committed'], context.previousCommittedAudioState)
       }
       if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
         restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
       }
-      pushToast(`Failed to deactivate: ${error}`, 'error')
-    },
-  })
-
-  const killLivePathMutation = useMutation({
-    mutationFn: async (chainId: number) => {
-      await chainsApi.deactivate(chainId)
-      return chainId
-    },
-    onMutate: async (chainId): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await cancelControlPlaneSnapshotCaches()
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
-        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
-        : undefined
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active && chain.id !== chainId)
-          .map((chain) => chain.id),
-      )
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
-      ))
-      pruneLiveSnapshotCache([chainId])
-      return { previousChains, previousAuthorityActiveSnapshot }
-    },
-    onSuccess: (chainId) => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      invalidateControlPlaneSnapshotCaches()
-      const killedChain = chains.find((chain) => chain.id === chainId)
-      markSnapshotsDirty()
-      pushToast(
-        killedChain ? `Killed live path: ${killedChain.name}` : 'Killed live path',
-        'info',
-      )
-    },
-    onError: (error, _chainId, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
-        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
-      }
-      pushToast(`Failed to kill live path: ${error}`, 'error')
-    },
-  })
-
-  const updateLiveChainsMutation = useMutation({
-    mutationFn: async (nextActiveChainIds: number[]) => {
-      const currentActiveChainIds = new Set(
-        chains
-          .filter((chain) => chain.is_active)
-          .map((chain) => chain.id),
-      )
-      const desiredChainIdSet = new Set(nextActiveChainIds)
-      const chainIdsToActivate = nextActiveChainIds.filter((chainId) => !currentActiveChainIds.has(chainId))
-      const chainIdsToDeactivate = chains
-        .filter((chain) => chain.is_active && !desiredChainIdSet.has(chain.id))
-        .map((chain) => chain.id)
-
-      for (const chainId of chainIdsToActivate) {
-        await chainsApi.activate(chainId)
-      }
-      for (const chainId of chainIdsToDeactivate) {
-        await chainsApi.deactivate(chainId)
-      }
-
-      return {
-        chainIdsToActivate,
-        chainIdsToDeactivate,
-      }
-    },
-    onMutate: async (nextActiveChainIds): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await cancelControlPlaneSnapshotCaches()
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
-        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
-        : undefined
-      const currentActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active)
-          .map((chain) => chain.id),
-      )
-      const chainIdsToDeactivate = [...currentActiveChainIds].filter((chainId) => !nextActiveChainIds.includes(chainId))
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticJuceGridLiveChainSet(current, nextActiveChainIds)
-      ))
-      pruneLiveSnapshotCache(chainIdsToDeactivate)
-      return { previousChains, previousAuthorityActiveSnapshot }
-    },
-    onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      invalidateControlPlaneSnapshotCaches()
-      pushToast(
-        chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
-          ? 'Live chains already match the editor'
-          : 'Live chains updated from the editor',
-        'success',
-      )
-    },
-    onError: (error, _nextActiveChainIds, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
-        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
-      }
-      pushToast(`Failed to update live chains: ${error}`, 'error')
+      const message = error instanceof Error ? error.message : variables.errorMessage
+      pushToast(message, 'error')
     },
   })
 
@@ -5067,14 +4990,77 @@ export function SnapshotEditorPage() {
     }
   }, [queryClient, pushToast])
 
+  const orderChainIdsAgainstEditor = useCallback((chainIds: Iterable<number>) => {
+    const remainingChainIds = new Set(chainIds)
+    const orderedChainIds: number[] = []
+
+    desiredLiveChainIds.forEach((chainId) => {
+      if (!remainingChainIds.has(chainId)) {
+        return
+      }
+      remainingChainIds.delete(chainId)
+      orderedChainIds.push(chainId)
+    })
+
+    remainingChainIds.forEach((chainId) => {
+      orderedChainIds.push(chainId)
+    })
+
+    return orderedChainIds
+  }, [desiredLiveChainIds])
+
+  const submitAuthorityLiveChainSelection = useCallback((params: {
+    nextActiveChainIds: number[]
+    pruneChainIds?: number[]
+    requestedBy: string
+    successMessage: string
+    successKind: 'success' | 'info'
+    errorMessage: string
+    markDirty?: boolean
+  }) => {
+    try {
+      const update = buildAuthorityLivePathSelectionUpdate({
+        authoritativeAudioState: committedAudioState,
+        authoritySnapshotPaths: controlPlaneSnapshot?.paths ?? null,
+        nextActiveChainIds: params.nextActiveChainIds,
+        requestedBy: params.requestedBy,
+      })
+      updateAuthorityLiveChainsMutation.mutate({
+        nextActiveChainIds: params.nextActiveChainIds,
+        nextCommittedState: update.nextCommittedState,
+        request: update.request,
+        pruneChainIds: params.pruneChainIds ?? [],
+        successMessage: params.successMessage,
+        successKind: params.successKind,
+        errorMessage: params.errorMessage,
+        markDirty: params.markDirty,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : params.errorMessage
+      pushToast(message, 'error')
+    }
+  }, [
+    committedAudioState,
+    controlPlaneSnapshot?.paths,
+    pushToast,
+    updateAuthorityLiveChainsMutation,
+  ])
+
   // Chain operations
   const handleUpdateLiveChains = useCallback(() => {
     if (!liveChainMismatch) {
       pushToast('Live chains already match the editor', 'info')
       return
     }
-    updateLiveChainsMutation.mutate(desiredLiveChainIds)
-  }, [desiredLiveChainIds, liveChainMismatch, pushToast, updateLiveChainsMutation])
+    submitAuthorityLiveChainSelection({
+      nextActiveChainIds: desiredLiveChainIds,
+      pruneChainIds: authorityLiveChainIds.filter((chainId) => !desiredLiveChainIds.includes(chainId)),
+      requestedBy: 'snapshot_editor_live_paths',
+      successMessage: 'Live chains updated from the editor',
+      successKind: 'success',
+      errorMessage: 'Failed to update live chains',
+    })
+  }, [authorityLiveChainIds, desiredLiveChainIds, liveChainMismatch, pushToast, submitAuthorityLiveChainSelection])
 
   const handleRevertEditorToLive = useCallback(() => {
     if (liveChainProjectionOverflow) {
@@ -5106,18 +5092,41 @@ export function SnapshotEditorPage() {
   ])
 
   const handleKillLiveChain = useCallback((chainId: number) => {
-    killLivePathMutation.mutate(chainId)
-  }, [killLivePathMutation])
+    const killedChainName = chains.find((chain) => chain.id === chainId)?.name
+    submitAuthorityLiveChainSelection({
+      nextActiveChainIds: orderChainIdsAgainstEditor(authorityLiveChainIds.filter((currentChainId) => currentChainId !== chainId)),
+      pruneChainIds: [chainId],
+      requestedBy: 'snapshot_editor_kill_live_path',
+      successMessage: killedChainName ? `Killed live path: ${killedChainName}` : 'Killed live path',
+      successKind: 'info',
+      errorMessage: 'Failed to kill live path',
+      markDirty: true,
+    })
+  }, [authorityLiveChainIds, chains, orderChainIdsAgainstEditor, submitAuthorityLiveChainSelection])
 
   const handleToggleChainActive = useCallback(() => {
     if (snapshotEditingLocked) return
     if (!currentChain) return
-    if (currentChain.is_active) {
-      deactivateMutation.mutate(currentChain.id)
-    } else {
-      activateMutation.mutate(currentChain.id)
-    }
-  }, [currentChain, activateMutation, deactivateMutation, snapshotEditingLocked])
+    const nextActiveChainIds = currentChainAuthorityActive
+      ? orderChainIdsAgainstEditor(authorityLiveChainIds.filter((chainId) => chainId !== currentChain.id))
+      : orderChainIdsAgainstEditor([...authorityLiveChainIds, currentChain.id])
+    submitAuthorityLiveChainSelection({
+      nextActiveChainIds,
+      pruneChainIds: currentChainAuthorityActive ? [currentChain.id] : [],
+      requestedBy: 'snapshot_editor_toggle_live_path',
+      successMessage: currentChainAuthorityActive ? 'Chain deactivated' : 'Chain activated',
+      successKind: currentChainAuthorityActive ? 'info' : 'success',
+      errorMessage: currentChainAuthorityActive ? 'Failed to deactivate chain' : 'Failed to activate chain',
+      markDirty: true,
+    })
+  }, [
+    authorityLiveChainIds,
+    currentChain,
+    currentChainAuthorityActive,
+    orderChainIdsAgainstEditor,
+    snapshotEditingLocked,
+    submitAuthorityLiveChainSelection,
+  ])
 
   const handleSavePreset = useCallback(() => {
     if (!currentChain) return
@@ -6936,7 +6945,6 @@ export function SnapshotEditorPage() {
   const canPageTabletFocusedBranchBackward = tabletFocusedBranchPage > 0
   const canPageTabletFocusedBranchForward = tabletFocusedBranchPage < tabletFocusedBranchPageCount - 1
   const liveRuntimeDisplayState = resolvePreferredLiveRuntimeDisplayState({
-    runtimeLiveState,
     authoritativeAudioState,
   })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
@@ -8761,9 +8769,9 @@ export function SnapshotEditorPage() {
           overflow={liveChainProjectionOverflow}
           onUpdateLive={handleUpdateLiveChains}
           onRevertToLive={handleRevertEditorToLive}
-          updatePending={updateLiveChainsMutation.isPending}
+          updatePending={updateAuthorityLiveChainsMutation.isPending}
           onKillLivePath={handleKillLiveChain}
-          killPending={killLivePathMutation.isPending}
+          killPending={updateAuthorityLiveChainsMutation.isPending}
         />
       ) : null}
 

@@ -68,8 +68,11 @@ import {
   midiApiV2,
 } from '../../map2/api'
 import type { AudioPort } from '../../map2/api'
+import { audioStateApi } from '../../map2/clients/audioState'
 import { snapshotsApi } from '../../map2/clients/snapshots'
+import { ApiError } from '../../map2/http'
 import type {
+  AuthoritativeAudioStateEnvelope,
   Chain,
   ChainsResponse,
   Plugin,
@@ -83,6 +86,7 @@ import type {
 } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
+import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
@@ -105,9 +109,10 @@ import type {
 } from '../components/JuceGrid/juceGridState'
 import {
   applyOptimisticSnapshotEditorLiveChainSet,
-  buildSnapshotEditorLiveChainProjection,
+  buildAuthoritativeSnapshotEditorLiveChainProjection,
   buildSnapshotEditorRevertedStateFromLiveProjection,
   getSnapshotEditorDesiredLiveChainIds,
+  hasCommittedSnapshotEditorAuthorityLivePaths,
   hasSnapshotEditorLiveChainMismatch,
 } from '../components/SnapshotEditor/snapshotEditorLiveChains'
 import {
@@ -136,6 +141,7 @@ import {
   resolveAudioTableMidiMapping,
   type AudioTablePluginSelectionTarget,
 } from '../components/AudioTable/audioTablePluginPrimitives'
+import { buildAuthorityLivePathSelectionUpdate } from '../utils/audioStateLivePaths'
 
 // ============================================================================
 // Constants — shared with JuceGridPage
@@ -480,6 +486,28 @@ export function AudioTablePage() {
     queryFn: () => snapshotsApi.list(),
     refetchInterval: 5000,
   })
+  const committedAudioStateQuery = useCommittedAudioState({
+    refetchInterval: 2_000,
+  })
+  const committedAudioState = committedAudioStateQuery.data?.value ?? null
+  const authoritySnapshotId = committedAudioState?.source_snapshot?.snapshot_id ?? null
+  const authoritySnapshotDetailQuery = useQuery({
+    queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
+    queryFn: async () => {
+      try {
+        return await snapshotsApi.get(authoritySnapshotId!)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    },
+    enabled: authoritySnapshotId != null,
+    retry: false,
+    refetchInterval: 5_000,
+  })
+  const authoritySnapshotDetail = authoritySnapshotDetailQuery.data ?? null
 
   // Plugin outputs for real-time levels
   const pluginOutputState = usePluginOutputs()
@@ -561,89 +589,54 @@ export function AudioTablePage() {
 
   type LiveChainMutationContext = {
     previousChains?: ChainsResponse
+    previousCommittedAudioState?: AuthoritativeAudioStateEnvelope
   }
 
-  const updateLivePathsMutation = useMutation({
-    mutationFn: async (nextActiveChainIds: number[]) => {
-      const currentActiveChainIds = new Set(
-        chains
-          .filter((chain) => chain.is_active)
-          .map((chain) => chain.id),
-      )
-      const desiredChainIdSet = new Set(nextActiveChainIds)
-      const chainIdsToActivate = nextActiveChainIds.filter((chainId) => !currentActiveChainIds.has(chainId))
-      const chainIdsToDeactivate = chains
-        .filter((chain) => chain.is_active && !desiredChainIdSet.has(chain.id))
-        .map((chain) => chain.id)
+  type AuthorityLivePathMutationVariables = {
+    nextActiveChainIds: number[]
+    nextCommittedState: AuthoritativeAudioStateEnvelope['value']
+    request: ReturnType<typeof buildAuthorityLivePathSelectionUpdate>['request']
+    successMessage: string
+    successKind: 'success' | 'info'
+    errorMessage: string
+  }
 
-      for (const chainId of chainIdsToActivate) {
-        await chainsApi.activate(chainId)
-      }
-      for (const chainId of chainIdsToDeactivate) {
-        await chainsApi.deactivate(chainId)
-      }
-
-      return {
-        chainIdsToActivate,
-        chainIdsToDeactivate,
-      }
-    },
-    onMutate: async (nextActiveChainIds): Promise<LiveChainMutationContext> => {
+  const updateAuthorityLivePathsMutation = useMutation({
+    mutationFn: (variables: AuthorityLivePathMutationVariables) => audioStateApi.putDesired(variables.request),
+    onMutate: async (variables): Promise<LiveChainMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
+      await queryClient.cancelQueries({ queryKey: ['audio-state', 'committed'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
+      const previousCommittedAudioState = queryClient.getQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'])
       queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
+        applyOptimisticSnapshotEditorLiveChainSet(current, variables.nextActiveChainIds)
       ))
-      return { previousChains }
+      if (previousCommittedAudioState) {
+        queryClient.setQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'], {
+          ...previousCommittedAudioState,
+          value: variables.nextCommittedState,
+        })
+      }
+      return { previousChains, previousCommittedAudioState }
     },
-    onSuccess: ({ chainIdsToActivate, chainIdsToDeactivate }) => {
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(['audio-state', 'committed'], response)
       void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast(
-        chainIdsToActivate.length === 0 && chainIdsToDeactivate.length === 0
-          ? 'Live paths already match this workspace'
-          : 'Live paths updated from this workspace',
-        'success',
-      )
+      void queryClient.invalidateQueries({ queryKey: ['audio-state', 'committed'] })
+      void queryClient.invalidateQueries({ queryKey: ['audio-state', 'desired'] })
+      void queryClient.invalidateQueries({ queryKey: ['audio-state', 'observed'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', 'authority-active'] })
+      pushToast(variables.successMessage, variables.successKind)
     },
-    onError: (error, _nextActiveChainIds, context) => {
+    onError: (error, variables, context) => {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      pushToast(`Failed to update live paths: ${error}`, 'error')
-    },
-  })
-
-  const killLivePathMutation = useMutation({
-    mutationFn: async (chainId: number) => {
-      await chainsApi.deactivate(chainId)
-      return chainId
-    },
-    onMutate: async (chainId): Promise<LiveChainMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const nextActiveChainIds = new Set(
-        (previousChains?.chains ?? [])
-          .filter((chain) => chain.is_active && chain.id !== chainId)
-          .map((chain) => chain.id),
-      )
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticSnapshotEditorLiveChainSet(current, nextActiveChainIds)
-      ))
-      return { previousChains }
-    },
-    onSuccess: (chainId) => {
-      void queryClient.invalidateQueries({ queryKey: ['chains'] })
-      const killedChain = chains.find((chain) => chain.id === chainId)
-      pushToast(
-        killedChain ? `Killed live path: ${killedChain.name}` : 'Killed live path',
-        'info',
-      )
-    },
-    onError: (error, _chainId, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
+      if (context?.previousCommittedAudioState) {
+        queryClient.setQueryData(['audio-state', 'committed'], context.previousCommittedAudioState)
       }
-      pushToast(`Failed to kill live path: ${error}`, 'error')
+      const message = error instanceof Error ? error.message : variables.errorMessage
+      pushToast(message, 'error')
     },
   })
 
@@ -828,8 +821,13 @@ export function AudioTablePage() {
   )
   const selectedActiveFlowOption = activeFlowOptions[activeFlowIndex] ?? activeFlowOptions[0] ?? null
   const liveRuntimeProjection = useMemo(
-    () => buildSnapshotEditorLiveChainProjection(chains, flowSlots),
-    [chains, flowSlots],
+    () => buildAuthoritativeSnapshotEditorLiveChainProjection({
+      chains,
+      flowSlots,
+      authoritativeAudioState: committedAudioState,
+      authoritySnapshotPaths: authoritySnapshotDetail?.paths ?? null,
+    }),
+    [authoritySnapshotDetail?.paths, chains, committedAudioState, flowSlots],
   )
   const liveProjectionByChainId = useMemo(
     () => new Map(liveRuntimeProjection.map((projection) => [projection.chainId, projection])),
@@ -839,9 +837,64 @@ export function AudioTablePage() {
     () => getSnapshotEditorDesiredLiveChainIds(flowSlots),
     [flowSlots],
   )
+  const authorityLiveChainIds = useMemo(
+    () => liveRuntimeProjection.map((projection) => projection.chainId),
+    [liveRuntimeProjection],
+  )
+  const orderChainIdsAgainstWorkspace = useCallback((chainIds: Iterable<number>) => {
+    const remainingChainIds = new Set(chainIds)
+    const orderedChainIds: number[] = []
+
+    desiredLiveChainIds.forEach((chainId) => {
+      if (!remainingChainIds.has(chainId)) {
+        return
+      }
+      remainingChainIds.delete(chainId)
+      orderedChainIds.push(chainId)
+    })
+
+    remainingChainIds.forEach((chainId) => {
+      orderedChainIds.push(chainId)
+    })
+
+    return orderedChainIds
+  }, [desiredLiveChainIds])
+  const submitAuthorityLivePathSelection = useCallback((params: {
+    nextActiveChainIds: number[]
+    requestedBy: string
+    successMessage: string
+    successKind: 'success' | 'info'
+    errorMessage: string
+  }) => {
+    try {
+      const update = buildAuthorityLivePathSelectionUpdate({
+        authoritativeAudioState: committedAudioState,
+        authoritySnapshotPaths: authoritySnapshotDetail?.paths ?? null,
+        nextActiveChainIds: params.nextActiveChainIds,
+        requestedBy: params.requestedBy,
+      })
+      updateAuthorityLivePathsMutation.mutate({
+        nextActiveChainIds: params.nextActiveChainIds,
+        nextCommittedState: update.nextCommittedState,
+        request: update.request,
+        successMessage: params.successMessage,
+        successKind: params.successKind,
+        errorMessage: params.errorMessage,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : params.errorMessage
+      pushToast(message, 'error')
+    }
+  }, [
+    authoritySnapshotDetail?.paths,
+    committedAudioState,
+    pushToast,
+    updateAuthorityLivePathsMutation,
+  ])
   const liveRuntimeMismatch = useMemo(
-    () => hasSnapshotEditorLiveChainMismatch(liveRuntimeProjection, flowSlots),
-    [flowSlots, liveRuntimeProjection],
+    () => hasCommittedSnapshotEditorAuthorityLivePaths(committedAudioState)
+      && hasSnapshotEditorLiveChainMismatch(liveRuntimeProjection, flowSlots),
+    [committedAudioState, flowSlots, liveRuntimeProjection],
   )
   const liveRuntimeOverflow = liveRuntimeProjection.length > MAX_FLOWS
   const showLiveRuntimeSummaryOnly = isTabletTouchRoute
@@ -1180,8 +1233,14 @@ export function AudioTablePage() {
       pushToast('Live paths already match this workspace', 'info')
       return
     }
-    updateLivePathsMutation.mutate(desiredLiveChainIds)
-  }, [desiredLiveChainIds, liveRuntimeMismatch, pushToast, updateLivePathsMutation])
+    submitAuthorityLivePathSelection({
+      nextActiveChainIds: desiredLiveChainIds,
+      requestedBy: 'audio_table_live_paths',
+      successMessage: 'Live paths updated from this workspace',
+      successKind: 'success',
+      errorMessage: 'Failed to update live paths',
+    })
+  }, [desiredLiveChainIds, liveRuntimeMismatch, pushToast, submitAuthorityLivePathSelection])
 
   const handleRevertWorkspaceToLive = useCallback(() => {
     if (liveRuntimeOverflow) {
@@ -1214,8 +1273,15 @@ export function AudioTablePage() {
   ])
 
   const handleKillLivePath = useCallback((chainId: number) => {
-    killLivePathMutation.mutate(chainId)
-  }, [killLivePathMutation])
+    const killedChainName = chains.find((chain) => chain.id === chainId)?.name
+    submitAuthorityLivePathSelection({
+      nextActiveChainIds: orderChainIdsAgainstWorkspace(authorityLiveChainIds.filter((currentChainId) => currentChainId !== chainId)),
+      requestedBy: 'audio_table_kill_live_path',
+      successMessage: killedChainName ? `Killed live path: ${killedChainName}` : 'Killed live path',
+      successKind: 'info',
+      errorMessage: 'Failed to kill live path',
+    })
+  }, [authorityLiveChainIds, chains, orderChainIdsAgainstWorkspace, submitAuthorityLivePathSelection])
 
   const registerRowAnchor = useCallback((rowAnchorId: string, element: HTMLElement | null) => {
     if (element) {
@@ -1757,9 +1823,9 @@ export function AudioTablePage() {
           overflow={liveRuntimeOverflow}
           onUpdateLive={handleUpdateLivePaths}
           onRevertToLive={handleRevertWorkspaceToLive}
-          updatePending={updateLivePathsMutation.isPending}
+          updatePending={updateAuthorityLivePathsMutation.isPending}
           onKillLivePath={handleKillLivePath}
-          killPending={killLivePathMutation.isPending}
+          killPending={updateAuthorityLivePathsMutation.isPending}
         />
       ) : null}
     </div>

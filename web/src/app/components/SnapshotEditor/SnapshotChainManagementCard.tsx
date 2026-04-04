@@ -82,6 +82,7 @@ interface SnapshotLiveHeadline {
 interface SnapshotChannelActivityBadge {
   label: string
   tooltip: string
+  tagType: 'green' | 'warm-gray' | 'cool-gray'
   warning: boolean
   messages: string[]
 }
@@ -279,10 +280,7 @@ function formatNodeSyncStatus(snapshot: SnapshotDetail): string {
 function resolveLiveHeadline(
   snapshot: SnapshotDetail | null,
   authoritativeAudioState?: AuthoritativeAudioState | null,
-  runtimeLiveState?: SnapshotRuntimeLiveState | null,
 ): SnapshotLiveHeadline {
-  void runtimeLiveState
-
   if (authoritativeAudioState) {
     const authorityIsLive = authoritativeAudioState.engine.display_state === 'live'
       || authoritativeAudioState.engine.display_state === 'live_warning'
@@ -335,19 +333,25 @@ function formatAuthorityPathMessage(label: string, status: AuthoritativeAudioSta
 function buildChannelActivityBadge(
   snapshot: SnapshotDetail | null,
   authoritativeAudioState?: AuthoritativeAudioState | null,
-  runtimeLiveState?: SnapshotRuntimeLiveState | null,
 ): SnapshotChannelActivityBadge | null {
-  if (authoritativeAudioState?.paths?.length) {
-    const activeCount = authoritativeAudioState.paths.filter((path) => path.status === 'active').length
+  if (authoritativeAudioState) {
     const totalCount = authoritativeAudioState.derived.total_channel_count || authoritativeAudioState.paths.length
-    const inactiveDescriptions = authoritativeAudioState.paths
-      .filter((path) => path.status !== 'active')
-      .map((path) => path.status_reason?.trim() || formatAuthorityPathMessage(path.label, path.status))
+    if (totalCount <= 0) {
+      return null
+    }
+
+    const activeCount = authoritativeAudioState.derived.active_channel_count
+    const inactiveDescriptions = authoritativeAudioState.derived.inactive_messages.length > 0
+      ? authoritativeAudioState.derived.inactive_messages
+      : authoritativeAudioState.paths
+        .filter((path) => path.status !== 'active')
+        .map((path) => path.status_reason?.trim() || formatAuthorityPathMessage(path.label, path.status))
     return {
       label: `${activeCount} of ${totalCount} channels active`,
       tooltip: inactiveDescriptions.length > 0
         ? inactiveDescriptions.join(' ')
         : `All ${totalCount} channels are active.`,
+      tagType: activeCount < totalCount ? 'warm-gray' : 'green',
       warning: activeCount < totalCount,
       messages: inactiveDescriptions,
     }
@@ -372,48 +376,14 @@ function buildChannelActivityBadge(
     return null
   }
 
-  const livePathsById = new Map(
-    (activitySnapshot.live_state?.paths ?? [])
-      .map((path) => [path.path_id, path] as const),
-  )
-  const runtimeChainsById = new Map(
-    (activitySnapshot.live_state?.runtime_chains ?? [])
-      .map((chain) => [chain.id, chain] as const),
-  )
-  const offline = Boolean(runtimeLiveState?.is_offline || runtimeLiveState?.display_state === 'offline')
-  let activeCount = 0
-  const inactiveDescriptions: string[] = []
-
-  channelDefinitions.forEach((channel) => {
-    const livePath = livePathsById.get(channel.key)
-    const runtimeChain = livePath?.runtime_chain_id != null
-      ? runtimeChainsById.get(livePath.runtime_chain_id)
-      : undefined
-    const runtimeStatus = runtimeChain?.runtime_sync?.status
-    const activationStatus = typeof livePath?.activation_status === 'string'
-      ? livePath.activation_status.toLowerCase()
-      : null
-    const channelOffline = activationStatus === 'offline' || runtimeStatus === 'offline' || offline
-    const isActive = activationStatus === 'active'
-      || runtimeStatus === 'active'
-      || (activationStatus == null && runtimeStatus == null && Boolean(runtimeChain?.is_active))
-
-    if (isActive) {
-      activeCount += 1
-      return
-    }
-
-    inactiveDescriptions.push(`Channel ${channel.label} is ${channelOffline ? 'offline' : 'not loaded'}.`)
-  })
-
   const totalCount = channelDefinitions.length
+  const channelNoun = totalCount === 1 ? 'channel' : 'channels'
   return {
-    label: `${activeCount} of ${totalCount} channels active`,
-    tooltip: inactiveDescriptions.length > 0
-      ? inactiveDescriptions.join(' ')
-      : `All ${totalCount} channels are active.`,
-    warning: activeCount < totalCount,
-    messages: inactiveDescriptions,
+    label: `${totalCount} ${channelNoun} saved`,
+    tooltip: `No control-plane snapshot is live. This snapshot defines ${totalCount} saved ${channelNoun}.`,
+    tagType: 'cool-gray',
+    warning: false,
+    messages: [],
   }
 }
 
@@ -530,7 +500,6 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
   const {
     liveSnapshot = null,
     editorSnapshotDraft = null,
-    runtimeLiveState = null,
     authoritativeAudioState = null,
     detailsAction,
     onRenameSnapshot,
@@ -565,12 +534,12 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     [liveSnapshot],
   )
   const liveHeadline = useMemo(
-    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, runtimeLiveState),
-    [authoritativeAudioState, liveSnapshot, runtimeLiveState],
+    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
+    [authoritativeAudioState, liveSnapshot],
   )
   const channelActivityBadge = useMemo(
-    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState, runtimeLiveState),
-    [authoritativeAudioState, liveSnapshot, runtimeLiveState],
+    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState),
+    [authoritativeAudioState, liveSnapshot],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const [editingDescription, setEditingDescription] = useState(false)
@@ -759,8 +728,8 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                       className="juce-grid-page__snapshot-status-channel-badge-wrap"
                     >
                       <Tag
-                        type={channelActivityBadge.warning ? 'warm-gray' : 'green'}
-                        className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : 'is-healthy'}`}
+                        type={channelActivityBadge.tagType}
+                        className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : channelActivityBadge.tagType === 'green' ? 'is-healthy' : 'is-saved'}`}
                       >
                         {channelActivityBadge.label}
                       </Tag>

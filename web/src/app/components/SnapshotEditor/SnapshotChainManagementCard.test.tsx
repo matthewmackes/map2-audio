@@ -542,7 +542,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Never')).toBeInTheDocument()
   })
 
-  it('shows an amber channel-activity badge with plain-language not-loaded guidance when channels are missing', () => {
+  it('shows a saved-state channel badge when only legacy runtime residue is present', () => {
     renderCard(buildLiveSnapshot({
       live_state: {
         is_live: true,
@@ -574,10 +574,10 @@ describe('SnapshotChainManagementCard', () => {
       },
     }))
 
-    const badge = screen.getByText('1 of 2 channels active')
+    const badge = screen.getByText('2 channels saved')
     expect(badge).toBeInTheDocument()
-    expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is not loaded.')
-    expect(screen.getByText('Channel B is not loaded.')).toBeInTheDocument()
+    expect(badge.closest('div[title]')).toHaveAttribute('title', 'No control-plane snapshot is live. This snapshot defines 2 saved channels.')
+    expect(screen.queryByText('Channel B is not loaded.')).not.toBeInTheDocument()
   })
 
   it('prefers authoritative audio-state devices and sync status over saved snapshot metadata', () => {
@@ -647,7 +647,7 @@ describe('SnapshotChainManagementCard', () => {
     expect(screen.getByText('Channel B is not loaded.')).toBeInTheDocument()
   })
 
-  it('updates the channel-activity badge when the control-plane snapshot detail changes', () => {
+  it('ignores runtime residue when the control plane has no committed snapshot', () => {
     const { rerender } = render(
       <SnapshotChainManagementCard
         onToggleSelectedChainActive={jest.fn()}
@@ -658,7 +658,7 @@ describe('SnapshotChainManagementCard', () => {
       />,
     )
 
-    expect(screen.getByText('2 of 2 channels active')).toBeInTheDocument()
+    expect(screen.getByText('2 channels saved')).toBeInTheDocument()
 
     rerender(
       <SnapshotChainManagementCard
@@ -703,10 +703,10 @@ describe('SnapshotChainManagementCard', () => {
       />,
     )
 
-    const badge = screen.getByText('1 of 2 channels active')
+    const badge = screen.getByText('2 channels saved')
     expect(badge).toBeInTheDocument()
-    expect(badge.closest('div[title]')).toHaveAttribute('title', 'Channel B is offline.')
-    expect(screen.getByText('Channel B is offline.')).toBeInTheDocument()
+    expect(badge.closest('div[title]')).toHaveAttribute('title', 'No control-plane snapshot is live. This snapshot defines 2 saved channels.')
+    expect(screen.queryByText('Channel B is offline.')).not.toBeInTheDocument()
   })
 
   it('uses the live snapshot title as the rename trigger when a rename handler is provided', () => {

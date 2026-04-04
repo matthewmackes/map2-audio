@@ -64,7 +64,7 @@ describe('LiveRuntimePathsModal', () => {
       />,
     )
 
-    expect(await screen.findByRole('dialog', { name: 'Backend truth' })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Control-plane truth' })).toBeInTheDocument()
     expect(screen.getByText('Main Runtime')).toBeInTheDocument()
     expect(screen.getByText('A')).toBeInTheDocument()
 
@@ -84,7 +84,7 @@ describe('LiveRuntimePathsModal', () => {
       />,
     )
 
-    expect(await screen.findByText('No backend-live paths currently reported.')).toBeInTheDocument()
+    expect(await screen.findByText('No control-plane live paths currently reported.')).toBeInTheDocument()
   })
 
   it('requires selecting a live path before kill is enabled', async () => {

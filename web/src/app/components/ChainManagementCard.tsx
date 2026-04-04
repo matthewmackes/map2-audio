@@ -26,6 +26,7 @@ import type { Chain, ChainsResponse } from '../../map2/types'
 import { getPluginChipMeta } from '../utils/pluginChipMeta'
 
 const MAX_VISIBLE_CHIPS = 5
+const RUNTIME_CHAIN_CONTROL_NOTICE = 'Runtime-only chain controls. Snapshot control-plane truth lives in Audio Grid.'
 
 interface FlowSlot {
   id: string
@@ -83,18 +84,18 @@ export function ChainManagementCard({
     mutationFn: (id: number) => chainsApi.activate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain activated', 'success')
+      pushToast('Runtime chain activated', 'success')
     },
-    onError: () => pushToast('Failed to activate', 'error'),
+    onError: () => pushToast('Failed to activate runtime chain', 'error'),
   })
 
   const deactivateMutation = useMutation({
     mutationFn: (id: number) => chainsApi.deactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain deactivated', 'info')
+      pushToast('Runtime chain stopped', 'info')
     },
-    onError: () => pushToast('Failed to deactivate', 'error'),
+    onError: () => pushToast('Failed to stop runtime chain', 'error'),
   })
 
   const deleteMutation = useMutation({
@@ -166,7 +167,21 @@ export function ChainManagementCard({
       {/* Vertical title on the left */}
       <div className="chains-grid-title">
         <SplitScreen size={16} />
-        <span>Chains</span>
+        <span>Runtime Chains</span>
+      </div>
+
+      <div
+        role="note"
+        style={{
+          padding: '0.5rem 0.75rem',
+          borderBottom: '1px solid var(--cds-border-subtle-01)',
+          background: 'var(--cds-layer-02)',
+          color: 'var(--cds-text-secondary)',
+          fontSize: '0.75rem',
+          lineHeight: 1.4,
+        }}
+      >
+        {RUNTIME_CHAIN_CONTROL_NOTICE}
       </div>
 
       {/* Grid of chain cells */}
@@ -225,7 +240,7 @@ export function ChainManagementCard({
                         className={`chains-grid-btn power ${chain.is_active ? 'on' : ''}`}
                         onClick={(e) => togglePower(chain, e)}
                         disabled={isPending}
-                        title={chain.is_active ? 'Deactivate' : 'Activate'}
+                        title={chain.is_active ? 'Stop runtime chain' : 'Set runtime active'}
                       >
                         <Power size={12} />
                       </button>
@@ -284,7 +299,7 @@ export function ChainManagementCard({
                           {chain.plugins.length}p
                         </span>
                         {chain.is_active && (
-                          <span className="chains-grid-active-indicator" title="Active" />
+                          <span className="chains-grid-active-indicator" title="Runtime active" />
                         )}
                       </div>
                       <div className="chains-grid-cell-actions">

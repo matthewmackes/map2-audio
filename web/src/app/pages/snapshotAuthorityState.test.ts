@@ -1,7 +1,6 @@
 import type {
   AuthoritativeAudioState,
   SnapshotDetail,
-  SnapshotRuntimeLiveState,
 } from '../../map2/types'
 import {
   buildObservedRuntimeNodeCards,
@@ -136,30 +135,6 @@ function buildAuthoritativeAudioState(snapshotId: number): AuthoritativeAudioSta
   }
 }
 
-function buildRuntimeLiveState(snapshotId: number): SnapshotRuntimeLiveState {
-  return {
-    node_id: 'node-a',
-    seq: 5,
-    emitted_at: '2026-04-03T12:00:01Z',
-    state: 'live',
-    snapshot_id: snapshotId,
-    snapshot_revision: '7',
-    snapshot_name: `Snapshot ${snapshotId}`,
-    triggered_by: 'ui',
-    live_snapshot_payload: null,
-    last_successful_request_id: null,
-    failure_reason: null,
-    runtime_metrics: {},
-    warning_threshold_seconds: 10,
-    offline_threshold_seconds: 20,
-    age_seconds: 0.1,
-    is_warning: false,
-    is_offline: false,
-    display_state: 'live',
-    display_label: 'Live',
-  }
-}
-
 describe('snapshotAuthorityState', () => {
   it('resolves the authority snapshot id from committed state', () => {
     expect(resolveAuthoritySnapshotId(buildAuthoritativeAudioState(42))).toBe(42)
@@ -192,18 +167,49 @@ describe('snapshotAuthorityState', () => {
     })?.id).toBe(77)
   })
 
+  it('falls back to the persisted editor snapshot when authority is absent', () => {
+    const persistedEditorSnapshot = buildSnapshotDetail(88, 'Persisted editor snapshot')
+
+    expect(resolveEditorActiveSnapshot({
+      editorSnapshotOverride: null,
+      controlPlaneSnapshot: null,
+      persistedEditorSnapshot,
+    })?.id).toBe(88)
+  })
+
+  it('still prefers the control-plane snapshot over persisted editor context', () => {
+    const controlPlaneSnapshot = buildSnapshotDetail(42, 'Authority live')
+    const persistedEditorSnapshot = buildSnapshotDetail(88, 'Persisted editor snapshot')
+
+    expect(resolveEditorActiveSnapshot({
+      editorSnapshotOverride: null,
+      controlPlaneSnapshot,
+      persistedEditorSnapshot,
+    })?.id).toBe(42)
+  })
+
   it('prefers authoritative engine display state over legacy runtime display state', () => {
     expect(resolvePreferredLiveRuntimeDisplayState({
-      runtimeLiveState: buildRuntimeLiveState(42),
       authoritativeAudioState: buildAuthoritativeAudioState(42),
     })).toBe('live_warning')
   })
 
+  it('returns no live runtime display state when authority is absent', () => {
+    expect(resolvePreferredLiveRuntimeDisplayState({
+      authoritativeAudioState: null,
+    })).toBeNull()
+  })
+
   it('prefers authoritative runtime display labels over legacy runtime labels', () => {
     expect(resolvePreferredLiveRuntimeDisplayLabel({
-      runtimeLiveState: buildRuntimeLiveState(42),
       authoritativeAudioState: buildAuthoritativeAudioState(42),
     })).toBe('Live + Warning')
+  })
+
+  it('returns no live runtime display label when authority is absent', () => {
+    expect(resolvePreferredLiveRuntimeDisplayLabel({
+      authoritativeAudioState: null,
+    })).toBeNull()
   })
 
   it('prefers authority-backed control-plane status over legacy runtime status', () => {
@@ -259,12 +265,18 @@ describe('snapshotAuthorityState', () => {
     ])
   })
 
-  it('resolves the control-plane snapshot id from authority state before runtime fallback', () => {
+  it('resolves the control-plane snapshot id from authority state without runtime fallback', () => {
     expect(resolveControlPlaneSnapshotId({
       controlPlaneSnapshot: null,
       authoritySnapshotId: 42,
-      runtimeLiveState: buildRuntimeLiveState(11),
     })).toBe(42)
+  })
+
+  it('returns no control-plane snapshot id when authority is absent', () => {
+    expect(resolveControlPlaneSnapshotId({
+      controlPlaneSnapshot: null,
+      authoritySnapshotId: null,
+    })).toBeNull()
   })
 
   it('formats operator-facing authority sync labels', () => {

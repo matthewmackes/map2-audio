@@ -37,26 +37,25 @@ export function resolveControlPlaneSnapshot(params: {
 export function resolveEditorActiveSnapshot(params: {
   editorSnapshotOverride: SnapshotDetail | null
   controlPlaneSnapshot: SnapshotDetail | null
+  persistedEditorSnapshot?: SnapshotDetail | null
 }): SnapshotDetail | null {
-  return params.editorSnapshotOverride ?? params.controlPlaneSnapshot
+  return params.editorSnapshotOverride ?? params.controlPlaneSnapshot ?? params.persistedEditorSnapshot ?? null
 }
 
 export function resolvePreferredLiveRuntimeDisplayState(params: {
-  runtimeLiveState: SnapshotRuntimeLiveState | null
   authoritativeAudioState: AuthoritativeAudioState | null
 }): SnapshotRuntimeDisplayState | null {
-  return params.authoritativeAudioState?.engine.display_state ?? params.runtimeLiveState?.display_state ?? null
+  return params.authoritativeAudioState?.engine.display_state ?? null
 }
 
 export function resolvePreferredLiveRuntimeDisplayLabel(params: {
-  runtimeLiveState: SnapshotRuntimeLiveState | null
   authoritativeAudioState: AuthoritativeAudioState | null
 }): string | null {
   if (params.authoritativeAudioState) {
     return buildDisplayLabel(params.authoritativeAudioState.engine.display_state)
   }
 
-  return params.runtimeLiveState?.display_label ?? buildDisplayLabel(params.runtimeLiveState?.display_state ?? 'stopped')
+  return null
 }
 
 function buildDisplayLabel(displayState: AudioStateEngineStatus | SnapshotRuntimeDisplayState): string {
@@ -102,11 +101,9 @@ export function resolveSnapshotControlPlaneStatus(params: {
 export function resolveControlPlaneSnapshotId(params: {
   controlPlaneSnapshot: SnapshotDetail | null
   authoritySnapshotId: number | null
-  runtimeLiveState: SnapshotRuntimeLiveState | null
 }): number | null {
   return params.controlPlaneSnapshot?.id
     ?? params.authoritySnapshotId
-    ?? params.runtimeLiveState?.snapshot_id
     ?? null
 }
 

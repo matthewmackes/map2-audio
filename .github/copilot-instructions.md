@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 2, 2026 (preloaded JUCE soak mode added for topology-only live-rewire evidence)
+> **Last Updated**: April 3, 2026 (authority-only live-path UI and desired-state write contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1417,6 +1417,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m py_compile .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py`; `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 20 --flow-rotation-seconds 8 --sample-interval-seconds 0.5 --warmup-seconds 2 --reset-stats-after-warmup --live-rewire --preload-effect-pool --seed 20260402 --effect-uri map2://juce/amp/peavey5150 --effect-uri map2://juce/pitch/h3000 --effect-uri map2://juce/amp/tweedbassman --effect-uri map2://juce/multieffect/passionfx --effect-uri map2://juce/delay --effect-uri map2://juce/pitch/boss-xs1 --effect-uri map2://juce/effects/eventide-h9 --effect-uri map2://juce/eq/parametric --effect-uri map2://juce/delay/circular --effect-uri map2://juce/dynamics/limiter`
 - **Lesson**: When low-latency evidence is trying to isolate live topology mutation, preload and prewarm every measured effect instance before resetting stats or the first-load seam will contaminate the result.
 
+**45. Live Snapshot/Path UI Must Read And Write Through Committed Authority State (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`, `web/src/app/utils/audioStateLivePaths.ts`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/snapshotAuthorityState.ts`, `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`, `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, `web/src/app/pages/ChainsPage.tsx`, `web/src/app/pages/PerformPage.tsx`, `web/src/app/components/ChainManagementCard.tsx`
+- **Problem**: Operator-facing pages could still report or mutate live snapshot/path/channel state from legacy runtime residue (`chain.is_active`, runtime websocket payloads, or direct `chainsApi.activate/deactivate`) even when the committed control plane said no snapshot or paths were live.
+- **Root Cause**: The etcd-backed authority rollout removed the main split-truth architecture, but a final cluster of UI helpers and mutation handlers still treated runtime chain activity as live/control-plane truth.
+- **Fix**: Build live-path projections from committed `AuthoritativeAudioState.paths`, route primary live-path mutations through `PUT /api/audio/state/desired`, quarantine secondary chain grids and stage views as explicit runtime-only utilities, remove runtime-residue fallback from shared authority selectors and channel badges, and allow Snapshot Editor metadata to fall back to persisted editor context only for non-live detail when authority is absent.
+- **Verification**: `rg -n "chainsApi\\.(activate|deactivate)" web/src/app/pages/SnapshotEditorPageContent.tsx web/src/app/pages/AudioTablePage.tsx`; `npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts src/app/components/modals/LiveRuntimePathsModal.test.tsx src/app/pages/AudioTablePage.test.tsx src/app/pages/snapshotAuthorityState.test.ts src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/utils/audioStateLivePaths.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In MAP2, operator-facing live state must come from committed authority state, not runtime residue. Persisted editor context may restore metadata, but never live truth, and primary UI live-path writes must go through `PUT /api/audio/state/desired`.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1687,6 +1695,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - Authority-Only Live-Path UI And Desired-State Write Contract
+- **Section**: Gotchas & Learned Fixes (#45), Update Log
+- **Change**: Documented that control-plane live status must derive from committed authority state, primary live-path UI writes must use `PUT /api/audio/state/desired`, runtime-only chain controls must be labeled as such, and Snapshot Editor metadata fallback must stay separate from live semantics when authority is absent.
+- **Reason**: T695 through T700 closed the remaining frontend seams where runtime residue or direct chain APIs could contradict the authority-backed live-state model.
+- **Impact**: Future assistants should not reintroduce `chain.is_active`, runtime websocket residue, or direct `chainsApi.activate/deactivate` into control-plane UX, and no-authority cases should degrade to empty or saved-state semantics instead of guessing at live status.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`, `web/src/app/utils/audioStateLivePaths.ts`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/pages/AudioTablePage.tsx`, `web/src/app/pages/snapshotAuthorityState.ts`
 
 ### [2026-04-02] - Preloaded JUCE Soak Mode For Topology-Only Evidence
 - **Section**: Gotchas & Learned Fixes (#44), Update Log

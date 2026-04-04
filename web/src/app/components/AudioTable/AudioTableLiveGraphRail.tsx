@@ -538,11 +538,11 @@ export function AudioTableLiveGraphRail({
         <div style={{ padding: '1rem 1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--cds-text-secondary)' }}>
-              Backend truth
+              Control-plane truth
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600 }}>Live path rail</div>
             <div style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
-              Read-only topology sourced from backend runtime path truth. Selecting a plugin node opens the shared advanced inspector and links back to the table when a matching row exists.
+              Read-only topology sourced from committed control-plane path truth. Selecting a plugin node opens the shared advanced inspector and links back to the table when a matching row exists.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
