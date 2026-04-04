@@ -6,7 +6,20 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-04 11:18 EDT - Started T703 for repeated GUI theme-compliance sweeps, publish loops, and port-3000 redeploy verification.
+Last updated: 2026-04-04 12:08 EDT - Completed T703 publish/deploy verification and preserved new T704 viewport-policy follow-up entry that appeared during the deploy loop.
+
+ID: T704
+Status: [>] In Progress
+Title: Enforce 1920x1080 minimum GUI viewport across the web platform and retire shared small-screen policy paths
+Description:
+- Goal / acceptance criteria: Add a platform-wide viewport enforcement rule so the web GUI only operates at `1920x1080` or higher, and block all pages below that threshold with a shared unsupported-viewport screen. Remove or neutralize shared mobile/tablet/small-screen code paths, prompts, and configuration patterns that would otherwise keep unsupported layouts alive, and update this worklist with the exact validation evidence.
+- Why it matters: The platform is no longer meant to support phones, iPads, or smaller desktop windows. Leaving page-local responsive/mobile fallbacks in place creates contradictory expectations and makes the support policy unclear.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: shared viewport-policy implementation, shared mobile/tablet policy cleanup, any required copy/style updates for legacy iPad/mobile blockers, and frontend validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 12:02 EDT - Codex
 
 ID: T703
 Status: [✓] Done
@@ -19,17 +32,26 @@ Description:
 - Required outputs: tokenized/theme-compliant frontend CSS or component updates, focused validation/build evidence for each cycle, synchronized git publish, verified port-3000 restart evidence, and worklist notes that record whether any non-blocked follow-up remains.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-04 11:48 EDT - Codex
+Last updated: 2026-04-04 12:08 EDT - Codex
 - Completion notes:
   - Cycle 1 theme sweep moved the shared shell/window chrome onto theme tokens in `web/src/index.css` and `web/src/app/layout/AppShell.css`, then retuned operator-facing page chrome in `ApiActivityOverlay.css`, `NodeContextBanner.css`, `NumericInput.css`, `HomePage.css`, and `web/src/styles/mobile.css` so those surfaces no longer carried fixed dark-blue or black values independent of the active theme.
   - Cycle 2 theme sweep cleared additional mobile/table/workspace highlight islands by replacing hard-coded highlight backgrounds and borders in `web/src/styles/mobile.css`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.css`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, and `web/src/app/components/ClusterDashboard/MultiNodeMonitoringTab.css` with theme/support-token mixes.
   - Cycle 3 theme sweep finished the shared routed-workspace pass by tokenizing remaining AVB and cluster workspace highlight states in `web/src/app/components/AvbRouting/AvbRoutingWorkspace.css` and `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, and by removing the remaining hard-coded fallback colors from `MultiNodeMonitoringTab.css`.
   - Re-ran `npm --prefix web run typecheck` after each sweep slice and completed the authoritative `npm --prefix web run build` successfully. Reverted the generated `VERSION` / `version.json` timestamp churn so the source commit stays scoped to the GUI theme-compliance work rather than the transient build stamp.
-  - The canonical worklist remains in blocked-only state after this task; no new non-blocked follow-up tasks were required from the sweep.
+  - Published commit `a3f85441` after rebasing the theme sweep on top of the newer GitHub `master` README sync commit, then synchronized `master` to `origin`, `gitlab`, and `local` (GitLab required a `--force-with-lease` update because it briefly held the pre-rebase sweep commit).
+  - Ran `npm --prefix web run deploy`, which rebuilt the production bundle, restarted `map2-web-prod.service`, and brought port `3000` back up serving `index-BjtRgYIV.js`; `npm --prefix web run deploy:status`, `curl`, and `lsof` all confirmed the live listener.
+  - A new non-blocked worklist item, `T704`, appeared during the deploy loop, so the canonical worklist is no longer in blocked-only state after this turn.
 - Validation:
   - `npm --prefix web run typecheck` -> PASS (after cycle 1)
   - `npm --prefix web run typecheck` -> PASS (after cycle 2)
   - `npm --prefix web run build` -> PASS
+  - `git push origin master` -> PASS (after rebasing onto `657a108e`)
+  - `git push --force-with-lease gitlab master` -> PASS
+  - `git push local master` -> PASS
+  - `npm --prefix web run deploy` -> PASS
+  - `npm --prefix web run deploy:status` -> PASS (`PID 2742803`, bundle `index-BjtRgYIV.js`)
+  - `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/` -> `200`
+  - `lsof -iTCP:3000 -sTCP:LISTEN -n -P` -> PASS (`node` PID `2742803`)
 
 ID: T702
 Status: [✓] Done
