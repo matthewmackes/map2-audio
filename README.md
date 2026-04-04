@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1072** TypeScript | **133** C++/H | **129** Docs | **1325** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1081** TypeScript | **133** C++/H | **129** Docs | **1328** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`826d8070`](https://github.com/matthewmackes/map2-audio/commit/826d8070979f5312074a736c2517a1f046a82c68) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
+| [`6aa55bca`](https://github.com/matthewmackes/map2-audio/commit/6aa55bca4c61098aa3cb04cd5c4622acd5b4cd5b) | Build AVB routing workspace | Map2 Audio | 2026-04-03 |
+| [`d45459a9`](https://github.com/matthewmackes/map2-audio/commit/d45459a932131383ce3075f7b9c241e46bab8dcd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`d0d75a0f`](https://github.com/matthewmackes/map2-audio/commit/d0d75a0f142c7e08d42e1b7113831c1644a6abc1) | Build audio engine graph workspace | Map2 Audio | 2026-04-03 |
 | [`16d413dd`](https://github.com/matthewmackes/map2-audio/commit/16d413dda972bad49889178a33b8f681e838d34e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`d4ea7478`](https://github.com/matthewmackes/map2-audio/commit/d4ea74782f0361c54d3ec1a7581918640cf50997) | Rework Platforms navigation for hard cut | Map2 Audio | 2026-04-03 |
 | [`cfb2ef42`](https://github.com/matthewmackes/map2-audio/commit/cfb2ef42f95ce2eb9126c8b8ec1166db3fd2597b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`d38d5818`](https://github.com/matthewmackes/map2-audio/commit/d38d5818726202f611380d92b4d42bce7e0e5f51) | Enforce authority-backed live path UI | Map2 Audio | 2026-04-03 |
-| [`c172175b`](https://github.com/matthewmackes/map2-audio/commit/c172175b936f25eeeb5acb89d054a357cbe027f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
-| [`7c415aeb`](https://github.com/matthewmackes/map2-audio/commit/7c415aeb01ad73ac2cefdb12ec78f5cbe531e7f4) | Update audio state authority and snapshot editor | Map2 Audio | 2026-04-03 |
-| [`8fd814e6`](https://github.com/matthewmackes/map2-audio/commit/8fd814e6ccca266384b6581b48cd4f70d00f2606) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
