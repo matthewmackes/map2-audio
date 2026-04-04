@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1089** TypeScript | **133** C++/H | **129** Docs | **1337** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1089** TypeScript | **133** C++/H | **129** Docs | **1338** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,6 +203,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`18b8ddfb`](https://github.com/matthewmackes/map2-audio/commit/18b8ddfbb943215debcdbb1526420b6cb294391f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`c8dc39be`](https://github.com/matthewmackes/map2-audio/commit/c8dc39be39324620a048677d3db2f1ad56ad7391) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
 | [`4d1d11a8`](https://github.com/matthewmackes/map2-audio/commit/4d1d11a8e93239099c5d8cb256b716ed1caa2370) | Complete T701 platforms hard cut | Map2 Audio | 2026-04-03 |
 | [`1262140e`](https://github.com/matthewmackes/map2-audio/commit/1262140e5b51cb8568a35e064bf18a51117078d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
@@ -210,7 +211,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`a6200f0c`](https://github.com/matthewmackes/map2-audio/commit/a6200f0cd678131aeb5d98447c118307f51aa94b) | Complete T701-subE management and discovery workspaces | Map2 Audio | 2026-04-03 |
 | [`7bb94262`](https://github.com/matthewmackes/map2-audio/commit/7bb94262284336d335bd56a3aacf272c175f6369) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`36634759`](https://github.com/matthewmackes/map2-audio/commit/3663475916c1ab491069996184d4f82ffa7d4025) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
-| [`1fca8372`](https://github.com/matthewmackes/map2-audio/commit/1fca83726ada22d6f8efd3ca8eb5edc84ed776af) | Build cluster dashboard workspace | Map2 Audio | 2026-04-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
