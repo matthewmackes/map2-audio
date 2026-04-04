@@ -28,8 +28,6 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
-  SkeletonPlaceholder,
-  SkeletonText,
   Tag,
   Table,
   TableBody,
@@ -53,23 +51,20 @@ import {
   type StandalonePanel,
 } from '../../data/platformMenuItems'
 import { useSpecialSettings, type SpecialSettings } from '../../hooks/useSpecialSettings'
-import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
-import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import { AvbRoutingWorkspace } from '../AvbRouting/AvbRoutingWorkspace'
 import { ClusterDashboardWorkspace } from '../ClusterDashboard/ClusterDashboardWorkspace'
-import {
-  useMidiClusterConnections,
-  useMidiClusterEndpoints,
-  useMidiClusterNodes,
-} from '../../hooks/useMidiCluster'
+import { ManagementWorkspace } from '../ManagementWorkspace/ManagementWorkspace'
+import { NetworkDiscoveryWorkspace } from '../NetworkDiscovery/NetworkDiscoveryWorkspace'
 import {
   useNodeOperations,
   type HybridApplicationStatusInfo,
 } from '../../hooks/useNodeOperations'
 import { makePendingUpdateApplicationSteps } from '../../hooks/updateApplicationProgressModel'
 import { usePlatformShellData } from '../../hooks/usePlatformShellData'
+import { useNodeTopology } from '../../hooks/useNodeTopology'
+import { useViewedNode } from '../../stores/viewedNodeStore'
 import type {
   PlatformAlert,
   PlatformGridItem,
@@ -80,6 +75,7 @@ import type {
   PlatformTableValue,
 } from '../../platform/model'
 import { isPlatformLayerId } from '../../platform/model'
+import { NODE_PAGE_KEYS } from '../../utils/nodeDisplay'
 import {
   usePlatformActions,
   usePlatformActiveLayer,
@@ -101,10 +97,9 @@ const DEFAULT_PLATFORM_LAYER: PlatformLayerId = 'overview'
 
 const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   overview: ChartColumn,
-  'single-node': Devices,
+  management: Devices,
   'avb-routing': Network_3,
-  'midi-cluster': Share,
-  'api-observatory': Terminal,
+  'network-discovery': Share,
   'cluster-dashboard': DataBase,
 }
 
@@ -396,77 +391,6 @@ function LayerDataTable({ layer, onRowSelect, selectedRowId }: {
   )
 }
 
-// ── MIDI Node Detail ─────────────────────────────────────────────────────────
-
-function MidiClusterNodeDetail({ selectedEndpointId }: { selectedEndpointId: string | null }) {
-  const midiNodesQuery = useMidiClusterNodes()
-  const midiConnectionsQuery = useMidiClusterConnections()
-  const midiEndpointsQuery = useMidiClusterEndpoints()
-
-  const midiNodes = midiNodesQuery.data ?? []
-  const midiConnections = midiConnectionsQuery.data ?? []
-  const midiEndpoints = midiEndpointsQuery.data ?? []
-  const selectedEndpoint = midiEndpoints.find((ep) => ep.endpoint_id === selectedEndpointId) ?? null
-  const selectedNode = midiNodes.find((n) => n.node_id === selectedEndpoint?.node_id) ?? null
-  const nodeNameById = useMemo(() => new Map(midiNodes.map((n) => [n.node_id, n.hostname])), [midiNodes])
-  const selectedConnections = useMemo(() => {
-    if (!selectedNode) return []
-    return midiConnections.filter((c) => c.source.node_id === selectedNode.node_id || c.destination.node_id === selectedNode.node_id)
-  }, [midiConnections, selectedNode])
-
-  if (!selectedEndpointId) {
-    return (
-      <section className="platform-shell__detail-empty" aria-label="MIDI node detail hint">
-        <h3>Node Detail</h3>
-        <p>Select a MIDI endpoint row above to inspect the owning cluster node and its active routes.</p>
-      </section>
-    )
-  }
-  if ((midiNodesQuery.isLoading && !midiNodes.length) || (midiConnectionsQuery.isLoading && !midiConnections.length)) {
-    return (
-      <section className="platform-shell__midi-node-detail">
-        <SkeletonText heading paragraph lineCount={2} />
-        <div className="platform-shell__midi-detail-grid">
-          <SkeletonPlaceholder className="platform-shell__midi-detail-card" />
-          <SkeletonPlaceholder className="platform-shell__midi-detail-card platform-shell__midi-detail-card--wide" />
-        </div>
-      </section>
-    )
-  }
-  if (!selectedEndpoint || !selectedNode) {
-    return <InlineNotification kind="warning" lowContrast hideCloseButton title="MIDI node detail unavailable" subtitle="The selected endpoint no longer maps to a discovered MIDI cluster node." />
-  }
-
-  return (
-    <section className="platform-shell__midi-node-detail">
-      <div className="platform-shell__detail-head">
-        <div>
-          <h3>Node Detail</h3>
-          <p>{selectedNode.hostname} owns {selectedEndpoint.device_name} / {selectedEndpoint.port_name}.</p>
-        </div>
-        <div className="platform-shell__nodes-tags">
-          <Tag type={selectedNode.online ? 'green' : 'red'}>{selectedNode.online ? 'online' : 'offline'}</Tag>
-          <Tag type="cool-gray">{selectedConnections.length} connection{selectedConnections.length === 1 ? '' : 's'}</Tag>
-        </div>
-      </div>
-      <div className="platform-shell__midi-detail-grid">
-        <MidiClusterNodeCard node={selectedNode} connections={selectedConnections.map((c) => c.connection_id)} onSelect={() => undefined} />
-        <MidiClusterTopology nodes={midiNodes} connections={midiConnections} />
-      </div>
-      <div className="platform-shell__detail-list" aria-label="Selected MIDI node routes">
-        {selectedConnections.length === 0 ? (
-          <p className="platform-shell__detail-empty-copy">No active cluster routes currently involve this node.</p>
-        ) : selectedConnections.map((c) => (
-          <div key={c.connection_id} className="platform-shell__detail-row">
-            <strong>{nodeNameById.get(c.source.node_id) ?? c.source.node_id}{' -> '}{nodeNameById.get(c.destination.node_id) ?? c.destination.node_id}</strong>
-            <span>{c.transport} · {c.state}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 // ── Standalone Workspace ─────────────────────────────────────────────────────
 
 function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
@@ -494,7 +418,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
   )
 }
 
-// ── Single-Node Operations Panel ─────────────────────────────────────────────
+// ── Management Operations Panel ──────────────────────────────────────────────
 
 function UpdateProgressModal({
   open,
@@ -523,7 +447,7 @@ function UpdateProgressModal({
     <ComposedModal open={open} size="lg" onClose={onClose}>
       <ModalHeader
         title="Application Update Progress"
-        label="Single Node"
+        label="Management"
         closeModal={onClose}
       />
       <ModalBody hasScrollingContent>
@@ -613,6 +537,15 @@ function UpdateProgressModal({
 
 function SingleNodeOperations() {
   const ops = useNodeOperations()
+  const topologyQuery = useNodeTopology()
+  const topologyNodes = Array.isArray(topologyQuery.data?.nodes) ? topologyQuery.data.nodes : []
+  const localNode = topologyNodes.find((node) => node.is_local) ?? topologyNodes[0] ?? null
+  const viewedNodeId = useViewedNode(NODE_PAGE_KEYS.platform, localNode?.node_id ?? 'local')
+  const viewedNode = topologyNodes.find((node) => node.node_id === viewedNodeId) ?? localNode
+  const viewedNodeIsRemote = Boolean(viewedNode && localNode && viewedNode.node_id !== localNode.node_id)
+  const viewedNodeLabel = viewedNode?.display_label
+    ? `${viewedNode.hostname} (${viewedNode.display_label})`
+    : viewedNode?.hostname ?? viewedNode?.node_id ?? 'selected node'
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [updateLaunchError, setUpdateLaunchError] = useState<string | null>(null)
 
@@ -639,11 +572,11 @@ function SingleNodeOperations() {
   }
 
   return (
-    <section className="platform-shell__node-operations" aria-label="Node operations">
+    <section className="platform-shell__node-operations" aria-label="Management operations">
       <div className="platform-shell__detail-head">
         <div>
-          <h3>Node Operations</h3>
-          <p>Version, deployment, update, backup, and remediation actions for this node.</p>
+          <h3>Management Actions</h3>
+          <p>Version, deployment, update, backup, and remediation actions for the local management host.</p>
         </div>
         <div className="platform-shell__nodes-tags">
           {ops.version && (
@@ -660,15 +593,24 @@ function SingleNodeOperations() {
         </div>
       </div>
 
+      {viewedNodeIsRemote && (
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="Remote management context selected"
+          subtitle={`The current workspace is scoped to ${viewedNodeLabel}, but mutation actions below still apply only to the local management host.`}
+        />
+      )}
+
       <div className="platform-shell__node-ops-grid">
-        {/* Update actions */}
         <div className="platform-shell__node-ops-group">
           <h4>Updates</h4>
           <div className="platform-shell__node-ops-actions">
             <Button
               kind="primary"
               size="sm"
-              disabled={updateActionPending}
+              disabled={viewedNodeIsRemote || updateActionPending}
               onClick={handleCheckForUpdates}
             >
               {updateActionPending && <InlineLoading description="" />}
@@ -678,6 +620,7 @@ function SingleNodeOperations() {
               <Button
                 kind="danger--ghost"
                 size="sm"
+                disabled={viewedNodeIsRemote}
                 onClick={() => ops.abortUpdate()}
               >
                 Abort Update
@@ -699,14 +642,13 @@ function SingleNodeOperations() {
           )}
         </div>
 
-        {/* Backup actions */}
         <div className="platform-shell__node-ops-group">
           <h4>Backup &amp; Restore</h4>
           <div className="platform-shell__node-ops-actions">
             <Button
               kind="secondary"
               size="sm"
-              disabled={ops.isBackingUp}
+              disabled={viewedNodeIsRemote || ops.isBackingUp}
               onClick={() => ops.triggerBackup()}
             >
               {ops.isBackingUp && <InlineLoading description="" />}
@@ -716,7 +658,7 @@ function SingleNodeOperations() {
               <Button
                 kind="ghost"
                 size="sm"
-                disabled={ops.isRestoring}
+                disabled={viewedNodeIsRemote || ops.isRestoring}
                 onClick={() => ops.restoreBackup(ops.backups[0].backup_id)}
               >
                 {ops.isRestoring ? 'Restoring…' : `Restore Latest (${new Date(ops.backups[0].created_at).toLocaleDateString()})`}
@@ -729,7 +671,6 @@ function SingleNodeOperations() {
           </p>
         </div>
 
-        {/* Deployment mode actions */}
         <div className="platform-shell__node-ops-group">
           <h4>Deployment Mode</h4>
           <div className="platform-shell__node-ops-actions">
@@ -738,7 +679,7 @@ function SingleNodeOperations() {
                 key={mode}
                 kind={ops.deploymentMode?.mode === mode ? 'primary' : 'ghost'}
                 size="sm"
-                disabled={ops.isSwitchingMode || ops.deploymentMode?.mode === mode}
+                disabled={viewedNodeIsRemote || ops.isSwitchingMode || ops.deploymentMode?.mode === mode}
                 onClick={() => ops.switchDeploymentMode(mode)}
               >
                 {mode.replace(/-/g, ' ')}
@@ -755,14 +696,13 @@ function SingleNodeOperations() {
           )}
         </div>
 
-        {/* Health & Remediation */}
         <div className="platform-shell__node-ops-group">
           <h4>Health &amp; Remediation</h4>
           <div className="platform-shell__node-ops-actions">
             <Button
               kind="ghost"
               size="sm"
-              disabled={ops.isRemediating}
+              disabled={viewedNodeIsRemote || ops.isRemediating}
               onClick={() => ops.triggerRemediation('RESTART_BACKEND')}
             >
               Restart Backend
@@ -770,7 +710,7 @@ function SingleNodeOperations() {
             <Button
               kind="ghost"
               size="sm"
-              disabled={ops.isRemediating}
+              disabled={viewedNodeIsRemote || ops.isRemediating}
               onClick={() => ops.triggerRemediation('RESTART_WEB_UI')}
             >
               Restart Web UI
@@ -778,7 +718,7 @@ function SingleNodeOperations() {
             <Button
               kind="ghost"
               size="sm"
-              disabled={ops.isRemediating}
+              disabled={viewedNodeIsRemote || ops.isRemediating}
               onClick={() => ops.triggerRemediation('CHECK_NETWORK')}
             >
               Check Network
@@ -786,7 +726,7 @@ function SingleNodeOperations() {
             <Button
               kind="ghost"
               size="sm"
-              disabled={ops.isRemediating}
+              disabled={viewedNodeIsRemote || ops.isRemediating}
               onClick={() => ops.triggerRemediation('REDISCOVER_PEERS')}
             >
               Rediscover Peers
@@ -805,6 +745,7 @@ function SingleNodeOperations() {
                 <Button
                   kind="tertiary"
                   size="sm"
+                  disabled={viewedNodeIsRemote}
                   onClick={() => {
                     const localNodeId = ops.health ? 'local' : ''
                     ops.captureManifest(localNodeId)
@@ -817,6 +758,7 @@ function SingleNodeOperations() {
                     key={node.node_id}
                     kind="danger--tertiary"
                     size="sm"
+                    disabled={viewedNodeIsRemote}
                     onClick={() => ops.enforceManifest(node.node_id)}
                   >
                     Enforce on {node.hostname}
@@ -858,17 +800,10 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   onDismissAlert: (id: string) => void
 }) {
   const Icon = LAYER_ICONS[layer.id]
-  const [selectedMidiRowId, setSelectedMidiRowId] = useState<string | null>(null)
   const isClusterLayer = layer.id === 'cluster-dashboard'
   const isAvbLayer = layer.id === 'avb-routing'
-  const isMidiLayer = layer.id === 'midi-cluster'
-  const isSingleNodeLayer = layer.id === 'single-node'
-
-  useEffect(() => { setSelectedMidiRowId(null) }, [layer.id])
-  useEffect(() => {
-    if (!isMidiLayer || !selectedMidiRowId) return
-    if (!layer.tableRows.some((r) => r.id === selectedMidiRowId)) setSelectedMidiRowId(null)
-  }, [isMidiLayer, layer.tableRows, selectedMidiRowId])
+  const isManagementLayer = layer.id === 'management'
+  const isNetworkDiscoveryLayer = layer.id === 'network-discovery'
 
   return (
     <motion.section key={layer.id} className="platform-shell__workspace"
@@ -891,12 +826,17 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
         <ClusterDashboardWorkspace layer={layer} />
       ) : isAvbLayer ? (
         <AvbRoutingWorkspace layer={layer} />
+      ) : isManagementLayer ? (
+        <>
+          <ManagementWorkspace layer={layer} />
+          <SingleNodeOperations />
+        </>
+      ) : isNetworkDiscoveryLayer ? (
+        <NetworkDiscoveryWorkspace layer={layer} />
       ) : (
         <>
           <LayerSummaryTiles items={layer.gridItems} />
-          <LayerDataTable layer={layer} onRowSelect={isMidiLayer ? setSelectedMidiRowId : undefined} selectedRowId={selectedMidiRowId} />
-          {isMidiLayer && <MidiClusterNodeDetail selectedEndpointId={selectedMidiRowId} />}
-          {isSingleNodeLayer && <SingleNodeOperations />}
+          <LayerDataTable layer={layer} />
         </>
       )}
     </motion.section>

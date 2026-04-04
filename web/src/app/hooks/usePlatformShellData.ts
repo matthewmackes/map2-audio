@@ -4,28 +4,18 @@ import { useQuery } from '@tanstack/react-query'
 import { getTrafficStats } from '../pages/ApiObservatory/api'
 import { type AVBNode, type AVBStream, useAVBDiscovery, useAVBStatus, useAVBStreams, useAvbRealtimeSync, usePTPStatus, useTsnStatus } from './useAvbStatus'
 import { useCPUMetrics } from './useCPUMetrics'
-import {
-  useMidiClusterClock,
-  useMidiClusterConnections,
-  useMidiClusterEndpoints,
-  useMidiClusterHealth,
-  useMidiClusterNodes,
-  useMidiClusterSummary,
-} from './useMidiCluster'
 import { useNodeIdentity, useNodeTopology } from './useNodeTopology'
 import { useOpenApiSchema } from './useOpenApiSchema'
+import { usePeerDiscoveryStatus } from './usePeerDiscovery'
 import { usePipeWire } from './usePipeWire'
 import {
   networkApi,
-  type MidiClusterConnection,
-  type MidiClusterEndpoint,
-  type MidiClusterNode,
   wwwApi,
 } from '../../map2/api'
 import { useViewedNode } from '../stores/viewedNodeStore'
 import type { NodeSummary } from '../types/node'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
-import type { AccessLog, APIEndpoint, NetworkStatus, WebSocketStats, WWWStatus } from '../../map2/types'
+import type { NetworkStatus, WWWStatus } from '../../map2/types'
 import type {
   PlatformAlert,
   PlatformGridItem,
@@ -79,13 +69,8 @@ export interface PlatformShellData {
   alerts: PlatformAlert[]
 }
 
-const EMPTY_ACCESS_LOGS: AccessLog[] = []
-const EMPTY_API_ENDPOINTS: APIEndpoint[] = []
 const EMPTY_AVB_NODES: AVBNode[] = []
 const EMPTY_AVB_STREAMS: AVBStream[] = []
-const EMPTY_MIDI_CONNECTIONS: MidiClusterConnection[] = []
-const EMPTY_MIDI_ENDPOINTS: MidiClusterEndpoint[] = []
-const EMPTY_MIDI_NODES: MidiClusterNode[] = []
 
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0
@@ -211,26 +196,6 @@ function pushNotification(
   target.push({ id, severity, title, subtitle })
 }
 
-function endpointErrorCount(logs: AccessLog[], endpoint: APIEndpoint): number {
-  return logs.filter((log) => log.path === endpoint.path && log.method.toUpperCase() === endpoint.method.toUpperCase() && log.status_code >= 400).length
-}
-
-function endpointStatus(endpoint: APIEndpoint, errorCount: number): PlatformHealth {
-  if (errorCount > 0) {
-    return errorCount >= 3 ? 'critical' : 'warning'
-  }
-  if (endpoint.avg_response_time !== null && endpoint.avg_response_time > 750) {
-    return 'warning'
-  }
-  return 'healthy'
-}
-
-function endpointActivity(endpoint: MidiClusterEndpoint, activeConnections: number): string {
-  if (!endpoint.available) return 'Unavailable'
-  if (activeConnections > 0) return `${activeConnections} route${activeConnections === 1 ? '' : 's'}`
-  return 'Idle'
-}
-
 export function usePlatformShellData(): PlatformShellData {
   const platformRouteActive = useRouteActive(['/platforms'])
   const platformFastCadence = useRealtimeCadence({
@@ -243,12 +208,6 @@ export function usePlatformShellData(): PlatformShellData {
     routeActive: platformRouteActive,
     visibleMs: 10_000,
     hiddenMs: 30_000,
-    inactiveMs: false,
-  })
-  const platformSlowCadence = useRealtimeCadence({
-    routeActive: platformRouteActive,
-    visibleMs: 15_000,
-    hiddenMs: 45_000,
     inactiveMs: false,
   })
   const platformVerySlowCadence = useRealtimeCadence({
@@ -302,36 +261,12 @@ export function usePlatformShellData(): PlatformShellData {
   const avbDiscoveryQuery = useAVBDiscovery(avbStreamsEnabled)
   const ptpStatusQuery = usePTPStatus(avbStreamsEnabled)
   const tsnStatusQuery = useTsnStatus(avbStreamsEnabled)
-
-  const midiNodesQuery = useMidiClusterNodes()
-  const midiConnectionsQuery = useMidiClusterConnections()
-  const midiEndpointsQuery = useMidiClusterEndpoints()
-  const midiClockQuery = useMidiClusterClock()
-  const midiHealthQuery = useMidiClusterHealth()
-  const midiSummaryQuery = useMidiClusterSummary()
+  const discoveryQuery = usePeerDiscoveryStatus(typeof platformStandardCadence === 'number' ? platformStandardCadence : 10_000)
 
   const observatorySchema = useOpenApiSchema()
   const trafficStatsQuery = useQuery<TrafficStatsResponse>({
     queryKey: ['platform', 'observatory', 'traffic-stats'],
     queryFn: () => getTrafficStats() as Promise<TrafficStatsResponse>,
-    refetchInterval: platformStandardCadence,
-    staleTime: 5000,
-  })
-  const observatoryEndpointsQuery = useQuery<{ endpoints: APIEndpoint[] }>({
-    queryKey: ['platform', 'observatory', 'endpoints'],
-    queryFn: wwwApi.getEndpoints,
-    refetchInterval: platformSlowCadence,
-    staleTime: 10000,
-  })
-  const observatoryLogsQuery = useQuery<{ logs: AccessLog[] }>({
-    queryKey: ['platform', 'observatory', 'logs'],
-    queryFn: () => wwwApi.getAccessLogs(40),
-    refetchInterval: platformSlowCadence,
-    staleTime: 10000,
-  })
-  const observatoryWsQuery = useQuery<WebSocketStats>({
-    queryKey: ['platform', 'observatory', 'websocket'],
-    queryFn: wwwApi.getWebSocketStats,
     refetchInterval: platformStandardCadence,
     staleTime: 5000,
   })
@@ -457,30 +392,10 @@ export function usePlatformShellData(): PlatformShellData {
   const runningAvbStreams = avbStreams.filter((stream) => stream.state === 'running')
   const avbStreamErrors = avbStreams.filter((stream) => stream.state === 'error' || Boolean(stream.error)).length
   const avbDiscoveredNodes = avbDiscoveryQuery.data?.nodes ?? EMPTY_AVB_NODES
+  const discoveryPeers = discoveryQuery.data?.peers ?? []
 
-  const midiEndpoints = midiEndpointsQuery.data ?? EMPTY_MIDI_ENDPOINTS
-  const midiConnections = midiConnectionsQuery.data ?? EMPTY_MIDI_CONNECTIONS
-  const midiNodes = midiNodesQuery.data ?? EMPTY_MIDI_NODES
-  const midiConnectionCountByEndpoint = useMemo(
-    () => midiConnections.reduce<Record<string, number>>((acc, connection) => {
-      acc[connection.source.endpoint_id] = (acc[connection.source.endpoint_id] ?? 0) + 1
-      acc[connection.destination.endpoint_id] = (acc[connection.destination.endpoint_id] ?? 0) + 1
-      return acc
-    }, {}),
-    [midiConnections],
-  )
-  const midiNodeNameById = useMemo(
-    () => new Map(midiNodes.map((node) => [node.node_id, node.hostname])),
-    [midiNodes],
-  )
-
-  const observatoryEndpoints = observatoryEndpointsQuery.data?.endpoints ?? EMPTY_API_ENDPOINTS
-  const observatoryLogs = observatoryLogsQuery.data?.logs ?? EMPTY_ACCESS_LOGS
   const observatoryTraffic = trafficStatsQuery.data
-  const observatoryWs = observatoryWsQuery.data
   const observatoryStatus = observatoryStatusQuery.data
-  const operationCount = observatorySchema.catalog.reduce((sum, group) => sum + group.endpoints.length, 0)
-  const diffCount = observatorySchema.diff.added.length + observatorySchema.diff.modified.length + observatorySchema.diff.removed.length
 
   // ── Node operations derived values ──
   const nodeVersion = nodeVersionQuery.data
@@ -497,8 +412,8 @@ export function usePlatformShellData(): PlatformShellData {
     const overviewNotifications: PlatformNotification[] = []
     const nodeNotifications: PlatformNotification[] = []
     const avbNotifications: PlatformNotification[] = []
-    const midiNotifications: PlatformNotification[] = []
     const observatoryNotifications: PlatformNotification[] = []
+    const discoveryNotifications: PlatformNotification[] = []
     const clusterNotifications: PlatformNotification[] = []
 
     if (criticalNodes > 0) {
@@ -590,33 +505,6 @@ export function usePlatformShellData(): PlatformShellData {
       )
     }
 
-    if (midiSummaryQuery.data?.enabled === false) {
-      pushNotification(
-        midiNotifications,
-        'midi-disabled',
-        'warning',
-        'MIDI cluster disabled',
-        'Cluster MIDI is disabled in configuration.',
-      )
-    } else if ((midiHealthQuery.data?.degraded_connections ?? 0) > 0) {
-      pushNotification(
-        midiNotifications,
-        'midi-degraded-connections',
-        'warning',
-        'MIDI routes are degraded',
-        `${midiHealthQuery.data?.degraded_connections ?? 0} connection${(midiHealthQuery.data?.degraded_connections ?? 0) === 1 ? '' : 's'} need attention.`,
-      )
-    }
-    if (Math.abs(midiClockQuery.data?.drift_ms ?? 0) > 5) {
-      pushNotification(
-        midiNotifications,
-        'midi-clock-drift',
-        'warning',
-        'Clock drift rising',
-        `Cluster clock drift is ${formatLatencyMs(Math.abs(midiClockQuery.data?.drift_ms ?? 0))}.`,
-      )
-    }
-
     if (observatorySchema.error) {
       pushNotification(
         observatoryNotifications,
@@ -644,6 +532,14 @@ export function usePlatformShellData(): PlatformShellData {
         `Backend ${observatoryStatus.backend_running ? 'up' : 'down'} · Frontend ${observatoryStatus.frontend_running ? 'up' : 'down'}.`,
       )
     }
+    if (observatoryNotifications.length > 0) {
+      overviewNotifications.push(
+        ...observatoryNotifications.map((notification) => ({
+          ...notification,
+          id: `overview-${notification.id}`,
+        })),
+      )
+    }
 
     if (onlineNodes < totalNodes) {
       pushNotification(
@@ -663,11 +559,56 @@ export function usePlatformShellData(): PlatformShellData {
         'No active network-edge latency links are being reported across the cluster.',
       )
     }
+    if (discoveryQuery.error) {
+      pushNotification(
+        discoveryNotifications,
+        'discovery-status-error',
+        'critical',
+        'Peer discovery unavailable',
+        discoveryQuery.error instanceof Error ? discoveryQuery.error.message : 'Failed to load peer visibility telemetry.',
+      )
+    }
+    const unmanagedDiscoveryPeers = discoveryPeers.filter((peer) => peer.registration_required).length
+    const offlineManagedPeers = discoveryPeers.filter((peer) => !peer.is_online && !peer.registration_required).length
+    const slowDiscoveryPeers = discoveryPeers.filter((peer) => (peer.latency_ms ?? 0) > 15).length
+    if (unmanagedDiscoveryPeers > 0) {
+      pushNotification(
+        discoveryNotifications,
+        'discovery-registration-required',
+        'warning',
+        'Peers still need registration',
+        `${unmanagedDiscoveryPeers} discovered peer${unmanagedDiscoveryPeers === 1 ? '' : 's'} are visible but not yet registered into the managed cluster.`,
+      )
+    }
+    if (offlineManagedPeers > 0) {
+      pushNotification(
+        discoveryNotifications,
+        'discovery-offline-managed',
+        'critical',
+        'Managed peers are offline',
+        `${offlineManagedPeers} registered peer${offlineManagedPeers === 1 ? '' : 's'} are currently offline or unreachable.`,
+      )
+    }
+    if (slowDiscoveryPeers > 0) {
+      pushNotification(
+        discoveryNotifications,
+        'discovery-latency-warning',
+        'warning',
+        'Peer latency rising',
+        `${slowDiscoveryPeers} peer${slowDiscoveryPeers === 1 ? '' : 's'} are above the 15 ms watch threshold.`,
+      )
+    }
 
+    const observatoryHealth = worstHealth(
+      observatorySchema.error ? 'critical' : 'healthy',
+      (observatoryTraffic?.error_rate_percent ?? 0) > 5 ? 'warning' : 'healthy',
+      observatoryStatus && (!observatoryStatus.backend_running || !observatoryStatus.frontend_running) ? 'critical' : 'healthy',
+    )
     const overviewHealth = worstHealth(
       clusterHealth,
       warningNodes > 0 ? 'warning' : 'healthy',
       criticalNodes > 0 ? 'critical' : 'healthy',
+      observatoryHealth,
     )
     const nodeHealth = worstHealth(
       statusToHealth(platformNode),
@@ -679,15 +620,10 @@ export function usePlatformShellData(): PlatformShellData {
       avbStreamErrors > 0 ? 'critical' : 'healthy',
       stringToHealth(ptpStatusQuery.data?.state),
     )
-    const midiHealth = worstHealth(
-      stringToHealth(midiHealthQuery.data?.status),
-      stringToHealth(midiHealthQuery.data?.clock_status),
-      (midiHealthQuery.data?.degraded_connections ?? 0) > 0 ? 'warning' : 'healthy',
-    )
-    const observatoryHealth = worstHealth(
-      observatorySchema.error ? 'critical' : 'healthy',
-      (observatoryTraffic?.error_rate_percent ?? 0) > 5 ? 'warning' : 'healthy',
-      observatoryStatus && (!observatoryStatus.backend_running || !observatoryStatus.frontend_running) ? 'critical' : 'healthy',
+    const discoveryHealth = worstHealth(
+      discoveryQuery.error ? 'critical' : 'healthy',
+      offlineManagedPeers > 0 ? 'critical' : 'healthy',
+      unmanagedDiscoveryPeers > 0 || slowDiscoveryPeers > 0 ? 'warning' : 'healthy',
     )
 
     const overviewLayer = {
@@ -742,8 +678,7 @@ export function usePlatformShellData(): PlatformShellData {
             overviewNotifications.length +
             nodeNotifications.length +
             avbNotifications.length +
-            midiNotifications.length +
-            observatoryNotifications.length +
+            discoveryNotifications.length +
             clusterNotifications.length,
           ),
           helper: 'Cross-layer notifications in scope',
@@ -878,7 +813,7 @@ export function usePlatformShellData(): PlatformShellData {
           {
             id: 'node-services',
             title: 'Node Services',
-            eyebrow: 'Single Node',
+            eyebrow: 'Management',
             metric: `${Number(Boolean(platformNode?.services.backend)) + Number(Boolean(platformNode?.services.juce_engine)) + Number(Boolean(platformNode?.services.pipewire))}/3 online`,
             helper: 'Backend, JUCE engine, PipeWire',
             status: nodeHealth,
@@ -1091,10 +1026,10 @@ export function usePlatformShellData(): PlatformShellData {
               : 'Clear',
         },
       ],
-      tableTitle: 'Single-node services and platform operations',
+      tableTitle: 'Management services and platform operations',
       tableDescription: platformNodeIsRemote
-        ? 'Service posture and platform operations for the selected remote node.'
-        : 'Service posture and platform operations for the local node — version, deployment, updates, backups, health, and remediation.',
+        ? 'Service posture and platform operations for the selected remote management context.'
+        : 'Service posture and platform operations for the local management context — version, deployment, updates, backups, health, and remediation.',
       notifications: nodeNotifications,
     } satisfies PlatformLayerData
 
@@ -1185,181 +1120,105 @@ export function usePlatformShellData(): PlatformShellData {
       notifications: avbNotifications,
     } satisfies PlatformLayerData
 
-    const midiLayer = {
+    const discoveryReadyPeers = discoveryPeers.filter((peer) => peer.routing_ready).length
+    const discoverySourceLabel = platformNodeDisplayName
+    const networkDiscoveryLayer = {
       ...PLATFORM_LAYER_META[3],
-      health: midiHealth,
-      activityLevel: clampPercent((midiConnections.length * 12) + (midiEndpoints.length * 3)),
-      alertCount: midiNotifications.length,
-      isLoading: midiNodesQuery.isLoading && midiNodes.length === 0,
-      error: midiNodesQuery.error instanceof Error ? midiNodesQuery.error.message : null,
+      health: discoveryHealth,
+      activityLevel: clampPercent(
+        (discoveryReadyPeers * 18) +
+        (discoveryPeers.filter((peer) => peer.is_online).length * 8) +
+        (discoveryPeers.filter((peer) => (peer.latency_ms ?? 0) > 15).length * 6),
+      ),
+      alertCount: discoveryNotifications.length,
+      isLoading: discoveryQuery.isLoading && discoveryPeers.length === 0,
+      error: discoveryQuery.error instanceof Error ? discoveryQuery.error.message : null,
       summaryMetrics: [
         {
-          id: 'midi-enabled',
-          label: 'Cluster MIDI',
-          value: midiSummaryQuery.data?.enabled ? 'Enabled' : 'Disabled',
-          helper: `${midiSummaryQuery.data?.node_count ?? 0} nodes`,
-          tone: midiHealth,
+          id: 'discovery-source',
+          label: platformNodeIsRemote ? 'Viewed source' : 'Local source',
+          value: discoverySourceLabel,
+          helper: platformNode?.node_id ?? 'Waiting for topology',
+          tone: discoveryHealth,
         },
         {
-          id: 'midi-clock',
-          label: 'Clock master',
-          value: midiClockQuery.data?.master_node_id ?? 'auto',
-          helper: `Drift ${formatLatencyMs(Math.abs(midiClockQuery.data?.drift_ms ?? 0))}`,
-          tone: Math.abs(midiClockQuery.data?.drift_ms ?? 0) > 5 ? 'warning' : 'healthy',
+          id: 'discovery-visible',
+          label: 'Visible peers',
+          value: String(discoveryPeers.length),
+          helper: `${discoveryPeers.filter((peer) => peer.is_online).length} online`,
+          tone: discoveryHealth,
         },
         {
-          id: 'midi-routes',
-          label: 'Routes',
-          value: String(midiConnections.length),
-          helper: `${midiHealthQuery.data?.healthy_connection_count ?? 0} healthy`,
-          tone: (midiHealthQuery.data?.degraded_connections ?? 0) > 0 ? 'warning' : 'healthy',
+          id: 'discovery-routing-ready',
+          label: 'Routing ready',
+          value: String(discoveryReadyPeers),
+          helper: `${discoveryPeers.filter((peer) => peer.registration_required).length} gated`,
+          tone: discoveryReadyPeers > 0 ? 'healthy' : 'warning',
         },
       ],
       gridItems: [
         {
-          id: 'midi-endpoints',
-          title: 'MIDI Endpoints',
-          eyebrow: 'MIDI Cluster',
-          metric: String(midiEndpoints.length),
-          helper: `${midiSummaryQuery.data?.device_count ?? 0} devices`,
-          status: midiHealth,
-          alertCount: midiNotifications.length,
+          id: 'discovery-peers',
+          title: 'Visible Peers',
+          eyebrow: 'Discovery',
+          metric: String(discoveryPeers.length),
+          helper: `${discoveryPeers.filter((peer) => peer.is_online).length} online · ${discoveryReadyPeers} ready`,
+          status: discoveryHealth,
+          alertCount: discoveryNotifications.length,
         },
         {
-          id: 'midi-routing-groups',
-          title: 'Routing Groups',
-          eyebrow: 'Connections',
-          metric: String(midiConnections.length),
-          helper: `${midiHealthQuery.data?.healthy_connection_count ?? 0} healthy · ${(midiHealthQuery.data?.degraded_connections ?? 0)} degraded`,
-          status: (midiHealthQuery.data?.degraded_connections ?? 0) > 0 ? 'warning' : 'healthy',
+          id: 'discovery-ready',
+          title: 'Routing Ready',
+          eyebrow: 'Visibility',
+          metric: String(discoveryReadyPeers),
+          helper: `${discoveryPeers.filter((peer) => !peer.registration_required).length} registered`,
+          status: discoveryReadyPeers > 0 ? 'healthy' : 'warning',
         },
         {
-          id: 'midi-clock-master',
-          title: 'Clock Master',
-          eyebrow: 'Sync',
-          metric: midiClockQuery.data?.master_node_id ?? 'auto',
-          helper: midiClockQuery.data?.strategy ?? 'Pending strategy',
-          status: Math.abs(midiClockQuery.data?.drift_ms ?? 0) > 5 ? 'warning' : 'healthy',
+          id: 'discovery-registration',
+          title: 'Registration Gates',
+          eyebrow: 'Readiness',
+          metric: String(discoveryPeers.filter((peer) => peer.registration_required).length),
+          helper: `${discoveryPeers.filter((peer) => !peer.is_online && !peer.registration_required).length} managed offline`,
+          status: discoveryPeers.some((peer) => peer.registration_required) ? 'warning' : 'healthy',
         },
         {
-          id: 'midi-activity',
-          title: 'Cluster Activity',
-          eyebrow: 'Transport',
-          metric: String(midiConnections.reduce((sum, connection) => sum + connection.messages_forwarded, 0)),
-          helper: 'Messages forwarded across active routes',
-          status: midiConnections.length > 0 ? 'healthy' : 'warning',
+          id: 'discovery-source-node',
+          title: 'Telemetry Source',
+          eyebrow: 'Host Context',
+          metric: platformNodeIsRemote ? 'Remote context' : 'Local context',
+          helper: platformNodeIsRemote
+            ? `${discoverySourceLabel} is selected without launching remote probes`
+            : `${discoverySourceLabel} is supplying the active peer-visibility perspective`,
+          status: discoveryHealth,
         },
       ],
       tableColumns: [
-        { key: 'device', header: 'Device' },
-        { key: 'port', header: 'Port' },
-        { key: 'clusterNode', header: 'Cluster Node' },
-        { key: 'activity', header: 'Activity' },
+        { key: 'peer', header: 'Peer' },
         { key: 'status', header: 'Status' },
+        { key: 'metric1', header: 'Latency' },
+        { key: 'metric2', header: 'Sources' },
+        { key: 'alerts', header: 'Routing' },
       ] satisfies PlatformTableColumn[],
-      tableRows: midiEndpoints.map((endpoint) => ({
-        id: endpoint.endpoint_id,
-        device: endpoint.device_name,
-        port: `${endpoint.port_name} (${endpoint.direction})`,
-        clusterNode: midiNodeNameById.get(endpoint.node_id) ?? endpoint.node_id,
-        activity: endpointActivity(endpoint, midiConnectionCountByEndpoint[endpoint.endpoint_id] ?? 0),
-        status: endpoint.available ? 'healthy' : 'offline',
+      tableRows: discoveryPeers.map((peer) => ({
+        id: peer.node_id,
+        peer: peer.hostname || peer.host || peer.node_id,
+        status: !peer.is_online && !peer.registration_required
+          ? 'critical'
+          : peer.registration_required || !peer.routing_ready
+            ? 'warning'
+            : 'healthy',
+        metric1: formatLatencyMs(peer.latency_ms),
+        metric2: peer.discovery_sources.join(', ') || 'No sources',
+        alerts: peer.routing_ready ? 'Ready' : peer.registration_required ? 'Registration required' : 'Gated',
       })),
-      tableTitle: 'MIDI endpoint inventory',
-      tableDescription: 'Distributed MIDI ports, node ownership, and active route pressure.',
-      notifications: midiNotifications,
-    } satisfies PlatformLayerData
-
-    const observatoryLayer = {
-      ...PLATFORM_LAYER_META[4],
-      health: observatoryHealth,
-      activityLevel: clampPercent((observatoryTraffic?.requests_per_second ?? 0) * 12 + ((observatoryWs?.active_connections ?? 0) * 10)),
-      alertCount: observatoryNotifications.length,
-      isLoading: observatorySchema.loading && observatoryEndpoints.length === 0,
-      error: observatorySchema.error,
-      summaryMetrics: [
-        {
-          id: 'observatory-paths',
-          label: 'OpenAPI paths',
-          value: String(observatorySchema.catalog.length),
-          helper: `${operationCount} operations`,
-          tone: observatoryHealth,
-        },
-        {
-          id: 'observatory-traffic',
-          label: 'Traffic',
-          value: `${formatNumber(observatoryTraffic?.requests_per_second, 1)} rps`,
-          helper: `P95 ${formatLatencyMs(observatoryTraffic?.p95_ms)}`,
-          tone: (observatoryTraffic?.error_rate_percent ?? 0) > 5 ? 'warning' : 'healthy',
-        },
-        {
-          id: 'observatory-diff',
-          label: 'Schema diff',
-          value: String(diffCount),
-          helper: diffCount > 0 ? 'Recent spec drift detected' : 'No spec drift',
-          tone: diffCount > 0 ? 'warning' : 'healthy',
-        },
-      ],
-      gridItems: [
-        {
-          id: 'observatory-services',
-          title: 'Services',
-          eyebrow: 'API Observatory',
-          metric: observatoryStatus?.backend_running && observatoryStatus.frontend_running ? '2/2 online' : 'Degraded',
-          helper: `WS ${observatoryWs?.active_connections ?? 0} active`,
-          status: observatoryStatus?.backend_running && observatoryStatus.frontend_running ? 'healthy' : 'critical',
-          alertCount: observatoryNotifications.length,
-        },
-        {
-          id: 'observatory-endpoint-groups',
-          title: 'Endpoint Groups',
-          eyebrow: 'Catalog',
-          metric: String(observatorySchema.catalog.length),
-          helper: `${operationCount} operations indexed`,
-          status: observatoryHealth,
-        },
-        {
-          id: 'observatory-rate',
-          title: 'Request Rate',
-          eyebrow: 'Traffic',
-          metric: `${formatNumber(observatoryTraffic?.requests_per_second, 1)} rps`,
-          helper: `${formatPercent(observatoryTraffic?.error_rate_percent, 1)} error rate`,
-          status: (observatoryTraffic?.error_rate_percent ?? 0) > 5 ? 'warning' : 'healthy',
-        },
-        {
-          id: 'observatory-websocket',
-          title: 'WebSocket Load',
-          eyebrow: 'Realtime',
-          metric: String(observatoryWs?.active_connections ?? 0),
-          helper: `${formatNumber(observatoryWs?.messages_per_second, 1)} msg/s`,
-          status: (observatoryWs?.active_connections ?? 0) > 0 ? 'healthy' : 'warning',
-        },
-      ],
-      tableColumns: [
-        { key: 'endpoint', header: 'Endpoint' },
-        { key: 'latency', header: 'Latency' },
-        { key: 'requests', header: 'Requests' },
-        { key: 'errors', header: 'Errors' },
-        { key: 'status', header: 'Status' },
-      ] satisfies PlatformTableColumn[],
-      tableRows: observatoryEndpoints.map((endpoint) => {
-        const errorCount = endpointErrorCount(observatoryLogs, endpoint)
-        return {
-          id: `${endpoint.method}-${endpoint.path}`,
-          endpoint: `${endpoint.method.toUpperCase()} ${endpoint.path}`,
-          latency: endpoint.avg_response_time !== null ? formatLatencyMs(endpoint.avg_response_time) : 'n/a',
-          requests: endpoint.request_count,
-          errors: errorCount,
-          status: endpointStatus(endpoint, errorCount),
-        }
-      }),
-      tableTitle: 'Observed API endpoints',
-      tableDescription: 'Endpoint latency and failure posture from the live web-service telemetry surfaces.',
-      notifications: observatoryNotifications,
+      tableTitle: 'Network discovery telemetry',
+      tableDescription: 'Peer visibility, latency, and routing-readiness context sourced from existing discovery and heartbeat telemetry.',
+      notifications: discoveryNotifications,
     } satisfies PlatformLayerData
 
     const clusterLayer = {
-      ...PLATFORM_LAYER_META[5],
+      ...PLATFORM_LAYER_META[4],
       health: clusterHealth,
       activityLevel: clampPercent(((clusterStatusQuery.data?.aggregate_health_score ?? 0) * 0.55) + (activeNetworkEdges * 9)),
       alertCount: clusterNotifications.length,
@@ -1377,7 +1236,7 @@ export function usePlatformShellData(): PlatformShellData {
           id: 'cluster-mode',
           label: 'Deployment mode',
           value: deploymentMode,
-          helper: `${midiNodes.length} MIDI nodes`,
+          helper: `${discoveryPeers.length} visible peers`,
           tone: 'info',
         },
         {
@@ -1403,7 +1262,7 @@ export function usePlatformShellData(): PlatformShellData {
           title: 'Cluster Zones',
           eyebrow: 'Fabric',
           metric: String(Math.max(1, activeNetworkEdges)),
-          helper: `${midiNodes.length} MIDI peers · ${avbDiscoveredNodes.length} AVB peers`,
+          helper: `${discoveryPeers.length} discovery peers · ${avbDiscoveredNodes.length} AVB peers`,
           status: activeNetworkEdges > 0 || totalNodes <= 1 ? 'healthy' : 'warning',
         },
         {
@@ -1449,8 +1308,7 @@ export function usePlatformShellData(): PlatformShellData {
       overviewLayer,
       nodeLayer,
       avbLayer,
-      midiLayer,
-      observatoryLayer,
+      networkDiscoveryLayer,
       clusterLayer,
     ]
   }, [
@@ -1474,33 +1332,22 @@ export function usePlatformShellData(): PlatformShellData {
     cpu.metrics.totalCpuPercent,
     cpu.status,
     criticalNodes,
+    discoveryPeers,
+    discoveryQuery.error,
+    discoveryQuery.isLoading,
     deploymentMode,
     deploymentModeQuery.data,
-    diffCount,
     identityQuery.data,
     identityQuery.isLoading,
     localNode,
-    midiClockQuery.data,
-    midiConnections,
-    midiConnectionCountByEndpoint,
-    midiEndpoints,
-    midiHealthQuery.data,
-    midiNodes,
-    midiNodeNameById,
-    midiNodesQuery.error,
-    midiNodesQuery.isLoading,
-    midiSummaryQuery.data,
     networkQuery.data,
-    observatoryEndpoints,
-    observatoryLogs,
-    observatorySchema.catalog,
     observatorySchema.error,
-    observatorySchema.loading,
     observatoryStatus,
     observatoryTraffic,
-    observatoryWs,
     onlineNodes,
-    operationCount,
+    platformNode,
+    platformNodeIsRemote,
+    platformViewedNodeId,
     pipewire.alerts.length,
     pipewire.clientCount,
     pipewire.hasXruns,

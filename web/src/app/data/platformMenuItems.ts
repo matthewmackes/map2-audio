@@ -49,10 +49,9 @@ export type PlatformPinnedNavItem = PlatformPanelNavItem & { pinnable: true }
 
 const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   overview: ChartColumn,
-  'single-node': Devices,
+  management: Devices,
   'avb-routing': Network_3,
-  'midi-cluster': Share,
-  'api-observatory': Terminal,
+  'network-discovery': Share,
   'cluster-dashboard': DataBase,
 }
 
@@ -154,10 +153,9 @@ function buildStandalonePanelNavItem(panelId: StandalonePanel): PlatformPanelNav
 export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('overview'),
   buildStandalonePanelNavItem('audio-engine'),
-  buildPlatformLayerNavItem('single-node'),
+  buildPlatformLayerNavItem('management'),
   buildPlatformLayerNavItem('avb-routing'),
-  buildPlatformLayerNavItem('midi-cluster'),
-  buildPlatformLayerNavItem('api-observatory'),
+  buildPlatformLayerNavItem('network-discovery'),
   buildPlatformLayerNavItem('cluster-dashboard'),
   buildStandalonePanelNavItem('adoption'),
   buildStandalonePanelNavItem('host-machine'),

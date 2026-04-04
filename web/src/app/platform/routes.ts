@@ -3,6 +3,11 @@ import { isPlatformLayerId, type PlatformLayerId } from './model'
 
 export type PlatformWorkspaceId = PlatformLayerId | StandalonePanel
 
+const LEGACY_PLATFORM_LAYER_REDIRECTS: Record<string, PlatformLayerId> = {
+  'single-node': 'management',
+  'api-observatory': 'network-discovery',
+}
+
 export function isPlatformWorkspaceId(value: string | null | undefined): value is PlatformWorkspaceId {
   return isPlatformLayerId(value) || isStandalonePanel(value)
 }
@@ -15,24 +20,42 @@ export function resolvePlatformWorkspaceTarget(workspace: string | null | undefi
   layer?: PlatformLayerId
   panel?: StandalonePanel
 } | null {
-  if (isPlatformLayerId(workspace)) {
-    return { layer: workspace }
+  const normalizedWorkspace = workspace && LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
+    ? LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
+    : workspace
+
+  if (isPlatformLayerId(normalizedWorkspace)) {
+    return { layer: normalizedWorkspace }
   }
 
-  if (isStandalonePanel(workspace)) {
-    return { panel: workspace }
+  if (isStandalonePanel(normalizedWorkspace)) {
+    return { panel: normalizedWorkspace }
   }
 
   return null
 }
 
+export function buildLegacyPlatformWorkspaceRedirectPath(workspace: string | null | undefined): string | null {
+  if (!workspace) {
+    return null
+  }
+
+  if (workspace === 'midi-cluster') {
+    return '/midi-hub/connections'
+  }
+
+  const redirectedLayer = LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
+  return redirectedLayer ? buildPlatformWorkspacePath(redirectedLayer) : null
+}
+
 export function buildLegacyPlatformRedirectPath(searchParams: URLSearchParams): string | null {
   const layer = searchParams.get('layer')
   const panel = searchParams.get('panel')
+  const redirectedLayer = layer ? LEGACY_PLATFORM_LAYER_REDIRECTS[layer] ?? layer : layer
   const target = panel && isStandalonePanel(panel)
     ? buildPlatformWorkspacePath(panel)
-    : layer && isPlatformLayerId(layer)
-      ? buildPlatformWorkspacePath(layer)
+    : redirectedLayer && isPlatformLayerId(redirectedLayer)
+      ? buildPlatformWorkspacePath(redirectedLayer)
       : null
 
   if (!target) {

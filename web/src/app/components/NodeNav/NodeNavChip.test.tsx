@@ -129,7 +129,7 @@ describe('NodeNavChip', () => {
     expect(useViewedNodeStore.getState().pageNodeMap.home).toBe('node-b')
   })
 
-  it('routes platform node details into the single-node layer', () => {
+  it('routes platform node details into the management layer', () => {
     render(
       <MemoryRouter initialEntries={['/platforms/cluster-dashboard']}>
         <NodeNavBar />
@@ -141,7 +141,7 @@ describe('NodeNavChip', () => {
     fireEvent.click(screen.getByText('View details'))
 
     expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/single-node')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/management')
   })
 
   it('renders a single chip for n=1 mode and shows a skeleton while loading', () => {

@@ -1,9 +1,8 @@
 export const PLATFORM_LAYER_IDS = [
   'overview',
-  'single-node',
+  'management',
   'avb-routing',
-  'midi-cluster',
-  'api-observatory',
+  'network-discovery',
   'cluster-dashboard',
 ] as const
 
@@ -89,10 +88,10 @@ export const PLATFORM_LAYER_META: PlatformLayerMeta[] = [
     accent: 'var(--cds-support-warning)',
   },
   {
-    id: 'single-node',
-    label: 'Single Node',
-    shortLabel: 'Node',
-    description: 'Local node service readiness, interfaces, and active stream posture.',
+    id: 'management',
+    label: 'Management',
+    shortLabel: 'Mgmt',
+    description: 'Platform operations, lifecycle posture, and service readiness for the selected node context.',
     accent: 'var(--cds-support-success)',
   },
   {
@@ -103,17 +102,10 @@ export const PLATFORM_LAYER_META: PlatformLayerMeta[] = [
     accent: 'var(--cds-support-info)',
   },
   {
-    id: 'midi-cluster',
-    label: 'MIDI Cluster',
-    shortLabel: 'MIDI',
-    description: 'Distributed MIDI endpoints, cluster clock, and cross-node routing state.',
-    accent: 'var(--cds-link-primary)',
-  },
-  {
-    id: 'api-observatory',
-    label: 'API Observatory',
-    shortLabel: 'API',
-    description: 'Endpoint inventory, traffic telemetry, websocket load, and schema drift.',
+    id: 'network-discovery',
+    label: 'Network Discovery',
+    shortLabel: 'Discovery',
+    description: 'Peer visibility, heartbeat readiness, and network reachability from collected cluster telemetry.',
     accent: 'var(--cds-support-error)',
   },
   {

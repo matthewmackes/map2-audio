@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (cluster-dashboard graph workspace and single-node handoff contract documented)
+> **Last Updated**: April 3, 2026 (management/network-discovery workspace contract and Platforms route-rename alias rules documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1449,13 +1449,21 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/AvbRouting/avbRoutingWorkspaceHref.test.ts src/app/components/AvbRouting/avbRoutingWorkspaceGraph.test.ts src/app/components/AvbRouting/AvbRoutingWorkspace.test.tsx src/app/components/Tesira/components/TesiraAvbTab.test.tsx src/app/components/Tesira/components/TesiraDeviceDashboard.test.tsx src/app/components/Platform/PlatformModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: During the `/platforms` hard cut, AVB/Tesira handoffs must target the routed shell destination, not legacy standalone paths, and all cross-workspace links need a shared focus-param contract or node context will drift between graph and table surfaces.
 
-**49. Cluster Dashboard Must Stay A Graph-First Workspace With Expandable Node Detail And Single-Node Handoff, Not The Old Summary/Table Stub (HIGH - Apr 3, 2026)**
+**49. Cluster Dashboard Must Stay A Graph-First Workspace With Expandable Node Detail And Management Handoff, Not The Old Summary/Table Stub (HIGH - Apr 3, 2026)**
 - **Files**: `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.ts`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, `web/src/app/components/Platform/PlatformModal.tsx`
-- **Problem**: `/platforms/cluster-dashboard` still rendered the old summary-tile/table stub even after the hard-cut shell work, so the cluster layer had no graph hero, no peer-link telemetry view, and no direct node-scoped handoff into the routed Single Node workspace.
+- **Problem**: `/platforms/cluster-dashboard` still rendered the old summary-tile/table stub even after the hard-cut shell work, so the cluster layer had no graph hero, no peer-link telemetry view, and no direct node-scoped handoff into the routed Management workspace.
 - **Root Cause**: The routed shell existed, but the cluster layer never got its dedicated React Flow workspace implementation and kept relying on the inline generic `ClusterDashboardWorkspace` placeholder inside `PlatformModal.tsx`.
-- **Fix**: Replace the inline stub with a dedicated `ClusterDashboardWorkspace`, build the graph from `useNodeTopology()` audio/network edges plus node health data, use expandable Carbon rows for node detail, and wire explicit node-context adoption plus `/platforms/single-node` launch actions from expanded rows.
+- **Fix**: Replace the inline stub with a dedicated `ClusterDashboardWorkspace`, build the graph from `useNodeTopology()` audio/network edges plus node health data, use expandable Carbon rows for node detail, and wire explicit node-context adoption plus `/platforms/management` launch actions from expanded rows.
 - **Verification**: `npm --prefix web test -- --runInBand src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.test.ts src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
-- **Lesson**: For `/platforms` hard-cut workspaces, a cluster layer is not complete until graph selection anchors into expandable detail rows and every selected node can hand operators straight into the correct routed node workspace without losing context.
+- **Lesson**: For `/platforms` hard-cut workspaces, a cluster layer is not complete until graph selection anchors into expandable detail rows and every selected node can hand operators straight into the correct routed management workspace without losing context.
+
+**50. Platforms Layer Renames Must Keep Active IDs, Legacy Aliases, And Node Handoffs In Sync (HIGH - Apr 3, 2026)**
+- **Files**: `web/src/app/platform/model.ts`, `web/src/app/platform/routes.ts`, `web/src/app/data/platformMenuItems.ts`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/pages/PlatformWorkspacePage.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, `web/src/app/components/NodeNav/NodeMiniCard.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`
+- **Problem**: The routed Platforms shell still mixed legacy layer IDs (`single-node`, `api-observatory`, `midi-cluster`) with the new management/discovery operator model, so graph workspaces, menu items, and node-scoped handoffs could drift onto stale routes or misleading labels.
+- **Root Cause**: Earlier `/platforms` migration slices added the routed shell incrementally, but the active layer IDs, legacy alias maps, and node-handoff launch points were not normalized together when the shell vocabulary changed.
+- **Fix**: Make `management` and `network-discovery` the only active layer IDs in `PLATFORM_LAYER_META`, keep legacy aliases centralized in `platform/routes.ts` and advanced-menu mappings, redirect `midi-cluster` into `/midi-hub/connections`, render dedicated management/discovery workspaces from `PlatformModal.tsx`, and update node-scoped handoffs to target `/platforms/management` with the platform viewed-node context preserved.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/ManagementWorkspace/managementWorkspaceGraph.test.ts src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/NetworkDiscovery/networkDiscoveryWorkspaceGraph.test.ts src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/data/advancedMenuItems.test.ts src/app/components/NodeNav/NodeNavChip.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: Whenever a `/platforms` layer is renamed or moved, update `PLATFORM_LAYER_META`, route alias normalization, shared menu aliases, and every node/graph handoff in the same slice. Legacy aliases may remain for compatibility, but active shell IDs and operator-visible destinations must stay singular and consistent.
 
 ---
 
@@ -1728,9 +1736,16 @@ Target: < 5 ms total
 
 ## Update Log
 
-### [2026-04-03] - Cluster Dashboard Graph Workspace And Single-Node Handoff Contract
+### [2026-04-03] - Management And Network-Discovery Workspace Contract Plus Platforms Route-Rename Alias Rules
+- **Section**: Gotchas & Learned Fixes (#50), Update Log
+- **Change**: Documented the dedicated `/platforms/management` and `/platforms/network-discovery` workspaces, the hard rename away from `single-node` and `api-observatory`, the `midi-cluster` redirect into MIDI Hub, and the rule that node-scoped platform handoffs must now land on `/platforms/management` while legacy aliases continue to resolve safely.
+- **Reason**: T701-subE closed the management/discovery slice of the hard-cut migration and had to normalize active layer IDs, compatibility redirects, and node-context handoff behavior in one pass.
+- **Impact**: Future assistants should preserve the management/discovery graph workspaces, keep legacy alias maps synchronized with active platform layer IDs, and avoid reintroducing stale route names into menus, graph links, or node-detail actions.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/platform/model.ts`, `web/src/app/platform/routes.ts`, `web/src/app/pages/PlatformWorkspacePage.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/NodeNav/NodeMiniCard.tsx`
+
+### [2026-04-03] - Cluster Dashboard Graph Workspace And Management Handoff Contract
 - **Section**: Gotchas & Learned Fixes (#49), Update Log
-- **Change**: Documented the dedicated `/platforms/cluster-dashboard` workspace, the topology/peer-link graph model, and the rule that selected cluster nodes must offer direct context-preserving handoff into `/platforms/single-node`.
+- **Change**: Documented the dedicated `/platforms/cluster-dashboard` workspace, the topology/peer-link graph model, and the rule that selected cluster nodes must offer direct context-preserving handoff into `/platforms/management`.
 - **Reason**: T701-subD replaced the old inline cluster stub with the next real graph-first `/platforms` workspace and had to lock the node-handoff behavior at the same time.
 - **Impact**: Future assistants should preserve the graph-on-top/table-on-bottom cluster layout, keep peer telemetry visible in the graph, and avoid regressing the cluster layer back into a generic summary table.
 - **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, `web/src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.ts`, `web/src/app/components/Platform/PlatformModal.tsx`

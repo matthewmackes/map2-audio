@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 22:43 EDT - Closed T701-subD after replacing `/platforms/cluster-dashboard` with a graph-first cluster topology workspace, peer-link telemetry edges, expandable node detail rows, and node-scoped platform links.
+Last updated: 2026-04-03 23:18 EDT - Completed T701-subE for management/network-discovery workspaces and started T701-subF to harden node-correct `/platforms/*` deep links.
 
 ID: T697
 Status: [✓] Done
@@ -177,7 +177,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T701-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build management and network-discovery React Flow workspaces from existing telemetry
     Description:
     - Goal / acceptance criteria: Provide management-focused and network-discovery workspaces using existing node-health, heartbeat, and related telemetry, with no UI-triggered probes, and keep the same graph-on-top/table-on-bottom pattern plus host-source selection across adopted nodes.
@@ -185,8 +185,18 @@ Subtasks:
     - Dependencies: Existing cluster/node telemetry routes
     - Estimated effort: High
     - Required outputs: management/discovery canvases, telemetry-backed tables, source-node handling, tests.
+    - Completion notes:
+      - Added `web/src/app/hooks/usePeerDiscovery.ts` plus dedicated `web/src/app/components/ManagementWorkspace/*` and `web/src/app/components/NetworkDiscovery/*` workspaces so `/platforms/management` and `/platforms/network-discovery` now render graph-first React Flow heroes, Carbon summary tiles, expandable tables, and node-context-aware detail panels.
+      - Reworked `web/src/app/platform/model.ts`, `web/src/app/platform/routes.ts`, `web/src/app/data/platformMenuItems.ts`, `web/src/app/data/advancedMenuItems.ts`, and `web/src/app/pages/PlatformWorkspacePage.tsx` so the active shell layer IDs are now `management` and `network-discovery`, with legacy `single-node` and `api-observatory` aliases preserved and `midi-cluster` redirected into `/midi-hub/connections`.
+      - Updated `web/src/app/hooks/usePlatformShellData.ts` and `web/src/app/components/Platform/PlatformModal.tsx` so the routed shell now renders dedicated management/discovery workspaces, exposes discovery-backed summary/table telemetry, and keeps the management action panel safe when the viewed platform node is remote.
+      - Updated cross-workspace handoffs in `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx` and `web/src/app/components/NodeNav/NodeMiniCard.tsx` so node-scoped jumps now land on `/platforms/management` with the correct platform node context retained.
+      - Added and refreshed focused coverage in `web/src/app/components/ManagementWorkspace/managementWorkspaceGraph.test.ts`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx`, `web/src/app/components/NetworkDiscovery/networkDiscoveryWorkspaceGraph.test.ts`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, and `web/src/app/data/advancedMenuItems.test.ts`.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/ManagementWorkspace/managementWorkspaceGraph.test.ts src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/NetworkDiscovery/networkDiscoveryWorkspaceGraph.test.ts src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx src/app/data/advancedMenuItems.test.ts src/app/components/NodeNav/NodeNavChip.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subF
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Wire node-correct `/platforms/*` deep links from all represented physical objects
     Description:
     - Goal / acceptance criteria: Ensure every physical object rendered in React Flow or tables exposes a deep link to the correct `/platforms/*` workspace with the appropriate node context preloaded.
@@ -194,6 +204,7 @@ Subtasks:
     - Dependencies: T701-subB through T701-subE
     - Estimated effort: Medium
     - Required outputs: consistent link contract, node-context propagation, focused tests.
+    - Started after T701-subE locked the management/network-discovery route rename and legacy alias behavior; next pass is auditing every remaining graph/table physical-object launch point against the new node-correct `/platforms/*` destinations.
   - ID: T701-subG
     Status: [ ] Todo
     Title: Remove legacy `AudioTable` route, components, tests, and platform references
@@ -204,7 +215,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
 Assigned to: Codex
-Last updated: 2026-04-03 22:43 EDT - Codex
+Last updated: 2026-04-03 23:18 EDT - Codex
 
 ID: T695
 Status: [✓] Done

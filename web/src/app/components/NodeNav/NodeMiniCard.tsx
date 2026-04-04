@@ -31,7 +31,7 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
   const alerts = useNodeAlertStore((state) => state.alerts).filter((a) => a.node_id === node.node_id)
   const dismissAlert = useNodeAlertStore((state) => state.dismissAlert)
   const accentColor = getNodePresenceAccent(getNodePresence(node))
-  const singleNodeHref = buildPlatformHref('single-node')
+  const managementHref = buildPlatformHref('management')
   const healthPercent = computeNodeHealthPercent(node)
   const healthTone = getHealthPercentTone(healthPercent)
   const contextLabel = node.is_local ? 'Local studio view' : 'Remote live view'
@@ -90,12 +90,12 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
           Set as page node
         </Button>
         <Link
-          href={singleNodeHref}
+          href={managementHref}
           onClick={(event) => {
             event.preventDefault()
             setViewedNode(pageKey, node.node_id)
             setViewedNode(NODE_PAGE_KEYS.platform, node.node_id)
-            navigate(singleNodeHref)
+            navigate(managementHref)
             onClose?.()
           }}
         >

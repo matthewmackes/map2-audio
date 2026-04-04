@@ -209,12 +209,12 @@ function NodeDetailPanel({
   record,
   nodesById,
   onAdoptNodeContext,
-  onOpenSingleNodeWorkspace,
+  onOpenManagementWorkspace,
 }: {
   record: NodeWorkspaceRecord
   nodesById: Map<string, NodeSummary>
   onAdoptNodeContext: (nodeId: string) => void
-  onOpenSingleNodeWorkspace: (nodeId: string) => void
+  onOpenManagementWorkspace: (nodeId: string) => void
 }) {
   return (
     <div className="cluster-dashboard-workspace__expanded-row">
@@ -319,8 +319,8 @@ function NodeDetailPanel({
         <Button kind="secondary" size="sm" onClick={() => onAdoptNodeContext(record.node.node_id)}>
           Adopt Platform Node Context
         </Button>
-        <Button kind="tertiary" size="sm" renderIcon={Launch} onClick={() => onOpenSingleNodeWorkspace(record.node.node_id)}>
-          Open Single Node Workspace
+        <Button kind="tertiary" size="sm" renderIcon={Launch} onClick={() => onOpenManagementWorkspace(record.node.node_id)}>
+          Open Management Workspace
         </Button>
       </div>
     </div>
@@ -481,9 +481,9 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
     handleSelectNode(nodeId)
   }, [fallbackLocalId, handleSelectNode, setActiveNode, setViewedNode])
 
-  const handleOpenSingleNodeWorkspace = useCallback((nodeId: string) => {
+  const handleOpenManagementWorkspace = useCallback((nodeId: string) => {
     handleAdoptNodeContext(nodeId)
-    navigate(buildPlatformHref('single-node'))
+    navigate(buildPlatformHref('management'))
   }, [handleAdoptNodeContext, navigate])
 
   const isLoading = topologyQuery.isLoading && nodes.length === 0
@@ -553,7 +553,7 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
           <div>
             <h3 id="cluster-dashboard-node-table" className="cluster-dashboard-workspace__section-title">Cluster nodes</h3>
             <p className="cluster-dashboard-workspace__muted">
-              Expand a node row to inspect service posture, peer-link activity, and launch the node-scoped Single Node workspace from the same cluster context.
+              Expand a node row to inspect service posture, peer-link activity, and launch the node-scoped Management workspace from the same cluster context.
             </p>
           </div>
           <div className="cluster-dashboard-workspace__tag-row">
@@ -631,7 +631,7 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
                             record={record}
                             nodesById={nodesById}
                             onAdoptNodeContext={handleAdoptNodeContext}
-                            onOpenSingleNodeWorkspace={handleOpenSingleNodeWorkspace}
+                            onOpenManagementWorkspace={handleOpenManagementWorkspace}
                           />
                         </TableExpandedRow>
                       </Fragment>

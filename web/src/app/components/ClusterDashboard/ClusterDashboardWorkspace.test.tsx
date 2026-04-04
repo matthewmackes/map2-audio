@@ -155,7 +155,7 @@ describe('ClusterDashboardWorkspace', () => {
     })
   })
 
-  it('expands the selected node from graph clicks and opens the single-node workspace with node context', async () => {
+  it('expands the selected node from graph clicks and opens the management workspace with node context', async () => {
     render(
       <MemoryRouter
         initialEntries={['/platforms/cluster-dashboard']}
@@ -171,14 +171,14 @@ describe('ClusterDashboardWorkspace', () => {
     fireEvent.click(screen.getByTestId('cluster-dashboard-graph'))
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: 'Open Single Node Workspace' }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: 'Open Management Workspace' }).length).toBeGreaterThan(0)
     })
 
-    const openButtons = screen.getAllByRole('button', { name: 'Open Single Node Workspace' })
+    const openButtons = screen.getAllByRole('button', { name: 'Open Management Workspace' })
     fireEvent.click(openButtons[openButtons.length - 1]!)
 
     expect(mockSetViewedNode).toHaveBeenCalledWith('nodes', 'node-remote')
     expect(mockSetActiveNode).toHaveBeenCalledWith('node-remote')
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/single-node')
+    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management')
   })
 })

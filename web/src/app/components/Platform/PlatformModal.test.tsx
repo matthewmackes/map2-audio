@@ -12,6 +12,8 @@ const mockSetSummaryMetrics = jest.fn()
 const mockTriggerUpdate = jest.fn()
 const mockAbortUpdate = jest.fn()
 const mockUseNodeOperations = jest.fn()
+const mockUseNodeTopology = jest.fn()
+const mockUseViewedNode = jest.fn()
 let mockActiveLayerId: string | null = null
 
 const makeApplicationStatus = (overrides: Record<string, unknown> = {}) => ({
@@ -169,6 +171,14 @@ jest.mock('../../hooks/useDeviceLocation', () => ({
   }),
 }))
 
+jest.mock('../../hooks/useNodeTopology', () => ({
+  useNodeTopology: () => mockUseNodeTopology(),
+}))
+
+jest.mock('../../stores/viewedNodeStore', () => ({
+  useViewedNode: (...args: unknown[]) => mockUseViewedNode(...args),
+}))
+
 jest.mock('../../hooks/usePlatformShellData', () => ({
   usePlatformShellData: () => ({
     layers: [
@@ -230,10 +240,10 @@ jest.mock('../../hooks/usePlatformShellData', () => ({
         error: null,
       },
       {
-        id: 'single-node',
-        label: 'Single Node',
-        shortLabel: 'Single Node',
-        description: 'Single Node',
+        id: 'management',
+        label: 'Management',
+        shortLabel: 'Management',
+        description: 'Management',
         accent: 'var(--cds-support-success)',
         health: 'healthy',
         activityLevel: 0,
@@ -241,8 +251,27 @@ jest.mock('../../hooks/usePlatformShellData', () => ({
         summaryMetrics: [],
         tableRows: [],
         tableColumns: [],
-        tableTitle: 'Single Node',
-        tableDescription: 'Single Node',
+        tableTitle: 'Management',
+        tableDescription: 'Management',
+        gridItems: [],
+        notifications: [],
+        isLoading: false,
+        error: null,
+      },
+      {
+        id: 'network-discovery',
+        label: 'Network Discovery',
+        shortLabel: 'Discovery',
+        description: 'Network Discovery',
+        accent: 'var(--cds-support-info)',
+        health: 'healthy',
+        activityLevel: 0,
+        alertCount: 0,
+        summaryMetrics: [],
+        tableRows: [],
+        tableColumns: [],
+        tableTitle: 'Network Discovery',
+        tableDescription: 'Network Discovery',
         gridItems: [],
         notifications: [],
         isLoading: false,
@@ -275,12 +304,6 @@ jest.mock('../../stores/platformStore', () => ({
   }),
 }))
 
-jest.mock('../../hooks/useMidiCluster', () => ({
-  useMidiClusterNodes: () => ({ data: [], isLoading: false }),
-  useMidiClusterConnections: () => ({ data: [], isLoading: false }),
-  useMidiClusterEndpoints: () => ({ data: [], isLoading: false }),
-}))
-
 jest.mock('../../hooks/useNodeOperations', () => ({
   useNodeOperations: () => mockUseNodeOperations(),
 }))
@@ -291,6 +314,14 @@ jest.mock('../AvbRouting/AvbRoutingWorkspace', () => ({
 
 jest.mock('../ClusterDashboard/ClusterDashboardWorkspace', () => ({
   ClusterDashboardWorkspace: () => <div data-testid="cluster-dashboard-workspace">Cluster Dashboard Workspace Mock</div>,
+}))
+
+jest.mock('../ManagementWorkspace/ManagementWorkspace', () => ({
+  ManagementWorkspace: () => <div data-testid="management-workspace">Management Workspace Mock</div>,
+}))
+
+jest.mock('../NetworkDiscovery/NetworkDiscoveryWorkspace', () => ({
+  NetworkDiscoveryWorkspace: () => <div data-testid="network-discovery-workspace">Network Discovery Workspace Mock</div>,
 }))
 
 describe('PlatformModalContent', () => {
@@ -304,6 +335,47 @@ describe('PlatformModalContent', () => {
     mockAbortUpdate.mockReset()
     mockUseNodeOperations.mockReset()
     mockUseNodeOperations.mockReturnValue(makeNodeOperations())
+    mockUseNodeTopology.mockReset()
+    mockUseNodeTopology.mockReturnValue({
+      data: {
+        nodes: [
+          {
+            node_id: 'node-local',
+            hostname: 'local-rack',
+            display_label: 'Stage',
+            role: 'all_in_one',
+            status: 'ok',
+            cpu_percent: 18,
+            memory_percent: 32,
+            xrun_count: 0,
+            audio_latency_ms: 2.2,
+            services: { backend: true, juce_engine: true, pipewire: true },
+            last_seen: '2026-04-03T22:00:00.000Z',
+            is_local: true,
+            is_viewed: false,
+          },
+          {
+            node_id: 'node-remote',
+            hostname: 'remote-rack',
+            display_label: null,
+            role: 'audio_node',
+            status: 'warn',
+            cpu_percent: 61,
+            memory_percent: 57,
+            xrun_count: 1,
+            audio_latency_ms: 4.9,
+            services: { backend: true, juce_engine: true, pipewire: false },
+            last_seen: '2026-04-03T22:00:03.000Z',
+            is_local: false,
+            is_viewed: true,
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    })
+    mockUseViewedNode.mockReset()
+    mockUseViewedNode.mockReturnValue('node-local')
     mockActiveLayerId = null
 
     class ResizeObserverMock {
@@ -435,8 +507,8 @@ describe('PlatformModalContent', () => {
     expect(handleLaunchRoute).toHaveBeenCalledWith('/midi-hub')
   })
 
-  it('opens the update progress modal and triggers the single-node update workflow', () => {
-    mockActiveLayerId = 'single-node'
+  it('opens the update progress modal and triggers the management update workflow', () => {
+    mockActiveLayerId = 'management'
 
     render(
       <MemoryRouter
@@ -445,10 +517,11 @@ describe('PlatformModalContent', () => {
           v7_relativeSplatPath: true,
         }}
       >
-        <PlatformModalContent onClose={() => undefined} initialLayer="single-node" />
+        <PlatformModalContent onClose={() => undefined} initialLayer="management" />
       </MemoryRouter>,
     )
 
+    expect(screen.getByTestId('management-workspace')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Check for Updates' }))
 
     expect(mockTriggerUpdate).toHaveBeenCalledWith({ branch: 'master' })
@@ -458,7 +531,7 @@ describe('PlatformModalContent', () => {
   })
 
   it('shows the active update question when progress is already running', () => {
-    mockActiveLayerId = 'single-node'
+    mockActiveLayerId = 'management'
     mockUseNodeOperations.mockReturnValue(
       makeNodeOperations({
         applicationStatus: makeApplicationStatus({
@@ -485,7 +558,7 @@ describe('PlatformModalContent', () => {
           v7_relativeSplatPath: true,
         }}
       >
-        <PlatformModalContent onClose={() => undefined} initialLayer="single-node" />
+        <PlatformModalContent onClose={() => undefined} initialLayer="management" />
       </MemoryRouter>,
     )
 
@@ -494,6 +567,23 @@ describe('PlatformModalContent', () => {
     expect(screen.getByText('Question 4 of 10')).toBeInTheDocument()
     expect(screen.getAllByText('Can the node prepare its local state safely?').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Stashing local changes before applying the update').length).toBeGreaterThan(0)
+  })
+
+  it('renders the dedicated management workspace when the management layer is active', () => {
+    mockActiveLayerId = 'management'
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} initialLayer="management" />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByTestId('management-workspace')).toBeInTheDocument()
   })
 
   it('renders the dedicated AVB workspace when the avb-routing layer is active', () => {
@@ -511,6 +601,23 @@ describe('PlatformModalContent', () => {
     )
 
     expect(screen.getByTestId('avb-routing-workspace')).toBeInTheDocument()
+  })
+
+  it('renders the dedicated network discovery workspace when the network-discovery layer is active', () => {
+    mockActiveLayerId = 'network-discovery'
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} initialLayer="network-discovery" />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByTestId('network-discovery-workspace')).toBeInTheDocument()
   })
 
   it('renders the dedicated cluster workspace when the cluster-dashboard layer is active', () => {
