@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (authority-only live-path UI and desired-state write contract documented)
+> **Last Updated**: April 3, 2026 (platforms rail utility grouping and Audio Table launcher removal documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1425,6 +1425,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `rg -n "chainsApi\\.(activate|deactivate)" web/src/app/pages/SnapshotEditorPageContent.tsx web/src/app/pages/AudioTablePage.tsx`; `npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/snapshotEditorLiveChains.test.ts src/app/components/modals/LiveRuntimePathsModal.test.tsx src/app/pages/AudioTablePage.test.tsx src/app/pages/snapshotAuthorityState.test.ts src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/utils/audioStateLivePaths.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In MAP2, operator-facing live state must come from committed authority state, not runtime residue. Persisted editor context may restore metadata, but never live truth, and primary UI live-path writes must go through `PUT /api/audio/state/desired`.
 
+**46. Platforms Utility Workspaces Must Stay In The Bottom Rail And Audio Table Must Not Reappear In Launcher Data (MEDIUM - Apr 3, 2026)**
+- **Files**: `web/src/app/data/platformMenuItems.ts`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.css`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/launcherCatalog.tsx`, `web/src/app/data/homeCardProfiles.ts`
+- **Problem**: During the `/platforms` hard cut, utility workspaces were still mixed into the main operational rail and the retired `/audio-table` route could still reappear through shared launcher and pinned-route data.
+- **Root Cause**: Shared navigation and launcher registries still treated utility panels and `Audio Table` as ordinary first-class platform destinations, so shell-level cleanup in one menu was not enough to keep the route retired everywhere.
+- **Fix**: Reordered the `/platforms` navigation so `Overview` and `Audio Engine` lead the operational stack, grouped `Host Machine`, `Theme`, `Platform Guide`, and `Workspace Catalog` into a green-tinted utility footer rail, and removed `Audio Table` from shared menu/launcher definitions so filtered landing data cannot surface `/audio-table` again.
+- **Verification**: `npm --prefix web test -- --runInBand src/app/components/Platform/PlatformModal.test.tsx src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/pages/HomePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: During a routed shell hard cut, utilities must stay visibly separate from operational workspaces and retired routes must be removed from every shared navigation/launcher registry before the final route deletion lands.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1695,6 +1703,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-03] - Platforms Rail Utility Grouping And Audio Table Launcher Removal
+- **Section**: Gotchas & Learned Fixes (#46), Update Log
+- **Change**: Documented the `/platforms` navigation regrouping, utility-footer styling contract, and shared launcher/menu removal of `/audio-table`.
+- **Reason**: T701-subA closed the shell-level migration seam for the `/platforms` hard cut and needed an explicit memory entry so later route work does not accidentally reintroduce utility drift or resurrect the retired launcher tile.
+- **Impact**: Keeps the routed Platforms shell coherent, protects the bottom-utility rail convention, and prevents `/audio-table` from reappearing through shared launcher or pinned-route normalization.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/data/platformMenuItems.ts`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.css`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/homeCardProfiles.ts`
 
 ### [2026-04-03] - Authority-Only Live-Path UI And Desired-State Write Contract
 - **Section**: Gotchas & Learned Fixes (#45), Update Log

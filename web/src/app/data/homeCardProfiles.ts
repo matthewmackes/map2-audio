@@ -11,10 +11,10 @@ export interface HomeCardProfile {
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
   '/platform': {
-    summary: 'Main platform workspace for system status, node views, AVB, MIDI, API tools, and cluster controls.',
+    summary: 'Main Platforms workspace for overview, audio-engine, node, AVB, cluster, and utility workspaces in one routed shell.',
     capabilities: [
       'Quick access to platform pages from one side menu',
-      'One path for node, AVB, MIDI, API, and cluster views',
+      'One path for overview, audio-engine, node, AVB, and cluster views',
       'Direct links to each platform page',
       'Shared layout across platform screens',
       'Clear labels and icons across platform tools',
@@ -24,10 +24,10 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     bestFor: 'System setup and monitoring',
   },
   '/platforms/overview': {
-    summary: 'Main platform workspace for system status, node views, AVB, MIDI, API tools, and cluster controls.',
+    summary: 'Main Platforms workspace for overview, audio-engine, node, AVB, cluster, and utility workspaces in one routed shell.',
     capabilities: [
       'Quick access to platform pages from one side menu',
-      'One path for node, AVB, MIDI, API, and cluster views',
+      'One path for overview, audio-engine, node, AVB, and cluster views',
       'Direct links to each platform page',
       'Shared layout across platform screens',
       'Clear labels and icons across platform tools',

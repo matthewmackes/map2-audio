@@ -10,6 +10,7 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
+    expect(getLauncherCatalogItem('/audio-table')).toBeNull()
     expect(getLauncherCatalogItem('/hardware-interfaces')).toMatchObject({
       category: 'Audio Interface',
       landingEligible: false,
@@ -32,6 +33,7 @@ describe('launcherCatalog', () => {
     expect(normalizeLandingTiles([
       { route: '/drums', size: 'small' },
       { route: '/synth-forge', size: 'large' },
+      { route: '/audio-table', size: 'large' },
       { route: '/platform', size: 'medium' },
       { route: '/hardware-interfaces', size: 'large' },
       { route: '/platforms/workspace-catalog', size: 'giant' },
@@ -47,22 +49,22 @@ describe('launcherCatalog', () => {
     expect(prioritizeRequiredHomeLauncher([
       { route: '/midi-hub', size: 'small' },
       { route: '/platforms/overview', size: 'medium' },
-      { route: '/audio-table', size: 'large' },
+      { route: '/platforms/workspace-catalog', size: 'large' },
     ])).toEqual([
       { route: '/platforms/overview', size: 'medium' },
       { route: '/midi-hub', size: 'small' },
-      { route: '/audio-table', size: 'large' },
+      { route: '/platforms/workspace-catalog', size: 'large' },
     ])
   })
 
   it('injects the required Platforms launcher when missing', () => {
     expect(ensureRequiredHomeLauncher([
       { route: '/midi-hub', size: 'small' },
-      { route: '/audio-table', size: 'large' },
+      { route: '/platforms/workspace-catalog', size: 'large' },
     ])).toEqual([
       { route: '/platforms/overview', size: 'medium' },
       { route: '/midi-hub', size: 'small' },
-      { route: '/audio-table', size: 'large' },
+      { route: '/platforms/workspace-catalog', size: 'large' },
     ])
   })
 })

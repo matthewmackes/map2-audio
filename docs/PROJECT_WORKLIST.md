@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-03 21:11 EDT - Validated T695 through T700 and left T701 as the remaining unblocked hard-cut epic after the authority-only live-path read/write cleanup.
+Last updated: 2026-04-03 21:25 EDT - Closed T701-subA after reordering the `/platforms` rail, grouping utility workspaces at the bottom, and removing Audio Table from launcher/navigation data during the hard cut.
 
 ID: T697
 Status: [✓] Done
@@ -93,7 +93,7 @@ Last updated: 2026-04-03 17:43 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T701
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Hard-cut Audio Table into `/platforms` workspaces with React Flow-first operator surfaces
 Description:
 - Goal / acceptance criteria: Hard-cut the standalone `/audio-table` route and move its surviving concepts into the correct `/platforms/*` workspace areas. The resulting flagship operator experience should pair a read-only JUCE current-state React Flow view with separate cluster/connectivity React Flow layers across adopted nodes (audio, management, AVB, cluster, network discovery, and related transport/control links, explicitly excluding MIDI from this interface), then back those views with advanced direct-edit tables appropriate to each workspace topic. The page layout should match the `/platforms` design pattern one-for-one, including the left-hand navigation and shared subpage chrome. Every operational/data `/platforms` submenu should receive its own React Flow canvas designed specifically for that dataset and view, except `/platforms/overview`, which should remain a supervisory landing surface with no flow canvas. Every React Flow-backed workspace should preserve the same graph-on-top, table-on-bottom composition. This first hard-cut implementation applies to all operational/data workspaces, not a phased subset. JUCE controls should live under `/platforms/audio-engine`. Utility workspaces such as `about`, `theme`, `host-machine`, and `workspace-catalog` should move to the bottom of the `/platforms` navigation and use Carbon green navigation buttons. After the hard cut, `/platforms/overview` should remain the default landing destination. Day one is expected to ship full direct-edit coverage for the in-scope entities rather than a reduced MVP subset, the page must serve performers, audio engineers, and cluster administrators together in one universal layout with no mode switching, and the overall shell should stay near-pure Carbon enterprise console. Table behavior should follow Carbon Data Table standards: scan-first presentation, toolbar-driven global actions, and progressive disclosure for denser row-level editing rather than always-on spreadsheet-style hot cells everywhere. Deep row editing should use expandable rows as the primary pattern rather than side inspectors. The page is desktop-only. The layout should make React Flow the hero: roughly 70% of the viewable page should be dedicated to the graph views, with the tables positioned underneath them rather than competing laterally as the primary surface. Demo-critical graph behavior must include visible traffic pulses that indicate activity volume through the topology rather than showing only static connectivity, plus diagnostic depth for MAP2 latency-pressure measurements, AVB audio-connection metrics, Biamp Tesira connectivity information, and network discovery data such as ping times and traceroute detail from the selected host perspective. All adopted MAP2 hosts must be available as the source for network discovery views, but that workspace should rely on telemetry already collected through node health, heartbeat, and related backend signals rather than launching new UI-triggered probes. Graph interactions should jump or anchor the operator to the relevant table section below, while dedicated dialogs remain available for deeper diagnostic drill-down. Every represented physical object must also expose a direct link into the correct `/platforms/*` page with the correct node context preloaded; Biamp Tesira-linked objects should route through `/platforms/avb-routing`, and that destination must use the Tesira interface/API to populate per-node detail. Reuse or interconnect with existing `/platforms` page information whenever possible instead of inventing duplicate data surfaces. Remove other platform-facing references to `audio-table`; this is a hard cut, not a coexistence phase, and the `/audio-table` route should be removed without a legacy redirect. Delete the old `AudioTable` component files and tests as part of the same hard-cut workstream rather than parking them as temporary legacy code. For the React Flow canvases themselves, use current best-in-class 2025-2026 React Flow visual patterns per dataset even when some canvas-level styling departs from strict Carbon compliance.
@@ -103,7 +103,7 @@ Description:
 - Required outputs: interview summary, source-of-truth decision record, flagship layout/design brief, staged implementation plan, and follow-on implementation tasks for the `/platforms` hard-cut migration. Interview decisions so far: use the platform source-of-truth system as the canonical operator-facing model for graph data, keep the JUCE-state React Flow canvas read-only while allowing selection-driven inspector edits, present the cluster/connectivity view as separate canvases or tabs per layer instead of one unified graph, exclude MIDI from this interface, target full day-one direct-edit coverage instead of a reduced feature subset, design for all core operator personas in one universal layout rather than mode switching, keep the overall shell near-pure Carbon enterprise console, match the `/platforms` shell pattern including left navigation, make every operational/data `/platforms` submenu a separate React Flow-backed subpage except `/platforms/overview`, include all operational/data workspaces in the first hard cut, place JUCE controls under `/platforms/audio-engine`, move `about`, `theme`, `host-machine`, and `workspace-catalog` to the bottom of `/platforms` navigation with Carbon green buttons, keep `/platforms/overview` as the default landing destination and a no-flow supervisory surface, follow Carbon Data Table standards with scan-first rows and progressive disclosure for dense editing, use expandable rows for deep row editing, make React Flow the dominant visual surface with the tables underneath, show traffic pulses that communicate live activity volume through the graphs, provide latency-pressure, AVB, Biamp Tesira, cluster, and network-discovery diagnostic depth, source network-discovery views from existing node-health and heartbeat telemetry rather than UI-triggered probes, use graph interactions to jump to the relevant table section below, keep dedicated dialogs for deeper drill-down, give every represented physical object a direct link to the correct node-scoped `/platforms/*` page, route Tesira-linked objects through `/platforms/avb-routing` with Tesira API-backed node detail, allow all adopted MAP2 hosts as network-discovery sources, interconnect with existing `/platforms` data where possible, keep the flagship surface desktop-only, remove platform-facing `audio-table` references as part of the hard cut, remove the `/audio-table` route with no legacy redirect, delete the old `AudioTable` code and tests in the same workstream, and allow best-in-class React Flow canvas visuals even when they are not strictly Carbon compliant.
 Subtasks:
   - ID: T701-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Rework `/platforms` shell navigation ordering, coloring, and landing behavior for the hard cut
     Description:
     - Goal / acceptance criteria: Make `/platforms/overview` the default landing route after the hard cut, move `about`, `theme`, `host-machine`, and `workspace-catalog` to the bottom of the `/platforms` navigation, and restyle those utility entries with Carbon green buttons while removing platform-facing `audio-table` navigation and route references.
@@ -111,6 +111,16 @@ Subtasks:
     - Dependencies: None
     - Estimated effort: Medium
     - Required outputs: platform nav/data updates, route/default updates, removal of `audio-table` entry points, focused navigation coverage.
+    - Completion notes:
+      - Reordered the `/platforms` rail so `Overview` and `Audio Engine` lead the operational stack, while `Host Machine`, `Theme`, `Platform Guide`, and `Workspace Catalog` render as bottom utility entries.
+      - Extended the shared side-nav primitive in `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` and `web/src/app/components/navigation/UnifiedWorkspaceSideNav.css` so platform utility entries can render in a distinct green utility style without forking the shell component.
+      - Updated `web/src/app/data/platformMenuItems.ts` and `web/src/app/components/Platform/PlatformModal.tsx` so the modal now groups utility workspaces in a footer rail and keeps operational workspaces first.
+      - Removed `Audio Table` from `web/src/app/data/advancedMenuItems.ts`, and tightened launcher/home normalization in `web/src/app/data/launcherCatalog.test.tsx` and `web/src/app/pages/HomePage.test.tsx` so `/audio-table` no longer reappears through shared launcher data.
+      - Updated `web/src/app/data/homeCardProfiles.ts` copy so the routed Platforms shell now describes overview, audio-engine, node, AVB, cluster, and utility workspaces instead of the legacy mixed shell.
+    - Validation:
+      - `npm --prefix web test -- --runInBand src/app/components/Platform/PlatformModal.test.tsx src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T701-subB
     Status: [ ] Todo
     Title: Build `/platforms/audio-engine` as the JUCE current-state React Flow workspace
@@ -166,7 +176,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: route removal, file deletions, reference cleanup, validation/test updates.
 Assigned to: Codex
-Last updated: 2026-04-03 21:04 EDT - Codex
+Last updated: 2026-04-03 21:25 EDT - Codex
 
 ID: T695
 Status: [✓] Done

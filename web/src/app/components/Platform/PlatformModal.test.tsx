@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { PlatformModalContent } from './PlatformModal'
@@ -305,6 +305,35 @@ describe('PlatformModalContent', () => {
     expect(screen.getByRole('link', { name: 'Open Overview' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open Theme' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open Workspace Catalog' })).toBeInTheDocument()
+  })
+
+  it('keeps utility workspaces grouped at the bottom of the rail with utility styling', () => {
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} />
+      </MemoryRouter>,
+    )
+
+    const nav = screen.getByLabelText('Platforms interface navigation')
+    const navLabels = within(nav).getAllByRole('link').map((link) => link.getAttribute('aria-label'))
+
+    expect(navLabels.slice(0, 2)).toEqual(['Open Overview', 'Open Audio Engine'])
+    expect(navLabels.slice(-4)).toEqual([
+      'Open Host Machine',
+      'Open Theme',
+      'Open Platform Guide',
+      'Open Workspace Catalog',
+    ])
+
+    for (const label of ['Open Host Machine', 'Open Theme', 'Open Platform Guide', 'Open Workspace Catalog']) {
+      expect(screen.getByRole('link', { name: label }).closest('.workspace-side-nav__item')).toHaveClass('is-utility')
+    }
+    expect(screen.getByRole('link', { name: 'Open Audio Engine' }).closest('.workspace-side-nav__item')).not.toHaveClass('is-utility')
   })
 
   it('shows the workspace catalog launcher organizer section', () => {

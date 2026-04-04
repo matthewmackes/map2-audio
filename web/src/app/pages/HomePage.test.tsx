@@ -203,7 +203,7 @@ describe('HomePage landing', () => {
 
     const landingTile = await screen.findByText('MIDI Hub')
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Audio Table' }).closest('.hp2-launchers__tile--medium')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Audio Table' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Platforms' }).closest('.hp2-launchers__tile--large')).toBeTruthy()
     expect(screen.queryByText(/^small$/i)).toBeNull()
     expect(screen.queryByText(/^medium$/i)).toBeNull()

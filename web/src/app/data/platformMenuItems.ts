@@ -15,6 +15,7 @@ import {
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
 export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
+export const PLATFORM_UTILITY_PANEL_IDS = ['host-machine', 'theme', 'about'] as const
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
   return value === 'host-machine'
@@ -22,6 +23,13 @@ export function isStandalonePanel(value: string | null | undefined): value is St
     || value === 'theme'
     || value === 'about'
     || value === 'adoption'
+}
+
+export function isPlatformUtilityPanel(
+  value: string | null | undefined,
+): value is (typeof PLATFORM_UTILITY_PANEL_IDS)[number] {
+  return typeof value === 'string'
+    && (PLATFORM_UTILITY_PANEL_IDS as readonly string[]).includes(value)
 }
 
 export interface PlatformPanelNavItem {
@@ -48,26 +56,15 @@ const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   'cluster-dashboard': DataBase,
 }
 
-const STANDALONE_PANEL_ITEMS: Array<{
-  id: StandalonePanel
+const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
   label: string
   shortLabel: string
   description: string
   color: string
   icon: CarbonIconType
   pinnable: boolean
-}> = [
-  {
-    id: 'host-machine',
-    label: 'Host Machine',
-    shortLabel: 'Host',
-    description: 'Open hardware posture, services, and interface readiness for the local MAP2 host.',
-    color: 'var(--cds-support-warning)',
-    icon: Screen,
-    pinnable: true,
-  },
-  {
-    id: 'audio-engine',
+}> = {
+  'audio-engine': {
     label: 'Audio Engine',
     shortLabel: 'Engine',
     description: 'Open the audio-engine workspace for runtime, latency, and engine-state inspection.',
@@ -75,26 +72,7 @@ const STANDALONE_PANEL_ITEMS: Array<{
     icon: Terminal,
     pinnable: true,
   },
-  {
-    id: 'theme',
-    label: 'Theme',
-    shortLabel: 'Theme',
-    description: 'Open the appearance workspace for Carbon theme presets, GUI typography, motion reduction, and category accents.',
-    color: 'var(--cds-link-primary)',
-    icon: PaintBrush,
-    pinnable: true,
-  },
-  {
-    id: 'about',
-    label: 'Platform Guide',
-    shortLabel: 'Guide',
-    description: 'Open the platform guide, version context, and operational documentation surface.',
-    color: 'var(--cds-support-info)',
-    icon: Information,
-    pinnable: true,
-  },
-  {
-    id: 'adoption',
+  'adoption': {
     label: 'Adoption',
     shortLabel: 'Adopt',
     description: 'Open the dedicated Platforms adoption workflow for unmanaged, blocked, or standby nodes.',
@@ -102,7 +80,31 @@ const STANDALONE_PANEL_ITEMS: Array<{
     icon: SettingsAdjust,
     pinnable: true,
   },
-]
+  'host-machine': {
+    label: 'Host Machine',
+    shortLabel: 'Host',
+    description: 'Open hardware posture, services, and interface readiness for the local MAP2 host.',
+    color: 'var(--cds-support-warning)',
+    icon: Screen,
+    pinnable: true,
+  },
+  'theme': {
+    label: 'Theme',
+    shortLabel: 'Theme',
+    description: 'Open the appearance workspace for Carbon theme presets, GUI typography, motion reduction, and category accents.',
+    color: 'var(--cds-link-primary)',
+    icon: PaintBrush,
+    pinnable: true,
+  },
+  'about': {
+    label: 'Platform Guide',
+    shortLabel: 'Guide',
+    description: 'Open the platform guide, version context, and operational documentation surface.',
+    color: 'var(--cds-support-info)',
+    icon: Information,
+    pinnable: true,
+  },
+}
 
 function buildPlatformLayerPinnedRoute(layerId: PlatformLayerId): string {
   return `/platforms/${layerId}`
@@ -112,8 +114,13 @@ function buildPlatformPanelPinnedRoute(panel: StandalonePanel): string {
   return `/platforms/${panel}`
 }
 
-export const platformPanelItems: PlatformPanelNavItem[] = [
-  ...PLATFORM_LAYER_META.map((layer) => ({
+function buildPlatformLayerNavItem(layerId: PlatformLayerId): PlatformPanelNavItem {
+  const layer = PLATFORM_LAYER_META.find((candidate) => candidate.id === layerId)
+  if (!layer) {
+    throw new Error(`Unknown platform layer: ${layerId}`)
+  }
+
+  return {
     to: buildPlatformLayerPinnedRoute(layer.id),
     label: layer.label,
     shortLabel: layer.shortLabel,
@@ -121,22 +128,41 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
     description: layer.description,
     color: layer.accent,
     pinnable: true,
-    maturity: 'beta' as const,
-    kind: 'link' as const,
+    maturity: 'beta',
+    kind: 'link',
     target: { layer: layer.id },
-  })),
-  ...STANDALONE_PANEL_ITEMS.map((panel) => ({
-    to: buildPlatformPanelPinnedRoute(panel.id),
+  }
+}
+
+function buildStandalonePanelNavItem(panelId: StandalonePanel): PlatformPanelNavItem {
+  const panel = STANDALONE_PANEL_ITEMS[panelId]
+
+  return {
+    to: buildPlatformPanelPinnedRoute(panelId),
     label: panel.label,
     shortLabel: panel.shortLabel,
     icon: panel.icon,
     description: panel.description,
     color: panel.color,
     pinnable: panel.pinnable,
-    maturity: 'beta' as const,
-    kind: 'link' as const,
-    target: { panel: panel.id },
-  })),
+    maturity: 'beta',
+    kind: 'link',
+    target: { panel: panelId },
+  }
+}
+
+export const platformPanelItems: PlatformPanelNavItem[] = [
+  buildPlatformLayerNavItem('overview'),
+  buildStandalonePanelNavItem('audio-engine'),
+  buildPlatformLayerNavItem('single-node'),
+  buildPlatformLayerNavItem('avb-routing'),
+  buildPlatformLayerNavItem('midi-cluster'),
+  buildPlatformLayerNavItem('api-observatory'),
+  buildPlatformLayerNavItem('cluster-dashboard'),
+  buildStandalonePanelNavItem('adoption'),
+  buildStandalonePanelNavItem('host-machine'),
+  buildStandalonePanelNavItem('theme'),
+  buildStandalonePanelNavItem('about'),
 ]
 
 export const platformPinnedItems: PlatformPinnedNavItem[] = platformPanelItems.filter(

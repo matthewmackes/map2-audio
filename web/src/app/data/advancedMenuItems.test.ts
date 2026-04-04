@@ -164,10 +164,12 @@ describe('navigation catalog', () => {
     const nodes = navigationCatalogItems.find((item) => item.label === 'Nodes')
     const multiSystem = navigationCatalogItems.find((item) => item.label === 'Multi-System')
     const midi = navigationCatalogItems.find((item) => item.to === '/midi')
+    const audioTable = navigationCatalogItems.find((item) => item.to === '/audio-table')
 
     expect(nodes).toBeUndefined()
     expect(multiSystem).toBeUndefined()
     expect(midi).toBeUndefined()
+    expect(audioTable).toBeUndefined()
   })
 
   it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in advanced navigation only', () => {

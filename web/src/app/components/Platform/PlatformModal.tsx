@@ -48,6 +48,7 @@ import { useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
 import {
+  isPlatformUtilityPanel,
   platformPanelItems,
   type StandalonePanel,
 } from '../../data/platformMenuItems'
@@ -206,7 +207,10 @@ function SidebarNavigation({
   onOpenStandalone: (id: StandalonePanel) => void
   onOpenWorkspaceCatalog: () => void
 }) {
-  const items: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
+  const buildNavItem = (
+    item: (typeof PLATFORM_CONTROL_PANEL_ITEMS)[number],
+    variant: UnifiedWorkspaceSideNavItem['variant'] = 'default',
+  ): UnifiedWorkspaceSideNavItem => {
     const targetId = item.target.layer ?? item.target.panel ?? null
     const isSelected = activeId === targetId
 
@@ -217,6 +221,7 @@ function SidebarNavigation({
       to: item.to,
       icon: item.icon,
       active: isSelected,
+      variant,
       onOpen: () => {
         if (item.target.layer) {
           onOpenLayer(item.target.layer)
@@ -227,14 +232,24 @@ function SidebarNavigation({
         }
       },
     }
-  })
-  items.push({
+  }
+
+  const items: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS
+    .filter((item) => !(item.target.panel && isPlatformUtilityPanel(item.target.panel)))
+    .map((item) => buildNavItem(item))
+
+  const utilityItems: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS
+    .filter((item) => item.target.panel && isPlatformUtilityPanel(item.target.panel))
+    .map((item) => buildNavItem(item, 'utility'))
+
+  utilityItems.push({
     key: '/platforms/workspace-catalog',
     label: 'Workspace Catalog',
     description: 'Launcher Organizer in one native Platforms section.',
     to: '/platforms/workspace-catalog',
     icon: SettingsAdjust,
     active: activeId === 'workspace-catalog',
+    variant: 'utility',
     onOpen: onOpenWorkspaceCatalog,
   })
 
@@ -244,8 +259,10 @@ function SidebarNavigation({
       ariaLabel="Platforms interface navigation"
       eyebrow="Navigation"
       title="Platforms Interface"
-      description="Move across platform workspaces, then open Workspace Catalog for launcher management."
+      description="Move across operational workspaces first, with utility workspaces grouped below."
       items={items}
+      footerTitle="Utilities"
+      footerItems={utilityItems}
     />
   )
 }
