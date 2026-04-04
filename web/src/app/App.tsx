@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Loading } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
 import { Map2BrandMark } from './components/branding/map2Branding'
+import { ViewportPolicyGate } from './components/ViewportPolicyGate'
 import { ToastProvider, useToasts } from './components/Toasts'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
@@ -176,18 +177,19 @@ function BackendConnectionMonitor() {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ClusterProvider>
-          <ToastProvider>
-            <BackendConnectionMonitor />
-            <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
-              <div className="platform-brand-frame">
-                <div className="platform-brand-backdrop" aria-hidden="true">
-                  <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--primary" />
-                  <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--secondary" />
-                </div>
-                <div className="platform-brand-frame__content">
-                  <Routes>
+      <ViewportPolicyGate>
+        <BrowserRouter>
+          <ClusterProvider>
+            <ToastProvider>
+              <BackendConnectionMonitor />
+              <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
+                <div className="platform-brand-frame">
+                  <div className="platform-brand-backdrop" aria-hidden="true">
+                    <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--primary" />
+                    <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--secondary" />
+                  </div>
+                  <div className="platform-brand-frame__content">
+                    <Routes>
                     {/* Full-window routes — no AppShell chrome */}
                     <Route path="/perform" element={
                       <Suspense fallback={<PageLoader />}>
@@ -291,13 +293,14 @@ export function App() {
                         </AppShell>
                       }
                     />
-                  </Routes>
+                    </Routes>
+                  </div>
                 </div>
-              </div>
-            </ErrorBoundary>
-          </ToastProvider>
-        </ClusterProvider>
-      </BrowserRouter>
+              </ErrorBoundary>
+            </ToastProvider>
+          </ClusterProvider>
+        </BrowserRouter>
+      </ViewportPolicyGate>
       <Suspense fallback={null}>
         <ReactQueryDevtools initialIsOpen={false} />
       </Suspense>

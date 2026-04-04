@@ -9,7 +9,7 @@
 Last updated: 2026-04-04 12:08 EDT - Completed T703 publish/deploy verification and preserved new T704 viewport-policy follow-up entry that appeared during the deploy loop.
 
 ID: T704
-Status: [>] In Progress
+Status: [✓] Done
 Title: Enforce 1920x1080 minimum GUI viewport across the web platform and retire shared small-screen policy paths
 Description:
 - Goal / acceptance criteria: Add a platform-wide viewport enforcement rule so the web GUI only operates at `1920x1080` or higher, and block all pages below that threshold with a shared unsupported-viewport screen. Remove or neutralize shared mobile/tablet/small-screen code paths, prompts, and configuration patterns that would otherwise keep unsupported layouts alive, and update this worklist with the exact validation evidence.
@@ -19,7 +19,15 @@ Description:
 - Required outputs: shared viewport-policy implementation, shared mobile/tablet policy cleanup, any required copy/style updates for legacy iPad/mobile blockers, and frontend validation evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-04 12:02 EDT - Codex
+Last updated: 2026-04-04 12:17 EDT - Codex
+- Completion notes:
+  - Added a shared viewport-policy layer in `web/src/app/hooks/useViewportPolicy.ts`, `web/src/app/components/ViewportPolicyGate.tsx`, `web/src/app/App.tsx`, and `web/src/index.css` so the entire web GUI now blocks below `1920x1080` with a single desktop-only unsupported-viewport screen instead of page-local behavior.
+  - Removed the dedicated mobile stylesheet from the runtime and repository (`web/src/main.tsx`, deleted `web/src/styles/mobile.css`), and collapsed the shared responsive helper module in `web/src/styles/responsive.module.css` to desktop-only behavior so the platform no longer advertises a mobile presentation layer.
+  - Neutralized shared mobile/tablet policy hooks and prompts in `web/src/app/hooks/useIsMobile.ts`, `web/src/app/hooks/useTabletTouchRouteLayout.ts`, and `web/src/app/components/shared/LandscapePrompt.tsx`, and updated the remaining explicit Audio Grid blocker copy in `web/src/app/pages/SnapshotEditorPageContent.tsx` from the old iPad/tablet language to the new `1920x1080` rule.
+  - Removed the mobile-specific `apple-touch-icon` metadata and simplified the viewport meta tag in `web/index.html` so the shell metadata no longer suggests touch-device support.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T703
 Status: [✓] Done
