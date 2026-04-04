@@ -162,7 +162,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**958** Python | **1091** TypeScript | **133** C++/H | **129** Docs | **1340** total commits | **3** stars | **0** forks | **0** open issues
+**958** Python | **1091** TypeScript | **133** C++/H | **129** Docs | **1342** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -203,14 +203,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a3f85441`](https://github.com/matthewmackes/map2-audio/commit/a3f8544110b0dc95ce5600e92927839860092ef2) | T703: sweep GUI theme compliance across shared window chrome | Map2 Audio | 2026-04-04 |
+| [`657a108e`](https://github.com/matthewmackes/map2-audio/commit/657a108e4f8e22eec5f0d1b1f4a00d687f0a1e36) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`84059806`](https://github.com/matthewmackes/map2-audio/commit/84059806ef045d58f0f83b9b02d7f825b5f78fcd) | feat(snapshot-editor): expand empty-state workflow | Map2 Audio | 2026-04-04 |
 | [`87e229ba`](https://github.com/matthewmackes/map2-audio/commit/87e229ba7dc65b498a0b0d9deefc5d1372a0353b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`18b8ddfb`](https://github.com/matthewmackes/map2-audio/commit/18b8ddfbb943215debcdbb1526420b6cb294391f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`c8dc39be`](https://github.com/matthewmackes/map2-audio/commit/c8dc39be39324620a048677d3db2f1ad56ad7391) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
 | [`4d1d11a8`](https://github.com/matthewmackes/map2-audio/commit/4d1d11a8e93239099c5d8cb256b716ed1caa2370) | Complete T701 platforms hard cut | Map2 Audio | 2026-04-03 |
 | [`1262140e`](https://github.com/matthewmackes/map2-audio/commit/1262140e5b51cb8568a35e064bf18a51117078d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
-| [`1d3e4f7c`](https://github.com/matthewmackes/map2-audio/commit/1d3e4f7cf673abe49e2e55c2cdef8a831c287915) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-03 |
-| [`a6200f0c`](https://github.com/matthewmackes/map2-audio/commit/a6200f0cd678131aeb5d98447c118307f51aa94b) | Complete T701-subE management and discovery workspaces | Map2 Audio | 2026-04-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
