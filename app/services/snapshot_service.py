@@ -1703,6 +1703,17 @@ class SnapshotService:
             output_safety_result = await self._apply_snapshot_output_safety_settings(detail)
             current_runtime_state = await runtime_state_service.get_live_state()
             previous_preload_state = self._extract_preload_state(current_runtime_state.get("runtime_metrics"))
+            preload_instance_ids = [
+                int(instance_id)
+                for instance_id in previous_preload_state.get("staged_instance_ids", [])
+                if _safe_int(instance_id) is not None
+            ]
+            preload_hit = (
+                str(previous_preload_state.get("status") or "").lower() == "ready"
+                and _safe_int(previous_preload_state.get("target_snapshot_id")) == int(snapshot.id)
+            )
+            if preload_instance_ids and not preload_hit:
+                await self.chain_service.release_detached_instance_ids(preload_instance_ids)
             current_live_detail = await runtime_state_service.get_live_snapshot_payload()
             if not isinstance(current_live_detail, dict):
                 current_live_detail = await self.get_live_snapshot()
@@ -1717,9 +1728,15 @@ class SnapshotService:
                     target_detail=detail,
                 )
                 await self._clear_materialized_runtime_chains()
-                live_state_payload = await self._materialize_live_state(snapshot, detail)
+                live_state_payload = await self._materialize_live_state(
+                    snapshot,
+                    detail,
+                    preloaded_instance_ids=preload_instance_ids if preload_hit else None,
+                )
             else:
                 topology_reused = True
+            if preload_instance_ids and preload_hit:
+                await self.chain_service.release_detached_instance_ids(preload_instance_ids)
             await self.session.flush()
 
             refreshed_detail = await self._serialize_snapshot_detail(
@@ -1802,8 +1819,7 @@ class SnapshotService:
                     "inactive_channels": channel_health["inactive_channels"],
                 },
                 "preload_hit": (
-                    str(previous_preload_state.get("status") or "").lower() == "ready"
-                    and _safe_int(previous_preload_state.get("target_snapshot_id")) == int(snapshot.id)
+                    preload_hit
                 ),
                 "audio_device_binding": audio_device_binding_result or {},
                 "monitoring_output": monitoring_output_result or {},
@@ -3395,7 +3411,13 @@ class SnapshotService:
                 await self.session.delete(chain)
         await self.session.flush()
 
-    async def _materialize_live_state(self, snapshot: Snapshot, detail: dict[str, Any]) -> dict[str, Any]:
+    async def _materialize_live_state(
+        self,
+        snapshot: Snapshot,
+        detail: dict[str, Any],
+        *,
+        preloaded_instance_ids: Optional[list[int]] = None,
+    ) -> dict[str, Any]:
         await self.session.execute(update(Chain).values(is_active=False))
         await self.session.flush()
 
@@ -3406,10 +3428,22 @@ class SnapshotService:
         }
         runtime_paths: list[dict[str, Any]] = []
         activated_runtime_chain_ids: list[int] = []
+        remaining_preloaded_instance_ids = [
+            int(instance_id)
+            for instance_id in preloaded_instance_ids or []
+            if _safe_int(instance_id) is not None
+        ]
 
         for channel in detail.get("channels", []):
             snapshot_chain_id = channel.get("chain_id")
             source_chain = chain_by_id.get(snapshot_chain_id) if snapshot_chain_id is not None else None
+            source_plugins = [
+                plugin
+                for plugin in (source_chain.get("plugins", []) if isinstance(source_chain, dict) else [])
+                if isinstance(plugin, dict)
+            ]
+            chain_preloaded_instance_ids = remaining_preloaded_instance_ids[:len(source_plugins)]
+            remaining_preloaded_instance_ids = remaining_preloaded_instance_ids[len(source_plugins):]
             runtime_chain = Chain(
                 name=self._runtime_chain_name_for_channel(source_chain, channel),
                 is_active=False,
@@ -3429,9 +3463,7 @@ class SnapshotService:
             await self.session.flush()
 
             if isinstance(source_chain, dict):
-                for plugin in source_chain.get("plugins", []):
-                    if not isinstance(plugin, dict):
-                        continue
+                for plugin in source_plugins:
                     self.session.add(
                         ChainPlugin(
                             chain_id=runtime_chain.id,
@@ -3465,7 +3497,12 @@ class SnapshotService:
                     )
 
             await self.session.flush()
-            activated = await self.chain_service.activate_chain(runtime_chain.id)
+            activated = await self.chain_service.activate_chain(
+                runtime_chain.id,
+                preferred_detached_instance_ids=(
+                    chain_preloaded_instance_ids if chain_preloaded_instance_ids else None
+                ),
+            )
             runtime_chain_id = runtime_chain.id
             runtime_chain_name = runtime_chain.name
             activation_status = "active" if activated else "degraded"

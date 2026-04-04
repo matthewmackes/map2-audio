@@ -695,6 +695,7 @@ class ChainService:
         chain_plugins: List[Any],
         *,
         allow_active_reuse: bool = True,
+        preferred_detached_instance_ids: Optional[List[int]] = None,
     ) -> tuple[List[tuple[Any, int]], List[str]]:
         loaded_plugins = await engine_service.get_loaded_plugins()
         pedalboard = await engine_service.get_current_pedalboard()
@@ -715,15 +716,41 @@ class ChainService:
                 continue
             active_by_uri[plugin_uri].append(instance_id)
 
-        detached_by_uri: Dict[str, deque[int]] = defaultdict(deque)
+        loaded_by_instance_id: Dict[int, Dict[str, Any]] = {}
         for plugin in loaded_plugins:
             if not isinstance(plugin, dict):
                 continue
             instance_id = self._runtime_instance_id(plugin)
-            plugin_uri = str(plugin.get("uri") or "")
-            if instance_id is None or not plugin_uri or instance_id in active_instance_ids:
+            if instance_id is None:
                 continue
-            detached_by_uri[plugin_uri].append(instance_id)
+            loaded_by_instance_id[instance_id] = plugin
+
+        detached_by_uri: Dict[str, deque[int]] = defaultdict(deque)
+        normalized_preferred_detached_ids: list[int] = []
+        for raw_value in preferred_detached_instance_ids or []:
+            try:
+                instance_id = int(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if instance_id > 0 and instance_id not in normalized_preferred_detached_ids:
+                normalized_preferred_detached_ids.append(instance_id)
+
+        if normalized_preferred_detached_ids:
+            for instance_id in normalized_preferred_detached_ids:
+                plugin = loaded_by_instance_id.get(instance_id)
+                plugin_uri = str(plugin.get("uri") or "") if isinstance(plugin, dict) else ""
+                if not plugin_uri or instance_id in active_instance_ids:
+                    continue
+                detached_by_uri[plugin_uri].append(instance_id)
+        else:
+            for plugin in loaded_plugins:
+                if not isinstance(plugin, dict):
+                    continue
+                instance_id = self._runtime_instance_id(plugin)
+                plugin_uri = str(plugin.get("uri") or "")
+                if instance_id is None or not plugin_uri or instance_id in active_instance_ids:
+                    continue
+                detached_by_uri[plugin_uri].append(instance_id)
 
         staged_instances: List[tuple[Any, int]] = []
         warnings: List[str] = []
@@ -944,6 +971,7 @@ class ChainService:
         chain_plugins: List[Any],
         *,
         enable_snapshot_spillover: bool = False,
+        preferred_detached_instance_ids: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         if not _ENABLE_ENGINE_CHAIN_DEPLOY:
             return self._build_runtime_sync_payload(
@@ -998,7 +1026,11 @@ class ChainService:
                 warnings=[f"Engine missing required APIs: {', '.join(missing_methods)}"],
             )
 
-        staged_instances, warnings = await self._stage_runtime_chain_instances(engine_service, chain_plugins)
+        staged_instances, warnings = await self._stage_runtime_chain_instances(
+            engine_service,
+            chain_plugins,
+            preferred_detached_instance_ids=preferred_detached_instance_ids,
+        )
 
         ordered_staged_instances = sorted(
             staged_instances,
@@ -1757,7 +1789,12 @@ class ChainService:
             logger.error(f"REMOVE_PLUGIN: Exception during removal: {e}", exc_info=True)
             return False
 
-    async def activate_chain(self, chain_id: int) -> bool:
+    async def activate_chain(
+        self,
+        chain_id: int,
+        *,
+        preferred_detached_instance_ids: Optional[List[int]] = None,
+    ) -> bool:
         """Activate a chain and deploy it to the JUCE audio engine.
         
         FIX #8: Bridge layer connecting SQLite chains to JUCE engine graph
@@ -1806,6 +1843,7 @@ class ChainService:
                     isinstance(chain_config, dict)
                     and chain_config.get("source_kind") == "snapshot_path"
                 ),
+                preferred_detached_instance_ids=preferred_detached_instance_ids,
             )
             chain_config["runtime_sync"] = runtime_sync
             chain.config = json.dumps(chain_config)

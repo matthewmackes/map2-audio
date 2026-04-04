@@ -93,7 +93,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         lambda **kwargs: scheduled_health_checks.append(dict(kwargs)),
     )
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -761,7 +761,7 @@ def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypat
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -841,7 +841,7 @@ def test_activate_snapshot_reuses_runtime_chains_for_same_topology(tmp_path, mon
         applied_payloads.append(json.loads(json.dumps(snapshot_data)))
         return 1, 1
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -982,7 +982,7 @@ def test_activate_snapshot_reuses_runtime_chains_when_authority_has_no_snapshot(
         applied_payloads.append(json.loads(json.dumps(snapshot_data)))
         return 1, 1
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1107,7 +1107,7 @@ def test_activate_snapshot_schedules_background_preload(tmp_path, monkeypatch):
     async def _fake_apply(_snapshot_data):
         return 0, 0
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1152,7 +1152,7 @@ def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, 
     async def _fake_apply(_snapshot_data):
         return 0, 0
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1211,7 +1211,7 @@ def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monk
     async def _fake_apply(_snapshot_data):
         return 0, 0
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1284,7 +1284,7 @@ def test_preload_next_snapshot_records_ready_runtime_metrics_for_program_order(t
     async def _fake_apply(_snapshot_data):
         return 0, 0
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1408,7 +1408,7 @@ def test_preload_next_snapshot_falls_back_to_display_order_when_program_numbers_
     async def _fake_apply(_snapshot_data):
         return 0, 0
 
-    async def _fake_activate_chain(self, chain_id):
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1468,6 +1468,280 @@ def test_preload_next_snapshot_falls_back_to_display_order_when_program_numbers_
             assert preload["candidate_reason"] == "display_order"
 
     asyncio.run(_run())
+
+
+def test_activate_snapshot_consumes_preloaded_instances_on_preload_hit(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    preferred_calls: list[list[int]] = []
+    release_calls: list[list[int]] = []
+
+    class _PreloadRuntimeEngineStub:
+        is_available = True
+        is_running = True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        preferred_calls.append(list(preferred_detached_instance_ids or []))
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_release_detached(self, instance_ids):
+        release_calls.append(list(instance_ids))
+        return {
+            "released_instance_ids": [],
+            "skipped_active_instance_ids": list(instance_ids),
+            "missing_instance_ids": [],
+            "warnings": [],
+        }
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: _PreloadRuntimeEngineStub())
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda _snapshot_id: None)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(ChainService, "release_detached_instance_ids", _fake_release_detached)
+
+    async def _reuse_disabled(self, *_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(SnapshotService, "_reuse_live_runtime_chains", _reuse_disabled)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            live_snapshot = await service.create_snapshot(
+                name="LiveVerse",
+                program_number=10,
+                detail_payload={
+                    "channels": [{"channel_key": "live-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Live Chain", "plugins": [{"uri": "urn:test:live", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "live-a", "series_order": ["live-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            target_snapshot = await service.create_snapshot(
+                name="TargetVerse",
+                program_number=11,
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "target-a", "label": "A", "chain_id": 1},
+                        {"channel_key": "target-b", "label": "B", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:a", "position": 0}]},
+                        {"id": 2, "name": "Chain B", "plugins": [{"uri": "urn:test:b", "position": 0}]},
+                    ],
+                    "routing": {"mode": "series", "active_channel_key": "target-a", "series_order": ["target-a", "target-b"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated_live = await service.activate_snapshot(live_snapshot["id"])
+            assert activated_live is not None
+            preferred_calls.clear()
+            release_calls.clear()
+
+            runtime_service = SnapshotRuntimeStateService(session)
+            live_payload = await runtime_service.get_live_snapshot_payload()
+            live_state = await runtime_service.get_live_state()
+            await runtime_service.sync_live_snapshot_payload(
+                snapshot_id=live_snapshot["id"],
+                live_snapshot_payload=live_payload,
+                snapshot_revision=live_payload.get("snapshot_revision"),
+                runtime_metrics={
+                    **dict(live_state.get("runtime_metrics") or {}),
+                    "preload": {
+                        "status": "ready",
+                        "source_snapshot_id": live_snapshot["id"],
+                        "target_snapshot_id": target_snapshot["id"],
+                        "target_snapshot_name": "TargetVerse",
+                        "candidate_reason": "program_number",
+                        "staged_instance_ids": [501, 502],
+                        "warnings": [],
+                        "prepared_at": "2026-04-05T00:00:00",
+                    },
+                },
+            )
+
+            activated_target = await service.activate_snapshot(target_snapshot["id"])
+            assert activated_target is not None
+            assert activated_target["runtime_live_state"]["runtime_metrics"]["preload_hit"] is True
+
+    asyncio.run(_run())
+
+    assert preferred_calls == [[501], [502]]
+    assert release_calls == [[501, 502]]
+
+
+def test_activate_snapshot_releases_stale_preloaded_instances_when_target_differs(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    preferred_calls: list[list[int]] = []
+    release_calls: list[list[int]] = []
+
+    class _PreloadRuntimeEngineStub:
+        is_available = True
+        is_running = True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        preferred_calls.append(list(preferred_detached_instance_ids or []))
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_release_detached(self, instance_ids):
+        release_calls.append(list(instance_ids))
+        return {
+            "released_instance_ids": list(instance_ids),
+            "skipped_active_instance_ids": [],
+            "missing_instance_ids": [],
+            "warnings": [],
+        }
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: _PreloadRuntimeEngineStub())
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(snapshot_service_module, "schedule_snapshot_preload_for_live_snapshot", lambda _snapshot_id: None)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(ChainService, "release_detached_instance_ids", _fake_release_detached)
+
+    async def _reuse_disabled(self, *_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(SnapshotService, "_reuse_live_runtime_chains", _reuse_disabled)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            live_snapshot = await service.create_snapshot(
+                name="LiveVerse",
+                program_number=10,
+                detail_payload={
+                    "channels": [{"channel_key": "live-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Live Chain", "plugins": [{"uri": "urn:test:live", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "live-a", "series_order": ["live-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            stale_target = await service.create_snapshot(
+                name="StaleTarget",
+                program_number=11,
+                detail_payload={
+                    "channels": [{"channel_key": "stale-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Stale Chain", "plugins": [{"uri": "urn:test:stale", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "stale-a", "series_order": ["stale-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+            other_snapshot = await service.create_snapshot(
+                name="OtherTarget",
+                program_number=12,
+                detail_payload={
+                    "channels": [{"channel_key": "other-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Other Chain", "plugins": [{"uri": "urn:test:other", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "other-a", "series_order": ["other-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated_live = await service.activate_snapshot(live_snapshot["id"])
+            assert activated_live is not None
+            preferred_calls.clear()
+            release_calls.clear()
+
+            runtime_service = SnapshotRuntimeStateService(session)
+            live_payload = await runtime_service.get_live_snapshot_payload()
+            live_state = await runtime_service.get_live_state()
+            await runtime_service.sync_live_snapshot_payload(
+                snapshot_id=live_snapshot["id"],
+                live_snapshot_payload=live_payload,
+                snapshot_revision=live_payload.get("snapshot_revision"),
+                runtime_metrics={
+                    **dict(live_state.get("runtime_metrics") or {}),
+                    "preload": {
+                        "status": "ready",
+                        "source_snapshot_id": live_snapshot["id"],
+                        "target_snapshot_id": stale_target["id"],
+                        "target_snapshot_name": "StaleTarget",
+                        "candidate_reason": "program_number",
+                        "staged_instance_ids": [601],
+                        "warnings": [],
+                        "prepared_at": "2026-04-05T00:00:00",
+                    },
+                },
+            )
+
+            activated_other = await service.activate_snapshot(other_snapshot["id"])
+            assert activated_other is not None
+            assert activated_other["runtime_live_state"]["runtime_metrics"]["preload_hit"] is False
+
+    asyncio.run(_run())
+
+    assert preferred_calls == [[]]
+    assert release_calls == [[601]]
 
 
 def test_snapshot_service_activation_rejects_missing_runtime_channels(tmp_path, monkeypatch):
@@ -1577,7 +1851,7 @@ def test_snapshot_runtime_health_refresh_marks_live_channels_not_loaded_when_run
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1863,7 +2137,7 @@ def test_activate_snapshot_applies_output_safety_settings(tmp_path, monkeypatch)
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -1985,7 +2259,7 @@ def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_p
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -2096,7 +2370,7 @@ def test_activate_snapshot_applies_monitoring_output_binding(tmp_path, monkeypat
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -2207,7 +2481,7 @@ def test_update_snapshot_reapplies_monitoring_output_for_live_snapshot(tmp_path,
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -2314,7 +2588,7 @@ def test_activate_snapshot_syncs_snapshot_midi_map_commands_to_engine(tmp_path, 
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -2449,7 +2723,7 @@ def test_replace_midi_map_resyncs_live_snapshot_commands_to_engine(tmp_path, mon
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:
@@ -2566,7 +2840,7 @@ def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_s
     async def _fake_apply(_snapshot_data):
         return 1, 0
 
-    async def _healthy_activate_chain(self, chain_id):
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
         result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
         chain = result.scalar_one_or_none()
         if chain is not None:

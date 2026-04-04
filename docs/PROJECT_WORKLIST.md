@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 00:04 EDT - Closed T751 with runtime monitoring-output application and live snapshot reapply coverage after finishing the earlier T750/T752/T753 and T745/T746/T747 slices; T749/T748 remain next in queue.
+Last updated: 2026-04-05 00:20 EDT - Closed T743 by consuming staged preload instances during activation and releasing stale preload leftovers; T749/T748 remain next in queue after the earlier T751, T750, T752, T753, T745, T746, and T747 slices.
 
 ID: T753
 Status: [✓] Done
@@ -202,7 +202,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-04 EDT
 
 ID: T743
-Status: [ ] Todo
+Status: [✓] Done
 Title: Preloaded snapshot staged instances are never consumed during activation
 Description:
 - Goal / acceptance criteria: When a snapshot is activated and a preload was prepared for it, the activation path must use the staged plugin instances from the preload instead of creating new ones from scratch. Currently `preload_hit` is computed as a metric (line 1603 in `snapshot_service.py`) but the code never branches on it — the staged instances are silently abandoned and new instances are always created, wasting the preload work.
@@ -213,8 +213,15 @@ Description:
 - Dependencies: None — the stage/release APIs exist; only the consumption path is missing.
 - Estimated effort: Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 00:20 EDT - Codex
+- Completion notes:
+  - Extended `app/services/chain_service.py` so chain activation can accept a preferred detached-instance list and prioritize those already-warmed detached plugins ahead of generic detached/active reuse or fresh plugin loads.
+  - Updated `app/services/snapshot_service.py::activate_snapshot()` and `_materialize_live_state()` so a `runtime_metrics.preload` entry that is `ready` for the target snapshot now feeds its staged instance IDs into per-path runtime-chain activation instead of discarding them, while stale preload IDs for a different target are released before activation.
+  - Added explicit preload cleanup after activation so any staged IDs that were not actually consumed are unloaded, while IDs that became active runtime instances are preserved automatically by the existing detached-release guard.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/chain_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 'preload_next_snapshot or preloaded_instances or stale_preloaded'` -> PASS
 
 ID: T742
 Status: [ ] Todo
