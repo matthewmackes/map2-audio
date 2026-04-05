@@ -18,6 +18,9 @@ const mockGetLibrary = jest.fn()
 const mockGetDiagnostics = jest.fn()
 const mockImportFromDrums = jest.fn()
 const mockImportFromSynthForge = jest.fn()
+const mockGetBackingTracks = jest.fn()
+const mockGetBackingTrackTransport = jest.fn()
+const mockSetBackingTrackTransport = jest.fn()
 
 jest.mock('@/app/components/PageHeader', () => ({
   PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
@@ -53,6 +56,11 @@ jest.mock('@/map2/api', () => ({
     importFromDrums: (...args: any[]) => mockImportFromDrums(...args),
     importFromSynthForge: (...args: any[]) => mockImportFromSynthForge(...args),
     updateSlot: jest.fn(async () => ({})),
+  },
+  drumsApi: {
+    getBackingTracks: (...args: any[]) => mockGetBackingTracks(...args),
+    getBackingTrackTransport: (...args: any[]) => mockGetBackingTrackTransport(...args),
+    setBackingTrackTransport: (...args: any[]) => mockSetBackingTrackTransport(...args),
   },
 }))
 
@@ -148,6 +156,33 @@ function makeDiagnostics(overrides: Record<string, any> = {}) {
   }
 }
 
+function makeBackingTracks() {
+  return [
+    { track_id: 'arena-drive', name: 'Arena Drive', genre: 'Rock', key: 'E minor', tempo: 124, duration_seconds: 186, duration_label: '3:06' },
+    { track_id: 'midnight-grid', name: 'Midnight Grid', genre: 'Electronic', key: 'D minor', tempo: 118, duration_seconds: 204, duration_label: '3:24' },
+  ]
+}
+
+function makeBackingTrackTransport(overrides: Record<string, any> = {}) {
+  return {
+    track_id: 'arena-drive',
+    track_name: 'Arena Drive',
+    genre: 'Rock',
+    key: 'E minor',
+    tempo: 124,
+    duration_seconds: 186,
+    duration_label: '3:06',
+    position_seconds: 12,
+    position_label: '0:12',
+    is_playing: false,
+    loop_enabled: true,
+    tempo_shift: 0,
+    pitch_shift: 0,
+    runtime_source: 'drum_machine_service',
+    ...overrides,
+  }
+}
+
 function makeState(activeSection = 'overview') {
   return {
     instance_id: 'workspace-default',
@@ -237,6 +272,9 @@ function primeApi({
   mockGetDiagnostics.mockResolvedValue(makeDiagnostics(diagnosticsOverride))
   mockImportFromDrums.mockResolvedValue(makeState())
   mockImportFromSynthForge.mockResolvedValue(makeState())
+  mockGetBackingTracks.mockResolvedValue(makeBackingTracks())
+  mockGetBackingTrackTransport.mockResolvedValue(makeBackingTrackTransport())
+  mockSetBackingTrackTransport.mockResolvedValue(makeBackingTrackTransport())
 }
 
 function LocationProbe() {
@@ -370,6 +408,36 @@ describe('PerformanceBrainPage', () => {
     await waitFor(() => expect(screen.getByText('Controller qualification')).toBeInTheDocument())
     expect(screen.getByText('No enabled keyboard zones configured.')).toBeInTheDocument()
     expect(screen.getByText('Legacy MIDI clock remains routed externally.')).toBeInTheDocument()
+  })
+
+  it('renders session media as a backing-track adjunct and routes transport mutations', async () => {
+    mockSetBackingTrackTransport
+      .mockResolvedValueOnce(makeBackingTrackTransport({ is_playing: true }))
+      .mockResolvedValueOnce(makeBackingTrackTransport({
+        track_id: 'midnight-grid',
+        track_name: 'Midnight Grid',
+        genre: 'Electronic',
+        key: 'D minor',
+        tempo: 118,
+        duration_seconds: 204,
+        duration_label: '3:24',
+      }))
+
+    renderPage('/brain?section=session_media')
+
+    await waitFor(() => expect(screen.getByText('Session media adjunct')).toBeInTheDocument())
+    expect(screen.getByText(/Backing tracks stay outside the core Performance Brain transport/)).toBeInTheDocument()
+    expect(screen.getAllByText('Arena Drive').length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play session media' }))
+    await waitFor(() => expect(mockSetBackingTrackTransport).toHaveBeenCalledWith({ is_playing: true }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load Midnight Grid' }))
+    await waitFor(() => expect(mockSetBackingTrackTransport).toHaveBeenCalledWith({
+      track_id: 'midnight-grid',
+      position_seconds: 0,
+      is_playing: false,
+    }))
   })
 
   it('auto-runs a scoped drum handoff import and clears the handoff flag from the route', async () => {

@@ -8,6 +8,7 @@ import { PageHeader } from '@/app/components/PageHeader'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import {
   brainApi,
+  drumsApi,
   type BrainControllerQualification,
   type BrainDiagnostics,
   type BrainLayer,
@@ -16,6 +17,7 @@ import {
   type BrainTransportState,
   type PluginRuntimeScopeOptions,
 } from '@/map2/api'
+import type { DrumBackingTrackSummary, DrumBackingTrackTransportState } from '@/map2/types'
 import { parseBrainImportSource } from './brainHandoff'
 import './PerformanceBrainPage.css'
 
@@ -27,6 +29,7 @@ const SECTION_DEFS = [
   { id: 'routing', label: 'Routing', eyebrow: 'Buses and master' },
   { id: 'inputs', label: 'Inputs', eyebrow: 'Zones and triggers' },
   { id: 'library', label: 'Library', eyebrow: 'Assets and import' },
+  { id: 'session_media', label: 'Session Media', eyebrow: 'Backing tracks adjunct' },
   { id: 'diagnostics', label: 'Diagnostics', eyebrow: 'Latency and health' },
 ] as const
 
@@ -94,6 +97,12 @@ function QualificationStrip({ qualification }: { qualification: BrainControllerQ
       ))}
     </div>
   )
+}
+
+function selectedBackingTrack(
+  tracks: DrumBackingTrackSummary[],
+  transport: DrumBackingTrackTransportState) {
+  return tracks.find((track) => track.track_id === transport.track_id)
 }
 
 function OverviewCards({
@@ -208,6 +217,17 @@ export function PerformanceBrainPage() {
     queryFn: () => brainApi.getDiagnostics(scope),
     staleTime: 1_000,
   })
+  const backingTracksQuery = useQuery({
+    queryKey: ['brain', 'session-media', 'backing-tracks'],
+    queryFn: () => drumsApi.getBackingTracks(),
+    staleTime: 60_000,
+  })
+  const backingTrackTransportQuery = useQuery({
+    queryKey: ['brain', 'session-media', 'backing-tracks', 'transport'],
+    queryFn: () => drumsApi.getBackingTrackTransport(),
+    refetchInterval: (query) => (query.state.data?.is_playing ? 500 : 2_000),
+    staleTime: 250,
+  })
 
   const [setNameDraft, setSetNameDraft] = useState('')
 
@@ -247,6 +267,12 @@ export function PerformanceBrainPage() {
     onSuccess: (state) => {
       queryClient.setQueryData(['brain', 'state', scopeKey], state)
       void queryClient.invalidateQueries({ queryKey: ['brain'] })
+    },
+  })
+  const backingTrackTransportMutation = useMutation({
+    mutationFn: (patch: Parameters<typeof drumsApi.setBackingTrackTransport>[0]) => drumsApi.setBackingTrackTransport(patch),
+    onSuccess: (transportState) => {
+      queryClient.setQueryData(['brain', 'session-media', 'backing-tracks', 'transport'], transportState)
     },
   })
 
@@ -314,8 +340,17 @@ export function PerformanceBrainPage() {
   const inputs = inputsQuery.data
   const library = libraryQuery.data
   const diagnostics = diagnosticsQuery.data
+  const backingTracks = backingTracksQuery.data ?? []
+  const backingTrackTransport = backingTrackTransportQuery.data
 
-  if (stateQuery.isLoading || transportQuery.isLoading || slotsQuery.isLoading || diagnosticsQuery.isLoading) {
+  if (
+    stateQuery.isLoading
+    || transportQuery.isLoading
+    || slotsQuery.isLoading
+    || diagnosticsQuery.isLoading
+    || backingTracksQuery.isLoading
+    || backingTrackTransportQuery.isLoading
+  ) {
     return (
       <section className="brain-page brain-page--loading">
         <InlineLoading status="active" description="Loading Performance Brain workspace" />
@@ -323,7 +358,7 @@ export function PerformanceBrainPage() {
     )
   }
 
-  if (!state || !transport || !slots || !layers || !sequence || !mixer || !inputs || !library || !diagnostics) {
+  if (!state || !transport || !slots || !layers || !sequence || !mixer || !inputs || !library || !diagnostics || !backingTrackTransport) {
     return (
       <section className="brain-page">
         <InlineNotification
@@ -342,6 +377,7 @@ export function PerformanceBrainPage() {
   const activeLayer = layers.find((layer) => layer.layer_id === state.active_layer_id)
   const qualification = diagnostics.controller_qualification
   const controllerAlerts = uniqueItems([...diagnostics.warnings, ...qualification.issues])
+  const activeBackingTrack = selectedBackingTrack(backingTracks, backingTrackTransport)
 
   const handleSectionChange = (sectionId: SectionId) => {
     if (searchParams.get('section') !== sectionId) {
@@ -758,6 +794,88 @@ export function PerformanceBrainPage() {
                   </ul>
                 </Tile>
               ))}
+            </div>
+          ) : null}
+
+          {activeSection === 'session_media' ? (
+            <div className="brain-page__section-grid">
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Session media adjunct</span>
+                <strong>{backingTrackTransport.track_name}</strong>
+                <p className="brain-page__panel-copy">
+                  Backing tracks stay outside the core Performance Brain transport and sequence identity.
+                  This adjunct reuses the shared session-media runtime without folding rehearsal media into the V1 Brain core.
+                </p>
+                <ul className="brain-page__flat-list">
+                  <li><strong>Track</strong> · {activeBackingTrack?.name ?? backingTrackTransport.track_name}</li>
+                  <li><strong>Style</strong> · {backingTrackTransport.genre} · key {backingTrackTransport.key} · {backingTrackTransport.tempo} BPM</li>
+                  <li><strong>Position</strong> · {backingTrackTransport.position_label} / {backingTrackTransport.duration_label}</li>
+                </ul>
+              </Tile>
+
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Adjunct transport</span>
+                <div className="brain-page__button-row">
+                  <Button
+                    size="sm"
+                    kind={backingTrackTransport.is_playing ? 'danger' : 'primary'}
+                    renderIcon={backingTrackTransport.is_playing ? PauseFilled : PlayFilled}
+                    onClick={() => backingTrackTransportMutation.mutate({ is_playing: !backingTrackTransport.is_playing })}
+                  >
+                    {backingTrackTransport.is_playing ? 'Stop session media' : 'Play session media'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    kind="secondary"
+                    onClick={() => backingTrackTransportMutation.mutate({ loop_enabled: !backingTrackTransport.loop_enabled })}
+                  >
+                    {backingTrackTransport.loop_enabled ? 'Disable loop' : 'Enable loop'}
+                  </Button>
+                </div>
+                <div className="brain-page__metric-row">
+                  <span>Tempo shift</span>
+                  <input
+                    className="brain-page__number-input"
+                    aria-label="Session media tempo shift"
+                    type="number"
+                    min={-50}
+                    max={50}
+                    value={backingTrackTransport.tempo_shift}
+                    onChange={(event) => backingTrackTransportMutation.mutate({ tempo_shift: Number(event.target.value) })}
+                  />
+                </div>
+                <div className="brain-page__metric-row">
+                  <span>Pitch shift</span>
+                  <input
+                    className="brain-page__number-input"
+                    aria-label="Session media pitch shift"
+                    type="number"
+                    min={-12}
+                    max={12}
+                    value={backingTrackTransport.pitch_shift}
+                    onChange={(event) => backingTrackTransportMutation.mutate({ pitch_shift: Number(event.target.value) })}
+                  />
+                </div>
+              </Tile>
+
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Backing-track catalog</span>
+                <ul className="brain-page__flat-list">
+                  {backingTracks.map((track) => (
+                    <li key={track.track_id}>
+                      <strong>{track.name}</strong> · {track.genre} · key {track.key} · {track.tempo} BPM · {track.duration_label}
+                      {' '}
+                      <Button
+                        size="sm"
+                        kind={track.track_id === backingTrackTransport.track_id ? 'ghost' : 'secondary'}
+                        onClick={() => backingTrackTransportMutation.mutate({ track_id: track.track_id, position_seconds: 0, is_playing: false })}
+                      >
+                        {track.track_id === backingTrackTransport.track_id ? `Loaded ${track.name}` : `Load ${track.name}`}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </Tile>
             </div>
           ) : null}
 

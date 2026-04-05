@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain native qualification reset rules documented)
+> **Last Updated**: April 5, 2026 (Brain session-media adjunct boundary documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1585,6 +1585,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `git diff --check`; `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`; `./juce-engine/build-synthforge-tests/synthforge_tests "[brain][processor]"`; `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4`
 - **Lesson**: Controller-first qualification has to exist in the native runtime too. If trigger notes share the same sustained-note path as keyboard polyphony, the Brain can look qualified in API/UI layers while the actual processor still behaves like a merged, unstable controller model.
 
+**66. Brain Session Media Must Reuse The Backing-Track Runtime As An Adjunct, Not As Core Brain Transport (HIGH - Apr 5, 2026)**
+- **Files**: `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: After T767 qualified the core Brain workflow, the next pressure point was reintroducing backing tracks. The risk was regressing into a mixed-identity page where rehearsal media looked like part of the Brain sequencer/transport itself instead of a separate adjunct workflow.
+- **Root Cause**: The repo already had a real backing-track runtime under `/api/engine/drums/backing-tracks*`, but the Brain route had no explicit adjunct boundary. Without a dedicated section and copy, the easiest implementation would have been to graft backing-track controls directly onto the Brain transport area and blur the product boundary again.
+- **Fix**: Add a dedicated `Session Media` section to `PerformanceBrainPage`, drive it through the shared `drumsApi` backing-track catalog/transport contract, and keep the UI language explicit that this surface is adjunct-only and does not redefine the core Performance Brain transport or sequence identity.
+- **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `git diff --check`
+- **Lesson**: Reuse the existing media runtime, but keep the product boundary hard. Session media belongs in the Brain workspace as an adjunct surface, not as a silent expansion of the core transport model.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1855,6 +1863,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Session-Media Adjunct Boundary
+- **Section**: Gotchas & Learned Fixes (#66), Update Log
+- **Change**: Documented that the Brain backing-track surface must stay a distinct session-media adjunct backed by the existing `/drums` runtime contract instead of merging into the core Brain transport/sequence model.
+- **Reason**: T768 reintroduced backing tracks into the Brain workspace, and the key architectural rule is boundary preservation: reuse the runtime, but do not let rehearsal media redefine the V1 Brain core identity.
+- **Impact**: Future Brain adjunct work should extend the explicit session-media surface rather than adding hidden backing-track state or controls to the core perform/sequence sections.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`
 
 ### [2026-04-05] - Brain Native Trigger Isolation And Transport Reset
 - **Section**: Gotchas & Learned Fixes (#65), Update Log

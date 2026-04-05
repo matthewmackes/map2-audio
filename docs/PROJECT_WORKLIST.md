@@ -564,7 +564,7 @@ Last updated: 2026-04-05 19:46 EDT - Codex
   - `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4` -> PASS
 
 ID: T768
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add backing-track session media as a Brain adjunct, not V1 core
 Description:
 - Goal / acceptance criteria: Reintroduce backing-track workflows as an explicit Brain adjunct after the core brain is stable, keeping media/session tooling clearly separated from the V1 instrument/brain identity.
@@ -574,7 +574,15 @@ Description:
 - Required outputs: Adjunct design/implementation tasks, routed/session integration, and validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 19:53 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/PerformanceBrainPage.tsx` with a dedicated `Session Media` rail section that exposes backing tracks as an explicit Brain adjunct instead of folding rehearsal media into the core Brain transport, sequencing, or qualification surfaces.
+  - Reused the existing runtime-backed `/api/engine/drums/backing-tracks*` contract via `drumsApi`, surfacing current track/session metadata, adjunct-only play/stop and loop controls, tempo/pitch shift controls, and a loadable backing-track catalog inside the Brain workspace.
+  - Kept the boundary explicit in the routed copy and behavior: the section states that session media is adjunct-only, uses its own transport state, and does not redefine the core Performance Brain identity.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx` -> PASS (`8 passed`)
+  - `git diff --check` -> PASS
+  - Licensing review: touched frontend/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T769
 Status: [ ] Todo
