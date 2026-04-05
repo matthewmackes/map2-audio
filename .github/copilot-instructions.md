@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain routed qualification workspace documented)
+> **Last Updated**: April 5, 2026 (Brain native qualification reset rules documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1577,6 +1577,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `git diff --check`; `npm --prefix web run build`
 - **Lesson**: Qualification evidence has to be operator-visible where the workflow happens. If readiness only exists in backend payloads or one deep diagnostics panel, the routed Brain surface is not actually qualified for shadow-phase evaluation.
 
+**65. Native Brain Trigger Notes Must Not Pollute Sustained Keyboard Polyphony, And Transport Stop Must Clear Lingering Voices (HIGH - Apr 5, 2026)**
+- **Files**: `juce-engine/Source/Brain/PerformanceBrainProcessor.cpp`, `juce-engine/Source/Brain/PerformanceBrainProcessor.h`, `juce-engine/tests/PerformanceBrainProcessorTests.cpp`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The first native Brain processor treated every MIDI note-on as the same sustained voice source. That meant drum-style trigger notes could inflate melodic voice counts or steal the tracked pitch from a held keyboard note, and a transport stop could leave the sustained-note tracker populated until explicit note-off traffic arrived later.
+- **Root Cause**: `PerformanceBrainProcessor` only had one `activeNotes_` path and no explicit reset semantics for trigger-note bursts or transport-stop transitions. Trigger-note routing and controller-reset behavior were still page/backend concepts, not runtime DSP rules.
+- **Fix**: Split trigger-note handling from sustained melodic note tracking by turning drum/hybrid trigger-note hits into short trigger impulses, keep those hits out of the sustained `activeNotes_` polyphony counter, and clear active-note/oscillator state on transport stop plus `all notes off` / `all sound off`.
+- **Verification**: `git diff --check`; `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`; `./juce-engine/build-synthforge-tests/synthforge_tests "[brain][processor]"`; `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4`
+- **Lesson**: Controller-first qualification has to exist in the native runtime too. If trigger notes share the same sustained-note path as keyboard polyphony, the Brain can look qualified in API/UI layers while the actual processor still behaves like a merged, unstable controller model.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1847,6 +1855,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Native Trigger Isolation And Transport Reset
+- **Section**: Gotchas & Learned Fixes (#65), Update Log
+- **Change**: Documented that native Brain trigger-note hits must stay out of sustained keyboard polyphony accounting and that stopping transport must clear lingering active voices immediately.
+- **Reason**: T767-subC finished the native qualification slice, and the critical rule is that controller-first readiness must hold in the JUCE runtime, not only in backend telemetry or routed UI summaries.
+- **Impact**: Future Brain processor work should preserve separate trigger-vs-melodic handling and explicit transport-stop reset semantics instead of collapsing all incoming note traffic into one sustained voice path.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `juce-engine/Source/Brain/PerformanceBrainProcessor.cpp`, `juce-engine/Source/Brain/PerformanceBrainProcessor.h`, `juce-engine/tests/PerformanceBrainProcessorTests.cpp`
 
 ### [2026-04-05] - Brain Routed Qualification Workspace
 - **Section**: Gotchas & Learned Fixes (#64), Update Log

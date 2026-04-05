@@ -477,7 +477,7 @@ Last updated: 2026-04-05 19:01 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T767
-Status: [>] In Progress
+Status: [✓] Done
 Title: Qualify Brain for MIDI keyboards, drum pads, and triggers
 Description:
 - Goal / acceptance criteria: Prove the replacement with focused engine, backend, and UI coverage plus qualification evidence for keyboard polyphony, trigger nuance, sequence timing, routing, and per-instance isolation while preserving Tier A runtime locks.
@@ -530,7 +530,7 @@ Subtasks:
       - `npm --prefix web run build` -> PASS
       - Licensing review: touched frontend/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T767-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Deepen native Brain processor qualification for keyboard polyphony, trigger isolation, and transport reset behavior
     Description:
     - Goal / acceptance criteria: Extend the existing native Brain processor test target with controller-first cases that stress polyphonic note handling, trigger-note isolation, and note-off/transport reset behavior so the epic adds real engine evidence instead of page-only assertions.
@@ -540,9 +540,28 @@ Subtasks:
     - Required outputs: C++ processor/test updates, passing native test evidence, and worklist validation notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 19:15 EDT - Codex
+    Last updated: 2026-04-05 19:46 EDT - Codex
+    - Completion notes:
+      - Updated `juce-engine/Source/Brain/PerformanceBrainProcessor.cpp` and `juce-engine/Source/Brain/PerformanceBrainProcessor.h` so drum/hybrid trigger-note hits now render as short trigger impulses instead of being folded into the sustained melodic note tracker, keeping keyboard polyphony counts isolated from pad-style trigger events.
+      - Added active-note clearing on transport stop plus `all notes off` / `all sound off` handling so the native Brain processor no longer carries stale sustained voices across stop/reset boundaries.
+      - Extended `juce-engine/tests/PerformanceBrainProcessorTests.cpp` with focused Catch2 coverage for keyboard polyphony growth/release, trigger-note isolation from sustained voices, trigger-only rendering, and transport-stop voice reset behavior.
+    - Validation:
+      - `git diff --check` -> PASS
+      - `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4` -> PASS
+      - `./juce-engine/build-synthforge-tests/synthforge_tests "[brain][processor]"` -> PASS (`29 assertions in 6 test cases`)
+      - `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4` -> PASS
+      - Licensing review: touched native-source/test/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts, with existing third-party JUCE/NAM/Eigen notices preserved; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src juce-engine` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 19:34 EDT - Codex
+Last updated: 2026-04-05 19:46 EDT - Codex
+- Completion notes:
+  - Closed T767 by landing the full qualification chain across backend-derived controller telemetry, routed operator-facing qualification visibility, and native processor/runtime proofs for keyboard polyphony, trigger-note isolation, and transport-stop reset semantics.
+  - The replacement Brain route now has deterministic scoped qualification summaries in the API/UI and matching JUCE processor tests that keep trigger workflows from polluting sustained keyboard voice accounting.
+- Validation:
+  - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS (`14 passed`)
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS (`2 suites, 10 tests`)
+  - `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4` -> PASS
+  - `./juce-engine/build-synthforge-tests/synthforge_tests "[brain][processor]"` -> PASS (`29 assertions in 6 test cases`)
+  - `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4` -> PASS
 
 ID: T768
 Status: [ ] Todo

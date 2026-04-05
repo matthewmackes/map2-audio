@@ -74,6 +74,7 @@ public:
 private:
     static bool isValidSlotIndex(int slotIndex);
     static double midiNoteToFrequency(int midiNote);
+    void clearPerformanceStateLocked();
 
     std::array<SlotState, kSlotCount> slots_{};
     TransportState transport_{};
@@ -82,7 +83,9 @@ private:
     std::atomic<double> sampleRate_{44100.0};
     std::atomic<int> activeVoiceCount_{0};
     std::atomic<int> peakVoiceCount_{0};
+    int triggerImpulseSamplesRemaining_ = 0;
     double oscillatorPhase_ = 0.0;
+    double triggerOscillatorPhase_ = 0.0;
 };
 
 }  // namespace map2::brain

@@ -7,6 +7,12 @@ namespace map2::brain {
 namespace {
 
 constexpr double kTwoPi = juce::MathConstants<double>::twoPi;
+constexpr int kTriggerImpulseSamples = 96;
+constexpr double kTriggerFrequencyHz = 1760.0;
+
+bool slotMatchesMidiChannel(const PerformanceBrainProcessor::SlotState& slot, int midiChannel) {
+    return slot.midiChannel == 0 || slot.midiChannel == midiChannel;
+}
 
 PerformanceBrainProcessor::SlotState makeDefaultSlotState(int slotIndex) {
     PerformanceBrainProcessor::SlotState state;
@@ -37,7 +43,13 @@ const juce::String PerformanceBrainProcessor::getName() const {
 
 void PerformanceBrainProcessor::prepareToPlay(double sampleRate, int) {
     sampleRate_.store(sampleRate > 0.0 ? sampleRate : 44100.0);
+    const juce::SpinLock::ScopedLockType lock(stateLock_);
+    activeNotes_.fill(false);
+    activeVoiceCount_.store(0);
+    peakVoiceCount_.store(0);
+    triggerImpulseSamplesRemaining_ = 0;
     oscillatorPhase_ = 0.0;
+    triggerOscillatorPhase_ = 0.0;
 }
 
 void PerformanceBrainProcessor::releaseResources() {
@@ -54,13 +66,44 @@ void PerformanceBrainProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 
     {
         const juce::SpinLock::ScopedLockType lock(stateLock_);
+        const auto isTriggerEvent = [this](const juce::MidiMessage& message) {
+            if (!message.isNoteOnOrOff()) {
+                return false;
+            }
+            const auto midiChannel = message.getChannel();
+            const auto midiNote = message.getNoteNumber();
+            for (const auto& slot : slots_) {
+                if (slot.mode == SlotMode::Chromatic) {
+                    continue;
+                }
+                if (slot.triggerNote != midiNote) {
+                    continue;
+                }
+                if (slotMatchesMidiChannel(slot, midiChannel)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
         for (const auto metadata : midiMessages) {
             const auto message = metadata.getMessage();
+            if (message.isAllNotesOff() || message.isAllSoundOff()) {
+                clearPerformanceStateLocked();
+                continue;
+            }
             if (message.isNoteOn()) {
+                if (isTriggerEvent(message)) {
+                    triggerImpulseSamplesRemaining_ = juce::jmax(triggerImpulseSamplesRemaining_, kTriggerImpulseSamples);
+                    continue;
+                }
                 activeNotes_[juce::jlimit(0, 127, message.getNoteNumber())] = true;
                 continue;
             }
             if (message.isNoteOff()) {
+                if (isTriggerEvent(message)) {
+                    continue;
+                }
                 activeNotes_[juce::jlimit(0, 127, message.getNoteNumber())] = false;
             }
         }
@@ -81,20 +124,36 @@ void PerformanceBrainProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     activeVoiceCount_.store(activeCount);
     peakVoiceCount_.store(std::max(peakVoiceCount_.load(), activeCount));
 
-    if (activeNote < 0) {
+    if (activeNote < 0 && triggerImpulseSamplesRemaining_ <= 0) {
         return;
     }
 
-    const double frequency = midiNoteToFrequency(activeNote);
-    const double phaseIncrement = kTwoPi * frequency / sampleRate_.load();
+    const double sampleRate = sampleRate_.load();
+    const double melodicPhaseIncrement = activeNote >= 0 ? (kTwoPi * midiNoteToFrequency(activeNote) / sampleRate) : 0.0;
+    const double triggerPhaseIncrement = kTwoPi * kTriggerFrequencyHz / sampleRate;
     auto* left = buffer.getWritePointer(0);
     auto* right = buffer.getWritePointer(juce::jmin(1, buffer.getNumChannels() - 1));
-    const float gain = 0.08f;
+    const float melodicGain = 0.08f;
+    const float triggerGain = 0.12f;
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
-        const float value = gain * static_cast<float>(std::sin(oscillatorPhase_));
-        oscillatorPhase_ += phaseIncrement;
-        if (oscillatorPhase_ >= kTwoPi) {
-            oscillatorPhase_ -= kTwoPi;
+        float value = 0.0f;
+
+        if (activeNote >= 0) {
+            value += melodicGain * static_cast<float>(std::sin(oscillatorPhase_));
+            oscillatorPhase_ += melodicPhaseIncrement;
+            if (oscillatorPhase_ >= kTwoPi) {
+                oscillatorPhase_ -= kTwoPi;
+            }
+        }
+
+        if (triggerImpulseSamplesRemaining_ > 0) {
+            const float envelope = static_cast<float>(triggerImpulseSamplesRemaining_) / static_cast<float>(kTriggerImpulseSamples);
+            value += triggerGain * envelope * static_cast<float>(std::sin(triggerOscillatorPhase_));
+            --triggerImpulseSamplesRemaining_;
+            triggerOscillatorPhase_ += triggerPhaseIncrement;
+            if (triggerOscillatorPhase_ >= kTwoPi) {
+                triggerOscillatorPhase_ -= kTwoPi;
+            }
         }
         left[sample] = value;
         if (right != nullptr) {
@@ -190,6 +249,9 @@ PerformanceBrainProcessor::TransportState PerformanceBrainProcessor::getTranspor
 
 void PerformanceBrainProcessor::setTransportState(const TransportState& state) {
     const juce::SpinLock::ScopedLockType lock(stateLock_);
+    if (transport_.isPlaying && !state.isPlaying) {
+        clearPerformanceStateLocked();
+    }
     transport_ = state;
 }
 
@@ -199,6 +261,14 @@ int PerformanceBrainProcessor::getActiveVoiceCount() const {
 
 int PerformanceBrainProcessor::getPeakVoiceCount() const {
     return peakVoiceCount_.load();
+}
+
+void PerformanceBrainProcessor::clearPerformanceStateLocked() {
+    activeNotes_.fill(false);
+    activeVoiceCount_.store(0);
+    triggerImpulseSamplesRemaining_ = 0;
+    oscillatorPhase_ = 0.0;
+    triggerOscillatorPhase_ = 0.0;
 }
 
 bool PerformanceBrainProcessor::isValidSlotIndex(int slotIndex) {
