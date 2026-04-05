@@ -462,11 +462,39 @@ class SnapshotService:
 
     async def _publish_snapshot_desired_state(self, detail: dict[str, Any]) -> None:
         try:
-            from app.services.audio_state_authority import AudioStateAuthorityService
-            from app.services.audio_state_snapshot_compiler import compile_snapshot_detail_to_intent
+            from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
+            from app.services.audio_state_snapshot_compiler import (
+                compile_snapshot_detail_to_intent,
+                merge_audio_state_extensions,
+            )
 
-            await AudioStateAuthorityService().put_desired_state(
-                compile_snapshot_detail_to_intent(detail)
+            authority = AudioStateAuthorityService()
+            preserved_extensions: dict[str, Any] = {}
+            try:
+                committed = await authority.get_committed_state()
+                preserved_extensions = merge_audio_state_extensions(
+                    preserved_extensions,
+                    committed.value.desired.extensions,
+                    committed.value.extensions,
+                )
+            except AudioStateAuthorityError as exc:
+                if "No committed authoritative audio state exists" not in str(exc):
+                    raise
+            try:
+                desired = await authority.get_desired_state()
+                preserved_extensions = merge_audio_state_extensions(
+                    preserved_extensions,
+                    desired.value.extensions,
+                )
+            except AudioStateAuthorityError as exc:
+                if "No desired audio state exists" not in str(exc):
+                    raise
+
+            await authority.put_desired_state(
+                compile_snapshot_detail_to_intent(
+                    detail,
+                    extensions=preserved_extensions,
+                )
             )
         except Exception as exc:
             logger.debug(

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 16:08 EDT - Completed T763-subC by restoring scoped `Performance Brain` state from the committed authority projection before Brain reads and writes operate on local persisted state, then revalidated the full production build before the cycle-2 release loop.
+Last updated: 2026-04-05 16:19 EDT - Completed T763-subD by preserving scoped `Performance Brain` authority projections across snapshot activation and desired-state republishes so control-plane transitions no longer erase Brain recall state.
 
 ## Performance Brain
 
@@ -202,12 +202,34 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_authority_sync.py app/services/performance_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
       - `npm --prefix web run build` -> PASS
       - Licensing review: touched backend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T763-subD
+    Status: [✓] Done
+    Title: Preserve scoped Brain authority projections across snapshot activation and desired-state republishes
+    Description:
+    - Goal / acceptance criteria: Keep `extensions.performance_brain.instances` intact when snapshot activation or live snapshot updates republish desired/committed audio-state envelopes, so snapshot-first control-plane transitions do not wipe Brain recall state that later routed/plugin Brain reads must restore.
+    - Why it matters: After T763-subC, Brain reads restore from committed authority, but snapshot activation can still erase the Brain projection if authoritative state is rebuilt from snapshot detail without preserving the existing extension payload.
+    - Dependencies: T763-subA, T763-subB, T763-subC
+    - Estimated effort: Medium
+    - Required outputs: Extension-preserving snapshot compiler/authority wiring, backend regressions proving Brain projections survive snapshot activation and desired-state publishes, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 16:19 EDT - Codex
+    - Completion notes:
+      - Extended `app/services/audio_state_snapshot_compiler.py` so compiled snapshot intents and initial authoritative audio-state envelopes can preserve existing extension payloads instead of defaulting back to empty extension maps on every snapshot compile.
+      - Updated `app/routes/audio_state.py` and `app/services/snapshot_service.py` to merge the current desired/committed authority extensions before snapshot activation or desired-state republishes write fresh envelopes, which keeps `extensions.performance_brain.instances` intact across snapshot activation and live snapshot routing updates.
+      - Added focused backend regressions in `tests/test_audio_state_snapshot_compiler.py`, `tests/test_audio_state_routes.py`, and `tests/test_snapshot_service.py` proving Brain authority projections survive both the audio-state activation route and the live snapshot desired-state publish path.
+    - Validation:
+      - `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py::test_activate_snapshot_route_compiles_and_commits_authoritative_state tests/test_audio_state_routes.py::test_activate_snapshot_route_preserves_existing_authority_extensions tests/test_snapshot_service.py::test_activate_snapshot_publishes_desired_state_to_audio_authority tests/test_snapshot_service.py::test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state tests/test_snapshot_service.py::test_update_routing_publishes_desired_state_for_live_snapshot` -> PASS (`8 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_service.py tests/test_audio_state_routes.py tests/test_audio_state_snapshot_compiler.py tests/test_snapshot_service.py` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched backend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 16:08 EDT - Codex
+Last updated: 2026-04-05 16:19 EDT - Codex
 - Completion notes:
   - Landed the first Brain-to-authority bridge by serializing scoped runtime state into the existing committed, desired, and observed audio-state envelopes under `extensions.performance_brain.instances`, so snapshot/live truth no longer depends on page-local Brain state alone.
   - Brain mutation and import routes now auto-publish their scoped state into the same authority bridge before broadcasting runtime updates, and matching Brain runtime events now invalidate the authoritative audio-state caches so control-plane surfaces observe the updated truth without a manual sync step.
   - Scoped Brain read and write routes now restore from the committed authority projection before touching local persisted state, so authority-backed recall survives restart/open flows instead of leaving stale Brain instance files in charge.
+  - Snapshot activation and live snapshot desired-state republishes now preserve the existing authority extension payload when compiling fresh audio-state envelopes, so `extensions.performance_brain.instances` survives control-plane transitions instead of being reset back to empty by snapshot-first flows.
   - Left the parent epic open because snapshot activation, recall rules, and deeper State Authority redesign alignment remain larger follow-on work beyond this focused projection slice.
 - Validation:
   - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS

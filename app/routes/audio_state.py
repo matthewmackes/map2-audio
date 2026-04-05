@@ -15,8 +15,11 @@ from app.models.audio_state import (
     SubmitDesiredAudioStateRequest,
 )
 from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
+from app.services.audio_state_snapshot_compiler import (
+    build_initial_authoritative_audio_state,
+    merge_audio_state_extensions,
+)
 from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
-from app.services.audio_state_snapshot_compiler import build_initial_authoritative_audio_state
 from app.services.snapshot_runtime_state_service import resolve_local_node_id
 from app.services.snapshot_service import SnapshotService
 
@@ -36,6 +39,30 @@ def _http_error(exc: AudioStateAuthorityError) -> HTTPException:
 
 def _brain_authority_service() -> PerformanceBrainAuthoritySyncService:
     return PerformanceBrainAuthoritySyncService()
+
+
+async def _load_existing_audio_state_extensions(authority: AudioStateAuthorityService) -> dict[str, object]:
+    merged_extensions: dict[str, object] = {}
+    try:
+        committed = await authority.get_committed_state()
+        merged_extensions = merge_audio_state_extensions(
+            merged_extensions,
+            committed.value.desired.extensions,
+            committed.value.extensions,
+        )
+    except AudioStateAuthorityError as exc:
+        if "No committed authoritative audio state exists" not in str(exc):
+            raise
+    try:
+        desired = await authority.get_desired_state()
+        merged_extensions = merge_audio_state_extensions(
+            merged_extensions,
+            desired.value.extensions,
+        )
+    except AudioStateAuthorityError as exc:
+        if "No desired audio state exists" not in str(exc):
+            raise
+    return merged_extensions
 
 
 @router.get("/status", response_model=AudioStateRouteStatus)
@@ -118,12 +145,14 @@ async def activate_snapshot_into_audio_state(
 
     authority = _service()
     try:
+        preserved_extensions = await _load_existing_audio_state_extensions(authority)
         state_version = await authority.next_state_version()
         initial_state = build_initial_authoritative_audio_state(
             detail,
             origin_node_id=resolve_local_node_id(),
             state_version=state_version,
             leader_epoch=request.leader_epoch,
+            extensions=preserved_extensions,
         )
         await authority.put_desired_state(initial_state.desired)
         return await authority.put_committed_state(initial_state)

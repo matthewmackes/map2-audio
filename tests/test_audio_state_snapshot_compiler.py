@@ -73,3 +73,36 @@ def test_build_initial_authoritative_audio_state_marks_paths_pending_until_nodes
     assert state.paths[0].status == "pending"
     assert state.paths[0].status_reason == "Awaiting node observation after desired-state publish"
     assert state.derived.inactive_messages == ["Channel A pending apply."]
+
+
+def test_build_initial_authoritative_audio_state_preserves_existing_extensions():
+    detail = {
+        "id": 9,
+        "name": "Brain Snapshot",
+        "routing": {"mode": "series", "series_order": ["ch_a"]},
+        "paths": [
+            {"id": "ch_a", "label": "A", "snapshot_chain_id": 301},
+        ],
+        "chains": [],
+    }
+
+    state = build_initial_authoritative_audio_state(
+        detail,
+        origin_node_id="MANAGEMENT-NODE-1",
+        state_version=4,
+        leader_epoch=7,
+        extensions={
+            "performance_brain": {
+                "instances": {
+                    "instance-17__position-3": {
+                        "runtime_instance_id": "instance-17__position-3",
+                        "instance_id": "17",
+                        "plugin_position": 3,
+                    }
+                }
+            }
+        },
+    )
+
+    assert state.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert state.desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from datetime import datetime, timezone
 from typing import Any
 
@@ -21,6 +22,31 @@ from app.models.audio_state import (
 
 def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+
+
+def _normalize_extensions(extensions: dict[str, Any] | None) -> dict[str, Any]:
+    return copy.deepcopy(extensions) if isinstance(extensions, dict) else {}
+
+
+def _merge_extension_value(existing: Any, incoming: Any) -> Any:
+    if isinstance(existing, dict) and isinstance(incoming, dict):
+        merged = copy.deepcopy(existing)
+        for key, value in incoming.items():
+            if key in merged:
+                merged[key] = _merge_extension_value(merged[key], value)
+            else:
+                merged[key] = copy.deepcopy(value)
+        return merged
+    return copy.deepcopy(incoming)
+
+
+def merge_audio_state_extensions(*extension_sets: dict[str, Any] | None) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for extension_set in extension_sets:
+        if not isinstance(extension_set, dict):
+            continue
+        merged = _merge_extension_value(merged, extension_set)
+    return merged
 
 
 def _coerce_snapshot_paths(detail: dict[str, Any]) -> list[dict[str, Any]]:
@@ -48,7 +74,11 @@ def _coerce_snapshot_paths(detail: dict[str, Any]) -> list[dict[str, Any]]:
     return normalized_paths
 
 
-def compile_snapshot_detail_to_intent(detail: dict[str, Any]) -> CompiledSnapshotIntent:
+def compile_snapshot_detail_to_intent(
+    detail: dict[str, Any],
+    *,
+    extensions: dict[str, Any] | None = None,
+) -> CompiledSnapshotIntent:
     compiled_at = _utcnow_iso()
     snapshot_id = int(detail["id"])
     snapshot_revision_id = detail.get("revision_number")
@@ -103,6 +133,7 @@ def compile_snapshot_detail_to_intent(detail: dict[str, Any]) -> CompiledSnapsho
             preferred_nodes=preferred_nodes,
         ),
         chains=[chain for chain in detail.get("chains", []) if isinstance(chain, dict)],
+        extensions=_normalize_extensions(extensions),
     )
 
 
@@ -112,8 +143,10 @@ def build_initial_authoritative_audio_state(
     origin_node_id: str,
     state_version: int,
     leader_epoch: int,
+    extensions: dict[str, Any] | None = None,
 ) -> AuthoritativeAudioState:
-    intent = compile_snapshot_detail_to_intent(detail)
+    merged_extensions = _normalize_extensions(extensions)
+    intent = compile_snapshot_detail_to_intent(detail, extensions=merged_extensions)
     paths = _coerce_snapshot_paths(detail)
     path_records = [
         AudioStatePathRecord(
@@ -149,4 +182,5 @@ def build_initial_authoritative_audio_state(
             total_channel_count=total_count,
             inactive_messages=[f"Channel {path.label} pending apply." for path in path_records],
         ),
+        extensions=merged_extensions,
     )

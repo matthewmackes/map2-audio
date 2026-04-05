@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Performance Brain authority restore precedence documented)
+> **Last Updated**: April 5, 2026 (Snapshot authority extension preservation documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1505,6 +1505,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py tests/test_audio_state_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_authority_sync.py app/services/performance_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py`; `npm --prefix web run build`
 - **Lesson**: Once runtime state is promoted into the authority plane, scoped engine routes must treat committed authority as the first restore source on open/read/write paths or local cache files will silently outrank snapshot-backed truth after restarts.
 
+**56. Snapshot Activation Must Preserve Existing Authority Extensions During Desired And Committed Republishes (HIGH - Apr 5, 2026)**
+- **Files**: `app/routes/audio_state.py`, `app/services/audio_state_snapshot_compiler.py`, `app/services/snapshot_service.py`, `tests/test_audio_state_routes.py`, `tests/test_audio_state_snapshot_compiler.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Snapshot activation and live snapshot desired-state republishes could rebuild fresh audio-state envelopes from snapshot detail and silently drop `extensions.performance_brain.instances`, erasing Brain recall state during otherwise-valid control-plane transitions.
+- **Root Cause**: The snapshot compiler defaulted `CompiledSnapshotIntent.extensions` and `AuthoritativeAudioState.extensions` to empty dicts, and the activation/publish paths wrote those fresh envelopes without merging the current authority extension payload first.
+- **Fix**: Add extension-preserving snapshot compiler helpers, merge current desired/committed authority extensions before snapshot activation or desired-state republishes write fresh envelopes, and cover both paths with focused regressions.
+- **Verification**: `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py::test_activate_snapshot_route_compiles_and_commits_authoritative_state tests/test_audio_state_routes.py::test_activate_snapshot_route_preserves_existing_authority_extensions tests/test_snapshot_service.py::test_activate_snapshot_publishes_desired_state_to_audio_authority tests/test_snapshot_service.py::test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state tests/test_snapshot_service.py::test_update_routing_publishes_desired_state_for_live_snapshot`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_service.py tests/test_audio_state_routes.py tests/test_audio_state_snapshot_compiler.py tests/test_snapshot_service.py`; `npm --prefix web run build`
+- **Lesson**: Snapshot compilers are allowed to replace routing and IO intent, but they must preserve unrelated authority extensions unless the snapshot payload explicitly replaces them, or snapshot-first flows will erase adjacent control-plane state.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1775,6 +1783,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Snapshot Authority Extension Preservation
+- **Section**: Gotchas & Learned Fixes (#56), Update Log
+- **Change**: Documented the rule that snapshot activation and desired-state republishes must preserve existing authority extensions, plus the extension-preserving compiler merge path used by the audio-state route and `SnapshotService`.
+- **Reason**: T763-subD closed a regression where valid snapshot-first control-plane transitions could erase the `Performance Brain` authority projection simply by recompiling desired/committed state from snapshot detail.
+- **Impact**: Future snapshot-authority work should treat extension preservation as part of the activation contract and avoid rebuilding fresh empty extension payloads unless a snapshot explicitly owns that extension namespace.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/routes/audio_state.py`, `app/services/audio_state_snapshot_compiler.py`, `app/services/snapshot_service.py`, `tests/test_audio_state_routes.py`, `tests/test_audio_state_snapshot_compiler.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - Performance Brain Authority Restore Precedence
 - **Section**: Gotchas & Learned Fixes (#55), Update Log

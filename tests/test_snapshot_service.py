@@ -1160,6 +1160,12 @@ def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, 
         return True
 
     class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
         async def put_desired_state(self, desired):
             published_desired.append(desired)
             return SimpleNamespace(value=desired)
@@ -1201,6 +1207,87 @@ def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, 
     assert desired.routing.active_path_ids == ["channel-a"]
 
 
+def test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            return SimpleNamespace(
+                value=SimpleNamespace(
+                    desired=SimpleNamespace(
+                        extensions={
+                            "performance_brain": {
+                                "instances": {
+                                    "instance-17__position-3": {
+                                        "runtime_instance_id": "instance-17__position-3",
+                                        "instance_id": "17",
+                                        "plugin_position": 3,
+                                    }
+                                }
+                            }
+                        }
+                    ),
+                    extensions={},
+                )
+            )
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="AuthorityLiveBrain",
+                program_number=13,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+    asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    desired = published_desired[0]
+    assert desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+
+
 def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []
@@ -1219,6 +1306,12 @@ def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monk
         return True
 
     class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
         async def put_desired_state(self, desired):
             published_desired.append(desired)
             return SimpleNamespace(value=desired)
