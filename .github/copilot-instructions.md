@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Performance Brain authority projection bridge and observed-state merge rule documented)
+> **Last Updated**: April 5, 2026 (Performance Brain authority restore precedence documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1497,6 +1497,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py tests/test_audio_state_routes.py`; `pytest -q tests/test_audio_state_authority_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py tests/test_brain_service.py tests/test_brain_routes.py`
 - **Lesson**: When promoting scoped runtime state into the authority plane, desired, committed, and observed envelopes must all share the same merged extension source or node-observed truth degrades into last-write-wins.
 
+**55. Committed Brain Authority Must Rehydrate Local Runtime State Before Scoped Reads And Writes (HIGH - Apr 5, 2026)**
+- **Files**: `app/routes/brain.py`, `app/services/performance_brain_authority_sync.py`, `app/services/performance_brain_service.py`, `tests/test_brain_routes.py`, `tests/test_performance_brain_authority_sync.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Even after the Brain authority bridge started publishing scoped runtime state into committed authority, restart/open flows could still return stale local Brain instance files instead of the control-plane truth.
+- **Root Cause**: The scoped Brain routes still read from and mutated local persisted service state first, and there was no service path that could replace the local Brain instance payload from the committed `extensions.performance_brain.instances` projection before route handling continued.
+- **Fix**: Add authority restore support in `PerformanceBrainAuthoritySyncService`, add `resolve_runtime_instance_id()` and `replace_state()` to `PerformanceBrainService`, and make scoped Brain read/write routes restore from committed authority before operating on local persisted state.
+- **Verification**: `pytest -q tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py tests/test_audio_state_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_authority_sync.py app/services/performance_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py`; `npm --prefix web run build`
+- **Lesson**: Once runtime state is promoted into the authority plane, scoped engine routes must treat committed authority as the first restore source on open/read/write paths or local cache files will silently outrank snapshot-backed truth after restarts.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1767,6 +1775,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Performance Brain Authority Restore Precedence
+- **Section**: Gotchas & Learned Fixes (#55), Update Log
+- **Change**: Documented the rule that scoped `Performance Brain` routes must restore local persisted instance state from committed authority before reads and writes continue, plus the new `PerformanceBrainService.replace_state()` restore path.
+- **Reason**: T763-subC closed the remaining restart/open drift hole after the authority sync bridge was in place, and that precedence rule needs to be explicit so later Brain work does not reintroduce stale local-state wins.
+- **Impact**: Future Brain recall and activation work should extend the committed-authority restore path instead of layering more file-first fallbacks around it.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/routes/brain.py`, `app/services/performance_brain_authority_sync.py`, `app/services/performance_brain_service.py`, `tests/test_brain_routes.py`, `tests/test_performance_brain_authority_sync.py`
 
 ### [2026-04-05] - Performance Brain Authority Projection Bridge
 - **Section**: Gotchas & Learned Fixes (#54), Update Log

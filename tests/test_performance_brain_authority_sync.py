@@ -156,3 +156,58 @@ async def test_sync_instance_preserves_existing_brain_extensions_in_observation(
     assert observed_instances["instance-17__position-3"]["state"]["set_name"] == "Authority Brain A"
     assert observed_instances["instance-22__position-5"]["state"]["set_name"] == "Authority Brain B"
     assert authority_service.observations[-1].runtime_metrics["performance_brain"]["instance_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_restore_instance_hydrates_local_brain_state_from_committed_projection(tmp_path):
+    brain_service = PerformanceBrainService(root_path=tmp_path / "brain-authority")
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Stale Local Brain", active_slot=2),
+        instance_id="17",
+        plugin_position=3,
+    )
+    committed_envelope = _build_committed_envelope()
+    authority_service = _FakeAuthorityService(committed_envelope)
+
+    synced_projection = await PerformanceBrainAuthoritySyncService(
+        authority_service=authority_service,
+        brain_service=brain_service,
+        node_id="node-local",
+    ).sync_instance(instance_id="17", plugin_position=3, triggered_by="seed")
+
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Locally Drifted Again", active_slot=7),
+        instance_id="17",
+        plugin_position=3,
+    )
+    authority_service.committed = synced_projection
+
+    restored = await PerformanceBrainAuthoritySyncService(
+        authority_service=authority_service,
+        brain_service=brain_service,
+        node_id="node-local",
+    ).restore_instance(instance_id="17", plugin_position=3)
+
+    assert restored["set_name"] == "Stale Local Brain"
+    assert restored["active_slot"] == 2
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Stale Local Brain"
+
+
+@pytest.mark.asyncio
+async def test_restore_instance_falls_back_to_local_state_without_projection(tmp_path):
+    brain_service = PerformanceBrainService(root_path=tmp_path / "brain-authority")
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Only Local Brain", active_slot=5),
+        instance_id="99",
+        plugin_position=1,
+    )
+    authority_service = _FakeAuthorityService(_build_committed_envelope())
+
+    restored = await PerformanceBrainAuthoritySyncService(
+        authority_service=authority_service,
+        brain_service=brain_service,
+        node_id="node-local",
+    ).restore_instance(instance_id="99", plugin_position=1)
+
+    assert restored["set_name"] == "Only Local Brain"
+    assert restored["active_slot"] == 5

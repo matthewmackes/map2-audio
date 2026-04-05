@@ -34,6 +34,15 @@ def _upsert_brain_projection(extensions: dict[str, Any] | None, projection: dict
     return next_extensions
 
 
+def _brain_instances_from_extensions(extensions: dict[str, Any] | None) -> dict[str, Any]:
+    next_extensions = _normalize_extensions(extensions)
+    brain_extension = next_extensions.get(_BRAIN_EXTENSION_KEY)
+    if not isinstance(brain_extension, dict):
+        return {}
+    instances = brain_extension.get("instances")
+    return copy.deepcopy(instances) if isinstance(instances, dict) else {}
+
+
 def build_brain_authority_projection(
     state: dict[str, Any],
     *,
@@ -129,3 +138,34 @@ class PerformanceBrainAuthoritySyncService:
         )
         await self.authority_service.put_observation(observation)
         return committed_result
+
+    async def restore_instance(
+        self,
+        *,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        runtime_instance_id = self.brain_service.resolve_runtime_instance_id(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
+        try:
+            committed_envelope = await self.authority_service.get_committed_state()
+        except AudioStateAuthorityError as exc:
+            if "No committed authoritative audio state exists" in str(exc):
+                return self.brain_service.get_state(instance_id=instance_id, plugin_position=plugin_position)
+            raise
+
+        projection = _brain_instances_from_extensions(committed_envelope.value.extensions).get(runtime_instance_id)
+        if not isinstance(projection, dict):
+            return self.brain_service.get_state(instance_id=instance_id, plugin_position=plugin_position)
+
+        projected_state = projection.get("state")
+        if not isinstance(projected_state, dict):
+            return self.brain_service.get_state(instance_id=instance_id, plugin_position=plugin_position)
+
+        return self.brain_service.replace_state(
+            projected_state,
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )

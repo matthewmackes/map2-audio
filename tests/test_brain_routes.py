@@ -124,8 +124,10 @@ class _FakeWsManager:
 
 
 class _FakeBrainAuthoritySyncService:
-    def __init__(self):
+    def __init__(self, service: PerformanceBrainService):
         self.calls = []
+        self.restored_states = {}
+        self.service = service
 
     async def sync_instance(self, *, instance_id=None, plugin_position=None, triggered_by="ui"):
         self.calls.append(
@@ -136,11 +138,18 @@ class _FakeBrainAuthoritySyncService:
             }
         )
 
+    async def restore_instance(self, *, instance_id=None, plugin_position=None):
+        key = (instance_id, plugin_position)
+        payload = self.restored_states.get(key)
+        if payload is None:
+            return None
+        return self.service.replace_state(payload, instance_id=instance_id, plugin_position=plugin_position)
+
 
 def make_client(tmp_path: Path) -> tuple[TestClient, _FakeWsManager, _FakeBrainAuthoritySyncService]:
     service = PerformanceBrainService(root_path=tmp_path / "brain-routes")
     ws_manager = _FakeWsManager()
-    authority_sync = _FakeBrainAuthoritySyncService()
+    authority_sync = _FakeBrainAuthoritySyncService(service)
     app = FastAPI()
     app.include_router(brain_routes.router)
     brain_routes.get_performance_brain_service = lambda: service
@@ -191,6 +200,49 @@ def test_brain_routes_scope_duplicate_instance_ids_by_plugin_position(tmp_path):
     assert second_payload["set_name"] == "Position One"
     assert first_payload["active_slot"] == 2
     assert second_payload["active_slot"] == 9
+
+
+def test_brain_routes_restore_scoped_state_from_authority_before_reads(tmp_path):
+    client, _, authority_sync = make_client(tmp_path)
+    seed_state = PerformanceBrainService(root_path=tmp_path / "brain-authority-seed").get_state()
+    authority_sync.restored_states[("17", 3)] = {
+        "instance_id": "instance-17__position-3",
+        "product_name": "Performance Brain",
+        "set_name": "Authority Recall",
+        "active_slot": 6,
+        "active_layer_id": "main-stack",
+        "active_section": "perform",
+        "transport": {
+            "is_playing": True,
+            "bpm": 133,
+            "swing": 10,
+            "pattern": 5,
+            "variation": 2,
+            "step": 0,
+            "bar": 1,
+            "beat": 1,
+            "pending_pattern": -1,
+            "switch_quantization_beats": 4,
+        },
+        "slots": seed_state["slots"],
+        "layers": seed_state["layers"],
+        "sequence": seed_state["sequence"],
+        "song": seed_state["song"],
+        "mixer": seed_state["mixer"],
+        "inputs": seed_state["inputs"],
+        "library": seed_state["library"],
+        "sample_editor": seed_state["sample_editor"],
+        "diagnostics": seed_state["diagnostics"],
+        "snapshot_integration": seed_state["snapshot_integration"],
+    }
+
+    response = client.get("/api/engine/brain/state?instance_id=17&plugin_position=3")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["set_name"] == "Authority Recall"
+    assert payload["active_slot"] == 6
+    assert payload["transport"]["bpm"] == 133
 
 
 def test_brain_routes_import_drum_machine_state(tmp_path):

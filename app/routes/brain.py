@@ -58,6 +58,33 @@ def _brain_authority_service() -> PerformanceBrainAuthoritySyncService:
     return PerformanceBrainAuthoritySyncService()
 
 
+async def _restore_authority_projection(
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+) -> None:
+    try:
+        await _brain_authority_service().restore_instance(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
+    except Exception as exc:
+        logger.warning("Performance Brain authority restore failed for %s/%s: %s", instance_id, plugin_position, exc)
+
+
+def _restore_authority_projection_blocking(
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+) -> None:
+    asyncio.run(
+        _restore_authority_projection(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
+    )
+
+
 async def _sync_authority_projection(
     *,
     instance_id: str | None = None,
@@ -134,6 +161,7 @@ def get_brain_state(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_state(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -143,6 +171,7 @@ def update_brain_state(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     state = _service().update_state(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -158,6 +187,7 @@ def get_brain_transport(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_transport(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -167,6 +197,7 @@ def update_brain_transport(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     transport = _service().update_transport(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -182,6 +213,7 @@ def list_brain_slots(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> list[dict[str, Any]]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_slots(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -194,6 +226,7 @@ def update_brain_slot(
 ) -> dict[str, Any]:
     if slot_id < 0 or slot_id > 15:
         raise HTTPException(status_code=400, detail="slot_id must be in range 0..15")
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     slot = _service().update_slot(
         slot_id,
         patch,
@@ -214,6 +247,7 @@ def get_brain_layers(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_layers(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -223,6 +257,7 @@ def update_brain_layers(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     layers = _service().update_layers(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -238,6 +273,7 @@ def get_brain_sequence(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_sequence(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -247,6 +283,7 @@ def update_brain_sequence(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     sequence = _service().update_sequence(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -262,6 +299,7 @@ def get_brain_song(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_song(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -271,6 +309,7 @@ def update_brain_song(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     song = _service().update_song(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -286,6 +325,7 @@ def get_brain_mixer(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_mixer(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -295,6 +335,7 @@ def update_brain_mixer(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     mixer = _service().update_mixer(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -310,6 +351,7 @@ def get_brain_inputs(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_inputs(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -319,6 +361,7 @@ def update_brain_inputs(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     inputs = _service().update_inputs(patch, instance_id=instance_id, plugin_position=plugin_position)
     _sync_authority_projection_blocking(
         instance_id=instance_id,
@@ -334,6 +377,7 @@ def get_brain_library(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_library(instance_id=instance_id, plugin_position=plugin_position)
 
 
@@ -343,6 +387,7 @@ def get_brain_sample_editor(
     plugin_position: int | None = Query(default=None, ge=0),
     slot_id: int | None = Query(default=None, ge=0, le=15),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_sample_editor(
         instance_id=instance_id,
         plugin_position=plugin_position,
@@ -356,6 +401,7 @@ def update_brain_sample_editor(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     sample_editor = _service().update_sample_editor(
         patch,
         instance_id=instance_id,
@@ -375,6 +421,7 @@ def get_brain_diagnostics(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
+    _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_diagnostics(instance_id=instance_id, plugin_position=plugin_position)
 
 

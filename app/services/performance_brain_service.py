@@ -426,6 +426,13 @@ class PerformanceBrainService(Singleton):
             key_parts.append("workspace-default")
         return _sanitize_key("__".join(key_parts))
 
+    def resolve_runtime_instance_id(
+        self,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> str:
+        return self._build_instance_key(instance_id, plugin_position)
+
     def _state_path_for_key(self, instance_key: str) -> Path:
         return self._state_dir / f"{_sanitize_key(instance_key)}.json"
 
@@ -853,6 +860,22 @@ class PerformanceBrainService(Singleton):
             state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
             self._refresh_derived_state(state)
             return state.model_dump()
+
+    def replace_state(
+        self,
+        state: BrainStateModel | dict[str, Any],
+        *,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            runtime_instance_id = self._build_instance_key(instance_id, plugin_position)
+            next_state = BrainStateModel.model_validate(state).model_copy(deep=True)
+            next_state.instance_id = runtime_instance_id
+            self._refresh_derived_state(next_state)
+            self._persist_state(next_state)
+            self._instances[runtime_instance_id] = next_state
+            return next_state.model_dump()
 
     def get_runtime_event(
         self,

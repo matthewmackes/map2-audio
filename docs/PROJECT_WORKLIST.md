@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 15:53 EDT - Completed T763-subB by auto-publishing scoped `Performance Brain` mutation/import writes into the authoritative audio-state path and refreshing frontend authority caches from the same runtime stream.
+Last updated: 2026-04-05 16:08 EDT - Completed T763-subC by restoring scoped `Performance Brain` state from the committed authority projection before Brain reads and writes operate on local persisted state, then revalidated the full production build before the cycle-2 release loop.
 
 ## Performance Brain
 
@@ -181,11 +181,33 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand src/app/hooks/useBrainRuntimeState.test.ts src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS (`3 suites, 10 tests`)
       - `npm --prefix web run build` -> PASS
       - Licensing review: touched backend/frontend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T763-subC
+    Status: [✓] Done
+    Title: Restore scoped Brain state from committed authority before local read/write paths
+    Description:
+    - Goal / acceptance criteria: Make scoped Brain reads and writes hydrate local persisted Brain state from the committed authority projection when one exists, so authority-backed recall survives restarts and local Brain files stop outranking the control-plane truth.
+    - Why it matters: After T763-subB, Brain writes publish into the authority plane, but restart/open flows can still return stale local Brain state unless the read/write path treats committed authority projection as the first source of truth.
+    - Dependencies: T763-subA, T763-subB
+    - Estimated effort: Medium
+    - Required outputs: Authority-restore service path, Brain service hydration support, route wiring for scoped reads/writes, focused backend regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 16:08 EDT - Codex
+    - Completion notes:
+      - Extended `app/services/performance_brain_authority_sync.py` with committed-authority restore support and added `replace_state()` / `resolve_runtime_instance_id()` in `app/services/performance_brain_service.py`, so a scoped Brain instance can be hydrated back into the local persistence layer from `extensions.performance_brain.instances`.
+      - Updated `app/routes/brain.py` so scoped Brain read and write routes restore from committed authority before operating on local state, which makes committed control-plane truth outrank stale local Brain files during restart/open flows.
+      - Added focused regression coverage in `tests/test_performance_brain_authority_sync.py` and `tests/test_brain_routes.py` proving committed Brain projections can rehydrate drifted local state and that scoped Brain reads surface the restored authority state.
+    - Validation:
+      - `pytest -q tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py tests/test_audio_state_routes.py` -> PASS (`15 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_authority_sync.py app/services/performance_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched backend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 15:53 EDT - Codex
+Last updated: 2026-04-05 16:08 EDT - Codex
 - Completion notes:
   - Landed the first Brain-to-authority bridge by serializing scoped runtime state into the existing committed, desired, and observed audio-state envelopes under `extensions.performance_brain.instances`, so snapshot/live truth no longer depends on page-local Brain state alone.
   - Brain mutation and import routes now auto-publish their scoped state into the same authority bridge before broadcasting runtime updates, and matching Brain runtime events now invalidate the authoritative audio-state caches so control-plane surfaces observe the updated truth without a manual sync step.
+  - Scoped Brain read and write routes now restore from the committed authority projection before touching local persisted state, so authority-backed recall survives restart/open flows instead of leaving stale Brain instance files in charge.
   - Left the parent epic open because snapshot activation, recall rules, and deeper State Authority redesign alignment remain larger follow-on work beyond this focused projection slice.
 - Validation:
   - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
