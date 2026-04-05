@@ -9,6 +9,15 @@ import {
 describe('launcherCatalog', () => {
   it('keeps standalone routed workspaces in the catalog and marks hardware submenu triggers as nav-only', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
+    expect(getLauncherCatalogItem('/brain')).toMatchObject({
+      heroTitle: 'Performance Brain',
+      landingEligible: true,
+      navEligible: false,
+      directory: 'core',
+      technicalSpecs: expect.arrayContaining([
+        expect.objectContaining({ label: 'Launch path', value: '/brain' }),
+      ]),
+    })
     expect(getLauncherCatalogItem('/drums')).toMatchObject({
       heroTitle: 'Drum Machine',
       landingEligible: true,
@@ -55,6 +64,7 @@ describe('launcherCatalog', () => {
 
   it('normalizes landing tiles to canonical route-backed launchers only', () => {
     expect(normalizeLandingTiles([
+      { route: '/brain', size: 'large' },
       { route: '/drums', size: 'small' },
       { route: '/synth-forge', size: 'large' },
       { route: '/audio-table', size: 'large' },
@@ -64,6 +74,7 @@ describe('launcherCatalog', () => {
       { route: '/platforms/workspace-catalog', size: 'small' },
       { route: '/platforms/workspace-catalog', size: 'medium' },
     ])).toEqual([
+      { route: '/brain', size: 'large' },
       { route: '/drums', size: 'small' },
       { route: '/synth-forge', size: 'large' },
       { route: '/platforms/overview', size: 'medium' },

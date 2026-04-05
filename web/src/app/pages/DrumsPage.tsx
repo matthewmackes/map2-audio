@@ -289,6 +289,26 @@ const DRUM_GESTURE_ROWS = [
   },
 ] as const
 
+const DRUM_THEME = {
+  page: 'var(--cds-background, #f4f4f4)',
+  layer: 'var(--cds-layer, #ffffff)',
+  layer01: 'var(--cds-layer-01, #f4f4f4)',
+  layer02: 'var(--cds-layer-02, #ffffff)',
+  border: 'var(--cds-border-subtle-01, #c6c6c6)',
+  borderStrong: 'var(--cds-border-strong-01, #8d8d8d)',
+  text: 'var(--cds-text-primary, #161616)',
+  textSecondary: 'var(--cds-text-secondary, #525252)',
+  textHelper: 'var(--cds-text-helper, #6f6f6f)',
+  focus: 'var(--cds-focus, #0f62fe)',
+  interactive: 'var(--cds-interactive, #0f62fe)',
+  success: '#24a148',
+  info: '#4589ff',
+  teal: '#08bdba',
+  warn: '#ff832b',
+  danger: '#da1e28',
+  shadow: '0 18px 40px rgba(22, 22, 22, 0.08)',
+} as const
+
 const shellStyle: Record<string, React.CSSProperties> = {
   page: {
     padding: '24px 24px 40px',
@@ -318,7 +338,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     padding: '10px 14px',
     borderRadius: 999,
-    background: '#0f62fe',
+    background: DRUM_THEME.focus,
     color: '#ffffff',
     fontSize: 12,
     fontWeight: 700,
@@ -338,14 +358,14 @@ const shellStyle: Record<string, React.CSSProperties> = {
   } as React.CSSProperties,
   transport: {
     borderRadius: 18,
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: `1px solid ${DRUM_THEME.border}`,
     background:
-      'linear-gradient(145deg, rgba(18,18,18,0.98), rgba(8,8,8,0.94)),' +
-      'radial-gradient(circle at top right, rgba(69,137,255,0.18), transparent 40%)',
+      `linear-gradient(180deg, ${DRUM_THEME.layer}, ${DRUM_THEME.layer01}),` +
+      'radial-gradient(circle at top right, rgba(69,137,255,0.12), transparent 34%)',
     padding: 20,
     display: 'grid',
     gap: 18,
-    boxShadow: '0 28px 60px rgba(0,0,0,0.28)',
+    boxShadow: DRUM_THEME.shadow,
   },
   transportRow: {
     display: 'grid',
@@ -361,7 +381,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
     fontSize: 11,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: '#a8a8a8',
+    color: DRUM_THEME.textHelper,
   },
   buttonRow: {
     display: 'flex',
@@ -378,7 +398,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 12,
-    color: '#c6c6c6',
+    color: DRUM_THEME.textSecondary,
   },
   range: {
     width: '100%',
@@ -409,7 +429,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
     display: 'grid',
     gap: 14,
     alignContent: 'start',
-    background: 'linear-gradient(180deg, rgba(30,30,30,0.92), rgba(18,18,18,0.98))',
+    background: `linear-gradient(180deg, ${DRUM_THEME.layer}, ${DRUM_THEME.layer01})`,
+    border: `1px solid ${DRUM_THEME.border}`,
+    boxShadow: DRUM_THEME.shadow,
   },
   tileHeader: {
     display: 'flex',
@@ -420,13 +442,13 @@ const shellStyle: Record<string, React.CSSProperties> = {
   tileTitle: {
     margin: 0,
     fontSize: 18,
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   tileText: {
     margin: 0,
     fontSize: 14,
     lineHeight: 1.6,
-    color: '#c6c6c6',
+    color: DRUM_THEME.textSecondary,
   },
   statGrid: {
     display: 'grid',
@@ -435,8 +457,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   statCard: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.02)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: 12,
     display: 'grid',
     gap: 6,
@@ -445,17 +467,17 @@ const shellStyle: Record<string, React.CSSProperties> = {
     fontSize: 11,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: '#8d8d8d',
+    color: DRUM_THEME.textHelper,
   },
   statValue: {
     fontSize: 18,
     fontWeight: 600,
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   footer: {
     borderRadius: 16,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(18,18,18,0.92)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
     padding: '12px 16px',
     display: 'flex',
     flexWrap: 'wrap',
@@ -478,8 +500,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
     width: 10,
     height: 10,
     borderRadius: '50%',
-    background: 'rgba(255,255,255,0.16)',
-    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
+    background: 'rgba(15, 98, 254, 0.12)',
+    boxShadow: `inset 0 0 0 1px ${DRUM_THEME.border}`,
   },
   sequencerGrid: {
     overflowX: 'auto',
@@ -503,8 +525,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   rowLabel: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: '10px 12px',
     display: 'grid',
     gap: 6,
@@ -512,7 +534,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
   rowTitle: {
     fontSize: 14,
     fontWeight: 600,
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   rowHeader: {
     display: 'flex',
@@ -523,14 +545,14 @@ const shellStyle: Record<string, React.CSSProperties> = {
     width: 16,
     height: 16,
     borderRadius: '50%',
-    boxShadow: '0 0 0 1px rgba(255,255,255,0.24)',
+    boxShadow: `0 0 0 1px ${DRUM_THEME.borderStrong}`,
   },
   rowNameInput: {
     width: '100%',
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(0,0,0,0.16)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
+    color: DRUM_THEME.text,
     padding: '7px 9px',
     fontSize: 13,
   },
@@ -551,9 +573,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   miniToggle: {
     borderRadius: 999,
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'rgba(255,255,255,0.06)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
+    color: DRUM_THEME.text,
     padding: '5px 10px',
     fontSize: 11,
     cursor: 'pointer',
@@ -574,7 +596,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 11,
-    color: '#c6c6c6',
+    color: DRUM_THEME.textSecondary,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
   },
@@ -586,9 +608,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
     width: 40,
     height: 40,
     borderRadius: 10,
-    border: '1px solid #6f6f6f',
-    background: '#262626',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer01,
+    color: DRUM_THEME.text,
     cursor: 'pointer',
     fontSize: 12,
     fontWeight: 600,
@@ -604,26 +626,28 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   inspectorGrid: {
     display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
     gap: 14,
+    alignItems: 'start',
   },
   inspectorSection: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.02)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: 12,
     display: 'grid',
     gap: 10,
   },
   inspectorValue: {
     fontSize: 14,
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   inspectorSelect: {
     width: '100%',
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(0,0,0,0.18)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
+    color: DRUM_THEME.text,
     padding: '9px 10px',
     fontSize: 13,
   },
@@ -639,9 +663,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   patternTileButton: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: '10px 8px',
     cursor: 'pointer',
     display: 'grid',
@@ -650,7 +674,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   patternTileMeta: {
     fontSize: 11,
-    color: '#a8a8a8',
+    color: DRUM_THEME.textHelper,
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
@@ -673,15 +697,15 @@ const shellStyle: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
     fontSize: 13,
   },
   input: {
     width: '100%',
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(0,0,0,0.18)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
+    color: DRUM_THEME.text,
     padding: '9px 10px',
     fontSize: 13,
   },
@@ -691,8 +715,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   songEntry: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: 12,
     display: 'grid',
     gap: 10,
@@ -721,9 +745,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   styleTileButton: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: 12,
     cursor: 'pointer',
     display: 'grid',
@@ -738,14 +762,14 @@ const shellStyle: Record<string, React.CSSProperties> = {
     placeItems: 'center',
     fontSize: 14,
     fontWeight: 700,
-    background: 'rgba(69,137,255,0.16)',
-    color: '#a6c8ff',
+    background: 'rgba(69,137,255,0.12)',
+    color: DRUM_THEME.info,
   },
   kitTileButton: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: 12,
     cursor: 'pointer',
     display: 'grid',
@@ -759,8 +783,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   busStrip: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: 12,
     display: 'grid',
     gap: 10,
@@ -768,8 +792,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   meterWrap: {
     height: 110,
     borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(0,0,0,0.25)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer01,
     display: 'flex',
     alignItems: 'flex-end',
     overflow: 'hidden',
@@ -780,22 +804,54 @@ const shellStyle: Record<string, React.CSSProperties> = {
     transition: 'height 120ms linear',
     minHeight: 2,
   },
+  denseTableMetric: {
+    display: 'grid',
+    gap: 6,
+    minWidth: 110,
+  },
+  denseTableMeterTrack: {
+    width: '100%',
+    height: 10,
+    borderRadius: 999,
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer01,
+    overflow: 'hidden',
+  },
+  denseTableMeterFill: {
+    height: '100%',
+    borderRadius: 999,
+    background: 'linear-gradient(90deg, #24a148, #42be65)',
+    minWidth: 4,
+    transition: 'width 120ms linear',
+  },
+  denseTableStatus: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+    alignItems: 'center',
+  },
+  denseTableActions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
   trackTable: {
     width: '100%',
     borderCollapse: 'collapse',
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   trackCell: {
     padding: '10px 8px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: `1px solid ${DRUM_THEME.border}`,
     fontSize: 13,
   },
   waveform: {
     position: 'relative',
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: `1px solid ${DRUM_THEME.border}`,
     background:
-      'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+      `linear-gradient(180deg, ${DRUM_THEME.layer01}, ${DRUM_THEME.layer})`,
     padding: 12,
     minHeight: 140,
     overflow: 'hidden',
@@ -814,7 +870,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
   midiTable: {
     width: '100%',
     borderCollapse: 'collapse',
-    color: '#f4f4f4',
+    color: DRUM_THEME.text,
   },
   midiTableWrap: {
     overflowX: 'auto',
@@ -823,9 +879,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
     width: '100%',
     minWidth: 72,
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(0,0,0,0.18)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer,
+    color: DRUM_THEME.text,
     padding: '7px 8px',
     fontSize: 12,
   },
@@ -844,8 +900,10 @@ const shellStyle: Record<string, React.CSSProperties> = {
     display: 'grid',
     gap: 12,
     alignContent: 'start',
-    background: 'linear-gradient(180deg, rgba(30,30,30,0.92), rgba(18,18,18,0.98))',
+    background: `linear-gradient(180deg, ${DRUM_THEME.layer}, ${DRUM_THEME.layer01})`,
     borderTop: '3px solid rgba(69,137,255,0.72)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    boxShadow: DRUM_THEME.shadow,
   },
   workspaceLinkList: {
     display: 'grid',
@@ -857,9 +915,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     gap: 10,
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: '10px 12px',
     textDecoration: 'none',
     fontSize: 13,
@@ -870,9 +928,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   workspacePresetButton: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: 12,
     cursor: 'pointer',
     display: 'grid',
@@ -891,8 +949,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   workspaceSavedLayout: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
     padding: 12,
     display: 'grid',
     gap: 10,
@@ -908,7 +966,7 @@ const shellStyle: Record<string, React.CSSProperties> = {
     paddingLeft: 18,
     display: 'grid',
     gap: 6,
-    color: '#c6c6c6',
+    color: DRUM_THEME.textSecondary,
     fontSize: 13,
   },
   shortcutOverlayBody: {
@@ -926,9 +984,9 @@ const shellStyle: Record<string, React.CSSProperties> = {
   },
   shortcutCommandButton: {
     borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.03)',
-    color: '#f4f4f4',
+    border: `1px solid ${DRUM_THEME.border}`,
+    background: DRUM_THEME.layer02,
+    color: DRUM_THEME.text,
     padding: 12,
     cursor: 'pointer',
     display: 'grid',
@@ -1201,7 +1259,8 @@ function practicePanel(
                     onClick={() => onUpdateState({ practice_style_id: style.id })}
                     style={{
                       ...shellStyle.styleTileButton,
-                      borderColor: isActive ? accent : 'rgba(255,255,255,0.12)',
+                      borderColor: isActive ? accent : DRUM_THEME.border,
+                      background: isActive ? 'rgba(69, 137, 255, 0.06)' : DRUM_THEME.layer02,
                       boxShadow: isActive ? `0 0 0 1px ${accent}` : 'none',
                     }}
                   >
@@ -1608,7 +1667,7 @@ function advancedPanel(
                       ...shellStyle.sequencerRow,
                       padding: selectedPad === instrumentIndex ? '6px 6px 10px' : undefined,
                       borderRadius: selectedPad === instrumentIndex ? 14 : undefined,
-                      background: selectedPad === instrumentIndex ? 'rgba(255,255,255,0.03)' : undefined,
+                      background: selectedPad === instrumentIndex ? 'rgba(15, 98, 254, 0.05)' : undefined,
                     }}
                     role="row"
                   >
@@ -1619,9 +1678,9 @@ function advancedPanel(
                         ? instrument.color
                         : selectedPad === instrumentIndex
                           ? accent
-                          : 'rgba(255,255,255,0.08)',
+                          : DRUM_THEME.border,
                       boxShadow: rowActive
-                        ? `0 0 0 1px ${instrument.color}, 0 0 16px rgba(0,0,0,0.18)`
+                        ? `0 0 0 1px ${instrument.color}, 0 8px 18px rgba(22, 22, 22, 0.08)`
                         : selectedPad === instrumentIndex
                           ? `0 0 0 1px ${accent}`
                           : 'none',
@@ -1663,8 +1722,9 @@ function advancedPanel(
                           }}
                           style={{
                             ...shellStyle.miniToggle,
-                            background: instrument.mute ? 'rgba(250,77,86,0.18)' : 'rgba(255,255,255,0.06)',
-                            borderColor: instrument.mute ? '#fa4d56' : 'rgba(255,255,255,0.14)',
+                            background: instrument.mute ? 'rgba(218, 30, 40, 0.1)' : DRUM_THEME.layer,
+                            borderColor: instrument.mute ? DRUM_THEME.danger : DRUM_THEME.border,
+                            color: instrument.mute ? DRUM_THEME.danger : DRUM_THEME.text,
                           }}
                         >
                           Mute
@@ -1679,8 +1739,9 @@ function advancedPanel(
                           }}
                           style={{
                             ...shellStyle.miniToggle,
-                            background: instrument.solo ? 'rgba(69,137,255,0.18)' : 'rgba(255,255,255,0.06)',
-                            borderColor: instrument.solo ? '#4589ff' : 'rgba(255,255,255,0.14)',
+                            background: instrument.solo ? 'rgba(69, 137, 255, 0.1)' : DRUM_THEME.layer,
+                            borderColor: instrument.solo ? DRUM_THEME.info : DRUM_THEME.border,
+                            color: instrument.solo ? DRUM_THEME.info : DRUM_THEME.text,
                           }}
                         >
                           Solo
@@ -1793,18 +1854,18 @@ function advancedPanel(
                             ? step.accent
                               ? 'linear-gradient(180deg, #78a9ff, #0f62fe)'
                               : 'linear-gradient(180deg, #42be65, #198038)'
-                            : '#262626',
+                            : DRUM_THEME.layer01,
                           opacity: step.active ? Math.max(0.35, step.probability ?? 1) : 1,
                           borderColor: isCurrent
-                            ? '#ffffff'
+                            ? DRUM_THEME.focus
                             : step.accent
-                              ? '#d0e2ff'
+                              ? '#78a9ff'
                               : step.active
-                                ? '#a7f0ba'
-                                : '#6f6f6f',
+                                ? '#42be65'
+                                : DRUM_THEME.borderStrong,
                           boxShadow:
                             isCurrent
-                              ? `0 0 0 2px ${accent}, 0 0 0 4px rgba(255,255,255,0.18)`
+                              ? `0 0 0 2px rgba(15, 98, 254, 0.16)`
                               : effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1
                                 ? `inset 0 -3px 0 ${instrument.color}`
                                 : 'none',
@@ -1823,8 +1884,9 @@ function advancedPanel(
                               bottom: 4,
                               padding: '1px 4px',
                               borderRadius: 999,
-                              background: 'rgba(0, 0, 0, 0.45)',
-                              color: '#f4f4f4',
+                              background: DRUM_THEME.layer,
+                              color: DRUM_THEME.text,
+                              boxShadow: `0 0 0 1px ${DRUM_THEME.border}`,
                               fontSize: 10,
                               lineHeight: 1.2,
                             }}
@@ -1841,8 +1903,9 @@ function advancedPanel(
                               bottom: 4,
                               padding: '1px 4px',
                               borderRadius: 999,
-                              background: 'rgba(0, 0, 0, 0.45)',
-                              color: '#f4f4f4',
+                              background: DRUM_THEME.layer,
+                              color: DRUM_THEME.text,
+                              boxShadow: `0 0 0 1px ${DRUM_THEME.border}`,
                               fontSize: 10,
                               lineHeight: 1.2,
                             }}
@@ -1861,7 +1924,7 @@ function advancedPanel(
                               height: 7,
                               borderRadius: '50%',
                               background: '#ff832b',
-                              boxShadow: '0 0 0 1px rgba(0,0,0,0.35)',
+                              boxShadow: `0 0 0 1px ${DRUM_THEME.layer}`,
                             }}
                           />
                         ) : null}
@@ -1931,10 +1994,10 @@ function advancedPanel(
                           ? accent
                           : slotPatternId === patternClipboard
                             ? '#4589ff'
-                            : 'rgba(255,255,255,0.12)',
+                            : DRUM_THEME.border,
                       boxShadow: slotPatternId === patternId ? `0 0 0 1px ${accent}` : 'none',
                       background:
-                        slotPatternId === patternId ? 'rgba(36,161,72,0.12)' : 'rgba(255,255,255,0.03)',
+                        slotPatternId === patternId ? 'rgba(36, 161, 72, 0.08)' : DRUM_THEME.layer02,
                     }}
                   >
                     <strong>P{slotPatternId.toString().padStart(3, '0')}</strong>
@@ -2188,8 +2251,8 @@ function advancedPanel(
                 <Tag type="warm-gray">8 buses</Tag>
               </div>
               <p style={shellStyle.tileText}>
-                Bus strips now expose EQ, compressor, mute/solo, level, and live peak metering,
-                with master output control, direct physical-output routing, and stereo peak readout alongside them.
+                The mixer is now a dense editable matrix so bus EQ, dynamics, routing, level, and
+                live peak state stay on one operator surface beside the master output chain.
               </p>
               <div style={shellStyle.fieldGrid}>
                 <div style={shellStyle.fieldStack}>
@@ -2283,100 +2346,144 @@ function advancedPanel(
                   </div>
                 ))}
               </div>
-              <div style={shellStyle.busStripGrid}>
-                {busMixers.map((bus) => (
-                  <div key={bus.bus_id} style={shellStyle.busStrip}>
-                    <div style={shellStyle.tileHeader}>
-                      <strong>{bus.name || `Bus ${bus.bus_id}`}</strong>
-                      <Tag type={bus.mute ? 'red' : bus.solo ? 'cyan' : 'cool-gray'}>
-                        {bus.mute ? 'Muted' : bus.solo ? 'Solo' : 'Live'}
-                      </Tag>
-                    </div>
-                    <div style={shellStyle.meterWrap} aria-label={`${bus.name} peak meter`}>
-                      <div
-                        style={{
-                          ...shellStyle.meterFill,
-                          height: `${meterPercent(metering?.per_bus_peak?.[bus.bus_id])}%`,
-                        }}
-                      />
-                    </div>
-                    <div style={shellStyle.toggleRow}>
-                      <button
-                        type="button"
-                        aria-label={`${bus.name} mute`}
-                        aria-pressed={bus.mute}
-                        onClick={() => onUpdateBusMixer(bus.bus_id, { mute: !bus.mute })}
-                        style={shellStyle.miniToggle}
-                      >
-                        Mute
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`${bus.name} solo`}
-                        aria-pressed={bus.solo}
-                        onClick={() => onUpdateBusMixer(bus.bus_id, { solo: !bus.solo })}
-                        style={shellStyle.miniToggle}
-                      >
-                        Solo
-                      </button>
-                    </div>
-                    <label style={shellStyle.fieldStack}>
-                      <div style={shellStyle.sliderValue}>
-                        <span>Output Pair</span>
-                        <strong>{bus.output_pair + 1}</strong>
-                      </div>
-                      <Select
-                        id={`drum-bus-output-pair-${bus.bus_id}`}
-                        aria-label={`${bus.name} output pair`}
-                        labelText={`${bus.name} output pair`}
-                        hideLabel
-                        size="sm"
-                        value={String(bus.output_pair)}
-                        onChange={(event) => onUpdateBusMixer(bus.bus_id, { output_pair: Number(event.currentTarget.value) })}
-                      >
-                        {bus.available_output_pairs.map((pairIndex) => (
-                          <SelectItem
-                            key={`${bus.bus_id}-pair-${pairIndex}`}
-                            value={String(pairIndex)}
-                            text={`Pair ${pairIndex + 1} (${pairIndex * 2 + 1}/${pairIndex * 2 + 2})`}
-                          />
-                        ))}
-                      </Select>
-                    </label>
-                    {[
-                      { label: 'Level', min: 0, max: 100, value: bus.level, update: (value: number) => ({ level: value }) },
-                      { label: 'Send', min: 0, max: 100, value: bus.reverb_send, update: (value: number) => ({ reverb_send: value }) },
-                      { label: 'Pan', min: -100, max: 100, value: bus.pan, update: (value: number) => ({ pan: value }) },
-                      { label: 'Low', min: -24, max: 24, value: bus.eq.low_gain, update: (value: number) => ({ eq: { ...bus.eq, low_gain: value } }) },
-                      { label: 'Mid', min: -24, max: 24, value: bus.eq.mid_gain, update: (value: number) => ({ eq: { ...bus.eq, mid_gain: value } }) },
-                      { label: 'High', min: -24, max: 24, value: bus.eq.high_gain, update: (value: number) => ({ eq: { ...bus.eq, high_gain: value } }) },
-                      { label: 'Ratio', min: 1, max: 20, value: bus.comp.ratio, update: (value: number) => ({ comp: { ...bus.comp, ratio: value } }) },
-                    ].map((control) => (
-                      <div key={`${bus.bus_id}-${control.label}`} style={shellStyle.fieldStack}>
-                        <div style={shellStyle.sliderValue}>
-                          <span>{control.label}</span>
-                          <strong>{control.value}</strong>
-                        </div>
-                        <NumberInput
-                          label={`${bus.name} ${control.label}`}
-                          value={control.value}
-                          min={control.min}
-                          max={control.max}
-                          step={1}
-                          profile={control.label === 'Low' || control.label === 'Mid' || control.label === 'High' ? 'gain-db' : 'integer'}
-                          onChange={(value) => onUpdateBusMixer(bus.bus_id, control.update(value))}
-                          showLabel={false}
-                          showBounds={false}
-                          size="small"
-                          fullWidth
-                          style={shellStyle.compactRange}
-                          accentColor="#d2a106"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <TableContainer title="Bus mixer matrix">
+                <div style={shellStyle.midiTableWrap}>
+                  <Table size="sm" aria-label="Bus mixer matrix">
+                    <TableHead>
+                      <TableRow>
+                        <TableHeader>Bus</TableHeader>
+                        <TableHeader>Peak</TableHeader>
+                        <TableHeader>Status</TableHeader>
+                        <TableHeader>Output Pair</TableHeader>
+                        <TableHeader>Level</TableHeader>
+                        <TableHeader>Send</TableHeader>
+                        <TableHeader>Pan</TableHeader>
+                        <TableHeader>Low</TableHeader>
+                        <TableHeader>Mid</TableHeader>
+                        <TableHeader>High</TableHeader>
+                        <TableHeader>Ratio</TableHeader>
+                        <TableHeader>Actions</TableHeader>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {busMixers.map((bus) => {
+                        const busLabel = bus.name || `Bus ${bus.bus_id}`
+                        const peak = meterPercent(metering?.per_bus_peak?.[bus.bus_id])
+                        return (
+                          <TableRow key={bus.bus_id}>
+                            <TableCell>
+                              <div style={shellStyle.fieldStack}>
+                                <strong>{busLabel}</strong>
+                                <span style={shellStyle.tileText}>Stereo bus {bus.bus_id + 1}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div style={shellStyle.denseTableMetric} aria-label={`${busLabel} peak meter`}>
+                                <span style={shellStyle.clusterLabel}>{peak}% peak</span>
+                                <div style={shellStyle.denseTableMeterTrack}>
+                                  <div
+                                    style={{
+                                      ...shellStyle.denseTableMeterFill,
+                                      width: `${Math.max(4, peak)}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div style={shellStyle.denseTableStatus}>
+                                <Tag type={bus.mute ? 'red' : bus.solo ? 'cyan' : 'cool-gray'}>
+                                  {bus.mute ? 'Muted' : bus.solo ? 'Solo' : 'Live'}
+                                </Tag>
+                                <Tag type="warm-gray">{`Pair ${bus.output_pair + 1}`}</Tag>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                id={`drum-bus-output-pair-${bus.bus_id}`}
+                                aria-label={`${busLabel} output pair`}
+                                labelText={`${busLabel} output pair`}
+                                hideLabel
+                                size="sm"
+                                value={String(bus.output_pair)}
+                                onChange={(event) => onUpdateBusMixer(bus.bus_id, { output_pair: Number(event.currentTarget.value) })}
+                              >
+                                {bus.available_output_pairs.map((pairIndex) => (
+                                  <SelectItem
+                                    key={`${bus.bus_id}-pair-${pairIndex}`}
+                                    value={String(pairIndex)}
+                                    text={`Pair ${pairIndex + 1} (${pairIndex * 2 + 1}/${pairIndex * 2 + 2})`}
+                                  />
+                                ))}
+                              </Select>
+                            </TableCell>
+                            {[
+                              { label: 'Level', min: 0, max: 100, value: bus.level, update: (value: number) => ({ level: value }) },
+                              { label: 'Send', min: 0, max: 100, value: bus.reverb_send, update: (value: number) => ({ reverb_send: value }) },
+                              { label: 'Pan', min: -100, max: 100, value: bus.pan, update: (value: number) => ({ pan: value }) },
+                              { label: 'Low', min: -24, max: 24, value: bus.eq.low_gain, update: (value: number) => ({ eq: { ...bus.eq, low_gain: value } }) },
+                              { label: 'Mid', min: -24, max: 24, value: bus.eq.mid_gain, update: (value: number) => ({ eq: { ...bus.eq, mid_gain: value } }) },
+                              { label: 'High', min: -24, max: 24, value: bus.eq.high_gain, update: (value: number) => ({ eq: { ...bus.eq, high_gain: value } }) },
+                              { label: 'Ratio', min: 1, max: 20, value: bus.comp.ratio, update: (value: number) => ({ comp: { ...bus.comp, ratio: value } }) },
+                            ].map((control) => (
+                              <TableCell key={`${bus.bus_id}-${control.label}`}>
+                                <NumberInput
+                                  label={`${busLabel} ${control.label}`}
+                                  value={control.value}
+                                  min={control.min}
+                                  max={control.max}
+                                  step={1}
+                                  profile={control.label === 'Low' || control.label === 'Mid' || control.label === 'High' ? 'gain-db' : 'integer'}
+                                  onChange={(value) => onUpdateBusMixer(bus.bus_id, control.update(value))}
+                                  showLabel={false}
+                                  showBounds={false}
+                                  size="small"
+                                  fullWidth
+                                  inline
+                                  style={shellStyle.miniInput}
+                                  accentColor="#d2a106"
+                                />
+                              </TableCell>
+                            ))}
+                            <TableCell>
+                              <div style={shellStyle.denseTableActions}>
+                                <button
+                                  type="button"
+                                  aria-label={`${busLabel} mute`}
+                                  aria-pressed={bus.mute}
+                                  onClick={() => onUpdateBusMixer(bus.bus_id, { mute: !bus.mute })}
+                                  style={{
+                                    ...shellStyle.miniToggle,
+                                    background: bus.mute ? 'rgba(218, 30, 40, 0.1)' : DRUM_THEME.layer,
+                                    borderColor: bus.mute ? DRUM_THEME.danger : DRUM_THEME.border,
+                                    color: bus.mute ? DRUM_THEME.danger : DRUM_THEME.text,
+                                  }}
+                                >
+                                  Mute
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label={`${busLabel} solo`}
+                                  aria-pressed={bus.solo}
+                                  onClick={() => onUpdateBusMixer(bus.bus_id, { solo: !bus.solo })}
+                                  style={{
+                                    ...shellStyle.miniToggle,
+                                    background: bus.solo ? 'rgba(69, 137, 255, 0.1)' : DRUM_THEME.layer,
+                                    borderColor: bus.solo ? DRUM_THEME.info : DRUM_THEME.border,
+                                    color: bus.solo ? DRUM_THEME.info : DRUM_THEME.text,
+                                  }}
+                                >
+                                  Solo
+                                </button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TableContainer>
             </Tile>
           </div>
         </div>
@@ -2443,7 +2550,7 @@ function advancedPanel(
                   </Tag>
                 </div>
               </div>
-              <div style={shellStyle.inspectorSection}>
+              <div style={{ ...shellStyle.inspectorSection, gridColumn: '1 / -1' }}>
                 <div style={shellStyle.tileHeader}>
                   <span style={shellStyle.clusterLabel}>Sample Layer</span>
                   <Tag type={selectedPadSample ? 'green' : 'cool-gray'}>
@@ -2613,7 +2720,7 @@ function advancedPanel(
                   </Tag>
                 </div>
               </div>
-              <div style={shellStyle.inspectorSection}>
+              <div style={{ ...shellStyle.inspectorSection, gridColumn: '1 / -1' }}>
                 <span style={shellStyle.clusterLabel}>Synth Voice</span>
                 <div style={shellStyle.fieldGrid}>
                   <Select
@@ -4353,7 +4460,8 @@ export function DrumsWorkspace({
                     onClick={() => applyWorkspacePreset(preset.id, preset.href)}
                     style={{
                       ...shellStyle.workspacePresetButton,
-                      borderColor: workspacePreset === preset.id ? activeModeMeta.accent : 'rgba(255,255,255,0.12)',
+                      borderColor: workspacePreset === preset.id ? activeModeMeta.accent : DRUM_THEME.border,
+                      background: workspacePreset === preset.id ? 'rgba(15, 98, 254, 0.06)' : DRUM_THEME.layer02,
                       boxShadow: workspacePreset === preset.id ? `0 0 0 1px ${activeModeMeta.accent}` : 'none',
                     }}
                   >

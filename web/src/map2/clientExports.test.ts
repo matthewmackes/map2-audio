@@ -3,6 +3,7 @@ import {
   audioApi,
   automationApi,
   avbApi,
+  brainApi,
   chainsApi,
   diagnosticsApi,
   drumsApi,
@@ -42,6 +43,7 @@ import {
 } from './api'
 import { audioApi as splitAudioApi, diagnosticsApi as splitDiagnosticsApi, usbApi as splitUsbApi } from './clients/audio'
 import { avbApi as splitAvbApi } from './clients/avb'
+import { brainApi as splitBrainApi } from './clients/brain'
 import {
   foldersApi as splitFoldersApi,
   irApi as splitIrApi,
@@ -90,6 +92,7 @@ import { API_BASE as splitApiBase } from './transport'
 describe('map2 api compatibility barrel', () => {
   it('re-exports the split client modules and transport base intact', () => {
     expect(API_BASE).toBe(splitApiBase)
+    expect(brainApi).toBe(splitBrainApi)
     expect(chainsApi).toBe(splitChainsApi)
     expect(pluginsApi).toBe(splitPluginsApi)
     expect(pluginAppearancesApi).toBe(splitPluginAppearancesApi)

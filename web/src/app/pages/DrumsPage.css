@@ -24,11 +24,13 @@
 
 .drums-page .cds--data-table,
 .drums-page .cds--structured-list {
-  background: rgba(22, 22, 22, 0.72);
+  background: var(--cds-layer, #ffffff);
+  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  border-radius: 0.75rem;
 }
 
 .drums-page .cds--structured-list-row {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--cds-border-subtle-01, #c6c6c6);
 }
 
 .drums-page .cds--structured-list-td {
@@ -38,11 +40,12 @@
 .drums-page__standards-layer {
   border-radius: 1rem;
   background:
-    linear-gradient(180deg, rgba(38, 38, 38, 0.96), rgba(24, 24, 24, 0.94)),
-    radial-gradient(circle at top right, rgba(8, 189, 186, 0.22), transparent 48%);
+    linear-gradient(180deg, var(--cds-layer, #ffffff), var(--cds-layer-01, #f4f4f4)),
+    radial-gradient(circle at top right, rgba(8, 189, 186, 0.12), transparent 48%);
+  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
   padding: 1rem;
 }
 
 .drums-page__table-row--selected td {
-  background: rgba(255, 131, 43, 0.08);
+  background: rgba(15, 98, 254, 0.06);
 }

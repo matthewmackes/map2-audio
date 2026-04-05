@@ -76,6 +76,14 @@ jest.mock('./pages/SynthForgePage', () => ({
   },
 }))
 
+jest.mock('./pages/PerformanceBrainPage', () => ({
+  PerformanceBrainPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="brain-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/GroundControlProPage', () => ({
   GroundControlProPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -157,6 +165,14 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('synthforge-route')).toHaveTextContent('/synth-forge')
+  })
+
+  it('keeps Performance Brain as a first-class routed surface', async () => {
+    window.history.pushState({}, '', '/brain?instance_id=17')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('brain-route')).toHaveTextContent('/brain?instance_id=17')
   })
 
   it('keeps Ground Control Pro as a first-class routed surface', async () => {

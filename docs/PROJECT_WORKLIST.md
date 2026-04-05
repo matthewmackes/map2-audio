@@ -6,7 +6,248 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 06:50 EDT - Completed T758 backing-track runtime restart persistence; the current canonical worklist has no open active tasks.
+Last updated: 2026-04-05 11:02 EDT - Completed T764-subA by clearing the routed Performance Brain build blocker, revalidating the `/brain` workspace shell, and keeping T764-subB plus the later Brain follow-on tasks queued behind the first commit/deploy cycle.
+
+## Performance Brain
+
+ID: T761
+Status: [✓] Done
+Title: Build the `Performance Brain` core engine/backend/workspace bootstrap
+Description:
+- Goal / acceptance criteria: Land the first integrated `Performance Brain` implementation that establishes the new product route `/brain`, plugin URI `map2://juce/brain`, per-instance backend state contracts, routed professional workspace shell, compact plugin/embed surface, catalog wiring, and focused validation. The first cut must coexist with `/drums` and `/synth-forge`, preserve those legacy routes, and create a real foundation for the full replacement plan rather than a static placeholder.
+- Why it matters: The project direction is to replace the current split drum/sampler products with one professional brain optimized for expressive routing, sequencing, trigger nuance, polyphony, and fast workflow. A coherent bootstrap is required before the deeper engine and migration work can proceed safely.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Worklist entries, backend route/service scaffolding, frontend `/brain` workspace and plugin card integration, processor catalog registration, import hooks, focused tests, and validation evidence.
+Subtasks:
+  - ID: T761-subA
+    Status: [✓] Done
+    Title: Add the canonical Performance Brain worklist epic and keep implementation progress restart-safe
+    Description:
+    - Goal / acceptance criteria: Record the new workstream in `docs/PROJECT_WORKLIST.md` with atomic follow-up tasks and keep the list synchronized as implementation lands.
+    - Why it matters: The repo requires one canonical tracker for restart-safe execution and handoff.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated worklist entries, status changes, and completion notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 10:03 EDT - Codex
+  - ID: T761-subB
+    Status: [✓] Done
+    Title: Land the first `/api/engine/brain` per-instance service and route surface
+    Description:
+    - Goal / acceptance criteria: Add a typed backend state service and route module that exposes the V1 Brain contract families for state, slots, layers, sequence, song, mixer, inputs, library, sample editor, diagnostics, and legacy import helpers.
+    - Why it matters: The new routed workspace and plugin card need a stable backend contract before deeper UI and migration work can converge.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Service implementation, route registration, backend tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 10:03 EDT - Codex
+  - ID: T761-subC
+    Status: [✓] Done
+    Title: Land the first routed `/brain` workspace and compact plugin card
+    Description:
+    - Goal / acceptance criteria: Add the professional route, section-rail UI shell, compact plugin card, catalog wiring, and focused frontend validation without removing legacy `/drums` or `/synth-forge`.
+    - Why it matters: The replacement needs a visible operator-facing surface now so subsequent engine and migration tasks have a real target product.
+    - Dependencies: T761-subB
+    - Estimated effort: Medium
+    - Required outputs: Routed page, card, route/catalog/registry wiring, frontend tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 10:03 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-05 10:03 EDT - Codex
+- Completion notes:
+  - Added the canonical `## Performance Brain` workstream to `docs/PROJECT_WORKLIST.md` with T761-T769 so the replacement remains restart-safe and all follow-on work stays in the single shared tracker.
+  - Landed the first per-instance `Performance Brain` backend surface under `/api/engine/brain/*`, covering state, transport, slots, layers, sequence, song, mixer, inputs, library, sample editor, diagnostics, and legacy Drum Machine/SynthForge import hooks, then registered the route in `app/main.py`.
+  - Registered `map2://juce/brain` across the JUCE host/deployment catalogs and added the first native `PerformanceBrainProcessor`/test scaffolding under `juce-engine/Source/Brain/`, establishing the dedicated subsystem entry point without removing legacy `/drums` or `/synth-forge`.
+  - Added the typed frontend Brain client surface, routed `/brain` workspace with workflow-grouped section rail, compact plugin/embed card, launcher/catalog wiring, snapshot-editor exposure, and live-editor registry routing for the new product.
+  - Kept the legacy Drum Machine and SynthForge routes alive for the shadow phase; deeper snapshot authority plumbing, full migration cutover, qualification, and advanced realtime engine completion remain intentionally tracked in T762-T767 rather than being overstated here.
+- Validation:
+  - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS (`6 passed in 5.23s`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx src/app/App.platformRoute.test.tsx src/app/data/launcherCatalog.test.tsx src/app/components/PluginCards/liveEditorRouting.test.ts src/app/components/PluginCards/registry.test.ts src/map2/clientExports.test.ts` -> PASS (`7 suites, 34 tests`)
+  - Not yet run in this bootstrap slice: full JUCE compile/runtime qualification, snapshot/live-authority regressions, migration proof, and controller soak evidence; those remain covered by T762-T767.
+
+ID: T762
+Status: [ ] Todo
+Title: Build the `/api/engine/brain` service and typed contracts
+Description:
+- Goal / acceptance criteria: Provide typed REST and WebSocket-facing Brain contracts for `/state`, `/transport`, `/slots`, `/layers`, `/sequence`, `/song`, `/mixer`, `/inputs`, `/library`, `/sample-editor`, and `/diagnostics`, with explicit per-instance scoping and focused backend regression coverage.
+- Why it matters: The replacement must separate itself through expressiveness, routing, and fast workflow, which requires a broad but coherent backend contract rather than page-local state.
+- Dependencies: T761
+- Estimated effort: High
+- Required outputs: Python models/services/routes, typed TypeScript client surface, backend tests, and instance-isolation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T763
+Status: [ ] Todo
+Title: Integrate snapshot-first recall and live authority for Brain instances
+Description:
+- Goal / acceptance criteria: Serialize Brain state into the existing snapshot/live-state authority system so committed, desired, and observed runtime truth remain canonical, with no second scene library introduced.
+- Why it matters: The user explicitly wants instant scene/layer control without splitting the product into competing recall models.
+- Dependencies: T761, T762
+- Estimated effort: High
+- Required outputs: Snapshot integration, live-state sync plumbing, persistence rules, and focused regressions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T764
+Status: [>] In Progress
+Title: Build the routed `/brain` professional workspace in the Platforms-window style
+Description:
+- Goal / acceptance criteria: Ship a section-rail professional workspace for `/brain` with `Overview`, `Perform`, `Layers`, `Sequence`, `Routing`, `Inputs`, `Library`, and `Diagnostics`, avoiding a flat menu and keeping primary controls immediately visible inside a workflow-grouped shell.
+- Why it matters: The replacement GUI must present the feature set professionally and mirror the workflow logic of high-end drum brains and keyboard workstations rather than burying capability in one long page.
+- Dependencies: T761, T762
+- Estimated effort: High
+- Required outputs: Routed page, shell styling, section navigation, route tests, and accessibility-focused validation.
+Subtasks:
+  - ID: T764-subA
+    Status: [✓] Done
+    Title: Clear the routed `/brain` production build blocker and revalidate the current workspace shell
+    Description:
+    - Goal / acceptance criteria: Repair the current `web/src/app/pages/PerformanceBrainPage.tsx` build failure exposed by `npm --prefix web run build`, then rerun the routed Brain frontend validation set so the existing section-rail workspace can be committed and deployed without a broken production gate.
+    - Why it matters: The first Brain workspace is already implemented in source, but the user’s required commit/push/restart loop cannot begin while the authoritative production build still fails.
+    - Dependencies: T761
+    - Estimated effort: Low
+    - Required outputs: Frontend fix, green production build, focused test evidence, and deploy-ready worktree state.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 11:02 EDT - Codex
+    - Completion notes:
+      - Fixed the routed Brain workspace build blocker in `web/src/app/pages/PerformanceBrainPage.tsx` by restoring the missing Carbon transport icon imports and making the transport button icon follow the play/stop state instead of referencing an undefined symbol.
+      - Re-ran the focused routed Brain page suite and the authoritative production bundle gate so the first `/brain` workspace shell is now deployable instead of source-only.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PerformanceBrainPage.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched frontend/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T764-subB
+    Status: [ ] Todo
+    Title: Preserve section-rail route state and extend routed Brain coverage
+    Description:
+    - Goal / acceptance criteria: Keep the routed Brain section selection restart-safe through URL or router state, and add focused route/accessibility coverage proving the rail and section transitions stay stable for scoped instances.
+    - Why it matters: A professional routed workspace should deep-link predictably instead of relying on page-local state that resets during navigation or plugin launches.
+    - Dependencies: T764-subA
+    - Estimated effort: Medium
+    - Required outputs: Route-state sync, focused tests, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 10:59 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-05 11:02 EDT - Codex
+
+ID: T765
+Status: [ ] Todo
+Title: Build the per-instance Brain plugin/embed surface
+Description:
+- Goal / acceptance criteria: Deliver a compact plugin surface that focuses on `Perform + Sequence + Quick Mix`, uses the same Brain contracts as the full workspace, launches into `/brain` for deep editing, and avoids the current global fallback behavior seen in SynthForge.
+- Why it matters: MIDI keyboards, drum pads, and trigger rigs need fast access to the right controls directly from the active chain rather than a modal detour.
+- Dependencies: T761, T762, T764
+- Estimated effort: Medium
+- Required outputs: Plugin card/editor implementation, registry/live-editor wiring, and parity tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T766
+Status: [ ] Todo
+Title: Deliver SynthForge and Drum Machine importers plus shadow-then-swap cutover
+Description:
+- Goal / acceptance criteria: Import SynthForge part/patch state and Drum Machine kit/pattern/mapping state into Brain sets/sequences while keeping `/drums` and `/synth-forge` alive during the shadow phase. Redirect or retire legacy surfaces only after parity, importer validation, and migration proof are established.
+- Why it matters: The project cannot strand existing operator work or collapse two mature products into one without a controlled migration path.
+- Dependencies: T761, T762, T764, T765
+- Estimated effort: High
+- Required outputs: Import adapters, migration routes/flags, validation fixtures, and cutover notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T767
+Status: [ ] Todo
+Title: Qualify Brain for MIDI keyboards, drum pads, and triggers
+Description:
+- Goal / acceptance criteria: Prove the replacement with focused engine, backend, and UI coverage plus qualification evidence for keyboard polyphony, trigger nuance, sequence timing, routing, and per-instance isolation while preserving Tier A runtime locks.
+- Why it matters: The replacement is explicitly targeted at controller-first workflows where low latency, expressive triggering, and dependable routing matter more than preset count.
+- Dependencies: T761, T762, T764, T765
+- Estimated effort: High
+- Required outputs: Native tests, pytest suites, frontend suites, and performance/latency evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T768
+Status: [ ] Todo
+Title: Add backing-track session media as a Brain adjunct, not V1 core
+Description:
+- Goal / acceptance criteria: Reintroduce backing-track workflows as an explicit Brain adjunct after the core brain is stable, keeping media/session tooling clearly separated from the V1 instrument/brain identity.
+- Why it matters: The user chose a core-brain-first V1 so the replacement does not dilute its primary workflow.
+- Dependencies: T764, T765, T766
+- Estimated effort: Medium
+- Required outputs: Adjunct design/implementation tasks, routed/session integration, and validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T769
+Status: [ ] Todo
+Title: Add practice-pack and style-coaching workflows as a separate Brain adjunct
+Description:
+- Goal / acceptance criteria: Reintroduce practice packs and coaching flows as a separate Brain adjunct after the core product is stable, with boundaries that keep rehearsal content distinct from the core brain workflow.
+- Why it matters: The current Drum Machine bundles too many identities together; this follow-up keeps the replacement disciplined.
+- Dependencies: T764, T765, T766
+- Estimated effort: Medium
+- Required outputs: Adjunct design/implementation tasks, workflow integration, and validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 09:38 EDT - Codex
+
+ID: T760
+Status: [✓] Done
+Title: Sync the running `/drums` frontend bundle with the completed Carbon redesign
+Description:
+- Goal / acceptance criteria: Diagnose why `/drums` still shows the pre-redesign UI after a hard refresh, confirm whether the route is serving stale assets, and build/restart the frontend runtime so the running page matches the current `web/src/app/pages/DrumsPage.tsx` implementation. The fix must preserve the completed source changes and capture deployment validation evidence.
+- Why it matters: T759 corrected the page in source, but if the served bundle remains stale the operator still sees the unfocused legacy surface. That makes the implementation effectively invisible and blocks visual verification.
+- Dependencies: T759
+- Estimated effort: Small
+- Required outputs: Runtime diagnosis, frontend bundle sync/restart if needed, validation evidence, and worklist/compliance updates.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 07:26 EDT - Codex
+- Completion notes:
+  - Confirmed the problem was runtime drift rather than source drift: `/drums` was correctly routed to `web/src/app/pages/DrumsPage.tsx`, but the production service was still serving the older `index-BlUDqATV.js` bundle and a pre-redesign `DrumsPage` asset that still contained the dark legacy theme values.
+  - Ran the production frontend deploy so the current `/drums` source changes were rebuilt and published; the live service now serves `index-DZPeWTk8.js` and the rebuilt `DrumsPage` asset contains the new Carbon-aligned token layer and dense mixer matrix.
+  - Verified the production web service restarted cleanly on port 3000 and that the served HTML now references the new bundle instead of the stale one.
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm run deploy` -> PASS
+  - `cd /home/mm/map2-audio/web && npm run deploy:status` -> PASS (`Live bundle: index-DZPeWTk8.js`)
+  - `curl -s http://localhost:3000 | rg -n "index-[A-Za-z0-9_-]+\\.js|DrumsPage-[A-Za-z0-9_-]+\\.js" -o` -> PASS (`index-DZPeWTk8.js`)
+  - `rg -n "Bus mixer matrix|dense editable matrix" web/dist/assets -S` -> PASS
+  - Licensing review: touched frontend/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T759
+Status: [✓] Done
+Title: Correct `/drums` Carbon theming and compress unfocused surfaces into denser operator views
+Description:
+- Goal / acceptance criteria: `web/src/app/pages/DrumsPage.tsx` and supporting CSS/tests must stop rendering as a mixed light-shell/dark-panel composition and instead present a visually consistent Carbon-aligned control plane. The redesign must keep every existing `/drums` control, reduce the sense of sprawl in the Advanced workspace by favoring denser editing surfaces where appropriate, and preserve accessibility plus focused regression coverage.
+- Why it matters: T756 improved capability coverage, but the page still reads as visually fragmented and overlong in practice. That undermines operator trust and makes the interface feel unfinished despite the feature depth already present.
+- Dependencies: T756, T757, T758
+- Estimated effort: Medium
+- Required outputs: Carbon-consistent theming cleanup, improved dense layout treatment for the most unfocused sections, validation evidence, and licensing/worklist updates.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 07:22 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/DrumsPage.tsx` around a shared Carbon-aligned token layer so the full `/drums` shell, tiles, row controls, pattern bank, workspace presets, and selected-state affordances no longer mix a light page shell with legacy dark panel styling.
+  - Replaced the eight standalone mixer bus cards with a single dense editable bus-mixer matrix inside the Advanced workspace, keeping every existing control for peak metering, output pairing, mute/solo, level, send, pan, EQ, and compression while materially reducing vertical sprawl.
+  - Tightened the Instrument Inspector by moving it onto a responsive multi-column grid and promoting the sample and synth editors to full-width sections, which makes the right-hand editing surface read as one professional control plane instead of a long stack of unrelated cards.
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> PASS
+  - Licensing review: touched frontend/css/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T758
 Status: [✓] Done

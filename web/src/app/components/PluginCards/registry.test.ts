@@ -30,4 +30,10 @@ describe('Plugin card registry fallbacks', () => {
       template: 'instrument',
     })
   })
+
+  it('registers Performance Brain as a dedicated custom card', () => {
+    expect(getPluginCardConfig('map2://juce/brain', 'Instrument')).toMatchObject({
+      loader: expect.any(Function),
+    })
+  })
 })

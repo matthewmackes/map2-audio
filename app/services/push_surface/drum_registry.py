@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-DRUM_PLUGIN_URIS = {"map2://juce/drums"}
+DRUM_PLUGIN_URIS = {"map2://juce/drums", "map2://juce/brain"}
 
 
 def _utcnow_iso() -> str:

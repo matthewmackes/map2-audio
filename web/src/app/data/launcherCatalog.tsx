@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SettingsAdjust, Waveform } from '@carbon/icons-react'
+import { Music, SettingsAdjust, Waveform } from '@carbon/icons-react'
 
 import { FxDrums } from '../components/icons/effectIcons'
 import {
@@ -73,6 +73,7 @@ const AUDIO_INTERFACE_DEVICE_TYPES = new Set(['edirol-ua1000', 'hotone-jogg', 'g
 const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pro', 'maschine-mk1'])
 const FEATURED_ROUTE_SET = new Set([
   '/platforms/overview',
+  '/brain',
   '/juce-grid',
   '/artifacts',
   '/midi-hub',
@@ -89,6 +90,7 @@ const PLATFORM_ESSENTIALS_ROUTE_SET = new Set([
   '/platforms/adoption',
 ])
 const RECENTLY_ADDED_ROUTE_SET = new Set([
+  '/brain',
   '/platforms/workspace-catalog',
   '/platforms/adoption',
   '/platforms/cluster-dashboard',
@@ -98,6 +100,22 @@ const RECENTLY_ADDED_ROUTE_SET = new Set([
 ])
 
 const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = [
+  {
+    route: '/brain',
+    label: 'Performance Brain',
+    heroTitle: 'Performance Brain',
+    shortLabel: 'Brain',
+    icon: Music,
+    description: 'Open the new unified drum, sequencer, trigger, and keyboard brain with one workflow-driven professional surface.',
+    category: 'Platform',
+    color: 'var(--cds-link-primary)',
+    maturity: 'beta',
+    directory: 'core',
+    homeSection: 'Audio Grid',
+    kind: 'link',
+    landingEligible: true,
+    navEligible: false,
+  },
   {
     route: '/drums',
     label: 'Drum Machine',
@@ -149,6 +167,21 @@ const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = [
 ]
 
 const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
+  '/brain': {
+    storefrontCollections: ['featured', 'recently-added'],
+    featureBullets: [
+      'Unifies drum triggering, keyboard layering, sequencing, routing, and diagnostics inside one professional operator surface.',
+      'Replaces the split drum-machine and sampler mental model with a workflow-first brain organized by performance, layers, routing, inputs, library, and diagnostics.',
+      'Keeps legacy `/drums` and `/synth-forge` alive during migration while giving operators a new first-class destination immediately.',
+    ],
+    technicalSpecs: [
+      { label: 'Primary workflow', value: 'Unified trigger, keyboard, sequence, routing, and diagnostics brain' },
+      { label: 'Workspace mode', value: 'Routed Performance Brain workspace plus compact plugin card' },
+      { label: 'Launch path', value: '/brain' },
+      { label: 'Recall model', value: 'Snapshot-first authority' },
+    ],
+    availabilityNote: 'Available as the new routed replacement surface; legacy drum and sampler workspaces remain available during the shadow migration phase.',
+  },
   '/drums': {
     featureBullets: [
       'Puts kits, patterns, transport, mixer, and MIDI editing inside one dedicated drum-performance route.',

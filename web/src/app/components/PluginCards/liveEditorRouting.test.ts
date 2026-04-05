@@ -51,4 +51,11 @@ describe('resolveLivePluginCardStrategy', () => {
       forceCompact: true,
     })
   })
+
+  it('routes Performance Brain onto the compact custom live editor card', () => {
+    expect(resolveLivePluginCardStrategy('map2://juce/brain', 'Instrument')).toEqual({
+      renderMode: 'custom',
+      forceCompact: true,
+    })
+  })
 })

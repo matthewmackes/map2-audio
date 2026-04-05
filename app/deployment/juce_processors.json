@@ -1195,6 +1195,28 @@
       }
     },
     {
+      "uri": "map2://juce/brain",
+      "name": "Performance Brain",
+      "category": "Instrument",
+      "description": "Unified drum-and-sequencer brain for expressive triggering, keyboard layering, sequencing, routing, and fast workflow across one professional surface.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 0,
+        "outputs": 2
+      },
+      "priority": 11,
+      "is_native": true,
+      "api_base": "/api/engine/brain",
+      "features": ["slot-engine", "sequence-brain", "keyboard-layers", "trigger-nuance", "routing", "diagnostics"],
+      "parameters": [
+        {"name": "BPM", "symbol": "bpm", "min": 40, "max": 300, "default": 120, "unit": "bpm"},
+        {"name": "Master Volume", "symbol": "master_volume", "min": 0, "max": 100, "default": 82, "unit": "%"},
+        {"name": "Pattern", "symbol": "pattern", "min": 0, "max": 127, "default": 0},
+        {"name": "Variation", "symbol": "variation", "min": 0, "max": 10, "default": 0},
+        {"name": "Transport", "symbol": "transport", "type": "toggle", "default": false}
+      ]
+    },
+    {
       "uri": "map2://juce/drums",
       "name": "Drum Machine",
       "category": "Drums",

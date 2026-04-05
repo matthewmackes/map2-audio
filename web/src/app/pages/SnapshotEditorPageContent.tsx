@@ -397,6 +397,7 @@ const FEATURED_NATIVE_BROWSER_GROUPS = [
     title: 'Instruments',
     icon: Music,
     pluginUris: [
+      'map2://juce/brain',
       'map2://juce/drums',
       'map2://juce/synthforge',
     ],

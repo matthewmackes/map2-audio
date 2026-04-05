@@ -151,6 +151,7 @@ import {
 } from './runtime';
 import { audioApi, diagnosticsApi, usbApi } from './clients/audio';
 import { avbApi } from './clients/avb';
+import { brainApi } from './clients/brain';
 import {
   foldersApi,
   irApi,
@@ -213,6 +214,7 @@ import type { PluginRuntimeScopeOptions } from './http';
 export { API_BASE, getWsBaseUrl, getWsUrl } from './transport';
 export { audioApi, diagnosticsApi, usbApi } from './clients/audio';
 export { avbApi } from './clients/avb';
+export { brainApi } from './clients/brain';
 export { chainsApi } from './clients/chains';
 export { drumsApi } from './clients/drums';
 export { midiApi, midiApiV2 } from './clients/midi';
@@ -1423,6 +1425,299 @@ export interface SynthForgeBackendStatus {
   unsupported_opcodes: string[]
 }
 
+// ==================== Performance Brain API ====================
+
+export interface BrainTransportState {
+  is_playing: boolean
+  bpm: number
+  swing: number
+  pattern: number
+  variation: number
+  step: number
+  bar: number
+  beat: number
+  pending_pattern: number
+  switch_quantization_beats: number
+}
+
+export interface BrainSlot {
+  slot_id: number
+  name: string
+  mode: 'chromatic' | 'drum' | 'hybrid'
+  asset_type: 'soundfont' | 'sfz' | 'sample' | 'kit' | 'patch' | 'empty'
+  asset_path: string
+  source_label: string
+  level: number
+  pan: number
+  mute: boolean
+  solo: boolean
+  tune: number
+  transpose: number
+  output_bus: number
+  polyphony: number
+  midi_channel: number
+  trigger_note: number
+  trigger_notes: number[]
+  key_low: number
+  key_high: number
+  velocity_low: number
+  velocity_high: number
+  choke_group: number
+  articulation_group: string
+  velocity_curve: string
+  status: string
+}
+
+export interface BrainLayer {
+  layer_id: string
+  name: string
+  slot_indices: number[]
+  key_low: number
+  key_high: number
+  velocity_low: number
+  velocity_high: number
+  polyphony: number
+  scene_slot: number
+  enabled: boolean
+  purpose: string
+}
+
+export interface BrainPatternSummary {
+  pattern_id: number
+  name: string
+  length: number
+  active_lane_count: number
+  fill_enabled: boolean
+  variation_count: number
+  summary: string
+}
+
+export interface BrainSequenceLaneSummary {
+  slot_id: number
+  name: string
+  length: number
+  swing: number
+  active_steps: number
+  step_lock_targets: string[]
+}
+
+export interface BrainSequence {
+  pattern_bank_size: number
+  max_steps: number
+  current_pattern: number
+  current_variation: number
+  patterns: BrainPatternSummary[]
+  lanes: BrainSequenceLaneSummary[]
+  fill_mode: string
+  song_entry_count: number
+}
+
+export interface BrainSongEntry {
+  pattern_id: number
+  variation: number
+  repeat_count: number
+  label: string
+}
+
+export interface BrainSongState {
+  entries: BrainSongEntry[]
+  loop: boolean
+}
+
+export interface BrainMixerBus {
+  bus_id: number
+  name: string
+  level: number
+  pan: number
+  mute: boolean
+  solo: boolean
+  output_pair: number
+  reverb_send: number
+}
+
+export interface BrainMasterSection {
+  master_volume: number
+  drive_db: number
+  compressor_amount: number
+  reverb_mix: number
+  limiter_ceiling_db: number
+}
+
+export interface BrainMixerState {
+  buses: BrainMixerBus[]
+  master: BrainMasterSection
+}
+
+export interface BrainKeyboardZone {
+  zone_id: string
+  name: string
+  midi_channel: number
+  key_low: number
+  key_high: number
+  transpose: number
+  enabled: boolean
+  aftertouch_mode: string
+}
+
+export interface BrainTriggerProfile {
+  profile_id: string
+  name: string
+  pad_range_start: number
+  pad_range_end: number
+  curve: string
+  scan_time_ms: number
+  mask_time_ms: number
+  retrigger_cancel_ms: number
+  crosstalk_guard: number
+  velocity_floor: number
+  velocity_ceiling: number
+}
+
+export interface BrainControllerAssignment {
+  source: string
+  target: string
+  mode: string
+  enabled: boolean
+}
+
+export interface BrainInputsState {
+  keyboard_zones: BrainKeyboardZone[]
+  trigger_profiles: BrainTriggerProfile[]
+  controller_assignments: BrainControllerAssignment[]
+}
+
+export interface BrainLibraryAsset {
+  asset_id: string
+  name: string
+  asset_type: 'soundfont' | 'sfz' | 'sample' | 'kit'
+  source: string
+  path: string
+  description: string
+  default_slot_mode: 'chromatic' | 'drum' | 'hybrid'
+  tags: string[]
+}
+
+export interface BrainLibraryCollection {
+  collection_id: string
+  label: string
+  asset_count: number
+  assets: BrainLibraryAsset[]
+}
+
+export interface BrainLibraryState {
+  collections: BrainLibraryCollection[]
+  featured_assets: string[]
+  last_scan_iso: string
+}
+
+export interface BrainSampleEditorState {
+  slot_id: number
+  asset_path: string
+  waveform_available: boolean
+  duration_seconds: number
+  start_sample: number
+  end_sample: number
+  normalize_target: number
+  reverse_enabled: boolean
+  record_target_path: string
+}
+
+export interface BrainSnapshotIntegration {
+  authority_model: 'snapshot-first'
+  snapshot_id: number | null
+  snapshot_name: string | null
+  committed_state_id: string
+  desired_state_id: string
+  observed_state_id: string
+}
+
+export interface BrainDiagnostics {
+  sample_rate_hz: number
+  buffer_size_samples: number
+  cpu_load_percent: number
+  active_voices: number
+  peak_voices: number
+  polyphony_headroom: number
+  trigger_latency_ms: number
+  roundtrip_latency_ms: number
+  xruns: number
+  backend_mode: string
+  warnings: string[]
+  last_import_source: string | null
+  updated_at_iso: string
+}
+
+export interface BrainState {
+  instance_id: string
+  product_name: string
+  set_name: string
+  active_slot: number
+  active_layer_id: string
+  active_section: 'overview' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'diagnostics'
+  transport: BrainTransportState
+  slots: BrainSlot[]
+  layers: BrainLayer[]
+  sequence: BrainSequence
+  song: BrainSongState
+  mixer: BrainMixerState
+  inputs: BrainInputsState
+  library: BrainLibraryState
+  sample_editor: BrainSampleEditorState
+  diagnostics: BrainDiagnostics
+  snapshot_integration: BrainSnapshotIntegration
+}
+
+export interface BrainStateUpdate {
+  set_name?: string
+  active_slot?: number
+  active_layer_id?: string
+  active_section?: BrainState['active_section']
+}
+
+export interface BrainTransportUpdate {
+  is_playing?: boolean
+  bpm?: number
+  swing?: number
+  pattern?: number
+  variation?: number
+  pending_pattern?: number
+  switch_quantization_beats?: number
+}
+
+export interface BrainSlotUpdate {
+  name?: string
+  mode?: BrainSlot['mode']
+  asset_type?: BrainSlot['asset_type']
+  asset_path?: string
+  source_label?: string
+  level?: number
+  pan?: number
+  mute?: boolean
+  solo?: boolean
+  tune?: number
+  transpose?: number
+  output_bus?: number
+  polyphony?: number
+  midi_channel?: number
+  trigger_note?: number
+  trigger_notes?: number[]
+  key_low?: number
+  key_high?: number
+  velocity_low?: number
+  velocity_high?: number
+  choke_group?: number
+  articulation_group?: string
+  velocity_curve?: string
+  status?: string
+}
+
+export interface BrainSampleEditorUpdate {
+  slot_id: number
+  start_sample?: number
+  end_sample?: number
+  normalize_target?: number
+}
+
 // ==================== Metrics API ====================
 // ==================== Health API ====================
 
@@ -2235,6 +2530,7 @@ export const map2Api = {
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,
+  brain: brainApi,
   soundfont: soundfontApi,
   synthforge: synthforgeApi,
   automation: automationApi,
