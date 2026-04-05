@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**971** Python | **1115** TypeScript | **136** C++/H | **131** Docs | **1367** total commits | **3** stars | **0** forks | **0** open issues
+**971** Python | **1115** TypeScript | **136** C++/H | **131** Docs | **1369** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8b0d004e`](https://github.com/matthewmackes/map2-audio/commit/8b0d004e557300acd40c354d89e3806bbc88ad33) | Persist Performance Brain route state | Map2 Audio | 2026-04-05 |
+| [`6bc17a30`](https://github.com/matthewmackes/map2-audio/commit/6bc17a30f8db8e96bdd2297c590b8fa002eab4fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`d3e3908a`](https://github.com/matthewmackes/map2-audio/commit/d3e3908abff4feb419485b63daaff6dc6686bcf9) | Enhance Performance Brain quick controls | Map2 Audio | 2026-04-05 |
 | [`20234581`](https://github.com/matthewmackes/map2-audio/commit/20234581036fc4c137f29b5e2996f160a4058a77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`3a5df6ec`](https://github.com/matthewmackes/map2-audio/commit/3a5df6ec0252c141fa9c160707944660e0243f12) | Add Brain plugin-position isolation coverage | Map2 Audio | 2026-04-05 |
 | [`6da6e520`](https://github.com/matthewmackes/map2-audio/commit/6da6e520e3a2b4e3a276449c143bce4119b49330) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`387e746e`](https://github.com/matthewmackes/map2-audio/commit/387e746e60cb4a1ac992bdfada7cb800e46b60a5) | Add Performance Brain bootstrap and refine drums workspace | Map2 Audio | 2026-04-05 |
 | [`112612fe`](https://github.com/matthewmackes/map2-audio/commit/112612feeb6677268ff42d4c50b07d811ab4fbc3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
-| [`f057864b`](https://github.com/matthewmackes/map2-audio/commit/f057864b98673e0c02cf55a954ece23fbe0a393f) | Persist drums backing-track runtime state | Map2 Audio | 2026-04-05 |
-| [`93576f3c`](https://github.com/matthewmackes/map2-audio/commit/93576f3c97ac1785ae5319723e9240e4616a46e0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
