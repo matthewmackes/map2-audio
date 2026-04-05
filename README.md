@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**971** Python | **1116** TypeScript | **136** C++/H | **131** Docs | **1371** total commits | **3** stars | **0** forks | **0** open issues
+**973** Python | **1116** TypeScript | **136** C++/H | **131** Docs | **1373** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fe49235a`](https://github.com/matthewmackes/map2-audio/commit/fe49235a6c9a2c27f32d3207284af51e63b2e8db) | Bridge Brain state into audio-state authority | Map2 Audio | 2026-04-05 |
+| [`f5142bcf`](https://github.com/matthewmackes/map2-audio/commit/f5142bcf5f1d3226a59dde0338d7f60471bada63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`11897a4d`](https://github.com/matthewmackes/map2-audio/commit/11897a4dd44c5030b9e4addc43cac3e202dac811) | Add Brain runtime websocket sync | Map2 Audio | 2026-04-05 |
 | [`1dd32ba1`](https://github.com/matthewmackes/map2-audio/commit/1dd32ba180929ee337fad4e6c86303dab03f1ff3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`8b0d004e`](https://github.com/matthewmackes/map2-audio/commit/8b0d004e557300acd40c354d89e3806bbc88ad33) | Persist Performance Brain route state | Map2 Audio | 2026-04-05 |
 | [`6bc17a30`](https://github.com/matthewmackes/map2-audio/commit/6bc17a30f8db8e96bdd2297c590b8fa002eab4fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`d3e3908a`](https://github.com/matthewmackes/map2-audio/commit/d3e3908abff4feb419485b63daaff6dc6686bcf9) | Enhance Performance Brain quick controls | Map2 Audio | 2026-04-05 |
 | [`20234581`](https://github.com/matthewmackes/map2-audio/commit/20234581036fc4c137f29b5e2996f160a4058a77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
-| [`3a5df6ec`](https://github.com/matthewmackes/map2-audio/commit/3a5df6ec0252c141fa9c160707944660e0243f12) | Add Brain plugin-position isolation coverage | Map2 Audio | 2026-04-05 |
-| [`6da6e520`](https://github.com/matthewmackes/map2-audio/commit/6da6e520e3a2b4e3a276449c143bce4119b49330) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
