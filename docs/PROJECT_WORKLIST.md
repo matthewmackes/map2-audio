@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 11:15 EDT - Completed T765 by turning the compact Brain card into a real quick-control surface with scoped runtime-parity updates, while keeping the routed workspace and websocket-facing backend follow-ons queued behind it.
+Last updated: 2026-04-05 13:55 EDT - Completed T764 by making the routed Brain section rail URL-backed and restart-safe for scoped instances, with focused route/accessibility coverage and a fresh production bundle validation.
 
 ## Performance Brain
 
@@ -128,7 +128,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 09:38 EDT - Codex
 
 ID: T764
-Status: [>] In Progress
+Status: [✓] Done
 Title: Build the routed `/brain` professional workspace in the Platforms-window style
 Description:
 - Goal / acceptance criteria: Ship a section-rail professional workspace for `/brain` with `Overview`, `Perform`, `Layers`, `Sequence`, `Routing`, `Inputs`, `Library`, and `Diagnostics`, avoiding a flat menu and keeping primary controls immediately visible inside a workflow-grouped shell.
@@ -157,7 +157,7 @@ Subtasks:
       - `npm --prefix web run build` -> PASS
       - Licensing review: touched frontend/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T764-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Preserve section-rail route state and extend routed Brain coverage
     Description:
     - Goal / acceptance criteria: Keep the routed Brain section selection restart-safe through URL or router state, and add focused route/accessibility coverage proving the rail and section transitions stay stable for scoped instances.
@@ -167,9 +167,22 @@ Subtasks:
     - Required outputs: Route-state sync, focused tests, and worklist validation notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 10:59 EDT - Codex
+    Last updated: 2026-04-05 13:55 EDT - Codex
+    - Completion notes:
+      - Reworked `web/src/app/pages/PerformanceBrainPage.tsx` so the routed section rail now derives from a validated `section` query param, preserves existing scoped query params like `instance_id` and `plugin_position`, and normalizes missing route state back into the URL from backend state instead of relying on page-local section state.
+      - Added `aria-current` to the active rail entry and extended the routed page regression suite with a location probe so deep links, scoped-instance route transitions, and the normalized active section are all asserted against the actual router state.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PerformanceBrainPage.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 11:02 EDT - Codex
+Last updated: 2026-04-05 13:55 EDT - Codex
+- Completion notes:
+  - The routed `/brain` workspace now keeps its section-rail state restart-safe through the URL, so scoped plugin launches and page refreshes reopen the expected section instead of collapsing back to page-local defaults.
+  - Focused routed coverage now checks both the router search state and accessibility-active rail state for scoped instances, closing the remaining professional workspace persistence gap tracked under T764.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PerformanceBrainPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T765
 Status: [✓] Done

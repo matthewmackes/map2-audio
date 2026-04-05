@@ -29,6 +29,10 @@ const SECTION_DEFS = [
 
 type SectionId = (typeof SECTION_DEFS)[number]['id']
 
+function parseSectionSearchParam(value: string | null): SectionId | undefined {
+  return SECTION_DEFS.some((section) => section.id === value) ? (value as SectionId) : undefined
+}
+
 function parseNumericSearchParam(value: string | null): number | undefined {
   if (value == null || value.trim() === '') {
     return undefined
@@ -93,8 +97,9 @@ function OverviewCards({
 export function PerformanceBrainPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const scope = useMemo(() => buildScope(searchParams), [searchParams])
+  const routeSection = useMemo(() => parseSectionSearchParam(searchParams.get('section')), [searchParams])
   const scopeKey = `${scope.instanceId ?? 'workspace'}:${scope.pluginPosition ?? 'none'}`
 
   const stateQuery = useQuery({
@@ -143,14 +148,12 @@ export function PerformanceBrainPage() {
     staleTime: 1_000,
   })
 
-  const [activeSection, setActiveSection] = useState<SectionId>('overview')
   const [setNameDraft, setSetNameDraft] = useState('')
 
   const stateMutation = useMutation({
     mutationFn: (patch: Parameters<typeof brainApi.updateState>[0]) => brainApi.updateState(patch, scope),
     onSuccess: (state) => {
       queryClient.setQueryData(['brain', 'state', scopeKey], state)
-      setActiveSection(state.active_section)
       setSetNameDraft(state.set_name)
     },
   })
@@ -190,9 +193,21 @@ export function PerformanceBrainPage() {
     if (!stateQuery.data) {
       return
     }
-    setActiveSection(stateQuery.data.active_section)
     setSetNameDraft(stateQuery.data.set_name)
   }, [stateQuery.data])
+
+  useEffect(() => {
+    if (!stateQuery.data) {
+      return
+    }
+    const normalizedSection = routeSection ?? stateQuery.data.active_section
+    if (searchParams.get('section') === normalizedSection) {
+      return
+    }
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.set('section', normalizedSection)
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [routeSection, searchParams, setSearchParams, stateQuery.data])
 
   const state = stateQuery.data
   const transport = transportQuery.data
@@ -226,12 +241,19 @@ export function PerformanceBrainPage() {
     )
   }
 
+  const activeSection = routeSection ?? state.active_section
   const activeSlot = slots[state.active_slot]
   const activeLayer = layers.find((layer) => layer.layer_id === state.active_layer_id)
 
   const handleSectionChange = (sectionId: SectionId) => {
-    setActiveSection(sectionId)
-    stateMutation.mutate({ active_section: sectionId })
+    if (searchParams.get('section') !== sectionId) {
+      const nextSearchParams = new URLSearchParams(searchParams)
+      nextSearchParams.set('section', sectionId)
+      setSearchParams(nextSearchParams)
+    }
+    if (state.active_section !== sectionId) {
+      stateMutation.mutate({ active_section: sectionId })
+    }
   }
 
   const handleSetNameCommit = () => {
@@ -278,6 +300,7 @@ export function PerformanceBrainPage() {
               key={section.id}
               type="button"
               className={`brain-page__rail-button${activeSection === section.id ? ' brain-page__rail-button--active' : ''}`}
+              aria-current={activeSection === section.id ? 'page' : undefined}
               onClick={() => handleSectionChange(section.id)}
             >
               <span className="brain-page__rail-eyebrow">{section.eyebrow}</span>

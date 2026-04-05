@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import { PerformanceBrainPage } from './PerformanceBrainPage'
 
@@ -65,14 +65,14 @@ function makeClient() {
   })
 }
 
-function primeApi() {
-  mockGetState.mockResolvedValue({
+function makeState(activeSection = 'overview') {
+  return {
     instance_id: 'workspace-default',
     product_name: 'Performance Brain',
     set_name: 'Stage Brain',
     active_slot: 0,
     active_layer_id: 'main-stack',
-    active_section: 'overview',
+    active_section: activeSection,
     transport: {
       is_playing: false,
       bpm: 124,
@@ -95,37 +95,12 @@ function primeApi() {
     sample_editor: { slot_id: 0, asset_path: '', waveform_available: false, duration_seconds: 0, start_sample: 0, end_sample: 0, normalize_target: 0.99, reverse_enabled: true, record_target_path: '' },
     diagnostics: { sample_rate_hz: 48000, buffer_size_samples: 128, cpu_load_percent: 7.5, active_voices: 4, peak_voices: 12, polyphony_headroom: 84, trigger_latency_ms: 2.1, roundtrip_latency_ms: 5.2, xruns: 0, backend_mode: 'hybrid', warnings: [], last_import_source: null, updated_at_iso: '2026-04-05T13:30:00Z' },
     snapshot_integration: { authority_model: 'snapshot-first', snapshot_id: null, snapshot_name: null, committed_state_id: 'brain:committed', desired_state_id: 'brain:desired', observed_state_id: 'brain:observed' },
-  })
-  mockUpdateState.mockResolvedValue({
-    instance_id: 'workspace-default',
-    product_name: 'Performance Brain',
-    set_name: 'Stage Brain',
-    active_slot: 0,
-    active_layer_id: 'main-stack',
-    active_section: 'sequence',
-    transport: {
-      is_playing: false,
-      bpm: 124,
-      swing: 10,
-      pattern: 3,
-      variation: 1,
-      step: 0,
-      bar: 1,
-      beat: 1,
-      pending_pattern: -1,
-      switch_quantization_beats: 4,
-    },
-    slots: [],
-    layers: [],
-    sequence: {},
-    song: { entries: [], loop: false },
-    mixer: { buses: [], master: { master_volume: 0.82, drive_db: 0, compressor_amount: 0.2, reverb_mix: 0.2, limiter_ceiling_db: -0.5 } },
-    inputs: { keyboard_zones: [], trigger_profiles: [], controller_assignments: [] },
-    library: { collections: [], featured_assets: [], last_scan_iso: '' },
-    sample_editor: { slot_id: 0, asset_path: '', waveform_available: false, duration_seconds: 0, start_sample: 0, end_sample: 0, normalize_target: 0.99, reverse_enabled: true, record_target_path: '' },
-    diagnostics: { sample_rate_hz: 48000, buffer_size_samples: 128, cpu_load_percent: 7.5, active_voices: 4, peak_voices: 12, polyphony_headroom: 84, trigger_latency_ms: 2.1, roundtrip_latency_ms: 5.2, xruns: 0, backend_mode: 'hybrid', warnings: [], last_import_source: null, updated_at_iso: '2026-04-05T13:30:00Z' },
-    snapshot_integration: { authority_model: 'snapshot-first', snapshot_id: null, snapshot_name: null, committed_state_id: 'brain:committed', desired_state_id: 'brain:desired', observed_state_id: 'brain:observed' },
-  })
+  }
+}
+
+function primeApi({ activeSection = 'overview' }: { activeSection?: string } = {}) {
+  mockGetState.mockResolvedValue(makeState(activeSection))
+  mockUpdateState.mockResolvedValue(makeState('sequence'))
   mockGetTransport.mockResolvedValue({
     is_playing: false,
     bpm: 124,
@@ -189,37 +164,72 @@ function primeApi() {
   mockImportFromSynthForge.mockResolvedValue({})
 }
 
+function LocationProbe() {
+  const location = useLocation()
+  return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
+}
+
+function renderPage(initialEntry = '/brain') {
+  return render(
+    <MemoryRouter
+      initialEntries={[initialEntry]}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <QueryClientProvider client={makeClient()}>
+        <Routes>
+          <Route
+            path="/brain"
+            element={(
+              <>
+                <PerformanceBrainPage />
+                <LocationProbe />
+              </>
+            )}
+          />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  )
+}
+
 describe('PerformanceBrainPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     primeApi()
   })
 
-  it('renders the overview surface and switches sections through the rail', async () => {
-    render(
-      <MemoryRouter initialEntries={['/brain']}>
-        <QueryClientProvider client={makeClient()}>
-          <PerformanceBrainPage />
-        </QueryClientProvider>
-      </MemoryRouter>,
-    )
+  it('preserves scoped route state when switching sections through the rail', async () => {
+    renderPage('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Performance Brain' })).toBeInTheDocument())
-    expect(screen.getByText('Import Drum Machine')).toBeInTheDocument()
+    await waitFor(() => expect(mockGetState).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
+    expect(screen.getByText('Realtime metrics')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Diagnostics$/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
-    fireEvent.click(screen.getByRole('button', { name: /Sequence/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Sequence$/ }))
 
-    await waitFor(() => expect(mockUpdateState).toHaveBeenCalledWith({ active_section: 'sequence' }, { instanceId: undefined, pluginPosition: undefined }))
+    await waitFor(() => expect(mockUpdateState).toHaveBeenCalledWith({ active_section: 'sequence' }, { instanceId: 42, pluginPosition: 9 }))
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=sequence'))
+    expect(screen.getByRole('button', { name: /Sequence$/ })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('normalizes the section query param from backend state when the route is missing it', async () => {
+    primeApi({ activeSection: 'layers' })
+
+    renderPage('/brain?instance_id=7&plugin_position=2')
+
+    await waitFor(() => expect(screen.getByText('Layer map')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=7&plugin_position=2&section=layers'))
+    expect(screen.getByRole('button', { name: /Layers$/ })).toHaveAttribute('aria-current', 'page')
+    expect(mockUpdateState).not.toHaveBeenCalled()
   })
 
   it('runs the drum importer from the overview section', async () => {
-    render(
-      <MemoryRouter initialEntries={['/brain']}>
-        <QueryClientProvider client={makeClient()}>
-          <PerformanceBrainPage />
-        </QueryClientProvider>
-      </MemoryRouter>,
-    )
+    renderPage('/brain')
 
     await waitFor(() => expect(screen.getByText('Import Drum Machine')).toBeInTheDocument())
 
