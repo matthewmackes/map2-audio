@@ -123,22 +123,38 @@ class _FakeWsManager:
         self.messages.append({"topic": topic, "message": data})
 
 
-def make_client(tmp_path: Path) -> tuple[TestClient, _FakeWsManager]:
+class _FakeBrainAuthoritySyncService:
+    def __init__(self):
+        self.calls = []
+
+    async def sync_instance(self, *, instance_id=None, plugin_position=None, triggered_by="ui"):
+        self.calls.append(
+            {
+                "instance_id": instance_id,
+                "plugin_position": plugin_position,
+                "triggered_by": triggered_by,
+            }
+        )
+
+
+def make_client(tmp_path: Path) -> tuple[TestClient, _FakeWsManager, _FakeBrainAuthoritySyncService]:
     service = PerformanceBrainService(root_path=tmp_path / "brain-routes")
     ws_manager = _FakeWsManager()
+    authority_sync = _FakeBrainAuthoritySyncService()
     app = FastAPI()
     app.include_router(brain_routes.router)
     brain_routes.get_performance_brain_service = lambda: service
+    brain_routes._brain_authority_service = lambda: authority_sync
     brain_routes.get_drum_machine_service = lambda: _FakeDrumMachineService()
     brain_routes.get_drum_sequencer_service = lambda: _FakeDrumSequencerService()
     brain_routes.get_drum_kit_service = lambda: _FakeDrumKitService()
     brain_routes.get_audio_engine = lambda: _FakeSynthForgeEngine()
     brain_routes.ws_manager = ws_manager
-    return TestClient(app), ws_manager
+    return TestClient(app), ws_manager, authority_sync
 
 
 def test_brain_routes_scope_state_by_instance_id(tmp_path):
-    client, _ = make_client(tmp_path)
+    client, _, _ = make_client(tmp_path)
 
     update_response = client.post("/api/engine/brain/state?instance_id=17", json={"set_name": "Card Instance", "active_slot": 4})
     assert update_response.status_code == 200
@@ -152,7 +168,7 @@ def test_brain_routes_scope_state_by_instance_id(tmp_path):
 
 
 def test_brain_routes_scope_duplicate_instance_ids_by_plugin_position(tmp_path):
-    client, _ = make_client(tmp_path)
+    client, _, _ = make_client(tmp_path)
 
     first_update = client.post(
         "/api/engine/brain/state?instance_id=17&plugin_position=0",
@@ -178,7 +194,7 @@ def test_brain_routes_scope_duplicate_instance_ids_by_plugin_position(tmp_path):
 
 
 def test_brain_routes_import_drum_machine_state(tmp_path):
-    client, _ = make_client(tmp_path)
+    client, _, authority_sync = make_client(tmp_path)
 
     response = client.post("/api/engine/brain/import/drums?instance_id=23")
     assert response.status_code == 200
@@ -187,10 +203,15 @@ def test_brain_routes_import_drum_machine_state(tmp_path):
     assert payload["song"]["loop"] is True
     assert payload["slots"][0]["name"] == "Kick"
     assert payload["diagnostics"]["last_import_source"] == "drums"
+    assert authority_sync.calls[-1] == {
+        "instance_id": "23",
+        "plugin_position": None,
+        "triggered_by": "brain-route:import-drums",
+    }
 
 
 def test_brain_routes_import_synthforge_state(tmp_path):
-    client, _ = make_client(tmp_path)
+    client, _, authority_sync = make_client(tmp_path)
 
     response = client.post("/api/engine/brain/import/synthforge?instance_id=42")
     assert response.status_code == 200
@@ -199,10 +220,15 @@ def test_brain_routes_import_synthforge_state(tmp_path):
     assert payload["slots"][0]["transpose"] == 7
     assert payload["diagnostics"]["active_voices"] == 9
     assert payload["diagnostics"]["last_import_source"] == "synthforge"
+    assert authority_sync.calls[-1] == {
+        "instance_id": "42",
+        "plugin_position": None,
+        "triggered_by": "brain-route:import-synthforge",
+    }
 
 
 def test_brain_routes_broadcast_scoped_runtime_updates(tmp_path):
-    client, ws_manager = make_client(tmp_path)
+    client, ws_manager, authority_sync = make_client(tmp_path)
 
     response = client.post(
         "/api/engine/brain/transport?instance_id=17&plugin_position=3",
@@ -225,3 +251,8 @@ def test_brain_routes_broadcast_scoped_runtime_updates(tmp_path):
     assert payload["message"]["data"]["state"]["transport"]["bpm"] == 131
     assert payload["message"]["data"]["state"]["transport"]["pattern"] == 4
     assert payload["message"]["data"]["state"]["transport"]["is_playing"] is True
+    assert authority_sync.calls[-1] == {
+        "instance_id": "17",
+        "plugin_position": 3,
+        "triggered_by": "brain-route:transport",
+    }

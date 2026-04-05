@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 14:19 EDT - Reviewed the newly added `MAP2 State Authority` program (T770-T778) and completed T763-subA by projecting scoped `Performance Brain` state into committed, desired, and observed audio-state authority envelopes through `/api/audio/state/brain/sync`, while leaving the broader Brain snapshot/live-authority epic open.
+Last updated: 2026-04-05 15:53 EDT - Completed T763-subB by auto-publishing scoped `Performance Brain` mutation/import writes into the authoritative audio-state path and refreshing frontend authority caches from the same runtime stream.
 
 ## Performance Brain
 
@@ -160,10 +160,32 @@ Subtasks:
       - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
       - `pytest -q tests/test_audio_state_authority_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
       - Licensing review: touched backend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T763-subB
+    Status: [✓] Done
+    Title: Auto-publish Brain mutation/runtime changes into authority and refresh control-plane caches
+    Description:
+    - Goal / acceptance criteria: Make the canonical Brain mutation/import path publish scoped state into `/api/audio/state/brain/sync` automatically, and ensure routed/plugin Brain consumers refresh authoritative audio-state caches when scoped runtime updates arrive instead of leaving the authority bridge as a manual backend-only endpoint.
+    - Why it matters: T763-subA proved the authority projection format, but the product still risks drift if Brain writes persist locally without also moving the shared control-plane truth that snapshot/live tooling reads.
+    - Dependencies: T763-subA
+    - Estimated effort: Medium
+    - Required outputs: Backend mutation-path sync wiring, frontend authority-cache refresh plumbing, focused backend/frontend regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 15:53 EDT - Codex
+    - Completion notes:
+      - Updated `app/routes/brain.py` so every mutating Brain route and both import paths now call the scoped authority-sync bridge before broadcasting `brain:runtime`, which keeps the committed/desired/observed audio-state authority in step with routed/plugin Brain writes instead of depending on a manual side route.
+      - Updated `web/src/app/hooks/useBrainRuntimeState.ts` to invalidate the authoritative audio-state queries whenever a matching scoped Brain runtime event is processed, so control-plane consumers refresh from the same runtime stream that updates the Brain card/page caches.
+      - Added focused regression coverage in `tests/test_brain_routes.py` and `web/src/app/hooks/useBrainRuntimeState.test.ts` to prove scoped Brain writes trigger authority sync with the expected route labels and that matched runtime events invalidate the control-plane query keys.
+    - Validation:
+      - `pytest -q tests/test_brain_routes.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS (`12 passed`)
+      - `CI=1 npm --prefix web test -- --runInBand src/app/hooks/useBrainRuntimeState.test.ts src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS (`3 suites, 10 tests`)
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched backend/frontend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app web/src tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 14:19 EDT - Codex
+Last updated: 2026-04-05 15:53 EDT - Codex
 - Completion notes:
   - Landed the first Brain-to-authority bridge by serializing scoped runtime state into the existing committed, desired, and observed audio-state envelopes under `extensions.performance_brain.instances`, so snapshot/live truth no longer depends on page-local Brain state alone.
+  - Brain mutation and import routes now auto-publish their scoped state into the same authority bridge before broadcasting runtime updates, and matching Brain runtime events now invalidate the authoritative audio-state caches so control-plane surfaces observe the updated truth without a manual sync step.
   - Left the parent epic open because snapshot activation, recall rules, and deeper State Authority redesign alignment remain larger follow-on work beyond this focused projection slice.
 - Validation:
   - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS

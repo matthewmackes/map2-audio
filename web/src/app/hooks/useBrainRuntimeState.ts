@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { useWebSocketTopic } from '@/map2/hooks/useWebSocket'
@@ -45,7 +46,7 @@ export function matchesBrainRuntimeScope(
 }
 
 export function syncBrainStateToQueryCache(
-  queryClient: ReturnType<typeof useQueryClient>,
+  queryClient: Pick<QueryClient, 'setQueryData'>,
   scopeKey: string,
   state: BrainState,
 ) {
@@ -65,6 +66,33 @@ export function syncBrainStateToQueryCache(
   queryClient.setQueryData(['brain', 'diagnostics', scopeKey], state.diagnostics)
 }
 
+export function invalidateBrainAuthorityQueryCaches(
+  queryClient: Pick<QueryClient, 'invalidateQueries'>,
+) {
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'committed'] })
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'desired'] })
+  void queryClient.invalidateQueries({ queryKey: ['audio-state', 'observed'] })
+}
+
+export function applyBrainRuntimeUpdate(
+  queryClient: Pick<QueryClient, 'setQueryData' | 'invalidateQueries'>,
+  update: BrainRuntimeUpdate,
+  scope: Pick<PluginRuntimeScopeOptions, 'instanceId' | 'pluginPosition'>,
+  scopeKey: string,
+  options: { enabled?: boolean } = {},
+): boolean {
+  const { enabled = true } = options
+  if (!enabled) {
+    return false
+  }
+  if (!matchesBrainRuntimeScope(update, scope)) {
+    return false
+  }
+  syncBrainStateToQueryCache(queryClient, scopeKey, update.state)
+  invalidateBrainAuthorityQueryCaches(queryClient)
+  return true
+}
+
 export function useBrainRuntimeStateSync(
   scope: Pick<PluginRuntimeScopeOptions, 'instanceId' | 'pluginPosition'>,
   scopeKey: string,
@@ -77,9 +105,6 @@ export function useBrainRuntimeStateSync(
     if (!enabled || message.type !== 'brain_runtime_update' || !data) {
       return
     }
-    if (!matchesBrainRuntimeScope(data, scope)) {
-      return
-    }
-    syncBrainStateToQueryCache(queryClient, scopeKey, data.state)
+    applyBrainRuntimeUpdate(queryClient, data, scope, scopeKey, { enabled })
   })
 }

@@ -18,6 +18,7 @@ from app.services.drum_kit_service import get_drum_kit_service
 from app.services.drum_machine_service import get_drum_machine_service
 from app.services.drum_sequencer_service import get_drum_sequencer_service
 from app.services.juce_engine_service import get_audio_engine
+from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
 from app.services.performance_brain_service import (
     BrainInputsStateModel,
     BrainInputsUpdateModel,
@@ -51,6 +52,41 @@ logger = logging.getLogger(__name__)
 
 def _service():
     return get_performance_brain_service()
+
+
+def _brain_authority_service() -> PerformanceBrainAuthoritySyncService:
+    return PerformanceBrainAuthoritySyncService()
+
+
+async def _sync_authority_projection(
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+    triggered_by: str = "brain-route",
+) -> None:
+    try:
+        await _brain_authority_service().sync_instance(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+            triggered_by=triggered_by,
+        )
+    except Exception as exc:
+        logger.warning("Performance Brain authority sync failed for %s/%s: %s", instance_id, plugin_position, exc)
+
+
+def _sync_authority_projection_blocking(
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+    triggered_by: str = "brain-route",
+) -> None:
+    asyncio.run(
+        _sync_authority_projection(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+            triggered_by=triggered_by,
+        )
+    )
 
 
 async def _broadcast_runtime_update(
@@ -108,6 +144,11 @@ def update_brain_state(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     state = _service().update_state(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:state",
+    )
     _publish_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
     return state
 
@@ -127,6 +168,11 @@ def update_brain_transport(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     transport = _service().update_transport(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:transport",
+    )
     _publish_runtime_update("transport", instance_id=instance_id, plugin_position=plugin_position)
     return transport
 
@@ -154,6 +200,11 @@ def update_brain_slot(
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:slot",
+    )
     _publish_runtime_update("slot", instance_id=instance_id, plugin_position=plugin_position)
     return slot
 
@@ -173,6 +224,11 @@ def update_brain_layers(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     layers = _service().update_layers(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:layers",
+    )
     _publish_runtime_update("layers", instance_id=instance_id, plugin_position=plugin_position)
     return layers
 
@@ -192,6 +248,11 @@ def update_brain_sequence(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     sequence = _service().update_sequence(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:sequence",
+    )
     _publish_runtime_update("sequence", instance_id=instance_id, plugin_position=plugin_position)
     return sequence
 
@@ -211,6 +272,11 @@ def update_brain_song(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     song = _service().update_song(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:song",
+    )
     _publish_runtime_update("song", instance_id=instance_id, plugin_position=plugin_position)
     return song
 
@@ -230,6 +296,11 @@ def update_brain_mixer(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     mixer = _service().update_mixer(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:mixer",
+    )
     _publish_runtime_update("mixer", instance_id=instance_id, plugin_position=plugin_position)
     return mixer
 
@@ -249,6 +320,11 @@ def update_brain_inputs(
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
     inputs = _service().update_inputs(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:inputs",
+    )
     _publish_runtime_update("inputs", instance_id=instance_id, plugin_position=plugin_position)
     return inputs
 
@@ -285,6 +361,11 @@ def update_brain_sample_editor(
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:sample-editor",
+    )
     _publish_runtime_update("sample_editor", instance_id=instance_id, plugin_position=plugin_position)
     return sample_editor
 
@@ -319,6 +400,11 @@ def import_brain_from_drums(
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _sync_authority_projection_blocking(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:import-drums",
+    )
     _publish_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
     return state
 
@@ -346,6 +432,11 @@ async def import_brain_from_synthforge(
         voice_metrics=dict(voice_metrics),
         instance_id=instance_id,
         plugin_position=plugin_position,
+    )
+    await _sync_authority_projection(
+        instance_id=instance_id,
+        plugin_position=plugin_position,
+        triggered_by="brain-route:import-synthforge",
     )
     await _broadcast_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
     return state
