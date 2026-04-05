@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { SynthForgePage } from './SynthForgePage'
 
 const mockNavigate = jest.fn()
+const mockLocation = { search: '' }
 const mockListSoundfonts = jest.fn()
 const mockGetPresets = jest.fn()
 const mockGetParts = jest.fn()
@@ -21,6 +22,7 @@ jest.mock('react-router-dom', () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useLocation: () => mockLocation,
   }
 })
 
@@ -318,6 +320,7 @@ function renderPage() {
 describe('SynthForgePage', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    mockLocation.search = ''
     mockSynthForgeCard.mockReset()
     mockListSoundfonts.mockReset()
     mockGetPresets.mockReset()
@@ -339,5 +342,17 @@ describe('SynthForgePage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /back to audio grid/i }))
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/juce-grid'))
+  })
+
+  it('offers a scoped handoff into Performance Brain from the standalone SynthForge page', async () => {
+    mockLocation.search = '?instance_id=17&plugin_position=4'
+
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: /open in performance brain/i }))
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(
+      '/brain?instance_id=17&plugin_position=4&section=overview&import_source=synthforge',
+    ))
   })
 })

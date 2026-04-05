@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Launch, Music, PauseFilled, PlayFilled, Reset } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
@@ -15,6 +15,7 @@ import {
   type BrainTransportState,
   type PluginRuntimeScopeOptions,
 } from '@/map2/api'
+import { parseBrainImportSource } from './brainHandoff'
 import './PerformanceBrainPage.css'
 
 const SECTION_DEFS = [
@@ -101,7 +102,9 @@ export function PerformanceBrainPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const scope = useMemo(() => buildScope(searchParams), [searchParams])
   const routeSection = useMemo(() => parseSectionSearchParam(searchParams.get('section')), [searchParams])
+  const importSource = useMemo(() => parseBrainImportSource(searchParams.get('import_source')), [searchParams])
   const scopeKey = `${scope.instanceId ?? 'workspace'}:${scope.pluginPosition ?? 'none'}`
+  const autoImportRequestRef = useRef<string | null>(null)
 
   useBrainRuntimeStateSync(scope, scopeKey)
 
@@ -211,6 +214,41 @@ export function PerformanceBrainPage() {
     nextSearchParams.set('section', normalizedSection)
     setSearchParams(nextSearchParams, { replace: true })
   }, [routeSection, searchParams, setSearchParams, stateQuery.data])
+
+  useEffect(() => {
+    if (!importSource) {
+      autoImportRequestRef.current = null
+      return
+    }
+
+    const requestKey = `${scopeKey}:${importSource}`
+    if (autoImportRequestRef.current === requestKey) {
+      return
+    }
+    autoImportRequestRef.current = requestKey
+
+    const clearImportSourceSearchParam = () => {
+      const nextSearchParams = new URLSearchParams(searchParams)
+      nextSearchParams.delete('import_source')
+      setSearchParams(nextSearchParams, { replace: true })
+    }
+    const resetAutoImportRequest = () => {
+      autoImportRequestRef.current = null
+    }
+
+    if (importSource === 'drums') {
+      importDrumsMutation.mutate(undefined, {
+        onSuccess: clearImportSourceSearchParam,
+        onError: resetAutoImportRequest,
+      })
+      return
+    }
+
+    importSynthForgeMutation.mutate(undefined, {
+      onSuccess: clearImportSourceSearchParam,
+      onError: resetAutoImportRequest,
+    })
+  }, [importDrumsMutation, importSource, importSynthForgeMutation, scopeKey, searchParams, setSearchParams])
 
   const state = stateQuery.data
   const transport = transportQuery.data

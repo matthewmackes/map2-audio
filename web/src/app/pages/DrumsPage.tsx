@@ -49,6 +49,7 @@ import { NumberInput } from '@/app/components/ParameterControl'
 import { ParameterControl } from '@/app/components/ParameterControl'
 import { requireParameterDescriptor } from '@/app/data/parameterSchema'
 import { useLocation } from 'react-router-dom'
+import { buildBrainHandoffPath } from './brainHandoff'
 import './DrumsPage.css'
 import {
   useDrumActiveKit,
@@ -1041,13 +1042,17 @@ function presetHref(preset: WorkspacePreset) {
   return WORKSPACE_PRESETS.find((candidate) => candidate.id === preset)?.href ?? '#drum-workspace-top'
 }
 
-function navigateToAudioGrid() {
+function navigateToPath(path: string) {
   if (typeof window === 'undefined') {
     return
   }
 
-  window.history.pushState({}, '', '/juce-grid')
+  window.history.pushState({}, '', path)
   window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
+function navigateToAudioGrid() {
+  navigateToPath('/juce-grid')
 }
 
 function clampPatternLength(pattern: DrumPattern | undefined) {
@@ -3682,6 +3687,7 @@ function backingTracksPanel(
 export interface DrumsWorkspaceProps {
   embedded?: boolean
   initialMode?: DrumMode | null
+  locationSearch?: string
   onSelectionChange?: (selection: DrumWorkspaceSelectionSummary) => void
   commandRequest?: DrumWorkspaceCommandRequest | null
   onCommandStateChange?: (state: DrumWorkspaceCommandState) => void
@@ -3752,10 +3758,12 @@ function cloneDrumPattern(pattern: DrumPattern): DrumPattern {
 export function DrumsWorkspace({
   embedded = false,
   initialMode = null,
+  locationSearch = '',
   onSelectionChange,
   commandRequest = null,
   onCommandStateChange,
 }: DrumsWorkspaceProps = {}) {
+  const brainHandoffPath = buildBrainHandoffPath('drums', locationSearch)
   const queryClient = useQueryClient()
   const stateQuery = useDrumMachineState()
   const transportQuery = useDrumTransport()
@@ -4425,9 +4433,14 @@ export function DrumsWorkspace({
         subtitle={activeModeMeta.description}
         icon={<Music size={32} style={{ color: activeModeMeta.accent }} />}
         actions={!embedded ? (
-          <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={navigateToAudioGrid}>
-            Back to Audio Grid
-          </Button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <Button kind="ghost" size="sm" renderIcon={Launch} onClick={() => navigateToPath(brainHandoffPath)}>
+              Open in Performance Brain
+            </Button>
+            <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={navigateToAudioGrid}>
+              Back to Audio Grid
+            </Button>
+          </div>
         ) : undefined}
       />
 
@@ -5441,7 +5454,7 @@ function resolveInitialDrumMode(search: string): DrumMode | null {
 export function DrumsPage() {
   const location = useLocation()
 
-  return <DrumsWorkspace initialMode={resolveInitialDrumMode(location.search)} />
+  return <DrumsWorkspace initialMode={resolveInitialDrumMode(location.search)} locationSearch={location.search} />
 }
 
 export default DrumsPage

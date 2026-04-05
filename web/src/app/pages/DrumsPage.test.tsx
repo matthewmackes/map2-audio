@@ -1008,6 +1008,20 @@ describe('DrumsPage', () => {
     expect(window.location.pathname).toBe('/juce-grid')
   })
 
+  it('offers a scoped handoff into Performance Brain from the standalone drums page', async () => {
+    mockLocation.search = '?mode=advanced&instance_id=42&plugin_position=9'
+
+    renderPage()
+
+    expect(screen.getByRole('button', { name: /open in performance brain/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /open in performance brain/i }))
+
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe(
+      '/brain?instance_id=42&plugin_position=9&section=overview&import_source=drums',
+    ))
+  })
+
   it('persists workspace presets and named layouts on the standalone drums page', () => {
     const scrollIntoView = jest.fn()
     Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {

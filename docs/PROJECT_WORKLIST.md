@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 18:44 EDT - Completed T766-subB by carrying richer SynthForge performance, backend, and patch-library context into `Performance Brain` shadow imports.
+Last updated: 2026-04-05 19:01 EDT - Completed T766 by landing the shadow-phase legacy-to-Brain handoff flow for Drum Machine and SynthForge.
 
 ## Performance Brain
 
@@ -395,7 +395,7 @@ Last updated: 2026-04-05 11:15 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T766
-Status: [>] In Progress
+Status: [✓] Done
 Title: Deliver SynthForge and Drum Machine importers plus shadow-then-swap cutover
 Description:
 - Goal / acceptance criteria: Import SynthForge part/patch state and Drum Machine kit/pattern/mapping state into Brain sets/sequences while keeping `/drums` and `/synth-forge` alive during the shadow phase. Redirect or retire legacy surfaces only after parity, importer validation, and migration proof are established.
@@ -446,7 +446,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
       - Licensing review: touched backend/frontend-type/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T766-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add shadow-phase launch/import handoff from legacy Drum Machine and SynthForge surfaces into Brain
     Description:
     - Goal / acceptance criteria: Add a restart-safe shadow migration handoff so `/drums` and `/synth-forge` can launch into `/brain` with an explicit import source, auto-run the matching Brain importer, and keep the legacy routes live while making the replacement path operator-visible.
@@ -456,12 +456,25 @@ Subtasks:
     - Required outputs: Routed UI/query handling, legacy-page handoff affordances, focused frontend regressions, and cutover notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 18:27 EDT - Codex
+    Last updated: 2026-04-05 19:01 EDT - Codex
+    - Completion notes:
+      - Added a shared `brainHandoff` route helper so legacy surfaces now launch `/brain` with `instance_id`, `plugin_position`, `section=overview`, and an explicit `import_source` instead of forcing operators to rebuild context by hand.
+      - Updated `web/src/app/pages/PerformanceBrainPage.tsx` so `/brain` auto-runs the matching Drum Machine or SynthForge import once when `import_source` is present, then clears the one-shot handoff flag from the router query state without dropping the scoped instance/plugin context.
+      - Updated `web/src/app/pages/DrumsPage.tsx` and `web/src/app/pages/SynthForgePage.tsx` so both legacy pages now expose a visible `Open in Performance Brain` action while keeping the original route live during the shadow phase.
+      - Extended the focused page suites in `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, and `web/src/app/pages/SynthForgePage.test.tsx` to cover scoped handoff URLs, auto-import flag clearing, and legacy-page launch affordances.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/pages/DrumsPage.test.tsx src/app/pages/SynthForgePage.test.tsx` -> PASS (`46 passed`)
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched frontend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 18:44 EDT - Codex
+Last updated: 2026-04-05 19:01 EDT - Codex
 - Completion notes:
   - Closed the first T766 shadow-migration gap by making Drum Machine imports carry real sequencer/song metadata and legacy trigger/transport nuance into Brain state instead of only mirroring coarse slot defaults.
   - Closed the second T766 shadow-migration gap by making SynthForge imports preserve performance/backend/tuning/patch-library context and by keeping importer-owned library overlays alive across derived Brain refreshes.
+  - Closed the final T766 shadow-migration gap by wiring restart-safe legacy-page handoff URLs into `/brain`, auto-running the matching Brain importer from query state, and keeping `/drums` plus `/synth-forge` operator-visible during the migration.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/pages/DrumsPage.test.tsx src/app/pages/SynthForgePage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T767
 Status: [ ] Todo

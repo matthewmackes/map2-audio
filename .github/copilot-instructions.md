@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (SynthForge shadow import fidelity documented)
+> **Last Updated**: April 5, 2026 (Brain shadow handoff routing documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1553,6 +1553,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
 - **Lesson**: Derived-state refreshes must preserve importer-owned library overlays. If a refresh normalizes only scanned assets, a shadow import can look correct once and then quietly lose its patch-bank evidence on the next read.
 
+**62. Legacy Surface Brain Handoffs Must Preserve Scope And Clear One-Shot Import Flags From Router State (HIGH - Apr 5, 2026)**
+- **Files**: `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/pages/SynthForgePage.tsx`, `web/src/app/pages/SynthForgePage.test.tsx`, `web/src/app/pages/brainHandoff.ts`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The repo could keep `/drums` and `/synth-forge` live during Brain migration, but operators still had to relaunch Brain and re-run imports manually, and an early handoff cleanup attempt could drop scoped `instance_id` / `plugin_position` when clearing the import flag.
+- **Root Cause**: There was no shared handoff URL contract between the legacy pages and `/brain`, and using `window.location.search` to clear a one-shot router query flag is not reliable under router-controlled navigation or tests.
+- **Fix**: Add a shared `buildBrainHandoffPath()` helper that carries `instance_id`, `plugin_position`, `section=overview`, and `import_source`; use it from the Drum Machine and SynthForge pages; let `/brain` auto-run the matching import once from query state; and clear `import_source` from router `searchParams` after success instead of reading window location directly.
+- **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/pages/DrumsPage.test.tsx src/app/pages/SynthForgePage.test.tsx`; `npm --prefix web run build`
+- **Lesson**: One-shot migration flags belong to router state, not `window.location`. If a handoff flow does not preserve scoped query params and explicitly clear its import trigger after success, the replacement surface either loses per-instance context or keeps re-importing on refresh.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1823,6 +1831,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Shadow Handoff Routing
+- **Section**: Gotchas & Learned Fixes (#62), Update Log
+- **Change**: Documented that legacy Drum Machine and SynthForge pages must launch `/brain` through a shared scoped handoff URL and that `/brain` must clear its one-shot `import_source` flag from router state after the import succeeds.
+- **Reason**: T766-subC landed the visible shadow-phase handoff flow, and focused validation exposed that `window.location.search` is the wrong source of truth when clearing scoped router query params after the auto-import runs.
+- **Impact**: Future Brain migration or routed handoff work should preserve `instance_id` / `plugin_position` in query state and treat router-owned one-shot flags as state that must be explicitly consumed, not left to browser-global location reads.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/pages/SynthForgePage.tsx`, `web/src/app/pages/SynthForgePage.test.tsx`, `web/src/app/pages/brainHandoff.ts`
 
 ### [2026-04-05] - SynthForge Shadow Import Fidelity
 - **Section**: Gotchas & Learned Fixes (#61), Update Log

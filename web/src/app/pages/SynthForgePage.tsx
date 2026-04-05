@@ -1,11 +1,12 @@
-import { ArrowLeft, Waveform } from '@carbon/icons-react'
+import { ArrowLeft, Launch, Waveform } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { PageHeader } from '@/app/components/PageHeader'
 import { SynthForgeCard } from '@/app/components/PluginCards/Custom/JUCE/SynthForgeCard'
 import type { Plugin } from '@/map2/types'
+import { buildBrainHandoffPath } from './brainHandoff'
 import './SynthForgePage.css'
 
 const SYNTHFORGE_PLUGIN_URI = 'map2://juce/synthforge'
@@ -27,8 +28,10 @@ function buildStandaloneSynthForgePlugin(): Plugin {
 }
 
 export function SynthForgePage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const plugin = useMemo(() => buildStandaloneSynthForgePlugin(), [])
+  const brainHandoffPath = useMemo(() => buildBrainHandoffPath('synthforge', location.search), [location.search])
 
   return (
     <section className="synthforge-page">
@@ -37,9 +40,14 @@ export function SynthForgePage() {
         subtitle="Sampler, SoundFont, and multitimbral synthesis workspace with the full five-tab workstation flow."
         icon={<Waveform size={24} />}
         actions={(
-          <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={() => navigate('/juce-grid')}>
-            Back to Audio Grid
-          </Button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <Button kind="ghost" size="sm" renderIcon={Launch} onClick={() => navigate(brainHandoffPath)}>
+              Open in Performance Brain
+            </Button>
+            <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={() => navigate('/juce-grid')}>
+              Back to Audio Grid
+            </Button>
+          </div>
         )}
       />
 

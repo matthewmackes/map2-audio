@@ -160,8 +160,8 @@ function primeApi({ activeSection = 'overview' }: { activeSection?: string } = {
     last_import_source: null,
     updated_at_iso: '2026-04-05T13:30:00Z',
   })
-  mockImportFromDrums.mockResolvedValue({})
-  mockImportFromSynthForge.mockResolvedValue({})
+  mockImportFromDrums.mockResolvedValue(makeState())
+  mockImportFromSynthForge.mockResolvedValue(makeState())
 }
 
 function LocationProbe() {
@@ -236,5 +236,23 @@ describe('PerformanceBrainPage', () => {
     fireEvent.click(screen.getByText('Import Drum Machine'))
 
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalled())
+  })
+
+  it('auto-runs a scoped drum handoff import and clears the handoff flag from the route', async () => {
+    renderPage('/brain?instance_id=42&plugin_position=9&section=overview&import_source=drums')
+
+    await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=overview'))
+    expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source')
+    expect(mockImportFromSynthForge).not.toHaveBeenCalled()
+  })
+
+  it('auto-runs a scoped SynthForge handoff import while preserving the selected section', async () => {
+    renderPage('/brain?instance_id=7&plugin_position=2&section=library&import_source=synthforge')
+
+    await waitFor(() => expect(mockImportFromSynthForge).toHaveBeenCalledWith({ instanceId: 7, pluginPosition: 2 }))
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=7&plugin_position=2&section=library'))
+    expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source')
+    expect(mockImportFromDrums).not.toHaveBeenCalled()
   })
 })
