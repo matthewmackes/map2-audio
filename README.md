@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**973** Python | **1117** TypeScript | **136** C++/H | **131** Docs | **1379** total commits | **3** stars | **0** forks | **0** open issues
+**973** Python | **1117** TypeScript | **136** C++/H | **131** Docs | **1382** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8f70c929`](https://github.com/matthewmackes/map2-audio/commit/8f70c929caf40b5aefb1dd460d9cd9ddf7306ca9) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`b08b12f6`](https://github.com/matthewmackes/map2-audio/commit/b08b12f6e8debbe5064a5155b5ebe67a3aeea772) | Persist snapshot-owned Brain authority recall | Map2 Audio | 2026-04-05 |
+| [`33d501bc`](https://github.com/matthewmackes/map2-audio/commit/33d501bc3445ac1fb8d4e3cbc8ebe37c0889b150) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`a94c154a`](https://github.com/matthewmackes/map2-audio/commit/a94c154a730e319db4538139bfd55d25ccc803ea) | Preserve Brain authority during snapshot activation | Map2 Audio | 2026-04-05 |
 | [`2a23b695`](https://github.com/matthewmackes/map2-audio/commit/2a23b695342da5482e2a9beb6ebac787d9fdf5f6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`48d3e00a`](https://github.com/matthewmackes/map2-audio/commit/48d3e00a9a80006be09357193091c391a37fe51b) | Restore Brain state from committed authority projection | Map2 Audio | 2026-04-05 |
 | [`3cf177cf`](https://github.com/matthewmackes/map2-audio/commit/3cf177cf23e6c03c01edec98a6f356facccf294e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`41b901de`](https://github.com/matthewmackes/map2-audio/commit/41b901de7ac736dd9a86a67b3f2d5845c58c5081) | Auto-sync Brain mutations into audio-state authority | Map2 Audio | 2026-04-05 |
-| [`19d3d7e4`](https://github.com/matthewmackes/map2-audio/commit/19d3d7e4c47ffb959d5ef182c247120e8e4bf440) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
-| [`fe49235a`](https://github.com/matthewmackes/map2-audio/commit/fe49235a6c9a2c27f32d3207284af51e63b2e8db) | Bridge Brain state into audio-state authority | Map2 Audio | 2026-04-05 |
-| [`f5142bcf`](https://github.com/matthewmackes/map2-audio/commit/f5142bcf5f1d3226a59dde0338d7f60471bada63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
