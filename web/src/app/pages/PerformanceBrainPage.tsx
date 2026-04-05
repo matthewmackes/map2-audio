@@ -8,6 +8,7 @@ import { PageHeader } from '@/app/components/PageHeader'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import {
   brainApi,
+  type BrainControllerQualification,
   type BrainDiagnostics,
   type BrainLayer,
   type BrainSlot,
@@ -61,6 +62,40 @@ function summaryForSlot(slot: BrainSlot | undefined): string {
   return `${slot.mode} • bus ${slot.output_bus + 1} • ${slot.asset_type}`
 }
 
+function qualificationTagType(ready: boolean): 'green' | 'red' {
+  return ready ? 'green' : 'red'
+}
+
+function uniqueItems(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean)))
+}
+
+function QualificationStrip({ qualification }: { qualification: BrainControllerQualification }) {
+  const areas = [
+    { key: 'keyboard', label: 'Keyboard', telemetry: qualification.keyboard },
+    { key: 'triggers', label: 'Triggers', telemetry: qualification.triggers },
+    { key: 'sequence', label: 'Sequence', telemetry: qualification.sequence },
+    { key: 'routing', label: 'Routing', telemetry: qualification.routing },
+  ] as const
+
+  return (
+    <div className="brain-page__qualification-grid">
+      {areas.map((area) => (
+        <Tile key={area.key} className="brain-page__summary-card brain-page__qualification-card">
+          <div className="brain-page__qualification-header">
+            <span className="brain-page__summary-eyebrow">{area.label}</span>
+            <Tag type={qualificationTagType(area.telemetry.ready)}>
+              {area.telemetry.ready ? 'Ready' : 'Attention'}
+            </Tag>
+          </div>
+          <strong>{area.telemetry.summary}</strong>
+          <span>{area.telemetry.issues[0] ?? 'Qualified for the current scoped workflow.'}</span>
+        </Tile>
+      ))}
+    </div>
+  )
+}
+
 function OverviewCards({
   state,
   diagnostics,
@@ -91,6 +126,26 @@ function OverviewCards({
         <span className="brain-page__summary-eyebrow">Snapshot authority</span>
         <strong>{state.snapshot_integration.authority_model}</strong>
         <span>{state.snapshot_integration.committed_state_id}</span>
+      </Tile>
+      <Tile className="brain-page__summary-card">
+        <span className="brain-page__summary-eyebrow">Controller readiness</span>
+        <strong>{diagnostics.controller_qualification.summary}</strong>
+        <span>{diagnostics.controller_qualification.scoped_instance_key}</span>
+      </Tile>
+      <Tile className="brain-page__summary-card">
+        <span className="brain-page__summary-eyebrow">Keyboard posture</span>
+        <strong>{diagnostics.controller_qualification.keyboard.summary}</strong>
+        <span>{diagnostics.controller_qualification.keyboard.aftertouch_modes.join(', ') || 'No aftertouch mode'}</span>
+      </Tile>
+      <Tile className="brain-page__summary-card">
+        <span className="brain-page__summary-eyebrow">Trigger posture</span>
+        <strong>{diagnostics.controller_qualification.triggers.summary}</strong>
+        <span>{diagnostics.controller_qualification.triggers.fastest_scan_time_ms.toFixed(1)} ms fastest scan</span>
+      </Tile>
+      <Tile className="brain-page__summary-card">
+        <span className="brain-page__summary-eyebrow">Routing posture</span>
+        <strong>{diagnostics.controller_qualification.routing.summary}</strong>
+        <span>{diagnostics.controller_qualification.sequence.summary}</span>
       </Tile>
     </div>
   )
@@ -285,6 +340,8 @@ export function PerformanceBrainPage() {
   const activeSection = routeSection ?? state.active_section
   const activeSlot = slots[state.active_slot]
   const activeLayer = layers.find((layer) => layer.layer_id === state.active_layer_id)
+  const qualification = diagnostics.controller_qualification
+  const controllerAlerts = uniqueItems([...diagnostics.warnings, ...qualification.issues])
 
   const handleSectionChange = (sectionId: SectionId) => {
     if (searchParams.get('section') !== sectionId) {
@@ -382,6 +439,8 @@ export function PerformanceBrainPage() {
 
           {activeSection === 'overview' ? (
             <div className="brain-page__section-grid">
+              <QualificationStrip qualification={qualification} />
+
               <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Why this brain</span>
                 <p className="brain-page__panel-copy">
@@ -429,12 +488,17 @@ export function PerformanceBrainPage() {
 
               <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Qualification posture</span>
-                <strong>{diagnostics.xruns === 0 ? 'Clean callback path' : 'Investigate xruns'}</strong>
-                <span>{diagnostics.roundtrip_latency_ms.toFixed(1)} ms roundtrip · {diagnostics.cpu_load_percent.toFixed(1)}% CPU</span>
+                <div className="brain-page__qualification-header">
+                  <strong>{qualification.summary}</strong>
+                  <Tag type={qualificationTagType(qualification.controller_ready)}>
+                    {qualification.controller_ready ? 'Qualified' : 'Needs attention'}
+                  </Tag>
+                </div>
+                <span>{diagnostics.roundtrip_latency_ms.toFixed(1)} ms roundtrip · {diagnostics.cpu_load_percent.toFixed(1)}% CPU · scope {qualification.scoped_instance_key}</span>
                 <ul className="brain-page__flat-list">
-                  <li>Optimized for keyboards, drum pads, and triggers.</li>
-                  <li>Snapshot-first authority avoids duplicate scene systems.</li>
-                  <li>Section rail keeps deep capability workflow-grouped, not flattened.</li>
+                  <li>{qualification.scope_binding_ready ? 'Authority IDs are bound to this scoped Brain instance.' : 'Authority IDs are drifting away from the scoped Brain instance.'}</li>
+                  <li>{qualification.tier_a_runtime_locked ? 'Tier A runtime locks are currently preserved.' : 'Tier A runtime locks are outside the current qualification window.'}</li>
+                  <li>{controllerAlerts[0] ?? 'No open controller qualification issues.'}</li>
                 </ul>
               </Tile>
             </div>
@@ -638,6 +702,21 @@ export function PerformanceBrainPage() {
           {activeSection === 'inputs' ? (
             <div className="brain-page__section-grid">
               <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Scoped controller qualification</span>
+                <div className="brain-page__qualification-header">
+                  <strong>{qualification.summary}</strong>
+                  <Tag type={qualificationTagType(qualification.controller_ready)}>
+                    {qualification.ready_surface_count}/4 ready
+                  </Tag>
+                </div>
+                <ul className="brain-page__flat-list">
+                  <li><strong>Scope key</strong> · {qualification.scoped_instance_key}</li>
+                  <li><strong>Keyboard</strong> · {qualification.keyboard.summary}</li>
+                  <li><strong>Triggers</strong> · {qualification.triggers.summary}</li>
+                  <li><strong>Routing</strong> · {qualification.routing.summary}</li>
+                </ul>
+              </Tile>
+              <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Trigger nuance</span>
                 <ul className="brain-page__flat-list">
                   {inputs.trigger_profiles.map((profile) => (
@@ -656,6 +735,10 @@ export function PerformanceBrainPage() {
                     </li>
                   ))}
                 </ul>
+                <span className="brain-page__panel-copy">
+                  Keyboard aftertouch: {qualification.keyboard.aftertouch_modes.join(', ') || 'none'}.
+                  Trigger scan floor: {qualification.triggers.fastest_scan_time_ms.toFixed(1)} ms.
+                </span>
               </Tile>
             </div>
           ) : null}
@@ -691,9 +774,26 @@ export function PerformanceBrainPage() {
                 </ul>
               </Tile>
               <Tile className="brain-page__panel">
-                <span className="brain-page__panel-title">Warnings</span>
+                <span className="brain-page__panel-title">Controller qualification</span>
+                <div className="brain-page__qualification-header">
+                  <strong>{qualification.summary}</strong>
+                  <Tag type={qualificationTagType(qualification.controller_ready)}>
+                    {qualification.controller_ready ? 'Qualified' : 'Investigate'}
+                  </Tag>
+                </div>
                 <ul className="brain-page__flat-list">
-                  {(diagnostics.warnings.length > 0 ? diagnostics.warnings : ['No active warnings']).map((warning) => (
+                  <li><strong>Scope binding</strong> · {qualification.scope_binding_ready ? 'ready' : 'drifting'}</li>
+                  <li><strong>Tier A lock</strong> · {qualification.tier_a_runtime_locked ? 'preserved' : 'outside target'}</li>
+                  <li><strong>Keyboard</strong> · {qualification.keyboard.summary}</li>
+                  <li><strong>Triggers</strong> · {qualification.triggers.summary}</li>
+                  <li><strong>Sequence</strong> · {qualification.sequence.summary}</li>
+                  <li><strong>Routing</strong> · {qualification.routing.summary}</li>
+                </ul>
+              </Tile>
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Warnings & open issues</span>
+                <ul className="brain-page__flat-list">
+                  {(controllerAlerts.length > 0 ? controllerAlerts : ['No active warnings']).map((warning) => (
                     <li key={warning}>{warning}</li>
                   ))}
                 </ul>

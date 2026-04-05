@@ -65,6 +65,89 @@ function makeClient() {
   })
 }
 
+function makeControllerQualification(overrides: Record<string, any> = {}) {
+  const base = {
+    scoped_instance_key: 'workspace-default',
+    scope_binding_ready: true,
+    tier_a_runtime_locked: true,
+    controller_ready: true,
+    ready_surface_count: 4,
+    keyboard: {
+      ready: true,
+      zone_count: 1,
+      channel_count: 1,
+      chromatic_slot_count: 1,
+      polyphony_capacity: 48,
+      max_key_span: 37,
+      aftertouch_modes: ['channel'],
+      summary: '1 zones · 1 melodic slots · poly 48',
+      issues: [],
+    },
+    triggers: {
+      ready: true,
+      profile_count: 1,
+      covered_pad_count: 8,
+      trigger_slot_count: 2,
+      unique_trigger_notes: 2,
+      fastest_scan_time_ms: 1.1,
+      widest_mask_time_ms: 7,
+      summary: '1 profiles · 8 pads · 2 trigger notes',
+      issues: [],
+    },
+    sequence: {
+      ready: true,
+      pattern_count: 1,
+      populated_pattern_count: 1,
+      active_lane_count: 1,
+      max_pattern_length: 16,
+      swing_lane_count: 0,
+      song_entry_count: 0,
+      summary: '1 patterns · 1 populated · 0 song entries',
+      issues: [],
+    },
+    routing: {
+      ready: true,
+      used_bus_count: 2,
+      output_pair_count: 2,
+      reverb_bus_count: 0,
+      controller_assignment_count: 1,
+      summary: '2 buses · 2 outputs · 1 assignments',
+      issues: [],
+    },
+    summary: '4/4 surfaces ready · Tier A locked',
+    issues: [],
+  }
+
+  return {
+    ...base,
+    ...overrides,
+    keyboard: { ...base.keyboard, ...(overrides.keyboard ?? {}) },
+    triggers: { ...base.triggers, ...(overrides.triggers ?? {}) },
+    sequence: { ...base.sequence, ...(overrides.sequence ?? {}) },
+    routing: { ...base.routing, ...(overrides.routing ?? {}) },
+  }
+}
+
+function makeDiagnostics(overrides: Record<string, any> = {}) {
+  return {
+    sample_rate_hz: 48000,
+    buffer_size_samples: 128,
+    cpu_load_percent: 7.5,
+    active_voices: 4,
+    peak_voices: 12,
+    polyphony_headroom: 84,
+    trigger_latency_ms: 2.1,
+    roundtrip_latency_ms: 5.2,
+    xruns: 0,
+    backend_mode: 'hybrid',
+    warnings: [],
+    last_import_source: null,
+    controller_qualification: makeControllerQualification(overrides.controller_qualification),
+    updated_at_iso: '2026-04-05T13:30:00Z',
+    ...overrides,
+  }
+}
+
 function makeState(activeSection = 'overview') {
   return {
     instance_id: 'workspace-default',
@@ -93,77 +176,18 @@ function makeState(activeSection = 'overview') {
     inputs: { keyboard_zones: [], trigger_profiles: [], controller_assignments: [] },
     library: { collections: [], featured_assets: [], last_scan_iso: '' },
     sample_editor: { slot_id: 0, asset_path: '', waveform_available: false, duration_seconds: 0, start_sample: 0, end_sample: 0, normalize_target: 0.99, reverse_enabled: true, record_target_path: '' },
-    diagnostics: {
-      sample_rate_hz: 48000,
-      buffer_size_samples: 128,
-      cpu_load_percent: 7.5,
-      active_voices: 4,
-      peak_voices: 12,
-      polyphony_headroom: 84,
-      trigger_latency_ms: 2.1,
-      roundtrip_latency_ms: 5.2,
-      xruns: 0,
-      backend_mode: 'hybrid',
-      warnings: [],
-      last_import_source: null,
-      controller_qualification: {
-        scoped_instance_key: 'workspace-default',
-        scope_binding_ready: true,
-        tier_a_runtime_locked: true,
-        controller_ready: true,
-        ready_surface_count: 4,
-        keyboard: {
-          ready: true,
-          zone_count: 1,
-          channel_count: 1,
-          chromatic_slot_count: 1,
-          polyphony_capacity: 48,
-          max_key_span: 37,
-          aftertouch_modes: ['channel'],
-          summary: '1 zones · 1 melodic slots · poly 48',
-          issues: [],
-        },
-        triggers: {
-          ready: true,
-          profile_count: 1,
-          covered_pad_count: 8,
-          trigger_slot_count: 2,
-          unique_trigger_notes: 2,
-          fastest_scan_time_ms: 1.1,
-          widest_mask_time_ms: 7,
-          summary: '1 profiles · 8 pads · 2 trigger notes',
-          issues: [],
-        },
-        sequence: {
-          ready: true,
-          pattern_count: 1,
-          populated_pattern_count: 1,
-          active_lane_count: 1,
-          max_pattern_length: 16,
-          swing_lane_count: 0,
-          song_entry_count: 0,
-          summary: '1 patterns · 1 populated · 0 song entries',
-          issues: [],
-        },
-        routing: {
-          ready: true,
-          used_bus_count: 2,
-          output_pair_count: 2,
-          reverb_bus_count: 0,
-          controller_assignment_count: 1,
-          summary: '2 buses · 2 outputs · 1 assignments',
-          issues: [],
-        },
-        summary: '4/4 surfaces ready · Tier A locked',
-        issues: [],
-      },
-      updated_at_iso: '2026-04-05T13:30:00Z',
-    },
+    diagnostics: makeDiagnostics(),
     snapshot_integration: { authority_model: 'snapshot-first', snapshot_id: null, snapshot_name: null, committed_state_id: 'brain:committed', desired_state_id: 'brain:desired', observed_state_id: 'brain:observed' },
   }
 }
 
-function primeApi({ activeSection = 'overview' }: { activeSection?: string } = {}) {
+function primeApi({
+  activeSection = 'overview',
+  diagnosticsOverride,
+}: {
+  activeSection?: string
+  diagnosticsOverride?: Record<string, any>
+} = {}) {
   mockGetState.mockResolvedValue(makeState(activeSection))
   mockUpdateState.mockResolvedValue(makeState('sequence'))
   mockGetTransport.mockResolvedValue({
@@ -210,72 +234,7 @@ function primeApi({ activeSection = 'overview' }: { activeSection?: string } = {
     featured_assets: ['kit:arena'],
     last_scan_iso: '2026-04-05T13:30:00Z',
   })
-  mockGetDiagnostics.mockResolvedValue({
-    sample_rate_hz: 48000,
-    buffer_size_samples: 128,
-    cpu_load_percent: 7.5,
-    active_voices: 4,
-    peak_voices: 12,
-    polyphony_headroom: 84,
-    trigger_latency_ms: 2.1,
-    roundtrip_latency_ms: 5.2,
-    xruns: 0,
-    backend_mode: 'hybrid',
-    warnings: [],
-    last_import_source: null,
-    controller_qualification: {
-      scoped_instance_key: 'workspace-default',
-      scope_binding_ready: true,
-      tier_a_runtime_locked: true,
-      controller_ready: true,
-      ready_surface_count: 4,
-      keyboard: {
-        ready: true,
-        zone_count: 1,
-        channel_count: 1,
-        chromatic_slot_count: 1,
-        polyphony_capacity: 48,
-        max_key_span: 37,
-        aftertouch_modes: ['channel'],
-        summary: '1 zones · 1 melodic slots · poly 48',
-        issues: [],
-      },
-      triggers: {
-        ready: true,
-        profile_count: 1,
-        covered_pad_count: 8,
-        trigger_slot_count: 2,
-        unique_trigger_notes: 2,
-        fastest_scan_time_ms: 1.1,
-        widest_mask_time_ms: 7,
-        summary: '1 profiles · 8 pads · 2 trigger notes',
-        issues: [],
-      },
-      sequence: {
-        ready: true,
-        pattern_count: 1,
-        populated_pattern_count: 1,
-        active_lane_count: 1,
-        max_pattern_length: 16,
-        swing_lane_count: 0,
-        song_entry_count: 0,
-        summary: '1 patterns · 1 populated · 0 song entries',
-        issues: [],
-      },
-      routing: {
-        ready: true,
-        used_bus_count: 2,
-        output_pair_count: 2,
-        reverb_bus_count: 0,
-        controller_assignment_count: 1,
-        summary: '2 buses · 2 outputs · 1 assignments',
-        issues: [],
-      },
-      summary: '4/4 surfaces ready · Tier A locked',
-      issues: [],
-    },
-    updated_at_iso: '2026-04-05T13:30:00Z',
-  })
+  mockGetDiagnostics.mockResolvedValue(makeDiagnostics(diagnosticsOverride))
   mockImportFromDrums.mockResolvedValue(makeState())
   mockImportFromSynthForge.mockResolvedValue(makeState())
 }
@@ -352,6 +311,65 @@ describe('PerformanceBrainPage', () => {
     fireEvent.click(screen.getByText('Import Drum Machine'))
 
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalled())
+  })
+
+  it('renders the controller qualification strip on the overview section', async () => {
+    renderPage('/brain?section=overview')
+
+    await waitFor(() => expect(screen.getAllByText('4/4 surfaces ready · Tier A locked').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('1 zones · 1 melodic slots · poly 48').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('1 profiles · 8 pads · 2 trigger notes').length).toBeGreaterThan(0)
+    expect(screen.getByText('Authority IDs are bound to this scoped Brain instance.')).toBeInTheDocument()
+  })
+
+  it('shows scoped qualification details on the inputs and diagnostics sections', async () => {
+    primeApi({
+      diagnosticsOverride: makeDiagnostics({
+        warnings: ['Legacy MIDI clock remains routed externally.'],
+        controller_qualification: makeControllerQualification({
+          scoped_instance_key: 'instance-42__position-9',
+          tier_a_runtime_locked: false,
+          controller_ready: false,
+          ready_surface_count: 2,
+          keyboard: {
+            ready: false,
+            zone_count: 0,
+            channel_count: 0,
+            chromatic_slot_count: 0,
+            polyphony_capacity: 0,
+            max_key_span: 0,
+            aftertouch_modes: [],
+            summary: '0 zones · 0 melodic slots · poly 0',
+            issues: ['No enabled keyboard zones configured.'],
+          },
+          triggers: {
+            ready: false,
+            profile_count: 0,
+            covered_pad_count: 0,
+            trigger_slot_count: 2,
+            unique_trigger_notes: 2,
+            fastest_scan_time_ms: 0,
+            widest_mask_time_ms: 0,
+            summary: '0 profiles · 0 pads · 2 trigger notes',
+            issues: ['No trigger profiles configured.'],
+          },
+          summary: '2/4 surfaces ready · Tier A drift',
+          issues: ['No enabled keyboard zones configured.', 'No trigger profiles configured.'],
+        }),
+      }),
+    })
+
+    renderPage('/brain?instance_id=42&plugin_position=9&section=inputs')
+
+    await waitFor(() => expect(screen.getByText('Scoped controller qualification')).toBeInTheDocument())
+    expect(screen.getAllByText('2/4 surfaces ready · Tier A drift').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('instance-42__position-9').length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: /Diagnostics$/ }))
+
+    await waitFor(() => expect(screen.getByText('Controller qualification')).toBeInTheDocument())
+    expect(screen.getByText('No enabled keyboard zones configured.')).toBeInTheDocument()
+    expect(screen.getByText('Legacy MIDI clock remains routed externally.')).toBeInTheDocument()
   })
 
   it('auto-runs a scoped drum handoff import and clears the handoff flag from the route', async () => {

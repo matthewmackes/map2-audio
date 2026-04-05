@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 19:22 EDT - Completed T767-subA by deriving scoped controller-first Brain qualification telemetry from runtime state and diagnostics.
+Last updated: 2026-04-05 20:15 EDT - Added Epic: Windows 10 Desktop Experience (T779-T788) — full landing page refactor spec locked via 100-question session.
 
 ## Performance Brain
 
@@ -508,7 +508,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
       - Licensing review: touched backend/frontend-type/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T767-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Surface Brain qualification posture in the routed workspace for scoped controller workflows
     Description:
     - Goal / acceptance criteria: Update `/brain` overview/inputs/diagnostics surfaces so the routed workspace exposes the new controller qualification posture with scoped keyboard, trigger, sequence, routing, and latency summaries that operators can inspect without leaving the Brain route.
@@ -518,7 +518,17 @@ Subtasks:
     - Required outputs: Routed UI updates, focused frontend regressions, and worklist validation notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 19:15 EDT - Codex
+    Last updated: 2026-04-05 19:34 EDT - Codex
+    - Completion notes:
+      - Updated `web/src/app/pages/PerformanceBrainPage.tsx` so the routed Brain workspace now exposes scoped controller qualification in all three operator-facing sections: overview summary cards plus a four-surface qualification strip, an inputs-side scoped qualification panel, and a diagnostics-side controller qualification panel.
+      - Replaced the static qualification copy with live summary/tag rendering tied to `diagnostics.controller_qualification`, including scope key, Tier A lock posture, keyboard aftertouch posture, trigger scan floor, and routing/sequence summaries so operators can evaluate scoped readiness without leaving `/brain`.
+      - Merged backend warnings with qualification issues into one routed operator surface, preventing scoped controller faults from being buried in diagnostics-only payloads or split away from existing runtime warnings.
+      - Extended `web/src/app/pages/PerformanceBrainPage.test.tsx` with reusable qualification builders plus regressions proving the routed overview, inputs, and diagnostics sections all surface the scoped qualification summary and open issues correctly.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx` -> PASS (`7 passed`)
+      - `git diff --check` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched frontend/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T767-subC
     Status: [ ] Todo
     Title: Deepen native Brain processor qualification for keyboard polyphony, trigger isolation, and transport reset behavior
@@ -532,7 +542,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-05 19:15 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 19:22 EDT - Codex
+Last updated: 2026-04-05 19:34 EDT - Codex
 
 ID: T768
 Status: [ ] Todo
@@ -16426,3 +16436,329 @@ Last updated: 2026-04-04 20:27 EDT - Codex
 - Validation:
   - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
   - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS
+
+## Epic: Windows 10 Desktop Experience — Landing Page Refactor
+
+Epic overview: Refactor the MAP2 landing page into an immersive Windows 10-style desktop environment built entirely with Carbon Design System components + custom CSS for Windows 10 visual fidelity. The desktop replaces the current HomePage with a wallpaper, desktop icons, a Windows 10-style taskbar (Start button, running app indicators, system tray), and a Start Menu. Apps open full-screen with the taskbar always visible. No react-desktop, no ProzillaOS — pure Carbon + custom CSS. Minimum screen width: 1440px. No tablet/mobile experience. Single complete delivery — all features shipped together.
+
+Design spec: Locked via 100-question interactive specification session (2026-04-05). All decisions below are final unless explicitly reopened.
+
+Key design decisions (summary):
+- Boot splash: 4s, first visit only, cosmetic, Carbon indeterminate progress bar, theme-aware background
+- Taskbar: fixed bottom, Start button (logo + "Start"), permanent Audio Artifacts icon, running app indicators (thin underline = running, thick = focused), system tray (5 node chips + overflow, latency readout, 12hr clock)
+- Start Menu: ~30% width / ~60% height, left column text-only (Audio Artifacts / Platforms / Workspace Catalog / Settings / Power), right column 3x3 uniform tile grid from user pins, $layer-01 + $border-subtle + drop shadow, Carbon productive motion
+- Desktop: wallpaper centered at native res + $background fill, ~64px Carbon icons in fixed top-left grid, single-click opens, right-click context menus (Carbon + custom CSS)
+- Apps: full-screen with taskbar visible, minimal close X top-right, slide-up open / slide-down close transitions
+- Perform page: true full-screen (hides taskbar), Escape to exit
+- Wallpaper: configurable — default image, theme solid colors, user uploads (localStorage)
+- Session: full state in localStorage, complete restore on refresh, splash only on first visit / Log Out / post-restart
+- Remediation: Windows 10 "Activate Windows" style watermark, click opens modal
+- WebSocket disconnect: persistent bar between app content and taskbar
+- NodeNavBar: restyled into system tray, up to 5 node chips + overflow, click-only popovers
+- No keyboard shortcuts, no tablet/mobile, Carbon built-in accessibility only
+
+ID: T779
+Status: [ ] Todo
+Title: Build the Windows 10 boot splash screen
+Description:
+- Goal / acceptance criteria: Implement a 4-second boot splash screen that displays on first visit only (no desktop state in localStorage). Shows the MAP2 brand mark centered with a smooth spinning animation, "Mackes Audio Platform" text below, and a Carbon indeterminate progress bar at the bottom. Background color matches the active Carbon theme's `$background` token. Auto-transitions to the desktop after 4 seconds. Purely cosmetic — no real data fetching. Also triggered by "Log Out" (Power menu) and after backend restart completes.
+- Why it matters: Sets the immersive tone of the Windows 10 desktop experience from the first moment.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Boot splash component, localStorage first-visit detection, 4-second auto-transition, theme-aware background, spinning logo animation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T780
+Status: [ ] Todo
+Title: Build the Windows 10-style taskbar shell
+Description:
+- Goal / acceptance criteria: Replace the current AppShell with a Windows 10-style taskbar fixed at the bottom of the screen. Layout left-to-right: Start button (MAP2 logo + "Start" text, merging the old titlebar brand mark) | Audio Artifacts permanent icon (not removable, like File Explorer in Windows 10) | Running app indicators area | System tray (right side). Taskbar uses `$background` token with a top border for separation. Height follows Carbon best practices. The existing AppShell titlebar is removed — brand mark moves into the Start button. Remove the existing top sticky titlebar entirely.
+- Why it matters: The taskbar is the primary navigation surface of the entire desktop experience — it must be built first to anchor all other features.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Taskbar component, Start button with logo + text, permanent Audio Artifacts icon, running app indicator slots, system tray container. Replaces AppShell titlebar.
+Subtasks:
+  - ID: T780-subA
+    Status: [ ] Todo
+    Title: Build the taskbar layout container and Start button
+    Description:
+    - Goal / acceptance criteria: Create the fixed-bottom taskbar with proper Carbon token styling ($background + top border). Implement the Start button with MAP2 logo + "Start" text that toggles the Start Menu open/closed. Remove the existing AppShell sticky titlebar.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Taskbar container component, Start button component, removal of old titlebar.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T780-subB
+    Status: [ ] Todo
+    Title: Build the running app indicators with focused/running states
+    Description:
+    - Goal / acceptance criteria: Implement running app indicator icons in the taskbar center area. Thin colored underline for running apps, thicker/brighter underline for the focused (currently viewed) app. An app becomes "running" on navigation and stays running until explicitly closed. Clicking a running indicator navigates to that app. Clicking the focused app's indicator closes it and returns to desktop. Audio Artifacts is permanently pinned (always visible, not removable).
+    - Dependencies: T780-subA
+    - Estimated effort: Medium
+    - Required outputs: Running app indicator component, app state tracking (open/close/focus), click navigation and close behavior.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T780-subC
+    Status: [ ] Todo
+    Title: Build the system tray (node chips, latency, clock)
+    Description:
+    - Goal / acceptance criteria: Implement the system tray on the right side of the taskbar containing: up to 5 NodeNavChip pills + overflow badge (click-only popovers with NodeMiniCard, not hover), latency numeric readout always visible (e.g. "1.3ms") with click for detailed popover matching current latency pressure content, and a 12-hour clock with date on hover tooltip. Click clock opens a popover showing full date, uptime, and platform version. Move hostname/AVB/AVDECC status into system tray hover/click details.
+    - Dependencies: T780-subA
+    - Estimated effort: Medium
+    - Required outputs: System tray container, NodeNavChip integration (up to 5 + overflow), latency readout + detail popover, clock + date/uptime popover.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T781
+Status: [ ] Todo
+Title: Build the Windows 10-style Start Menu
+Description:
+- Goal / acceptance criteria: Implement a full Windows 10-style Start Menu anchored to the bottom-left, ~30% width, ~60% height. Left column contains text-only static items (no icons): Audio Artifacts (File Explorer equivalent), Platforms (Advanced Settings / Control Panel equivalent → `/platforms/overview`), Workspace Catalog (Add/Remove Programs equivalent → `/platforms/workspace-catalog`), Settings (→ expanded `/platforms/theme`), Power (submenu). Right column contains a 3x3 grid of uniform square live tiles populated by user pins from the Workspace Catalog. Empty state shows "Pin apps from the Workspace Catalog" with link. Styled with `$layer-01` background, `$border-subtle` outline, and drop shadow. Opens/closes with Carbon productive motion (scale/fade). Clicking outside closes it. Clicking any item closes it immediately.
+- Why it matters: The Start Menu is the primary app discovery and launch surface alongside the Workspace Catalog.
+- Dependencies: T780
+- Estimated effort: High
+- Required outputs: Start Menu component with left column (static items) and right column (pinned live tiles grid), Power submenu, animation, click-outside-to-close behavior.
+Subtasks:
+  - ID: T781-subA
+    Status: [ ] Todo
+    Title: Build the Start Menu shell, left column static items, and open/close behavior
+    Description:
+    - Goal / acceptance criteria: Create the Start Menu panel anchored to bottom-left with proper dimensions (~30% width, ~60% height). Left column with 5 text-only static items: Audio Artifacts, Platforms, Workspace Catalog, Settings, Power. Carbon productive motion for open/close animation. Click-outside-to-close. Click-any-item-to-close. Styled with $layer-01 background, $border-subtle outline, drop shadow.
+    - Dependencies: T780-subA
+    - Estimated effort: Medium
+    - Required outputs: Start Menu container, left column with navigation items, open/close animation, dismiss behavior.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T781-subB
+    Status: [ ] Todo
+    Title: Build the Start Menu right column — pinned live tiles grid
+    Description:
+    - Goal / acceptance criteria: Implement the right column of the Start Menu as a 3x3 grid of uniform square tiles. Tiles are populated from the existing Start Menu pin group in the Workspace Catalog. Each tile shows a static app icon/logo. Empty state: message "Pin apps from the Workspace Catalog" with a clickable link to open `/platforms/workspace-catalog`. Tiles are scrollable if more than 9 are pinned.
+    - Dependencies: T781-subA
+    - Estimated effort: Medium
+    - Required outputs: Live tile grid component, pin group data integration, empty state, scroll overflow.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T781-subC
+    Status: [ ] Todo
+    Title: Build the Power submenu (Restart Backend, Refresh Page, Log Out)
+    Description:
+    - Goal / acceptance criteria: Implement the Power submenu in the Start Menu with three actions. "Restart Backend": shows a Carbon modal with UAC-style dimmed background confirmation, then full-screen progress takeover showing status steps (Stopping engine → Restarting service → Reconnecting → Ready), then boot splash on completion. "Refresh Page": standard browser refresh, state restores from localStorage, skips splash. "Log Out": clears session state (running apps, current view) but keeps pins/wallpaper/theme, returns to boot splash.
+    - Dependencies: T781-subA, T779
+    - Estimated effort: Medium
+    - Required outputs: Power submenu component, restart confirmation modal + full-screen progress, refresh behavior, log out state clearing + splash trigger.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T782
+Status: [ ] Todo
+Title: Build the desktop environment (wallpaper, icons, context menus)
+Description:
+- Goal / acceptance criteria: Replace the current HomePage with a Windows 10-style desktop. Wallpaper displays `NEW-map2-landing-bg.png` at native resolution, centered, with theme `$background` color behind if screen is larger. Desktop icons use Carbon icon tokens in a fixed grid (top-left aligned, columns top-to-bottom then left-to-right, ~64px icons, Carbon spacing tokens, `body-compact-01` labels). Single-click opens the app. Only "Audio Artifacts" pre-pinned by default with its custom SVG icon. Desktop icon data sourced from existing `landingTiles` (repurposed). Right-click wallpaper context menu: Refresh | Display settings (theme picker) | About. Right-click icon context menu: Open | Unpin from Desktop. Empty desktop shows bottom-right watermark hint to visit Workspace Catalog.
+- Why it matters: The desktop is the home base of the entire experience — it replaces the existing landing page.
+- Dependencies: T780
+- Estimated effort: High
+- Required outputs: Desktop component, wallpaper renderer, icon grid with pin data integration, context menus (Carbon + custom CSS for Windows 10 style), empty state watermark.
+Subtasks:
+  - ID: T782-subA
+    Status: [ ] Todo
+    Title: Build the wallpaper renderer and desktop container
+    Description:
+    - Goal / acceptance criteria: Create the desktop container that fills the screen above the taskbar. Render `NEW-map2-landing-bg.png` at native resolution, centered, with `$background` fill behind. Support alternative wallpapers: solid colors from active Carbon theme tokens, or user-uploaded images stored in localStorage/IndexedDB. When theme changes and user has a solid color wallpaper, auto-update to the equivalent token in the new theme.
+    - Dependencies: T780
+    - Estimated effort: Medium
+    - Required outputs: Desktop container component, wallpaper renderer supporting image/solid-color/uploaded modes, theme-reactive solid colors, localStorage persistence.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T782-subB
+    Status: [ ] Todo
+    Title: Build the desktop icon grid with pin data integration
+    Description:
+    - Goal / acceptance criteria: Render desktop icons in a fixed grid (top-left aligned, columns top-to-bottom then left-to-right). ~64px Carbon icon tokens, Carbon spacing tokens, `body-compact-01` labels. Single-click opens the app (navigates to route). Data sourced from existing `landingTiles` / desktop pin group. Only "Audio Artifacts" pre-pinned by default with custom SVG icon. No selection model, no multi-select, no drag.
+    - Dependencies: T782-subA
+    - Estimated effort: Medium
+    - Required outputs: Desktop icon grid component, pin data integration, Audio Artifacts default pin, single-click navigation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T782-subC
+    Status: [ ] Todo
+    Title: Build desktop context menus (wallpaper and icon right-click)
+    Description:
+    - Goal / acceptance criteria: Right-click empty wallpaper shows context menu: Refresh | Display settings (opens theme picker) | About. Right-click a desktop icon shows: Open | Unpin from Desktop. Context menus styled with Carbon components + custom CSS for Windows 10 visual fidelity. "Unpin from Desktop" removes the icon and updates the pin state.
+    - Dependencies: T782-subB
+    - Estimated effort: Low
+    - Required outputs: Context menu components (wallpaper and icon variants), unpin action, navigation to display settings/about.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T782-subD
+    Status: [ ] Todo
+    Title: Build desktop empty state watermark and remediation watermark
+    Description:
+    - Goal / acceptance criteria: When no desktop icons are pinned, show a bottom-right watermark (like Windows 10 "Activate Windows") hinting to visit Workspace Catalog. Platform remediation status also displayed as a bottom-right watermark; clicking it opens the remediation workflow modal. Watermarks are subtle, semi-transparent, positioned in bottom-right corner.
+    - Dependencies: T782-subA
+    - Estimated effort: Low
+    - Required outputs: Empty state watermark component, remediation watermark component, modal trigger on click.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T783
+Status: [ ] Todo
+Title: Build the full-screen app window behavior with transitions
+Description:
+- Goal / acceptance criteria: When a user opens an app (from desktop icon, Start Menu, or taskbar), the app opens full-screen with the taskbar always visible at the bottom. A minimal close "X" button appears in the top-right corner (no title text, no icon — just the X, flush right). Closing returns to the desktop. Open transition: slide up from the bottom. Close transition: reverse slide down revealing the desktop. The WebSocket disconnect banner appears as a persistent bar between the app content and the taskbar. The Perform page (`/perform`) is an exception: true full-screen hiding the taskbar, press Escape to exit. No other pages get true full-screen.
+- Why it matters: The app window behavior is the core interaction loop — opening, using, and closing apps must feel smooth and Windows 10-authentic.
+- Dependencies: T780, T782
+- Estimated effort: Medium
+- Required outputs: App window wrapper component, close X button, slide up/down transitions (Framer Motion or CSS), WebSocket disconnect bar repositioned, Perform page full-screen exception with Escape exit.
+Subtasks:
+  - ID: T783-subA
+    Status: [ ] Todo
+    Title: Build the app window wrapper with close button and slide transitions
+    Description:
+    - Goal / acceptance criteria: Create a wrapper component for all app routes that renders full-screen above the desktop but below the taskbar. Top-right close "X" button (minimal, no title bar text). Slide-up animation on open, slide-down animation on close. Tracks which apps are "running" in state — app becomes running on navigate, stays running until explicitly closed via X button or taskbar indicator toggle.
+    - Dependencies: T780-subB
+    - Estimated effort: Medium
+    - Required outputs: App window wrapper component, close button, slide transitions, running app state management.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T783-subB
+    Status: [ ] Todo
+    Title: Handle Perform page true full-screen exception
+    Description:
+    - Goal / acceptance criteria: The Perform page (`/perform`) hides the taskbar when opened, entering true full-screen. Press Escape to exit back to normal view (taskbar visible, app still running). No other pages get this behavior.
+    - Dependencies: T783-subA
+    - Estimated effort: Low
+    - Required outputs: Full-screen mode toggle for Perform route, Escape key listener, taskbar hide/show logic.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T783-subC
+    Status: [ ] Todo
+    Title: Reposition WebSocket disconnect banner above the taskbar
+    Description:
+    - Goal / acceptance criteria: Move the existing WebSocket connection banner from the top of the screen to a persistent bar between the app content area and the taskbar at the bottom. Restyle to fit the Windows 10 aesthetic. Only visible on disconnect, auto-dismisses on reconnect.
+    - Dependencies: T780-subA
+    - Estimated effort: Low
+    - Required outputs: Repositioned and restyled disconnect banner.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T784
+Status: [ ] Todo
+Title: Build session state persistence and full restore on refresh
+Description:
+- Goal / acceptance criteria: Persist the entire desktop session state to localStorage: wallpaper choice, desktop pins, Start Menu pins, running apps list, currently focused app/route, and theme. On browser refresh, restore to exactly where the user was — same app open, same state. No splash on refresh (splash only on first visit or after Log Out / backend restart). Boot splash detection: if no desktop state exists in localStorage, show splash; otherwise skip.
+- Why it matters: Session persistence is what makes the desktop feel like a real OS rather than a web page.
+- Dependencies: T779, T780, T782
+- Estimated effort: Medium
+- Required outputs: localStorage state schema, save/restore hooks, state hydration on mount, splash skip logic when state exists.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T785
+Status: [ ] Todo
+Title: Expand Settings page with desktop personalization (wallpaper, display)
+Description:
+- Goal / acceptance criteria: Expand the existing `/platforms/theme` page to include desktop-specific settings: wallpaper picker (default landing image, solid colors from active Carbon theme tokens, user-uploaded images via file input stored in localStorage/IndexedDB), display settings accessible from the desktop right-click context menu. The page is opened from the Start Menu "Settings" item and from the desktop right-click "Display settings" option.
+- Why it matters: Users need control over their desktop appearance, matching the Windows 10 personalization experience.
+- Dependencies: T782-subA
+- Estimated effort: Medium
+- Required outputs: Wallpaper picker section (image/solid-color/upload), display settings, integration with desktop right-click context menu.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T786
+Status: [ ] Todo
+Title: Update Workspace Catalog with Desktop/Start Menu pin labels and visual previews
+Description:
+- Goal / acceptance criteria: Relabel the existing two pin groups in the Workspace Catalog to explicitly say "Desktop" and "Start Menu" for clarity. Add visual previews showing a mini desktop grid and mini Start Menu tile grid so users understand where their pins will appear. No functional changes to the pin system — just UX clarity improvements.
+- Why it matters: Users need to understand the relationship between the Catalog pin groups and the desktop/Start Menu surfaces.
+- Dependencies: T782, T781
+- Estimated effort: Low
+- Required outputs: Relabeled pin group headers, mini-preview illustrations for desktop and Start Menu pin targets.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T787
+Status: [ ] Todo
+Title: Integrate platform status polling with desktop lifecycle
+Description:
+- Goal / acceptance criteria: Ensure `useHomePlatformStatus()` runs in the background at all times, feeding the system tray indicators regardless of which app is open. When an app is in the foreground, reduce the polling interval to save resources. When on the desktop, use the standard interval.
+- Why it matters: The system tray must show live platform health data at all times, not just when on the home page.
+- Dependencies: T780-subC
+- Estimated effort: Low
+- Required outputs: Global platform status hook integration, polling interval adjustment based on foreground/background state.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-05
+
+ID: T788
+Status: [ ] Todo
+Title: Write tests for the Windows 10 Desktop Experience
+Description:
+- Goal / acceptance criteria: Deliver unit tests for core logic (state management, pin mapping, session persistence, boot splash detection), integration tests for key flows (boot → desktop → open app → close app → desktop, Start Menu open/close/navigate, Power menu actions), and visual snapshot tests for key components (taskbar, Start Menu, desktop icon grid, context menus). Follow existing testing patterns and conventions.
+- Why it matters: The desktop experience is a large cross-cutting feature that must be regression-safe before delivery.
+- Dependencies: T779, T780, T781, T782, T783, T784, T785, T786, T787
+- Estimated effort: Medium
+- Required outputs: Unit tests, integration tests, visual snapshot tests, validation evidence.
+Subtasks:
+  - ID: T788-subA
+    Status: [ ] Todo
+    Title: Unit tests for desktop state management and session persistence
+    Description:
+    - Goal / acceptance criteria: Test localStorage save/restore, boot splash first-visit detection, running app tracking (open/close/focus), pin group mapping to desktop/Start Menu, wallpaper state persistence and theme-reactive solid color updates.
+    - Dependencies: T784
+    - Estimated effort: Low
+    - Required outputs: Focused unit tests for state hooks and utilities.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T788-subB
+    Status: [ ] Todo
+    Title: Integration tests for desktop interaction flows
+    Description:
+    - Goal / acceptance criteria: Test full flows: boot splash → desktop transition, desktop icon click → app opens with slide-up → close X → desktop with slide-down, Start Menu open → navigate → close, Power menu restart/refresh/logout actions, Perform full-screen with Escape exit.
+    - Dependencies: T779, T780, T781, T782, T783
+    - Estimated effort: Medium
+    - Required outputs: Integration test suite covering primary user journeys.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+  - ID: T788-subC
+    Status: [ ] Todo
+    Title: Visual snapshot tests for desktop components
+    Description:
+    - Goal / acceptance criteria: Snapshot tests for taskbar (with Start button, running indicators, system tray), Start Menu (left column + right tiles + empty state), desktop icon grid, context menus (wallpaper and icon variants), boot splash screen.
+    - Dependencies: T779, T780, T781, T782
+    - Estimated effort: Low
+    - Required outputs: Snapshot test suite for key visual components.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-05
+Assigned to: Unassigned
+Last updated: 2026-04-05

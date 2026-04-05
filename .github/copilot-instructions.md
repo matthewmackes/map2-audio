@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain controller qualification telemetry documented)
+> **Last Updated**: April 5, 2026 (Brain routed qualification workspace documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1569,6 +1569,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
 - **Lesson**: Qualification posture is derived state, not replacement state. Add it as a scoped overlay on top of durable diagnostics so import/runtime evidence remains intact while controller readiness stays current on every read.
 
+**64. Routed Brain Qualification Must Stay Visible Across Overview, Inputs, And Diagnostics With Issues Merged Into One Operator Surface (HIGH - Apr 5, 2026)**
+- **Files**: `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.css`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: After T767-subA added scoped controller qualification telemetry, the routed `/brain` workspace still made operators hunt for readiness context across disconnected panels. Qualification could stay effectively hidden if it only appeared as raw diagnostics data or if controller issues were split away from existing warning lists.
+- **Root Cause**: The routed page had static qualification copy and section-local summaries, but no shared visualization pattern for the new `controller_qualification` contract. That left the overview, inputs, and diagnostics sections out of sync with each other and with the operator workflow the epic is trying to qualify.
+- **Fix**: Promote `diagnostics.controller_qualification` into first-class routed UI state on `PerformanceBrainPage`, add overview summary cards plus a four-surface qualification strip, add a scoped qualification panel in the inputs section, add a dedicated controller qualification panel in diagnostics, and merge `diagnostics.warnings` with qualification issues before rendering the open-issues list.
+- **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `git diff --check`; `npm --prefix web run build`
+- **Lesson**: Qualification evidence has to be operator-visible where the workflow happens. If readiness only exists in backend payloads or one deep diagnostics panel, the routed Brain surface is not actually qualified for shadow-phase evaluation.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1839,6 +1847,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Routed Qualification Workspace
+- **Section**: Gotchas & Learned Fixes (#64), Update Log
+- **Change**: Documented that scoped Brain controller qualification must render consistently across overview, inputs, and diagnostics, and that controller qualification issues should be merged with existing runtime warnings into one operator-visible list.
+- **Reason**: T767-subB turned backend qualification telemetry into a real routed operator surface, and the key repo rule is that readiness cannot be hidden in diagnostics-only copy or split across disconnected warning channels.
+- **Impact**: Future Brain qualification/UI work should extend the shared routed qualification surface rather than reintroducing section-specific summaries that drift or bury controller faults.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.css`, `web/src/app/pages/PerformanceBrainPage.test.tsx`
 
 ### [2026-04-05] - Brain Controller Qualification Telemetry
 - **Section**: Gotchas & Learned Fixes (#63), Update Log
