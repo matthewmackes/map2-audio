@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-04 22:14 EDT - Completed T755 live-routing truth sync and T757 backing-track runtime wiring; the current canonical worklist has no open active tasks.
+Last updated: 2026-04-05 06:50 EDT - Completed T758 backing-track runtime restart persistence; the current canonical worklist has no open active tasks.
+
+ID: T758
+Status: [✓] Done
+Title: Persist `/drums` backing-track runtime selection and shift settings across service restarts
+Description:
+- Goal / acceptance criteria: The `/drums` backing-track runtime must restore the selected track plus loop, tempo-shift, pitch-shift, and stable stopped-position state after the drum machine service restarts, instead of always falling back to the hard-coded first track. The implementation must remain backward-compatible with existing drum state files, avoid auto-resuming playback on startup, and include focused regression coverage.
+- Why it matters: T757 made the Backing Tracks tab runtime-backed, but deploys/restarts still discard the operator’s selected track and shift settings. That undercuts the new runtime contract and makes repeated build/restart loops feel lossy.
+- Dependencies: T757
+- Estimated effort: Small
+- Required outputs: Restart-safe backing-track persistence, regression coverage, validation evidence, and worklist/compliance updates.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 06:50 EDT - Codex
+- Completion notes:
+  - Added a dedicated persisted backing-track transport state file in `app/services/drum_machine_service.py` so the drum service now restores the selected track, stopped playhead position, loop flag, tempo shift, and pitch shift across service restarts instead of resetting to the first library entry.
+  - The restore path rebuilds transport metadata from the current backing-track catalog and explicitly forces `is_playing=False` on startup, so restart recovery stays backward-compatible and never auto-resumes playback mid-session.
+  - Extended `tests/test_drum_machine_service.py` with focused regression coverage that verifies the persisted JSON payload and a restart round-trip for `track_id`, `position_seconds`, loop, tempo shift, pitch shift, and stopped transport state.
+- Validation:
+  - `cd /home/mm/map2-audio && PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/drum_machine_service.py tests/test_drum_machine_service.py` -> PASS
+  - `cd /home/mm/map2-audio && pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> PASS
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T756
 Status: [✓] Done

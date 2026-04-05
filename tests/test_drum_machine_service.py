@@ -493,6 +493,7 @@ def _build_service(tmp_path, monkeypatch):
     factory_dir = tmp_path / "factory"
     generated_dir = tmp_path / "generated"
     state_path = tmp_path / "state.json"
+    backing_track_state_path = tmp_path / "backing_track_state.json"
     midi_configs_dir = tmp_path / "midi_configs"
     factory_dir.mkdir()
     generated_dir.mkdir()
@@ -503,6 +504,7 @@ def _build_service(tmp_path, monkeypatch):
     monkeypatch.setattr(drum_service_module, "_FACTORY_PACKS_DIR", factory_dir)
     monkeypatch.setattr(drum_service_module, "_GENERATED_PACKS_DIR", generated_dir)
     monkeypatch.setattr(drum_service_module, "_DEFAULT_STATE_PATH", state_path)
+    monkeypatch.setattr(drum_service_module, "_DEFAULT_BACKING_TRACK_STATE_PATH", backing_track_state_path)
     monkeypatch.setattr(drum_service_module, "_MIDI_CONFIGS_DIR", midi_configs_dir)
     monkeypatch.setattr(drum_service_module, "get_audio_engine", lambda: fake_engine_service)
     drum_service_module.DrumMachineService.reset_instance()
@@ -648,6 +650,48 @@ def test_drum_machine_service_tracks_backing_track_runtime_progress(tmp_path, mo
     assert clamped["position_seconds"] == pytest.approx(178.0)
     assert clamped["position_label"] == "02:58"
     assert clamped["is_playing"] is False
+
+
+def test_drum_machine_service_restores_backing_track_runtime_state_after_restart(tmp_path, monkeypatch):
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+    clock = {"value": 250.0}
+    backing_track_state_path = tmp_path / "backing_track_state.json"
+    monkeypatch.setattr(drum_service_module.time, "monotonic", lambda: clock["value"])
+
+    updated = service.update_backing_track_transport(
+        {
+            "track_id": "bt-004",
+            "position_seconds": 42.5,
+            "is_playing": False,
+            "loop_enabled": True,
+            "tempo_shift": -8,
+            "pitch_shift": 3,
+        }
+    )
+
+    assert updated["track_id"] == "bt-004"
+    assert updated["position_seconds"] == pytest.approx(42.5)
+    assert updated["position_label"] == "00:42"
+    persisted = json.loads(backing_track_state_path.read_text())
+    assert persisted == {
+        "track_id": "bt-004",
+        "position_seconds": 42.5,
+        "loop_enabled": True,
+        "tempo_shift": -8,
+        "pitch_shift": 3,
+    }
+
+    drum_service_module.DrumMachineService.reset_instance()
+    restored = drum_service_module.get_drum_machine_service()
+    transport = restored.get_backing_track_transport()
+    assert transport["track_id"] == "bt-004"
+    assert transport["track_name"] == "Neon Circuit"
+    assert transport["loop_enabled"] is True
+    assert transport["tempo_shift"] == -8
+    assert transport["pitch_shift"] == 3
+    assert transport["position_seconds"] == pytest.approx(42.5)
+    assert transport["position_label"] == "00:42"
+    assert transport["is_playing"] is False
 
 
 def test_drum_machine_service_round_trips_midi_output_config(tmp_path, monkeypatch):

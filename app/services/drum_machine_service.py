@@ -26,6 +26,9 @@ from app.utils.singleton import Singleton
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_DRUMS_ROOT = Path(os.environ.get("MAP2_DRUMS_ROOT", Path.home() / ".map2" / "drums"))
 _DEFAULT_STATE_PATH = Path(os.environ.get("MAP2_DRUMS_STATE_PATH", _DEFAULT_DRUMS_ROOT / "state.json"))
+_DEFAULT_BACKING_TRACK_STATE_PATH = Path(
+    os.environ.get("MAP2_DRUMS_BACKING_TRACK_STATE_PATH", _DEFAULT_DRUMS_ROOT / "backing_track_state.json")
+)
 _FACTORY_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_FACTORY_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "factory_packs"))
 _GENERATED_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_GENERATED_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "generated"))
 _POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS", "0.05"))
@@ -424,6 +427,7 @@ class DrumMachineService(Singleton):
     def __init__(self) -> None:
         super().__init__()
         self._state_path = _DEFAULT_STATE_PATH
+        self._backing_track_state_path = _DEFAULT_BACKING_TRACK_STATE_PATH
         self._factory_packs_dir = _FACTORY_PACKS_DIR
         self._user_content_manager = UserContentManager(_GENERATED_PACKS_DIR)
         self._midi_configs_dir = _MIDI_CONFIGS_DIR
@@ -436,22 +440,7 @@ class DrumMachineService(Singleton):
             variation=self._state.variation,
         )
         self._backing_tracks = [self._build_backing_track_summary(item) for item in _BACKING_TRACK_LIBRARY]
-        default_backing_track = self._backing_tracks[0]
-        self._backing_track_transport = DrumBackingTrackTransportStateModel(
-            track_id=default_backing_track.track_id,
-            track_name=default_backing_track.name,
-            genre=default_backing_track.genre,
-            key=default_backing_track.key,
-            tempo=default_backing_track.tempo,
-            duration_seconds=default_backing_track.duration_seconds,
-            duration_label=default_backing_track.duration_label,
-            position_seconds=0.0,
-            position_label="00:00",
-            is_playing=False,
-            loop_enabled=False,
-            tempo_shift=0,
-            pitch_shift=0,
-        )
+        self._backing_track_transport = self._load_backing_track_transport()
         self._backing_track_started_monotonic: Optional[float] = None
         self._backing_track_started_position_seconds: float = 0.0
         self._song_transport = DrumSongTransportStateModel(active_pattern=self._state.pattern)
@@ -532,6 +521,76 @@ class DrumMachineService(Singleton):
         temp_path = self._cc_mappings_path.with_suffix(".tmp")
         temp_path.write_text(json.dumps(self._cc_mappings.model_dump(), indent=2, sort_keys=True))
         temp_path.replace(self._cc_mappings_path)
+
+    def _default_backing_track_transport_payload(self) -> Dict[str, Any]:
+        default_track = self._backing_tracks[0]
+        return {
+            "track_id": default_track.track_id,
+            "track_name": default_track.name,
+            "genre": default_track.genre,
+            "key": default_track.key,
+            "tempo": default_track.tempo,
+            "duration_seconds": default_track.duration_seconds,
+            "duration_label": default_track.duration_label,
+            "position_seconds": 0.0,
+            "position_label": "00:00",
+            "is_playing": False,
+            "loop_enabled": False,
+            "tempo_shift": 0,
+            "pitch_shift": 0,
+            "runtime_source": "drum_machine_service",
+        }
+
+    def _load_backing_track_transport(self) -> DrumBackingTrackTransportStateModel:
+        payload = self._default_backing_track_transport_payload()
+        if not self._backing_track_state_path.exists():
+            return DrumBackingTrackTransportStateModel.model_validate(payload)
+
+        try:
+            persisted = json.loads(self._backing_track_state_path.read_text())
+            track = self._get_backing_track_summary(str(persisted.get("track_id", payload["track_id"])))
+            payload.update(
+                {
+                    "track_id": track.track_id,
+                    "track_name": track.name,
+                    "genre": track.genre,
+                    "key": track.key,
+                    "tempo": track.tempo,
+                    "duration_seconds": track.duration_seconds,
+                    "duration_label": track.duration_label,
+                    "position_seconds": float(persisted.get("position_seconds", 0.0)),
+                    "loop_enabled": bool(persisted.get("loop_enabled", False)),
+                    "tempo_shift": int(persisted.get("tempo_shift", 0)),
+                    "pitch_shift": int(persisted.get("pitch_shift", 0)),
+                    # Never auto-resume playback on startup even if the service
+                    # was restarted mid-session.
+                    "is_playing": False,
+                }
+            )
+        except (OSError, TypeError, ValueError, json.JSONDecodeError, ValidationError):
+            payload = self._default_backing_track_transport_payload()
+
+        return DrumBackingTrackTransportStateModel.model_validate(
+            self._normalize_backing_track_transport_payload(payload)
+        )
+
+    def _persist_backing_track_transport(self) -> None:
+        self._backing_track_state_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self._backing_track_state_path.with_suffix(".tmp")
+        temp_path.write_text(
+            json.dumps(
+                {
+                    "track_id": self._backing_track_transport.track_id,
+                    "position_seconds": self._backing_track_transport.position_seconds,
+                    "loop_enabled": self._backing_track_transport.loop_enabled,
+                    "tempo_shift": self._backing_track_transport.tempo_shift,
+                    "pitch_shift": self._backing_track_transport.pitch_shift,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        temp_path.replace(self._backing_track_state_path)
 
     def _build_backing_track_summary(self, payload: Dict[str, Any]) -> DrumBackingTrackSummaryModel:
         return DrumBackingTrackSummaryModel.model_validate(
@@ -694,6 +753,7 @@ class DrumMachineService(Singleton):
         else:
             self._backing_track_started_monotonic = None
         self._backing_track_started_position_seconds = self._backing_track_transport.position_seconds
+        self._persist_backing_track_transport()
         return self.get_backing_track_transport()
 
     def update_transport(self, patch: Dict[str, Any]) -> Dict[str, Any]:
