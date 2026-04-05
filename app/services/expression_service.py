@@ -22,7 +22,7 @@ import uuid
 from typing import Any, Deque, Dict, List, Optional, Tuple
 
 from app.database import ExpressionAssignment as ExpressionAssignmentRow
-from app.database import get_db_session
+from app.database import get_db_session, get_session
 from app.services.juce_engine_service import get_audio_engine
 
 logger = logging.getLogger(__name__)
@@ -374,6 +374,35 @@ class ExpressionService:
             self._perf_gate.pop(assignment_id, None)
         self._delete_assignment_from_db(assignment_id)
         return True
+
+    def replace_snapshot_assignments(self, entries: List[Dict[str, Any]]) -> Dict[str, int]:
+        snapshot_assignment_ids = [
+            assignment_id
+            for assignment_id, assignment in self._assignments.items()
+            if assignment.source == "snapshot"
+        ]
+        for assignment_id in snapshot_assignment_ids:
+            self.delete_assignment(assignment_id)
+
+        applied_count = 0
+        for index, entry in enumerate(entries or []):
+            if not isinstance(entry, dict):
+                continue
+            payload = dict(entry)
+            payload["id"] = str(payload.get("id") or f"snapshot_expr_{index}")
+            payload["source"] = "snapshot"
+            self.create_assignment(payload)
+            applied_count += 1
+
+        with self._lock:
+            active_snapshot_count = sum(
+                1 for assignment in self._assignments.values() if assignment.source == "snapshot"
+            )
+        return {
+            "cleared_count": len(snapshot_assignment_ids),
+            "applied_count": applied_count,
+            "active_snapshot_count": active_snapshot_count,
+        }
 
     def listen_for_cc(self, timeout_seconds: float = 10.0, listener_id: Optional[str] = None) -> Dict[str, Any]:
         req = ListenRequest(
@@ -745,11 +774,14 @@ class ExpressionService:
     def _apply_parameter(self, item: ApplyWorkItem) -> bool:
         service = get_audio_engine()
         engine = getattr(service, "_engine", None)
-        if engine is None:
+        if engine is None and str(item.param_id) not in {"snapshot.morph_position", "snapshot.routing.morph_position"}:
             return False
 
         value = float(item.mapped_value)
         param_id = str(item.param_id)
+
+        if param_id in {"snapshot.morph_position", "snapshot.routing.morph_position"}:
+            return self._apply_snapshot_morph_position(_clamp01(value))
 
         if param_id == "engine.reverb_mix":
             return self._call_engine(engine, ["set_reverb_mix"], _clamp01(value))
@@ -780,6 +812,34 @@ class ExpressionService:
         # Fallback: map "plugin.param" to "set_param" if available.
         fallback_setter = f"set_{param_id.split('.')[-1]}"
         return self._call_engine(engine, [fallback_setter], value)
+
+    def _apply_snapshot_morph_position(self, value: float) -> bool:
+        async def _apply() -> bool:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+            from app.services.snapshot_service import SnapshotService
+
+            async with get_session() as session:
+                runtime_state_service = SnapshotRuntimeStateService(session)
+                live_snapshot_payload = await runtime_state_service.get_live_snapshot_payload()
+                if not isinstance(live_snapshot_payload, dict):
+                    return False
+                snapshot_id = int(live_snapshot_payload.get("id") or 0)
+                if snapshot_id <= 0:
+                    return False
+                service = SnapshotService(session)
+                updated = await service.set_morph_position(snapshot_id, _clamp01(value))
+                if not isinstance(updated, dict):
+                    return False
+                morph_apply = updated.get("morph_apply")
+                if isinstance(morph_apply, dict):
+                    return bool(morph_apply.get("applied"))
+                return True
+
+        try:
+            return bool(asyncio.run(_apply()))
+        except Exception:
+            logger.debug("Snapshot morph-position apply failed", exc_info=True)
+            return False
 
     def _call_engine(self, engine: Any, method_names: List[str], *args: Any) -> bool:
         for name in method_names:

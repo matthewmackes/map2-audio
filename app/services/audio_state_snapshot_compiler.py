@@ -82,6 +82,21 @@ def compile_snapshot_detail_to_intent(detail: dict[str, Any]) -> CompiledSnapsho
             mode=str(routing.get("mode") or "series"),
             active_path_ids=[str(active_path)] if active_path else [],
             path_order=[str(item) for item in series_order if str(item).strip()] or [str(path.get("id")) for path in paths if str(path.get("id") or "").strip()],
+            morph_position=(
+                float(routing.get("morph_position"))
+                if isinstance(routing.get("morph_position"), (int, float))
+                else None
+            ),
+            morph_source_path_id=(
+                str(routing.get("morph_source_channel_key")).strip()
+                if str(routing.get("morph_source_channel_key") or "").strip()
+                else None
+            ),
+            morph_target_path_id=(
+                str(routing.get("morph_target_channel_key")).strip()
+                if str(routing.get("morph_target_channel_key") or "").strip()
+                else None
+            ),
         ),
         deployment=AudioStateDeployment(
             placement_mode=placement_mode,

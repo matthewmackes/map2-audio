@@ -1369,6 +1369,48 @@ bool Map2AudioEngine::setChainLoopInsertions(
     return true;
 }
 
+bool Map2AudioEngine::setChainDryWetMix(int chainId, float dryWetMix) {
+    if (chainId < 0) {
+        return false;
+    }
+
+    const float normalizedMix = juce::jlimit(0.0f, 100.0f, dryWetMix);
+    std::lock_guard<std::mutex> guard(chainStateMutex_);
+    chainDryWetMix_[chainId] = normalizedMix;
+    chainGainLinear_[chainId] = juce::jlimit(0.0f, 1.0f, normalizedMix / 100.0f);
+    return true;
+}
+
+bool Map2AudioEngine::setChainGain(int chainId, float gainLinear) {
+    if (chainId < 0) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> guard(chainStateMutex_);
+    chainGainLinear_[chainId] = juce::jlimit(0.0f, 1.0f, gainLinear);
+    return true;
+}
+
+bool Map2AudioEngine::setChainMute(int chainId, bool muted) {
+    if (chainId < 0) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> guard(chainStateMutex_);
+    chainMuteState_[chainId] = muted;
+    return true;
+}
+
+bool Map2AudioEngine::setChainSolo(int chainId, bool solo) {
+    if (chainId < 0) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> guard(chainStateMutex_);
+    chainSoloState_[chainId] = solo;
+    return true;
+}
+
 bool Map2AudioEngine::setLoopBypass(const std::string& loopId, bool bypass) {
     std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
     auto defIt = externalLoops_.find(loopId);

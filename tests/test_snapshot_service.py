@@ -3256,3 +3256,671 @@ def test_arm_live_spillover_processors_stages_same_uri_native_wet_state_changes(
     )
 
     assert engine.calls == ["delay"]
+
+
+def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _ExpressionServiceStub:
+        def __init__(self):
+            self.calls = []
+
+        def replace_snapshot_assignments(self, entries):
+            payload = [dict(entry) for entry in entries]
+            self.calls.append(payload)
+            return {
+                "cleared_count": 1,
+                "applied_count": len(payload),
+                "active_snapshot_count": len(payload),
+            }
+
+    class _AutomationEngineStub:
+        def __init__(self):
+            self.calls = []
+
+        def replace_snapshot_lanes(self, entries):
+            payload = [dict(entry) for entry in entries]
+            self.calls.append(payload)
+            return {
+                "cleared_count": 1,
+                "applied_count": len(payload),
+                "invalid_count": 0,
+                "active_snapshot_count": len(payload),
+            }
+
+    class _RuntimeEngineStub:
+        async def set_all_midi_commands(self, commands):
+            self.commands = [dict(command) for command in commands]
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return None
+
+    expression_stub = _ExpressionServiceStub()
+    automation_stub = _AutomationEngineStub()
+    runtime_engine_stub = _RuntimeEngineStub()
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: runtime_engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "get_expression_service", lambda: expression_stub)
+    monkeypatch.setattr(snapshot_service_module, "automation_engine", automation_stub)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="ExpressionAutomationSnapshot",
+                controls_payload={
+                    "expression_mappings": [
+                        {
+                            "id": "snapshot-wah",
+                            "cc": 11,
+                            "channel": 1,
+                            "cc_min": 0,
+                            "cc_max": 127,
+                            "param_id": "engine.wah_freq",
+                            "param_label": "Wah",
+                            "out_min": 0.1,
+                            "out_max": 0.9,
+                        }
+                    ],
+                    "automation_lanes": [
+                        {
+                            "parameter_id": "urn:test:plugin:1@0",
+                            "plugin_uri": "urn:test:plugin",
+                            "plugin_position": 0,
+                            "param_index": 1,
+                            "param_name": "Mix",
+                            "modulation_source": "lfo",
+                            "enabled": True,
+                            "points": [],
+                            "lfo": {
+                                "rate_hz": 2.5,
+                                "depth": 0.8,
+                                "waveform": "triangle",
+                                "sync_to_tempo": True,
+                                "tempo_division": "1/8",
+                                "phase_offset": 0.25,
+                                "smoothing": 0.1,
+                            },
+                        }
+                    ],
+                },
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Test Plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert expression_stub.calls == [[created["controls"]["expression_mappings"][0]]]
+            assert automation_stub.calls == [[created["controls"]["automation_lanes"][0]]]
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["synced"] is True
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["applied_count"] == 1
+            assert activated["runtime_live_state"]["runtime_metrics"]["automation_lanes"]["synced"] is True
+            assert activated["runtime_live_state"]["runtime_metrics"]["automation_lanes"]["applied_count"] == 1
+
+    asyncio.run(_run())
+
+
+class _OpenGapMatrixEngineStub:
+    def __init__(self) -> None:
+        self.loop_calls: list[tuple[int, list[dict[str, object]]]] = []
+        self.parallel_group_calls: list[tuple[int, int]] = []
+        self.parallel_branch_calls: list[tuple[int, int, int, int]] = []
+        self.parallel_blend_calls: list[tuple[int, float]] = []
+        self.chain_mute_calls: list[tuple[int, bool]] = []
+        self.chain_solo_calls: list[tuple[int, bool]] = []
+        self.chain_mix_calls: list[tuple[int, float]] = []
+        self.parameter_calls: list[tuple[int | None, int, float]] = []
+        self._instance_ids: dict[tuple[str, int | None], int] = {}
+
+    async def set_all_midi_commands(self, commands):
+        self.commands = [dict(command) for command in commands]
+        return True
+
+    async def get_topology_mutation_stats(self):
+        return None
+
+    async def set_chain_loop_insertions(self, chain_id: int, insertions: list[dict[str, object]]) -> bool:
+        self.loop_calls.append((chain_id, [dict(entry) for entry in insertions]))
+        return True
+
+    async def create_parallel_group(self, position: int = -1, num_branches: int = 2) -> int:
+        self.parallel_group_calls.append((position, num_branches))
+        return len(self.parallel_group_calls)
+
+    async def add_to_parallel_branch(self, group_id: int, branch_index: int, plugin_id: int, position: int = -1) -> bool:
+        self.parallel_branch_calls.append((group_id, branch_index, plugin_id, position))
+        return True
+
+    async def set_parallel_ab_blend(self, group_id: int, blend: float) -> None:
+        self.parallel_blend_calls.append((group_id, float(blend)))
+
+    async def set_chain_mute(self, chain_id: int, muted: bool) -> bool:
+        self.chain_mute_calls.append((chain_id, bool(muted)))
+        return True
+
+    async def set_chain_solo(self, chain_id: int, solo: bool) -> bool:
+        self.chain_solo_calls.append((chain_id, bool(solo)))
+        return True
+
+    async def set_chain_dry_wet_mix(self, chain_id: int, dry_wet_mix: float) -> bool:
+        self.chain_mix_calls.append((chain_id, float(dry_wet_mix)))
+        return True
+
+    async def set_parameter(self, instance_id: int | None, param_index: int, value: float) -> bool:
+        self.parameter_calls.append((instance_id, int(param_index), float(value)))
+        return True
+
+    def _get_instance_id_for_uri(self, plugin_uri: str, plugin_position: int | None = None) -> int | None:
+        key = (str(plugin_uri), plugin_position if isinstance(plugin_position, int) else None)
+        if key not in self._instance_ids:
+            self._instance_ids[key] = len(self._instance_ids) + 1
+        return self._instance_ids[key]
+
+
+async def _create_and_activate_open_gap_snapshot(tmp_path, monkeypatch, *, detail_payload, controls_payload=None):
+    _init_temp_db(tmp_path)
+    engine_stub = _OpenGapMatrixEngineStub()
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async with database_module.get_session() as session:
+        service = SnapshotService(session)
+        created = await service.create_snapshot(
+            name="OpenGapMatrixSnapshot",
+            controls_payload=controls_payload or {},
+            detail_payload=detail_payload,
+            apply_default_system_blocks=False,
+        )
+        activated = await service.activate_snapshot(created["id"])
+        return service, created, activated, engine_stub
+
+
+def test_t736_activation_should_push_loop_insertions_to_engine(tmp_path, monkeypatch):
+    async def _run():
+        _init_temp_db(tmp_path)
+        engine_stub = _OpenGapMatrixEngineStub()
+
+        async def _passthrough(snapshot_data):
+            return snapshot_data
+
+        async def _fake_apply(_snapshot_data):
+            return 0, 0
+
+        async def _healthy_channels(self, *, live_snapshot_payload):
+            return {
+                "snapshot_payload": live_snapshot_payload,
+                "active_count": 0,
+                "total_count": 0,
+                "inactive_channels": [],
+                "inactive_messages": [],
+            }
+
+        async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+            result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+            chain = result.scalar_one_or_none()
+            if chain is not None:
+                chain.is_active = True
+            return True
+
+        monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+        monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+        monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+        monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+        monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+        monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+        async with database_module.get_session() as session:
+            session.add(
+                database_module.EffectsLoop(
+                    loop_id="loop-a",
+                    name="Loop A",
+                    channels=2,
+                    topology="serial_insert",
+                )
+            )
+            await session.flush()
+
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LoopSyncSnapshot",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1}
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Loop Chain",
+                            "plugins": [{"uri": "urn:test:plugin", "position": 0, "bypass": False, "parameters": {}}],
+                            "loop_insertions": [
+                                {
+                                    "loop_id": "loop-a",
+                                    "slot_index": 0,
+                                    "enabled": True,
+                                    "mode": "serial_insert",
+                                    "blend_pct": 75.0,
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert engine_stub.loop_calls
+            assert activated["runtime_live_state"]["runtime_metrics"]["loop_insertions"]["applied_count"] == 1
+
+    asyncio.run(_run())
+
+
+def test_t737_activation_should_push_channel_state_to_engine(tmp_path, monkeypatch):
+    async def _run():
+        _service, _created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {
+                        "channel_key": "channel-a",
+                        "label": "A",
+                        "color": "#2563eb",
+                        "chain_id": 1,
+                        "muted": True,
+                        "solo": True,
+                        "dry_wet_mix": 42.0,
+                    }
+                ],
+                "chains": [
+                    {"id": 1, "name": "State Chain", "plugins": [{"uri": "urn:test:plugin", "position": 0, "bypass": False, "parameters": {}}]}
+                ],
+                "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+        assert engine_stub.chain_mute_calls
+        assert engine_stub.chain_solo_calls
+        assert engine_stub.chain_mix_calls
+        assert activated["runtime_live_state"]["runtime_metrics"]["channel_state"]["applied_count"] == 1
+
+    asyncio.run(_run())
+
+
+def test_t739_activation_should_push_parallel_routing_to_engine(tmp_path, monkeypatch):
+    async def _run():
+        _service, _created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                    {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                ],
+                "chains": [
+                    {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                    {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                ],
+                "routing": {
+                    "mode": "parallel_blend",
+                    "active_channel_key": "channel-a",
+                    "blend_positions": {"channel-a": 30.0, "channel-b": 70.0},
+                    "series_order": ["channel-a", "channel-b"],
+                },
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+        assert engine_stub.parallel_group_calls
+        assert engine_stub.parallel_branch_calls
+        assert engine_stub.parallel_blend_calls
+
+    asyncio.run(_run())
+
+
+def test_t738_live_routing_edit_should_reapply_engine_blend(tmp_path, monkeypatch):
+    async def _run():
+        _init_temp_db(tmp_path)
+        engine_stub = _OpenGapMatrixEngineStub()
+
+        async def _passthrough(snapshot_data):
+            return snapshot_data
+
+        async def _fake_apply(_snapshot_data):
+            return 0, 0
+
+        async def _healthy_channels(self, *, live_snapshot_payload):
+            return {
+                "snapshot_payload": live_snapshot_payload,
+                "active_count": 0,
+                "total_count": 0,
+                "inactive_channels": [],
+                "inactive_messages": [],
+            }
+
+        async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+            result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+            chain = result.scalar_one_or_none()
+            if chain is not None:
+                chain.is_active = True
+            return True
+
+        monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+        monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+        monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+        monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+        monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+        monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveRoutingUpdate",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                        {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0, "channel-b": 0.0},
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            before_calls = len(engine_stub.parallel_blend_calls)
+            updated = await service.update_routing(
+                created["id"],
+                {"blend_positions": {"channel-a": 25.0, "channel-b": 75.0}},
+            )
+            assert updated is not None
+            assert updated["routing_requires_reactivation"] is False
+            assert updated["routing_apply"]["applied"] is True
+            assert len(engine_stub.parallel_blend_calls) > before_calls
+
+    asyncio.run(_run())
+
+
+def test_t744_live_channel_edit_should_reapply_engine_channel_state(tmp_path, monkeypatch):
+    async def _run():
+        service, created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {
+                        "channel_key": "channel-a",
+                        "label": "A",
+                        "color": "#2563eb",
+                        "chain_id": 1,
+                        "muted": False,
+                        "solo": False,
+                        "dry_wet_mix": 100.0,
+                    }
+                ],
+                "chains": [
+                    {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]}
+                ],
+                "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+        before_calls = (
+            len(engine_stub.chain_mute_calls),
+            len(engine_stub.chain_solo_calls),
+            len(engine_stub.chain_mix_calls),
+        )
+        updated = await service.update_channel(
+            created["id"],
+            created["channels"][0]["id"],
+            {"muted": True, "solo": True, "dry_wet_mix": 35.0},
+        )
+        assert updated is not None
+        after_calls = (
+            len(engine_stub.chain_mute_calls),
+            len(engine_stub.chain_solo_calls),
+            len(engine_stub.chain_mix_calls),
+        )
+        assert after_calls > before_calls
+        assert updated["channel_state_apply"]["applied_count"] == 1
+
+    asyncio.run(_run())
+
+
+def test_t742_topology_reuse_should_reapply_routing_and_loop_state(tmp_path, monkeypatch):
+    async def _run():
+        _init_temp_db(tmp_path)
+        engine_stub = _OpenGapMatrixEngineStub()
+
+        async def _passthrough(snapshot_data):
+            return snapshot_data
+
+        async def _fake_apply(_snapshot_data):
+            return 0, 0
+
+        async def _healthy_channels(self, *, live_snapshot_payload):
+            return {
+                "snapshot_payload": live_snapshot_payload,
+                "active_count": 0,
+                "total_count": 0,
+                "inactive_channels": [],
+                "inactive_messages": [],
+            }
+
+        async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+            result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+            chain = result.scalar_one_or_none()
+            if chain is not None:
+                chain.is_active = True
+            return True
+
+        monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+        monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+        monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+        monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: engine_stub)
+        monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+        monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+        monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+        async with database_module.get_session() as session:
+            session.add(
+                database_module.EffectsLoop(
+                    loop_id="loop-a",
+                    name="Loop A",
+                    channels=2,
+                    topology="serial_insert",
+                )
+            )
+            await session.flush()
+            service = SnapshotService(session)
+            first = await service.create_snapshot(
+                name="ReuseA",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+            await service.activate_snapshot(first["id"])
+            before_mix_calls = len(engine_stub.chain_mix_calls)
+
+            second = await service.create_snapshot(
+                name="ReuseB",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 2,
+                            "dry_wet_mix": 33.0,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 2,
+                            "name": "A",
+                            "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {"0": 0.7}}],
+                            "loop_insertions": [{"loop_id": "loop-a", "slot_index": 0, "enabled": True, "mode": "serial_insert"}],
+                        }
+                    ],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+            activated = await service.activate_snapshot(second["id"])
+            assert activated is not None
+            assert activated["topology_reused"] is True
+            assert len(engine_stub.chain_mix_calls) > before_mix_calls
+
+    asyncio.run(_run())
+
+
+def test_t741_set_morph_position_should_drive_runtime_parameter_interpolation(tmp_path, monkeypatch):
+    async def _run():
+        service, created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                    {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                ],
+                "chains": [
+                    {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {"0": 0.0}}]},
+                    {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {"0": 1.0}}]},
+                ],
+                "routing": {
+                    "mode": "morph",
+                    "active_channel_key": "channel-a",
+                    "morph_position": 0.0,
+                    "morph_source_channel_key": "channel-a",
+                    "morph_target_channel_key": "channel-b",
+                    "series_order": ["channel-a", "channel-b"],
+                },
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+        before_calls = len(engine_stub.parameter_calls)
+        updated = await service.set_morph_position(created["id"], 0.75)
+        assert updated is not None
+        assert len(engine_stub.parameter_calls) > before_calls
+        assert updated["morph_apply"]["applied"] is True
+        assert updated["morph_apply"]["applied_count"] == 1
+        assert engine_stub.parameter_calls[-1][2] == pytest.approx(0.75)
+
+    asyncio.run(_run())

@@ -28,7 +28,6 @@ import {
   type LandingTilePlacement,
   type LandingTileSize,
   type LauncherCatalogItem,
-  type LauncherStorefrontCollection,
 } from '../../data/launcherCatalog'
 import type { SpecialSettings } from '../../hooks/useSpecialSettings'
 import { WorkspaceCatalogArtwork } from './WorkspaceCatalogArtwork'
@@ -42,40 +41,13 @@ const DIRECTORY_LABELS: Record<LauncherCatalogItem['directory'], string> = {
 
 const SIZE_OPTIONS: LandingTileSize[] = ['small', 'medium', 'large']
 const CATEGORY_FILTER_OPTIONS = ['all', 'Audio Interface', 'Human Interface', 'Platform'] as const
-const CURATED_SECTION_LIMIT = 4
 
 type LauncherCategoryFilter = typeof CATEGORY_FILTER_OPTIONS[number]
 
-const STOREFRONT_SECTION_COPY: Record<LauncherStorefrontCollection | 'catalog', { title: string; description: string }> = {
-  featured: {
-    title: 'Featured',
-    description: 'Flagship MAP2 workspaces positioned for first-look evaluation and launch-ready exploration.',
-  },
-  'platform-essentials': {
-    title: 'Platform Essentials',
-    description: 'Core routed platform surfaces that explain how MAP2 handles supervision, management, routing, and adoption.',
-  },
-  'recently-added': {
-    title: 'Recently Added',
-    description: 'Newer utility-forward workspaces that expand the MAP2 product story without breaking the operational shell.',
-  },
-  catalog: {
-    title: 'Full Catalog',
-    description: 'Every launcher that matches the current storefront filters, with launch and shell-management controls intact.',
-  },
-}
-
-const STOREFRONT_SECTION_IDS: Record<LauncherStorefrontCollection | 'catalog', string> = {
-  featured: 'workspace-catalog-featured',
-  'platform-essentials': 'workspace-catalog-platform-essentials',
-  'recently-added': 'workspace-catalog-recently-added',
-  catalog: 'workspace-catalog-full-catalog',
-}
-
-const COLLECTION_LABELS: Record<LauncherStorefrontCollection, string> = {
-  featured: 'Featured',
-  'platform-essentials': 'Platform Essential',
-  'recently-added': 'Recently Added',
+const FULL_CATALOG_SECTION_ID = 'workspace-catalog-full-catalog'
+const FULL_CATALOG_COPY = {
+  title: 'Full Catalog',
+  description: 'Every launcher that matches the current catalog filters, with launch and shell-management controls intact.',
 }
 
 function maturityTagType(maturity: LauncherCatalogItem['maturity']): 'green' | 'cyan' | 'purple' | 'warm-gray' | 'red' {
@@ -109,18 +81,6 @@ function categoryTagType(category: LauncherCatalogItem['category']): 'blue' | 'p
 
 function storefrontDocumentHref(name: string): string {
   return `/api/system/docs/${encodeURIComponent(name)}`
-}
-
-function collectionTagType(collection: LauncherStorefrontCollection): 'green' | 'cyan' | 'purple' {
-  switch (collection) {
-    case 'featured':
-      return 'green'
-    case 'platform-essentials':
-      return 'cyan'
-    case 'recently-added':
-    default:
-      return 'purple'
-  }
 }
 
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
@@ -218,20 +178,6 @@ export function PlatformLaunchersWorkspace({
       .filter((item) => (needle ? launcherSearchIndex(item).includes(needle) : true))
   }, [searchValue, selectedCategory])
 
-  const featuredItems = useMemo(() => {
-    return catalogItems.filter((item) => item.storefrontCollections.includes('featured'))
-  }, [catalogItems])
-
-  const platformEssentialItems = useMemo(() => {
-    return catalogItems.filter((item) => item.storefrontCollections.includes('platform-essentials'))
-  }, [catalogItems])
-
-  const recentItems = useMemo(() => {
-    return catalogItems.filter((item) => item.storefrontCollections.includes('recently-added'))
-  }, [catalogItems])
-
-  const spotlightItem = featuredItems[0] ?? catalogItems[0] ?? null
-
   const configureItem = getLauncherCatalogItem(configureRoute)
   const configureLandingIndex = configureItem ? landingTiles.findIndex((tile) => tile.route === configureItem.route) : -1
   const configureLandingTile = configureLandingIndex >= 0 ? landingTiles[configureLandingIndex] : null
@@ -276,11 +222,6 @@ export function PlatformLaunchersWorkspace({
 
     return (
       <div className="platform-launchers__status-tags">
-        {item.storefrontCollections.map((collection) => (
-          <Tag key={`${item.route}-${collection}`} type={collectionTagType(collection)} size="sm">
-            {COLLECTION_LABELS[collection]}
-          </Tag>
-        ))}
         <Tag type={categoryTagType(item.category)} size="sm">{item.category}</Tag>
         <Tag type={maturityTagType(item.maturity)} size="sm">{getLauncherCatalogMaturityLabel(item.maturity)}</Tag>
         <Tag type="blue" size="sm">{DIRECTORY_LABELS[item.directory]}</Tag>
@@ -362,53 +303,6 @@ export function PlatformLaunchersWorkspace({
       </div>
     </Tile>
   )
-
-  const renderSection = (
-    collection: LauncherStorefrontCollection | 'catalog',
-    items: LauncherCatalogItem[],
-    limit?: number,
-  ) => {
-    const sectionCopy = STOREFRONT_SECTION_COPY[collection]
-    const visibleItems = typeof limit === 'number' ? items.slice(0, limit) : items
-
-    if (visibleItems.length === 0) {
-      return null
-    }
-
-    return (
-      <section key={collection} id={STOREFRONT_SECTION_IDS[collection]} className="platform-launchers__section">
-        <Grid condensed fullWidth className="platform-launchers__section-grid" role="list" aria-label={`${sectionCopy.title} workspaces`}>
-          <Column sm={4} md={8} lg={16} className="platform-launchers__section-column">
-            <div className="platform-launchers__section-head">
-              <div>
-                <p className="platform-launchers__eyebrow">Curated collection</p>
-                <h3>{sectionCopy.title}</h3>
-                <p>{sectionCopy.description}</p>
-              </div>
-              <div className="platform-launchers__toolbar-tags">
-                <Tag type="cool-gray">{`${items.length} matching`}</Tag>
-                {typeof limit === 'number' && items.length > limit ? (
-                  <Tag type="cool-gray">{`${limit} showcased`}</Tag>
-                ) : null}
-              </div>
-            </div>
-          </Column>
-
-          {visibleItems.map((item) => (
-            <Column
-              key={`${collection}-${item.route}`}
-              sm={4}
-              md={4}
-              lg={8}
-              className="platform-launchers__card-column"
-            >
-              {renderCard(item)}
-            </Column>
-          ))}
-        </Grid>
-      </section>
-    )
-  }
 
   const configureModal = configureItem ? (
     <ComposedModal
@@ -699,81 +593,22 @@ export function PlatformLaunchersWorkspace({
     <section className="platform-launchers">
       <Tile className="platform-launchers__hero">
         <Grid condensed fullWidth className="platform-launchers__hero-grid">
-          <Column sm={4} md={4} lg={8} className="platform-launchers__hero-column">
+          <Column sm={4} md={8} lg={16} className="platform-launchers__hero-column">
             <div className="platform-launchers__hero-copy">
               <p className="platform-launchers__eyebrow">MAP2 Workspace Catalog</p>
               <h2>Carbon storefront for MAP2 workspaces</h2>
               <p className="platform-launchers__hero-summary">
-                Browse the routed MAP2 product surface as a curated storefront, then launch or configure the same workspaces
-                without leaving the catalog.
+                Browse the routed MAP2 product surface in one full catalog, then launch or configure the same workspaces
+                without leaving the page.
               </p>
               <div className="platform-launchers__summary-tags">
                 <Tag type="green">Launch ready</Tag>
                 <Tag type="cyan">Configure preserved</Tag>
                 <Tag type="cool-gray">{`${launcherCatalogItems.length} catalog entries`}</Tag>
-                <Tag type="cool-gray">{`${featuredItems.length} featured now`}</Tag>
-              </div>
-              <div className="platform-launchers__section-nav" role="navigation" aria-label="Workspace catalog section navigation">
-                <Button size="sm" kind="ghost" href={`#${STOREFRONT_SECTION_IDS.featured}`}>Featured</Button>
-                <Button size="sm" kind="ghost" href={`#${STOREFRONT_SECTION_IDS['platform-essentials']}`}>Platform Essentials</Button>
-                <Button size="sm" kind="ghost" href={`#${STOREFRONT_SECTION_IDS['recently-added']}`}>Recently Added</Button>
-                <Button size="sm" kind="ghost" href={`#${STOREFRONT_SECTION_IDS.catalog}`}>Full Catalog</Button>
+                <Tag type="cool-gray">Full catalog only</Tag>
               </div>
             </div>
           </Column>
-
-          {spotlightItem ? (
-            <Column sm={4} md={4} lg={8} className="platform-launchers__hero-column">
-              <Layer className="platform-launchers__spotlight">
-                <p className="platform-launchers__eyebrow">Storefront spotlight</p>
-                <div className="platform-launchers__spotlight-art">
-                  <WorkspaceCatalogArtwork item={spotlightItem} />
-                </div>
-                <div className="platform-launchers__spotlight-copy">
-                  <div className="platform-launchers__spotlight-head">
-                    <div>
-                      <h3>{spotlightItem.heroTitle}</h3>
-                      <p>{spotlightItem.description}</p>
-                    </div>
-                    <Tag type={maturityTagType(spotlightItem.maturity)} size="sm">
-                      {getLauncherCatalogMaturityLabel(spotlightItem.maturity)}
-                    </Tag>
-                  </div>
-                  <div className="platform-launchers__docs">
-                    {spotlightItem.documentLinks.slice(0, 2).map((doc) => (
-                      <Link
-                        key={`${spotlightItem.route}-hero-doc-${doc.name}`}
-                        className="platform-launchers__doc-link"
-                        href={storefrontDocumentHref(doc.name)}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        {doc.label}
-                      </Link>
-                    ))}
-                  </div>
-                  <div className="platform-launchers__actions">
-                    <Button
-                      size="sm"
-                      kind="primary"
-                      aria-label={`Launch ${spotlightItem.label}`}
-                      onClick={() => launchRoute(spotlightItem.route)}
-                    >
-                      Launch
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="secondary"
-                      aria-label={`Configure ${spotlightItem.label}`}
-                      onClick={() => setConfigureRoute(spotlightItem.route)}
-                    >
-                      Configure
-                    </Button>
-                  </div>
-                </div>
-              </Layer>
-            </Column>
-          ) : null}
 
           <Column sm={4} md={8} lg={16} className="platform-launchers__hero-column">
             <div className="platform-launchers__toolbar">
@@ -817,18 +652,14 @@ export function PlatformLaunchersWorkspace({
         </Grid>
       </Tile>
 
-      {renderSection('featured', featuredItems, CURATED_SECTION_LIMIT)}
-      {renderSection('platform-essentials', platformEssentialItems, CURATED_SECTION_LIMIT)}
-      {renderSection('recently-added', recentItems, CURATED_SECTION_LIMIT)}
-
-      <section id={STOREFRONT_SECTION_IDS.catalog} className="platform-launchers__section">
+      <section id={FULL_CATALOG_SECTION_ID} className="platform-launchers__section">
         <Grid condensed fullWidth className="platform-launchers__section-grid" role="list" aria-label="Full workspace catalog">
           <Column sm={4} md={8} lg={16} className="platform-launchers__section-column">
             <div className="platform-launchers__section-head">
               <div>
                 <p className="platform-launchers__eyebrow">Browse everything</p>
-                <h3>{STOREFRONT_SECTION_COPY.catalog.title}</h3>
-                <p>{STOREFRONT_SECTION_COPY.catalog.description}</p>
+                <h3>{FULL_CATALOG_COPY.title}</h3>
+                <p>{FULL_CATALOG_COPY.description}</p>
               </div>
               <div className="platform-launchers__toolbar-tags">
                 <Tag type="cool-gray">{`${catalogItems.length} matching`}</Tag>

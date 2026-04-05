@@ -36,6 +36,9 @@ class AudioStateRouting(BaseModel):
     mode: str
     active_path_ids: list[str] = Field(default_factory=list)
     path_order: list[str] = Field(default_factory=list)
+    morph_position: Optional[float] = None
+    morph_source_path_id: Optional[str] = None
+    morph_target_path_id: Optional[str] = None
 
 
 class AudioStateDeployment(BaseModel):

@@ -2732,6 +2732,22 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return self.setChainLoopInsertions(chainId, payload);
         }, py::arg("chain_id"), py::arg("insertions"), "Set external loop insertions for a chain")
 
+        .def("set_chain_dry_wet_mix", &Map2AudioEngine::setChainDryWetMix,
+             py::arg("chain_id"), py::arg("dry_wet_mix"),
+             "Set per-chain dry/wet mix percentage")
+
+        .def("set_chain_gain", &Map2AudioEngine::setChainGain,
+             py::arg("chain_id"), py::arg("gain_linear"),
+             "Set per-chain gain multiplier")
+
+        .def("set_chain_mute", &Map2AudioEngine::setChainMute,
+             py::arg("chain_id"), py::arg("muted"),
+             "Set per-chain mute state")
+
+        .def("set_chain_solo", &Map2AudioEngine::setChainSolo,
+             py::arg("chain_id"), py::arg("solo"),
+             "Set per-chain solo state")
+
         .def("set_loop_bypass", &Map2AudioEngine::setLoopBypass,
              py::arg("loop_id"), py::arg("bypass"),
              "Set external loop bypass state")

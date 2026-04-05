@@ -245,6 +245,10 @@ public:
 
     bool setExternalLoopDefinitions(const std::vector<ExternalLoopDefinition>& loops);
     bool setChainLoopInsertions(int chainId, const std::vector<ExternalLoopInsertion>& insertions);
+    bool setChainDryWetMix(int chainId, float dryWetMix);
+    bool setChainGain(int chainId, float gainLinear);
+    bool setChainMute(int chainId, bool muted);
+    bool setChainSolo(int chainId, bool solo);
     bool setLoopBypass(const std::string& loopId, bool bypass);
     bool calibrateLoop(const std::string& loopId, int calibrationFrames = 0);
     std::vector<ExternalLoopMetrics> getLoopMetrics(const std::string& loopId = "") const;
@@ -1578,6 +1582,11 @@ private:
     std::map<std::string, ExternalLoopDefinition> externalLoops_;
     std::map<int, std::vector<ExternalLoopInsertion>> chainLoopInsertions_;
     std::map<std::string, ExternalLoopMetrics> externalLoopMetrics_;
+    mutable std::mutex chainStateMutex_;
+    std::map<int, float> chainDryWetMix_;
+    std::map<int, float> chainGainLinear_;
+    std::map<int, bool> chainMuteState_;
+    std::map<int, bool> chainSoloState_;
 
     struct ExternalLoopRuntimeLoop {
         std::string loopId;

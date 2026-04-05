@@ -305,7 +305,7 @@ class ChainService:
     def _serialize_loop_insertion(insertion: Any) -> Dict[str, Any]:
         return {
             "insertion_id": insertion.insertion_id,
-            "chain_id": insertion.chain_id,
+            "chain_id": getattr(insertion, "chain_id", getattr(insertion, "snapshot_chain_id", None)),
             "loop_id": insertion.loop_id,
             "slot_index": insertion.slot_index,
             "enabled": insertion.enabled,

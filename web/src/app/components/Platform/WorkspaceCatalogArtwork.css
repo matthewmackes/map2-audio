@@ -1,42 +1,45 @@
 .platform-launchers-art {
   --platform-launchers-art-accent: var(--cds-border-interactive);
-  --platform-launchers-art-fill: var(--cds-layer-accent-01);
-  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
-  --platform-launchers-art-signal: var(--cds-icon-primary);
-  --platform-launchers-art-pulse: var(--cds-support-info);
-  --platform-launchers-art-frame: var(--cds-border-subtle-01);
+  --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-border-interactive) 24%, transparent);
+  --platform-launchers-art-surface: color-mix(in srgb, var(--cds-layer-03) 86%, #0d141c);
+  --platform-launchers-art-surface-strong: color-mix(in srgb, var(--cds-layer-02) 90%, #081019);
+  --platform-launchers-art-chrome: color-mix(in srgb, var(--cds-layer-02) 94%, #0a1018);
+  --platform-launchers-art-panel: color-mix(in srgb, var(--cds-layer-accent-01) 82%, #121a24);
+  --platform-launchers-art-panel-strong: color-mix(in srgb, var(--cds-layer-accent-02) 86%, #141e2a);
+  --platform-launchers-art-grid: color-mix(in srgb, var(--cds-border-subtle-01) 58%, transparent);
+  --platform-launchers-art-line: var(--platform-launchers-art-accent);
+  --platform-launchers-art-line-secondary: color-mix(in srgb, var(--platform-launchers-art-accent) 54%, var(--cds-icon-primary));
+  --platform-launchers-art-text: var(--cds-text-primary);
+  --platform-launchers-art-text-muted: var(--cds-text-secondary);
+  --platform-launchers-art-shadow: rgba(2, 8, 20, 0.24);
+  --platform-launchers-art-traffic: color-mix(in srgb, var(--platform-launchers-art-accent) 80%, white);
 }
 
 .platform-launchers-art--platform {
   --platform-launchers-art-accent: var(--cds-support-success);
-  --platform-launchers-art-fill: var(--cds-layer-accent-01);
-  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
-  --platform-launchers-art-signal: var(--cds-icon-primary);
-  --platform-launchers-art-pulse: var(--cds-support-success);
+  --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-support-success) 24%, transparent);
+  --platform-launchers-art-line-secondary: color-mix(in srgb, var(--cds-support-success) 44%, var(--cds-support-info));
 }
 
 .platform-launchers-art--audio {
   --platform-launchers-art-accent: var(--cds-support-info);
-  --platform-launchers-art-fill: var(--cds-layer-selected-inverse);
-  --platform-launchers-art-fill-alt: var(--cds-layer-accent-01);
-  --platform-launchers-art-signal: var(--cds-support-info);
-  --platform-launchers-art-pulse: var(--cds-support-info);
+  --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-support-info) 24%, transparent);
+  --platform-launchers-art-line-secondary: color-mix(in srgb, var(--cds-support-info) 50%, white);
 }
 
 .platform-launchers-art--human {
   --platform-launchers-art-accent: var(--cds-support-warning);
-  --platform-launchers-art-fill: var(--cds-layer-accent-01);
-  --platform-launchers-art-fill-alt: var(--cds-layer-accent-02);
-  --platform-launchers-art-signal: var(--cds-support-warning);
-  --platform-launchers-art-pulse: var(--cds-support-warning);
+  --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-support-warning) 24%, transparent);
+  --platform-launchers-art-line-secondary: color-mix(in srgb, var(--cds-support-warning) 48%, white);
 }
 
 .platform-launchers-art--hardware {
   --platform-launchers-art-accent: var(--cds-support-error);
-  --platform-launchers-art-fill: color-mix(in srgb, var(--cds-support-error) 10%, var(--cds-layer-01));
-  --platform-launchers-art-fill-alt: color-mix(in srgb, var(--cds-support-error) 18%, var(--cds-layer-01));
-  --platform-launchers-art-signal: var(--cds-support-error);
-  --platform-launchers-art-pulse: var(--cds-support-error);
+  --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-support-error) 24%, transparent);
+  --platform-launchers-art-surface: color-mix(in srgb, var(--cds-support-error) 7%, #101318);
+  --platform-launchers-art-panel: color-mix(in srgb, var(--cds-support-error) 10%, #18131a);
+  --platform-launchers-art-panel-strong: color-mix(in srgb, var(--cds-support-error) 14%, #18131a);
+  --platform-launchers-art-line-secondary: color-mix(in srgb, var(--cds-support-error) 52%, white);
 }
 
 .platform-launchers-art,
@@ -46,40 +49,157 @@
   height: auto;
 }
 
-.platform-launchers-art__frame {
-  fill: color-mix(in srgb, var(--platform-launchers-art-fill) 42%, var(--cds-layer-01));
-  stroke: var(--platform-launchers-art-frame);
-  stroke-width: 1.5;
+.platform-launchers-art text {
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
 }
 
-.platform-launchers-art__signal {
-  fill: none;
-  stroke: var(--platform-launchers-art-signal);
-  stroke-linecap: round;
-  stroke-width: 4;
-  opacity: 0.88;
+.platform-launchers-art__shadow {
+  fill: var(--platform-launchers-art-shadow);
 }
 
-.platform-launchers-art__column {
-  fill: var(--platform-launchers-art-fill);
-  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 34%, transparent);
+.platform-launchers-art__surface {
+  fill: var(--platform-launchers-art-surface);
+  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 18%, var(--cds-border-subtle-01));
   stroke-width: 1.25;
 }
 
-.platform-launchers-art__column--alt {
-  fill: var(--platform-launchers-art-fill-alt);
+.platform-launchers-art__chrome {
+  fill: var(--platform-launchers-art-chrome);
 }
 
-.platform-launchers-art__pulse {
-  fill: color-mix(in srgb, var(--platform-launchers-art-pulse) 22%, transparent);
-  stroke: var(--platform-launchers-art-pulse);
+.platform-launchers-art__traffic {
+  fill: var(--platform-launchers-art-traffic);
+}
+
+.platform-launchers-art__traffic--muted {
+  fill: color-mix(in srgb, var(--platform-launchers-art-traffic) 38%, transparent);
+}
+
+.platform-launchers-art__title {
+  fill: var(--platform-launchers-art-text);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.platform-launchers-art__subtitle,
+.platform-launchers-art__sidebar-label,
+.platform-launchers-art__metric-label,
+.platform-launchers-art__panel-label,
+.platform-launchers-art__footer-label {
+  fill: var(--platform-launchers-art-text-muted);
+  font-size: 5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.platform-launchers-art__subtitle {
+  font-size: 4.8px;
+}
+
+.platform-launchers-art__chip {
+  fill: var(--platform-launchers-art-accent-soft);
+  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 38%, transparent);
+  stroke-width: 1;
+}
+
+.platform-launchers-art__chip-text,
+.platform-launchers-art__metric-value {
+  fill: var(--platform-launchers-art-text);
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.platform-launchers-art__sidebar,
+.platform-launchers-art__canvas,
+.platform-launchers-art__metric-card,
+.platform-launchers-art__panel,
+.platform-launchers-art__footer-bar {
+  fill: var(--platform-launchers-art-panel);
+}
+
+.platform-launchers-art__sidebar,
+.platform-launchers-art__canvas,
+.platform-launchers-art__panel,
+.platform-launchers-art__metric-card,
+.platform-launchers-art__footer-bar {
+  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 16%, var(--cds-border-subtle-01));
+  stroke-width: 1;
+}
+
+.platform-launchers-art__panel--secondary {
+  fill: var(--platform-launchers-art-panel-strong);
+}
+
+.platform-launchers-art__nav-slot {
+  fill: color-mix(in srgb, var(--platform-launchers-art-text-muted) 28%, transparent);
+}
+
+.platform-launchers-art__nav-slot--active {
+  fill: var(--platform-launchers-art-accent);
+}
+
+.platform-launchers-art__grid-line {
+  stroke: var(--platform-launchers-art-grid);
+  stroke-width: 0.8;
+}
+
+.platform-launchers-art__line,
+.platform-launchers-art__connector {
+  fill: none;
+  stroke: var(--platform-launchers-art-line);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.1;
+}
+
+.platform-launchers-art__line--secondary {
+  stroke: var(--platform-launchers-art-line-secondary);
   stroke-width: 1.5;
 }
 
-.platform-launchers-art__label {
-  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 22%, transparent);
+.platform-launchers-art__node {
+  fill: var(--platform-launchers-art-line-secondary);
 }
 
-.platform-launchers-art__label--wide {
-  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 14%, transparent);
+.platform-launchers-art__node--accent {
+  fill: var(--platform-launchers-art-accent);
+}
+
+.platform-launchers-art__node-block {
+  fill: color-mix(in srgb, var(--platform-launchers-art-accent-soft) 70%, var(--platform-launchers-art-panel-strong));
+  stroke: color-mix(in srgb, var(--platform-launchers-art-accent) 28%, transparent);
+  stroke-width: 1;
+}
+
+.platform-launchers-art__node-block--active {
+  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 18%, var(--platform-launchers-art-panel-strong));
+}
+
+.platform-launchers-art__meter-track {
+  fill: color-mix(in srgb, var(--platform-launchers-art-text-muted) 18%, transparent);
+}
+
+.platform-launchers-art__meter-level {
+  fill: var(--platform-launchers-art-accent);
+}
+
+.platform-launchers-art__meter-level--alt {
+  fill: var(--platform-launchers-art-line-secondary);
+}
+
+.platform-launchers-art__detail-row {
+  fill: color-mix(in srgb, var(--platform-launchers-art-text-muted) 32%, transparent);
+}
+
+.platform-launchers-art__detail-row--active,
+.platform-launchers-art__footer-step--active {
+  fill: var(--platform-launchers-art-accent);
+}
+
+.platform-launchers-art__footer-step {
+  fill: color-mix(in srgb, var(--platform-launchers-art-accent) 24%, transparent);
 }

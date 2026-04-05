@@ -68,8 +68,8 @@ describe('PlatformLaunchersWorkspace', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Carbon storefront for MAP2 workspaces' })).toBeInTheDocument()
-    expect(screen.getByText('Storefront spotlight')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Workspace catalog section navigation' })).toBeInTheDocument()
+    expect(screen.queryByText('Storefront spotlight')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Workspace catalog section navigation' })).not.toBeInTheDocument()
     expect(screen.queryByRole('table', { name: 'Launcher catalog' })).not.toBeInTheDocument()
 
     const catalog = getCatalogSection()
@@ -161,7 +161,7 @@ describe('PlatformLaunchersWorkspace', () => {
     expect(within(getCatalogSection()).queryByRole('button', { name: 'Launch Edirol UA-1000' })).toBeNull()
   })
 
-  it('shows collection badges and section jump links for storefront browsing', () => {
+  it('keeps only the browse-everything full catalog section visible', () => {
     render(
       <PlatformLaunchersWorkspace
         settings={buildSettings()}
@@ -170,24 +170,15 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    expect(screen.getByRole('link', { name: 'Featured' })).toHaveAttribute('href', '#workspace-catalog-featured')
-    expect(screen.getByRole('link', { name: 'Platform Essentials' })).toHaveAttribute(
-      'href',
-      '#workspace-catalog-platform-essentials',
-    )
-    expect(screen.getByRole('link', { name: 'Recently Added' })).toHaveAttribute(
-      'href',
-      '#workspace-catalog-recently-added',
-    )
-    expect(screen.getByRole('link', { name: 'Full Catalog' })).toHaveAttribute(
-      'href',
-      '#workspace-catalog-full-catalog',
-    )
+    expect(screen.queryByText('Curated collection')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Featured' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Platform Essentials' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Recently Added' })).not.toBeInTheDocument()
 
     const catalog = getCatalogSection()
     const midiHubCard = within(catalog).getByRole('heading', { name: 'MIDI Hub' }).closest('.platform-launchers__card')
     expect(midiHubCard).not.toBeNull()
-    expect(within(midiHubCard as HTMLElement).getByText('Featured')).toBeInTheDocument()
+    expect(within(midiHubCard as HTMLElement).queryByText('Featured')).toBeNull()
   })
 
   it('keeps Platforms locked on Home and first in landing order', async () => {

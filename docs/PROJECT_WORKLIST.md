@@ -6,7 +6,26 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 00:20 EDT - Closed T743 by consuming staged preload instances during activation and releasing stale preload leftovers; T749/T748 remain next in queue after the earlier T751, T750, T752, T753, T745, T746, and T747 slices.
+Last updated: 2026-04-05 02:33 EDT - Closed follow-on T754 after wiring expression-assignment morph control into the live snapshot path; no remaining unblocked tasks identified.
+
+ID: T754
+Status: [✓] Done
+Title: Allow snapshot expression mappings to drive live morph position
+Description:
+- Goal / acceptance criteria: Snapshot-scoped `expression_mappings` entries must be able to target morph position so an expression pedal can drive the current live snapshot’s morph amount in real time. The existing expression worker should accept a stable target id such as `snapshot.morph_position`, forward the normalized value into the live snapshot service, and reuse the same runtime morph-apply path as the editor slider.
+- Why it matters: T741 added live morph interpolation, but without a control path the feature still cannot be driven from an expression pedal during performance. This closes the backend half of the morph-control story and reduces the remaining T629 block to UI/learn wiring instead of missing runtime behavior.
+- Dependencies: T741
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 02:33 EDT - Codex
+- Completion notes:
+  - Extended `app/services/expression_service.py` so expression assignments targeting `snapshot.morph_position` or `snapshot.routing.morph_position` now call through to `SnapshotService.set_morph_position()` for the current live snapshot rather than being treated as an unknown engine setter.
+  - The implementation reuses the existing live morph path, so runtime engine application, desired-state publish, and live snapshot payload sync all stay aligned with the editor-driven morph slider behavior.
+  - Added focused regression coverage in `tests/test_expression_service.py` proving a snapshot-scoped morph assignment normalizes the incoming CC value and routes it through the new live morph helper.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/expression_service.py tests/test_expression_service.py` -> PASS
+  - `pytest -q tests/test_expression_service.py -k 'snapshot_morph_assignment_routes_through_live_snapshot_service or live_state_and_retime_stats_accumulate or custom_curve_affects_output'` -> PASS
 
 ID: T753
 Status: [✓] Done
@@ -96,7 +115,7 @@ Last updated: 2026-04-05 00:12 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_metrics.py app/services/snapshot_service.py app/services/snapshot_deployment_service.py tests/test_snapshot_service.py tests/test_snapshot_deployment_service.py` -> PASS
 
 ID: T749
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot expression_mappings and automation_lanes never applied on activation
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, `controls.expression_mappings` must configure expression pedal→parameter bindings in the MIDI engine, and `controls.automation_lanes` must configure LFO/modulation automation in the automation engine. Currently both are stored in `controls_payload` but never read or applied by any runtime service.
@@ -107,19 +126,36 @@ Description:
 - Dependencies: T747 (MIDI engine registration pattern to reuse)
 - Estimated effort: Large (automation engine integration)
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 01:00 EDT - Codex
+- Completion notes:
+  - Added snapshot activation sync hooks in `app/services/snapshot_service.py` so `controls.expression_mappings` now flow into `ExpressionService.replace_snapshot_assignments(...)` and `controls.automation_lanes` now flow into `automation_engine.replace_snapshot_lanes(...)`, with per-activation runtime metrics recorded alongside the existing MIDI/output sync results.
+  - Extended `app/services/expression_service.py` with snapshot-scoped assignment replacement that clears only prior snapshot-owned mappings, preserving user and performance-mode mappings while allowing each activation to replace the live snapshot control set deterministically.
+  - Extended `app/services/automation_engine.py` with snapshot-scoped lane replacement and backup/restore handling so snapshot activations can replace prior snapshot lanes, restore pre-existing lanes when switching away, and honor LFO/envelope configuration payloads during import.
+  - Added regression coverage in `tests/test_snapshot_service.py` proving activation applies both expression mappings and automation lanes and reports the sync results in confirmed runtime metrics.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/expression_service.py app/services/automation_engine.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 'expression_mappings_and_automation_lanes or snapshot_midi_map or monitoring_output or output_safety or preload_next_snapshot or preloaded_instances or stale_preloaded'` -> PASS
+  - `pytest -q tests/test_expression_service.py` -> PASS
+  - `pytest -q tests/test_midi_automation_identity_persistence.py -k 'automation_engine_persists_and_exports_duplicate_safe_parameter_ids'` -> PASS
 
 ID: T748
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update T735 test matrix to cover all discovered gaps (T736–T753)
 Description:
 - Goal / acceptance criteria: Expand the T735 integration test plan to cover the full set of discovered gaps: routing (T739), channel state (T737, T744), effects loops (T736), bypass (T745), MIDI map (T747, T746), preload (T743), topology reuse (T742), morph (T741), expression/automation (T749), output levels (T750), monitoring output (T751), IO bindings (T752), and cluster deployment (T753). Each gap should have at least one test that stubs the engine and asserts the expected call was or was not made.
 - Dependencies: T735
 - Estimated effort: Medium (test design, no implementation)
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 01:08 EDT - Codex
+- Completion notes:
+  - Audited the existing snapshot/deployment test coverage and confirmed the already-shipped gaps T743, T745, T746, T747, T749, T750, T751, T752, and T753 each have direct regression coverage in `tests/test_snapshot_service.py` or `tests/test_snapshot_deployment_service.py`.
+  - Added explicit open-gap matrix tests in `tests/test_snapshot_service.py` for T736, T737, T738, T739, T741, T742, and T744. The still-open gaps remain `pytest.mark.xfail(..., strict=True)`, while T738/T739 have since been promoted to normal passing regressions as their implementations landed.
+  - The xfail block uses engine stubs and direct activation/live-edit assertions, so when those runtime tasks are implemented the matrix will flip from expected-fail to hard signal automatically.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't736_ or t737_ or t738_ or t739_ or t741_ or t742_ or t744_ or expression_mappings_and_automation_lanes'` -> PASS (`1 passed, 7 xfailed`)
 
 ID: T747
 Status: [✓] Done
@@ -187,7 +223,7 @@ Last updated: 2026-04-05 00:39 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T744
-Status: [ ] Todo
+Status: [✓] Done
 Title: Channel update (mute/solo/dry_wet_mix) on live snapshot does not sync to engine or authority
 Description:
 - Goal / acceptance criteria: When `update_channel()` is called on the currently-live snapshot, channel-level state (mute, solo, dry_wet_mix) must be applied to the engine and the live snapshot payload must be synced. Currently the method is DB-only — it does not check live status, does not sync the live payload, and does not publish desired state.
@@ -198,8 +234,14 @@ Description:
 - Dependencies: T737 (engine primitives for channel mute/solo/gain)
 - Estimated effort: Small
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 02:06 EDT - Codex
+- Completion notes:
+  - `app/services/snapshot_service.py::update_channel()` now follows the same live-snapshot sync pattern as `update_routing()`: after the DB flush it refreshes the live payload, reapplies channel state to the runtime engine, and republishes desired state when the edited snapshot is currently live.
+  - Added a `channel_state_apply` result to the live edit response so the caller can tell whether the runtime reapply happened or was skipped.
+  - Promoted the T744 matrix row in `tests/test_snapshot_service.py` to a normal regression test proving a live channel edit triggers fresh `set_chain_mute()`, `set_chain_solo()`, and `set_chain_dry_wet_mix()` calls.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py -k 't744_live_channel_edit_should_reapply_engine_channel_state'` -> PASS
 
 ID: T743
 Status: [✓] Done
@@ -224,7 +266,7 @@ Last updated: 2026-04-05 00:20 EDT - Codex
   - `pytest -q tests/test_snapshot_service.py -k 'preload_next_snapshot or preloaded_instances or stale_preloaded'` -> PASS
 
 ID: T742
-Status: [ ] Todo
+Status: [✓] Done
 Title: Topology-reuse path skips routing, channel, and loop-insertion application
 Description:
 - Goal / acceptance criteria: When `_reuse_live_runtime_chains()` succeeds (topology reuse), the activation path must still apply routing mode/blend, channel mute/solo/dry_wet_mix, and effects-loop insertion parameters — not just plugin bypass and loader_state. Currently the reuse path (line 3015-3157 in `snapshot_service.py`) only updates `ChainPlugin.bypass` and `loader_state` columns for each runtime plugin (lines 3121-3132), then returns without applying any other snapshot state to the engine.
@@ -232,14 +274,20 @@ Description:
 - Root cause: `_reuse_live_runtime_chains()` was written to handle the common case of "same plugins, different parameters" but only covers the plugin-level bypass/loader_state columns. It does not call `apply_snapshot_to_engine()` equivalent steps for routing, channels, or loop insertions. The full-rebuild path (`_materialize_live_state`) creates fresh chains and loop insertions from the snapshot detail, but the reuse path skips all of that.
 - Fix approach: After the reuse path succeeds (line 3152), apply the same routing/channel/loop-insertion steps that would run after `_materialize_live_state()`. Specifically: (1) call `_apply_routing_to_engine()` from T739, (2) apply channel mute/solo/gain from T737, (3) sync loop insertions for each reused runtime chain via `set_chain_loop_insertions()` from T736.
 - Files: `app/services/snapshot_service.py`
-- Dependencies: T736, T737, T739 (the engine primitives must exist first)
+- Dependencies: T737
 - Estimated effort: Small (integration work after dependencies are complete)
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 02:06 EDT - Codex
+- Completion notes:
+  - Activation now runs a dedicated `_sync_snapshot_channel_state_to_runtime()` step after live-state serialization, alongside the already-landed routing and loop-insertion apply steps, so the topology-reuse fast path no longer skips channel mute/solo/dry-wet state.
+  - The runtime metrics now include `channel_state`, making the reuse path observable in the same way as routing and loop insertion application.
+  - Promoted the T742 matrix row in `tests/test_snapshot_service.py` to a normal regression test proving a reused topology still emits fresh runtime chain-mix calls.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py -k 't742_topology_reuse_should_reapply_routing_and_loop_state'` -> PASS
 
 ID: T741
-Status: [ ] Todo
+Status: [✓] Done
 Title: Morph position stored to authority but never applied to engine parameter interpolation
 Description:
 - Goal / acceptance criteria: When `set_morph_position()` is called, the morph position must drive actual parameter interpolation between the morph source and target channels in the JUCE engine — not just update the authority state.
@@ -250,8 +298,15 @@ Description:
 - Dependencies: T739 (parallel routing engine apply must be in place so source/target channels are mapped)
 - Estimated effort: Large (new interpolation engine, parameter diffing, real-time application)
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 02:19 EDT - Codex
+- Completion notes:
+  - Added `apply_snapshot_morph_to_engine()` in `app/services/snapshot_runtime_service.py`, which now resolves the morph source and target channels, matches plugins by URI/position, interpolates overlapping parameter values at the requested morph position, and pushes the blended values into the runtime engine.
+  - Wired morph application into both activation-time runtime metrics and the live `update_routing()` path, so `set_morph_position()` now drives the engine immediately instead of remaining authority-only state.
+  - Extended `app/models/audio_state.py::AudioStateRouting` and `app/services/audio_state_snapshot_compiler.py` to include `morph_position`, `morph_source_path_id`, and `morph_target_path_id`, so the desired-state payload now carries the morph intent that the runtime is applying.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/models/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_runtime_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't741_set_morph_position_should_drive_runtime_parameter_interpolation or t737_activation_should_push_channel_state_to_engine or t744_live_channel_edit_should_reapply_engine_channel_state or t742_topology_reuse_should_reapply_routing_and_loop_state'` -> PASS
 
 ID: T740
 Status: [✓] Done
@@ -279,7 +334,7 @@ Last updated: 2026-04-04 23:24 EDT - Codex
   - Touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs app/services tests` and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T739
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply snapshot routing mode and blend to JUCE parallel-group engine on activation
 Description:
 - Goal / acceptance criteria: When a snapshot with `routing.mode = "parallel"` is activated, `apply_snapshot_to_engine()` must (1) call `create_parallel_group()` to build the parallel topology, (2) map each snapshot channel onto a branch via `add_to_parallel_branch()`, and (3) call `set_parallel_ab_blend()` with the blend value stored in `routing.blend_positions`. When mode is `"series"`, the existing chain deploy path is sufficient and parallel groups should be torn down if previously created.
@@ -290,11 +345,18 @@ Description:
 - Dependencies: T637 (re-blocked) partially overlaps — T739 is the concrete implementation T637 was blocked waiting for.
 - Estimated effort: Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 01:20 EDT - Codex
+- Completion notes:
+  - Added `apply_snapshot_routing_to_engine()` in `app/services/snapshot_runtime_service.py`, which now inspects the live runtime chains, tears down stale parallel groups, creates a fresh JUCE parallel group for `routing.mode == "parallel_blend"`, attaches each branch’s runtime plugin instances, and applies the normalized A/B blend from `routing.blend_positions`.
+  - Wired the helper into `app/services/snapshot_service.py::activate_snapshot()` so routing is applied on every successful activation, including topology-reuse activations, and the result is recorded in `runtime_metrics.routing_apply`.
+  - Upgraded the T739 matrix row in `tests/test_snapshot_service.py` from strict `xfail` to a normal regression test that proves activation now drives `create_parallel_group()`, `add_to_parallel_branch()`, and `set_parallel_ab_blend()`.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't739_activation_should_push_parallel_routing_to_engine or activation_records_topology_mutation_metrics or topology_reused or monitoring_output or snapshot_midi_map'` -> PASS
 
 ID: T738
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply live routing edit to engine immediately (update_routing live-sync)
 Description:
 - Goal / acceptance criteria: When the user edits routing on the currently-live snapshot (`PATCH /api/snapshots/{id}/routing`), the engine must reflect the change immediately — blend ratio, mode, active path — without requiring a full deactivate/reactivate cycle.
@@ -305,11 +367,18 @@ Description:
 - Dependencies: T739 (must exist to have `_apply_routing_to_engine` helper)
 - Estimated effort: Small–Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 01:23 EDT - Codex
+- Completion notes:
+  - Extended `app/services/snapshot_service.py::update_routing()` so when the edited snapshot is currently live and the routing mode is unchanged, it immediately reapplies routing through `snapshot_runtime_service.apply_snapshot_routing_to_engine(detail)` instead of stopping at DB/runtime-payload sync.
+  - Added an explicit `routing_requires_reactivation` response flag for live mode switches. Parallel-blend edits reapply in place; mode changes are surfaced honestly as requiring reactivation rather than being treated as silently-applied runtime changes.
+  - Promoted the T738 matrix row in `tests/test_snapshot_service.py` to a normal regression test proving a live blend edit triggers a second `set_parallel_ab_blend()` call and returns `routing_requires_reactivation == False`.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't738_live_routing_edit_should_reapply_engine_blend or t739_activation_should_push_parallel_routing_to_engine'` -> PASS
 
 ID: T737
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply snapshot channel dry_wet_mix, mute, and solo to engine on activation
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, per-channel `dry_wet_mix`, `muted`, and `solo` values must be applied to the corresponding runtime chains in the engine. Currently these values are stored in `SnapshotChannel` rows and serialized into the snapshot detail payload but are never sent to the engine.
@@ -320,11 +389,19 @@ Description:
 - Dependencies: None for Python side; C++ binding additions are self-contained.
 - Estimated effort: Medium (C++ binding additions required)
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 02:06 EDT - Codex
+- Completion notes:
+  - Added `set_chain_dry_wet_mix()`, `set_chain_gain()`, `set_chain_mute()`, and `set_chain_solo()` to the JUCE engine wrapper surface via `juce-engine/Source/Map2AudioEngine.*`, `juce-engine/Source/PythonBindings.cpp`, and `app/services/juce_engine_service.py`, giving snapshot activation a concrete runtime API for per-chain channel state.
+  - Added `_sync_snapshot_channel_state_to_runtime()` in `app/services/snapshot_service.py`; activation now resolves snapshot channel IDs to runtime chain IDs from `live_state.paths`, applies mute/solo/dry-wet state, and records a `runtime_metrics.channel_state` result.
+  - Promoted the T737 matrix row in `tests/test_snapshot_service.py` to a normal regression test proving activation emits the expected chain mute/solo/dry-wet calls and reports `channel_state.applied_count == 1`.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/juce_engine_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't737_activation_should_push_channel_state_to_engine or t744_live_channel_edit_should_reapply_engine_channel_state or t742_topology_reuse_should_reapply_routing_and_loop_state or t736_activation_should_push_loop_insertions_to_engine or t738_live_routing_edit_should_reapply_engine_blend or t739_activation_should_push_parallel_routing_to_engine'` -> PASS
+  - `cmake --build build --target map2_audio_engine -j2` -> PASS
 
 ID: T736
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply snapshot effects-loop insertion parameters to engine on activation
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, `EffectsLoopInsertion` rows attached to the snapshot's chains must be pushed to the engine via `set_chain_loop_insertions()`. Currently the insertions are stored in the DB and available in the snapshot detail payload but `_deploy_chain_to_engine()` and `apply_snapshot_to_engine()` never call `set_chain_loop_insertions()` with the snapshot-scoped insertion parameters (`blend_pct`, `send_gain_db`, `return_gain_db`, `crossfade_ms`, `band_split_hz`, `mode`, `enabled`).
@@ -335,23 +412,37 @@ Description:
 - Dependencies: None — `set_chain_loop_insertions()` already exists on the engine service.
 - Estimated effort: Small
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 01:34 EDT - Codex
+- Completion notes:
+  - Added snapshot activation loop-insertion sync in `app/services/snapshot_service.py` so confirmed live runtime chains now receive `set_chain_loop_insertions(chain_id, payload)` during activation, and the result is reported in `runtime_metrics.loop_insertions`.
+  - Fixed the snapshot normalization/enrichment path to preserve `chains[].loop_insertions` across the legacy enrichment round-trip, and hardened `ChainService._serialize_loop_insertion()` so snapshot loop rows serialize correctly despite using `snapshot_chain_id` instead of `chain_id`.
+  - Promoted the T736 matrix row in `tests/test_snapshot_service.py` to a normal regression test with a real `EffectsLoop` fixture, proving activation now pushes one configured loop insertion into the runtime engine while the topology-reuse row remains expected-fail only for the still-missing channel-state apply.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/chain_service.py app/services/snapshot_service.py app/services/snapshot_runtime_service.py tests/test_snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_service.py -k 't736_activation_should_push_loop_insertions_to_engine or t738_live_routing_edit_should_reapply_engine_blend or t739_activation_should_push_parallel_routing_to_engine or t742_topology_reuse_should_reapply_routing_and_loop_state or expression_mappings_and_automation_lanes or snapshot_midi_map or monitoring_output or output_safety'` -> PASS (`8 passed, 1 xfailed`)
 
 ID: T735
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audit and test the full snapshot→engine activation path end-to-end
 Description:
 - Goal / acceptance criteria: Add an integration test suite that activates a snapshot with known routing, channel, blend, effects-loop, mute, solo, and dry_wet_mix values, then asserts that each value reaches the corresponding engine API call. The tests should catch regressions for every gap documented in T736–T740 as they are fixed, and they should run in the existing `pytest` suite.
 - Why it matters: All five gaps (T736–T740) are silent failures with no error surface. Once fixed, they need regression coverage so they cannot regress invisibly again. Without tests the activation path is trust-based, not verified.
-- Root cause: No integration-level test exists that covers the snapshot activation path beyond `params_applied` and `bypass_applied` count checks. The `test_snapshot_service.py` suite tests DB-layer behavior only; no test stubs the engine and asserts routing/channel/loop state was pushed.
+- Root cause: No dedicated integration-level test file existed that covered the snapshot activation path beyond `params_applied` and `bypass_applied` count checks. The broad `test_snapshot_service.py` suite had grown targeted rows, but there was still no single focused activation-audit suite.
 - Fix approach: Add `tests/test_snapshot_activation_engine_apply.py`. Use `unittest.mock.patch` to stub `JuceEngineService` methods. Activate a snapshot that has: (1) parallel routing with blend, (2) a muted channel, (3) a non-default dry_wet_mix, (4) an effects-loop insertion with non-default blend_pct. Assert each corresponding engine method was called with the expected arguments. Add a test for `update_routing` on the live snapshot that asserts `set_parallel_ab_blend` fires without a full reactivation.
-- Files: `tests/test_snapshot_activation_engine_apply.py` (new), `app/services/snapshot_runtime_service.py`, `app/services/snapshot_service.py`
+- Files: `tests/test_snapshot_activation_engine_apply.py` (new), `tests/test_snapshot_service.py`, `app/services/snapshot_runtime_service.py`, `app/services/snapshot_service.py`
 - Dependencies: Ideally run after T736–T740 are implemented, but can be written first as failing tests to drive the implementation.
 - Estimated effort: Small–Medium
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-04 EDT
+Assigned to: Codex
+Last updated: 2026-04-05 02:19 EDT - Codex
+- Completion notes:
+  - Added `tests/test_snapshot_activation_engine_apply.py`, a dedicated activation-audit suite with engine stubs that asserts activation pushes routing, channel state, and loop insertion settings into the runtime engine surface.
+  - The new suite also includes a live `update_routing()` regression proving blend edits reapply through the engine without requiring full snapshot reactivation.
+  - Kept the existing open-gap matrix in `tests/test_snapshot_service.py` as the broader per-task signal layer, while the new file serves as the focused end-to-end activation audit requested by T735.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_snapshot_activation_engine_apply.py app/models/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_runtime_service.py app/services/snapshot_service.py` -> PASS
+  - `pytest -q tests/test_snapshot_activation_engine_apply.py tests/test_snapshot_service.py -k 'snapshot_activation_applies_routing_channel_and_loop_state or live_routing_blend_edit_reapplies_without_full_reactivation or t741_set_morph_position_should_drive_runtime_parameter_interpolation'` -> PASS
 
 ID: T734
 Status: [✓] Done
@@ -15428,3 +15519,97 @@ Last updated: 2026-04-04 17:09 EDT - Codex
   - `pytest -q tests/test_ir_routes.py tests/test_nam_ir_instance_routes.py` -> PASS (`17 passed`)
 - Licensing review:
   - Touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+---
+
+ID: T605
+Status: [✓] Done
+Title: Simplify `/platforms/workspace-catalog` to a single browse-everything catalog surface
+Description:
+- Goal / acceptance criteria: Remove the extra curated storefront sections from `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` so the routed workspace no longer renders `Featured`, `Platform Essentials`, `Recently Added`, section-jump navigation, or any other duplicate sectional chrome. Preserve the existing hero, search, category filters, launch/configure controls, and the `Browse everything` + `Full Catalog` surface as the only catalog listing region. Update focused frontend regression coverage to prove the removed section labels no longer render while the full catalog actions still work.
+- Why it matters: The current workspace-catalog page duplicates launcher inventory across multiple sections, which adds noise and weakens the direct browse-everything workflow the storefront is supposed to provide.
+- Dependencies: `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.css`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx`, and this worklist entry.
+- Estimated effort: Medium
+- Required outputs: single-section workspace-catalog UI, updated focused regression coverage, and validation evidence.
+Subtasks:
+  - ID: T605-subA
+    Status: [✓] Done
+    Title: Remove curated collection sections and section-jump chrome from the workspace catalog
+    Description:
+    - Goal / acceptance criteria: Delete the multi-section storefront rendering path and any supporting copy/constants that only exist to render curated sections. Keep `Browse everything` and `Full Catalog` copy intact and ensure filter/search state still drives the remaining card grid.
+    - Why it matters: The current curated split repeats content and distracts from the single catalog browse surface requested by the user.
+    - Dependencies: T605
+    - Estimated effort: Low
+    - Required outputs: streamlined `PlatformLaunchersWorkspace.tsx`/`.css` implementation with one catalog section.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 20:27 EDT - Codex
+  - ID: T605-subB
+    Status: [✓] Done
+    Title: Refresh workspace-catalog regressions for the full-catalog-only layout
+    Description:
+    - Goal / acceptance criteria: Update the focused workspace-catalog tests so they stop expecting removed curated navigation/sections, continue verifying launch/configure/filter behavior from the surviving full catalog, and explicitly guard against the removed labels returning.
+    - Why it matters: The layout change is structural; without regression coverage the removed sectional chrome could be reintroduced accidentally.
+    - Dependencies: T605-subA
+    - Estimated effort: Low
+    - Required outputs: passing focused frontend tests for the simplified catalog layout.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 20:27 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 20:27 EDT - Codex
+- Completion notes:
+  - What was done: Removed the curated storefront section records, section-jump navigation, spotlight panel, and collection badges from `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, leaving the hero controls plus one `Browse everything` / `Full Catalog` listing surface.
+  - Key findings: The section split was fully driven by local constants and helper rendering logic, so the requested simplification was contained to the workspace-catalog component plus its focused regression expectations; the existing launch/configure/filter flows did not need behavioral changes.
+  - Files/links produced: `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx`, `docs/PROJECT_WORKLIST.md`
+  - Suggested next tasks: None
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS
+
+---
+
+ID: T606
+Status: [✓] Done
+Title: Replace workspace-catalog artwork with generated screenshot-style previews
+Description:
+- Goal / acceptance criteria: Replace the existing abstract `WorkspaceCatalogArtwork` illustrations with newly generated screenshot-style previews for every launcher card and configure modal instance on `/platforms/workspace-catalog`. The new previews must feel like MAP2 product screenshots rather than decorative shapes, vary deterministically by launcher metadata so every catalog image changes, preserve category/maturity tone cues, and remain fully local/code-generated so the catalog does not depend on external assets.
+- Why it matters: The current artwork reads as placeholder illustration rather than product evidence, which makes the storefront less credible and less useful as a product-browsing surface.
+- Dependencies: `web/src/app/components/Platform/WorkspaceCatalogArtwork.tsx`, `web/src/app/components/Platform/WorkspaceCatalogArtwork.css`, `web/src/app/data/launcherCatalog.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, focused workspace-catalog tests, and this worklist entry.
+- Estimated effort: Medium
+- Required outputs: generated screenshot-style catalog previews, any supporting styling updates, focused regression stability, and validation evidence.
+Subtasks:
+  - ID: T606-subA
+    Status: [✓] Done
+    Title: Build deterministic screenshot-preview composition for launcher artwork
+    Description:
+    - Goal / acceptance criteria: Rework `WorkspaceCatalogArtwork` to render a screenshot-like composition with window chrome, panel structure, metrics, and route-specific variation derived from launcher metadata instead of the current abstract bars/pulses artwork. Preserve accessibility and responsive sizing for card and modal contexts.
+    - Why it matters: This is the core visual change needed to replace the current illustrative placeholder art with generated screenshot-like previews.
+    - Dependencies: T606
+    - Estimated effort: Medium
+    - Required outputs: updated artwork component and CSS that render screenshot-style previews consistently across all catalog surfaces.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 20:27 EDT - Codex
+  - ID: T606-subB
+    Status: [✓] Done
+    Title: Validate screenshot previews against workspace-catalog regressions
+    Description:
+    - Goal / acceptance criteria: Ensure the new preview component does not break the catalog layout or tests, and extend focused assertions only if needed to cover the screenshot-preview integration points.
+    - Why it matters: The artwork renders in every card and configure modal, so regressions here can destabilize the whole catalog surface.
+    - Dependencies: T606-subA
+    - Estimated effort: Low
+    - Required outputs: stable focused tests and validation notes for the new screenshot previews.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-04 20:27 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-04 20:27 EDT - Codex
+- Completion notes:
+  - What was done: Rebuilt `web/src/app/components/Platform/WorkspaceCatalogArtwork.tsx` and `web/src/app/components/Platform/WorkspaceCatalogArtwork.css` around deterministic screenshot-style SVG previews with window chrome, sidebar/navigation, metric cards, seeded graph/mixer/flow panels, and category/maturity color treatment so every catalog image now reads like a generated product screenshot.
+  - Key findings: The catalog artwork was already centralized behind one component, so replacing the image language across every rendered launcher instance required no catalog-data changes and stayed local to the shared artwork layer.
+  - Files/links produced: `web/src/app/components/Platform/WorkspaceCatalogArtwork.tsx`, `web/src/app/components/Platform/WorkspaceCatalogArtwork.css`, `docs/PROJECT_WORKLIST.md`
+  - Suggested next tasks: None
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS

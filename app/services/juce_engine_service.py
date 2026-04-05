@@ -4732,6 +4732,38 @@ class JuceEngineService(Singleton):
             return bool(method(chain_id, insertions))
         return False
 
+    async def set_chain_dry_wet_mix(self, chain_id: int, dry_wet_mix: float) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_chain_dry_wet_mix", None)
+        if callable(method):
+            return bool(method(chain_id, dry_wet_mix))
+        return False
+
+    async def set_chain_gain(self, chain_id: int, gain_linear: float) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_chain_gain", None)
+        if callable(method):
+            return bool(method(chain_id, gain_linear))
+        return False
+
+    async def set_chain_mute(self, chain_id: int, muted: bool) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_chain_mute", None)
+        if callable(method):
+            return bool(method(chain_id, muted))
+        return False
+
+    async def set_chain_solo(self, chain_id: int, solo: bool) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_chain_solo", None)
+        if callable(method):
+            return bool(method(chain_id, solo))
+        return False
+
     async def set_loop_bypass(self, loop_id: str, bypass: bool) -> bool:
         if not self._engine:
             return False

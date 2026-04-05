@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from app.services.chain_service import (
     _CABINET_IR_PLUGIN_URIS,
@@ -197,6 +197,382 @@ async def apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int, 
                     logger.debug("Could not set param %s for %s: %s", idx_str, plugin_uri, exc)
 
     return params_applied, bypass_applied
+
+
+def _ordered_runtime_paths(snapshot_detail: Dict[str, Any]) -> List[Dict[str, Any]]:
+    live_state = snapshot_detail.get("live_state")
+    if not isinstance(live_state, dict):
+        return []
+
+    runtime_paths = [
+        dict(item)
+        for item in live_state.get("paths", [])
+        if isinstance(item, dict)
+    ]
+    if not runtime_paths:
+        return []
+
+    runtime_paths_by_id = {
+        str(path.get("path_id") or ""): path
+        for path in runtime_paths
+        if str(path.get("path_id") or "")
+    }
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    ordered_ids = [
+        str(path_id)
+        for path_id in routing.get("series_order", [])
+        if str(path_id or "")
+    ]
+    if ordered_ids:
+        ordered_paths = [runtime_paths_by_id[path_id] for path_id in ordered_ids if path_id in runtime_paths_by_id]
+        if ordered_paths:
+            remaining_paths = [path for path in runtime_paths if path not in ordered_paths]
+            return [*ordered_paths, *remaining_paths]
+    return runtime_paths
+
+
+def _parallel_blend_value(snapshot_detail: Dict[str, Any], ordered_paths: List[Dict[str, Any]]) -> float:
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    blend_positions = routing.get("blend_positions")
+    if not isinstance(blend_positions, dict) or len(ordered_paths) < 2:
+        return 0.5
+
+    first_path_id = str(ordered_paths[0].get("path_id") or "")
+    second_path_id = str(ordered_paths[1].get("path_id") or "")
+    first_value = float(blend_positions.get(first_path_id, 100.0) or 0.0)
+    second_value = float(blend_positions.get(second_path_id, 100.0) or 0.0)
+    total = first_value + second_value
+    if total <= 0.0:
+        return 0.5
+    return max(0.0, min(1.0, second_value / total))
+
+
+def _plugin_parameter_symbols(plugin_uri: str) -> Dict[int, str]:
+    try:
+        from app.routes.plugins import _discovered_plugins
+    except Exception:
+        return {}
+
+    plugin_info = next(
+        (item for item in _discovered_plugins if item.get("uri") == plugin_uri),
+        None,
+    )
+    if not isinstance(plugin_info, dict):
+        return {}
+
+    symbols: Dict[int, str] = {}
+    for index, parameter in enumerate(plugin_info.get("parameters", [])):
+        if not isinstance(parameter, dict):
+            continue
+        symbol = str(parameter.get("symbol") or "").strip()
+        if symbol:
+            symbols[index] = symbol
+    return symbols
+
+
+async def _set_interpolated_parameter(
+    engine: Any,
+    *,
+    plugin_uri: str,
+    plugin_position: Optional[int],
+    param_index: int,
+    value: float,
+) -> bool:
+    symbols = _plugin_parameter_symbols(plugin_uri)
+    symbol = symbols.get(param_index)
+    if symbol:
+        try:
+            applied = await engine.set_parameter(
+                plugin_uri,
+                symbol,
+                value,
+                plugin_position=plugin_position,
+            )
+            return bool(applied)
+        except TypeError:
+            pass
+        except Exception as exc:
+            logger.debug(
+                "Morph parameter apply failed for %s[%s] via symbol %s: %s",
+                plugin_uri,
+                plugin_position,
+                symbol,
+                exc,
+            )
+
+    resolver = getattr(engine, "_get_instance_id_for_uri", None)
+    instance_id = None
+    if callable(resolver):
+        try:
+            instance_id = resolver(plugin_uri, plugin_position)
+        except Exception as exc:
+            logger.debug("Morph resolver failed for %s[%s]: %s", plugin_uri, plugin_position, exc)
+            instance_id = None
+
+    try:
+        applied = await engine.set_parameter(instance_id, param_index, value)
+        return bool(applied)
+    except TypeError:
+        logger.debug(
+            "Morph parameter apply fallback signature unsupported for %s[%s] index %s",
+            plugin_uri,
+            plugin_position,
+            param_index,
+        )
+        return False
+    except Exception as exc:
+        logger.debug(
+            "Morph parameter apply failed for %s[%s] index %s: %s",
+            plugin_uri,
+            plugin_position,
+            param_index,
+            exc,
+        )
+        return False
+
+
+async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dict[str, Any]:
+    from app.services.juce_engine_service import get_audio_engine
+
+    engine = get_audio_engine()
+    if engine is None or not hasattr(engine, "set_parameter"):
+        return {
+            "applied": False,
+            "reason": "engine_unavailable",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    if str(routing.get("mode") or "") != "morph":
+        return {
+            "applied": False,
+            "reason": "non_morph_mode",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
+    source_key = str(routing.get("morph_source_channel_key") or "").strip()
+    target_key = str(routing.get("morph_target_channel_key") or "").strip()
+    if not source_key or not target_key:
+        return {
+            "applied": False,
+            "reason": "missing_morph_channels",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
+    morph_position = max(0.0, min(1.0, float(routing.get("morph_position", 0.5) or 0.0)))
+    channels_by_key = {
+        str(channel.get("channel_key") or ""): dict(channel)
+        for channel in snapshot_detail.get("channels", [])
+        if isinstance(channel, dict)
+    }
+    source_channel = channels_by_key.get(source_key)
+    target_channel = channels_by_key.get(target_key)
+    if not isinstance(source_channel, dict) or not isinstance(target_channel, dict):
+        return {
+            "applied": False,
+            "reason": "channel_not_found",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
+    chains_by_id = {
+        int(chain.get("id")): dict(chain)
+        for chain in snapshot_detail.get("chains", [])
+        if isinstance(chain, dict) and isinstance(chain.get("id"), int)
+    }
+    source_chain = chains_by_id.get(int(source_channel.get("chain_id") or 0))
+    target_chain = chains_by_id.get(int(target_channel.get("chain_id") or 0))
+    if not isinstance(source_chain, dict) or not isinstance(target_chain, dict):
+        return {
+            "applied": False,
+            "reason": "chain_not_found",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
+    target_plugins = {
+        (str(plugin.get("uri") or ""), snapshot_plugin_position(plugin)): dict(plugin)
+        for plugin in target_chain.get("plugins", [])
+        if isinstance(plugin, dict)
+    }
+
+    plugin_count = 0
+    applied_count = 0
+    for source_plugin in source_chain.get("plugins", []):
+        if not isinstance(source_plugin, dict):
+            continue
+        plugin_uri = str(source_plugin.get("uri") or "")
+        plugin_position = snapshot_plugin_position(source_plugin)
+        target_plugin = target_plugins.get((plugin_uri, plugin_position))
+        if not isinstance(target_plugin, dict):
+            continue
+
+        plugin_count += 1
+        source_params = source_plugin.get("parameters") if isinstance(source_plugin.get("parameters"), dict) else {}
+        target_params = target_plugin.get("parameters") if isinstance(target_plugin.get("parameters"), dict) else {}
+        for param_index_str, source_value in source_params.items():
+            if param_index_str not in target_params:
+                continue
+            try:
+                param_index = int(param_index_str)
+                source_float = float(source_value)
+                target_float = float(target_params[param_index_str])
+            except (TypeError, ValueError):
+                continue
+            blended = source_float + ((target_float - source_float) * morph_position)
+            if await _set_interpolated_parameter(
+                engine,
+                plugin_uri=plugin_uri,
+                plugin_position=plugin_position,
+                param_index=param_index,
+                value=blended,
+            ):
+                applied_count += 1
+
+    return {
+        "applied": applied_count > 0,
+        "reason": "applied" if applied_count > 0 else "no_matching_parameters",
+        "plugin_count": plugin_count,
+        "applied_count": applied_count,
+        "morph_position": morph_position,
+    }
+
+
+async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply snapshot routing mode and branch blend to the JUCE parallel-group runtime."""
+    from app.services.juce_engine_service import get_audio_engine
+
+    engine = get_audio_engine()
+    if engine is None:
+        return {
+            "applied": False,
+            "reason": "engine_unavailable",
+            "removed_group_count": 0,
+            "created_group_id": None,
+            "branch_count": 0,
+        }
+
+    if not getattr(engine, "is_available", True) or not getattr(engine, "is_running", True):
+        return {
+            "applied": False,
+            "reason": "engine_not_running",
+            "removed_group_count": 0,
+            "created_group_id": None,
+            "branch_count": 0,
+        }
+
+    try:
+        existing_groups = await engine.get_parallel_groups()
+    except Exception as exc:
+        logger.debug("Could not query existing parallel groups: %s", exc)
+        existing_groups = []
+
+    removed_group_count = 0
+    for group in existing_groups if isinstance(existing_groups, list) else []:
+        group_id = group.get("group_id", group.get("id")) if isinstance(group, dict) else None
+        try:
+            parsed_group_id = int(group_id)
+        except (TypeError, ValueError):
+            continue
+        try:
+            if await engine.remove_parallel_group(parsed_group_id):
+                removed_group_count += 1
+        except Exception as exc:
+            logger.debug("Could not remove parallel group %s: %s", parsed_group_id, exc)
+
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    routing_mode = str(routing.get("mode") or "").strip().lower()
+    if routing_mode != "parallel_blend":
+        return {
+            "applied": True,
+            "reason": "non_parallel_mode",
+            "removed_group_count": removed_group_count,
+            "created_group_id": None,
+            "branch_count": 0,
+        }
+
+    ordered_paths = _ordered_runtime_paths(snapshot_detail)
+    runtime_chains = {
+        int(chain.get("id")): chain
+        for chain in snapshot_detail.get("live_state", {}).get("runtime_chains", [])
+        if isinstance(chain, dict) and isinstance(chain.get("id"), int)
+    }
+    branch_plugins: List[List[Dict[str, Any]]] = []
+    for path in ordered_paths:
+        runtime_chain_id = path.get("runtime_chain_id")
+        if not isinstance(runtime_chain_id, int):
+            continue
+        runtime_chain = runtime_chains.get(runtime_chain_id)
+        if not isinstance(runtime_chain, dict):
+            continue
+        plugins = [
+            dict(plugin)
+            for plugin in runtime_chain.get("plugins", [])
+            if isinstance(plugin, dict)
+        ]
+        plugins.sort(key=lambda plugin: int(plugin.get("position", 0)))
+        resolved_plugins: List[Dict[str, Any]] = []
+        for plugin in plugins:
+            instance_id = plugin.get("instance_id")
+            if not isinstance(instance_id, int):
+                resolver = getattr(engine, "_get_instance_id_for_uri", None)
+                if callable(resolver):
+                    try:
+                        instance_id = resolver(
+                            str(plugin.get("uri") or ""),
+                            snapshot_plugin_position(plugin),
+                        )
+                    except Exception as exc:
+                        logger.debug("Could not resolve runtime instance for %s: %s", plugin.get("uri"), exc)
+                        instance_id = None
+            if isinstance(instance_id, int) and instance_id > 0:
+                resolved_plugin = dict(plugin)
+                resolved_plugin["instance_id"] = instance_id
+                resolved_plugins.append(resolved_plugin)
+        if resolved_plugins:
+            branch_plugins.append(resolved_plugins)
+
+    if len(branch_plugins) < 2:
+        return {
+            "applied": False,
+            "reason": "insufficient_runtime_branches",
+            "removed_group_count": removed_group_count,
+            "created_group_id": None,
+            "branch_count": len(branch_plugins),
+        }
+
+    group_id = await engine.create_parallel_group(position=-1, num_branches=len(branch_plugins))
+    if not isinstance(group_id, int) or group_id < 0:
+        return {
+            "applied": False,
+            "reason": "create_parallel_group_failed",
+            "removed_group_count": removed_group_count,
+            "created_group_id": None,
+            "branch_count": len(branch_plugins),
+        }
+
+    added_plugin_count = 0
+    for branch_index, plugins in enumerate(branch_plugins):
+        for plugin in plugins:
+            instance_id = int(plugin["instance_id"])
+            position = int(plugin.get("position", -1))
+            await engine.add_to_parallel_branch(group_id, branch_index, instance_id, position)
+            added_plugin_count += 1
+
+    blend_value = _parallel_blend_value(snapshot_detail, ordered_paths)
+    await engine.set_parallel_ab_blend(group_id, blend_value)
+    return {
+        "applied": True,
+        "reason": "parallel_blend_applied",
+        "removed_group_count": removed_group_count,
+        "created_group_id": group_id,
+        "branch_count": len(branch_plugins),
+        "added_plugin_count": added_plugin_count,
+        "blend_value": blend_value,
+    }
 
 
 def _parameter_lookup_keys(definition: Dict[str, Any]) -> set[str]:

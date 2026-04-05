@@ -11,6 +11,7 @@ Features:
 - Real-time processing loop
 """
 
+import copy
 import numpy as np
 import logging
 import asyncio
@@ -229,6 +230,8 @@ class AutomationEngine:
 
         # Thread safety
         self._lock = Lock()
+        self._snapshot_lane_ids: set[str] = set()
+        self._snapshot_lane_backups: Dict[str, AutomationLaneState] = {}
 
         logger.info(f"Automation engine initialized (SR: {sample_rate}, buffer: {buffer_size})")
 
@@ -723,6 +726,8 @@ class AutomationEngine:
         tempo_division: str = "1/4",
         phase_offset: float = 0.0,
         smoothing: float = 0.0,
+        bipolar: bool = True,
+        pulse_width: float = 0.5,
     ) -> bool:
         """Configure LFO for a parameter lane."""
         with self._lock:
@@ -747,6 +752,8 @@ class AutomationEngine:
                 depth=depth,
                 phase_offset=phase_offset,
                 waveform=wf,
+                bipolar=bipolar,
+                pulse_width=pulse_width,
                 sync_to_tempo=sync_to_tempo,
                 tempo_division=td,
                 tempo_bpm=self.tempo_bpm,
@@ -1006,7 +1013,98 @@ class AutomationEngine:
         """Clear all automation data."""
         with self._lock:
             self.lanes.clear()
+            self._snapshot_lane_ids.clear()
+            self._snapshot_lane_backups.clear()
         logger.info("Cleared all automation data")
+
+    def _restore_snapshot_lanes_locked(self) -> int:
+        cleared_count = len(self._snapshot_lane_ids)
+        for parameter_id in list(self._snapshot_lane_ids):
+            backup_lane = self._snapshot_lane_backups.pop(parameter_id, None)
+            if backup_lane is not None:
+                self.lanes[parameter_id] = copy.deepcopy(backup_lane)
+            else:
+                self.lanes.pop(parameter_id, None)
+        self._snapshot_lane_ids.clear()
+        return cleared_count
+
+    def replace_snapshot_lanes(self, entries: List[Dict[str, Any]]) -> Dict[str, int]:
+        with self._lock:
+            cleared_count = self._restore_snapshot_lanes_locked()
+
+        applied_count = 0
+        invalid_count = 0
+        for entry in entries or []:
+            if not isinstance(entry, dict):
+                invalid_count += 1
+                continue
+
+            payload = dict(entry)
+            parameter_id = str(payload.get("parameter_id") or "").strip()
+            plugin_uri = str(payload.get("plugin_uri") or "").strip()
+            plugin_position = payload.get("plugin_position")
+            param_index_raw = payload.get("param_index")
+
+            if not parameter_id:
+                if not plugin_uri or param_index_raw is None:
+                    invalid_count += 1
+                    continue
+                try:
+                    parameter_id = self.build_parameter_id(plugin_uri, int(param_index_raw), plugin_position)
+                except (TypeError, ValueError):
+                    invalid_count += 1
+                    continue
+                payload["parameter_id"] = parameter_id
+
+            with self._lock:
+                existing_lane = self.lanes.get(parameter_id)
+                if existing_lane is not None and parameter_id not in self._snapshot_lane_backups:
+                    self._snapshot_lane_backups[parameter_id] = copy.deepcopy(existing_lane)
+
+            if not self.import_automation(payload):
+                invalid_count += 1
+                continue
+
+            modulation_source = str(payload.get("modulation_source") or "timeline").strip().lower()
+            lfo_payload = payload.get("lfo") if isinstance(payload.get("lfo"), dict) else {}
+            envelope_payload = payload.get("envelope") if isinstance(payload.get("envelope"), dict) else {}
+
+            if modulation_source == ModulationSource.LFO.value:
+                self.configure_lfo(
+                    parameter_id=parameter_id,
+                    rate_hz=float(lfo_payload.get("rate_hz", payload.get("rate_hz", 1.0)) or 1.0),
+                    depth=float(lfo_payload.get("depth", payload.get("depth", 0.5)) or 0.5),
+                    waveform=str(lfo_payload.get("waveform", payload.get("waveform", "sine")) or "sine"),
+                    sync_to_tempo=bool(lfo_payload.get("sync_to_tempo", payload.get("sync_to_tempo", False))),
+                    tempo_division=str(lfo_payload.get("tempo_division", payload.get("tempo_division", "1/4")) or "1/4"),
+                    phase_offset=float(lfo_payload.get("phase_offset", payload.get("phase_offset", 0.0)) or 0.0),
+                    smoothing=float(lfo_payload.get("smoothing", payload.get("smoothing", 0.0)) or 0.0),
+                    bipolar=bool(lfo_payload.get("bipolar", payload.get("bipolar", True))),
+                    pulse_width=float(lfo_payload.get("pulse_width", payload.get("pulse_width", 0.5)) or 0.5),
+                )
+            elif modulation_source == ModulationSource.ENVELOPE.value:
+                self.configure_envelope_follower(
+                    parameter_id=parameter_id,
+                    attack_ms=float(envelope_payload.get("attack_ms", payload.get("attack_ms", 10.0)) or 10.0),
+                    release_ms=float(envelope_payload.get("release_ms", payload.get("release_ms", 100.0)) or 100.0),
+                    threshold_db=float(envelope_payload.get("threshold_db", payload.get("threshold_db", -60.0)) or -60.0),
+                    sensitivity=float(envelope_payload.get("sensitivity", payload.get("sensitivity", 1.0)) or 1.0),
+                    input_source=str(envelope_payload.get("input_source", payload.get("input_source", "main_input")) or "main_input"),
+                    invert=bool(envelope_payload.get("invert", payload.get("invert", False))),
+                )
+
+            with self._lock:
+                self._snapshot_lane_ids.add(parameter_id)
+            applied_count += 1
+
+        with self._lock:
+            active_snapshot_count = len(self._snapshot_lane_ids)
+        return {
+            "cleared_count": cleared_count,
+            "applied_count": applied_count,
+            "invalid_count": invalid_count,
+            "active_snapshot_count": active_snapshot_count,
+        }
 
 
 # Global automation engine instance
