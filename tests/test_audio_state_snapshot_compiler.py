@@ -1,6 +1,7 @@
 from app.services.audio_state_snapshot_compiler import (
     build_initial_authoritative_audio_state,
     compile_snapshot_detail_to_intent,
+    overlay_audio_state_extensions,
 )
 
 
@@ -106,3 +107,37 @@ def test_build_initial_authoritative_audio_state_preserves_existing_extensions()
 
     assert state.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
     assert state.desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+
+
+def test_overlay_audio_state_extensions_replaces_snapshot_owned_namespace():
+    merged = overlay_audio_state_extensions(
+        {
+            "performance_brain": {
+                "instances": {
+                    "instance-17__position-3": {
+                        "runtime_instance_id": "instance-17__position-3",
+                        "instance_id": "17",
+                        "plugin_position": 3,
+                    }
+                }
+            },
+            "transport": {
+                "tempo": 128.0,
+            },
+        },
+        {
+            "performance_brain": {
+                "instances": {
+                    "instance-18__position-4": {
+                        "runtime_instance_id": "instance-18__position-4",
+                        "instance_id": "18",
+                        "plugin_position": 4,
+                    }
+                }
+            }
+        },
+    )
+
+    assert "instance-17__position-3" not in merged["performance_brain"]["instances"]
+    assert merged["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
+    assert merged["transport"]["tempo"] == 128.0

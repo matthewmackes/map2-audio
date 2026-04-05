@@ -460,13 +460,10 @@ class SnapshotService:
             runtime_metrics=runtime_metrics,
         )
 
-    async def _publish_snapshot_desired_state(self, detail: dict[str, Any]) -> None:
+    async def _load_current_audio_state_extensions(self) -> dict[str, Any]:
         try:
             from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
-            from app.services.audio_state_snapshot_compiler import (
-                compile_snapshot_detail_to_intent,
-                merge_audio_state_extensions,
-            )
+            from app.services.audio_state_snapshot_compiler import merge_audio_state_extensions
 
             authority = AudioStateAuthorityService()
             preserved_extensions: dict[str, Any] = {}
@@ -489,11 +486,44 @@ class SnapshotService:
             except AudioStateAuthorityError as exc:
                 if "No desired audio state exists" not in str(exc):
                     raise
+            return preserved_extensions
+        except Exception as exc:
+            logger.debug("Snapshot authority extension load skipped: %s", exc)
+            return {}
+
+    async def _resolve_snapshot_persisted_extensions(
+        self,
+        detail_payload: dict[str, Any] | None,
+        *,
+        capture_current_authority_extensions: bool,
+    ) -> dict[str, Any]:
+        from app.services.audio_state_snapshot_compiler import merge_audio_state_extensions
+
+        explicit_extensions = detail_payload.get("extensions") if isinstance(detail_payload, dict) else None
+        if isinstance(explicit_extensions, dict):
+            return merge_audio_state_extensions(explicit_extensions)
+        if not capture_current_authority_extensions:
+            return {}
+        return await self._load_current_audio_state_extensions()
+
+    async def _publish_snapshot_desired_state(self, detail: dict[str, Any]) -> None:
+        try:
+            from app.services.audio_state_authority import AudioStateAuthorityService
+            from app.services.audio_state_snapshot_compiler import (
+                compile_snapshot_detail_to_intent,
+                overlay_audio_state_extensions,
+            )
+
+            authority = AudioStateAuthorityService()
+            preserved_extensions = await self._load_current_audio_state_extensions()
 
             await authority.put_desired_state(
                 compile_snapshot_detail_to_intent(
                     detail,
-                    extensions=preserved_extensions,
+                    extensions=overlay_audio_state_extensions(
+                        preserved_extensions,
+                        detail.get("extensions") if isinstance(detail.get("extensions"), dict) else None,
+                    ),
                 )
             )
         except Exception as exc:
@@ -1450,6 +1480,7 @@ class SnapshotService:
         is_favorite: bool = False,
         is_locked: bool = False,
         apply_default_system_blocks: bool = True,
+        capture_current_authority_extensions: bool = True,
     ) -> dict[str, Any]:
         normalized_name = validate_snapshot_name(name)
         await self._validate_program_number(program_number)
@@ -1487,6 +1518,10 @@ class SnapshotService:
         await self.session.flush()
 
         normalized = self._normalize_detail_payload(detail_payload or {})
+        normalized["extensions"] = await self._resolve_snapshot_persisted_extensions(
+            detail_payload,
+            capture_current_authority_extensions=capture_current_authority_extensions,
+        )
         normalized = self._apply_default_system_blocks_to_normalized(
             normalized,
             apply_defaults=apply_default_system_blocks,
@@ -1520,6 +1555,7 @@ class SnapshotService:
         display_order: Any = UNSET,
         detail_payload: Any = UNSET,
         create_revision: bool = False,
+        capture_current_authority_extensions: bool = True,
     ) -> Optional[dict[str, Any]]:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
@@ -1576,6 +1612,10 @@ class SnapshotService:
 
         if detail_payload is not UNSET:
             normalized = self._normalize_detail_payload(detail_payload)
+            normalized["extensions"] = await self._resolve_snapshot_persisted_extensions(
+                detail_payload if isinstance(detail_payload, dict) else None,
+                capture_current_authority_extensions=capture_current_authority_extensions,
+            )
             normalized = await self._enrich_normalized_payload(normalized)
             await self._replace_snapshot_state(snapshot, normalized)
             snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
@@ -1707,6 +1747,7 @@ class SnapshotService:
             controls_payload=payload["controls"] if "controls" in payload else UNSET,
             detail_payload=payload,
             create_revision=True,
+            capture_current_authority_extensions=False,
         )
         return restored
 
@@ -1731,6 +1772,7 @@ class SnapshotService:
             is_favorite=bool(snapshot.get("is_favorite", False)),
             is_locked=False,
             apply_default_system_blocks=False,
+            capture_current_authority_extensions=False,
         )
 
     async def save_snapshot_as_new(
@@ -1758,6 +1800,7 @@ class SnapshotService:
             is_favorite=bool(snapshot.get("is_favorite", False)),
             is_locked=False,
             apply_default_system_blocks=False,
+            capture_current_authority_extensions=False,
         )
 
     @staticmethod
@@ -2664,6 +2707,7 @@ class SnapshotService:
             output_device=detail_payload.get("output_device"),
             detail_payload=detail_payload,
             apply_default_system_blocks=False,
+            capture_current_authority_extensions=False,
         )
         return imported
 
@@ -2929,6 +2973,7 @@ class SnapshotService:
         return int(result.scalar_one_or_none() or 0)
 
     async def _replace_snapshot_state(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
+        snapshot.extensions_payload = copy.deepcopy(normalized.get("extensions") or {})
         await self.session.execute(delete(SnapshotChannel).where(SnapshotChannel.snapshot_id == snapshot.id))
         await self.session.execute(delete(SnapshotRouting).where(SnapshotRouting.snapshot_id == snapshot.id))
         await self.session.execute(delete(SnapshotMidiMap).where(SnapshotMidiMap.snapshot_id == snapshot.id))
@@ -3253,6 +3298,9 @@ class SnapshotService:
             "chains": normalized_chains,
             "routing": normalized_routing,
             "midi_map": normalized_midi_map,
+            "extensions": copy.deepcopy(payload.get("extensions") or {})
+            if isinstance(payload.get("extensions"), dict)
+            else {},
         }
 
     async def _enrich_normalized_payload(self, normalized: dict[str, Any]) -> dict[str, Any]:
@@ -3280,6 +3328,7 @@ class SnapshotService:
                 if preserved.get("effects_loops"):
                     chain["effects_loops"] = [dict(item) for item in preserved["effects_loops"]]
             enriched_normalized["midi_map"] = [dict(entry) for entry in normalized.get("midi_map", [])]
+            enriched_normalized["extensions"] = copy.deepcopy(normalized.get("extensions") or {})
             return enriched_normalized
         except Exception as exc:
             logger.debug("Snapshot enrichment skipped runtime refresh: %s", exc)
@@ -3977,6 +4026,11 @@ class SnapshotService:
             "midi_map": [dict(entry) for entry in (snapshot.midi_map.entries if snapshot.midi_map else [])],
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
+            "extensions": (
+                copy.deepcopy(snapshot.extensions_payload)
+                if isinstance(snapshot.extensions_payload, dict)
+                else {}
+            ),
         }
 
     def _canonicalize_snapshot_normalized(self, normalized: dict[str, Any]) -> dict[str, Any]:
@@ -4064,6 +4118,7 @@ class SnapshotService:
             "midi_map": _canonicalize_json_value(normalized.get("midi_map") or []),
             "input_device": normalized.get("input_device"),
             "output_device": normalized.get("output_device"),
+            "extensions": _canonicalize_json_value(normalized.get("extensions") or {}),
         }
 
     def _snapshot_revision_from_normalized(self, normalized: dict[str, Any]) -> str:
@@ -4178,6 +4233,11 @@ class SnapshotService:
         if snapshot_row is not None and snapshot_row.community_rating_count:
             average_rating = float(snapshot_row.community_rating_sum or 0.0) / float(snapshot_row.community_rating_count)
         tempo_status = self._tempo_status_for_snapshot(snapshot_row)
+        persisted_extensions = (
+            snapshot_row.extensions_payload
+            if snapshot_row is not None and isinstance(snapshot_row.extensions_payload, dict)
+            else {}
+        )
 
         return {
             "id": snapshot_id,
@@ -4217,6 +4277,7 @@ class SnapshotService:
                 "series_order": list(routing["series_order"]),
             },
             "midi_map": [dict(entry) for entry in normalized["midi_map"]],
+            "extensions": copy.deepcopy(normalized.get("extensions") or persisted_extensions),
             "active_channel_index": channel_key_to_index.get(routing["active_channel_key"], 0),
             "channel_count": len(detail_channels),
             "chain_count": len(chains_payload),
@@ -4359,6 +4420,7 @@ class SnapshotService:
             "chains": copy.deepcopy(detail.get("chains") or []),
             "routing": copy.deepcopy(detail.get("routing") or {}),
             "midi_map": copy.deepcopy(detail.get("midi_map") or []),
+            "extensions": copy.deepcopy(detail.get("extensions") or {}),
         }
 
     def _build_snapshot_revision_summary(self, detail: dict[str, Any]) -> str:

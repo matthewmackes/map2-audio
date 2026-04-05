@@ -49,6 +49,18 @@ def merge_audio_state_extensions(*extension_sets: dict[str, Any] | None) -> dict
     return merged
 
 
+def overlay_audio_state_extensions(
+    base: dict[str, Any] | None,
+    overlay: dict[str, Any] | None,
+) -> dict[str, Any]:
+    merged = merge_audio_state_extensions(base)
+    if not isinstance(overlay, dict):
+        return merged
+    for namespace, value in overlay.items():
+        merged[str(namespace)] = copy.deepcopy(value)
+    return merged
+
+
 def _coerce_snapshot_paths(detail: dict[str, Any]) -> list[dict[str, Any]]:
     paths = detail.get("paths")
     if isinstance(paths, list) and paths:

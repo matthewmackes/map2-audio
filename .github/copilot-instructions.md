@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Snapshot authority extension preservation documented)
+> **Last Updated**: April 5, 2026 (Snapshot-owned Brain authority recall documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1513,6 +1513,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py::test_activate_snapshot_route_compiles_and_commits_authoritative_state tests/test_audio_state_routes.py::test_activate_snapshot_route_preserves_existing_authority_extensions tests/test_snapshot_service.py::test_activate_snapshot_publishes_desired_state_to_audio_authority tests/test_snapshot_service.py::test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state tests/test_snapshot_service.py::test_update_routing_publishes_desired_state_for_live_snapshot`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_service.py tests/test_audio_state_routes.py tests/test_audio_state_snapshot_compiler.py tests/test_snapshot_service.py`; `npm --prefix web run build`
 - **Lesson**: Snapshot compilers are allowed to replace routing and IO intent, but they must preserve unrelated authority extensions unless the snapshot payload explicitly replaces them, or snapshot-first flows will erase adjacent control-plane state.
 
+**57. Snapshot-Owned Brain Extensions Must Round-Trip Through Persistence And Replace The Live Brain Namespace On Recall (HIGH - Apr 5, 2026)**
+- **Files**: `app/database.py`, `app/routes/audio_state.py`, `app/services/audio_state_snapshot_compiler.py`, `app/services/snapshot_service.py`, `tests/test_audio_state_routes.py`, `tests/test_audio_state_snapshot_compiler.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: After snapshot activation started preserving the current authority extension payload, activating Snapshot A after Snapshot B could still recall Snapshot B's latest `performance_brain` projection because snapshots themselves did not persist any Brain extension content.
+- **Root Cause**: Snapshot normalization, DB persistence, detail export, and revision payloads only tracked channels/chains/routing/MIDI data, so `extensions.performance_brain` was silently dropped during save/load/restore. Activation could merge the live authority payload, but it had no snapshot-owned Brain namespace to prefer over the current live projection.
+- **Fix**: Add `snapshots.extensions_payload`, extend snapshot normalize/detail/revision round-tripping to include `extensions`, capture the current authority extension projection into authored snapshots when no explicit extension payload is provided, and use namespace overlay semantics so snapshot-owned `performance_brain` replaces the live Brain namespace while unrelated extensions stay preserved.
+- **Verification**: `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_snapshot_service.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/routes/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_snapshot_service.py`
+- **Lesson**: Preserving current authority extensions is only half of snapshot recall. Any snapshot-owned authority namespace must round-trip through snapshot persistence and revisions, then explicitly replace the live namespace during activation, or snapshot recall will silently devolve into "whatever happened most recently."
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1783,6 +1791,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Snapshot-Owned Brain Authority Recall
+- **Section**: Gotchas & Learned Fixes (#57), Update Log
+- **Change**: Documented the rule that authored snapshots must persist `extensions.performance_brain`, capture current authority extensions when authors omit them, and overlay snapshot-owned namespaces during activation/desired-state publish so snapshot recall beats the current live Brain namespace.
+- **Reason**: T763-subE closed the remaining recall gap after extension-preservation work by making snapshots own Brain extension content instead of only preserving whichever projection happened to be live when activation ran.
+- **Impact**: Future snapshot/authority work should treat snapshot extension round-tripping and namespace replacement as part of the recall contract, not as an optional control-plane convenience.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/database.py`, `app/routes/audio_state.py`, `app/services/audio_state_snapshot_compiler.py`, `app/services/snapshot_service.py`, `tests/test_audio_state_routes.py`, `tests/test_audio_state_snapshot_compiler.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - Snapshot Authority Extension Preservation
 - **Section**: Gotchas & Learned Fixes (#56), Update Log

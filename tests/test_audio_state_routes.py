@@ -320,6 +320,69 @@ def test_activate_snapshot_route_preserves_existing_authority_extensions(monkeyp
     assert fake_service.committed.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
 
 
+def test_activate_snapshot_route_prefers_snapshot_owned_authority_extensions(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+    fake_service = _ActivateService(
+        committed_extensions={
+            "performance_brain": {
+                "instances": {
+                    "instance-17__position-3": {
+                        "runtime_instance_id": "instance-17__position-3",
+                        "instance_id": "17",
+                        "plugin_position": 3,
+                    }
+                }
+            },
+            "transport": {
+                "tempo": 128.0,
+            },
+        }
+    )
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
+    monkeypatch.setattr(audio_state_routes, "resolve_local_node_id", lambda: "node-a")
+
+    class _FakeSnapshotService:
+        def __init__(self, _session) -> None:
+            pass
+
+        async def get_snapshot(self, snapshot_id: int):
+            return {
+                "id": snapshot_id,
+                "name": "Brain Override Snapshot",
+                "routing": {"mode": "series", "active_channel_key": "ch_a", "series_order": ["ch_a"]},
+                "paths": [{"id": "ch_a", "label": "A", "snapshot_chain_id": 101}],
+                "chains": [],
+                "extensions": {
+                    "performance_brain": {
+                        "instances": {
+                            "instance-18__position-4": {
+                                "runtime_instance_id": "instance-18__position-4",
+                                "instance_id": "18",
+                                "plugin_position": 4,
+                            }
+                        }
+                    }
+                },
+            }
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(audio_state_routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(audio_state_routes, "get_session", _fake_session)
+
+    response = client.post(
+        "/api/audio/state/snapshots/9/activate",
+        json={"triggered_by": "ui-test", "leader_epoch": 5},
+    )
+
+    assert response.status_code == 200
+    assert "instance-17__position-3" not in fake_service.desired.extensions["performance_brain"]["instances"]
+    assert fake_service.desired.extensions["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
+    assert fake_service.committed.extensions["transport"]["tempo"] == 128.0
+
+
 def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
     client = _build_client(monkeypatch)
     fake_service = _BrainAuthoritySyncService()

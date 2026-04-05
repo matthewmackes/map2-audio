@@ -1288,6 +1288,135 @@ def test_activate_snapshot_preserves_existing_authority_extensions_when_publishi
     assert desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
 
 
+def test_create_snapshot_captures_current_authority_extensions_when_detail_omits_them(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            return SimpleNamespace(
+                value=SimpleNamespace(
+                    desired=SimpleNamespace(
+                        extensions={
+                            "performance_brain": {
+                                "instances": {
+                                    "instance-17__position-3": {
+                                        "runtime_instance_id": "instance-17__position-3",
+                                        "instance_id": "17",
+                                        "plugin_position": 3,
+                                    }
+                                }
+                            }
+                        }
+                    ),
+                    extensions={},
+                )
+            )
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="CapturedBrainSnapshot",
+                program_number=14,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            fetched = await service.get_snapshot(created["id"])
+            assert fetched is not None
+            assert created["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+            assert fetched["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+
+    asyncio.run(_run())
+
+
+def test_snapshot_revision_round_trips_snapshot_owned_extensions(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="RevisionBrainSnapshot",
+                program_number=15,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                    "extensions": {
+                        "performance_brain": {
+                            "instances": {
+                                "instance-17__position-3": {
+                                    "runtime_instance_id": "instance-17__position-3",
+                                    "instance_id": "17",
+                                    "plugin_position": 3,
+                                }
+                            }
+                        }
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            updated = await service.update_snapshot(
+                created["id"],
+                detail_payload={
+                    "channels": created["channels"],
+                    "chains": created["chains"],
+                    "routing": created["routing"],
+                    "midi_map": created["midi_map"],
+                    "extensions": {
+                        "performance_brain": {
+                            "instances": {
+                                "instance-18__position-4": {
+                                    "runtime_instance_id": "instance-18__position-4",
+                                    "instance_id": "18",
+                                    "plugin_position": 4,
+                                }
+                            }
+                        }
+                    },
+                },
+                create_revision=True,
+                capture_current_authority_extensions=False,
+            )
+
+            assert updated is not None
+            assert updated["snapshot_revision"] != created["snapshot_revision"]
+            assert updated["extensions"]["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
+
+            restored = await service.restore_revision(created["id"], 1)
+            assert restored is not None
+            assert restored["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+            assert "instance-18__position-4" not in restored["extensions"]["performance_brain"]["instances"]
+
+    asyncio.run(_run())
+
+
 def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []
