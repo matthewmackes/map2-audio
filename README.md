@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**967** Python | **1109** TypeScript | **133** C++/H | **131** Docs | **1361** total commits | **3** stars | **0** forks | **0** open issues
+**971** Python | **1114** TypeScript | **136** C++/H | **131** Docs | **1363** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`387e746e`](https://github.com/matthewmackes/map2-audio/commit/387e746e60cb4a1ac992bdfada7cb800e46b60a5) | Add Performance Brain bootstrap and refine drums workspace | Map2 Audio | 2026-04-05 |
+| [`112612fe`](https://github.com/matthewmackes/map2-audio/commit/112612feeb6677268ff42d4c50b07d811ab4fbc3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`f057864b`](https://github.com/matthewmackes/map2-audio/commit/f057864b98673e0c02cf55a954ece23fbe0a393f) | Persist drums backing-track runtime state | Map2 Audio | 2026-04-05 |
 | [`93576f3c`](https://github.com/matthewmackes/map2-audio/commit/93576f3c97ac1785ae5319723e9240e4616a46e0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`9706e959`](https://github.com/matthewmackes/map2-audio/commit/9706e9597a50859be73a83465e6c61952fd869ec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`cad826da`](https://github.com/matthewmackes/map2-audio/commit/cad826daa44815b7440b2d02d5063a39c54d87cb) | Add drums backing-track runtime and live routing sync | Map2 Audio | 2026-04-04 |
 | [`40279d1a`](https://github.com/matthewmackes/map2-audio/commit/40279d1aa0c82174af8eba59d8a5821ebea962da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`7d814cdd`](https://github.com/matthewmackes/map2-audio/commit/7d814cddc69e5724d5d0fac122dcb73340f9f21d) | Finish snapshot runtime sync and workspace catalog refresh | Map2 Audio | 2026-04-04 |
-| [`8a7d2a7a`](https://github.com/matthewmackes/map2-audio/commit/8a7d2a7a77eaf7d17d72ef99641895dc851ffc11) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
-| [`91d6fbc6`](https://github.com/matthewmackes/map2-audio/commit/91d6fbc6c642a45b607851079f85571bd23f3336) | Consume staged preload instances during activation | Map2 Audio | 2026-04-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
