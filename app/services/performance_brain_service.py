@@ -266,6 +266,66 @@ class BrainSnapshotIntegrationModel(BaseModel):
     observed_state_id: str = "brain:observed:default"
 
 
+class BrainKeyboardQualificationModel(BaseModel):
+    ready: bool = False
+    zone_count: int = Field(0, ge=0)
+    channel_count: int = Field(0, ge=0)
+    chromatic_slot_count: int = Field(0, ge=0)
+    polyphony_capacity: int = Field(0, ge=0)
+    max_key_span: int = Field(0, ge=0)
+    aftertouch_modes: list[str] = Field(default_factory=list)
+    summary: str = ""
+    issues: list[str] = Field(default_factory=list)
+
+
+class BrainTriggerQualificationModel(BaseModel):
+    ready: bool = False
+    profile_count: int = Field(0, ge=0)
+    covered_pad_count: int = Field(0, ge=0, le=16)
+    trigger_slot_count: int = Field(0, ge=0, le=16)
+    unique_trigger_notes: int = Field(0, ge=0)
+    fastest_scan_time_ms: float = Field(0.0, ge=0.0)
+    widest_mask_time_ms: float = Field(0.0, ge=0.0)
+    summary: str = ""
+    issues: list[str] = Field(default_factory=list)
+
+
+class BrainSequenceQualificationModel(BaseModel):
+    ready: bool = False
+    pattern_count: int = Field(0, ge=0)
+    populated_pattern_count: int = Field(0, ge=0)
+    active_lane_count: int = Field(0, ge=0)
+    max_pattern_length: int = Field(0, ge=0)
+    swing_lane_count: int = Field(0, ge=0)
+    song_entry_count: int = Field(0, ge=0)
+    summary: str = ""
+    issues: list[str] = Field(default_factory=list)
+
+
+class BrainRoutingQualificationModel(BaseModel):
+    ready: bool = False
+    used_bus_count: int = Field(0, ge=0, le=8)
+    output_pair_count: int = Field(0, ge=0)
+    reverb_bus_count: int = Field(0, ge=0, le=8)
+    controller_assignment_count: int = Field(0, ge=0)
+    summary: str = ""
+    issues: list[str] = Field(default_factory=list)
+
+
+class BrainControllerQualificationModel(BaseModel):
+    scoped_instance_key: str = "workspace-default"
+    scope_binding_ready: bool = True
+    tier_a_runtime_locked: bool = True
+    controller_ready: bool = False
+    ready_surface_count: int = Field(0, ge=0, le=4)
+    keyboard: BrainKeyboardQualificationModel = Field(default_factory=BrainKeyboardQualificationModel)
+    triggers: BrainTriggerQualificationModel = Field(default_factory=BrainTriggerQualificationModel)
+    sequence: BrainSequenceQualificationModel = Field(default_factory=BrainSequenceQualificationModel)
+    routing: BrainRoutingQualificationModel = Field(default_factory=BrainRoutingQualificationModel)
+    summary: str = ""
+    issues: list[str] = Field(default_factory=list)
+
+
 class BrainDiagnosticsModel(BaseModel):
     sample_rate_hz: int = Field(48000, ge=8000)
     buffer_size_samples: int = Field(128, ge=16)
@@ -279,6 +339,7 @@ class BrainDiagnosticsModel(BaseModel):
     backend_mode: str = "hybrid"
     warnings: list[str] = Field(default_factory=list)
     last_import_source: str | None = None
+    controller_qualification: BrainControllerQualificationModel = Field(default_factory=BrainControllerQualificationModel)
     updated_at_iso: str = Field(default_factory=_utcnow_iso)
 
 
@@ -801,6 +862,201 @@ class PerformanceBrainService(Singleton):
             record_target_path=str(self._root_path / f"slot-{slot_id + 1}-capture.wav"),
         )
 
+    def _build_keyboard_qualification(self, state: BrainStateModel) -> BrainKeyboardQualificationModel:
+        enabled_zones = [zone for zone in state.inputs.keyboard_zones if zone.enabled]
+        chromatic_slots = [slot for slot in state.slots if slot.mode != "drum" and slot.key_high > slot.key_low]
+        issues: list[str] = []
+        zone_count = len(enabled_zones)
+        channel_count = len({zone.midi_channel for zone in enabled_zones})
+        chromatic_slot_count = len(chromatic_slots)
+        polyphony_capacity = sum(max(1, slot.polyphony) for slot in chromatic_slots)
+        max_key_span = max((zone.key_high - zone.key_low + 1) for zone in enabled_zones) if enabled_zones else 0
+        aftertouch_modes = sorted({zone.aftertouch_mode for zone in enabled_zones if zone.aftertouch_mode})
+
+        if zone_count == 0:
+            issues.append("No enabled keyboard zones configured.")
+        if chromatic_slot_count == 0:
+            issues.append("No melodic slots are available for keyboard qualification.")
+        if polyphony_capacity < 32:
+            issues.append("Keyboard polyphony budget is below the 32-voice qualification floor.")
+
+        ready = not issues
+        summary = f"{zone_count} zones · {chromatic_slot_count} melodic slots · poly {polyphony_capacity}"
+        return BrainKeyboardQualificationModel(
+            ready=ready,
+            zone_count=zone_count,
+            channel_count=channel_count,
+            chromatic_slot_count=chromatic_slot_count,
+            polyphony_capacity=polyphony_capacity,
+            max_key_span=max_key_span,
+            aftertouch_modes=aftertouch_modes,
+            summary=summary,
+            issues=issues,
+        )
+
+    def _build_trigger_qualification(self, state: BrainStateModel) -> BrainTriggerQualificationModel:
+        profiles = list(state.inputs.trigger_profiles)
+        covered_pads: set[int] = set()
+        for profile in profiles:
+            start = max(0, min(15, profile.pad_range_start))
+            end = max(start, min(15, profile.pad_range_end))
+            covered_pads.update(range(start, end + 1))
+        trigger_slots = [slot for slot in state.slots if slot.mode in {"drum", "hybrid"}]
+        unique_trigger_notes = {
+            note
+            for slot in trigger_slots
+            for note in slot.trigger_notes
+            if 0 <= note <= 127
+        }
+        issues: list[str] = []
+        profile_count = len(profiles)
+        covered_pad_count = len(covered_pads)
+        trigger_slot_count = len(trigger_slots)
+        fastest_scan_time_ms = min((profile.scan_time_ms for profile in profiles), default=0.0)
+        widest_mask_time_ms = max((profile.mask_time_ms for profile in profiles), default=0.0)
+        target_pad_floor = 8 if trigger_slot_count >= 8 else max(1, trigger_slot_count)
+
+        if profile_count == 0:
+            issues.append("No trigger profiles configured.")
+        if covered_pad_count < target_pad_floor:
+            issues.append("Trigger profiles do not cover the active drum-pad range.")
+        if len(unique_trigger_notes) < target_pad_floor:
+            issues.append("Trigger-note coverage is too narrow for isolated pad qualification.")
+
+        ready = not issues
+        summary = f"{profile_count} profiles · {covered_pad_count} pads · {len(unique_trigger_notes)} trigger notes"
+        return BrainTriggerQualificationModel(
+            ready=ready,
+            profile_count=profile_count,
+            covered_pad_count=covered_pad_count,
+            trigger_slot_count=trigger_slot_count,
+            unique_trigger_notes=len(unique_trigger_notes),
+            fastest_scan_time_ms=fastest_scan_time_ms,
+            widest_mask_time_ms=widest_mask_time_ms,
+            summary=summary,
+            issues=issues,
+        )
+
+    def _build_sequence_qualification(self, state: BrainStateModel) -> BrainSequenceQualificationModel:
+        patterns = list(state.sequence.patterns)
+        populated_pattern_count = sum(
+            1
+            for pattern in patterns
+            if pattern.active_lane_count > 0 or bool(pattern.summary.strip())
+        )
+        active_lane_count = sum(
+            1
+            for lane in state.sequence.lanes
+            if lane.active_steps > 0 or bool(lane.step_lock_targets)
+        )
+        max_pattern_length = max((pattern.length for pattern in patterns), default=0)
+        swing_lane_count = sum(1 for lane in state.sequence.lanes if lane.swing > 0)
+        song_entry_count = len(state.song.entries)
+        issues: list[str] = []
+
+        if not patterns:
+            issues.append("No sequence patterns are present.")
+        if populated_pattern_count == 0:
+            issues.append("No sequence content is populated for timing qualification.")
+        if max_pattern_length < 16:
+            issues.append("Sequence length is below the 16-step qualification floor.")
+        if active_lane_count == 0:
+            issues.append("No active sequence lanes are available for timing verification.")
+
+        ready = not issues
+        summary = (
+            f"{len(patterns)} patterns · {populated_pattern_count} populated · "
+            f"{song_entry_count} song entries"
+        )
+        return BrainSequenceQualificationModel(
+            ready=ready,
+            pattern_count=len(patterns),
+            populated_pattern_count=populated_pattern_count,
+            active_lane_count=active_lane_count,
+            max_pattern_length=max_pattern_length,
+            swing_lane_count=swing_lane_count,
+            song_entry_count=song_entry_count,
+            summary=summary,
+            issues=issues,
+        )
+
+    def _build_routing_qualification(self, state: BrainStateModel) -> BrainRoutingQualificationModel:
+        used_buses = {slot.output_bus for slot in state.slots if 0 <= slot.output_bus <= 7 and not slot.mute}
+        output_pairs = {bus.output_pair for bus in state.mixer.buses if not bus.mute}
+        reverb_bus_count = sum(1 for bus in state.mixer.buses if bus.reverb_send > 0.0)
+        controller_assignment_count = sum(1 for assignment in state.inputs.controller_assignments if assignment.enabled)
+        issues: list[str] = []
+
+        if len(used_buses) < 2:
+            issues.append("Slot routing is collapsed onto fewer than two buses.")
+        if len(output_pairs) < 2:
+            issues.append("Mixer outputs expose fewer than two output pairs.")
+        if controller_assignment_count == 0:
+            issues.append("No controller assignments are available to drive routed Brain actions.")
+
+        ready = not issues
+        summary = f"{len(used_buses)} buses · {len(output_pairs)} outputs · {controller_assignment_count} assignments"
+        return BrainRoutingQualificationModel(
+            ready=ready,
+            used_bus_count=len(used_buses),
+            output_pair_count=len(output_pairs),
+            reverb_bus_count=reverb_bus_count,
+            controller_assignment_count=controller_assignment_count,
+            summary=summary,
+            issues=issues,
+        )
+
+    def _build_controller_qualification(self, state: BrainStateModel) -> BrainControllerQualificationModel:
+        keyboard = self._build_keyboard_qualification(state)
+        triggers = self._build_trigger_qualification(state)
+        sequence = self._build_sequence_qualification(state)
+        routing = self._build_routing_qualification(state)
+        scope_binding_ready = all(
+            value.endswith(state.instance_id)
+            for value in (
+                state.snapshot_integration.committed_state_id,
+                state.snapshot_integration.desired_state_id,
+                state.snapshot_integration.observed_state_id,
+            )
+        )
+        tier_a_runtime_locked = (
+            state.diagnostics.xruns == 0
+            and state.diagnostics.trigger_latency_ms <= 5.0
+            and state.diagnostics.roundtrip_latency_ms <= 10.0
+        )
+        ready_surface_count = sum(
+            1 for area in (keyboard, triggers, sequence, routing) if area.ready
+        )
+        issues = [
+            *(keyboard.issues),
+            *(triggers.issues),
+            *(sequence.issues),
+            *(routing.issues),
+        ]
+        if not scope_binding_ready:
+            issues.append("Authority state IDs are not bound to the scoped Brain instance.")
+        if not tier_a_runtime_locked:
+            issues.append("Tier A runtime locks are not currently satisfied for this scoped Brain instance.")
+
+        controller_ready = scope_binding_ready and tier_a_runtime_locked and ready_surface_count == 4
+        summary = (
+            f"{ready_surface_count}/4 surfaces ready · "
+            f"{'Tier A locked' if tier_a_runtime_locked else 'Tier A drift'}"
+        )
+        return BrainControllerQualificationModel(
+            scoped_instance_key=state.instance_id,
+            scope_binding_ready=scope_binding_ready,
+            tier_a_runtime_locked=tier_a_runtime_locked,
+            controller_ready=controller_ready,
+            ready_surface_count=ready_surface_count,
+            keyboard=keyboard,
+            triggers=triggers,
+            sequence=sequence,
+            routing=routing,
+            summary=summary,
+            issues=issues,
+        )
+
     def _default_state(self, instance_key: str) -> BrainStateModel:
         slots = self._default_slots()
         return BrainStateModel(
@@ -864,6 +1120,7 @@ class PerformanceBrainService(Singleton):
         base_library.featured_assets = merged_featured_assets
         state.library = base_library
         state.sequence.song_entry_count = len(state.song.entries)
+        state.diagnostics.controller_qualification = self._build_controller_qualification(state)
         state.diagnostics.updated_at_iso = _utcnow_iso()
         return state
 

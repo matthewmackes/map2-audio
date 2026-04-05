@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from app.services.performance_brain_service import (
+    BrainInputsStateModel,
+    BrainInputsUpdateModel,
     BrainStateUpdateModel,
     BrainTransportUpdateModel,
     PerformanceBrainService,
@@ -74,6 +76,60 @@ def test_brain_service_builds_scoped_runtime_events(tmp_path):
     assert event["state"]["instance_id"] == "instance-101__position-3"
     assert event["state"]["transport"]["bpm"] == 131
     assert event["state"]["transport"]["pattern"] == 4
+
+
+def test_brain_service_derives_controller_qualification_from_scoped_state(tmp_path):
+    service = make_service(tmp_path)
+
+    diagnostics = service.get_diagnostics(instance_id="77", plugin_position=3)
+    qualification = diagnostics["controller_qualification"]
+
+    assert qualification["scoped_instance_key"] == "instance-77__position-3"
+    assert qualification["scope_binding_ready"] is True
+    assert qualification["tier_a_runtime_locked"] is True
+    assert qualification["controller_ready"] is True
+    assert qualification["ready_surface_count"] == 4
+    assert qualification["keyboard"]["zone_count"] == 2
+    assert qualification["keyboard"]["chromatic_slot_count"] == 8
+    assert qualification["keyboard"]["polyphony_capacity"] == 192
+    assert qualification["triggers"]["profile_count"] == 2
+    assert qualification["triggers"]["covered_pad_count"] == 16
+    assert qualification["sequence"]["pattern_count"] == 16
+    assert qualification["sequence"]["active_lane_count"] == 4
+    assert qualification["routing"]["used_bus_count"] == 8
+    assert qualification["routing"]["output_pair_count"] == 4
+    assert qualification["routing"]["controller_assignment_count"] == 3
+    assert qualification["summary"] == "4/4 surfaces ready · Tier A locked"
+
+
+def test_brain_service_keeps_controller_qualification_scope_specific(tmp_path):
+    service = make_service(tmp_path)
+
+    service.update_inputs(
+        BrainInputsUpdateModel(
+            inputs=BrainInputsStateModel(
+                keyboard_zones=[],
+                trigger_profiles=[],
+                controller_assignments=[],
+            )
+        ),
+        instance_id="77",
+        plugin_position=1,
+    )
+
+    degraded = service.get_diagnostics(instance_id="77", plugin_position=1)["controller_qualification"]
+    untouched = service.get_diagnostics(instance_id="77", plugin_position=2)["controller_qualification"]
+
+    assert degraded["controller_ready"] is False
+    assert degraded["keyboard"]["ready"] is False
+    assert degraded["triggers"]["ready"] is False
+    assert degraded["routing"]["ready"] is False
+    assert degraded["sequence"]["ready"] is True
+    assert "No enabled keyboard zones configured." in degraded["issues"]
+    assert "No trigger profiles configured." in degraded["issues"]
+    assert degraded["summary"] == "1/4 surfaces ready · Tier A locked"
+    assert untouched["controller_ready"] is True
+    assert untouched["scoped_instance_key"] == "instance-77__position-2"
 
 
 def test_brain_service_imports_drum_machine_payloads(tmp_path):

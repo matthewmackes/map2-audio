@@ -1631,6 +1631,66 @@ export interface BrainSnapshotIntegration {
   observed_state_id: string
 }
 
+export interface BrainKeyboardQualification {
+  ready: boolean
+  zone_count: number
+  channel_count: number
+  chromatic_slot_count: number
+  polyphony_capacity: number
+  max_key_span: number
+  aftertouch_modes: string[]
+  summary: string
+  issues: string[]
+}
+
+export interface BrainTriggerQualification {
+  ready: boolean
+  profile_count: number
+  covered_pad_count: number
+  trigger_slot_count: number
+  unique_trigger_notes: number
+  fastest_scan_time_ms: number
+  widest_mask_time_ms: number
+  summary: string
+  issues: string[]
+}
+
+export interface BrainSequenceQualification {
+  ready: boolean
+  pattern_count: number
+  populated_pattern_count: number
+  active_lane_count: number
+  max_pattern_length: number
+  swing_lane_count: number
+  song_entry_count: number
+  summary: string
+  issues: string[]
+}
+
+export interface BrainRoutingQualification {
+  ready: boolean
+  used_bus_count: number
+  output_pair_count: number
+  reverb_bus_count: number
+  controller_assignment_count: number
+  summary: string
+  issues: string[]
+}
+
+export interface BrainControllerQualification {
+  scoped_instance_key: string
+  scope_binding_ready: boolean
+  tier_a_runtime_locked: boolean
+  controller_ready: boolean
+  ready_surface_count: number
+  keyboard: BrainKeyboardQualification
+  triggers: BrainTriggerQualification
+  sequence: BrainSequenceQualification
+  routing: BrainRoutingQualification
+  summary: string
+  issues: string[]
+}
+
 export interface BrainDiagnostics {
   sample_rate_hz: number
   buffer_size_samples: number
@@ -1644,6 +1704,7 @@ export interface BrainDiagnostics {
   backend_mode: string
   warnings: string[]
   last_import_source: string | null
+  controller_qualification: BrainControllerQualification
   updated_at_iso: string
 }
 

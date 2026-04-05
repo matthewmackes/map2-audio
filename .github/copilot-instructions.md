@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain shadow handoff routing documented)
+> **Last Updated**: April 5, 2026 (Brain controller qualification telemetry documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1561,6 +1561,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/pages/DrumsPage.test.tsx src/app/pages/SynthForgePage.test.tsx`; `npm --prefix web run build`
 - **Lesson**: One-shot migration flags belong to router state, not `window.location`. If a handoff flow does not preserve scoped query params and explicitly clear its import trigger after success, the replacement surface either loses per-instance context or keeps re-importing on refresh.
 
+**63. Scoped Brain Qualification Telemetry Must Be Recomputed From State Without Overwriting Runtime-Or-Import Diagnostics (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/performance_brain_service.py`, `tests/test_brain_service.py`, `tests/test_brain_routes.py`, `web/src/map2/api.ts`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Raw Brain diagnostics exposed latency and voice counters, but T767 needs controller-first qualification evidence. A naive implementation risked overwriting imported warning/backend metrics every time derived state refreshed, which would make shadow-import evidence disappear as soon as the route was read again.
+- **Root Cause**: `_refresh_derived_state()` already rebuilds sample-editor and library-derived fields on every scoped read. If controller qualification were bolted on by replacing the whole diagnostics object, imported `last_import_source`, backend-mode details, voice metrics, and warnings would regress to defaults.
+- **Fix**: Derive a nested `controller_qualification` payload inside `_refresh_derived_state()` from the current scoped Brain state while preserving the existing diagnostics scalars. Recompute keyboard, trigger, sequence, routing, scope-binding, and Tier A runtime readiness per scope, and prove with tests that degrading one `instance_id` / `plugin_position` pair does not leak into another.
+- **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
+- **Lesson**: Qualification posture is derived state, not replacement state. Add it as a scoped overlay on top of durable diagnostics so import/runtime evidence remains intact while controller readiness stays current on every read.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1831,6 +1839,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Controller Qualification Telemetry
+- **Section**: Gotchas & Learned Fixes (#63), Update Log
+- **Change**: Documented that scoped Brain controller-readiness telemetry must be recomputed from instance state inside derived-state refreshes while preserving existing import/runtime diagnostics fields.
+- **Reason**: T767-subA needed a deterministic keyboard/trigger/sequence/routing qualification contract, and the safe implementation path was to overlay nested telemetry instead of clobbering imported warnings and backend metrics on each read.
+- **Impact**: Future Brain qualification or diagnostics work should extend `controller_qualification` rather than replacing the diagnostics object, preserving both shadow-import evidence and per-scope readiness isolation.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/performance_brain_service.py`, `tests/test_brain_service.py`, `tests/test_brain_routes.py`, `web/src/map2/api.ts`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx`
 
 ### [2026-04-05] - Brain Shadow Handoff Routing
 - **Section**: Gotchas & Learned Fixes (#62), Update Log

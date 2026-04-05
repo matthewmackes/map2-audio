@@ -364,6 +364,45 @@ def test_brain_routes_restore_scoped_state_from_authority_before_reads(tmp_path)
     assert payload["transport"]["bpm"] == 133
 
 
+def test_brain_routes_expose_scoped_controller_qualification(tmp_path):
+    client, _, authority_sync = make_client(tmp_path)
+
+    update_response = client.post(
+        "/api/engine/brain/inputs?instance_id=17&plugin_position=3",
+        json={
+            "inputs": {
+                "keyboard_zones": [],
+                "trigger_profiles": [],
+                "controller_assignments": [],
+            }
+        },
+    )
+
+    assert update_response.status_code == 200
+
+    response = client.get("/api/engine/brain/diagnostics?instance_id=17&plugin_position=3")
+    assert response.status_code == 200
+    payload = response.json()
+    qualification = payload["controller_qualification"]
+
+    assert qualification["scoped_instance_key"] == "instance-17__position-3"
+    assert qualification["controller_ready"] is False
+    assert qualification["keyboard"]["ready"] is False
+    assert qualification["triggers"]["ready"] is False
+    assert qualification["sequence"]["ready"] is True
+    assert qualification["routing"]["ready"] is False
+    assert "No enabled keyboard zones configured." in qualification["issues"]
+    assert authority_sync.calls[-1] == {
+        "instance_id": "17",
+        "plugin_position": 3,
+        "triggered_by": "brain-route:inputs",
+    }
+
+    other_scope = client.get("/api/engine/brain/diagnostics?instance_id=17&plugin_position=4").json()
+    assert other_scope["controller_qualification"]["controller_ready"] is True
+    assert other_scope["controller_qualification"]["scoped_instance_key"] == "instance-17__position-4"
+
+
 def test_brain_routes_import_drum_machine_state(tmp_path):
     client, _, authority_sync = make_client(tmp_path)
 

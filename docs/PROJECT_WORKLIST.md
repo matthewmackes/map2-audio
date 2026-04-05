@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 19:01 EDT - Completed T766 by landing the shadow-phase legacy-to-Brain handoff flow for Drum Machine and SynthForge.
+Last updated: 2026-04-05 19:22 EDT - Completed T767-subA by deriving scoped controller-first Brain qualification telemetry from runtime state and diagnostics.
 
 ## Performance Brain
 
@@ -477,7 +477,7 @@ Last updated: 2026-04-05 19:01 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T767
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Qualify Brain for MIDI keyboards, drum pads, and triggers
 Description:
 - Goal / acceptance criteria: Prove the replacement with focused engine, backend, and UI coverage plus qualification evidence for keyboard polyphony, trigger nuance, sequence timing, routing, and per-instance isolation while preserving Tier A runtime locks.
@@ -485,9 +485,54 @@ Description:
 - Dependencies: T761, T762, T764, T765
 - Estimated effort: High
 - Required outputs: Native tests, pytest suites, frontend suites, and performance/latency evidence.
-Subtasks: None
+Subtasks:
+  - ID: T767-subA
+    Status: [✓] Done
+    Title: Derive controller-first Brain qualification telemetry from scoped state and diagnostics
+    Description:
+    - Goal / acceptance criteria: Extend the Brain diagnostics/state contract so scoped instances report controller-focused qualification telemetry for keyboard zoning/polyphony, trigger-profile posture, sequence timing density, routing spread, and per-instance readiness flags rather than only raw latency counters.
+    - Why it matters: The epic cannot be qualified with low-level counters alone; operators and later tests need a deterministic posture summary that reflects whether one scoped Brain instance is actually ready for keyboards, drum pads, and triggers.
+    - Dependencies: T761, T762, T764, T765
+    - Estimated effort: Medium
+    - Required outputs: Backend/service contract updates, route coverage, focused pytest evidence, and worklist notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 19:22 EDT - Codex
+    - Completion notes:
+      - Added derived `controller_qualification` telemetry under `BrainDiagnosticsModel` in `app/services/performance_brain_service.py`, covering scoped keyboard, trigger, sequence, routing, scope-binding, and Tier A runtime readiness without overwriting the existing import/runtime counters.
+      - Updated `_refresh_derived_state()` so every scoped Brain read now recomputes qualification posture from the current instance state, keeping controller readiness in sync with slot/input/sequence/routing edits while preserving imported warning/backend metrics.
+      - Extended `tests/test_brain_service.py` and `tests/test_brain_routes.py` with focused regressions proving the qualification summary is deterministic per scope and that degrading one `instance_id` / `plugin_position` pair does not leak into another scoped Brain instance.
+    - Validation:
+      - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS (`14 passed`)
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS (`2 suites, 10 tests`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - Licensing review: touched backend/frontend-type/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T767-subB
+    Status: [ ] Todo
+    Title: Surface Brain qualification posture in the routed workspace for scoped controller workflows
+    Description:
+    - Goal / acceptance criteria: Update `/brain` overview/inputs/diagnostics surfaces so the routed workspace exposes the new controller qualification posture with scoped keyboard, trigger, sequence, routing, and latency summaries that operators can inspect without leaving the Brain route.
+    - Why it matters: Qualification evidence is not useful if it stays backend-only; the replacement route must make controller readiness visible during the shadow phase.
+    - Dependencies: T767-subA
+    - Estimated effort: Medium
+    - Required outputs: Routed UI updates, focused frontend regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 19:15 EDT - Codex
+  - ID: T767-subC
+    Status: [ ] Todo
+    Title: Deepen native Brain processor qualification for keyboard polyphony, trigger isolation, and transport reset behavior
+    Description:
+    - Goal / acceptance criteria: Extend the existing native Brain processor test target with controller-first cases that stress polyphonic note handling, trigger-note isolation, and note-off/transport reset behavior so the epic adds real engine evidence instead of page-only assertions.
+    - Why it matters: T767 explicitly calls for native qualification, and the repo already has a reusable Catch2 target that should carry these guarantees.
+    - Dependencies: T767-subA
+    - Estimated effort: Medium
+    - Required outputs: C++ processor/test updates, passing native test evidence, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 19:15 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 19:22 EDT - Codex
 
 ID: T768
 Status: [ ] Todo
