@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { drumsApi } from '@/map2/api'
 import type {
+  DrumBackingTrackTransportUpdate,
   DrumBusMixerUpdate,
   DrumCcLearnStatus,
   DrumCcMapping,
@@ -34,6 +35,11 @@ function invalidateDrumState(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: ['drums', 'transport'] })
 }
 
+function invalidateBackingTrackTransport(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: ['drums', 'backing-tracks'] })
+  void queryClient.invalidateQueries({ queryKey: ['drums', 'backing-tracks', 'transport'] })
+}
+
 function invalidateDrumPattern(queryClient: ReturnType<typeof useQueryClient>, patternId?: number) {
   if (typeof patternId === 'number') {
     void queryClient.invalidateQueries({ queryKey: ['drums', 'pattern', patternId] })
@@ -56,6 +62,25 @@ export function useDrumTransport() {
     queryKey: ['drums', 'transport'],
     queryFn: drumsApi.getTransport,
     refetchInterval,
+    staleTime: 250,
+  })
+}
+
+export function useDrumBackingTracks() {
+  return useQuery({
+    queryKey: ['drums', 'backing-tracks'],
+    queryFn: drumsApi.getBackingTracks,
+    staleTime: 60_000,
+  })
+}
+
+export function useDrumBackingTrackTransport() {
+  const activeRefetchInterval = useDrumRealtimeCadence(500, 2_000)
+  const idleRefetchInterval = useDrumRealtimeCadence(2_000, 5_000)
+  return useQuery({
+    queryKey: ['drums', 'backing-tracks', 'transport'],
+    queryFn: drumsApi.getBackingTrackTransport,
+    refetchInterval: (query) => (query.state.data?.is_playing ? activeRefetchInterval : idleRefetchInterval),
     staleTime: 250,
   })
 }
@@ -334,6 +359,17 @@ export function useUpdateDrumTransport() {
     mutationFn: (payload: DrumTransportUpdate) => drumsApi.setTransport(payload),
     onSuccess: () => {
       invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useUpdateDrumBackingTrackTransport() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: DrumBackingTrackTransportUpdate) => drumsApi.setBackingTrackTransport(payload),
+    onSuccess: () => {
+      invalidateBackingTrackTransport(queryClient)
     },
   })
 }

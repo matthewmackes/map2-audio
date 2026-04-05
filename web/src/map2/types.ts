@@ -1709,6 +1709,42 @@ export interface DrumTransportState {
   track_swing: number[];
 }
 
+export interface DrumBackingTrackSummary {
+  track_id: string;
+  name: string;
+  genre: string;
+  key: string;
+  tempo: number;
+  duration_seconds: number;
+  duration_label: string;
+}
+
+export interface DrumBackingTrackTransportState {
+  track_id: string;
+  track_name: string;
+  genre: string;
+  key: string;
+  tempo: number;
+  duration_seconds: number;
+  duration_label: string;
+  position_seconds: number;
+  position_label: string;
+  is_playing: boolean;
+  loop_enabled: boolean;
+  tempo_shift: number;
+  pitch_shift: number;
+  runtime_source: 'drum_machine_service';
+}
+
+export interface DrumBackingTrackTransportUpdate {
+  track_id?: string;
+  is_playing?: boolean;
+  loop_enabled?: boolean;
+  tempo_shift?: number;
+  pitch_shift?: number;
+  position_seconds?: number;
+}
+
 export interface DrumTransportUpdate {
   is_playing?: boolean;
   bpm?: number;

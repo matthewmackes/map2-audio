@@ -1,19 +1,35 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import {
-  Accordion,
-  AccordionItem,
   Button,
+  Column,
+  Grid,
   InlineLoading,
   InlineNotification,
   Modal,
+  Search,
+  Select,
+  SelectItem,
+  StructuredListBody,
+  StructuredListCell,
+  StructuredListRow,
+  StructuredListWrapper,
   Tab,
   TabList,
   TabPanel,
   TabPanels,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   Tag,
+  TextInput,
   Tile,
+  Toggle,
 } from '@carbon/react'
 import {
   Add,
@@ -36,6 +52,8 @@ import { useLocation } from 'react-router-dom'
 import './DrumsPage.css'
 import {
   useDrumActiveKit,
+  useDrumBackingTracks,
+  useDrumBackingTrackTransport,
   useDrumCcMapping,
   useDrumKits,
   useDrumMasterFx,
@@ -83,12 +101,16 @@ import {
   useStopDrumMidiLearn,
   useTriggerDrumFill,
   useDrumTransport,
+  useUpdateDrumBackingTrackTransport,
   useUpdateDrumMachineState,
   useUpdateDrumTransport,
 } from '@/app/hooks/useDrumMachine'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
 import type {
+  DrumBackingTrackSummary,
+  DrumBackingTrackTransportState,
+  DrumBackingTrackTransportUpdate,
   DrumBusMixer,
   DrumCcMapping,
   DrumCcTarget,
@@ -146,13 +168,6 @@ const PRACTICE_STYLES = [
   { id: 'pop_4onfloor', label: 'Pop 4', icon: 'P', feel: 'Four on Floor', signature: '4/4' },
   { id: 'jazz_swing', label: 'Jazz Swing', icon: 'J', feel: 'Swing', signature: '4/4' },
   { id: 'reggae_1drop', label: 'Reggae 1', icon: 'R', feel: 'One Drop', signature: '4/4' },
-] as const
-
-const BACKING_TRACK_LIBRARY = [
-  { id: 'bt-001', name: 'Midnight Motor', genre: 'Rock', key: 'E minor', tempo: 118, duration: '03:24' },
-  { id: 'bt-002', name: 'City Lights', genre: 'Pop', key: 'A major', tempo: 124, duration: '02:58' },
-  { id: 'bt-003', name: 'Copper Shuffle', genre: 'Blues', key: 'G', tempo: 92, duration: '04:11' },
-  { id: 'bt-004', name: 'Neon Circuit', genre: 'Electronic', key: 'D minor', tempo: 128, duration: '03:42' },
 ] as const
 
 const VELOCITY_CURVE_OPTIONS: Array<{ value: DrumVelocityCurve['curve_type']; label: string }> = [
@@ -221,6 +236,57 @@ const SHORTCUT_CUES = [
   'Enter or Space toggles the focused step.',
   'Shift-click selects a step for parameter-lock editing.',
   'Use the mode tabs to jump between Practice, Advanced, and Backing Tracks.',
+] as const
+
+const DRUM_STANDARDS_ROWS = [
+  {
+    standard: 'MIDI 2.0 Default Drum Note Map',
+    scope: 'Negotiated kick/snare/tom/hat/cymbal note semantics.',
+    uiImplication: 'Keep note and class alignment visible in pad tables instead of hiding mappings in secondary dialogs.',
+  },
+  {
+    standard: 'MIDI-CI Drum Profile',
+    scope: 'Expressive drum behavior such as cymbal choke, positional sensing, and hi-hat gestures.',
+    uiImplication: 'Model zones and gestures as vendor-neutral head/rim/edge classes so the UI can absorb future negotiated drum features.',
+  },
+  {
+    standard: 'General MIDI lineage',
+    scope: 'Legacy drum-module compatibility and predictable note playback.',
+    uiImplication: 'Preserve per-pad note, channel, and curve editing for cross-module interoperability.',
+  },
+  {
+    standard: 'RTP-MIDI / Network MIDI 2.0',
+    scope: 'Node-to-node transport for MIDI 1.0 and MIDI 2.0 performance data.',
+    uiImplication: 'Treat routing and MIDI output as first-class operator surfaces, not buried setup state.',
+  },
+  {
+    standard: 'MIDI 1.0 electrical transport',
+    scope: 'DIN and opto-isolated hardware transport baseline.',
+    uiImplication: 'Keep trigger-note logic, CV/Gate, and physical output routing distinct so proprietary trigger wiring never leaks into note semantics.',
+  },
+] as const
+
+const DRUM_GESTURE_ROWS = [
+  {
+    gesture: 'Head / primary strike',
+    mapping: 'Default note map + velocity curve',
+    operatorNeed: 'Fast note, channel, and output edits in one row.',
+  },
+  {
+    gesture: 'Rim / edge articulation',
+    mapping: 'Secondary zone note and articulation class',
+    operatorNeed: 'Visible zone-note editing without vendor-specific naming.',
+  },
+  {
+    gesture: 'Hi-hat pedal / openness',
+    mapping: 'Gesture-aware control surface plus note/zone context',
+    operatorNeed: 'Keep pedal behavior beside pad mappings so open/closed states remain auditable.',
+  },
+  {
+    gesture: 'Positional sensing / choke',
+    mapping: 'MIDI 2.0 drum-profile extension path',
+    operatorNeed: 'Show this as standards-ready capability, not as hidden proprietary metadata.',
+  },
 ] as const
 
 const shellStyle: Record<string, React.CSSProperties> = {
@@ -968,6 +1034,19 @@ function meterPercent(level: number | undefined) {
   return Math.max(0, Math.min(100, Math.round(value * 100)))
 }
 
+function describeZoneModel(zones: DrumMidiZones['pads'][number]['zones']) {
+  if (zones.length >= 3) {
+    return `${zones.length} zones`
+  }
+  if (zones.length === 2) {
+    return 'Head + rim'
+  }
+  if (zones.length === 1) {
+    return 'Head'
+  }
+  return 'Unassigned'
+}
+
 function waveformWindow(
   waveform: DrumPadSampleWaveform | undefined,
   zoomPercent: number,
@@ -1093,6 +1172,11 @@ function practicePanel(
   accent: string,
   onUpdateState: (patch: Partial<DrumMachineState>) => void,
 ) {
+  const packRows = [
+    ...packs.factory.map((pack) => ({ ...pack, source: 'Factory' })),
+    ...packs.user.map((pack) => ({ ...pack, source: 'User' })),
+  ]
+
   return (
     <div style={shellStyle.modeShell}>
       <div style={shellStyle.modeGrid}>
@@ -1232,38 +1316,45 @@ function practicePanel(
               <h3 style={shellStyle.tileTitle}>Practice Pack Browser</h3>
               <Tag type="teal">Catalog</Tag>
             </div>
-            <Accordion align="start">
-              <AccordionItem title={`Factory Packs (${packs.factory.length})`}>
-                <div style={shellStyle.songList}>
-                  {packs.factory.length === 0 ? (
-                    <p style={shellStyle.tileText}>No factory packs detected.</p>
-                  ) : packs.factory.map((pack) => (
-                    <div key={pack.pack_id} style={shellStyle.songEntry}>
-                      <strong>{pack.name}</strong>
-                      <p style={shellStyle.tileText}>{pack.description || 'Factory rehearsal arrangement pack.'}</p>
-                      <Button size="sm" kind="ghost" onClick={() => onUpdateState({ active_pack: pack.pack_id })}>
-                        Load Arrangement
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </AccordionItem>
-              <AccordionItem title={`User Packs (${packs.user.length})`}>
-                <div style={shellStyle.songList}>
-                  {packs.user.length === 0 ? (
-                    <p style={shellStyle.tileText}>No user packs imported yet.</p>
-                  ) : packs.user.map((pack) => (
-                    <div key={pack.pack_id} style={shellStyle.songEntry}>
-                      <strong>{pack.name}</strong>
-                      <p style={shellStyle.tileText}>{pack.description || 'User rehearsal arrangement pack.'}</p>
-                      <Button size="sm" kind="ghost" onClick={() => onUpdateState({ active_pack: pack.pack_id })}>
-                        Load Arrangement
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </AccordionItem>
-            </Accordion>
+            <p style={shellStyle.tileText}>
+              Factory and user rehearsal packs now share one dense catalog so operators can compare
+              source, description, and active assignment without swapping accordions.
+            </p>
+            <TableContainer title="Practice packs">
+              <Table size="sm" aria-label="Practice pack browser">
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Source</TableHeader>
+                    <TableHeader>Name</TableHeader>
+                    <TableHeader>Description</TableHeader>
+                    <TableHeader>Action</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {packRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4}>No rehearsal packs detected.</TableCell>
+                    </TableRow>
+                  ) : packRows.map((pack) => {
+                    const isActive = state.active_pack === pack.pack_id
+                    return (
+                      <TableRow key={pack.pack_id}>
+                        <TableCell>
+                          <Tag type={pack.source === 'Factory' ? 'teal' : 'warm-gray'}>{pack.source}</Tag>
+                        </TableCell>
+                        <TableCell>{pack.name}</TableCell>
+                        <TableCell>{pack.description || `${pack.source} rehearsal arrangement pack.`}</TableCell>
+                        <TableCell>
+                          <Button size="sm" kind={isActive ? 'primary' : 'ghost'} onClick={() => onUpdateState({ active_pack: pack.pack_id })}>
+                            {isActive ? 'Active' : 'Load Arrangement'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Tile>
         </div>
       </div>
@@ -1888,19 +1979,20 @@ function advancedPanel(
                 </div>
                 <label style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Variation</span>
-                  <select
+                  <Select
+                    id="drum-pattern-variation"
                     aria-label="Pattern variation"
-                    value={variation}
+                    labelText="Pattern variation"
+                    hideLabel
+                    size="sm"
+                    value={String(variation)}
                     onChange={(event) => onSetVariation(Number(event.currentTarget.value))}
-                    style={shellStyle.input}
                   >
-                    <option value={0}>Main</option>
+                    <SelectItem value="0" text="Main" />
                     {Array.from({ length: 10 }, (_, index) => (
-                      <option key={`variation-${index + 1}`} value={index + 1}>
-                        Var {index + 1}
-                      </option>
+                      <SelectItem key={`variation-${index + 1}`} value={String(index + 1)} text={`Var ${index + 1}`} />
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <div style={shellStyle.fieldStack}>
                   <span style={shellStyle.clusterLabel}>Fill</span>
@@ -1982,67 +2074,51 @@ function advancedPanel(
                   />
                 </div>
               </div>
-              <div style={shellStyle.songList}>
-                {songEntries.length === 0 ? (
-                  <InlineNotification
-                    kind="info"
-                    lowContrast
-                    hideCloseButton
-                    title="No song entries yet"
-                    subtitle="Add patterns above to build a repeatable song arrangement."
-                  />
-                ) : (
-                  songEntries.map((entry, index) => {
-                    const isCurrent = isSongPlaying && currentSongEntryIndex === index
-                    return (
-                      <div
-                        key={`song-entry-${index}-${entry.pattern_id}`}
-                        style={{
-                          ...shellStyle.songEntry,
-                          borderColor: isCurrent ? accent : 'rgba(255,255,255,0.1)',
-                          boxShadow: isCurrent ? `0 0 0 1px ${accent}` : 'none',
-                        }}
-                      >
-                        <div style={shellStyle.songEntryHeader}>
-                          <div>
-                            <strong>Pattern {entry.pattern_id}</strong>
-                            <p style={{ ...shellStyle.tileText, marginTop: 4 }}>Repeat {entry.repeat_count}x</p>
-                          </div>
-                          <div style={shellStyle.songEntryActions}>
-                            <Tag type={isCurrent ? 'green' : 'cool-gray'}>{isCurrent ? 'Current' : `Step ${index + 1}`}</Tag>
-                          </div>
-                        </div>
-                        <div style={shellStyle.songEntryActions}>
-                          <Button
-                            kind="ghost"
-                            size="sm"
-                            disabled={index === 0}
-                            onClick={() => onMoveSongEntry(index, -1)}
-                          >
-                            Move Up
-                          </Button>
-                          <Button
-                            kind="ghost"
-                            size="sm"
-                            disabled={index === songEntries.length - 1}
-                            onClick={() => onMoveSongEntry(index, 1)}
-                          >
-                            Move Down
-                          </Button>
-                          <Button
-                            kind="danger--ghost"
-                            size="sm"
-                            renderIcon={TrashCan}
-                            onClick={() => onRemoveSongEntry(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
+              <TableContainer title="Song arrangement">
+                <Table size="sm" aria-label="Song arranger table">
+                  <TableHead>
+                    <TableRow>
+                      <TableHeader>Step</TableHeader>
+                      <TableHeader>Pattern</TableHeader>
+                      <TableHeader>Repeats</TableHeader>
+                      <TableHeader>Status</TableHeader>
+                      <TableHeader>Actions</TableHeader>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {songEntries.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5}>Add patterns above to build a repeatable song arrangement.</TableCell>
+                      </TableRow>
+                    ) : songEntries.map((entry, index) => {
+                      const isCurrent = isSongPlaying && currentSongEntryIndex === index
+                      return (
+                        <TableRow key={`song-entry-${index}-${entry.pattern_id}`}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{entry.pattern_id}</TableCell>
+                          <TableCell>{entry.repeat_count}x</TableCell>
+                          <TableCell>
+                            <Tag type={isCurrent ? 'green' : 'cool-gray'}>{isCurrent ? 'Current' : 'Queued'}</Tag>
+                          </TableCell>
+                          <TableCell>
+                            <div style={shellStyle.songEntryActions}>
+                              <Button kind="ghost" size="sm" disabled={index === 0} onClick={() => onMoveSongEntry(index, -1)}>
+                                Move Up
+                              </Button>
+                              <Button kind="ghost" size="sm" disabled={index === songEntries.length - 1} onClick={() => onMoveSongEntry(index, 1)}>
+                                Move Down
+                              </Button>
+                              <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} onClick={() => onRemoveSongEntry(index)}>
+                                Remove
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Tile>
           </div>
           <div style={shellStyle.panelGrid}>
@@ -2055,31 +2131,46 @@ function advancedPanel(
                 Available drum kits are now browsable inline and load through a confirmation modal so
                 the active assignment cannot be replaced accidentally.
               </p>
-              <div style={shellStyle.kitGrid}>
-                {kits.map((kit) => {
-                  const isActiveKit = kit.kit_id === activeKit?.kit_id
-                  return (
-                    <button
-                      key={kit.kit_id}
-                      type="button"
-                      aria-label={`Load kit ${kit.name}`}
-                      onClick={() => onSelectKit(kit.kit_id)}
-                      style={{
-                        ...shellStyle.kitTileButton,
-                        borderColor: isActiveKit ? '#08bdba' : 'rgba(255,255,255,0.12)',
-                        boxShadow: isActiveKit ? '0 0 0 1px #08bdba' : 'none',
-                      }}
-                    >
-                      <strong>{kit.name}</strong>
-                      <div style={shellStyle.rowMeta}>
-                        <Tag type={isActiveKit ? 'green' : 'cool-gray'}>{isActiveKit ? 'Active' : 'Available'}</Tag>
-                        <Tag type="blue">{kit.category}</Tag>
-                      </div>
-                      <span style={shellStyle.tileText}>{kit.instruments?.length ?? 0} instruments</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <TableContainer title="Drum kits">
+                <Table size="sm" aria-label="Drum kit browser">
+                  <TableHead>
+                    <TableRow>
+                      <TableHeader>Name</TableHeader>
+                      <TableHeader>Category</TableHeader>
+                      <TableHeader>Author</TableHeader>
+                      <TableHeader>Instruments</TableHeader>
+                      <TableHeader>Status</TableHeader>
+                      <TableHeader>Action</TableHeader>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {kits.map((kit) => {
+                      const isActiveKit = kit.kit_id === activeKit?.kit_id
+                      return (
+                        <TableRow key={kit.kit_id}>
+                          <TableCell>{kit.name}</TableCell>
+                          <TableCell>{kit.category}</TableCell>
+                          <TableCell>{kit.author}</TableCell>
+                          <TableCell>{kit.instruments?.length ?? 0}</TableCell>
+                          <TableCell>
+                            <Tag type={isActiveKit ? 'green' : 'cool-gray'}>{isActiveKit ? 'Active' : 'Available'}</Tag>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              kind={isActiveKit ? 'secondary' : 'ghost'}
+                              aria-label={`Load kit ${kit.name}`}
+                              onClick={() => onSelectKit(kit.kit_id)}
+                            >
+                              {isActiveKit ? 'Selected' : `Load kit ${kit.name}`}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <Modal
                 open={kitModalOpen}
                 modalHeading={selectedKitSummary ? `Load ${selectedKitSummary.name}` : 'Load drum kit'}
@@ -2234,18 +2325,23 @@ function advancedPanel(
                         <span>Output Pair</span>
                         <strong>{bus.output_pair + 1}</strong>
                       </div>
-                      <select
+                      <Select
+                        id={`drum-bus-output-pair-${bus.bus_id}`}
                         aria-label={`${bus.name} output pair`}
-                        value={bus.output_pair}
+                        labelText={`${bus.name} output pair`}
+                        hideLabel
+                        size="sm"
+                        value={String(bus.output_pair)}
                         onChange={(event) => onUpdateBusMixer(bus.bus_id, { output_pair: Number(event.currentTarget.value) })}
-                        style={shellStyle.inspectorSelect}
                       >
                         {bus.available_output_pairs.map((pairIndex) => (
-                          <option key={`${bus.bus_id}-pair-${pairIndex}`} value={pairIndex}>
-                            Pair {pairIndex + 1} ({pairIndex * 2 + 1}/{pairIndex * 2 + 2})
-                          </option>
+                          <SelectItem
+                            key={`${bus.bus_id}-pair-${pairIndex}`}
+                            value={String(pairIndex)}
+                            text={`Pair ${pairIndex + 1} (${pairIndex * 2 + 1}/${pairIndex * 2 + 2})`}
+                          />
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     {[
                       { label: 'Level', min: 0, max: 100, value: bus.level, update: (value: number) => ({ level: value }) },
@@ -2308,31 +2404,35 @@ function advancedPanel(
               </div>
               <div style={shellStyle.inspectorSection}>
                 <span style={shellStyle.clusterLabel}>Bus Assignment</span>
-                <select
+                <Select
+                  id={`drum-selected-pad-bus-${selectedPad}`}
                   aria-label="Selected pad bus assignment"
-                  value={selectedPadControl.bus}
+                  labelText="Selected pad bus assignment"
+                  hideLabel
+                  size="sm"
+                  value={String(selectedPadControl.bus)}
                   onChange={(event) => onUpdatePadControl(selectedPad, { bus_assignment: Number(event.currentTarget.value) })}
-                  style={shellStyle.inspectorSelect}
                 >
                   {Array.from({ length: 8 }, (_, busIndex) => (
-                    <option key={busIndex} value={busIndex}>
-                      Bus {busIndex}
-                    </option>
+                    <SelectItem key={busIndex} value={String(busIndex)} text={`Bus ${busIndex}`} />
                   ))}
-                </select>
+                </Select>
               </div>
               <div style={shellStyle.inspectorSection}>
                 <span style={shellStyle.clusterLabel}>Sound Source</span>
-                <select
+                <Select
+                  id={`drum-selected-pad-source-${selectedPad}`}
                   aria-label="Selected pad sound source"
+                  labelText="Selected pad sound source"
+                  hideLabel
+                  size="sm"
                   value={selectedPadSoundSource}
                   onChange={(event) => onUpdatePadSoundSource(selectedPad, event.currentTarget.value as DrumPadSoundSource)}
-                  style={shellStyle.inspectorSelect}
                 >
-                  <option value="sample">Sample</option>
-                  <option value="synth">Synth</option>
-                  <option value="hybrid">Hybrid</option>
-                </select>
+                  <SelectItem value="sample" text="Sample" />
+                  <SelectItem value="synth" text="Synth" />
+                  <SelectItem value="hybrid" text="Hybrid" />
+                </Select>
                 <span style={shellStyle.inspectorValue}>{selectedInstrument?.sfz_path ?? 'Factory assignment'}</span>
                 <div style={shellStyle.toggleRow}>
                   <Tag type={selectedPadSoundSource === 'sample' ? 'green' : 'cool-gray'}>
@@ -2516,24 +2616,23 @@ function advancedPanel(
               <div style={shellStyle.inspectorSection}>
                 <span style={shellStyle.clusterLabel}>Synth Voice</span>
                 <div style={shellStyle.fieldGrid}>
-                  <label style={shellStyle.fieldStack}>
-                    <span style={shellStyle.clusterLabel}>Oscillator</span>
-                    <select
-                      aria-label="Selected pad synth oscillator"
-                      value={selectedPadSynth.oscillator_type}
-                      onChange={(event) => onUpdatePadSynthParams(selectedPad, {
-                        ...selectedPadSynth,
-                        oscillator_type: event.currentTarget.value as DrumSynthParams['oscillator_type'],
-                      })}
-                      style={shellStyle.inspectorSelect}
-                    >
-                      <option value="sine">Sine</option>
-                      <option value="triangle">Triangle</option>
-                      <option value="saw">Saw</option>
-                      <option value="square">Square</option>
-                      <option value="metallic">Metallic</option>
-                    </select>
-                  </label>
+                  <Select
+                    id={`drum-selected-pad-oscillator-${selectedPad}`}
+                    aria-label="Selected pad synth oscillator"
+                    labelText="Selected pad synth oscillator"
+                    size="sm"
+                    value={selectedPadSynth.oscillator_type}
+                    onChange={(event) => onUpdatePadSynthParams(selectedPad, {
+                      ...selectedPadSynth,
+                      oscillator_type: event.currentTarget.value as DrumSynthParams['oscillator_type'],
+                    })}
+                  >
+                    <SelectItem value="sine" text="Sine" />
+                    <SelectItem value="triangle" text="Triangle" />
+                    <SelectItem value="saw" text="Saw" />
+                    <SelectItem value="square" text="Square" />
+                    <SelectItem value="metallic" text="Metallic" />
+                  </Select>
                   {[
                     { key: 'pitch_envelope_start_hz', label: 'Pitch Start', min: 20, max: 4000, step: 1 },
                     { key: 'pitch_envelope_end_hz', label: 'Pitch End', min: 20, max: 4000, step: 1 },
@@ -2580,23 +2679,22 @@ function advancedPanel(
               <div style={shellStyle.inspectorSection}>
                 <span style={shellStyle.clusterLabel}>Per-Pad Filter</span>
                 <div style={shellStyle.fieldGrid}>
-                  <label style={shellStyle.fieldStack}>
-                    <span style={shellStyle.clusterLabel}>Type</span>
-                    <select
-                      aria-label="Selected pad filter type"
-                      value={selectedPadFilter.type}
-                      onChange={(event) => onUpdatePadFilter(selectedPad, {
-                        ...selectedPadFilter,
-                        type: event.currentTarget.value as DrumPadFilter['type'],
-                      })}
-                      style={shellStyle.inspectorSelect}
-                    >
-                      <option value="lowpass">Low-pass</option>
-                      <option value="highpass">High-pass</option>
-                      <option value="bandpass">Band-pass</option>
-                      <option value="notch">Notch</option>
-                    </select>
-                  </label>
+                  <Select
+                    id={`drum-selected-pad-filter-${selectedPad}`}
+                    aria-label="Selected pad filter type"
+                    labelText="Selected pad filter type"
+                    size="sm"
+                    value={selectedPadFilter.type}
+                    onChange={(event) => onUpdatePadFilter(selectedPad, {
+                      ...selectedPadFilter,
+                      type: event.currentTarget.value as DrumPadFilter['type'],
+                    })}
+                  >
+                    <SelectItem value="lowpass" text="Low-pass" />
+                    <SelectItem value="highpass" text="High-pass" />
+                    <SelectItem value="bandpass" text="Band-pass" />
+                    <SelectItem value="notch" text="Notch" />
+                  </Select>
                   {[
                     { key: 'cutoff_hz', label: 'Cutoff', min: 20, max: 20000, step: 10 },
                     { key: 'resonance', label: 'Resonance', min: 0.1, max: 10, step: 0.01 },
@@ -2634,39 +2732,39 @@ function advancedPanel(
               <div style={shellStyle.inspectorSection}>
                 <span style={shellStyle.clusterLabel}>CV / Gate Output</span>
                 <div style={shellStyle.fieldGrid}>
-                  <label style={shellStyle.fieldStack}>
-                    <span style={shellStyle.clusterLabel}>Enabled</span>
-                    <select
-                      aria-label="Selected pad CV/Gate enabled"
-                      value={selectedPadCvGate.enabled ? 'on' : 'off'}
-                      onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
-                        ...selectedPadCvGate,
-                        enabled: event.currentTarget.value === 'on',
-                      })}
-                      style={shellStyle.inspectorSelect}
-                    >
-                      <option value="off">Off</option>
-                      <option value="on">On</option>
-                    </select>
-                  </label>
-                  <label style={shellStyle.fieldStack}>
-                    <span style={shellStyle.clusterLabel}>Output Pair</span>
-                    <select
-                      aria-label="Selected pad CV/Gate output pair"
-                      value={selectedPadCvGate.output_pair}
-                      onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
-                        ...selectedPadCvGate,
-                        output_pair: Number(event.currentTarget.value),
-                      })}
-                      style={shellStyle.inspectorSelect}
-                    >
-                      {Array.from({ length: 8 }, (_, pairIndex) => (
-                        <option key={`cv-pair-${pairIndex}`} value={pairIndex}>
-                          Pair {pairIndex + 1} ({pairIndex * 2 + 1}/{pairIndex * 2 + 2})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <Select
+                    id={`drum-selected-pad-cvgate-enabled-${selectedPad}`}
+                    aria-label="Selected pad CV/Gate enabled"
+                    labelText="Selected pad CV/Gate enabled"
+                    size="sm"
+                    value={selectedPadCvGate.enabled ? 'on' : 'off'}
+                    onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                      ...selectedPadCvGate,
+                      enabled: event.currentTarget.value === 'on',
+                    })}
+                  >
+                    <SelectItem value="off" text="Off" />
+                    <SelectItem value="on" text="On" />
+                  </Select>
+                  <Select
+                    id={`drum-selected-pad-cvgate-output-${selectedPad}`}
+                    aria-label="Selected pad CV/Gate output pair"
+                    labelText="Selected pad CV/Gate output pair"
+                    size="sm"
+                    value={String(selectedPadCvGate.output_pair)}
+                    onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                      ...selectedPadCvGate,
+                      output_pair: Number(event.currentTarget.value),
+                    })}
+                  >
+                    {Array.from({ length: 8 }, (_, pairIndex) => (
+                      <SelectItem
+                        key={`cv-pair-${pairIndex}`}
+                        value={String(pairIndex)}
+                        text={`Pair ${pairIndex + 1} (${pairIndex * 2 + 1}/${pairIndex * 2 + 2})`}
+                      />
+                    ))}
+                  </Select>
                   {[
                     { key: 'gate_length_ms', label: 'Gate Length', min: 1, max: 5000, step: 1 },
                     { key: 'note_min', label: 'Note Min', min: 0, max: 126, step: 1 },
@@ -2898,20 +2996,19 @@ function advancedPanel(
               routing now live beside the sequencer instead of staying queued behind the inspector.
             </p>
             <div style={shellStyle.fieldGrid}>
-              <label style={shellStyle.fieldStack}>
-                <span style={shellStyle.clusterLabel}>Hardware Preset</span>
-                <select
-                  aria-label="Drum MIDI preset"
-                  value={selectedMidiPreset}
-                  onChange={(event) => onSelectMidiPreset(event.currentTarget.value)}
-                  style={shellStyle.input}
-                >
-                  {midiPresets.length === 0 ? <option value="">No presets detected</option> : null}
-                  {midiPresets.map((preset) => (
-                    <option key={preset} value={preset}>{preset}</option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                id="drum-midi-preset"
+                aria-label="Drum MIDI preset"
+                labelText="Drum MIDI preset"
+                size="sm"
+                value={selectedMidiPreset}
+                onChange={(event) => onSelectMidiPreset(event.currentTarget.value)}
+              >
+                {midiPresets.length === 0 ? <SelectItem value="" text="No presets detected" /> : null}
+                {midiPresets.map((preset) => (
+                  <SelectItem key={preset} value={preset} text={preset} />
+                ))}
+              </Select>
               <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Learn Controls</span>
                 <div style={shellStyle.buttonRow}>
@@ -2940,24 +3037,27 @@ function advancedPanel(
                 <span style={shellStyle.statValue}>{midiLearnState && midiLearnState.last_received_channel >= 0 ? midiLearnState.last_received_channel + 1 : '--'}</span>
               </div>
             </div>
-            <div style={shellStyle.midiTableWrap}>
-              <table style={shellStyle.midiTable} aria-label="Drum MIDI mapping table">
-                <thead>
-                  <tr>
-                    {['Pad', 'Note', 'Channel', 'Curve', 'Zone'].map((heading) => (
-                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer title="Pad mapping matrix">
+              <Table size="sm" aria-label="Drum MIDI mapping table">
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Pad</TableHeader>
+                    <TableHeader>Note</TableHeader>
+                    <TableHeader>Channel</TableHeader>
+                    <TableHeader>Curve</TableHeader>
+                    <TableHeader>Head zone</TableHeader>
+                    <TableHeader>Zone model</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {Array.from({ length: 16 }, (_, padId) => {
                     const padMapping = resolvedMidiPad(midiMapping, padId)
                     const curve = resolvedVelocityCurve(velocityCurves, padId)
                     const zoneConfig = resolvedZones(midiZones, padId)
                     return (
-                      <tr key={`midi-pad-${padId}`}>
-                        <td style={shellStyle.trackCell}>{draftNames[padId] ?? `Pad ${padId + 1}`}</td>
-                        <td style={shellStyle.trackCell}>
+                      <TableRow key={`midi-pad-${padId}`}>
+                        <TableCell>{draftNames[padId] ?? `Pad ${padId + 1}`}</TableCell>
+                        <TableCell>
                           <NumberInput
                             label={`Pad ${padId + 1} MIDI note`}
                             value={padMapping.notes[0] ?? 36 + padId}
@@ -2974,32 +3074,38 @@ function advancedPanel(
                             style={shellStyle.miniInput}
                             accentColor="#be95ff"
                           />
-                        </td>
-                        <td style={shellStyle.trackCell}>
-                          <select
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            id={`drum-midi-channel-${padId}`}
                             aria-label={`Pad ${padId + 1} MIDI channel`}
-                            value={padMapping.midi_channel}
+                            labelText={`Pad ${padId + 1} MIDI channel`}
+                            hideLabel
+                            size="sm"
+                            value={String(padMapping.midi_channel)}
                             onChange={(event) => onUpdateMidiPad(padId, { midi_channel: Number(event.currentTarget.value) })}
-                            style={shellStyle.miniInput}
                           >
                             {Array.from({ length: 16 }, (_, channel) => (
-                              <option key={`${padId}-channel-${channel}`} value={channel}>{channel + 1}</option>
+                              <SelectItem key={`${padId}-channel-${channel}`} value={String(channel)} text={String(channel + 1)} />
                             ))}
-                          </select>
-                        </td>
-                        <td style={shellStyle.trackCell}>
-                          <select
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            id={`drum-velocity-curve-${padId}`}
                             aria-label={`Pad ${padId + 1} velocity curve`}
-                            value={curve.curve_type}
+                            labelText={`Pad ${padId + 1} velocity curve`}
+                            hideLabel
+                            size="sm"
+                            value={String(curve.curve_type)}
                             onChange={(event) => onUpdateVelocityCurve(padId, { curve_type: Number(event.currentTarget.value) as DrumVelocityCurve['curve_type'] })}
-                            style={shellStyle.miniInput}
                           >
                             {VELOCITY_CURVE_OPTIONS.map((option) => (
-                              <option key={`${padId}-curve-${option.value}`} value={option.value}>{option.label}</option>
+                              <SelectItem key={`${padId}-curve-${option.value}`} value={String(option.value)} text={option.label} />
                             ))}
-                          </select>
-                        </td>
-                        <td style={shellStyle.trackCell}>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
                           <NumberInput
                             label={`Pad ${padId + 1} head zone note`}
                             value={zoneConfig.zones[0]?.trigger_note ?? padMapping.notes[0] ?? 36 + padId}
@@ -3027,13 +3133,14 @@ function advancedPanel(
                             style={shellStyle.miniInput}
                             accentColor="#be95ff"
                           />
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>{describeZoneModel(zoneConfig.zones)}</TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
             <div style={shellStyle.fieldGrid}>
               <div style={shellStyle.fieldStack}>
                 <span style={shellStyle.clusterLabel}>Selected Pad Curve</span>
@@ -3091,6 +3198,28 @@ function advancedPanel(
                 />
               </div>
             </div>
+            <div style={shellStyle.inspectorSection}>
+              <div style={shellStyle.tileHeader}>
+                <h4 style={shellStyle.tileTitle}>Drum Gesture Semantics</h4>
+                <Tag type="teal">Open standards</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                The matrix keeps note, curve, and trigger-zone edits visible using vendor-neutral drum
+                gesture language, so operators can audit head, rim, edge, and pedal behavior without
+                translating brand-specific pad names.
+              </p>
+              <StructuredListWrapper aria-label="Drum gesture semantics">
+                <StructuredListBody>
+                  {DRUM_GESTURE_ROWS.map((row) => (
+                    <StructuredListRow key={row.gesture}>
+                      <StructuredListCell>{row.gesture}</StructuredListCell>
+                      <StructuredListCell>{row.mapping}</StructuredListCell>
+                      <StructuredListCell>{row.operatorNeed}</StructuredListCell>
+                    </StructuredListRow>
+                  ))}
+                </StructuredListBody>
+              </StructuredListWrapper>
+            </div>
             <div style={shellStyle.tileHeader}>
               <h4 style={shellStyle.tileTitle}>CC Mapping</h4>
               <Tag type={ccLearnState?.active ? 'cyan' : 'cool-gray'}>
@@ -3107,22 +3236,25 @@ function advancedPanel(
                 <span style={shellStyle.statValue}>{ccLearnState && ccLearnState.last_channel >= 0 ? ccLearnState.last_channel : '--'}</span>
               </div>
             </div>
-            <div style={shellStyle.midiTableWrap}>
-              <table style={shellStyle.midiTable} aria-label="Drum CC mapping table">
-                <thead>
-                  <tr>
-                    {['Slot', 'CC', 'Channel', 'Target', 'Index', 'State'].map((heading) => (
-                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer title="Continuous controller mappings">
+              <Table size="sm" aria-label="Drum CC mapping table">
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Slot</TableHeader>
+                    <TableHeader>CC</TableHeader>
+                    <TableHeader>Channel</TableHeader>
+                    <TableHeader>Target</TableHeader>
+                    <TableHeader>Index</TableHeader>
+                    <TableHeader>State</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {Array.from({ length: 8 }, (_, slot) => {
                     const mapping = resolvedCcMapping(ccMapping, slot)
                     return (
-                      <tr key={`cc-slot-${slot}`}>
-                        <td style={shellStyle.trackCell}>Slot {slot + 1}</td>
-                        <td style={shellStyle.trackCell}>
+                      <TableRow key={`cc-slot-${slot}`}>
+                        <TableCell>{`Slot ${slot + 1}`}</TableCell>
+                        <TableCell>
                           <NumberInput
                             label={`CC slot ${slot + 1} number`}
                             value={mapping.cc_number}
@@ -3139,33 +3271,39 @@ function advancedPanel(
                             style={shellStyle.miniInput}
                             accentColor="#be95ff"
                           />
-                        </td>
-                        <td style={shellStyle.trackCell}>
-                          <select
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            id={`drum-cc-channel-${slot}`}
                             aria-label={`CC slot ${slot + 1} channel`}
-                            value={mapping.midi_channel}
+                            labelText={`CC slot ${slot + 1} channel`}
+                            hideLabel
+                            size="sm"
+                            value={String(mapping.midi_channel)}
                             onChange={(event) => onUpdateCcMapping(slot, { midi_channel: Number(event.currentTarget.value), active: true })}
-                            style={shellStyle.miniInput}
                           >
-                            <option value={0}>Omni</option>
+                            <SelectItem value="0" text="Omni" />
                             {Array.from({ length: 16 }, (_, channel) => (
-                              <option key={`cc-slot-${slot}-channel-${channel + 1}`} value={channel + 1}>{channel + 1}</option>
+                              <SelectItem key={`cc-slot-${slot}-channel-${channel + 1}`} value={String(channel + 1)} text={String(channel + 1)} />
                             ))}
-                          </select>
-                        </td>
-                        <td style={shellStyle.trackCell}>
-                          <select
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            id={`drum-cc-target-${slot}`}
                             aria-label={`CC slot ${slot + 1} target`}
+                            labelText={`CC slot ${slot + 1} target`}
+                            hideLabel
+                            size="sm"
                             value={mapping.target}
                             onChange={(event) => onUpdateCcMapping(slot, { target: event.currentTarget.value as DrumCcTarget, active: true })}
-                            style={shellStyle.miniInput}
                           >
                             {CC_TARGET_OPTIONS.map((option) => (
-                              <option key={`cc-slot-${slot}-target-${option.value}`} value={option.value}>{option.label}</option>
+                              <SelectItem key={`cc-slot-${slot}-target-${option.value}`} value={option.value} text={option.label} />
                             ))}
-                          </select>
-                        </td>
-                        <td style={shellStyle.trackCell}>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
                           <NumberInput
                             label={`CC slot ${slot + 1} target index`}
                             value={mapping.target_index}
@@ -3182,27 +3320,23 @@ function advancedPanel(
                             style={shellStyle.miniInput}
                             accentColor="#be95ff"
                           />
-                        </td>
-                        <td style={shellStyle.trackCell}>
+                        </TableCell>
+                        <TableCell>
                           <div style={shellStyle.buttonRow}>
                             <Button size="sm" kind="secondary" onClick={() => onStartCcLearn(slot)}>
                               Learn
                             </Button>
-                            <Button
-                              size="sm"
-                              kind="tertiary"
-                              onClick={() => onUpdateCcMapping(slot, { active: !mapping.active })}
-                            >
+                            <Button size="sm" kind="tertiary" onClick={() => onUpdateCcMapping(slot, { active: !mapping.active })}>
                               {mapping.active ? 'Disable' : 'Enable'}
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
             <div style={shellStyle.buttonRow}>
               <Button size="sm" kind="tertiary" onClick={onStopCcLearn}>
                 Stop CC Learn
@@ -3217,29 +3351,38 @@ function advancedPanel(
 
 function backingTracksPanel(
   accent: string,
+  tracks: DrumBackingTrackSummary[],
+  transport: DrumBackingTrackTransportState | null,
   search: string,
-  selectedTrackId: string,
-  loopEnabled: boolean,
-  tempoShift: number,
-  pitchShift: number,
   onSearchChange: (value: string) => void,
   onSelectTrack: (trackId: string) => void,
-  onToggleLoop: () => void,
+  onSetPlaying: (isPlaying: boolean) => void,
+  onStop: () => void,
+  onToggleLoop: (nextValue: boolean) => void,
   onTempoShiftChange: (value: number) => void,
   onPitchShiftChange: (value: number) => void,
 ) {
-  const filteredTracks = BACKING_TRACK_LIBRARY.filter((track) => {
+  const filteredTracks = tracks.filter((track) => {
     const normalized = search.trim().toLowerCase()
     if (!normalized) {
       return true
     }
     return [track.name, track.genre, track.key].some((value) => value.toLowerCase().includes(normalized))
   })
+  const selectedTrackId = transport?.track_id ?? ''
   const selectedTrack =
-    filteredTracks.find((track) => track.id === selectedTrackId) ??
-    BACKING_TRACK_LIBRARY.find((track) => track.id === selectedTrackId) ??
+    filteredTracks.find((track) => track.track_id === selectedTrackId) ??
     filteredTracks[0] ??
-    BACKING_TRACK_LIBRARY[0]
+    tracks.find((track) => track.track_id === selectedTrackId) ??
+    tracks[0] ??
+    null
+  const effectiveTempo = transport ? Math.max(1, Math.round(transport.tempo * (1 + (transport.tempo_shift / 100)))) : (selectedTrack?.tempo ?? 0)
+  const positionLabel = transport?.position_label ?? '00:00'
+  const durationLabel = transport?.duration_label ?? selectedTrack?.duration_label ?? '00:00'
+  const loopEnabled = transport?.loop_enabled ?? false
+  const tempoShift = transport?.tempo_shift ?? 0
+  const pitchShift = transport?.pitch_shift ?? 0
+  const isPlaying = transport?.is_playing ?? false
 
   return (
     <div style={shellStyle.modeShell}>
@@ -3248,62 +3391,81 @@ function backingTracksPanel(
           <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
             <div style={shellStyle.tileHeader}>
               <h2 style={shellStyle.tileTitle}>Backing Track Browser</h2>
-              <Tag type="warm-gray">UI Ready</Tag>
+              <Tag type="green">Runtime-backed</Tag>
             </div>
             <div style={shellStyle.fieldGrid}>
-              <label style={shellStyle.fieldStack}>
-                <span style={shellStyle.clusterLabel}>Search Tracks</span>
-                <input
-                  aria-label="Backing track search"
-                  type="search"
-                  value={search}
-                  onChange={(event) => onSearchChange(event.currentTarget.value)}
-                  placeholder="Filter by name, genre, or key"
-                  style={shellStyle.input}
-                />
-              </label>
+              <Search
+                id="drum-backing-track-search"
+                aria-label="Backing track search"
+                labelText="Backing track search"
+                size="sm"
+                value={search}
+                onChange={(event) => onSearchChange(event.currentTarget.value)}
+                placeholder="Filter by name, genre, or key"
+              />
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={shellStyle.trackTable} aria-label="Backing track browser">
-                <thead>
-                  <tr>
-                    {['Track', 'Genre', 'Key', 'Tempo', 'Duration'].map((heading) => (
-                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTracks.map((track) => {
-                    const isSelected = selectedTrack?.id === track.id
+            <TableContainer title="Backing track catalog">
+              <Table size="sm" aria-label="Backing track browser">
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Track</TableHeader>
+                    <TableHeader>Genre</TableHeader>
+                    <TableHeader>Key</TableHeader>
+                    <TableHeader>Tempo</TableHeader>
+                    <TableHeader>Duration</TableHeader>
+                    <TableHeader>Action</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredTracks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>No backing tracks match the current search.</TableCell>
+                    </TableRow>
+                  ) : filteredTracks.map((track) => {
+                    const isSelected = selectedTrack?.track_id === track.track_id
                     return (
-                      <tr
-                        key={track.id}
-                        onClick={() => onSelectTrack(track.id)}
-                        style={{ background: isSelected ? 'rgba(255,131,43,0.08)' : 'transparent', cursor: 'pointer' }}
+                      <TableRow
+                        key={track.track_id}
+                        aria-selected={isSelected}
+                        className={isSelected ? 'drums-page__table-row--selected' : undefined}
                       >
-                        <td style={shellStyle.trackCell}>{track.name}</td>
-                        <td style={shellStyle.trackCell}>{track.genre}</td>
-                        <td style={shellStyle.trackCell}>{track.key}</td>
-                        <td style={shellStyle.trackCell}>{track.tempo} BPM</td>
-                        <td style={shellStyle.trackCell}>{track.duration}</td>
-                      </tr>
+                        <TableCell>
+                          <div style={shellStyle.fieldStack}>
+                            <strong>{track.name}</strong>
+                            {isSelected ? <Tag type="green">Selected</Tag> : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>{track.genre}</TableCell>
+                        <TableCell>{track.key}</TableCell>
+                        <TableCell>{track.tempo} BPM</TableCell>
+                        <TableCell>{track.duration_label}</TableCell>
+                        <TableCell>
+                          <Button size="sm" kind={isSelected ? 'primary' : 'ghost'} onClick={() => onSelectTrack(track.track_id)}>
+                            {isSelected ? 'Selected' : 'Select'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Tile>
         </div>
         <div style={shellStyle.modeColumn}>
           <Tile style={shellStyle.tile}>
             <div style={shellStyle.tileHeader}>
               <h3 style={shellStyle.tileTitle}>Track Player</h3>
-              <Tag type="warm-gray">{selectedTrack?.tempo ?? 0} BPM</Tag>
+              <Tag type="warm-gray">{effectiveTempo} BPM effective</Tag>
             </div>
             <strong>{selectedTrack?.name ?? 'No track selected'}</strong>
+            <div style={shellStyle.fieldGrid}>
+              <Tag type="cool-gray">{selectedTrack?.genre ?? 'No genre'}</Tag>
+              <Tag type="cool-gray">{selectedTrack?.key ?? 'No key'}</Tag>
+              <Tag type="cool-gray">{positionLabel} / {durationLabel}</Tag>
+            </div>
             <p style={shellStyle.tileText}>
-              The browser, waveform shell, seek transport, and loop/shift controls are now in place.
-              Time-stretch and pitch-shift processing remain backend-engine dependent.
+              The browser, transport state, loop setting, tempo shift, and pitch shift now round-trip through the drum runtime service instead of local component state.
             </p>
             <div style={shellStyle.waveform} aria-label="Backing track waveform overview">
               <div style={shellStyle.waveformBars}>
@@ -3320,13 +3482,38 @@ function backingTracksPanel(
               </div>
             </div>
             <div style={shellStyle.buttonRow}>
-              <Button size="sm" kind="secondary" renderIcon={PlayFilled}>Play</Button>
-              <Button size="sm" kind="secondary" renderIcon={PauseFilled}>Pause</Button>
-              <Button size="sm" kind="tertiary" renderIcon={StopFilled}>Stop</Button>
-              <Button size="sm" kind={loopEnabled ? 'primary' : 'secondary'} onClick={onToggleLoop}>
-                Loop {loopEnabled ? 'On' : 'Off'}
+              <Button
+                size="sm"
+                kind="secondary"
+                renderIcon={PlayFilled}
+                onClick={() => onSetPlaying(true)}
+                disabled={isPlaying || !selectedTrack}
+              >
+                Play
+              </Button>
+              <Button
+                size="sm"
+                kind="secondary"
+                renderIcon={PauseFilled}
+                onClick={() => onSetPlaying(false)}
+                disabled={!isPlaying}
+              >
+                Pause
+              </Button>
+              <Button size="sm" kind="tertiary" renderIcon={StopFilled} onClick={onStop} disabled={!selectedTrack}>
+                Stop
               </Button>
             </div>
+            <Toggle
+              id="backing-track-loop"
+              aria-label="Backing track loop enabled"
+              labelText="Backing track loop enabled"
+              labelA="Off"
+              labelB="On"
+              size="sm"
+              toggled={loopEnabled}
+              onToggle={() => onToggleLoop(!loopEnabled)}
+            />
             <div style={shellStyle.fieldStack}>
               <span style={shellStyle.clusterLabel}>Tempo Shift</span>
               <div style={shellStyle.sliderValue}>
@@ -3372,11 +3559,11 @@ function backingTracksPanel(
               />
             </div>
             <InlineNotification
-              kind="warning"
+              kind="info"
               lowContrast
               hideCloseButton
-              title="Audio playback engine not wired here yet"
-              subtitle="The UI is live; transport, looping, tempo stretch, and pitch shift still need the dedicated backing-track engine path."
+              title="Runtime-backed backing-track transport active"
+              subtitle="This surface now uses the drum runtime service for selection, playhead state, looping, tempo shift, and pitch shift. A dedicated audio-render path can be layered in later without changing the UI contract."
             />
           </Tile>
         </div>
@@ -3465,6 +3652,8 @@ export function DrumsWorkspace({
   const queryClient = useQueryClient()
   const stateQuery = useDrumMachineState()
   const transportQuery = useDrumTransport()
+  const backingTracksQuery = useDrumBackingTracks()
+  const backingTrackTransportQuery = useDrumBackingTrackTransport()
   const positionQuery = useDrumPosition()
   const activeKitQuery = useDrumActiveKit()
   const kitsQuery = useDrumKits()
@@ -3513,6 +3702,7 @@ export function DrumsWorkspace({
   const stopSongTransport = useStopDrumSongTransport()
   const triggerFill = useTriggerDrumFill()
   const updateState = useUpdateDrumMachineState()
+  const updateBackingTrackTransport = useUpdateDrumBackingTrackTransport()
   const updateTransport = useUpdateDrumTransport()
   const tapTempo = useMutation({
     mutationFn: () => drumsApi.tapTempo(Date.now()),
@@ -3531,6 +3721,8 @@ export function DrumsWorkspace({
   const activeKitName = activeKitQuery.data?.name ?? 'No kit loaded'
   const activeKit = activeKitQuery.data
   const kits = kitsQuery.data ?? []
+  const backingTracks = backingTracksQuery.data ?? []
+  const backingTrackTransport = backingTrackTransportQuery.data ?? null
   const padControls = mixer.pads.data
   const busMixers = mixer.buses.data ?? []
   const masterVolume = mixer.master.data?.volume ?? state?.volume ?? 80
@@ -3560,10 +3752,6 @@ export function DrumsWorkspace({
   const [selectedStep, setSelectedStep] = useState<{ instrumentIndex: number; stepIndex: number } | null>(null)
   const [selectedMidiPreset, setSelectedMidiPreset] = useState('')
   const [backingTrackSearch, setBackingTrackSearch] = useState('')
-  const [selectedBackingTrackId, setSelectedBackingTrackId] = useState(BACKING_TRACK_LIBRARY[0]?.id ?? '')
-  const [backingTrackLoop, setBackingTrackLoop] = useState(false)
-  const [backingTrackTempoShift, setBackingTrackTempoShift] = useState(0)
-  const [backingTrackPitchShift, setBackingTrackPitchShift] = useState(0)
   const [liveMessage, setLiveMessage] = useState('Drum machine workspace ready.')
   const [shortcutOverlayOpen, setShortcutOverlayOpen] = useState(false)
   const [layoutDraftName, setLayoutDraftName] = useState('')
@@ -3968,6 +4156,10 @@ export function DrumsWorkspace({
   const announce = (message: string) => {
     setLiveMessage(message)
   }
+  const updateBackingTrackRuntime = (patch: DrumBackingTrackTransportUpdate, message: string) => {
+    updateBackingTrackTransport.mutate(patch)
+    announce(message)
+  }
   const patternSwitchLabel =
     transport.switch_quantization_beats === 1
       ? '1 beat'
@@ -4134,8 +4326,9 @@ export function DrumsWorkspace({
 
       {!embedded ? (
         <section style={shellStyle.workspaceTools} aria-label="Drum workspace tools">
-          <div style={shellStyle.workspaceToolsGrid}>
-            <Tile style={shellStyle.workspaceToolTile}>
+          <Grid condensed fullWidth className="drums-page__workspace-grid">
+            <Column lg={4} md={4} sm={4}>
+              <Tile style={shellStyle.workspaceToolTile}>
               <div style={shellStyle.tileHeader}>
                 <h2 style={shellStyle.tileTitle}>Workspace Navigation</h2>
                 <Tag type="blue">{activeModeMeta.label}</Tag>
@@ -4169,24 +4362,26 @@ export function DrumsWorkspace({
                   </button>
                 ))}
               </div>
-            </Tile>
+              </Tile>
+            </Column>
 
-            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(36,161,72,0.72)' }}>
+            <Column lg={4} md={4} sm={4}>
+              <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(36,161,72,0.72)' }}>
               <div style={shellStyle.tileHeader}>
                 <h2 style={shellStyle.tileTitle}>Saved Layouts</h2>
                 <Tag type="green">{savedLayouts.length} saved</Tag>
               </div>
               <div style={shellStyle.workspaceLayoutActions}>
-                <label style={shellStyle.fieldStack}>
-                  <span style={shellStyle.clusterLabel}>Layout name</span>
-                  <input
-                    aria-label="Workspace layout name"
-                    value={layoutDraftName}
-                    onChange={(event) => setLayoutDraftName(event.currentTarget.value)}
-                    placeholder="Editing set"
-                    style={shellStyle.input}
-                  />
-                </label>
+                <TextInput
+                  id="drum-workspace-layout-name"
+                  aria-label="Workspace layout name"
+                  labelText="Workspace layout name"
+                  hideLabel
+                  value={layoutDraftName}
+                  onChange={(event) => setLayoutDraftName(event.currentTarget.value)}
+                  placeholder="Editing set"
+                  size="sm"
+                />
                 <Button kind="primary" size="sm" onClick={saveCurrentLayout}>
                   Save Layout
                 </Button>
@@ -4215,9 +4410,11 @@ export function DrumsWorkspace({
                   </p>
                 )}
               </div>
-            </Tile>
+              </Tile>
+            </Column>
 
-            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(255,131,43,0.72)' }}>
+            <Column lg={4} md={4} sm={4}>
+              <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(255,131,43,0.72)' }}>
               <div style={shellStyle.tileHeader}>
                 <h2 style={shellStyle.tileTitle}>Shortcut Cues</h2>
                 <Tag type={historyBusy ? 'warm-gray' : 'cool-gray'}>{historyBusy ? 'History Busy' : 'Ready'}</Tag>
@@ -4238,9 +4435,11 @@ export function DrumsWorkspace({
                   Shortcut Overlay
                 </Button>
               </div>
-            </Tile>
+              </Tile>
+            </Column>
 
-            <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(190,149,255,0.72)' }}>
+            <Column lg={4} md={4} sm={4}>
+              <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(190,149,255,0.72)' }}>
               <div style={shellStyle.tileHeader}>
                 <h2 style={shellStyle.tileTitle}>Live Summary</h2>
                 <Tag type={transport.is_playing ? 'green' : 'cool-gray'}>{transport.is_playing ? 'Playing' : 'Stopped'}</Tag>
@@ -4280,8 +4479,34 @@ export function DrumsWorkspace({
                   Open Step Locks
                 </Button>
               </div>
-            </Tile>
-          </div>
+              </Tile>
+            </Column>
+
+            <Column lg={8} md={4} sm={4}>
+              <Tile style={{ ...shellStyle.workspaceToolTile, borderTopColor: 'rgba(8, 189, 186, 0.72)' }}>
+                <div style={shellStyle.tileHeader}>
+                  <h2 style={shellStyle.tileTitle}>Open Standards Alignment</h2>
+                  <Tag type="teal">Enterprise-grade</Tag>
+                </div>
+                <p style={shellStyle.tileText}>
+                  The redesigned control planes follow the MIDI standards stack that actually exists today:
+                  deterministic drum note maps, vendor-neutral zone semantics, explicit transport routing, and
+                  a forward path to negotiated MIDI 2.0 drum behavior.
+                </p>
+                <StructuredListWrapper aria-label="Drum interoperability standards">
+                  <StructuredListBody>
+                    {DRUM_STANDARDS_ROWS.map((row) => (
+                      <StructuredListRow key={row.standard}>
+                        <StructuredListCell>{row.standard}</StructuredListCell>
+                        <StructuredListCell>{row.scope}</StructuredListCell>
+                        <StructuredListCell>{row.uiImplication}</StructuredListCell>
+                      </StructuredListRow>
+                    ))}
+                  </StructuredListBody>
+                </StructuredListWrapper>
+              </Tile>
+            </Column>
+          </Grid>
         </section>
       ) : null}
 
@@ -4373,10 +4598,12 @@ export function DrumsWorkspace({
           </div>
 
           <div style={shellStyle.transportCluster}>
-            <span style={shellStyle.clusterLabel}>Pattern Switch</span>
-            <select
+            <Select
+              id="drum-pattern-switch-quantization"
               aria-label="Pattern switch quantization"
-              value={transport.switch_quantization_beats}
+              labelText="Pattern switch quantization"
+              size="sm"
+              value={String(transport.switch_quantization_beats)}
               onChange={(event) => {
                 const value = Number(event.currentTarget.value)
                 updateTransport.mutate({ switch_quantization_beats: value })
@@ -4386,21 +4613,12 @@ export function DrumsWorkspace({
                     : `Pattern switch quantization set to ${value / 4} bar${value === 4 ? '' : 's'}.`,
                 )
               }}
-              style={{
-                width: '100%',
-                minHeight: 40,
-                borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.16)',
-                background: 'rgba(22,22,22,0.9)',
-                color: '#f4f4f4',
-                padding: '0 12px',
-              }}
             >
-              <option value={1}>1 beat</option>
-              <option value={4}>1 bar</option>
-              <option value={8}>2 bars</option>
-              <option value={16}>4 bars</option>
-            </select>
+              <SelectItem value="1" text="1 beat" />
+              <SelectItem value="4" text="1 bar" />
+              <SelectItem value="8" text="2 bars" />
+              <SelectItem value="16" text="4 bars" />
+            </Select>
           </div>
 
           <div style={shellStyle.transportCluster}>
@@ -4442,66 +4660,70 @@ export function DrumsWorkspace({
           <div style={shellStyle.transportCluster}>
             <span style={shellStyle.clusterLabel}>Sequencer MIDI Out</span>
             <div style={shellStyle.fieldStack}>
-              <label style={shellStyle.checkboxRow}>
-                <input
-                  aria-label="Sequencer MIDI note output enabled"
-                  type="checkbox"
-                  checked={transport.midi_output_enabled}
-                  onChange={(event) => {
-                    updateMidiOutput(
-                      { midi_output_enabled: event.currentTarget.checked },
-                      event.currentTarget.checked ? 'Sequencer MIDI note output enabled.' : 'Sequencer MIDI note output disabled.',
-                    )
-                  }}
-                />
-                <span>Send notes</span>
-              </label>
-              <label style={shellStyle.checkboxRow}>
-                <input
-                  aria-label="Sequencer MIDI clock output enabled"
-                  type="checkbox"
-                  checked={transport.midi_clock_output_enabled}
-                  onChange={(event) => {
-                    updateMidiOutput(
-                      { midi_clock_output_enabled: event.currentTarget.checked },
-                      event.currentTarget.checked ? 'Sequencer MIDI clock output enabled.' : 'Sequencer MIDI clock output disabled.',
-                    )
-                  }}
-                />
-                <span>Send clock + Start/Stop</span>
-              </label>
-              <label style={shellStyle.checkboxRow}>
-                <input
-                  aria-label="Sequencer Program Change input enabled"
-                  type="checkbox"
-                  checked={transport.program_change_enabled}
-                  onChange={(event) => {
-                    updateMidiOutput(
-                      { program_change_enabled: event.currentTarget.checked },
-                      event.currentTarget.checked ? 'Program Change pattern switching enabled.' : 'Program Change pattern switching disabled.',
-                    )
-                  }}
-                />
-                <span>Accept Program Change</span>
-              </label>
+              <Toggle
+                id="drum-midi-output-enabled"
+                aria-label="Sequencer MIDI note output enabled"
+                labelText="Sequencer MIDI note output enabled"
+                labelA="Off"
+                labelB="On"
+                size="sm"
+                toggled={transport.midi_output_enabled}
+                onToggle={(checked) => {
+                  updateMidiOutput(
+                    { midi_output_enabled: checked },
+                    checked ? 'Sequencer MIDI note output enabled.' : 'Sequencer MIDI note output disabled.',
+                  )
+                }}
+              />
+              <Toggle
+                id="drum-midi-clock-output-enabled"
+                aria-label="Sequencer MIDI clock output enabled"
+                labelText="Sequencer MIDI clock output enabled"
+                labelA="Off"
+                labelB="On"
+                size="sm"
+                toggled={transport.midi_clock_output_enabled}
+                onToggle={(checked) => {
+                  updateMidiOutput(
+                    { midi_clock_output_enabled: checked },
+                    checked ? 'Sequencer MIDI clock output enabled.' : 'Sequencer MIDI clock output disabled.',
+                  )
+                }}
+              />
+              <Toggle
+                id="drum-program-change-enabled"
+                aria-label="Sequencer Program Change input enabled"
+                labelText="Sequencer Program Change input enabled"
+                labelA="Off"
+                labelB="On"
+                size="sm"
+                toggled={transport.program_change_enabled}
+                onToggle={(checked) => {
+                  updateMidiOutput(
+                    { program_change_enabled: checked },
+                    checked ? 'Program Change pattern switching enabled.' : 'Program Change pattern switching disabled.',
+                  )
+                }}
+              />
             </div>
           </div>
 
           <div style={shellStyle.transportCluster}>
-            <span style={shellStyle.clusterLabel}>MIDI Channel</span>
-            <select
+            <Select
+              id="drum-midi-output-channel"
               aria-label="Sequencer MIDI output channel"
-              value={transport.midi_output_channel}
+              labelText="Sequencer MIDI output channel"
+              size="sm"
+              value={String(transport.midi_output_channel)}
               onChange={(event) => {
                 const value = Number(event.currentTarget.value)
                 updateMidiOutput({ midi_output_channel: value }, `Sequencer MIDI output channel set to ${value + 1}.`)
               }}
-              style={shellStyle.input}
             >
               {Array.from({ length: 16 }, (_, channel) => (
-                <option key={`transport-midi-channel-${channel}`} value={channel}>{channel + 1}</option>
+                <SelectItem key={`transport-midi-channel-${channel}`} value={String(channel)} text={String(channel + 1)} />
               ))}
-            </select>
+            </Select>
           </div>
 
           <div style={shellStyle.sliderWrap}>
@@ -4990,16 +5212,32 @@ export function DrumsWorkspace({
           <TabPanel>
             {backingTracksPanel(
               MODE_META.backing_tracks.accent,
+              backingTracks,
+              backingTrackTransport,
               backingTrackSearch,
-              selectedBackingTrackId,
-              backingTrackLoop,
-              backingTrackTempoShift,
-              backingTrackPitchShift,
               setBackingTrackSearch,
-              setSelectedBackingTrackId,
-              () => setBackingTrackLoop((current) => !current),
-              setBackingTrackTempoShift,
-              setBackingTrackPitchShift,
+              (trackId) => {
+                const trackName = backingTracks.find((track) => track.track_id === trackId)?.name ?? 'Backing track'
+                updateBackingTrackRuntime({ track_id: trackId }, `${trackName} selected.`)
+              },
+              (isPlaying) => {
+                updateBackingTrackRuntime({ is_playing: isPlaying }, isPlaying ? 'Backing track playing.' : 'Backing track paused.')
+              },
+              () => {
+                updateBackingTrackRuntime({ is_playing: false, position_seconds: 0 }, 'Backing track stopped.')
+              },
+              (nextValue) => {
+                updateBackingTrackRuntime(
+                  { loop_enabled: nextValue },
+                  `Backing track loop ${nextValue ? 'enabled' : 'disabled'}.`,
+                )
+              },
+              (value) => {
+                updateBackingTrackRuntime({ tempo_shift: value }, `Backing track tempo shift set to ${value}%.`)
+              },
+              (value) => {
+                updateBackingTrackRuntime({ pitch_shift: value }, `Backing track pitch shift set to ${value} st.`)
+              },
             )}
           </TabPanel>
         </TabPanels>

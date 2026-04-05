@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 3, 2026 (node-aware Platforms deep-link contract and final `/audio-table` hard-cut removal documented)
+> **Last Updated**: April 4, 2026 (drum backing-track runtime contract and snapshot live-routing truth sync documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1481,6 +1481,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/data/launcherCatalog.test.tsx src/app/data/advancedMenuItems.test.ts src/app/pages/HomePage.test.tsx`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: For a hard-cut retirement, hiding a route from menus is not enough. The route import, page modules, and emitted chunk must disappear together or the legacy surface is still part of the shipped product.
 
+**53. `/drums` Backing-Track Controls Must Share One Runtime Transport Contract, And Snapshot Routing Modals Must Not Pretend Draft Edits Are Already Live (HIGH - Apr 4, 2026)**
+- **Files**: `app/services/drum_machine_service.py`, `app/routes/drums.py`, `tests/test_drum_machine_service.py`, `tests/test_drum_routes.py`, `web/src/map2/types.ts`, `web/src/map2/clients/drums.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/utils/snapshotRoutingLiveState.ts`, `web/src/app/utils/snapshotRoutingLiveState.test.ts`, `web/src/app/components/modals/RoutingTopologyModal.tsx`, `web/src/app/components/modals/RoutingTopologyModal.test.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`
+- **Problem**: The Carbon `/drums` redesign exposed backing-track Play/Pause/Stop, Loop, Tempo Shift, and Pitch Shift controls that only mutated local React state, while the Snapshot Editor routing modal still advertised "changes are live" even though some edits were draft-only until reactivation.
+- **Root Cause**: Neither surface had a single truth-bearing runtime contract. `/drums` lacked any backing-track transport endpoint/service, and the snapshot routing modal conflated editable draft state with authority-live runtime state.
+- **Fix**: Add a service-owned backing-track catalog/transport path in `DrumMachineService` plus `/api/engine/drums/backing-tracks*` routes, route the page through shared client/hooks instead of component-local transport state, and derive live-routing status from authority-live snapshot/runtime truth so only same-mode live-safe updates mutate immediately while mode changes surface reactivation-required status.
+- **Verification**: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx src/app/components/modals/RoutingTopologyModal.test.tsx src/app/utils/snapshotRoutingLiveState.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+- **Lesson**: In MAP2, dense operator controls must round-trip through one shared runtime object. If a UI cannot mutate the live runtime path safely, the UI copy must say so explicitly instead of simulating success in local draft state.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1751,6 +1759,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-04] - Drum Runtime And Snapshot Live-Routing Truth Contract
+- **Section**: Gotchas & Learned Fixes (#53), Update Log
+- **Change**: Documented the service-backed `/drums` backing-track transport contract and the rule that Snapshot Editor routing surfaces must derive live/draft status from authority-live runtime truth instead of optimistic modal copy.
+- **Reason**: T757 and T755 closed the last visible runtime truth gaps on the drum and snapshot control planes, and both failures came from the same class of bug: a UI that looked live but did not share a real runtime state object.
+- **Impact**: Future assistants should preserve the `/api/engine/drums/backing-tracks*` contract as the single source of truth for backing-track transport, and should treat any snapshot live-routing banner/status text as incorrect unless it matches the real authority-live mutation path and reactivation rules.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/drum_machine_service.py`, `app/routes/drums.py`, `tests/test_drum_machine_service.py`, `tests/test_drum_routes.py`, `web/src/map2/types.ts`, `web/src/map2/clients/drums.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/pages/DrumsPage.test.tsx`, `web/src/app/utils/snapshotRoutingLiveState.ts`, `web/src/app/utils/snapshotRoutingLiveState.test.ts`, `web/src/app/components/modals/RoutingTopologyModal.tsx`, `web/src/app/components/modals/RoutingTopologyModal.test.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`
 
 ### [2026-04-03] - AudioTable Route Deletion And Node-Aware Platforms Deep-Link Finalization
 - **Section**: Gotchas & Learned Fixes (#51, #52), Update Log

@@ -22,6 +22,20 @@ export const drumsApi = {
       method: 'POST', body: JSON.stringify(state),
     }),
 
+  /** Get backing-track catalog */
+  getBackingTracks: () =>
+    fetchJson<import('../types').DrumBackingTrackSummary[]>(`${API_BASE}/engine/drums/backing-tracks`),
+
+  /** Get backing-track transport state */
+  getBackingTrackTransport: () =>
+    fetchJson<import('../types').DrumBackingTrackTransportState>(`${API_BASE}/engine/drums/backing-tracks/transport`),
+
+  /** Update backing-track transport state */
+  setBackingTrackTransport: (state: import('../types').DrumBackingTrackTransportUpdate) =>
+    fetchJson<import('../types').DrumBackingTrackTransportState>(`${API_BASE}/engine/drums/backing-tracks/transport`, {
+      method: 'POST', body: JSON.stringify(state),
+    }),
+
   /** Get drum sequencer MIDI output configuration */
   getMidiOutputConfig: () =>
     fetchJson<import('../types').DrumMidiOutputConfig>(`${API_BASE}/engine/drums/midi/output`),

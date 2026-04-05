@@ -11,6 +11,7 @@ import asyncio
 import contextlib
 import json
 import os
+import time
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
@@ -31,6 +32,12 @@ _POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_
 _MIDI_CONFIGS_DIR = Path(os.environ.get("MAP2_DRUMS_MIDI_CONFIGS_DIR", _DEFAULT_DRUMS_ROOT / "midi_configs"))
 _CC_MAPPINGS_PATH = Path(os.environ.get("MAP2_DRUMS_CC_MAPPINGS_PATH", _DEFAULT_DRUMS_ROOT / "cc_mappings.json"))
 _DEFAULT_DRUM_NOTES = [36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48]
+_BACKING_TRACK_LIBRARY = [
+    {"track_id": "bt-001", "name": "Midnight Motor", "genre": "Rock", "key": "E minor", "tempo": 118, "duration_seconds": 204.0},
+    {"track_id": "bt-002", "name": "City Lights", "genre": "Pop", "key": "A major", "tempo": 124, "duration_seconds": 178.0},
+    {"track_id": "bt-003", "name": "Copper Shuffle", "genre": "Blues", "key": "G", "tempo": 92, "duration_seconds": 251.0},
+    {"track_id": "bt-004", "name": "Neon Circuit", "genre": "Electronic", "key": "D minor", "tempo": 128, "duration_seconds": 222.0},
+]
 DrumPadSoundSource = Literal["sample", "synth", "hybrid"]
 
 
@@ -271,6 +278,42 @@ class DrumSongTransportStateModel(BaseModel):
     active_pattern: int = Field(0, ge=0, le=127)
 
 
+class DrumBackingTrackSummaryModel(BaseModel):
+    track_id: str
+    name: str
+    genre: str
+    key: str
+    tempo: int = Field(..., ge=1)
+    duration_seconds: float = Field(..., gt=0.0)
+    duration_label: str
+
+
+class DrumBackingTrackTransportStateModel(BaseModel):
+    track_id: str
+    track_name: str
+    genre: str
+    key: str
+    tempo: int = Field(..., ge=1)
+    duration_seconds: float = Field(..., gt=0.0)
+    duration_label: str
+    position_seconds: float = Field(0.0, ge=0.0)
+    position_label: str = "00:00"
+    is_playing: bool = False
+    loop_enabled: bool = False
+    tempo_shift: int = Field(0, ge=-50, le=50)
+    pitch_shift: int = Field(0, ge=-12, le=12)
+    runtime_source: Literal["drum_machine_service"] = "drum_machine_service"
+
+
+class DrumBackingTrackTransportUpdateModel(BaseModel):
+    track_id: Optional[str] = None
+    is_playing: Optional[bool] = None
+    loop_enabled: Optional[bool] = None
+    tempo_shift: Optional[int] = Field(None, ge=-50, le=50)
+    pitch_shift: Optional[int] = Field(None, ge=-12, le=12)
+    position_seconds: Optional[float] = Field(None, ge=0.0)
+
+
 class DrumPackSummaryModel(BaseModel):
     pack_id: str
     name: str
@@ -392,6 +435,25 @@ class DrumMachineService(Singleton):
             pattern_id=self._state.pattern,
             variation=self._state.variation,
         )
+        self._backing_tracks = [self._build_backing_track_summary(item) for item in _BACKING_TRACK_LIBRARY]
+        default_backing_track = self._backing_tracks[0]
+        self._backing_track_transport = DrumBackingTrackTransportStateModel(
+            track_id=default_backing_track.track_id,
+            track_name=default_backing_track.name,
+            genre=default_backing_track.genre,
+            key=default_backing_track.key,
+            tempo=default_backing_track.tempo,
+            duration_seconds=default_backing_track.duration_seconds,
+            duration_label=default_backing_track.duration_label,
+            position_seconds=0.0,
+            position_label="00:00",
+            is_playing=False,
+            loop_enabled=False,
+            tempo_shift=0,
+            pitch_shift=0,
+        )
+        self._backing_track_started_monotonic: Optional[float] = None
+        self._backing_track_started_position_seconds: float = 0.0
         self._song_transport = DrumSongTransportStateModel(active_pattern=self._state.pattern)
         self._last_polled_step: Optional[int] = None
         self._position_poll_task: Optional[asyncio.Task] = None
@@ -471,6 +533,88 @@ class DrumMachineService(Singleton):
         temp_path.write_text(json.dumps(self._cc_mappings.model_dump(), indent=2, sort_keys=True))
         temp_path.replace(self._cc_mappings_path)
 
+    def _build_backing_track_summary(self, payload: Dict[str, Any]) -> DrumBackingTrackSummaryModel:
+        return DrumBackingTrackSummaryModel.model_validate(
+            {
+                **payload,
+                "duration_label": self._format_time_label(float(payload["duration_seconds"])),
+            }
+        )
+
+    def _format_time_label(self, seconds: float) -> str:
+        rounded_seconds = max(0, int(round(seconds)))
+        minutes, remainder = divmod(rounded_seconds, 60)
+        return f"{minutes:02d}:{remainder:02d}"
+
+    def _backing_track_playback_rate(self, tempo_shift: int) -> float:
+        return max(0.5, 1.0 + (float(tempo_shift) / 100.0))
+
+    def _get_backing_track_summary(self, track_id: str) -> DrumBackingTrackSummaryModel:
+        for track in self._backing_tracks:
+            if track.track_id == track_id:
+                return track
+        raise ValueError(f"unknown backing track: {track_id}")
+
+    def _normalize_backing_track_transport_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        duration_seconds = float(payload["duration_seconds"])
+        position_seconds = max(0.0, float(payload.get("position_seconds", 0.0)))
+        loop_enabled = bool(payload.get("loop_enabled", False))
+        is_playing = bool(payload.get("is_playing", False))
+
+        if duration_seconds > 0.0 and loop_enabled and position_seconds >= duration_seconds:
+            position_seconds = position_seconds % duration_seconds
+        else:
+            position_seconds = min(position_seconds, duration_seconds)
+            if duration_seconds > 0.0 and position_seconds >= duration_seconds:
+                is_playing = False
+
+        payload["position_seconds"] = position_seconds
+        payload["position_label"] = self._format_time_label(position_seconds)
+        payload["duration_label"] = self._format_time_label(duration_seconds)
+        payload["is_playing"] = is_playing
+        return payload
+
+    def _refresh_backing_track_transport(self) -> None:
+        if not self._backing_track_transport.is_playing or self._backing_track_started_monotonic is None:
+            self._backing_track_transport = DrumBackingTrackTransportStateModel.model_validate(
+                self._normalize_backing_track_transport_payload(self._backing_track_transport.model_dump())
+            )
+            return
+
+        now = time.monotonic()
+        elapsed_seconds = max(0.0, now - self._backing_track_started_monotonic)
+        rate = self._backing_track_playback_rate(self._backing_track_transport.tempo_shift)
+        raw_position = self._backing_track_started_position_seconds + (elapsed_seconds * rate)
+        duration_seconds = self._backing_track_transport.duration_seconds
+        if self._backing_track_transport.loop_enabled and duration_seconds > 0.0:
+            position_seconds = raw_position % duration_seconds
+            is_playing = True
+        else:
+            position_seconds = min(raw_position, duration_seconds)
+            is_playing = raw_position < duration_seconds
+
+        self._backing_track_transport = DrumBackingTrackTransportStateModel.model_validate(
+            self._normalize_backing_track_transport_payload(
+                {
+                    **self._backing_track_transport.model_dump(),
+                    "position_seconds": position_seconds,
+                    "is_playing": is_playing,
+                }
+            )
+        )
+
+        if not self._backing_track_transport.is_playing:
+            self._backing_track_started_monotonic = None
+            self._backing_track_started_position_seconds = self._backing_track_transport.position_seconds
+
+    def _freeze_backing_track_transport(self) -> None:
+        self._refresh_backing_track_transport()
+        if self._backing_track_transport.is_playing:
+            self._backing_track_started_monotonic = time.monotonic()
+        else:
+            self._backing_track_started_monotonic = None
+        self._backing_track_started_position_seconds = self._backing_track_transport.position_seconds
+
     def get_state(self) -> Dict[str, Any]:
         return self._state.model_dump()
 
@@ -506,6 +650,51 @@ class DrumMachineService(Singleton):
             program_change_enabled=self._state.program_change_enabled,
             track_swing=list(self._state.track_swing),
         ).model_dump()
+
+    def list_backing_tracks(self) -> List[Dict[str, Any]]:
+        return [track.model_dump() for track in self._backing_tracks]
+
+    def get_backing_track_transport(self) -> Dict[str, Any]:
+        self._refresh_backing_track_transport()
+        return self._backing_track_transport.model_dump()
+
+    def update_backing_track_transport(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+        self._freeze_backing_track_transport()
+        current = self._backing_track_transport.model_dump()
+
+        if "track_id" in patch and patch["track_id"] is not None:
+            track = self._get_backing_track_summary(str(patch["track_id"]))
+            current.update(
+                {
+                    "track_id": track.track_id,
+                    "track_name": track.name,
+                    "genre": track.genre,
+                    "key": track.key,
+                    "tempo": track.tempo,
+                    "duration_seconds": track.duration_seconds,
+                    "duration_label": track.duration_label,
+                    "position_seconds": 0.0,
+                }
+            )
+
+        if "position_seconds" in patch and patch["position_seconds"] is not None:
+            current["position_seconds"] = float(patch["position_seconds"])
+
+        if "is_playing" in patch and patch["is_playing"] is True and float(current["position_seconds"]) >= float(current["duration_seconds"]):
+            current["position_seconds"] = 0.0
+
+        for key in ("is_playing", "loop_enabled", "tempo_shift", "pitch_shift"):
+            if key in patch and patch[key] is not None:
+                current[key] = patch[key]
+
+        normalized = self._normalize_backing_track_transport_payload(current)
+        self._backing_track_transport = DrumBackingTrackTransportStateModel.model_validate(normalized)
+        if self._backing_track_transport.is_playing:
+            self._backing_track_started_monotonic = time.monotonic()
+        else:
+            self._backing_track_started_monotonic = None
+        self._backing_track_started_position_seconds = self._backing_track_transport.position_seconds
+        return self.get_backing_track_transport()
 
     def update_transport(self, patch: Dict[str, Any]) -> Dict[str, Any]:
         immediate_pattern = bool(patch.pop("_immediate_pattern", False))

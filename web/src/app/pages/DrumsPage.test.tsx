@@ -59,6 +59,8 @@ const mockDrumsApiUploadPadSample = jest.fn().mockResolvedValue(undefined)
 
 const mockUseDrumMachineState = jest.fn()
 const mockUseDrumTransport = jest.fn()
+const mockUseDrumBackingTracks = jest.fn()
+const mockUseDrumBackingTrackTransport = jest.fn()
 const mockUseDrumPosition = jest.fn()
 const mockUseDrumActiveKit = jest.fn()
 const mockUseDrumKits = jest.fn()
@@ -106,7 +108,9 @@ const mockUseStopDrumSongTransport = jest.fn()
 const mockUseStopDrumMidiLearn = jest.fn()
 const mockUseTriggerDrumFill = jest.fn()
 const mockUseUpdateDrumMachineState = jest.fn()
+const mockUseUpdateDrumBackingTrackTransport = jest.fn()
 const mockUseUpdateDrumTransport = jest.fn()
+const mockUpdateBackingTrackTransportMutate = jest.fn()
 
 jest.mock('@/app/components/PageHeader', () => ({
   PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
@@ -211,6 +215,119 @@ jest.mock('@carbon/react', () => {
     return <div>{children}</div>
   }
 
+  function Column({ children, lg, md, sm, ...props }: any) {
+    return <div {...props}>{children}</div>
+  }
+
+  function Grid({ children, condensed, fullWidth, ...props }: any) {
+    return <div {...props}>{children}</div>
+  }
+
+  function Layer({ children, ...props }: any) {
+    return <div {...props}>{children}</div>
+  }
+
+  function TextInput({ labelText, hideLabel, value, onChange, 'aria-label': ariaLabel, size, ...props }: any) {
+    const resolvedLabel = ariaLabel ?? labelText
+    return (
+      <label>
+        {!hideLabel ? <span>{labelText}</span> : null}
+        <input aria-label={resolvedLabel} value={value} onChange={onChange} {...props} />
+      </label>
+    )
+  }
+
+  function Search({ labelText, value, onChange, 'aria-label': ariaLabel, size, ...props }: any) {
+    const resolvedLabel = ariaLabel ?? labelText
+    return (
+      <label>
+        <span>{labelText}</span>
+        <input type="search" aria-label={resolvedLabel} value={value} onChange={onChange} {...props} />
+      </label>
+    )
+  }
+
+  function Select({ children, labelText, hideLabel, value, onChange, 'aria-label': ariaLabel, size, ...props }: any) {
+    const resolvedLabel = ariaLabel ?? labelText
+    return (
+      <label>
+        {!hideLabel ? <span>{labelText}</span> : null}
+        <select aria-label={resolvedLabel} value={value} onChange={onChange} {...props}>
+          {children}
+        </select>
+      </label>
+    )
+  }
+
+  function SelectItem({ value, text, children, ...props }: any) {
+    return <option value={value} {...props}>{text ?? children}</option>
+  }
+
+  function Toggle({ labelText, toggled, onToggle, 'aria-label': ariaLabel, labelA, labelB, size, ...props }: any) {
+    const resolvedLabel = ariaLabel ?? labelText
+    return (
+      <label>
+        <span>{labelText}</span>
+        <input
+          type="checkbox"
+          aria-label={resolvedLabel}
+          checked={Boolean(toggled)}
+          onChange={(event) => onToggle?.(event.currentTarget.checked)}
+          {...props}
+        />
+      </label>
+    )
+  }
+
+  function Table({ children, ...props }: any) {
+    return <table {...props}>{children}</table>
+  }
+
+  function TableHead({ children }: any) {
+    return <thead>{children}</thead>
+  }
+
+  function TableBody({ children }: any) {
+    return <tbody>{children}</tbody>
+  }
+
+  function TableRow({ children, ...props }: any) {
+    return <tr {...props}>{children}</tr>
+  }
+
+  function TableHeader({ children, ...props }: any) {
+    return <th {...props}>{children}</th>
+  }
+
+  function TableCell({ children, ...props }: any) {
+    return <td {...props}>{children}</td>
+  }
+
+  function TableContainer({ title, children, ...props }: any) {
+    return (
+      <div {...props}>
+        {title ? <h3>{title}</h3> : null}
+        {children}
+      </div>
+    )
+  }
+
+  function StructuredListWrapper({ children, ...props }: any) {
+    return <div {...props}>{children}</div>
+  }
+
+  function StructuredListBody({ children }: any) {
+    return <div>{children}</div>
+  }
+
+  function StructuredListRow({ children }: any) {
+    return <div>{children}</div>
+  }
+
+  function StructuredListCell({ children }: any) {
+    return <div>{children}</div>
+  }
+
   return {
     Accordion: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     AccordionItem: ({ title, children }: { title: React.ReactNode; children: React.ReactNode }) => (
@@ -232,10 +349,29 @@ jest.mock('@carbon/react', () => {
           <button onClick={onRequestClose}>{secondaryButtonText}</button>
         </section>
       ) : null,
+    Column,
+    Grid,
+    Layer,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
+    Search,
+    Select,
+    SelectItem,
+    StructuredListBody,
+    StructuredListCell,
+    StructuredListRow,
+    StructuredListWrapper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableHeader,
+    TableRow,
+    TextInput,
+    Toggle,
     Tabs,
     Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
     Tile: ({ children, ...props }: any) => <div {...props}>{children}</div>,
@@ -258,6 +394,8 @@ jest.mock('@/map2/drumMachineState', () => ({
 jest.mock('@/app/hooks/useDrumMachine', () => ({
   useDrumMachineState: () => mockUseDrumMachineState(),
   useDrumTransport: () => mockUseDrumTransport(),
+  useDrumBackingTracks: () => mockUseDrumBackingTracks(),
+  useDrumBackingTrackTransport: () => mockUseDrumBackingTrackTransport(),
   useDrumPosition: () => mockUseDrumPosition(),
   useDrumActiveKit: () => mockUseDrumActiveKit(),
   useDrumKits: () => mockUseDrumKits(),
@@ -305,6 +443,7 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useStopDrumSongTransport: () => mockUseStopDrumSongTransport(),
   useTriggerDrumFill: () => mockUseTriggerDrumFill(),
   useUpdateDrumMachineState: () => mockUseUpdateDrumMachineState(),
+  useUpdateDrumBackingTrackTransport: () => mockUseUpdateDrumBackingTrackTransport(),
   useUpdateDrumTransport: () => mockUseUpdateDrumTransport(),
 }))
 
@@ -411,6 +550,31 @@ function primeHooks() {
       midi_output_channel: 9,
       program_change_enabled: false,
       track_swing: Array(16).fill(0),
+    },
+  })
+  mockUseDrumBackingTracks.mockReturnValue({
+    data: [
+      { track_id: 'bt-001', name: 'Midnight Motor', genre: 'Rock', key: 'E minor', tempo: 118, duration_seconds: 204, duration_label: '03:24' },
+      { track_id: 'bt-002', name: 'City Lights', genre: 'Pop', key: 'A major', tempo: 124, duration_seconds: 178, duration_label: '02:58' },
+      { track_id: 'bt-003', name: 'Copper Shuffle', genre: 'Blues', key: 'G', tempo: 92, duration_seconds: 251, duration_label: '04:11' },
+    ],
+  })
+  mockUseDrumBackingTrackTransport.mockReturnValue({
+    data: {
+      track_id: 'bt-001',
+      track_name: 'Midnight Motor',
+      genre: 'Rock',
+      key: 'E minor',
+      tempo: 118,
+      duration_seconds: 204,
+      duration_label: '03:24',
+      position_seconds: 0,
+      position_label: '00:00',
+      is_playing: false,
+      loop_enabled: false,
+      tempo_shift: 0,
+      pitch_shift: 0,
+      runtime_source: 'drum_machine_service',
     },
   })
   mockUseDrumPosition.mockReturnValue({
@@ -637,6 +801,7 @@ function primeHooks() {
   mockUseStopDrumSongTransport.mockReturnValue({ mutate: mockStopSongTransportMutate })
   mockUseTriggerDrumFill.mockReturnValue({ mutate: mockTriggerFillMutate })
   mockUseUpdateDrumMachineState.mockReturnValue({ mutate: mockUpdateStateMutate })
+  mockUseUpdateDrumBackingTrackTransport.mockReturnValue({ mutate: mockUpdateBackingTrackTransportMutate })
   mockUseUpdateDrumTransport.mockReturnValue({ mutate: mockUpdateTransportMutate })
 }
 
@@ -744,6 +909,7 @@ describe('DrumsPage', () => {
     mockStopMidiLearnMutate.mockReset()
     mockTriggerFillMutate.mockReset()
     mockUpdateStateMutate.mockReset()
+    mockUpdateBackingTrackTransportMutate.mockReset()
     mockUpdateTransportMutate.mockReset()
     mockDrumsApiTapTempo.mockReset()
     mockDrumsApiSetPattern.mockReset()
@@ -755,6 +921,8 @@ describe('DrumsPage', () => {
     mockDrumsApiUploadPadSample.mockResolvedValue(undefined)
     mockUseDrumMachineState.mockReset()
     mockUseDrumTransport.mockReset()
+    mockUseDrumBackingTracks.mockReset()
+    mockUseDrumBackingTrackTransport.mockReset()
     mockUseDrumPosition.mockReset()
     mockUseDrumActiveKit.mockReset()
     mockUseDrumKits.mockReset()
@@ -802,6 +970,7 @@ describe('DrumsPage', () => {
     mockUseStopDrumSongTransport.mockReset()
     mockUseTriggerDrumFill.mockReset()
     mockUseUpdateDrumMachineState.mockReset()
+    mockUseUpdateDrumBackingTrackTransport.mockReset()
     mockUseUpdateDrumTransport.mockReset()
     primeHooks()
   })
@@ -831,6 +1000,8 @@ describe('DrumsPage', () => {
     expect(screen.getByText('Saved Layouts')).toBeInTheDocument()
     expect(screen.getByText('Shortcut Cues')).toBeInTheDocument()
     expect(screen.getByText('Live Summary')).toBeInTheDocument()
+    expect(screen.getByText('Open Standards Alignment')).toBeInTheDocument()
+    expect(screen.getByText('MIDI 2.0 Default Drum Note Map')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /back to audio grid/i }))
 
@@ -1334,17 +1505,27 @@ describe('DrumsPage', () => {
     fireEvent.change(screen.getByLabelText('Backing track search'), { target: { value: 'Copper' } })
     expect(table).toHaveTextContent('Copper Shuffle')
     expect(table).not.toHaveTextContent('Midnight Motor')
+    expect(screen.getByRole('button', { name: 'Selected' })).toBeInTheDocument()
   })
 
-  it('updates backing-track shift displays through shared numeric controls', () => {
+  it('routes backing-track transport controls through the runtime mutation path', () => {
     renderPage()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Backing Tracks' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Select' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Stop' })[1])
+    fireEvent.click(screen.getByLabelText('Backing track loop enabled'))
     fireEvent.change(screen.getByLabelText('Backing track tempo shift'), { target: { value: '12' } })
     fireEvent.change(screen.getByLabelText('Backing track pitch shift'), { target: { value: '-3' } })
 
-    expect(screen.getAllByText('12%').length).toBeGreaterThan(0)
-    expect(screen.getByText('-3 st')).toBeInTheDocument()
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ track_id: 'bt-002' })
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ is_playing: true })
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ is_playing: false, position_seconds: 0 })
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ loop_enabled: true })
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ tempo_shift: 12 })
+    expect(mockUpdateBackingTrackTransportMutate).toHaveBeenCalledWith({ pitch_shift: -3 })
+    expect(screen.getByText('Runtime-backed backing-track transport active')).toBeInTheDocument()
   })
 
   it('updates midi mapping, learning, and preset flows from the advanced panel', () => {
@@ -1355,6 +1536,8 @@ describe('DrumsPage', () => {
     fireEvent.change(screen.getByLabelText('Pad 1 head zone note'), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Learn Pad 1' }))
 
+    expect(screen.getByText('Drum Gesture Semantics')).toBeInTheDocument()
+    expect(screen.getByText('Head / primary strike')).toBeInTheDocument()
     expect(mockSetMidiMappingMutate).toHaveBeenCalledWith(
       expect.objectContaining({
         global_midi_channel: 10,

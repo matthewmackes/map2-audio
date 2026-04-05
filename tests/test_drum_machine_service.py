@@ -605,6 +605,51 @@ def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
     assert service.get_state()["transport"] is True
 
 
+def test_drum_machine_service_tracks_backing_track_runtime_progress(tmp_path, monkeypatch):
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+    clock = {"value": 100.0}
+    monkeypatch.setattr(drum_service_module.time, "monotonic", lambda: clock["value"])
+
+    started = service.update_backing_track_transport({
+        "track_id": "bt-003",
+        "is_playing": True,
+        "loop_enabled": True,
+        "tempo_shift": 20,
+        "pitch_shift": -2,
+    })
+
+    assert started["track_id"] == "bt-003"
+    assert started["position_seconds"] == 0.0
+    assert started["tempo_shift"] == 20
+    assert started["pitch_shift"] == -2
+
+    clock["value"] = 110.0
+    progressed = service.get_backing_track_transport()
+    assert progressed["position_seconds"] == pytest.approx(12.0)
+    assert progressed["position_label"] == "00:12"
+    assert progressed["is_playing"] is True
+
+    clock["value"] = 400.0
+    looped = service.get_backing_track_transport()
+    assert looped["position_seconds"] == pytest.approx(109.0)
+    assert looped["position_label"] == "01:49"
+    assert looped["is_playing"] is True
+
+    service.update_backing_track_transport({
+        "track_id": "bt-002",
+        "position_seconds": 175.0,
+        "is_playing": True,
+        "loop_enabled": False,
+        "tempo_shift": 0,
+    })
+    clock["value"] = 405.0
+    clamped = service.get_backing_track_transport()
+    assert clamped["track_id"] == "bt-002"
+    assert clamped["position_seconds"] == pytest.approx(178.0)
+    assert clamped["position_label"] == "02:58"
+    assert clamped["is_playing"] is False
+
+
 def test_drum_machine_service_round_trips_midi_output_config(tmp_path, monkeypatch):
     service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
 

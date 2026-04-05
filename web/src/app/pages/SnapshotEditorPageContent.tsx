@@ -164,6 +164,10 @@ import {
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import {
+  resolveSnapshotRoutingLiveStatus,
+  type SnapshotRoutingLiveApplyState,
+} from '../utils/snapshotRoutingLiveState'
+import {
   buildSnapshotIoControlsUpdate,
   SNAPSHOT_IO_USE_DEFAULT_OPTION,
   buildSnapshotIoDefaultsUpdate,
@@ -1120,6 +1124,7 @@ export function SnapshotEditorPage() {
   const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
   const [flowOutputClipTimestamps, setFlowOutputClipTimestamps] = useState<Record<string, number>>({})
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
+  const [routingLiveApplyState, setRoutingLiveApplyState] = useState<SnapshotRoutingLiveApplyState>('idle')
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
@@ -1453,6 +1458,10 @@ export function SnapshotEditorPage() {
       persistedEditorSnapshot: editorSnapshotContext,
     }),
     [controlPlaneSnapshot, editorSnapshotContext, editorSnapshotOverride],
+  )
+  const isAuthorityLiveSnapshot = useMemo(
+    () => isSnapshotCurrentAuthorityLive(activeSnapshot, committedAudioState),
+    [activeSnapshot, committedAudioState],
   )
   const setControlPlaneSnapshotCaches = useCallback((snapshot: SnapshotDetail) => {
     setAuthorityAwareLiveSnapshot(queryClient, snapshot, authoritySnapshotId)
@@ -2257,6 +2266,10 @@ export function SnapshotEditorPage() {
     }
   }, [activeSnapshot])
 
+  useEffect(() => {
+    setRoutingLiveApplyState('idle')
+  }, [activeSnapshot?.id, isAuthorityLiveSnapshot, showRoutingTopologyModal])
+
   const createSnapshotFromEditorMutation = useMutation({
     mutationFn: async ({
       snapshotName,
@@ -2693,9 +2706,15 @@ export function SnapshotEditorPage() {
     }
   }, [authoritySnapshotId, queryClient])
 
-  const syncSnapshotDetailCaches = useCallback((snapshot: SnapshotDetail) => {
+  const syncSnapshotDetailCaches = useCallback((
+    snapshot: SnapshotDetail,
+    options?: {
+      updateAuthorityActiveSnapshot?: boolean
+    },
+  ) => {
+    const updateAuthorityActiveSnapshot = options?.updateAuthorityActiveSnapshot ?? true
     queryClient.setQueryData(['snapshots', 'detail', snapshot.id], snapshot)
-    if (authoritySnapshotId === snapshot.id) {
+    if (updateAuthorityActiveSnapshot && authoritySnapshotId === snapshot.id) {
       queryClient.setQueryData(['snapshots', 'detail', 'authority-active', authoritySnapshotId], snapshot)
     }
     setEditorSnapshotContext((current) => {
@@ -2704,14 +2723,66 @@ export function SnapshotEditorPage() {
       }
       return current
     })
-    if (controlPlaneSnapshot?.id === snapshot.id) {
+    if (updateAuthorityActiveSnapshot && controlPlaneSnapshot?.id === snapshot.id) {
       setControlPlaneSnapshotCaches(snapshot)
       setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? null : current))
       return
     }
 
+    if (!updateAuthorityActiveSnapshot && currentEditorSnapshotId === snapshot.id) {
+      setEditorSnapshotOverride(snapshot)
+      return
+    }
+
     setEditorSnapshotOverride((current) => (current?.id === snapshot.id ? snapshot : current))
-  }, [authoritySnapshotId, controlPlaneSnapshot?.id, editorSnapshotOverride?.id, queryClient, setControlPlaneSnapshotCaches])
+  }, [
+    authoritySnapshotId,
+    controlPlaneSnapshot?.id,
+    currentEditorSnapshotId,
+    editorSnapshotOverride?.id,
+    queryClient,
+    setControlPlaneSnapshotCaches,
+  ])
+
+  type SnapshotRoutingMutationResponse = SnapshotDetail & {
+    routing_requires_reactivation?: boolean
+  }
+
+  const updateLiveSnapshotRoutingMutation = useMutation({
+    mutationFn: async ({
+      snapshotId,
+      nextDraft,
+    }: {
+      snapshotId: number
+      nextDraft: SnapshotDraftData
+    }) => snapshotsApi.updateRouting(
+      snapshotId,
+      flowSnapshotDataToSnapshotPayload(nextDraft).routing,
+    ) as Promise<SnapshotRoutingMutationResponse>,
+    onSuccess: (snapshot) => {
+      const requiresReactivation = Boolean(snapshot.routing_requires_reactivation)
+      syncSnapshotDetailCaches(snapshot, {
+        updateAuthorityActiveSnapshot: !requiresReactivation,
+      })
+      setRoutingLiveApplyState(requiresReactivation ? 'reactivation-required' : 'live-applied')
+      if (requiresReactivation) {
+        pushToast('Routing mode saved. Reactivate the snapshot to apply the new live topology.', 'info')
+      }
+    },
+    onError: (error) => {
+      setRoutingLiveApplyState('idle')
+      pushToast(error instanceof Error ? error.message : 'Failed to update live routing', 'error')
+    },
+  })
+
+  const routingLiveStatus = useMemo(
+    () => resolveSnapshotRoutingLiveStatus({
+      isAuthorityLive: isAuthorityLiveSnapshot,
+      isApplying: updateLiveSnapshotRoutingMutation.isPending,
+      applyState: routingLiveApplyState,
+    }),
+    [isAuthorityLiveSnapshot, routingLiveApplyState, updateLiveSnapshotRoutingMutation.isPending],
+  )
 
   const hydrateEditorFromSnapshot = useCallback((
     detail: SnapshotDetail,
@@ -4402,6 +4473,17 @@ export function SnapshotEditorPage() {
   }, [selectedFlowForAssignment, closeAssignmentDialog, pushToast, queryClient, snapshotEditorMutationDisabled])
 
   // Routing
+  const queueLiveRoutingDraftUpdate = useCallback((nextDraft: SnapshotDraftData) => {
+    if (!isAuthorityLiveSnapshot || !activeSnapshot) {
+      return
+    }
+    setRoutingLiveApplyState('idle')
+    updateLiveSnapshotRoutingMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      nextDraft,
+    })
+  }, [activeSnapshot, isAuthorityLiveSnapshot, updateLiveSnapshotRoutingMutation])
+
   const setRoutingMode = useCallback((mode: RoutingMode) => {
     if (snapshotEditorMutationDisabled) {
       return
@@ -4430,7 +4512,15 @@ export function SnapshotEditorPage() {
     }
     setEditorSnapshotState(nextDraft)
     recordSnapshotUndoRedoStep(nextDraft, 'Change routing mode')
-  }, [activeFlow?.id, captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditorMutationDisabled])
+    queueLiveRoutingDraftUpdate(nextDraft)
+  }, [
+    activeFlow?.id,
+    captureCurrentState,
+    queueLiveRoutingDraftUpdate,
+    recordSnapshotUndoRedoStep,
+    setEditorSnapshotState,
+    snapshotEditorMutationDisabled,
+  ])
 
   const setBlendPosition = useCallback((slotId: string, position: number) => {
     if (snapshotEditorMutationDisabled) {
@@ -4456,7 +4546,14 @@ export function SnapshotEditorPage() {
     }
     setEditorSnapshotState(nextDraft)
     recordSnapshotUndoRedoStep(nextDraft, 'Adjust morph position')
-  }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditorMutationDisabled])
+    queueLiveRoutingDraftUpdate(nextDraft)
+  }, [
+    captureCurrentState,
+    queueLiveRoutingDraftUpdate,
+    recordSnapshotUndoRedoStep,
+    setEditorSnapshotState,
+    snapshotEditorMutationDisabled,
+  ])
 
   // Plugin operations
   const openSelectedBlockEditor = useCallback(() => {
@@ -9134,6 +9231,9 @@ export function SnapshotEditorPage() {
           if (flow) openAssignmentDialog(flow)
         }}
         activeFlowId={routing.activeSlotId}
+        liveStatusLabel={routingLiveStatus.tagLabel}
+        liveStatusTagType={routingLiveStatus.tagType}
+        liveStatusMessage={routingLiveStatus.message}
       />
 
     </div>

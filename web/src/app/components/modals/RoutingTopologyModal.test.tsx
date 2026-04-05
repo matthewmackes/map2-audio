@@ -75,6 +75,9 @@ function renderModal() {
         onOpenPortRouting={jest.fn()}
         onOpenAssignFlow={jest.fn()}
         activeFlowId="flow-a"
+        liveStatusLabel="Pending live"
+        liveStatusTagType="warm-gray"
+        liveStatusMessage="Saved to the live snapshot. Reactivate to apply the new routing mode."
       />
     </QueryClientProvider>,
   )
@@ -122,6 +125,8 @@ describe('RoutingTopologyModal', () => {
 
     expect(screen.getByText('Focus Flow A')).toBeInTheDocument()
     expect(screen.getByText('Morph 42%')).toBeInTheDocument()
+    expect(screen.getByText('Pending live')).toBeInTheDocument()
+    expect(screen.getByText('Saved to the live snapshot. Reactivate to apply the new routing mode.')).toBeInTheDocument()
 
     const focusButton = screen.getByRole('button', { name: /flow a primary live chain/i })
     expect(focusButton).toHaveAttribute('style', expect.stringContaining('--rtm-flow-color: #24a148'))

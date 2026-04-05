@@ -10,8 +10,8 @@
  *   - Actions: Route ports, Assign flow (open child modals in place)
  *   - MIDI command assignments for every controllable routing target
  *
- * Changes are live/immediate — no Apply step. The modal heading button
- * labelled "Live" reflects this. Close with X or "Done".
+ * The status strip reflects whether edits are draft-only, applying live,
+ * or pending a required reactivation. Close with X or "Done".
  *
  * MIDI section follows the MIDICommand pattern (`action: 'set_routing'`),
  * matching the Native JUCE effect card pattern (MidiMappingDialog / MidiCcBadge).
@@ -103,6 +103,9 @@ export interface RoutingTopologyModalProps {
   onOpenAssignFlow: (flowId: string) => void
   /** Active flow index so Actions panel knows which flow to target */
   activeFlowId: string | null
+  liveStatusLabel: 'Draft' | 'Live' | 'Pending live' | 'Applying'
+  liveStatusTagType: 'cool-gray' | 'green' | 'warm-gray' | 'blue'
+  liveStatusMessage: string
   readOnly?: boolean
 }
 
@@ -255,6 +258,9 @@ export function RoutingTopologyModal({
   onOpenPortRouting,
   onOpenAssignFlow,
   activeFlowId,
+  liveStatusLabel,
+  liveStatusTagType,
+  liveStatusMessage,
   readOnly = false,
 }: RoutingTopologyModalProps) {
   const queryClient = useQueryClient()
@@ -768,11 +774,11 @@ export function RoutingTopologyModal({
       aria-label="Routing topology"
     >
       <div className="rtm__body">
-        {/* Live status strip */}
+        {/* Live/draft status strip */}
         <div className="rtm__live-strip">
-          <Tag type="green">Live</Tag>
+          <Tag type={liveStatusTagType}>{liveStatusLabel}</Tag>
           <span className="rtm__live-strip-copy">
-            Changes apply immediately — no Apply step needed.
+            {liveStatusMessage}
           </span>
           <div className="rtm__live-strip-meta">
             <Tag type="blue">{activeMode.label}</Tag>

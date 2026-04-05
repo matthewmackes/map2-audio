@@ -6,7 +6,72 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 02:33 EDT - Closed follow-on T754 after wiring expression-assignment morph control into the live snapshot path; no remaining unblocked tasks identified.
+Last updated: 2026-04-04 22:14 EDT - Completed T755 live-routing truth sync and T757 backing-track runtime wiring; the current canonical worklist has no open active tasks.
+
+ID: T756
+Status: [✓] Done
+Title: Refactor `/drums` into a Carbon-first enterprise drum control plane with standards alignment
+Description:
+- Goal / acceptance criteria: Redesign `web/src/app/pages/DrumsPage.tsx` and supporting assets/tests into a Carbon-first interface that preserves every existing control and workflow across Practice, Advanced, and Backing Tracks modes while upgrading the operator experience to dense, editable control planes. The redesign must favor Carbon tables and structured summaries for high-density editing, add clear standards-oriented guidance for MIDI drum note mapping/trigger zones/pad behavior where the UI already exposes those concepts, and retain accessibility labels/testable interaction coverage for sequencing, kits, mixer, sample editing, MIDI mapping, CC mapping, transport, and backing-track tools.
+- Why it matters: `/drums` is currently feature-rich but visually fragmented, with many bespoke controls and ad hoc tables that undersell the platform. A Carbon-first redesign makes the surface more functional, legible, and credible for enterprise/operator use without dropping capability.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Refactored drum workspace UI, updated CSS/test coverage, standards-backed operator framing inside the interface, verification evidence, and follow-up task capture for any backend/runtime gaps uncovered during the redesign.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 21:52 EDT - Codex
+- Completion notes:
+  - Refactored `web/src/app/pages/DrumsPage.tsx` into a more complete Carbon operator surface by replacing the highest-density raw HTML areas with Carbon grid/form/table primitives: workspace navigation summary, standards tile, practice pack browser, pattern/song controls, kit browser, backing-track catalog, transport selects/toggles, and the MIDI/CC mapping matrices.
+  - Added explicit standards-oriented operator framing to `/drums`, including an Open Standards Alignment tile and drum-gesture semantics tables that ground the UI in MIDI 2.0 Default Drum Note Map / Drum Profile concepts, General MIDI lineage, RTP-MIDI / Network MIDI 2.0 transport, and the MIDI 1.0 electrical transport baseline.
+  - Preserved existing control coverage and accessibility labels across sequencing, mixer, sample editing, MIDI routing, CC learn, transport, and backing-track tools while extending `web/src/app/pages/DrumsPage.test.tsx` and its Carbon mocks so the redesign remains fully regression-tested.
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> PASS
+  - Licensing review: touched frontend/css/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T757
+Status: [✓] Done
+Title: Wire backing-track transport, looping, time-stretch, and pitch-shift controls to a real runtime path
+Description:
+- Goal / acceptance criteria: Replace the current `/drums` backing-track player placeholder path with a working runtime integration so Play/Pause/Stop, Loop, Tempo Shift, and Pitch Shift in `web/src/app/pages/DrumsPage.tsx` control an actual backing-track engine/service instead of a UI-only shell. The finished path must expose real transport state, remove or downgrade the current warning notification, and include focused frontend/backend regression coverage.
+- Why it matters: T756 made `/drums` an enterprise-grade control plane, but the backing-track player still advertises controls whose audio path is not yet wired. This is the main functional gap left visible on the page.
+- Dependencies: T756
+- Estimated effort: Medium
+- Required outputs: Runtime backing-track service/API integration, UI state wiring, validation evidence, and updated tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 22:14 EDT - Codex
+- Completion notes:
+  - Added a service-owned backing-track runtime in `app/services/drum_machine_service.py` with a typed catalog, transport state, playhead progression, loop/clamp behavior, and percent-based tempo-rate scaling so `/drums` now talks to a real backend runtime object instead of local-only React state.
+  - Exposed the runtime through new `/api/engine/drums/backing-tracks` and `/api/engine/drums/backing-tracks/transport` endpoints, plus matching client/type/hook wiring in `web/src/map2/clients/drums.ts`, `web/src/map2/types.ts`, and `web/src/app/hooks/useDrumMachine.ts`.
+  - Rewired the Backing Tracks tab in `web/src/app/pages/DrumsPage.tsx` to use the runtime-backed catalog/transport for Select, Play, Pause, Stop, Loop, Tempo Shift, and Pitch Shift, and downgraded the old warning banner to an informational runtime-status notice.
+- Validation:
+  - `cd /home/mm/map2-audio && pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> PASS
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> PASS
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm run build` -> PASS
+  - Licensing review: touched backend/frontend/test/worklist/version files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T755
+Status: [✓] Done
+Title: Align Snapshot Editor routing modal with live routing runtime semantics
+Description:
+- Goal / acceptance criteria: When the currently edited snapshot is also the authority-live snapshot, routing controls in `RoutingTopologyModal` must stop being draft-only. Morph-position changes and same-mode live routing updates must call the snapshot routing APIs immediately, update the editor/control-plane caches, and keep the live routing visual state aligned with runtime truth. If a routing-mode change still cannot be applied in place without reactivation, the editor must surface that explicitly instead of implying the change was already live.
+- Why it matters: The routing modal currently advertises "Changes are live/immediate — no Apply step", but source inspection confirmed `setRoutingMode()` and `setMorphProgress()` only mutate local draft state. That mismatch is operator-hostile and creates false confidence during live editing.
+- Dependencies: T738, T741, T754
+- Estimated effort: Medium
+- Required outputs: Snapshot Editor live-routing mutation path, truthful UI/status handling for reactivation-required mode changes, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-04 22:14 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/utils/snapshotRoutingLiveState.ts` so the editor can derive truthful live-routing status from the authority-live snapshot/runtime state instead of relying on draft-only modal assumptions.
+  - Updated `web/src/app/components/modals/RoutingTopologyModal.tsx` and `web/src/app/pages/SnapshotEditorPageContent.tsx` so same-mode live routing edits and morph-position changes mutate the live snapshot path immediately when the edited snapshot is authority-live, while routing-mode changes explicitly surface reactivation-required state instead of implying they were already live.
+  - Added focused regression coverage in `web/src/app/components/modals/RoutingTopologyModal.test.tsx` and `web/src/app/utils/snapshotRoutingLiveState.test.ts` to lock the truthful status strip and live/draft branching behavior.
+- Validation:
+  - `cd /home/mm/map2-audio/web && npm test -- --runInBand src/app/components/modals/RoutingTopologyModal.test.tsx src/app/utils/snapshotRoutingLiveState.test.ts` -> PASS
+  - `cd /home/mm/map2-audio/web && npm run typecheck` -> PASS
+  - `cd /home/mm/map2-audio/web && npm run build` -> PASS
 
 ID: T754
 Status: [✓] Done

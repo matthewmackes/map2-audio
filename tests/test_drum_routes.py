@@ -78,6 +78,27 @@ class _FakeDrumService:
             "switch_quantization_beats": 4,
             "updated_at": None,
         }
+        self.backing_tracks = [
+            {"track_id": "bt-001", "name": "Midnight Motor", "genre": "Rock", "key": "E minor", "tempo": 118, "duration_seconds": 204.0, "duration_label": "03:24"},
+            {"track_id": "bt-002", "name": "City Lights", "genre": "Pop", "key": "A major", "tempo": 124, "duration_seconds": 178.0, "duration_label": "02:58"},
+            {"track_id": "bt-003", "name": "Copper Shuffle", "genre": "Blues", "key": "G", "tempo": 92, "duration_seconds": 251.0, "duration_label": "04:11"},
+        ]
+        self.backing_track_transport = {
+            "track_id": "bt-001",
+            "track_name": "Midnight Motor",
+            "genre": "Rock",
+            "key": "E minor",
+            "tempo": 118,
+            "duration_seconds": 204.0,
+            "duration_label": "03:24",
+            "position_seconds": 0.0,
+            "position_label": "00:00",
+            "is_playing": False,
+            "loop_enabled": False,
+            "tempo_shift": 0,
+            "pitch_shift": 0,
+            "runtime_source": "drum_machine_service",
+        }
         self.song = []
         self.song_loop = False
         self.song_transport = {
@@ -205,6 +226,38 @@ class _FakeDrumService:
             "program_change_enabled": self.state["program_change_enabled"],
             "track_swing": list(self.state["track_swing"]),
         }
+
+    def _format_time_label(self, seconds):
+        rounded_seconds = max(0, int(round(seconds)))
+        minutes, remainder = divmod(rounded_seconds, 60)
+        return f"{minutes:02d}:{remainder:02d}"
+
+    def list_backing_tracks(self):
+        return [dict(track) for track in self.backing_tracks]
+
+    def get_backing_track_transport(self):
+        payload = dict(self.backing_track_transport)
+        payload["position_label"] = self._format_time_label(payload["position_seconds"])
+        return payload
+
+    def update_backing_track_transport(self, patch):
+        if "track_id" in patch:
+            track = next(track for track in self.backing_tracks if track["track_id"] == patch["track_id"])
+            self.backing_track_transport.update({
+                "track_id": track["track_id"],
+                "track_name": track["name"],
+                "genre": track["genre"],
+                "key": track["key"],
+                "tempo": track["tempo"],
+                "duration_seconds": track["duration_seconds"],
+                "duration_label": track["duration_label"],
+                "position_seconds": 0.0,
+            })
+        for key in ("is_playing", "loop_enabled", "tempo_shift", "pitch_shift", "position_seconds"):
+            if key in patch:
+                self.backing_track_transport[key] = patch[key]
+        self.backing_track_transport["position_label"] = self._format_time_label(self.backing_track_transport["position_seconds"])
+        return self.get_backing_track_transport()
 
     def update_transport(self, patch):
         if "is_playing" in patch:
@@ -811,6 +864,49 @@ def test_drum_transport_route_updates_transport_projection(monkeypatch):
     history = ws_manager.get_event_history("drums:transport")
     assert history["events"][-1]["type"] == "drum_transport"
     assert history["events"][-1]["data"]["bpm"] == 96
+
+
+def test_drum_backing_track_routes_round_trip_runtime_state(monkeypatch):
+    client = _client(monkeypatch)
+
+    catalog = client.get("/api/engine/drums/backing-tracks")
+    initial_transport = client.get("/api/engine/drums/backing-tracks/transport")
+    updated_transport = client.post(
+        "/api/engine/drums/backing-tracks/transport",
+        json={
+            "track_id": "bt-003",
+            "is_playing": True,
+            "loop_enabled": True,
+            "tempo_shift": 12,
+            "pitch_shift": -3,
+            "position_seconds": 24.0,
+        },
+    )
+
+    assert catalog.status_code == 200
+    assert catalog.json()[0]["track_id"] == "bt-001"
+
+    assert initial_transport.status_code == 200
+    assert initial_transport.json()["track_id"] == "bt-001"
+    assert initial_transport.json()["runtime_source"] == "drum_machine_service"
+
+    assert updated_transport.status_code == 200
+    assert updated_transport.json() == {
+        "track_id": "bt-003",
+        "track_name": "Copper Shuffle",
+        "genre": "Blues",
+        "key": "G",
+        "tempo": 92,
+        "duration_seconds": 251.0,
+        "duration_label": "04:11",
+        "position_seconds": 24.0,
+        "position_label": "00:24",
+        "is_playing": True,
+        "loop_enabled": True,
+        "tempo_shift": 12,
+        "pitch_shift": -3,
+        "runtime_source": "drum_machine_service",
+    }
 
 
 def test_drum_pad_synth_routes_round_trip_source_and_params(monkeypatch):

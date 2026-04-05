@@ -28,6 +28,9 @@ from app.services.drum_sequencer_service import (
     get_drum_sequencer_service,
 )
 from app.services.drum_machine_service import (
+    DrumBackingTrackSummaryModel,
+    DrumBackingTrackTransportStateModel,
+    DrumBackingTrackTransportUpdateModel,
     DrumBusMixerModel,
     DrumCcLearnStateModel,
     DrumCcMappingModel,
@@ -267,6 +270,19 @@ def get_drum_transport() -> Dict[str, Any]:
     return _get_service().get_transport()
 
 
+@router.get("/api/engine/drums/backing-tracks", response_model=List[DrumBackingTrackSummaryModel])
+def get_drum_backing_tracks() -> List[Dict[str, Any]]:
+    return _get_service().list_backing_tracks()
+
+
+@router.get("/api/engine/drums/backing-tracks/transport", response_model=DrumBackingTrackTransportStateModel)
+def get_drum_backing_track_transport() -> Dict[str, Any]:
+    try:
+        return _get_service().get_backing_track_transport()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/api/engine/drums/pad/{pad}/source", response_model=DrumPadSoundSourceModel)
 def get_drum_pad_sound_source(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
     try:
@@ -457,6 +473,14 @@ async def set_drum_transport(update: DrumTransportUpdateModel) -> Dict[str, Any]
     await _get_service().publish_transport_update()
     await _get_service().publish_position_update()
     return updated
+
+
+@router.post("/api/engine/drums/backing-tracks/transport", response_model=DrumBackingTrackTransportStateModel)
+def set_drum_backing_track_transport(update: DrumBackingTrackTransportUpdateModel) -> Dict[str, Any]:
+    try:
+        return _get_service().update_backing_track_transport(update.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/api/engine/drums/position", response_model=DrumSequencerPositionModel)
