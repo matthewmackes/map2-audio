@@ -581,6 +581,9 @@ Last updated: 2026-04-05 19:53 EDT - Codex
   - Kept the boundary explicit in the routed copy and behavior: the section states that session media is adjunct-only, uses its own transport state, and does not redefine the core Performance Brain identity.
 - Validation:
   - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx` -> PASS (`8 passed`)
+  - `pytest -q tests/test_brain_routes.py` -> PASS (`8 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_routes.py` -> PASS
+  - `npm --prefix web run build` -> PASS
   - `git diff --check` -> PASS
   - Licensing review: touched frontend/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 

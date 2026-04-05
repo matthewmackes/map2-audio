@@ -364,6 +364,18 @@ def test_brain_routes_restore_scoped_state_from_authority_before_reads(tmp_path)
     assert payload["transport"]["bpm"] == 133
 
 
+def test_brain_routes_accept_session_media_active_section(tmp_path):
+    client, _, _ = make_client(tmp_path)
+
+    response = client.post(
+        "/api/engine/brain/state",
+        json={"active_section": "session_media"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["active_section"] == "session_media"
+
+
 def test_brain_routes_expose_scoped_controller_qualification(tmp_path):
     client, _, authority_sync = make_client(tmp_path)
 

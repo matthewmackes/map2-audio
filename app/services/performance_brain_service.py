@@ -357,6 +357,7 @@ class BrainStateModel(BaseModel):
         "routing",
         "inputs",
         "library",
+        "session_media",
         "diagnostics",
     ] = "overview"
     transport: BrainTransportStateModel = Field(default_factory=BrainTransportStateModel)
@@ -396,6 +397,7 @@ class BrainStateUpdateModel(BaseModel):
         "routing",
         "inputs",
         "library",
+        "session_media",
         "diagnostics",
     ] | None = None
 
