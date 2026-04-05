@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 4, 2026 (drum backing-track runtime contract and snapshot live-routing truth sync documented)
+> **Last Updated**: April 5, 2026 (Performance Brain authority projection bridge and observed-state merge rule documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1489,6 +1489,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx src/app/components/modals/RoutingTopologyModal.test.tsx src/app/utils/snapshotRoutingLiveState.test.ts`; `npm --prefix web run typecheck`; `npm --prefix web run build`
 - **Lesson**: In MAP2, dense operator controls must round-trip through one shared runtime object. If a UI cannot mutate the live runtime path safely, the UI copy must say so explicitly instead of simulating success in local draft state.
 
+**54. Brain Authority Sync Must Preserve The Full Scoped Projection Set Across Desired, Committed, And Observed Envelopes (HIGH - Apr 5, 2026)**
+- **Files**: `app/models/audio_state.py`, `app/routes/audio_state.py`, `app/services/performance_brain_authority_sync.py`, `tests/test_audio_state_routes.py`, `tests/test_performance_brain_authority_sync.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The first `Performance Brain` snapshot/live-authority bridge could serialize scoped runtime state into committed and desired envelopes, but node observations would silently collapse to the most recently synced Brain instance.
+- **Root Cause**: `PerformanceBrainAuthoritySyncService` initially built `AudioStateObservation.extensions` from a fresh projection-only dict instead of mirroring the merged `extensions.performance_brain.instances` set already present in committed authority state.
+- **Fix**: Carry extension payloads on the shared audio-state models, add `POST /api/audio/state/brain/sync` as the explicit bridge route, and populate observations from the merged committed extensions so repeated per-instance syncs preserve the full scoped Brain projection set for the node.
+- **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py tests/test_audio_state_routes.py`; `pytest -q tests/test_audio_state_authority_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py tests/test_brain_service.py tests/test_brain_routes.py`
+- **Lesson**: When promoting scoped runtime state into the authority plane, desired, committed, and observed envelopes must all share the same merged extension source or node-observed truth degrades into last-write-wins.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1759,6 +1767,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Performance Brain Authority Projection Bridge
+- **Section**: Gotchas & Learned Fixes (#54), Update Log
+- **Change**: Documented the rule that scoped `Performance Brain` authority sync must use the merged `extensions.performance_brain.instances` set across desired, committed, and observed audio-state envelopes, plus the dedicated `/api/audio/state/brain/sync` bridge route.
+- **Reason**: T763-subA introduced the first Brain snapshot/live-authority bridge, and the initial observation path would have lost previously synced instances on the same node without recording the merge requirement as part of the repo memory.
+- **Impact**: Future Brain recall/live-authority work should extend the existing merged extension contract instead of inventing side stores or regressing observations back to last-write-wins behavior.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/models/audio_state.py`, `app/routes/audio_state.py`, `app/services/performance_brain_authority_sync.py`, `tests/test_audio_state_routes.py`, `tests/test_performance_brain_authority_sync.py`
 
 ### [2026-04-04] - Drum Runtime And Snapshot Live-Routing Truth Contract
 - **Section**: Gotchas & Learned Fixes (#53), Update Log

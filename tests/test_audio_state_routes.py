@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.models.audio_state import AudioStateDesiredIO, AudioStateRouting, CompiledSnapshotIntent
+from app.models.audio_state import AudioStateDesiredIO, AudioStateRouting, AuthoritativeAudioState, CompiledSnapshotIntent
 from app.routes import audio_state as audio_state_routes
 from app.services.audio_state_authority import AudioStateAuthorityError
 
@@ -57,6 +57,54 @@ class _ActivateService:
                 "namespace": "/map2/audio-state/v1",
                 "key": "/map2/audio-state/v1/committed",
                 "revision": 32,
+                "value": committed,
+            },
+        )()
+
+
+class _BrainAuthoritySyncService:
+    def __init__(self) -> None:
+        self.calls = []
+
+    async def sync_instance(self, *, instance_id=None, plugin_position=None, triggered_by="ui"):
+        self.calls.append(
+            {
+                "instance_id": instance_id,
+                "plugin_position": plugin_position,
+                "triggered_by": triggered_by,
+            }
+        )
+        committed = AuthoritativeAudioState(
+            state_version=18,
+            leader_epoch=4,
+            committed_at="2026-04-05T18:10:00",
+            origin_node_id="node-a",
+            desired=CompiledSnapshotIntent(
+                snapshot_id=11,
+                snapshot_revision_id=3,
+                compiled_at="2026-04-05T18:10:00",
+                io=AudioStateDesiredIO(requested_input_device="In", requested_output_device="Out"),
+                routing=AudioStateRouting(mode="series", active_path_ids=["a"], path_order=["a"]),
+                chains=[],
+            ),
+            extensions={
+                "performance_brain": {
+                    "instances": {
+                        "instance-17__position-3": {
+                            "instance_id": "17",
+                            "plugin_position": 3,
+                        }
+                    }
+                }
+            },
+        )
+        return type(
+            "CommittedEnvelope",
+            (),
+            {
+                "namespace": "/map2/audio-state/v1",
+                "key": "/map2/audio-state/v1/committed",
+                "revision": 33,
                 "value": committed,
             },
         )()
@@ -169,3 +217,23 @@ def test_activate_snapshot_route_compiles_and_commits_authoritative_state(monkey
     assert payload["value"]["cluster"]["sync_status"] == "pending_apply"
     assert fake_service.desired.snapshot_id == 7
     assert fake_service.committed.source_snapshot.snapshot_id == 7
+
+
+def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
+    client = _build_client(monkeypatch)
+    fake_service = _BrainAuthoritySyncService()
+    monkeypatch.setattr(audio_state_routes, "_brain_authority_service", lambda: fake_service)
+
+    response = client.post("/api/audio/state/brain/sync?instance_id=17&plugin_position=3&triggered_by=ui-test")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["revision"] == 33
+    assert payload["value"]["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert fake_service.calls == [
+        {
+            "instance_id": "17",
+            "plugin_position": 3,
+            "triggered_by": "ui-test",
+        }
+    ]

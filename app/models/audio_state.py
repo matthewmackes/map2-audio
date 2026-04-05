@@ -89,6 +89,7 @@ class CompiledSnapshotIntent(BaseModel):
     routing: AudioStateRouting
     deployment: AudioStateDeployment = Field(default_factory=AudioStateDeployment)
     chains: list[dict[str, Any]] = Field(default_factory=list)
+    extensions: dict[str, Any] = Field(default_factory=dict)
 
 
 class AuthoritativeAudioState(BaseModel):
@@ -104,6 +105,7 @@ class AuthoritativeAudioState(BaseModel):
     engine: AudioStateEngineSummary = Field(default_factory=AudioStateEngineSummary)
     paths: list[AudioStatePathRecord] = Field(default_factory=list)
     derived: AudioStateDerivedStatus = Field(default_factory=AudioStateDerivedStatus)
+    extensions: dict[str, Any] = Field(default_factory=dict)
 
 
 class AudioStateEnvelope(BaseModel):
@@ -130,6 +132,7 @@ class AudioStateObservation(BaseModel):
     engine: AudioStateEngineSummary = Field(default_factory=AudioStateEngineSummary)
     runtime_metrics: dict[str, Any] = Field(default_factory=dict)
     observed_at: str
+    extensions: dict[str, Any] = Field(default_factory=dict)
 
 
 class AudioStateObservationEnvelope(BaseModel):
@@ -159,6 +162,7 @@ class SubmitDesiredAudioStateRequest(BaseModel):
     engine: AudioStateEngineSummary = Field(default_factory=AudioStateEngineSummary)
     paths: list[AudioStatePathRecord] = Field(default_factory=list)
     derived: AudioStateDerivedStatus = Field(default_factory=AudioStateDerivedStatus)
+    extensions: dict[str, Any] = Field(default_factory=dict)
 
     def to_authoritative_state(self) -> AuthoritativeAudioState:
         return AuthoritativeAudioState(
@@ -173,6 +177,7 @@ class SubmitDesiredAudioStateRequest(BaseModel):
             engine=self.engine,
             paths=self.paths,
             derived=self.derived,
+            extensions=self.extensions,
         )
 
 

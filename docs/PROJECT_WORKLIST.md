@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 14:07 EDT - Completed T762 by adding scoped `brain:runtime` websocket contracts and frontend cache-sync consumers, so routed and compact Brain surfaces now receive duplicate-instance-safe live runtime updates without polling-only fallbacks.
+Last updated: 2026-04-05 14:19 EDT - Reviewed the newly added `MAP2 State Authority` program (T770-T778) and completed T763-subA by projecting scoped `Performance Brain` state into committed, desired, and observed audio-state authority envelopes through `/api/audio/state/brain/sync`, while leaving the broader Brain snapshot/live-authority epic open.
 
 ## Performance Brain
 
@@ -131,7 +131,7 @@ Last updated: 2026-04-05 14:07 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T763
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Integrate snapshot-first recall and live authority for Brain instances
 Description:
 - Goal / acceptance criteria: Serialize Brain state into the existing snapshot/live-state authority system so committed, desired, and observed runtime truth remain canonical, with no second scene library introduced.
@@ -139,9 +139,35 @@ Description:
 - Dependencies: T761, T762
 - Estimated effort: High
 - Required outputs: Snapshot integration, live-state sync plumbing, persistence rules, and focused regressions.
-Subtasks: None
+Subtasks:
+  - ID: T763-subA
+    Status: [✓] Done
+    Title: Project scoped Brain runtime state into authoritative audio-state envelopes
+    Description:
+    - Goal / acceptance criteria: Extend the current audio-state authority models and routes so a scoped Brain instance can be serialized into committed, desired, and observed envelopes under a stable extension key, then expose a focused sync endpoint that writes the projection without inventing a second persistence layer.
+    - Why it matters: Snapshot-first Brain recall is only credible if the existing control-plane authority can carry the per-instance Brain truth that routed pages, plugin cards, and future snapshot activation will rely on.
+    - Dependencies: T762-subB
+    - Estimated effort: Medium
+    - Required outputs: Audio-state model updates, Brain authority sync service/route, focused backend route/service regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 14:19 EDT - Codex
+    - Completion notes:
+      - Extended `app/models/audio_state.py` so authoritative, desired, and observed audio-state envelopes can carry extension payloads, then added `app/services/performance_brain_authority_sync.py` to project scoped Brain runtime state into the existing authority records under `extensions.performance_brain.instances`.
+      - Added `POST /api/audio/state/brain/sync` in `app/routes/audio_state.py` so routed Brain surfaces can explicitly bridge one scoped instance into the current control-plane authority without introducing a second scene store.
+      - Added focused backend regression coverage in `tests/test_performance_brain_authority_sync.py` and `tests/test_audio_state_routes.py`, proving the sync service writes consistent desired/committed/observed projections and the new route forwards instance scope correctly.
+    - Validation:
+      - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
+      - `pytest -q tests/test_audio_state_authority_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - Licensing review: touched backend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 14:19 EDT - Codex
+- Completion notes:
+  - Landed the first Brain-to-authority bridge by serializing scoped runtime state into the existing committed, desired, and observed audio-state envelopes under `extensions.performance_brain.instances`, so snapshot/live truth no longer depends on page-local Brain state alone.
+  - Left the parent epic open because snapshot activation, recall rules, and deeper State Authority redesign alignment remain larger follow-on work beyond this focused projection slice.
+- Validation:
+  - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS
+  - `pytest -q tests/test_audio_state_authority_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
 
 ID: T764
 Status: [✓] Done
@@ -290,6 +316,137 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-04-05 09:38 EDT - Codex
+
+## MAP2 State Authority
+
+ID: T770
+Status: [ ] Todo
+Title: Deliver the `MAP2 State Authority` snapshot-authority redesign
+Description:
+- Goal / acceptance criteria: Replace the current snapshot-service authority model with the locked `MAP2 State Authority` program from `/home/mm/.claude/plans/keen-growing-tome.md`, covering graph-document storage, service decomposition, activation/runtime orchestration, morph, reconciliation, templates, and qualification. The redesign must be tracked only in this canonical worklist and stay coherent with downstream Brain/snapshot follow-up work.
+- Why it matters: The current snapshot authority is large, relationally fragmented, and easy to extend piecemeal. The approved redesign establishes one graph-native source of truth that future Brain recall/live-state work can build on instead of deepening the monolith.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Canonical phase tasks T771-T778, implementation/validation evidence for each phase, and dependency notes for downstream open tasks that should consume the new authority.
+Subtasks:
+  - ID: T770-subA
+    Status: [✓] Done
+    Title: Record the State Authority redesign in the canonical global worklist
+    Description:
+    - Goal / acceptance criteria: Merge the actionable work from `/home/mm/.claude/plans/keen-growing-tome.md` into `docs/PROJECT_WORKLIST.md` as restart-safe tasks without creating a second tracker.
+    - Why it matters: The repo requires one authoritative task list; architecture work left in a side document will drift from execution.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: New `MAP2 State Authority` section, phased tasks, and refreshed worklist timestamp/merge note.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 14:16 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T771
+Status: [ ] Todo
+Title: Land graph-document schema, JSONB persistence, URI canonicalization, and asset-registry foundations
+Description:
+- Goal / acceptance criteria: Introduce the monolithic `schemas/snapshot-graph-v1.schema.json` contract, enforce per-write validation with reject-plus-auto-repair guidance, move snapshot storage to the minimal `snapshot(id, document)` plus revision/asset/activation tables, canonicalize stored plugin URIs to `map2:{type}:{name}`, and make graph documents reference content-addressed assets by hash.
+- Why it matters: The State Authority cannot exist until storage, schema validation, URIs, and asset identity all converge on one graph-native foundation instead of split relational rows and legacy URI variants.
+- Dependencies: T770
+- Estimated effort: High
+- Required outputs: Schema file, storage/bootstrap changes, graph-doc CRUD persistence path, URI normalization rules, content-addressed asset plumbing, and focused verification for Phase 1.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T772
+Status: [ ] Todo
+Title: Decompose the snapshot monolith into direct State Authority sub-services and route wiring
+Description:
+- Goal / acceptance criteria: Split the current snapshot authority into the planned service modules under `app/services/`, including CRUD, activation, topology, portability, revision, control-map, community, reconciliation, template, asset, runtime, runtime-state, preload, and device-registry owners, with routes calling sub-services directly and categorized revision summaries generated at save time.
+- Why it matters: The redesign is as much about ownership boundaries and restart-safe service layout as it is about the new document shape; keeping a monolith would preserve the current maintenance failure mode.
+- Dependencies: T771
+- Estimated effort: High
+- Required outputs: New/refactored service modules, route rewiring without a facade layer, revision-summary generation, and focused backend coverage for the decomposed surface.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T773
+Status: [ ] Todo
+Title: Add JUCE graph-document load/save bindings and independent-graph crossfade runtime support
+Description:
+- Goal / acceptance criteria: Expose `load_graph_document` / `save_graph_document` through the pybind11 layer, implement JSON-to-`ValueTree` and `ValueTree`-to-JSON conversion on the C++ side, and add an independent-graph crossfade path that runs old and new graphs in parallel with equal-power mixing and a 500ms maximum duration.
+- Why it matters: The graph document is only authoritative if the engine can consume and emit it directly, and glitch-resistant activation depends on a first-class crossfade runtime rather than ad hoc reconfiguration.
+- Dependencies: T771
+- Estimated effort: High
+- Required outputs: JUCE engine/binding changes, crossfade runtime class(es), Python service integration hooks, and focused C++/Python validation for Phase 1 and Phase 3 runtime primitives.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T774
+Status: [ ] Todo
+Title: Build the State Authority activation state machine, validation pipeline, hooks, and preload flow
+Description:
+- Goal / acceptance criteria: Implement the `VALIDATING -> STAGING -> APPLYING -> VERIFYING -> LIVE` activation flow with 10-second timeout handling, missing-asset/device/plugin validation, reject-plus-auto-repair reporting, config-ordered activation hooks, existing-topic WebSocket progress events, and eager preload of the top three likely snapshots on selection.
+- Why it matters: The redesign promises explicit failure semantics, observable progress, and dependable activation behavior; those guarantees do not emerge automatically from the storage refactor or engine bridge alone.
+- Dependencies: T772, T773
+- Estimated effort: High
+- Required outputs: Activation service/state-machine implementation, preload service, hook config support, WS/runtime reporting, and focused verification for failure-before-apply versus failure-after-apply behavior.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T775
+Status: [ ] Todo
+Title: Deliver graph-document morph persistence and the C++ quad MorphEngine
+Description:
+- Goal / acceptance criteria: Persist morph metadata in the graph document, add the planned C++ `MorphEngine` with A/B/C/D endpoints plus atomic `set_morph_position(x, y)`, support continuous-parameter interpolation with discrete snap-at-50% behavior, and wire both intra-snapshot and cross-snapshot morph modes through the Python/C++ authority surface.
+- Why it matters: Morph is a locked part of the new authority model, and the design explicitly moves it out of ad hoc UI/runtime state into a sample-rate-capable engine subsystem with document-backed truth.
+- Dependencies: T771, T773
+- Estimated effort: High
+- Required outputs: Morph document schema/runtime support, JUCE engine/binding additions, service/API integration, and verification of smooth interpolation plus discrete snapping behavior.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T776
+Status: [ ] Todo
+Title: Implement layered reconciliation, drift correction, and cluster authority reporting
+Description:
+- Goal / acceptance criteria: Add the two-layer reconciliation design with per-node local self-heal and management-node cross-node coordination every five seconds, 1% drift tolerance, targeted parameter correction, topology-triggered reactivation, missing-plugin asset redeploy paths, runtime-only drift logging, and Prometheus-style drift metrics/reporting.
+- Why it matters: The State Authority is intended to be authoritative across local and clustered nodes, not just a better save format. Without reconciliation, observed runtime state can still drift away from desired state unnoticed.
+- Dependencies: T772, T773, T774
+- Estimated effort: High
+- Required outputs: Reconciliation services/jobs, drift event/reporting surface, cluster correction flows, metrics, and focused validation for parameter drift, topology drift, and node-loss scenarios.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T777
+Status: [ ] Todo
+Title: Deliver live-linked template composition, portability, and community-aware graph workflows
+Description:
+- Goal / acceptance criteria: Implement flat templates with base-plus-overlay resolution, override-always-wins merging, live-link cascade updates, template CRUD/services, template update event publishing, and the portability/community paths needed to import, export, bundle, share, and browse graph documents and templates without reintroducing side data models.
+- Why it matters: Reuse, exchange, and community sharing are explicit parts of the locked design; if templates and portability remain bolt-ons, the graph-doc authority will fracture into parallel persistence paths again.
+- Dependencies: T771, T772
+- Estimated effort: High
+- Required outputs: Template/community/portability services, live-link resolution logic, bundle/import-export support, affected-snapshot update flow, and focused verification for override preservation and cascade semantics.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
+
+ID: T778
+Status: [ ] Todo
+Title: Qualify and cut over the MAP2 State Authority with the locked phase-verification matrix
+Description:
+- Goal / acceptance criteria: Execute the verification matrix from the design doc across phases 1-6, document the fresh-start database cutover and dropped legacy tables, prove graph-doc round trips and runtime behavior end to end, and reconcile downstream open work so future Brain/snapshot tasks consume the new authority rather than rebuilding old snapshot-service assumptions.
+- Why it matters: This redesign is high-risk and cross-cutting; without an explicit qualification and cutover task, partial implementation would leave the repo with two competing authority models and ambiguous follow-on work.
+- Dependencies: T771, T772, T773, T774, T775, T776, T777
+- Estimated effort: High
+- Required outputs: Verification evidence for each phase, cutover/runbook notes, legacy-table retirement proof, and updated downstream dependency notes for remaining authority consumers.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-05 14:16 EDT - Codex
 
 ID: T760
 Status: [✓] Done

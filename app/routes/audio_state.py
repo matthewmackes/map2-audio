@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.config import get_config
 from app.database import get_session
@@ -15,6 +15,7 @@ from app.models.audio_state import (
     SubmitDesiredAudioStateRequest,
 )
 from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
+from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
 from app.services.audio_state_snapshot_compiler import build_initial_authoritative_audio_state
 from app.services.snapshot_runtime_state_service import resolve_local_node_id
 from app.services.snapshot_service import SnapshotService
@@ -31,6 +32,10 @@ def _http_error(exc: AudioStateAuthorityError) -> HTTPException:
     if "No committed" in detail or "No desired" in detail:
         return HTTPException(status_code=404, detail=detail)
     return HTTPException(status_code=503, detail=detail)
+
+
+def _brain_authority_service() -> PerformanceBrainAuthoritySyncService:
+    return PerformanceBrainAuthoritySyncService()
 
 
 @router.get("/status", response_model=AudioStateRouteStatus)
@@ -122,5 +127,21 @@ async def activate_snapshot_into_audio_state(
         )
         await authority.put_desired_state(initial_state.desired)
         return await authority.put_committed_state(initial_state)
+    except AudioStateAuthorityError as exc:
+        raise _http_error(exc)
+
+
+@router.post("/brain/sync", response_model=AudioStateEnvelope)
+async def sync_brain_into_audio_state(
+    instance_id: str | None = Query(default=None),
+    plugin_position: int | None = Query(default=None, ge=0),
+    triggered_by: str = Query(default="ui"),
+) -> AudioStateEnvelope:
+    try:
+        return await _brain_authority_service().sync_instance(
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+            triggered_by=triggered_by,
+        )
     except AudioStateAuthorityError as exc:
         raise _http_error(exc)
