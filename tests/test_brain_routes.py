@@ -141,6 +141,32 @@ def test_brain_routes_scope_state_by_instance_id(tmp_path):
     assert payload["active_slot"] == 4
 
 
+def test_brain_routes_scope_duplicate_instance_ids_by_plugin_position(tmp_path):
+    client = make_client(tmp_path)
+
+    first_update = client.post(
+        "/api/engine/brain/state?instance_id=17&plugin_position=0",
+        json={"set_name": "Position Zero", "active_slot": 2},
+    )
+    second_update = client.post(
+        "/api/engine/brain/state?instance_id=17&plugin_position=1",
+        json={"set_name": "Position One", "active_slot": 9},
+    )
+
+    assert first_update.status_code == 200
+    assert second_update.status_code == 200
+
+    first_payload = client.get("/api/engine/brain/state?instance_id=17&plugin_position=0").json()
+    second_payload = client.get("/api/engine/brain/state?instance_id=17&plugin_position=1").json()
+
+    assert first_payload["instance_id"] == "instance-17__position-0"
+    assert second_payload["instance_id"] == "instance-17__position-1"
+    assert first_payload["set_name"] == "Position Zero"
+    assert second_payload["set_name"] == "Position One"
+    assert first_payload["active_slot"] == 2
+    assert second_payload["active_slot"] == 9
+
+
 def test_brain_routes_import_drum_machine_state(tmp_path):
     client = make_client(tmp_path)
 

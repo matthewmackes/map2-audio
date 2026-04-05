@@ -29,6 +29,31 @@ def test_brain_service_isolates_instance_state(tmp_path):
     assert right["instance_id"] != left["instance_id"]
 
 
+def test_brain_service_isolates_duplicate_instance_ids_by_plugin_position(tmp_path):
+    service = make_service(tmp_path)
+
+    service.update_state(
+        BrainStateUpdateModel(set_name="Rig A", active_slot=1),
+        instance_id="101",
+        plugin_position=0,
+    )
+    service.update_state(
+        BrainStateUpdateModel(set_name="Rig B", active_slot=7),
+        instance_id="101",
+        plugin_position=1,
+    )
+
+    left = service.get_state(instance_id="101", plugin_position=0)
+    right = service.get_state(instance_id="101", plugin_position=1)
+
+    assert left["instance_id"] == "instance-101__position-0"
+    assert right["instance_id"] == "instance-101__position-1"
+    assert left["set_name"] == "Rig A"
+    assert right["set_name"] == "Rig B"
+    assert left["active_slot"] == 1
+    assert right["active_slot"] == 7
+
+
 def test_brain_service_imports_drum_machine_payloads(tmp_path):
     service = make_service(tmp_path)
 

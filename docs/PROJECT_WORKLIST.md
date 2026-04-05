@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 11:02 EDT - Completed T764-subA by clearing the routed Performance Brain build blocker, revalidating the `/brain` workspace shell, and keeping T764-subB plus the later Brain follow-on tasks queued behind the first commit/deploy cycle.
+Last updated: 2026-04-05 11:07 EDT - Completed T762-subA by proving duplicate Brain instances stay isolated across service, route, and client scope paths, while leaving the websocket-facing contract follow-up in T762-subB and the UI follow-on tasks queued next.
 
 ## Performance Brain
 
@@ -71,7 +71,7 @@ Last updated: 2026-04-05 10:03 EDT - Codex
   - Not yet run in this bootstrap slice: full JUCE compile/runtime qualification, snapshot/live-authority regressions, migration proof, and controller soak evidence; those remain covered by T762-T767.
 
 ID: T762
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Build the `/api/engine/brain` service and typed contracts
 Description:
 - Goal / acceptance criteria: Provide typed REST and WebSocket-facing Brain contracts for `/state`, `/transport`, `/slots`, `/layers`, `/sequence`, `/song`, `/mixer`, `/inputs`, `/library`, `/sample-editor`, and `/diagnostics`, with explicit per-instance scoping and focused backend regression coverage.
@@ -79,9 +79,40 @@ Description:
 - Dependencies: T761
 - Estimated effort: High
 - Required outputs: Python models/services/routes, typed TypeScript client surface, backend tests, and instance-isolation evidence.
-Subtasks: None
+Subtasks:
+  - ID: T762-subA
+    Status: [✓] Done
+    Title: Prove Brain state isolation for duplicate plugin instances and plugin positions
+    Description:
+    - Goal / acceptance criteria: Add focused service, route, and client regression coverage proving Brain state stays isolated when duplicate plugin instances share the same URI but differ by `instance_id`, `plugin_position`, or both.
+    - Why it matters: The per-instance Brain card and routed workspace are only trustworthy if duplicate chains cannot collapse back onto shared state the way older global fallbacks did.
+    - Dependencies: T761
+    - Estimated effort: Low
+    - Required outputs: Targeted tests, any required scope fixes, and validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 11:07 EDT - Codex
+    - Completion notes:
+      - Added focused backend coverage proving duplicate Brain instances remain isolated when the same `instance_id` is paired with different `plugin_position` values, so the service keying no longer relies on `instance_id` coverage alone.
+      - Added route-level regression coverage for duplicate `/api/engine/brain/state` requests scoped by both `instance_id` and `plugin_position`, then added a frontend client test that proves scoped Brain URLs preserve existing query params while appending runtime identity.
+    - Validation:
+      - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/clients/brain.test.ts` -> PASS
+      - Licensing review: touched backend/frontend test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reused the current repository licensing evidence and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T762-subB
+    Status: [ ] Todo
+    Title: Add websocket-facing Brain runtime scope contracts
+    Description:
+    - Goal / acceptance criteria: Extend the Brain contract family with scoped runtime event payloads or equivalent websocket-facing envelopes so compact/plugin surfaces can subscribe without falling back to polling-only shared state.
+    - Why it matters: The Brain backend contract is not complete until live runtime updates carry the same duplicate-instance identity guarantees as the REST surface.
+    - Dependencies: T762-subA
+    - Estimated effort: Medium
+    - Required outputs: Scoped event contract, implementation, and validation.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 11:05 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 11:05 EDT - Codex
 
 ID: T763
 Status: [ ] Todo
