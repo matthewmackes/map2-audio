@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Desired-aware Brain restore documented)
+> **Last Updated**: April 5, 2026 (Drum Machine shadow import fidelity documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1537,6 +1537,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_authority_sync.py tests/test_performance_brain_authority_sync.py`
 - **Lesson**: For restart-safe scoped restore, desired authority is not optional metadata. If activation publishes desired first, the restore path must merge desired and committed projections or restarts can briefly resurrect stale local runtime state even though the control plane already knows the newer snapshot-owned truth.
 
+**60. Drum Machine Shadow Imports Must Read Real Sequencer Song Keys, Pattern Payloads, And Legacy Transport Output Flags (HIGH - Apr 5, 2026)**
+- **Files**: `app/routes/brain.py`, `app/services/performance_brain_service.py`, `tests/test_brain_service.py`, `tests/test_brain_routes.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The first Brain Drum Machine importer looked functional but silently flattened important migration context: real sequencer/song pattern IDs, pending-pattern transport state, step-lock summaries, and legacy MIDI output behavior were missing from the imported Brain shadow state.
+- **Root Cause**: The import path only read coarse Drum Machine slot/mixer payloads. It ignored `get_song_transport()`, never fetched actual pattern payloads from `DrumSequencerService`, and assumed song entries used a `pattern_id` key even though the real sequencer service emits `pattern`.
+- **Fix**: Pull song transport, MIDI-output config, and the active/pending/song pattern payloads in `app/routes/brain.py`; then build imported Brain transport, sequence summaries, lane lock targets, song entries, controller assignments, and diagnostics warnings from those real legacy payloads inside `PerformanceBrainService.import_from_drums()`.
+- **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
+- **Lesson**: A shadow importer is only trustworthy when it follows the real legacy contract all the way down. If a migration path drops live transport or sequencer semantics, operators will evaluate the replacement against a degraded copy instead of the source of truth they actually use.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1807,6 +1815,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Drum Machine Shadow Import Fidelity
+- **Section**: Gotchas & Learned Fixes (#60), Update Log
+- **Change**: Documented that Brain Drum Machine imports must consume real sequencer song keys, pattern payloads, and legacy transport output settings rather than only coarse slot defaults.
+- **Reason**: The live sequencer service emits `pattern`, not only `pattern_id`, and the shadow migration needs the actual pending/song/current pattern context to stay credible.
+- **Impact**: Prevents future Brain migration slices from shipping a degraded Drum Machine import path that looks successful while dropping the operator-visible sequencing contract.
 
 ### [2026-04-05] - Desired-Aware Brain Restore
 - **Section**: Gotchas & Learned Fixes (#59), Update Log

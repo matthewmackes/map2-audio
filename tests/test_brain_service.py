@@ -78,6 +78,11 @@ def test_brain_service_builds_scoped_runtime_events(tmp_path):
 
 def test_brain_service_imports_drum_machine_payloads(tmp_path):
     service = make_service(tmp_path)
+    empty_step = {"velocity": 0, "accent": False}
+    pattern_rows = [[dict(empty_step) for _ in range(64)] for _ in range(16)]
+    pattern_rows[0][0] = {"velocity": 127, "accent": True, "lock_volume": 0.75}
+    pattern_rows[0][4] = {"velocity": 96, "accent": False}
+    pattern_rows[1][8] = {"velocity": 110, "accent": False, "lock_filter_cutoff": 840.0}
 
     imported = service.import_from_drums(
         drum_state={
@@ -87,8 +92,14 @@ def test_brain_service_imports_drum_machine_payloads(tmp_path):
             "pattern": 5,
             "variation": 2,
             "volume": 88,
+            "midi_output_enabled": True,
+            "midi_clock_output_enabled": True,
+            "program_change_enabled": True,
             "track_swing": [0] * 16,
             "pad_sound_sources": ["sample"] * 16,
+            "pad_filters": [{"type": "lowpass"} for _ in range(16)],
+            "pad_synth_params": [{"tone_amount": 0.55} for _ in range(16)],
+            "pad_cv_gate_configs": [{"enabled": False} for _ in range(16)],
         },
         pad_controls=[
             {
@@ -128,18 +139,61 @@ def test_brain_service_imports_drum_machine_payloads(tmp_path):
                 for index in range(16)
             ],
         },
-        song=[{"pattern_id": 5, "repeat_count": 4}],
+        song=[{"pattern": 5, "repeat_count": 4}],
         song_loop=True,
+        song_transport={"active_pattern": 5, "pending_pattern": 9, "switch_quantization_beats": 2},
+        midi_output_config={
+            "midi_output_enabled": True,
+            "midi_clock_output_enabled": True,
+            "midi_output_channel": 9,
+            "program_change_enabled": True,
+        },
+        patterns=[
+            {
+                "pattern_id": 5,
+                "length": 16,
+                "track_lengths": [16, 16] + [0] * 14,
+                "steps": pattern_rows,
+            }
+        ],
         instance_id="drums-import",
     )
 
     assert imported["transport"]["is_playing"] is True
     assert imported["transport"]["bpm"] == 126
     assert imported["transport"]["pattern"] == 5
+    assert imported["transport"]["pending_pattern"] == 9
+    assert imported["transport"]["switch_quantization_beats"] == 2
+    assert imported["set_name"] == "Arena Kit Brain Import"
     assert imported["slots"][0]["name"] == "Kick"
     assert imported["slots"][0]["mode"] == "drum"
+    assert imported["slots"][0]["status"] == "imported-drums:sample"
     assert imported["mixer"]["master"]["master_volume"] == 0.88
+    assert imported["sequence"]["patterns"][0] == {
+        "pattern_id": 5,
+        "name": "Pattern 6",
+        "length": 16,
+        "active_lane_count": 2,
+        "fill_enabled": False,
+        "variation_count": 3,
+        "summary": "2 lanes · 3 active steps · locks: filter, volume",
+    }
+    assert imported["sequence"]["lanes"][0]["active_steps"] == 2
+    assert imported["sequence"]["lanes"][0]["step_lock_targets"] == ["volume"]
+    assert imported["sequence"]["lanes"][1]["step_lock_targets"] == ["filter"]
     assert imported["song"]["loop"] is True
+    assert imported["song"]["entries"][0]["pattern_id"] == 5
+    assert imported["inputs"]["controller_assignments"][0] == {
+        "source": "note:36",
+        "target": "slot:0:trigger",
+        "mode": "note",
+        "enabled": True,
+    }
+    assert any(
+        assignment["target"] == "transport:midi-clock"
+        for assignment in imported["inputs"]["controller_assignments"]
+    )
+    assert "Imported Drum Machine MIDI clock output remains a legacy transport feature." in imported["diagnostics"]["warnings"]
     assert imported["diagnostics"]["last_import_source"] == "drums"
 
 

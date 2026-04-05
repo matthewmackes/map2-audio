@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 16:55 EDT - Completed T763-subG so scoped `Performance Brain` restore paths now merge committed and desired authority extensions, closing the restart window where committed authority could lag a just-activated snapshot.
+Last updated: 2026-04-05 18:32 EDT - Completed T766-subA so Drum Machine shadow imports now carry real song/pattern summaries, pending-pattern transport metadata, and trigger/midi-output nuance into `Performance Brain`.
 
 ## Performance Brain
 
@@ -395,7 +395,7 @@ Last updated: 2026-04-05 11:15 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T766
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Deliver SynthForge and Drum Machine importers plus shadow-then-swap cutover
 Description:
 - Goal / acceptance criteria: Import SynthForge part/patch state and Drum Machine kit/pattern/mapping state into Brain sets/sequences while keeping `/drums` and `/synth-forge` alive during the shadow phase. Redirect or retire legacy surfaces only after parity, importer validation, and migration proof are established.
@@ -403,9 +403,55 @@ Description:
 - Dependencies: T761, T762, T764, T765
 - Estimated effort: High
 - Required outputs: Import adapters, migration routes/flags, validation fixtures, and cutover notes.
-Subtasks: None
+Subtasks:
+  - ID: T766-subA
+    Status: [✓] Done
+    Title: Import Drum Machine pattern, trigger, and transport nuance into Brain shadow state
+    Description:
+    - Goal / acceptance criteria: Extend the Brain Drum Machine importer so it carries real sequencer pattern summaries, current-lane step-lock metadata, trigger/mapping nuance, and legacy transport output settings into the imported Brain set instead of only mirroring coarse slot and mixer defaults.
+    - Why it matters: The shadow migration is not credible if a Drum Machine import drops the very pattern and trigger details operators rely on before evaluating the Brain replacement.
+    - Dependencies: T761, T762, T764, T765
+    - Estimated effort: Medium
+    - Required outputs: Backend importer/service updates, focused route/service regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 18:32 EDT - Codex
+    - Completion notes:
+      - Updated `app/routes/brain.py` so the Drum Machine importer now pulls `song_transport`, `midi_output_config`, and the active/pending/song pattern payloads from the legacy drum services before building the Brain shadow import.
+      - Updated `app/services/performance_brain_service.py` so Drum Machine imports now preserve pending-pattern and switch-quantization transport state, real sequencer pattern summaries and current-lane step-lock targets, actual song-entry pattern IDs, per-pad trigger-note assignments, and legacy MIDI output warnings inside the imported Brain state instead of collapsing back to generic defaults.
+      - Extended `tests/test_brain_service.py` and `tests/test_brain_routes.py` to cover the real song-key contract (`pattern`, not only `pattern_id`), pattern-summary import behavior, and the new transport/mapping/warning payloads.
+    - Validation:
+      - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS (`11 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - Licensing review: touched backend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T766-subB
+    Status: [ ] Todo
+    Title: Import SynthForge performance, modulation, and patch context into Brain shadow state
+    Description:
+    - Goal / acceptance criteria: Extend the Brain SynthForge importer so it carries per-part performance settings, modulation/mpe/tuning/runtime backend context, and patch-library signals into the imported Brain state instead of only copying coarse preset names and transpose values.
+    - Why it matters: SynthForge parity depends on preserving expressive workstation context, not just asset paths.
+    - Dependencies: T766-subA
+    - Estimated effort: Medium
+    - Required outputs: Backend importer/route updates, focused route/service regressions, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 18:27 EDT - Codex
+  - ID: T766-subC
+    Status: [ ] Todo
+    Title: Add shadow-phase launch/import handoff from legacy Drum Machine and SynthForge surfaces into Brain
+    Description:
+    - Goal / acceptance criteria: Add a restart-safe shadow migration handoff so `/drums` and `/synth-forge` can launch into `/brain` with an explicit import source, auto-run the matching Brain importer, and keep the legacy routes live while making the replacement path operator-visible.
+    - Why it matters: The swap cannot be controlled if operators must manually discover and re-run imports after leaving the legacy surfaces.
+    - Dependencies: T766-subA, T766-subB
+    - Estimated effort: Medium
+    - Required outputs: Routed UI/query handling, legacy-page handoff affordances, focused frontend regressions, and cutover notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 18:27 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 18:32 EDT - Codex
+- Completion notes:
+  - Closed the first T766 shadow-migration gap by making Drum Machine imports carry real sequencer/song metadata and legacy trigger/transport nuance into Brain state instead of only mirroring coarse slot defaults.
 
 ID: T767
 Status: [ ] Todo

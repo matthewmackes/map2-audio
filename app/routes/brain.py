@@ -156,6 +156,33 @@ def _publish_runtime_update(
     )
 
 
+def _collect_drum_import_pattern_ids(
+    *,
+    drum_state: dict[str, Any],
+    song: list[dict[str, Any]],
+    song_transport: dict[str, Any],
+) -> list[int]:
+    pattern_ids: set[int] = set()
+    for value in (
+        drum_state.get("pattern"),
+        song_transport.get("active_pattern"),
+        song_transport.get("pending_pattern"),
+    ):
+        if value is None:
+            continue
+        pattern_id = int(value)
+        if pattern_id >= 0:
+            pattern_ids.add(pattern_id)
+    for entry in song:
+        value = entry.get("pattern_id", entry.get("pattern"))
+        if value is None:
+            continue
+        pattern_id = int(value)
+        if pattern_id >= 0:
+            pattern_ids.add(pattern_id)
+    return sorted(pattern_ids)
+
+
 @router.get("/api/engine/brain/state", response_model=BrainStateModel)
 def get_brain_state(
     instance_id: str | None = Query(default=None),
@@ -433,8 +460,16 @@ def import_brain_from_drums(
     drum_service = get_drum_machine_service()
     sequencer_service = get_drum_sequencer_service()
     kit_service = get_drum_kit_service()
+    drum_state = drum_service.get_state()
+    song = sequencer_service.get_song()
+    song_transport = drum_service.get_song_transport()
+    pattern_ids = _collect_drum_import_pattern_ids(
+        drum_state=drum_state,
+        song=song,
+        song_transport=song_transport,
+    )
     state = _service().import_from_drums(
-        drum_state=drum_service.get_state(),
+        drum_state=drum_state,
         pad_controls=drum_service.get_pad_controls(),
         bus_mixers=drum_service.get_bus_mixers(),
         master_fx=drum_service.get_master_fx(),
@@ -442,8 +477,11 @@ def import_brain_from_drums(
         velocity_curves=drum_service.get_velocity_curves(),
         zones=drum_service.get_midi_zones(),
         active_kit=kit_service.get_active_kit(),
-        song=sequencer_service.get_song(),
+        song=song,
         song_loop=sequencer_service.get_song_loop(),
+        song_transport=song_transport,
+        midi_output_config=drum_service.get_midi_output_config(),
+        patterns=[sequencer_service.get_pattern(pattern_id) for pattern_id in pattern_ids],
         instance_id=instance_id,
         plugin_position=plugin_position,
     )

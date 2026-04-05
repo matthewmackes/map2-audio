@@ -16,8 +16,14 @@ class _FakeDrumMachineService:
             "pattern": 3,
             "variation": 1,
             "volume": 83,
+            "midi_output_enabled": True,
+            "midi_clock_output_enabled": True,
+            "program_change_enabled": True,
             "track_swing": [0] * 16,
             "pad_sound_sources": ["sample"] * 16,
+            "pad_filters": [{"type": "lowpass"} for _ in range(16)],
+            "pad_synth_params": [{"tone_amount": 0.55} for _ in range(16)],
+            "pad_cv_gate_configs": [{"enabled": False} for _ in range(16)],
         }
 
     def get_pad_controls(self):
@@ -66,13 +72,40 @@ class _FakeDrumMachineService:
     def get_midi_zones(self):
         return {"pads": [{"pad": pad, "zones": []} for pad in range(16)]}
 
+    def get_song_transport(self):
+        return {
+            "is_playing": True,
+            "active_pattern": 3,
+            "pending_pattern": 7,
+            "switch_quantization_beats": 2,
+        }
+
+    def get_midi_output_config(self):
+        return {
+            "midi_output_enabled": True,
+            "midi_clock_output_enabled": True,
+            "midi_output_channel": 9,
+            "program_change_enabled": True,
+        }
+
 
 class _FakeDrumSequencerService:
     def get_song(self):
-        return [{"pattern_id": 3, "repeat_count": 2}]
+        return [{"pattern": 3, "repeat_count": 2}]
 
     def get_song_loop(self):
         return True
+
+    def get_pattern(self, pattern_id: int):
+        steps = [[{"velocity": 0, "accent": False} for _ in range(64)] for _ in range(16)]
+        steps[0][0] = {"velocity": 127, "accent": True, "lock_volume": 0.75}
+        steps[1][8] = {"velocity": 96, "accent": False, "lock_filter_cutoff": 4200.0}
+        return {
+            "pattern_id": pattern_id,
+            "length": 16,
+            "track_lengths": [16, 16] + [0] * 14,
+            "steps": steps,
+        }
 
 
 class _FakeDrumKitService:
@@ -252,9 +285,17 @@ def test_brain_routes_import_drum_machine_state(tmp_path):
     assert response.status_code == 200
     payload = response.json()
     assert payload["transport"]["bpm"] == 124
+    assert payload["transport"]["pending_pattern"] == 7
+    assert payload["transport"]["switch_quantization_beats"] == 2
     assert payload["song"]["loop"] is True
+    assert payload["song"]["entries"][0]["pattern_id"] == 3
+    assert payload["set_name"] == "Arena Kit Brain Import"
     assert payload["slots"][0]["name"] == "Kick"
+    assert payload["sequence"]["patterns"][0]["pattern_id"] == 3
+    assert payload["sequence"]["patterns"][0]["summary"] == "2 lanes · 2 active steps · locks: filter, volume"
+    assert payload["sequence"]["lanes"][0]["step_lock_targets"] == ["volume"]
     assert payload["diagnostics"]["last_import_source"] == "drums"
+    assert "Imported Drum Machine MIDI clock output remains a legacy transport feature." in payload["diagnostics"]["warnings"]
     assert authority_sync.calls[-1] == {
         "instance_id": "23",
         "plugin_position": None,

@@ -1098,6 +1098,139 @@ class PerformanceBrainService(Singleton):
             self._refresh_derived_state(state)
             return state.diagnostics.model_dump()
 
+    @staticmethod
+    def _drum_step_is_active(step: dict[str, Any]) -> bool:
+        return any(
+            (
+                int(step.get("velocity", 0)) > 0,
+                bool(step.get("accent", False)),
+                int(step.get("micro_timing", 0)) != 0,
+                float(step.get("probability", 1.0)) != 1.0,
+                int(step.get("ratchet_count", 1)) > 1,
+                int(step.get("ratchet_decay", 0)) > 0,
+                step.get("lock_pitch") is not None,
+                step.get("lock_filter_cutoff") is not None,
+                step.get("lock_decay") is not None,
+                step.get("lock_pan") is not None,
+                step.get("lock_volume") is not None,
+            )
+        )
+
+    @staticmethod
+    def _drum_step_lock_targets(steps: list[dict[str, Any]]) -> list[str]:
+        targets: set[str] = set()
+        for step in steps:
+            if step.get("lock_pitch") is not None:
+                targets.add("pitch")
+            if step.get("lock_filter_cutoff") is not None:
+                targets.add("filter")
+            if step.get("lock_decay") is not None:
+                targets.add("decay")
+            if step.get("lock_pan") is not None:
+                targets.add("pan")
+            if step.get("lock_volume") is not None:
+                targets.add("volume")
+        return sorted(targets)
+
+    def _build_drum_import_sequence(
+        self,
+        *,
+        slots: list[BrainSlotModel],
+        patterns: list[dict[str, Any]],
+        current_pattern: int,
+        current_variation: int,
+        track_swing: list[int],
+    ) -> BrainSequenceModel:
+        pattern_summaries: list[BrainPatternSummaryModel] = []
+        active_pattern = None
+        for pattern in sorted(patterns, key=lambda payload: int(payload.get("pattern_id", 0))):
+            pattern_id = int(pattern.get("pattern_id", 0))
+            length = max(1, min(64, int(pattern.get("length", 16))))
+            rows = list(pattern.get("steps", []))
+            track_lengths = list(pattern.get("track_lengths", [0] * 16))
+            active_lane_count = 0
+            active_steps_total = 0
+            lock_targets: set[str] = set()
+            fill_enabled = False
+
+            for slot_id in range(min(len(slots), len(rows), 16)):
+                row = list(rows[slot_id] or [])
+                lane_length = max(1, min(64, int(track_lengths[slot_id] or length))) if slot_id < len(track_lengths) else length
+                visible_steps = row[:lane_length]
+                lane_active_steps = sum(1 for step in visible_steps if self._drum_step_is_active(step))
+                if lane_active_steps > 0 or (slot_id < len(track_lengths) and int(track_lengths[slot_id] or 0) > 0):
+                    active_lane_count += 1
+                    active_steps_total += lane_active_steps
+                lock_targets.update(self._drum_step_lock_targets(visible_steps))
+                if any(int(step.get("ratchet_count", 1)) > 1 for step in visible_steps):
+                    fill_enabled = True
+
+            summary_parts: list[str] = []
+            if active_lane_count > 0:
+                summary_parts.append(f"{active_lane_count} lanes")
+            if active_steps_total > 0:
+                summary_parts.append(f"{active_steps_total} active steps")
+            if lock_targets:
+                summary_parts.append(f"locks: {', '.join(sorted(lock_targets))}")
+
+            pattern_summaries.append(
+                BrainPatternSummaryModel(
+                    pattern_id=pattern_id,
+                    name=f"Pattern {pattern_id + 1}",
+                    length=length,
+                    active_lane_count=active_lane_count,
+                    fill_enabled=fill_enabled,
+                    variation_count=max(1, current_variation + 1),
+                    summary=" · ".join(summary_parts),
+                )
+            )
+            if pattern_id == current_pattern:
+                active_pattern = pattern
+
+        lane_summaries: list[BrainSequenceLaneSummaryModel] = []
+        if active_pattern is not None:
+            rows = list(active_pattern.get("steps", []))
+            track_lengths = list(active_pattern.get("track_lengths", [0] * 16))
+            length = max(1, min(64, int(active_pattern.get("length", 16))))
+            for slot in slots:
+                row = list(rows[slot.slot_id] or []) if slot.slot_id < len(rows) else []
+                lane_length = max(1, min(64, int(track_lengths[slot.slot_id] or length))) if slot.slot_id < len(track_lengths) else length
+                visible_steps = row[:lane_length]
+                lane_summaries.append(
+                    BrainSequenceLaneSummaryModel(
+                        slot_id=slot.slot_id,
+                        name=slot.name,
+                        length=lane_length,
+                        swing=int(track_swing[slot.slot_id]) if slot.slot_id < len(track_swing) else 0,
+                        active_steps=sum(1 for step in visible_steps if self._drum_step_is_active(step)),
+                        step_lock_targets=self._drum_step_lock_targets(visible_steps),
+                    )
+                )
+
+        if not lane_summaries:
+            lane_summaries = [
+                BrainSequenceLaneSummaryModel(
+                    slot_id=slot.slot_id,
+                    name=slot.name,
+                    length=16,
+                    swing=int(track_swing[slot.slot_id]) if slot.slot_id < len(track_swing) else 0,
+                    active_steps=0,
+                    step_lock_targets=[],
+                )
+                for slot in slots
+            ]
+
+        return BrainSequenceModel(
+            pattern_bank_size=128,
+            max_steps=64,
+            current_pattern=current_pattern,
+            current_variation=current_variation,
+            patterns=pattern_summaries,
+            lanes=lane_summaries,
+            fill_mode="legacy-drum-import",
+            song_entry_count=0,
+        )
+
     def import_from_drums(
         self,
         *,
@@ -1111,6 +1244,9 @@ class PerformanceBrainService(Singleton):
         active_kit: dict[str, Any] | None,
         song: list[dict[str, Any]],
         song_loop: bool,
+        song_transport: dict[str, Any] | None = None,
+        midi_output_config: dict[str, Any] | None = None,
+        patterns: list[dict[str, Any]] | None = None,
         instance_id: str | int | None = None,
         plugin_position: int | None = None,
     ) -> dict[str, Any]:
@@ -1120,6 +1256,14 @@ class PerformanceBrainService(Singleton):
             mapped_pads = {int(item.get("pad") or -1): item for item in midi_mapping.get("pads", [])}
             curve_lookup = {int(item.get("pad") or -1): item for item in velocity_curves.get("pads", [])}
             zone_lookup = {int(item.get("pad") or -1): item.get("zones", []) for item in zones.get("pads", [])}
+            source_modes = list(drum_state.get("pad_sound_sources", ["sample"] * 16))
+            synth_params = list(drum_state.get("pad_synth_params", [{}] * 16))
+            pad_filters = list(drum_state.get("pad_filters", [{}] * 16))
+            cv_gate_configs = list(drum_state.get("pad_cv_gate_configs", [{}] * 16))
+            imported_kit_name = str((active_kit or {}).get("name") or "Drum Machine Import")
+            midi_output_config = midi_output_config or {}
+            song_transport = song_transport or {}
+            track_swing = [int(value) for value in drum_state.get("track_swing", [0] * 16)]
 
             for slot_id in range(min(16, len(state.slots))):
                 slot = state.slots[slot_id]
@@ -1127,7 +1271,10 @@ class PerformanceBrainService(Singleton):
                 instrument = kit_instruments[slot_id] if slot_id < len(kit_instruments) else {}
                 mapping = mapped_pads.get(slot_id, {})
                 curve = curve_lookup.get(slot_id, {})
-                source_mode = str(drum_state.get("pad_sound_sources", ["sample"] * 16)[slot_id])
+                source_mode = str(source_modes[slot_id]) if slot_id < len(source_modes) else "sample"
+                synth = synth_params[slot_id] if slot_id < len(synth_params) else {}
+                filter_config = pad_filters[slot_id] if slot_id < len(pad_filters) else {}
+                cv_gate = cv_gate_configs[slot_id] if slot_id < len(cv_gate_configs) else {}
                 slot.mode = {
                     "sample": "drum",
                     "synth": "hybrid",
@@ -1136,7 +1283,7 @@ class PerformanceBrainService(Singleton):
                 slot.asset_type = "kit"
                 slot.name = str(instrument.get("name") or slot.name)
                 slot.asset_path = str(instrument.get("sfz_path") or "")
-                slot.source_label = str((active_kit or {}).get("name") or "Imported drum kit")
+                slot.source_label = f"{imported_kit_name} · {source_mode}"
                 slot.level = float(control.get("volume", 100.0)) / 100.0
                 slot.pan = float(control.get("pan", 0.0)) / 100.0
                 slot.tune = float(control.get("tune", 0.0))
@@ -1148,38 +1295,42 @@ class PerformanceBrainService(Singleton):
                 slot.trigger_note = slot.trigger_notes[0]
                 slot.midi_channel = int(mapping.get("midi_channel", 0))
                 slot.velocity_curve = str(curve.get("curve_type", "dynamic"))
+                slot.articulation_group = str(filter_config.get("type") or ("synth" if source_mode != "sample" else "main"))
                 pad_zones = zone_lookup.get(slot_id, [])
                 if pad_zones:
                     first_zone = pad_zones[0]
                     trigger_note = int(first_zone.get("trigger_note", slot.trigger_note))
+                    zone_notes = [int(zone.get("trigger_note", trigger_note)) for zone in pad_zones if zone.get("trigger_note") is not None]
                     slot.trigger_note = trigger_note
-                    slot.trigger_notes = [trigger_note]
-                slot.status = "imported-drums"
+                    slot.trigger_notes = zone_notes or [trigger_note]
+                if slot.mode == "hybrid":
+                    slot.polyphony = max(8, int(float(synth.get("tone_amount", 0.0)) * 32) or slot.polyphony)
+                if bool(cv_gate.get("enabled", False)):
+                    slot.output_bus = int(cv_gate.get("output_pair", slot.output_bus))
+                slot.status = f"imported-drums:{source_mode}"
 
             state.transport.is_playing = bool(drum_state.get("transport", False))
             state.transport.bpm = int(drum_state.get("bpm", 120))
             state.transport.swing = int(drum_state.get("swing", 0))
             state.transport.pattern = int(drum_state.get("pattern", 0))
             state.transport.variation = int(drum_state.get("variation", 0))
-            state.sequence.current_pattern = state.transport.pattern
-            state.sequence.current_variation = state.transport.variation
-            state.sequence.lanes = [
-                BrainSequenceLaneSummaryModel(
-                    slot_id=slot.slot_id,
-                    name=slot.name,
-                    length=16,
-                    swing=int(drum_state.get("track_swing", [0] * 16)[slot.slot_id]),
-                    active_steps=4 if slot.slot_id < 4 else 0,
-                    step_lock_targets=["pitch", "filter", "volume"] if slot.slot_id < 2 else [],
-                )
-                for slot in state.slots
-            ]
+            state.transport.pending_pattern = int(song_transport.get("pending_pattern", state.transport.pending_pattern))
+            state.transport.switch_quantization_beats = int(
+                song_transport.get("switch_quantization_beats", state.transport.switch_quantization_beats)
+            )
+            state.sequence = self._build_drum_import_sequence(
+                slots=state.slots,
+                patterns=list(patterns or []),
+                current_pattern=state.transport.pattern,
+                current_variation=state.transport.variation,
+                track_swing=track_swing,
+            )
             state.song = BrainSongStateModel(
                 entries=[
                     BrainSongEntryModel(
-                        pattern_id=int(entry.get("pattern_id", 0)),
+                        pattern_id=int(entry.get("pattern_id", entry.get("pattern", 0))),
                         repeat_count=int(entry.get("repeat_count", 1)),
-                        label=f"Pattern {int(entry.get('pattern_id', 0)) + 1}",
+                        label=f"Pattern {int(entry.get('pattern_id', entry.get('pattern', 0))) + 1}",
                     )
                     for entry in song
                 ],
@@ -1207,22 +1358,106 @@ class PerformanceBrainService(Singleton):
                     limiter_ceiling_db=float(master_fx.get("limiter_threshold", -0.5)),
                 ),
             )
+            imported_note_assignments = [
+                BrainControllerAssignmentModel(
+                    source=f"note:{slot.trigger_note}",
+                    target=f"slot:{slot.slot_id}:trigger",
+                    mode="note",
+                    enabled=True,
+                )
+                for slot in state.slots
+            ]
+            if bool(midi_output_config.get("midi_output_enabled", False)):
+                imported_note_assignments.append(
+                    BrainControllerAssignmentModel(
+                        source=f"legacy:drums:midi-out:{int(midi_output_config.get('midi_output_channel', 9)) + 1}",
+                        target="transport:midi-output",
+                        mode="legacy",
+                        enabled=True,
+                    )
+                )
+            if bool(midi_output_config.get("midi_clock_output_enabled", False)):
+                imported_note_assignments.append(
+                    BrainControllerAssignmentModel(
+                        source="legacy:drums:midi-clock",
+                        target="transport:midi-clock",
+                        mode="legacy",
+                        enabled=True,
+                    )
+                )
+            if bool(midi_output_config.get("program_change_enabled", False)):
+                imported_note_assignments.append(
+                    BrainControllerAssignmentModel(
+                        source="legacy:drums:program-change",
+                        target="transport:program-change",
+                        mode="legacy",
+                        enabled=True,
+                    )
+                )
             state.inputs.trigger_profiles = [
                 BrainTriggerProfileModel(
-                    profile_id="imported-drum-zones",
-                    name="Imported Drum Zones",
+                    profile_id="imported-drum-pads-a",
+                    name="Imported Pads A",
                     pad_range_start=0,
-                    pad_range_end=15,
-                    curve="drum-import",
+                    pad_range_end=7,
+                    curve="dynamic",
                     scan_time_ms=1.1,
                     mask_time_ms=7.0,
                     retrigger_cancel_ms=18.0,
                     crosstalk_guard=0.35,
+                ),
+                BrainTriggerProfileModel(
+                    profile_id="imported-drum-pads-b",
+                    name="Imported Pads B",
+                    pad_range_start=8,
+                    pad_range_end=15,
+                    curve="dynamic",
+                    scan_time_ms=1.2,
+                    mask_time_ms=8.0,
+                    retrigger_cancel_ms=18.0,
+                    crosstalk_guard=0.4,
+                ),
+            ]
+            state.inputs.controller_assignments = imported_note_assignments
+            state.layers = [
+                BrainLayerModel(
+                    layer_id="drum-kit-import",
+                    name=imported_kit_name,
+                    slot_indices=[slot.slot_id for slot in state.slots],
+                    key_low=min(slot.trigger_note for slot in state.slots),
+                    key_high=max(slot.trigger_note for slot in state.slots),
+                    velocity_low=1,
+                    velocity_high=127,
+                    polyphony=sum(max(1, slot.polyphony) for slot in state.slots),
+                    scene_slot=0,
+                    enabled=True,
+                    purpose="drum-import",
                 )
             ]
+            state.set_name = f"{imported_kit_name} Brain Import"
+            state.active_layer_id = "drum-kit-import"
             state.diagnostics.last_import_source = "drums"
             state.diagnostics.active_voices = 8
             state.diagnostics.peak_voices = 16
+            state.diagnostics.warnings = []
+            if bool(midi_output_config.get("midi_clock_output_enabled", False)):
+                state.diagnostics.warnings.append("Imported Drum Machine MIDI clock output remains a legacy transport feature.")
+            if bool(midi_output_config.get("program_change_enabled", False)):
+                state.diagnostics.warnings.append("Imported Drum Machine program-change output remains a legacy transport feature.")
+            hybrid_slots = [str(slot.slot_id + 1) for slot in state.slots if slot.mode == "hybrid"]
+            if hybrid_slots:
+                state.diagnostics.warnings.append(
+                    f"Pads {', '.join(hybrid_slots[:6])} import hybrid Drum Machine sources into Brain slot state."
+                )
+            cv_gate_slots = [
+                str(index + 1)
+                for index, config in enumerate(cv_gate_configs[:16])
+                if bool(config.get("enabled", False))
+            ]
+            if cv_gate_slots:
+                state.diagnostics.warnings.append(
+                    f"Pads {', '.join(cv_gate_slots[:6])} retain legacy CV/gate output assignments from Drum Machine."
+                )
             self._refresh_derived_state(state)
             self._persist_state(state)
             return state.model_dump()
