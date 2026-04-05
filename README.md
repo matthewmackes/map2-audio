@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**973** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1396** total commits | **3** stars | **0** forks | **0** open issues
+**973** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1399** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bce69c74`](https://github.com/matthewmackes/map2-audio/commit/bce69c74e8c8ba8bf6e0dd0814a74561046b620c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`bc269e0c`](https://github.com/matthewmackes/map2-audio/commit/bc269e0cb045a0819c3a49927bf744d27655aaa2) | Add Brain controller qualification telemetry | Map2 Audio | 2026-04-05 |
+| [`d94e0341`](https://github.com/matthewmackes/map2-audio/commit/d94e0341974f15444a36baba29741ca215c684d5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`8ad677cb`](https://github.com/matthewmackes/map2-audio/commit/8ad677cb0e1c6e813dc70798b0ad18ec81ee9807) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`499d5614`](https://github.com/matthewmackes/map2-audio/commit/499d561440a2fd8fb8149fdc75d9854c1244f9bc) | Add Brain shadow handoff routing | Map2 Audio | 2026-04-05 |
 | [`381a2690`](https://github.com/matthewmackes/map2-audio/commit/381a269090bbdeec0133a3360295ace6adc427af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`03a692e6`](https://github.com/matthewmackes/map2-audio/commit/03a692e6cb1036f3e6f894e03b61a617fec7bebf) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`c8401d34`](https://github.com/matthewmackes/map2-audio/commit/c8401d34d72dea0c94490732dbee1717f6f13af8) | Deepen SynthForge Brain shadow import | Map2 Audio | 2026-04-05 |
-| [`b5148918`](https://github.com/matthewmackes/map2-audio/commit/b5148918ab23ead7bc2eb6c0d422a8db243bb4ea) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
-| [`91e6aec0`](https://github.com/matthewmackes/map2-audio/commit/91e6aec0bef359a57ea3e8526ffbf2ea2af4baf8) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`a20f0ed8`](https://github.com/matthewmackes/map2-audio/commit/a20f0ed8e9cb08a4147759106baf1103590ddcbe) | Deepen Drum Machine Brain shadow import | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
