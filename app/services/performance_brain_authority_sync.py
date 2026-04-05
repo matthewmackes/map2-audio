@@ -43,6 +43,14 @@ def _brain_instances_from_extensions(extensions: dict[str, Any] | None) -> dict[
     return copy.deepcopy(instances) if isinstance(instances, dict) else {}
 
 
+def _projection_scope(projection: dict[str, Any]) -> tuple[str | None, int | None]:
+    instance_id = projection.get("instance_id")
+    plugin_position = projection.get("plugin_position")
+    normalized_instance_id = None if instance_id is None else str(instance_id)
+    normalized_plugin_position = plugin_position if isinstance(plugin_position, int) else None
+    return normalized_instance_id, normalized_plugin_position
+
+
 def build_brain_authority_projection(
     state: dict[str, Any],
     *,
@@ -169,3 +177,67 @@ class PerformanceBrainAuthoritySyncService:
             instance_id=instance_id,
             plugin_position=plugin_position,
         )
+
+    def reconcile_runtime_with_extensions(
+        self,
+        *,
+        current_extensions: dict[str, Any] | None,
+        next_extensions: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        if not isinstance(next_extensions, dict) or _BRAIN_EXTENSION_KEY not in next_extensions:
+            return {
+                "reconciled": False,
+                "reason": "no_snapshot_brain_namespace",
+                "restored": [],
+                "reset": [],
+            }
+
+        current_instances = _brain_instances_from_extensions(current_extensions)
+        next_instances = _brain_instances_from_extensions(next_extensions)
+        restored: list[dict[str, Any]] = []
+        reset: list[dict[str, Any]] = []
+
+        for runtime_instance_id in sorted(next_instances):
+            projection = next_instances.get(runtime_instance_id)
+            if not isinstance(projection, dict):
+                continue
+            projected_state = projection.get("state")
+            if not isinstance(projected_state, dict):
+                continue
+            instance_id, plugin_position = _projection_scope(projection)
+            restored_state = self.brain_service.replace_state(
+                projected_state,
+                instance_id=instance_id,
+                plugin_position=plugin_position,
+            )
+            restored.append(
+                {
+                    "runtime_instance_id": restored_state["instance_id"],
+                    "instance_id": instance_id,
+                    "plugin_position": plugin_position,
+                }
+            )
+
+        for runtime_instance_id in sorted(set(current_instances) - set(next_instances)):
+            projection = current_instances.get(runtime_instance_id)
+            if not isinstance(projection, dict):
+                continue
+            instance_id, plugin_position = _projection_scope(projection)
+            reset_state = self.brain_service.reset_state(
+                instance_id=instance_id,
+                plugin_position=plugin_position,
+            )
+            reset.append(
+                {
+                    "runtime_instance_id": reset_state["instance_id"],
+                    "instance_id": instance_id,
+                    "plugin_position": plugin_position,
+                }
+            )
+
+        return {
+            "reconciled": True,
+            "reason": "snapshot_brain_namespace_applied",
+            "restored": restored,
+            "reset": reset,
+        }

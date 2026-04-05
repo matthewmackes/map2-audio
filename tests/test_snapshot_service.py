@@ -9,11 +9,14 @@ import pytest
 
 from app import database as database_module
 from app.services import audio_state_authority as audio_state_authority_module
+from app.services import performance_brain_authority_sync as performance_brain_authority_sync_module
 from app.services import performance_metrics as performance_metrics_module
+from app.services import performance_brain_service as performance_brain_service_module
 from app.services import snapshot_runtime_service
 from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services import upload_service as upload_service_module
+from app.services import websocket_manager as websocket_manager_module
 from app.services.chain_service import ChainService
 from app.services.midi_service import ActionType, CommandType, MIDICommandDTO, midi_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
@@ -1415,6 +1418,155 @@ def test_snapshot_revision_round_trips_snapshot_owned_extensions(tmp_path, monke
             assert "instance-18__position-4" not in restored["extensions"]["performance_brain"]["instances"]
 
     asyncio.run(_run())
+
+
+def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime_updates(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    class _FakeWsManager:
+        def __init__(self) -> None:
+            self.messages = []
+
+        async def broadcast_json(self, data, topic=None):
+            self.messages.append({"topic": topic, "message": data})
+
+    fake_ws_manager = _FakeWsManager()
+    brain_service = performance_brain_service_module.PerformanceBrainService(root_path=tmp_path / "brain-runtime")
+    brain_service.update_state(
+        performance_brain_service_module.BrainStateUpdateModel(set_name="Locally Drifted Brain", active_slot=1),
+        instance_id="17",
+        plugin_position=3,
+    )
+    brain_service.update_state(
+        performance_brain_service_module.BrainStateUpdateModel(set_name="Stale Previous Snapshot Brain", active_slot=5),
+        instance_id="22",
+        plugin_position=5,
+    )
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            return SimpleNamespace(
+                value=SimpleNamespace(
+                    desired=SimpleNamespace(
+                        extensions={
+                            "performance_brain": {
+                                "instances": {
+                                    "instance-22__position-5": {
+                                        "runtime_instance_id": "instance-22__position-5",
+                                        "instance_id": "22",
+                                        "plugin_position": 5,
+                                        "state": brain_service.get_state(instance_id="22", plugin_position=5),
+                                    }
+                                }
+                            }
+                        }
+                    ),
+                    extensions={},
+                )
+            )
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+    monkeypatch.setattr(performance_brain_service_module, "get_performance_brain_service", lambda: brain_service)
+    monkeypatch.setattr(performance_brain_authority_sync_module, "get_performance_brain_service", lambda: brain_service)
+    monkeypatch.setattr(websocket_manager_module, "ws_manager", fake_ws_manager)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="BrainRuntimeSnapshot",
+                program_number=16,
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                    "extensions": {
+                        "performance_brain": {
+                            "instances": {
+                                "instance-17__position-3": {
+                                    "runtime_instance_id": "instance-17__position-3",
+                                    "instance_id": "17",
+                                    "plugin_position": 3,
+                                    "state": {
+                                        **brain_service.get_state(instance_id="17", plugin_position=3),
+                                        "set_name": "Snapshot Runtime Brain",
+                                        "active_slot": 7,
+                                    },
+                                }
+                            }
+                        }
+                    },
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["reconciled"] is True
+            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["restored"] == [
+                {
+                    "runtime_instance_id": "instance-17__position-3",
+                    "instance_id": "17",
+                    "plugin_position": 3,
+                }
+            ]
+            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["reset"] == [
+                {
+                    "runtime_instance_id": "instance-22__position-5",
+                    "instance_id": "22",
+                    "plugin_position": 5,
+                }
+            ]
+
+    asyncio.run(_run())
+
+    assert published_desired
+    desired_instances = published_desired[-1].extensions["performance_brain"]["instances"]
+    assert set(desired_instances) == {"instance-17__position-3"}
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Snapshot Runtime Brain"
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["active_slot"] == 7
+    assert brain_service.get_state(instance_id="22", plugin_position=5)["set_name"] == "Init Performance Brain"
+
+    brain_runtime_messages = [
+        message
+        for message in fake_ws_manager.messages
+        if message["topic"] == performance_brain_service_module.BRAIN_RUNTIME_TOPIC
+    ]
+    assert len(brain_runtime_messages) == 2
+    assert {
+        message["message"]["data"]["scope"]["runtime_instance_id"]
+        for message in brain_runtime_messages
+    } == {"instance-17__position-3", "instance-22__position-5"}
 
 
 def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monkeypatch):

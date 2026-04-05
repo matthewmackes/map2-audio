@@ -211,3 +211,81 @@ async def test_restore_instance_falls_back_to_local_state_without_projection(tmp
 
     assert restored["set_name"] == "Only Local Brain"
     assert restored["active_slot"] == 5
+
+
+@pytest.mark.asyncio
+async def test_reconcile_runtime_with_extensions_restores_snapshot_state_and_resets_missing_instances(tmp_path):
+    brain_service = PerformanceBrainService(root_path=tmp_path / "brain-authority")
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Local Brain A", active_slot=2),
+        instance_id="17",
+        plugin_position=3,
+    )
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Local Brain B", active_slot=5),
+        instance_id="22",
+        plugin_position=5,
+    )
+
+    sync_service = PerformanceBrainAuthoritySyncService(
+        authority_service=_FakeAuthorityService(_build_committed_envelope()),
+        brain_service=brain_service,
+        node_id="node-local",
+    )
+
+    result = sync_service.reconcile_runtime_with_extensions(
+        current_extensions={
+            "performance_brain": {
+                "instances": {
+                    "instance-17__position-3": {
+                        "runtime_instance_id": "instance-17__position-3",
+                        "instance_id": "17",
+                        "plugin_position": 3,
+                        "state": brain_service.get_state(instance_id="17", plugin_position=3),
+                    },
+                    "instance-22__position-5": {
+                        "runtime_instance_id": "instance-22__position-5",
+                        "instance_id": "22",
+                        "plugin_position": 5,
+                        "state": brain_service.get_state(instance_id="22", plugin_position=5),
+                    },
+                }
+            }
+        },
+        next_extensions={
+            "performance_brain": {
+                "instances": {
+                    "instance-17__position-3": {
+                        "runtime_instance_id": "instance-17__position-3",
+                        "instance_id": "17",
+                        "plugin_position": 3,
+                        "state": {
+                            **brain_service.get_state(instance_id="17", plugin_position=3),
+                            "set_name": "Snapshot Brain A",
+                            "active_slot": 7,
+                        },
+                    }
+                }
+            }
+        },
+    )
+
+    assert result["reconciled"] is True
+    assert result["reason"] == "snapshot_brain_namespace_applied"
+    assert result["restored"] == [
+        {
+            "runtime_instance_id": "instance-17__position-3",
+            "instance_id": "17",
+            "plugin_position": 3,
+        }
+    ]
+    assert result["reset"] == [
+        {
+            "runtime_instance_id": "instance-22__position-5",
+            "instance_id": "22",
+            "plugin_position": 5,
+        }
+    ]
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Snapshot Brain A"
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["active_slot"] == 7
+    assert brain_service.get_state(instance_id="22", plugin_position=5)["set_name"] == "Init Performance Brain"

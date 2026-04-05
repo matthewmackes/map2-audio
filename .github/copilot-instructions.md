@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Snapshot-owned Brain authority recall documented)
+> **Last Updated**: April 5, 2026 (Snapshot activation Brain runtime restore documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1521,6 +1521,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_snapshot_service.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/routes/audio_state.py app/services/audio_state_snapshot_compiler.py app/services/snapshot_service.py tests/test_audio_state_snapshot_compiler.py tests/test_audio_state_routes.py tests/test_snapshot_service.py`
 - **Lesson**: Preserving current authority extensions is only half of snapshot recall. Any snapshot-owned authority namespace must round-trip through snapshot persistence and revisions, then explicitly replace the live namespace during activation, or snapshot recall will silently devolve into "whatever happened most recently."
 
+**58. Snapshot Activation Must Reconcile Local Brain Runtime And Reset Removed Instances When The Snapshot Owns The Brain Namespace (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/performance_brain_service.py`, `app/services/performance_brain_authority_sync.py`, `app/services/snapshot_service.py`, `tests/test_performance_brain_authority_sync.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Even after snapshots started persisting `extensions.performance_brain`, activation could still leave routed/plugin Brain consumers showing stale local Brain state until a later scoped Brain route happened to restore from authority, and stale prior-instance local state could survive when the snapshot intentionally replaced the Brain namespace.
+- **Root Cause**: Snapshot activation only refreshed snapshot detail and desired authority. It did not reconcile the local `Performance Brain` runtime cache/files against the snapshot-owned projection set, and there was no reset path for instances removed from the snapshot-owned Brain namespace.
+- **Fix**: Add `PerformanceBrainService.reset_state()`, add `PerformanceBrainAuthoritySyncService.reconcile_runtime_with_extensions()` to restore snapshot-owned projections and reset stale removed instances, then invoke that reconcile path during snapshot activation and emit scoped `brain:runtime` state refresh events after desired-state publish.
+- **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py app/services/performance_brain_authority_sync.py app/services/snapshot_service.py tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py`
+- **Lesson**: If a snapshot owns an authority namespace, activation must update the live local runtime for that namespace immediately, including clearing stale instances that disappeared from the snapshot-owned set. Otherwise the authority plane says one thing while live operator surfaces keep rendering another until some later incidental restore happens.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1791,6 +1799,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Snapshot Activation Brain Runtime Restore
+- **Section**: Gotchas & Learned Fixes (#58), Update Log
+- **Change**: Documented the rule that snapshot activation must reconcile local Brain runtime from snapshot-owned `extensions.performance_brain`, reset stale removed instances when the snapshot replaces that namespace, and broadcast scoped `brain:runtime` refresh events after desired-state publish.
+- **Reason**: T763-subF closed the remaining live-runtime gap after snapshot-owned Brain persistence landed, so snapshot recall now updates the local Brain service and live Brain consumers instead of only updating snapshot detail and authority payloads.
+- **Impact**: Future snapshot/Brain work should treat local runtime reconcile plus runtime-event fanout as part of the activation contract whenever a snapshot owns the Brain namespace.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/performance_brain_service.py`, `app/services/performance_brain_authority_sync.py`, `app/services/snapshot_service.py`, `tests/test_performance_brain_authority_sync.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - Snapshot-Owned Brain Authority Recall
 - **Section**: Gotchas & Learned Fixes (#57), Update Log

@@ -877,6 +877,20 @@ class PerformanceBrainService(Singleton):
             self._instances[runtime_instance_id] = next_state
             return next_state.model_dump()
 
+    def reset_state(
+        self,
+        *,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            runtime_instance_id = self._build_instance_key(instance_id, plugin_position)
+            next_state = self._default_state(runtime_instance_id)
+            self._refresh_derived_state(next_state)
+            self._persist_state(next_state)
+            self._instances[runtime_instance_id] = next_state
+            return next_state.model_dump()
+
     def get_runtime_event(
         self,
         resource: BrainRuntimeResource,

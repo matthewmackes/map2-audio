@@ -533,6 +533,71 @@ class SnapshotService:
                 exc,
             )
 
+    async def _reconcile_snapshot_brain_runtime_extensions(
+        self,
+        *,
+        current_extensions: dict[str, Any] | None,
+        snapshot_extensions: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        try:
+            from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
+
+            reconcile_result = PerformanceBrainAuthoritySyncService().reconcile_runtime_with_extensions(
+                current_extensions=current_extensions,
+                next_extensions=snapshot_extensions,
+            )
+            return {
+                "reconciled": bool(reconcile_result.get("reconciled", False)),
+                "reason": reconcile_result.get("reason") or "snapshot_brain_namespace_applied",
+                "restored": [dict(item) for item in reconcile_result.get("restored", []) if isinstance(item, dict)],
+                "reset": [dict(item) for item in reconcile_result.get("reset", []) if isinstance(item, dict)],
+                "broadcast_count": 0,
+            }
+        except Exception as exc:
+            logger.debug("Snapshot Brain runtime reconcile skipped: %s", exc)
+            return {
+                "reconciled": False,
+                "reason": f"reconcile_failed:{exc}",
+                "restored": [],
+                "reset": [],
+                "broadcast_count": 0,
+            }
+
+    async def _broadcast_snapshot_brain_runtime_updates(self, reconcile_result: dict[str, Any]) -> int:
+        if not bool(reconcile_result.get("reconciled", False)):
+            return 0
+
+        try:
+            from app.services.performance_brain_service import BRAIN_RUNTIME_TOPIC, get_performance_brain_service
+            from app.services.websocket_manager import ws_manager
+
+            brain_service = get_performance_brain_service()
+            timestamp = _utcnow().isoformat()
+            broadcast_count = 0
+            for entry in [
+                *[item for item in reconcile_result.get("restored", []) if isinstance(item, dict)],
+                *[item for item in reconcile_result.get("reset", []) if isinstance(item, dict)],
+            ]:
+                payload = brain_service.get_runtime_event(
+                    "state",
+                    instance_id=entry.get("instance_id"),
+                    plugin_position=entry.get("plugin_position"),
+                )
+                await ws_manager.broadcast_json(
+                    {
+                        "type": "brain_runtime_update",
+                        "topic": BRAIN_RUNTIME_TOPIC,
+                        "data": payload,
+                        "timestamp": timestamp,
+                    },
+                    topic=BRAIN_RUNTIME_TOPIC,
+                )
+                broadcast_count += 1
+            return broadcast_count
+        except Exception as exc:
+            logger.debug("Snapshot Brain runtime broadcast skipped: %s", exc)
+            return 0
+
     async def _resolve_next_preload_snapshot(
         self,
         current_snapshot: Snapshot,
@@ -2043,6 +2108,7 @@ class SnapshotService:
                 )
             except Exception as exc:
                 logger.debug("Snapshot controller-display preview skipped for %s: %s", snapshot.id, exc)
+            pre_activation_extensions = await self._load_current_audio_state_extensions()
             try:
                 routing_apply_result = await snapshot_runtime_service.apply_snapshot_routing_to_engine(
                     refreshed_detail
@@ -2144,6 +2210,14 @@ class SnapshotService:
                     "invalid_count": 0,
                     "active_snapshot_count": 0,
                 }
+            brain_runtime_reconcile_result = await self._reconcile_snapshot_brain_runtime_extensions(
+                current_extensions=pre_activation_extensions,
+                snapshot_extensions=(
+                    refreshed_detail.get("extensions")
+                    if isinstance(refreshed_detail.get("extensions"), dict)
+                    else None
+                ),
+            )
 
             runtime_metrics = {
                 "params_applied": params_applied,
@@ -2168,6 +2242,7 @@ class SnapshotService:
                 "snapshot_midi_map": midi_map_sync_result or {},
                 "expression_mappings": expression_mapping_sync_result or {},
                 "automation_lanes": automation_lane_sync_result or {},
+                "performance_brain_runtime": brain_runtime_reconcile_result or {},
                 "topology_mutation": activation_topology_metrics,
             }
             live_runtime_state = await runtime_state_service.confirm_live_intent(
@@ -2176,6 +2251,9 @@ class SnapshotService:
                 runtime_metrics=runtime_metrics,
             )
             await self._publish_snapshot_desired_state(refreshed_detail)
+            brain_runtime_reconcile_result["broadcast_count"] = await self._broadcast_snapshot_brain_runtime_updates(
+                brain_runtime_reconcile_result
+            )
             try:
                 from app.services.snapshot_runtime_state_service import schedule_post_activation_health_check
 
