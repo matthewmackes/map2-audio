@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 11:07 EDT - Completed T762-subA by proving duplicate Brain instances stay isolated across service, route, and client scope paths, while leaving the websocket-facing contract follow-up in T762-subB and the UI follow-on tasks queued next.
+Last updated: 2026-04-05 11:15 EDT - Completed T765 by turning the compact Brain card into a real quick-control surface with scoped runtime-parity updates, while keeping the routed workspace and websocket-facing backend follow-ons queued behind it.
 
 ## Performance Brain
 
@@ -172,7 +172,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 11:02 EDT - Codex
 
 ID: T765
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build the per-instance Brain plugin/embed surface
 Description:
 - Goal / acceptance criteria: Deliver a compact plugin surface that focuses on `Perform + Sequence + Quick Mix`, uses the same Brain contracts as the full workspace, launches into `/brain` for deep editing, and avoids the current global fallback behavior seen in SynthForge.
@@ -180,9 +180,35 @@ Description:
 - Dependencies: T761, T762, T764
 - Estimated effort: Medium
 - Required outputs: Plugin card/editor implementation, registry/live-editor wiring, and parity tests.
-Subtasks: None
+Subtasks:
+  - ID: T765-subA
+    Status: [✓] Done
+    Title: Add quick-mix controls and runtime-parity cache updates to the compact Brain card
+    Description:
+    - Goal / acceptance criteria: Extend the compact Brain card so it exposes the intended `Perform + Sequence + Quick Mix` core controls, and make its transport/mixer/slot interactions update the scoped card state immediately instead of behaving like a stale readout between polls.
+    - Why it matters: The embedded Brain surface is only useful if it behaves like a real controller-first quick editor rather than a launch-only summary tile.
+    - Dependencies: T762-subA, T764-subA
+    - Estimated effort: Medium
+    - Required outputs: Compact card control updates, scoped cache/runtime sync, and focused parity tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 11:15 EDT - Codex
+    - Completion notes:
+      - Extended `web/src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.tsx` so the compact Brain surface now exposes the intended quick controls for `Master`, `Quick Mix`, `BPM`, `Pattern`, and transport instead of behaving like a mostly read-only launch card.
+      - Swapped the compact card mutations onto scoped React Query mutation/cache updates so transport, pattern, mixer, and slot-level edits reflect immediately in the per-instance card state rather than waiting for the next poll.
+      - Tightened the focused compact-card tests so the scoped transport and sequence actions are exercised directly against the duplicate-instance runtime identity.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; no new notice or ownership gaps were introduced.
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 11:15 EDT - Codex
+- Completion notes:
+  - The compact Brain card now behaves like a controller-first quick editor with scoped `Perform + Sequence + Quick Mix` controls instead of a launch-only summary tile.
+  - Runtime writes stay scoped to the active Brain instance and plugin position, and the card still launches into the full `/brain` workspace for deep editing.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T766
 Status: [ ] Todo

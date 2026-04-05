@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Launch, PauseFilled, PlayFilled } from '@carbon/icons-react'
 
 import { NumberInput, ParameterKnob } from '../../../ParameterControl'
@@ -64,6 +64,7 @@ function PerformanceBrainCardBase({
   onBypassToggle,
   onOpenMidiMappings,
 }: PerformanceBrainCardProps) {
+  const queryClient = useQueryClient()
   const accentColor = resolvePluginAccentColor(providedAccent, plugin.uri, plugin.category)
   const scope = useMemo(
     () => ({
@@ -95,30 +96,81 @@ function PerformanceBrainCardBase({
   const mixer = mixerQuery.data as BrainMixerState | undefined
   const activeSlot = state?.slots?.[state.active_slot] as BrainSlot | undefined
 
+  const transportMutation = useMutation({
+    mutationFn: (patch: Parameters<typeof brainApi.setTransport>[0]) => brainApi.setTransport(patch, scope),
+    onSuccess: (nextTransport) => {
+      queryClient.setQueryData(['brain', 'transport', scopeKey], nextTransport)
+    },
+  })
+  const mixerMutation = useMutation({
+    mutationFn: (nextMixer: BrainMixerState) => brainApi.setMixer(nextMixer, scope),
+    onSuccess: (nextMixer) => {
+      queryClient.setQueryData(['brain', 'mixer', scopeKey], nextMixer)
+    },
+  })
+  const slotMutation = useMutation({
+    mutationFn: ({ slotId, patch }: { slotId: number; patch: Parameters<typeof brainApi.updateSlot>[1] }) =>
+      brainApi.updateSlot(slotId, patch, scope),
+    onSuccess: (nextSlot) => {
+      queryClient.setQueryData<BrainState | undefined>(['brain', 'state', scopeKey], (previousState) => {
+        if (!previousState?.slots?.length) {
+          return previousState
+        }
+        const nextSlots = [...previousState.slots]
+        nextSlots[nextSlot.slot_id] = {
+          ...nextSlots[nextSlot.slot_id],
+          ...nextSlot,
+        }
+        return {
+          ...previousState,
+          slots: nextSlots,
+        }
+      })
+    },
+  })
+
   const isPlaying = transport?.is_playing ?? false
   const bpm = transport?.bpm ?? 120
+  const pattern = (transport?.pattern ?? 0) + 1
   const masterVolume = Math.round((mixer?.master?.master_volume ?? 0.82) * 100)
+  const activeSlotLevel = Math.round((activeSlot?.level ?? 1) * 100)
 
   const handleTransportToggle = useCallback(() => {
-    void brainApi.setTransport({ is_playing: !isPlaying }, scope)
-  }, [isPlaying, scope])
+    transportMutation.mutate({ is_playing: !isPlaying })
+  }, [isPlaying, transportMutation])
 
   const handleBpmChange = useCallback((value: number) => {
-    void brainApi.setTransport({ bpm: clamp(Math.round(value), 40, 300) }, scope)
-  }, [scope])
+    transportMutation.mutate({ bpm: clamp(Math.round(value), 40, 300) })
+  }, [transportMutation])
+
+  const handlePatternChange = useCallback((value: number) => {
+    transportMutation.mutate({ pattern: clamp(Math.round(value) - 1, 0, 127) })
+  }, [transportMutation])
 
   const handleMasterChange = useCallback((value: number) => {
     if (!mixer) {
       return
     }
-    void brainApi.setMixer({
+    mixerMutation.mutate({
       ...mixer,
       master: {
         ...mixer.master,
         master_volume: clamp(value, 0, 100) / 100,
       },
-    }, scope)
-  }, [mixer, scope])
+    })
+  }, [mixer, mixerMutation])
+
+  const handleQuickMixChange = useCallback((value: number) => {
+    if (!activeSlot) {
+      return
+    }
+    slotMutation.mutate({
+      slotId: activeSlot.slot_id,
+      patch: {
+        level: clamp(value, 0, 100) / 100,
+      },
+    })
+  }, [activeSlot, slotMutation])
 
   const visualization = (
     <div style={{
@@ -177,6 +229,22 @@ function PerformanceBrainCardBase({
             />
           </div>
 
+          <div style={{ display: 'grid', justifyItems: 'center' }}>
+            <ParameterKnob
+              label="Quick Mix"
+              ariaLabel="Active slot level"
+              value={activeSlotLevel}
+              min={0}
+              max={100}
+              step={1}
+              onChange={handleQuickMixChange}
+              size="small"
+              accentColor={accentColor}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 12 }}>
           <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
             <NumberInput
               label="BPM"
@@ -189,32 +257,46 @@ function PerformanceBrainCardBase({
               size="small"
               accentColor={accentColor}
             />
+          </div>
 
-            <button
-              type="button"
-              aria-label={isPlaying ? 'Stop Performance Brain transport' : 'Start Performance Brain transport'}
-              onClick={handleTransportToggle}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                minHeight: 42,
-                border: 'none',
-                borderRadius: 10,
-                padding: '0 14px',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                color: '#081018',
-                background: '#0f62fe',
-              }}
-            >
-              {isPlaying ? <PauseFilled size={16} /> : <PlayFilled size={16} />}
-              {isPlaying ? 'Stop' : 'Play'}
-            </button>
+          <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
+            <NumberInput
+              label="Pattern"
+              ariaLabel="Brain pattern"
+              value={pattern}
+              min={1}
+              max={128}
+              step={1}
+              onChange={handlePatternChange}
+              size="small"
+              accentColor={accentColor}
+            />
           </div>
         </div>
+
+        <button
+          type="button"
+          aria-label={isPlaying ? 'Stop Performance Brain transport' : 'Start Performance Brain transport'}
+          onClick={handleTransportToggle}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            minHeight: 42,
+            border: 'none',
+            borderRadius: 10,
+            padding: '0 14px',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            color: '#081018',
+            background: '#0f62fe',
+          }}
+        >
+          {isPlaying ? <PauseFilled size={16} /> : <PlayFilled size={16} />}
+          {isPlaying ? 'Stop' : 'Play'}
+        </button>
       </div>
     </PluginCardShell>
   )
