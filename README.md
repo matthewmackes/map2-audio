@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**966** Python | **1107** TypeScript | **133** C++/H | **131** Docs | **1354** total commits | **3** stars | **0** forks | **0** open issues
+**967** Python | **1107** TypeScript | **133** C++/H | **131** Docs | **1356** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7d814cdd`](https://github.com/matthewmackes/map2-audio/commit/7d814cddc69e5724d5d0fac122dcb73340f9f21d) | Finish snapshot runtime sync and workspace catalog refresh | Map2 Audio | 2026-04-04 |
+| [`8a7d2a7a`](https://github.com/matthewmackes/map2-audio/commit/8a7d2a7a77eaf7d17d72ef99641895dc851ffc11) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`91d6fbc6`](https://github.com/matthewmackes/map2-audio/commit/91d6fbc6c642a45b607851079f85571bd23f3336) | Consume staged preload instances during activation | Map2 Audio | 2026-04-04 |
 | [`c7651050`](https://github.com/matthewmackes/map2-audio/commit/c7651050167fa5af64ccb386521c7cccda5c6996) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`e757a172`](https://github.com/matthewmackes/map2-audio/commit/e757a172a20294d6383699ad00747e0d4db47960) | Apply snapshot monitoring output runtime binding | Map2 Audio | 2026-04-04 |
 | [`71b996b4`](https://github.com/matthewmackes/map2-audio/commit/71b996b4135b4fc6c83e0ca1bdb1c56cc475ff0a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`66b40a97`](https://github.com/matthewmackes/map2-audio/commit/66b40a97396c38ed37558764486e6da9613253fc) | Sync live snapshot MIDI and bypass updates | Map2 Audio | 2026-04-04 |
 | [`63e61bc2`](https://github.com/matthewmackes/map2-audio/commit/63e61bc26cd71a3a6ae09d78fb331115057d77dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
-| [`fe20d228`](https://github.com/matthewmackes/map2-audio/commit/fe20d228d6de3d6e17fc4dc3b5427fb56f88a8ad) | Advance snapshot runtime and platform backlog | Map2 Audio | 2026-04-04 |
-| [`a1466620`](https://github.com/matthewmackes/map2-audio/commit/a1466620a438ed31a8cde27084b989b284de86f1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
