@@ -8,6 +8,8 @@ Legacy drum and sampler routes stay live during the shadow migration phase.
 from __future__ import annotations
 
 import asyncio
+import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -36,15 +38,59 @@ from app.services.performance_brain_service import (
     BrainTransportStateModel,
     BrainTransportUpdateModel,
     BrainDiagnosticsModel,
+    BRAIN_RUNTIME_TOPIC,
+    BrainRuntimeResource,
     get_performance_brain_service,
 )
+from app.services.websocket_manager import ws_manager
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _service():
     return get_performance_brain_service()
+
+
+async def _broadcast_runtime_update(
+    resource: BrainRuntimeResource,
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+) -> None:
+    try:
+        payload = _service().get_runtime_event(
+            resource,
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
+        await ws_manager.broadcast_json(
+            {
+                "type": "brain_runtime_update",
+                "topic": BRAIN_RUNTIME_TOPIC,
+                "data": payload,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            topic=BRAIN_RUNTIME_TOPIC,
+        )
+    except Exception as exc:
+        logger.debug("Performance Brain runtime broadcast failed: %s", exc)
+
+
+def _publish_runtime_update(
+    resource: BrainRuntimeResource,
+    *,
+    instance_id: str | None = None,
+    plugin_position: int | None = None,
+) -> None:
+    asyncio.run(
+        _broadcast_runtime_update(
+            resource,
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
+    )
 
 
 @router.get("/api/engine/brain/state", response_model=BrainStateModel)
@@ -61,7 +107,9 @@ def update_brain_state(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_state(patch, instance_id=instance_id, plugin_position=plugin_position)
+    state = _service().update_state(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
+    return state
 
 
 @router.get("/api/engine/brain/transport", response_model=BrainTransportStateModel)
@@ -78,7 +126,9 @@ def update_brain_transport(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_transport(patch, instance_id=instance_id, plugin_position=plugin_position)
+    transport = _service().update_transport(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("transport", instance_id=instance_id, plugin_position=plugin_position)
+    return transport
 
 
 @router.get("/api/engine/brain/slots", response_model=list[BrainSlotModel])
@@ -98,12 +148,14 @@ def update_brain_slot(
 ) -> dict[str, Any]:
     if slot_id < 0 or slot_id > 15:
         raise HTTPException(status_code=400, detail="slot_id must be in range 0..15")
-    return _service().update_slot(
+    slot = _service().update_slot(
         slot_id,
         patch,
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _publish_runtime_update("slot", instance_id=instance_id, plugin_position=plugin_position)
+    return slot
 
 
 @router.get("/api/engine/brain/layers")
@@ -120,7 +172,9 @@ def update_brain_layers(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_layers(patch, instance_id=instance_id, plugin_position=plugin_position)
+    layers = _service().update_layers(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("layers", instance_id=instance_id, plugin_position=plugin_position)
+    return layers
 
 
 @router.get("/api/engine/brain/sequence", response_model=BrainSequenceModel)
@@ -137,7 +191,9 @@ def update_brain_sequence(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_sequence(patch, instance_id=instance_id, plugin_position=plugin_position)
+    sequence = _service().update_sequence(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("sequence", instance_id=instance_id, plugin_position=plugin_position)
+    return sequence
 
 
 @router.get("/api/engine/brain/song", response_model=BrainSongStateModel)
@@ -154,7 +210,9 @@ def update_brain_song(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_song(patch, instance_id=instance_id, plugin_position=plugin_position)
+    song = _service().update_song(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("song", instance_id=instance_id, plugin_position=plugin_position)
+    return song
 
 
 @router.get("/api/engine/brain/mixer", response_model=BrainMixerStateModel)
@@ -171,7 +229,9 @@ def update_brain_mixer(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_mixer(patch, instance_id=instance_id, plugin_position=plugin_position)
+    mixer = _service().update_mixer(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("mixer", instance_id=instance_id, plugin_position=plugin_position)
+    return mixer
 
 
 @router.get("/api/engine/brain/inputs", response_model=BrainInputsStateModel)
@@ -188,7 +248,9 @@ def update_brain_inputs(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_inputs(patch, instance_id=instance_id, plugin_position=plugin_position)
+    inputs = _service().update_inputs(patch, instance_id=instance_id, plugin_position=plugin_position)
+    _publish_runtime_update("inputs", instance_id=instance_id, plugin_position=plugin_position)
+    return inputs
 
 
 @router.get("/api/engine/brain/library", response_model=BrainLibraryStateModel)
@@ -218,11 +280,13 @@ def update_brain_sample_editor(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
 ) -> dict[str, Any]:
-    return _service().update_sample_editor(
+    sample_editor = _service().update_sample_editor(
         patch,
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _publish_runtime_update("sample_editor", instance_id=instance_id, plugin_position=plugin_position)
+    return sample_editor
 
 
 @router.get("/api/engine/brain/diagnostics", response_model=BrainDiagnosticsModel)
@@ -241,7 +305,7 @@ def import_brain_from_drums(
     drum_service = get_drum_machine_service()
     sequencer_service = get_drum_sequencer_service()
     kit_service = get_drum_kit_service()
-    return _service().import_from_drums(
+    state = _service().import_from_drums(
         drum_state=drum_service.get_state(),
         pad_controls=drum_service.get_pad_controls(),
         bus_mixers=drum_service.get_bus_mixers(),
@@ -255,6 +319,8 @@ def import_brain_from_drums(
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    _publish_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
+    return state
 
 
 @router.post("/api/engine/brain/import/synthforge", response_model=BrainStateModel)
@@ -273,7 +339,7 @@ async def import_brain_from_synthforge(
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"SynthForge import unavailable: {exc}") from exc
 
-    return _service().import_from_synthforge(
+    state = _service().import_from_synthforge(
         parts=list(parts),
         sample_statuses=list(sample_statuses),
         parameters=list(parameters),
@@ -281,3 +347,5 @@ async def import_brain_from_synthforge(
         instance_id=instance_id,
         plugin_position=plugin_position,
     )
+    await _broadcast_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
+    return state

@@ -1667,6 +1667,29 @@ export interface BrainState {
   snapshot_integration: BrainSnapshotIntegration
 }
 
+export type BrainRuntimeResource =
+  | 'state'
+  | 'transport'
+  | 'slot'
+  | 'layers'
+  | 'sequence'
+  | 'song'
+  | 'mixer'
+  | 'inputs'
+  | 'sample_editor'
+
+export interface BrainRuntimeScope {
+  runtime_instance_id: string
+  instance_id: string | null
+  plugin_position: number | null
+}
+
+export interface BrainRuntimeUpdate {
+  resource: BrainRuntimeResource
+  scope: BrainRuntimeScope
+  state: BrainState
+}
+
 export interface BrainStateUpdate {
   set_name?: string
   active_slot?: number

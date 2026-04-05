@@ -5,6 +5,7 @@ import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/re
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { PageHeader } from '@/app/components/PageHeader'
+import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import {
   brainApi,
   type BrainDiagnostics,
@@ -101,6 +102,8 @@ export function PerformanceBrainPage() {
   const scope = useMemo(() => buildScope(searchParams), [searchParams])
   const routeSection = useMemo(() => parseSectionSearchParam(searchParams.get('section')), [searchParams])
   const scopeKey = `${scope.instanceId ?? 'workspace'}:${scope.pluginPosition ?? 'none'}`
+
+  useBrainRuntimeStateSync(scope, scopeKey)
 
   const stateQuery = useQuery({
     queryKey: ['brain', 'state', scopeKey],

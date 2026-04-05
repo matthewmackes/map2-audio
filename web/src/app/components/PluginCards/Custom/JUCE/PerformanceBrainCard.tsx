@@ -6,6 +6,7 @@ import { NumberInput, ParameterKnob } from '../../../ParameterControl'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import { brainApi, type BrainMixerState, type BrainSlot, type BrainState, type BrainTransportState } from '@/map2/api'
 
@@ -74,6 +75,8 @@ function PerformanceBrainCardBase({
     [plugin.instance_id, pluginPosition],
   )
   const scopeKey = `${plugin.instance_id ?? 'workspace'}:${pluginPosition ?? 'none'}`
+
+  useBrainRuntimeStateSync(scope, scopeKey)
 
   const stateQuery = useQuery({
     queryKey: ['brain', 'state', scopeKey],

@@ -54,6 +54,28 @@ def test_brain_service_isolates_duplicate_instance_ids_by_plugin_position(tmp_pa
     assert right["active_slot"] == 7
 
 
+def test_brain_service_builds_scoped_runtime_events(tmp_path):
+    service = make_service(tmp_path)
+
+    service.update_transport(
+        BrainTransportUpdateModel(bpm=131, pattern=4),
+        instance_id="101",
+        plugin_position=3,
+    )
+
+    event = service.get_runtime_event("transport", instance_id="101", plugin_position=3)
+
+    assert event["resource"] == "transport"
+    assert event["scope"] == {
+        "runtime_instance_id": "instance-101__position-3",
+        "instance_id": "101",
+        "plugin_position": 3,
+    }
+    assert event["state"]["instance_id"] == "instance-101__position-3"
+    assert event["state"]["transport"]["bpm"] == 131
+    assert event["state"]["transport"]["pattern"] == 4
+
+
 def test_brain_service_imports_drum_machine_payloads(tmp_path):
     service = make_service(tmp_path)
 

@@ -11,6 +11,7 @@ const mockGetMixer = jest.fn()
 const mockSetTransport = jest.fn()
 const mockSetMixer = jest.fn()
 const mockUpdateSlot = jest.fn()
+const mockTopicHandlers = new Map<string, (data: any, message: any) => void>()
 
 jest.mock('../../Base/PluginCardShell', () => ({
   PluginCardShell: ({ plugin, visualization, children, footer, onLaunch }: any) => (
@@ -62,6 +63,12 @@ jest.mock('@/map2/api', () => ({
   },
 }))
 
+jest.mock('@/map2/hooks/useWebSocket', () => ({
+  useWebSocketTopic: (topic: string, handler: (data: any, message: any) => void) => {
+    mockTopicHandlers.set(topic, handler)
+  },
+}))
+
 function makeClient() {
   return new QueryClient({
     defaultOptions: {
@@ -87,14 +94,47 @@ function makePlugin() {
   }
 }
 
-function primeApi() {
-  mockGetState.mockResolvedValue({
+function makeRuntimeState(overrides: Record<string, any> = {}) {
+  return {
+    instance_id: 'instance-17__position-3',
+    product_name: 'Performance Brain',
     set_name: 'Stage Brain',
     active_slot: 0,
+    active_layer_id: 'main-stack',
+    active_section: 'perform',
+    transport: {
+      is_playing: true,
+      bpm: 128,
+      swing: 10,
+      pattern: 6,
+      variation: 2,
+      step: 0,
+      bar: 1,
+      beat: 1,
+      pending_pattern: -1,
+      switch_quantization_beats: 4,
+    },
     slots: [
       { slot_id: 0, name: 'Kick', mode: 'drum', level: 0.76 },
     ],
-  })
+    layers: [],
+    sequence: { pattern_bank_size: 128, max_steps: 64, current_pattern: 6, current_variation: 2, patterns: [], lanes: [], fill_mode: 'manual+auto', song_entry_count: 0 },
+    song: { entries: [], loop: false },
+    mixer: {
+      buses: [],
+      master: { master_volume: 0.9, drive_db: 0, compressor_amount: 0.2, reverb_mix: 0.2, limiter_ceiling_db: -0.5 },
+    },
+    inputs: { keyboard_zones: [], trigger_profiles: [], controller_assignments: [] },
+    library: { collections: [], featured_assets: [], last_scan_iso: '' },
+    sample_editor: { slot_id: 0, asset_path: '', waveform_available: false, duration_seconds: 0, start_sample: 0, end_sample: 0, normalize_target: 0.99, reverse_enabled: true, record_target_path: '' },
+    diagnostics: { sample_rate_hz: 48000, buffer_size_samples: 128, cpu_load_percent: 8.5, active_voices: 4, peak_voices: 12, polyphony_headroom: 84, trigger_latency_ms: 2.1, roundtrip_latency_ms: 5.2, xruns: 0, backend_mode: 'hybrid', warnings: [], last_import_source: null, updated_at_iso: '2026-04-05T18:02:00Z' },
+    snapshot_integration: { authority_model: 'snapshot-first', snapshot_id: null, snapshot_name: null, committed_state_id: 'brain:committed', desired_state_id: 'brain:desired', observed_state_id: 'brain:observed' },
+    ...overrides,
+  }
+}
+
+function primeApi() {
+  mockGetState.mockResolvedValue(makeRuntimeState())
   mockGetTransport.mockResolvedValue({
     is_playing: true,
     bpm: 128,
@@ -118,6 +158,7 @@ function primeApi() {
 describe('PerformanceBrainCard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockTopicHandlers.clear()
     window.history.replaceState({}, '', '/')
     primeApi()
   })
@@ -207,5 +248,53 @@ describe('PerformanceBrainCard', () => {
 
     expect(window.location.pathname).toBe('/brain')
     expect(window.location.search).toBe('?instance_id=17&plugin_position=3')
+  })
+
+  it('applies scoped brain runtime websocket updates without waiting for another fetch', async () => {
+    render(
+      <QueryClientProvider client={makeClient()}>
+        <PerformanceBrainCard
+          plugin={makePlugin()}
+          pluginPosition={3}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#0f62fe"
+        />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Stop Performance Brain transport' })).toBeInTheDocument())
+
+    mockTopicHandlers.get('brain:runtime')?.(
+      {
+        resource: 'transport',
+        scope: {
+          runtime_instance_id: 'instance-17__position-3',
+          instance_id: '17',
+          plugin_position: 3,
+        },
+        state: makeRuntimeState({
+          set_name: 'Runtime Synced',
+          transport: {
+            is_playing: false,
+            bpm: 132,
+            swing: 10,
+            pattern: 8,
+            variation: 4,
+            step: 0,
+            bar: 1,
+            beat: 1,
+            pending_pattern: -1,
+            switch_quantization_beats: 4,
+          },
+        }),
+      },
+      { type: 'brain_runtime_update', topic: 'brain:runtime' },
+    )
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Start Performance Brain transport' })).toBeInTheDocument())
+    expect(screen.getByText('Runtime Synced')).toBeInTheDocument()
+    expect(screen.getByLabelText('Brain BPM')).toHaveValue('132')
+    expect(screen.getByLabelText('Brain pattern')).toHaveValue('9')
   })
 })

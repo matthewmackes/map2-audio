@@ -66,6 +66,7 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "drums:transport",
                 "drums:position",
                 "drums:metering",
+                "brain:runtime",
                 "avb:router:connection_state", # AVB per-route connection state updates
                 "avb:router:endpoints", # AVB endpoint discovery snapshots
                 "avb:router:connections", # AVB routing connection snapshots

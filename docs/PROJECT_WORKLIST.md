@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 13:55 EDT - Completed T764 by making the routed Brain section rail URL-backed and restart-safe for scoped instances, with focused route/accessibility coverage and a fresh production bundle validation.
+Last updated: 2026-04-05 14:07 EDT - Completed T762 by adding scoped `brain:runtime` websocket contracts and frontend cache-sync consumers, so routed and compact Brain surfaces now receive duplicate-instance-safe live runtime updates without polling-only fallbacks.
 
 ## Performance Brain
 
@@ -71,7 +71,7 @@ Last updated: 2026-04-05 10:03 EDT - Codex
   - Not yet run in this bootstrap slice: full JUCE compile/runtime qualification, snapshot/live-authority regressions, migration proof, and controller soak evidence; those remain covered by T762-T767.
 
 ID: T762
-Status: [>] In Progress
+Status: [✓] Done
 Title: Build the `/api/engine/brain` service and typed contracts
 Description:
 - Goal / acceptance criteria: Provide typed REST and WebSocket-facing Brain contracts for `/state`, `/transport`, `/slots`, `/layers`, `/sequence`, `/song`, `/mixer`, `/inputs`, `/library`, `/sample-editor`, and `/diagnostics`, with explicit per-instance scoping and focused backend regression coverage.
@@ -100,7 +100,7 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/clients/brain.test.ts` -> PASS
       - Licensing review: touched backend/frontend test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reused the current repository licensing evidence and found no new notice or ownership gaps requiring follow-up work.
   - ID: T762-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add websocket-facing Brain runtime scope contracts
     Description:
     - Goal / acceptance criteria: Extend the Brain contract family with scoped runtime event payloads or equivalent websocket-facing envelopes so compact/plugin surfaces can subscribe without falling back to polling-only shared state.
@@ -110,9 +110,25 @@ Subtasks:
     - Required outputs: Scoped event contract, implementation, and validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 11:05 EDT - Codex
+    Last updated: 2026-04-05 14:07 EDT - Codex
+    - Completion notes:
+      - Added a typed `brain:runtime` websocket contract on the backend that broadcasts full per-instance Brain state envelopes keyed by scoped `instance_id` and `plugin_position`, and registered the topic in the websocket welcome surface.
+      - Added a reusable frontend Brain runtime cache-sync hook plus compact/routed Brain consumers, so scoped websocket updates now refresh the same React Query caches used by the plugin card and `/brain` workspace instead of waiting for another fetch.
+      - Added focused service, route, and compact-card regression coverage proving websocket runtime updates preserve duplicate-instance identity and reach the compact Brain surface with live transport/set-name changes.
+    - Validation:
+      - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx src/app/pages/PerformanceBrainPage.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - Licensing review: touched backend/frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 11:05 EDT - Codex
+Last updated: 2026-04-05 14:07 EDT - Codex
+- Completion notes:
+  - The Brain contract family now includes a scoped websocket runtime envelope carrying full per-instance state on `brain:runtime`, closing the polling-only gap for duplicate plugin instances and routed launches.
+  - The compact Brain card and routed `/brain` workspace now consume the websocket runtime feed to keep their scoped caches current from live backend changes, while backend/frontend tests explicitly cover the new event scope guarantees.
+- Validation:
+  - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/Custom/JUCE/PerformanceBrainCard.test.tsx src/app/pages/PerformanceBrainPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T763
 Status: [ ] Todo

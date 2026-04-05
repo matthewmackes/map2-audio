@@ -39,6 +39,18 @@ _SECTION_IDS = (
     "library",
     "diagnostics",
 )
+BRAIN_RUNTIME_TOPIC = "brain:runtime"
+BrainRuntimeResource = Literal[
+    "state",
+    "transport",
+    "slot",
+    "layers",
+    "sequence",
+    "song",
+    "mixer",
+    "inputs",
+    "sample_editor",
+]
 
 
 def _utcnow_iso() -> str:
@@ -297,6 +309,18 @@ class BrainStateModel(BaseModel):
     sample_editor: BrainSampleEditorStateModel = Field(default_factory=BrainSampleEditorStateModel)
     diagnostics: BrainDiagnosticsModel = Field(default_factory=BrainDiagnosticsModel)
     snapshot_integration: BrainSnapshotIntegrationModel = Field(default_factory=BrainSnapshotIntegrationModel)
+
+
+class BrainRuntimeScopeModel(BaseModel):
+    runtime_instance_id: str
+    instance_id: str | None = None
+    plugin_position: int | None = Field(default=None, ge=0)
+
+
+class BrainRuntimeEventModel(BaseModel):
+    resource: BrainRuntimeResource
+    scope: BrainRuntimeScopeModel
+    state: BrainStateModel
 
 
 class BrainStateUpdateModel(BaseModel):
@@ -829,6 +853,25 @@ class PerformanceBrainService(Singleton):
             state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
             self._refresh_derived_state(state)
             return state.model_dump()
+
+    def get_runtime_event(
+        self,
+        resource: BrainRuntimeResource,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
+            self._refresh_derived_state(state)
+            return BrainRuntimeEventModel(
+                resource=resource,
+                scope=BrainRuntimeScopeModel(
+                    runtime_instance_id=state.instance_id,
+                    instance_id=None if instance_id is None else str(instance_id),
+                    plugin_position=plugin_position,
+                ),
+                state=state,
+            ).model_dump(mode="json")
 
     def update_state(
         self,

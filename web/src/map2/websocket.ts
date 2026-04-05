@@ -56,6 +56,7 @@ export type WebSocketTopic =
   | 'effects_loop_state'
   | 'effects_loop_metrics'
   | 'effects_loop_calibration_progress'
+  | 'brain:runtime'
   | 'snapshot_runtime_live_state'
   | 'snapshot_activation_events'
   | 'maschine:status'
