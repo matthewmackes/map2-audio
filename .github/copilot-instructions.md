@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Snapshot activation Brain runtime restore documented)
+> **Last Updated**: April 5, 2026 (Desired-aware Brain restore documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1529,6 +1529,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py app/services/performance_brain_authority_sync.py app/services/snapshot_service.py tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py`
 - **Lesson**: If a snapshot owns an authority namespace, activation must update the live local runtime for that namespace immediately, including clearing stale instances that disappeared from the snapshot-owned set. Otherwise the authority plane says one thing while live operator surfaces keep rendering another until some later incidental restore happens.
 
+**59. Scoped Brain Restore Must Merge Desired Authority With Committed Authority After Snapshot Activation (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/performance_brain_authority_sync.py`, `tests/test_performance_brain_authority_sync.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: After snapshot activation started publishing snapshot-owned Brain projections into desired authority, restart/open flows could still fall back to stale local Brain state because `restore_instance()` only read committed authority, and committed could lag the just-published desired snapshot projection.
+- **Root Cause**: The scoped Brain restore path treated committed authority as the only control-plane source. That ignored the repo's own merged-extension pattern already used elsewhere for snapshot/authority preservation and left a restart window where desired contained the latest snapshot-owned Brain state but committed did not.
+- **Fix**: Update `PerformanceBrainAuthoritySyncService.restore_instance()` to merge Brain projections from committed desired extensions, committed extensions, and the live desired authority envelope before selecting the scoped runtime projection to restore.
+- **Verification**: `pytest -q tests/test_performance_brain_authority_sync.py -q`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_authority_sync.py tests/test_performance_brain_authority_sync.py`
+- **Lesson**: For restart-safe scoped restore, desired authority is not optional metadata. If activation publishes desired first, the restore path must merge desired and committed projections or restarts can briefly resurrect stale local runtime state even though the control plane already knows the newer snapshot-owned truth.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1799,6 +1807,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Desired-Aware Brain Restore
+- **Section**: Gotchas & Learned Fixes (#59), Update Log
+- **Change**: Documented the rule that scoped Brain restore must merge committed and desired authority projections so restart/open flows can restore a just-activated snapshot-owned Brain state before committed authority catches up.
+- **Reason**: T763-subG closed the remaining restart window after desired-state snapshot publishing and local runtime reconcile landed, making the restore path consume the same merged authority view already used by the snapshot extension-preservation helpers.
+- **Impact**: Future Brain restore or authority work should preserve the merged desired+committed projection contract instead of regressing back to committed-only reads.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/performance_brain_authority_sync.py`, `tests/test_performance_brain_authority_sync.py`
 
 ### [2026-04-05] - Snapshot Activation Brain Runtime Restore
 - **Section**: Gotchas & Learned Fixes (#58), Update Log

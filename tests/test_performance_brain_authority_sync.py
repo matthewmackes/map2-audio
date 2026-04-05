@@ -214,6 +214,53 @@ async def test_restore_instance_falls_back_to_local_state_without_projection(tmp
 
 
 @pytest.mark.asyncio
+async def test_restore_instance_prefers_desired_projection_when_committed_lags(tmp_path):
+    brain_service = PerformanceBrainService(root_path=tmp_path / "brain-authority")
+    brain_service.update_state(
+        BrainStateUpdateModel(set_name="Locally Drifted Brain", active_slot=1),
+        instance_id="17",
+        plugin_position=3,
+    )
+    committed_envelope = _build_committed_envelope()
+    desired_state = committed_envelope.value.desired.model_copy(deep=True)
+    desired_state.extensions = {
+        "performance_brain": {
+            "instances": {
+                "instance-17__position-3": {
+                    "runtime_instance_id": "instance-17__position-3",
+                    "instance_id": "17",
+                    "plugin_position": 3,
+                    "state": {
+                        **brain_service.get_state(instance_id="17", plugin_position=3),
+                        "set_name": "Desired Snapshot Brain",
+                        "active_slot": 6,
+                    },
+                }
+            }
+        }
+    }
+    authority_service = _FakeAuthorityService(
+        committed_envelope,
+        AudioStateDesiredEnvelope(
+            namespace=committed_envelope.namespace,
+            key=f"{committed_envelope.namespace}/desired",
+            revision=41,
+            value=desired_state,
+        ),
+    )
+
+    restored = await PerformanceBrainAuthoritySyncService(
+        authority_service=authority_service,
+        brain_service=brain_service,
+        node_id="node-local",
+    ).restore_instance(instance_id="17", plugin_position=3)
+
+    assert restored["set_name"] == "Desired Snapshot Brain"
+    assert restored["active_slot"] == 6
+    assert brain_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Desired Snapshot Brain"
+
+
+@pytest.mark.asyncio
 async def test_reconcile_runtime_with_extensions_restores_snapshot_state_and_resets_missing_instances(tmp_path):
     brain_service = PerformanceBrainService(root_path=tmp_path / "brain-authority")
     brain_service.update_state(

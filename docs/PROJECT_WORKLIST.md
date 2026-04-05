@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 16:49 EDT - Completed T763-subF so snapshot activation now reconciles local `Performance Brain` runtime from snapshot-owned extensions, resets stale prior Brain instances when the snapshot replaces that namespace, and broadcasts scoped runtime refresh events for live Brain consumers.
+Last updated: 2026-04-05 16:55 EDT - Completed T763-subG so scoped `Performance Brain` restore paths now merge committed and desired authority extensions, closing the restart window where committed authority could lag a just-activated snapshot.
 
 ## Performance Brain
 
@@ -264,8 +264,27 @@ Subtasks:
       - `pytest -q tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py -q` -> PASS
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py app/services/performance_brain_authority_sync.py app/services/snapshot_service.py tests/test_performance_brain_authority_sync.py tests/test_snapshot_service.py` -> PASS
       - Licensing review: touched backend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+  - ID: T763-subG
+    Status: [✓] Done
+    Title: Let scoped Brain restore fall back to desired authority when committed lags snapshot activation
+    Description:
+    - Goal / acceptance criteria: Make `PerformanceBrainAuthoritySyncService.restore_instance()` merge scoped Brain projections across committed and desired authority envelopes, so a just-activated snapshot can still rehydrate the correct Brain runtime on restart/open even if committed authority has not yet been reconciled to the latest desired snapshot projection.
+    - Why it matters: T763-subF updates local runtime during activation, but restart/open flows still call `restore_instance()`, which currently reads committed authority only. After snapshot activation, desired authority is refreshed immediately while committed can lag, leaving a restart window where Brain recall can still fall back to stale local state.
+    - Dependencies: T763-subC, T763-subD, T763-subE, T763-subF
+    - Estimated effort: Medium
+    - Required outputs: Desired-aware Brain restore merge path, focused backend regressions for desired-fallback behavior, and worklist validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 16:55 EDT - Codex
+    - Completion notes:
+      - Updated `app/services/performance_brain_authority_sync.py` so `restore_instance()` now merges scoped Brain projections from committed desired extensions, committed extensions, and the live desired authority envelope before hydrating local runtime state, instead of trusting committed extensions alone.
+      - Added focused regressions in `tests/test_performance_brain_authority_sync.py` proving scoped Brain restore now prefers the desired snapshot-owned Brain projection when committed authority is still stale, which closes the restart/open recall window after snapshot activation publishes desired state first.
+    - Validation:
+      - `pytest -q tests/test_performance_brain_authority_sync.py -q` -> PASS
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_authority_sync.py tests/test_performance_brain_authority_sync.py` -> PASS
+      - Licensing review: touched backend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 Assigned to: Codex
-Last updated: 2026-04-05 16:49 EDT - Codex
+Last updated: 2026-04-05 16:55 EDT - Codex
 - Completion notes:
   - Landed the first Brain-to-authority bridge by serializing scoped runtime state into the existing committed, desired, and observed audio-state envelopes under `extensions.performance_brain.instances`, so snapshot/live truth no longer depends on page-local Brain state alone.
   - Brain mutation and import routes now auto-publish their scoped state into the same authority bridge before broadcasting runtime updates, and matching Brain runtime events now invalidate the authoritative audio-state caches so control-plane surfaces observe the updated truth without a manual sync step.
@@ -273,6 +292,7 @@ Last updated: 2026-04-05 16:49 EDT - Codex
   - Snapshot activation and live snapshot desired-state republishes now preserve the existing authority extension payload when compiling fresh audio-state envelopes, so `extensions.performance_brain.instances` survives control-plane transitions instead of being reset back to empty by snapshot-first flows.
   - Authored snapshots now persist snapshot-owned `extensions.performance_brain`, capture the current authority projection when authors do not supply explicit extension content, and let activation/desired-state republishes prefer the snapshot-owned Brain namespace over the currently live authority namespace while preserving unrelated extensions.
   - Snapshot activation now reconciles the local Brain runtime against snapshot-owned Brain extensions, resets stale prior-instance local Brain state when the snapshot replaces that namespace, and emits scoped `brain:runtime` refresh events so live Brain surfaces update immediately instead of waiting for a later route restore.
+  - Scoped Brain restore now merges desired and committed authority projections on open/read/write, so restart/open flows can rehydrate the just-activated snapshot-owned Brain state even when committed authority has not yet caught up to the latest desired snapshot publish.
   - Left the parent epic open because snapshot activation, recall rules, and deeper State Authority redesign alignment remain larger follow-on work beyond this focused projection slice.
 - Validation:
   - `pytest -q tests/test_audio_state_routes.py tests/test_performance_brain_authority_sync.py` -> PASS

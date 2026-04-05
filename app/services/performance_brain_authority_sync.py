@@ -158,13 +158,32 @@ class PerformanceBrainAuthoritySyncService:
             plugin_position=plugin_position,
         )
         try:
+            from app.services.audio_state_snapshot_compiler import merge_audio_state_extensions
+
             committed_envelope = await self.authority_service.get_committed_state()
         except AudioStateAuthorityError as exc:
             if "No committed authoritative audio state exists" in str(exc):
                 return self.brain_service.get_state(instance_id=instance_id, plugin_position=plugin_position)
             raise
 
-        projection = _brain_instances_from_extensions(committed_envelope.value.extensions).get(runtime_instance_id)
+        merged_extensions = merge_audio_state_extensions(
+            committed_envelope.value.desired.extensions,
+            committed_envelope.value.extensions,
+        )
+        try:
+            desired_envelope = await self.authority_service.get_desired_state()
+        except AudioStateAuthorityError as exc:
+            if "No desired audio state exists" in str(exc):
+                desired_envelope = None
+            else:
+                raise
+        if desired_envelope is not None:
+            merged_extensions = merge_audio_state_extensions(
+                merged_extensions,
+                desired_envelope.value.extensions,
+            )
+
+        projection = _brain_instances_from_extensions(merged_extensions).get(runtime_instance_id)
         if not isinstance(projection, dict):
             return self.brain_service.get_state(instance_id=instance_id, plugin_position=plugin_position)
 
