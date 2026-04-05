@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**967** Python | **1109** TypeScript | **133** C++/H | **131** Docs | **1358** total commits | **3** stars | **0** forks | **0** open issues
+**967** Python | **1109** TypeScript | **133** C++/H | **131** Docs | **1359** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9706e959`](https://github.com/matthewmackes/map2-audio/commit/9706e9597a50859be73a83465e6c61952fd869ec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`cad826da`](https://github.com/matthewmackes/map2-audio/commit/cad826daa44815b7440b2d02d5063a39c54d87cb) | Add drums backing-track runtime and live routing sync | Map2 Audio | 2026-04-04 |
 | [`40279d1a`](https://github.com/matthewmackes/map2-audio/commit/40279d1aa0c82174af8eba59d8a5821ebea962da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`7d814cdd`](https://github.com/matthewmackes/map2-audio/commit/7d814cddc69e5724d5d0fac122dcb73340f9f21d) | Finish snapshot runtime sync and workspace catalog refresh | Map2 Audio | 2026-04-04 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`91d6fbc6`](https://github.com/matthewmackes/map2-audio/commit/91d6fbc6c642a45b607851079f85571bd23f3336) | Consume staged preload instances during activation | Map2 Audio | 2026-04-04 |
 | [`c7651050`](https://github.com/matthewmackes/map2-audio/commit/c7651050167fa5af64ccb386521c7cccda5c6996) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 | [`e757a172`](https://github.com/matthewmackes/map2-audio/commit/e757a172a20294d6383699ad00747e0d4db47960) | Apply snapshot monitoring output runtime binding | Map2 Audio | 2026-04-04 |
-| [`71b996b4`](https://github.com/matthewmackes/map2-audio/commit/71b996b4135b4fc6c83e0ca1bdb1c56cc475ff0a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
