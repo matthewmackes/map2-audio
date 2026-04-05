@@ -1589,7 +1589,7 @@ export interface BrainInputsState {
 export interface BrainLibraryAsset {
   asset_id: string
   name: string
-  asset_type: 'soundfont' | 'sfz' | 'sample' | 'kit'
+  asset_type: 'soundfont' | 'sfz' | 'sample' | 'kit' | 'patch'
   source: string
   path: string
   description: string

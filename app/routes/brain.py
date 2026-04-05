@@ -503,18 +503,56 @@ async def import_brain_from_synthforge(
     try:
         parts = await engine.get_synthforge_parts_config()
         voice_metrics = await engine.get_synthforge_voice_metrics()
-        sample_statuses, parameters = await asyncio.gather(
+        (
+            sample_statuses,
+            parameters,
+            sampler_backends,
+            streaming_configs,
+            hot_reload_statuses,
+            scala_tunings,
+            mpe_configs,
+            mod_matrix_routes,
+            backend_statuses,
+            patches,
+        ) = await asyncio.gather(
             asyncio.gather(*(engine.get_synthforge_part_sample_status(index) for index in range(16))),
             asyncio.gather(*(engine.get_synthforge_part_parameters(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_sampler_backend(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_streaming_config(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_hot_reload_status(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_scala_tuning(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_mpe_config(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_mod_matrix_routes(index) for index in range(16))),
+            asyncio.gather(*(engine.get_synthforge_part_backend_status(index) for index in range(16))),
+            engine.get_synthforge_patches(""),
         )
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"SynthForge import unavailable: {exc}") from exc
 
+    performance_configs = [
+        {
+            "master_transpose": int(params.get("global.transpose", 0)),
+            "velocity_curve": float(params.get("performance.velocity_curve", 0.0)),
+            "pitch_bend_range": int(params.get("performance.pitch_bend_range", 2)),
+            "mono_mode": bool(params.get("performance.mono_mode", 0.0) >= 0.5),
+            "legato": bool(params.get("performance.legato", 0.0) >= 0.5),
+        }
+        for params in parameters
+    ]
     state = _service().import_from_synthforge(
         parts=list(parts),
         sample_statuses=list(sample_statuses),
         parameters=list(parameters),
         voice_metrics=dict(voice_metrics),
+        performance_configs=performance_configs,
+        sampler_backends=list(sampler_backends),
+        streaming_configs=list(streaming_configs),
+        hot_reload_statuses=list(hot_reload_statuses),
+        scala_tunings=list(scala_tunings),
+        mpe_configs=list(mpe_configs),
+        mod_matrix_routes=[list(routes) for routes in mod_matrix_routes],
+        backend_statuses=list(backend_statuses),
+        patches=list(patches),
         instance_id=instance_id,
         plugin_position=plugin_position,
     )

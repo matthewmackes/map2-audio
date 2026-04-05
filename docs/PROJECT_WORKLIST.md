@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 18:32 EDT - Completed T766-subA so Drum Machine shadow imports now carry real song/pattern summaries, pending-pattern transport metadata, and trigger/midi-output nuance into `Performance Brain`.
+Last updated: 2026-04-05 18:44 EDT - Completed T766-subB by carrying richer SynthForge performance, backend, and patch-library context into `Performance Brain` shadow imports.
 
 ## Performance Brain
 
@@ -425,7 +425,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
       - Licensing review: touched backend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T766-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Import SynthForge performance, modulation, and patch context into Brain shadow state
     Description:
     - Goal / acceptance criteria: Extend the Brain SynthForge importer so it carries per-part performance settings, modulation/mpe/tuning/runtime backend context, and patch-library signals into the imported Brain state instead of only copying coarse preset names and transpose values.
@@ -435,7 +435,16 @@ Subtasks:
     - Required outputs: Backend importer/route updates, focused route/service regressions, and worklist validation notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-05 18:27 EDT - Codex
+    Last updated: 2026-04-05 18:44 EDT - Codex
+    - Completion notes:
+      - Updated `app/routes/brain.py` so the SynthForge importer now gathers per-part sampler backend, streaming, hot-reload, Scala tuning, MPE, modulation-matrix, backend-status, and patch-library payloads before building the Brain shadow import.
+      - Updated `app/services/performance_brain_service.py` so SynthForge imports now preserve per-part output-bus routing, performance articulation context, MPE-aware keyboard zones, mod-matrix controller assignments, backend/tuning warnings, and a `synthforge-patches` Brain library collection instead of reducing the import to names and transpose only.
+      - Fixed `_refresh_derived_state()` to preserve importer-owned library collections and featured assets across later Brain reads, so the imported SynthForge patch bank survives route refreshes instead of being discarded by the standard library rescan.
+      - Extended `tests/test_brain_service.py` and `tests/test_brain_routes.py` to assert the richer SynthForge shadow-state contract, including patch-library persistence, backend diagnostics, and MPE/modulation import behavior.
+    - Validation:
+      - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS (`11 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+      - Licensing review: touched backend/frontend-type/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
   - ID: T766-subC
     Status: [ ] Todo
     Title: Add shadow-phase launch/import handoff from legacy Drum Machine and SynthForge surfaces into Brain
@@ -449,9 +458,10 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-05 18:27 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 18:32 EDT - Codex
+Last updated: 2026-04-05 18:44 EDT - Codex
 - Completion notes:
   - Closed the first T766 shadow-migration gap by making Drum Machine imports carry real sequencer/song metadata and legacy trigger/transport nuance into Brain state instead of only mirroring coarse slot defaults.
+  - Closed the second T766 shadow-migration gap by making SynthForge imports preserve performance/backend/tuning/patch-library context and by keeping importer-owned library overlays alive across derived Brain refreshes.
 
 ID: T767
 Status: [ ] Todo

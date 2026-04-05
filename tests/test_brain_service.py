@@ -205,7 +205,7 @@ def test_brain_service_imports_synthforge_payloads(tmp_path):
             {
                 "part_index": index,
                 "midi_channel": index + 1,
-                "output_bus": "main",
+                "output_bus": "aux_2" if index == 0 else "main",
                 "level": 1.0,
                 "pan": 0.0,
                 "mute": False,
@@ -217,21 +217,131 @@ def test_brain_service_imports_synthforge_payloads(tmp_path):
             {
                 "loaded": True,
                 "sampler_mode": True,
-                "sfz_path": f"/sfz/part-{index + 1}.sfz",
-                "soundfont_path": "",
-                "active_preset_name": f"Layer {index + 1}",
+                "sfz_path": "" if index == 0 else f"/sfz/part-{index + 1}.sfz",
+                "soundfont_path": "/soundfonts/studio-grand.sf2" if index == 0 else "",
+                "active_bank": 0,
+                "active_program": 0,
+                "active_preset_name": "" if index == 0 else f"Layer {index + 1}",
                 "engine": "sfizz",
             }
             for index in range(16)
         ],
-        parameters=[{"global.transpose": 12 if index == 0 else 0} for index in range(16)],
+        parameters=[
+            {
+                "global.transpose": 12 if index == 0 else 0,
+                "performance.velocity_curve": 0.25 if index == 0 else 0.0,
+                "performance.pitch_bend_range": 12 if index == 0 else 2,
+                "performance.mono_mode": 1.0 if index == 0 else 0.0,
+                "performance.legato": 1.0 if index == 0 else 0.0,
+            }
+            for index in range(16)
+        ],
         voice_metrics={"active_voices": 11, "peak_voices": 27, "voices_per_part": [2] * 16},
+        performance_configs=[
+            {
+                "master_transpose": 12 if index == 0 else 0,
+                "velocity_curve": 0.25 if index == 0 else 0.0,
+                "pitch_bend_range": 12 if index == 0 else 2,
+                "mono_mode": index == 0,
+                "legato": index == 0,
+            }
+            for index in range(16)
+        ],
+        sampler_backends=["native" if index == 0 else "sfizz" for index in range(16)],
+        streaming_configs=[
+            {"enabled": True, "max_voices": 48 if index == 0 else 24}
+            for index in range(16)
+        ],
+        hot_reload_statuses=[
+            {
+                "enabled": index == 0,
+                "last_error": "scan drift" if index == 0 else "",
+            }
+            for index in range(16)
+        ],
+        scala_tunings=[
+            {
+                "enabled": index == 0,
+                "scala_path": "/tunings/studio-grand.scl" if index == 0 else "",
+            }
+            for index in range(16)
+        ],
+        mpe_configs=[
+            {
+                "enabled": index == 0,
+                "lower_zone_channels": 5 if index == 0 else 0,
+                "upper_zone_channels": 0,
+            }
+            for index in range(16)
+        ],
+        mod_matrix_routes=[
+            (
+                [
+                    {
+                        "source": "modwheel",
+                        "destination": "filter.cutoff",
+                        "enabled": True,
+                    }
+                ]
+                if index == 0
+                else []
+            )
+            for index in range(16)
+        ],
+        backend_statuses=[
+            {
+                "unsupported_opcodes": ["sw_lfo"] if index == 0 else [],
+                "unknown_opcodes": ["mystery_opcode"] if index == 0 else [],
+            }
+            for index in range(16)
+        ],
+        patches=[
+            {
+                "bank": 0,
+                "program": 0,
+                "name": "Studio Grand",
+                "category": "Piano",
+                "author": "MAP2",
+                "description": "Flagship piano patch",
+            }
+        ],
         instance_id="synthforge-import",
     )
 
-    assert imported["slots"][0]["name"] == "Layer 1"
-    assert imported["slots"][0]["asset_type"] == "sfz"
+    assert imported["set_name"] == "Studio Grand Multi Import"
+    assert imported["active_layer_id"] == "synthforge-multi"
+    assert imported["slots"][0]["name"] == "Studio Grand"
+    assert imported["slots"][0]["asset_type"] == "soundfont"
+    assert imported["slots"][0]["source_label"] == "native · Piano"
+    assert imported["slots"][0]["output_bus"] == 2
     assert imported["slots"][0]["transpose"] == 12
+    assert imported["slots"][0]["velocity_curve"] == "mpe"
+    assert imported["slots"][0]["articulation_group"] == "mono-legato"
+    assert imported["slots"][0]["status"] == "imported-synthforge:native:hot-reload"
+    assert imported["inputs"]["keyboard_zones"][0]["aftertouch_mode"] == "poly"
+    assert imported["inputs"]["keyboard_zones"][0]["key_low"] == 0
+    assert imported["inputs"]["keyboard_zones"][0]["key_high"] == 127
+    assert imported["inputs"]["trigger_profiles"] == []
+    assert imported["inputs"]["controller_assignments"][0] == {
+        "source": "part:1:modwheel",
+        "target": "slot:0:filter.cutoff",
+        "mode": "mod-matrix",
+        "enabled": True,
+    }
+    patch_collection = next(
+        collection
+        for collection in imported["library"]["collections"]
+        if collection["collection_id"] == "synthforge-patches"
+    )
+    assert patch_collection["label"] == "SynthForge Patches"
+    assert patch_collection["assets"][0]["asset_type"] == "patch"
+    assert patch_collection["assets"][0]["path"] == "bank:0/program:0"
     assert imported["diagnostics"]["active_voices"] == 11
     assert imported["diagnostics"]["peak_voices"] == 27
+    assert imported["diagnostics"]["polyphony_headroom"] == 509
+    assert imported["diagnostics"]["backend_mode"] == "synthforge:mixed(native, sfizz)"
+    assert "Part 1 uses Scala tuning from /tunings/studio-grand.scl." in imported["diagnostics"]["warnings"]
+    assert "Part 1 hot reload reports: scan drift" in imported["diagnostics"]["warnings"]
+    assert "Part 1 backend native reports unsupported opcodes: sw_lfo." in imported["diagnostics"]["warnings"]
+    assert "Part 1 backend native reports unknown opcodes: mystery_opcode." in imported["diagnostics"]["warnings"]
     assert imported["diagnostics"]["last_import_source"] == "synthforge"

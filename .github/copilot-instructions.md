@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Drum Machine shadow import fidelity documented)
+> **Last Updated**: April 5, 2026 (SynthForge shadow import fidelity documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1545,6 +1545,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
 - **Lesson**: A shadow importer is only trustworthy when it follows the real legacy contract all the way down. If a migration path drops live transport or sequencer semantics, operators will evaluate the replacement against a degraded copy instead of the source of truth they actually use.
 
+**61. SynthForge Shadow Imports Must Preserve Backend Context And Imported Patch Libraries Across Derived Refreshes (HIGH - Apr 5, 2026)**
+- **Files**: `app/routes/brain.py`, `app/services/performance_brain_service.py`, `tests/test_brain_service.py`, `tests/test_brain_routes.py`, `web/src/map2/api.ts`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The widened Brain SynthForge importer could collect performance/backend/tuning/patch context at import time, but later Brain reads silently dropped the imported `synthforge-patches` library collection and would reduce the shadow state back toward a plain scanned-asset view.
+- **Root Cause**: `_refresh_derived_state()` rebuilt `state.library` from `_build_library_state()` on every read/update, and that scan only knows the canonical soundfont/sfz/sample/kit collections. Importer-owned overlay collections and featured assets were not merged back in.
+- **Fix**: Gather full SynthForge sampler-backend, streaming, hot-reload, Scala, MPE, mod-matrix, backend-status, and patch payloads in `app/routes/brain.py`; import them into per-slot routing/diagnostics plus a `synthforge-patches` Brain library collection in `PerformanceBrainService.import_from_synthforge()`; then merge importer-owned library collections and featured assets back into the rebuilt library inside `_refresh_derived_state()`.
+- **Verification**: `pytest -q tests/test_brain_service.py tests/test_brain_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/brain.py app/services/performance_brain_service.py tests/test_brain_service.py tests/test_brain_routes.py`
+- **Lesson**: Derived-state refreshes must preserve importer-owned library overlays. If a refresh normalizes only scanned assets, a shadow import can look correct once and then quietly lose its patch-bank evidence on the next read.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1815,6 +1823,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - SynthForge Shadow Import Fidelity
+- **Section**: Gotchas & Learned Fixes (#61), Update Log
+- **Change**: Documented that Brain SynthForge imports must preserve per-part performance/backend/tuning/MPE context and keep imported patch-library collections alive across later derived-state refreshes.
+- **Reason**: T766-subB widened the SynthForge shadow import contract, and focused validation exposed `_refresh_derived_state()` dropping the imported `synthforge-patches` collection on later reads until library overlays were explicitly preserved.
+- **Impact**: Future Brain migration slices should treat importer-owned library overlays as durable runtime state, not one-shot decoration that can be discarded by a generic rescan.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/routes/brain.py`, `app/services/performance_brain_service.py`, `tests/test_brain_service.py`, `tests/test_brain_routes.py`, `web/src/map2/api.ts`
 
 ### [2026-04-05] - Drum Machine Shadow Import Fidelity
 - **Section**: Gotchas & Learned Fixes (#60), Update Log

@@ -224,7 +224,7 @@ class BrainInputsStateModel(BaseModel):
 class BrainLibraryAssetModel(BaseModel):
     asset_id: str
     name: str
-    asset_type: Literal["soundfont", "sfz", "sample", "kit"]
+    asset_type: Literal["soundfont", "sfz", "sample", "kit", "patch"]
     source: str
     path: str = ""
     description: str = ""
@@ -846,7 +846,23 @@ class PerformanceBrainService(Singleton):
         active_slot = max(0, min(active_slot, len(state.slots) - 1))
         state.active_slot = active_slot
         state.sample_editor = self._build_sample_editor_state(active_slot, state.slots[active_slot])
-        state.library = self._build_library_state()
+        base_library = self._build_library_state()
+        existing_library = state.library.model_copy(deep=True)
+        base_collection_ids = {collection.collection_id for collection in base_library.collections}
+        extra_collections = [
+            collection.model_copy(deep=True)
+            for collection in existing_library.collections
+            if collection.collection_id not in base_collection_ids
+        ]
+        if extra_collections:
+            # Preserve importer-owned library views such as SynthForge patch banks.
+            base_library.collections.extend(extra_collections)
+        merged_featured_assets: list[str] = []
+        for asset_id in [*existing_library.featured_assets, *base_library.featured_assets]:
+            if asset_id and asset_id not in merged_featured_assets:
+                merged_featured_assets.append(asset_id)
+        base_library.featured_assets = merged_featured_assets
+        state.library = base_library
         state.sequence.song_entry_count = len(state.song.entries)
         state.diagnostics.updated_at_iso = _utcnow_iso()
         return state
@@ -1469,52 +1485,214 @@ class PerformanceBrainService(Singleton):
         sample_statuses: list[dict[str, Any]],
         parameters: list[dict[str, Any]],
         voice_metrics: dict[str, Any],
+        performance_configs: list[dict[str, Any]] | None = None,
+        sampler_backends: list[str] | None = None,
+        streaming_configs: list[dict[str, Any]] | None = None,
+        hot_reload_statuses: list[dict[str, Any]] | None = None,
+        scala_tunings: list[dict[str, Any]] | None = None,
+        mpe_configs: list[dict[str, Any]] | None = None,
+        mod_matrix_routes: list[list[dict[str, Any]]] | None = None,
+        backend_statuses: list[dict[str, Any]] | None = None,
+        patches: list[dict[str, Any]] | None = None,
         instance_id: str | int | None = None,
         plugin_position: int | None = None,
     ) -> dict[str, Any]:
         with self._lock:
             state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
+            performance_configs = performance_configs or [{} for _ in range(len(parts))]
+            sampler_backends = sampler_backends or ["native" for _ in range(len(parts))]
+            streaming_configs = streaming_configs or [{} for _ in range(len(parts))]
+            hot_reload_statuses = hot_reload_statuses or [{} for _ in range(len(parts))]
+            scala_tunings = scala_tunings or [{} for _ in range(len(parts))]
+            mpe_configs = mpe_configs or [{} for _ in range(len(parts))]
+            mod_matrix_routes = mod_matrix_routes or [[] for _ in range(len(parts))]
+            backend_statuses = backend_statuses or [{} for _ in range(len(parts))]
+            patches = patches or []
+
+            patch_lookup = {
+                (int(patch.get("bank", 0)), int(patch.get("program", 0))): patch
+                for patch in patches
+            }
+            active_slot_indices: list[int] = []
+            keyboard_zones: list[BrainKeyboardZoneModel] = []
+            controller_assignments: list[BrainControllerAssignmentModel] = []
+            warnings: list[str] = []
+            unique_backends: set[str] = set()
+            total_voice_budget = 128
+
+            def _output_bus_index(value: str) -> int:
+                normalized = str(value or "main").strip().lower()
+                if normalized in {"main", "main_out"}:
+                    return 0
+                if normalized.startswith("aux_"):
+                    suffix = normalized.split("_", 1)[1]
+                    if suffix.isdigit():
+                        return max(0, min(7, int(suffix)))
+                return 0
+
             voices_per_part = voice_metrics.get("voices_per_part", [0] * 16)
             for slot_id, part in enumerate(parts[:16]):
                 slot = state.slots[slot_id]
                 sample_status = sample_statuses[slot_id] if slot_id < len(sample_statuses) else {}
                 params = parameters[slot_id] if slot_id < len(parameters) else {}
+                performance = performance_configs[slot_id] if slot_id < len(performance_configs) else {}
+                backend = str(sampler_backends[slot_id] if slot_id < len(sampler_backends) else "native")
+                streaming = streaming_configs[slot_id] if slot_id < len(streaming_configs) else {}
+                hot_reload = hot_reload_statuses[slot_id] if slot_id < len(hot_reload_statuses) else {}
+                scala = scala_tunings[slot_id] if slot_id < len(scala_tunings) else {}
+                mpe = mpe_configs[slot_id] if slot_id < len(mpe_configs) else {}
+                routes = mod_matrix_routes[slot_id] if slot_id < len(mod_matrix_routes) else []
+                backend_status = backend_statuses[slot_id] if slot_id < len(backend_statuses) else {}
                 asset_path = str(sample_status.get("soundfont_path") or sample_status.get("sfz_path") or "")
                 asset_type = "soundfont" if sample_status.get("soundfont_path") else "sfz"
                 if not sample_status.get("loaded"):
                     asset_type = "empty"
-                slot.mode = "hybrid" if sample_status.get("sampler_mode") else "chromatic"
+                patch = patch_lookup.get(
+                    (
+                        int(sample_status.get("active_bank", 0)),
+                        int(sample_status.get("active_program", 0)),
+                    )
+                )
+                slot.mode = "hybrid" if sample_status.get("sampler_mode") or bool(mpe.get("enabled", False)) else "chromatic"
                 slot.asset_type = asset_type
                 slot.asset_path = asset_path
-                slot.name = str(sample_status.get("active_preset_name") or f"Part {slot_id + 1}")
-                slot.source_label = str(sample_status.get("engine") or "SynthForge import")
+                slot.name = str(sample_status.get("active_preset_name") or (patch or {}).get("name") or f"Part {slot_id + 1}")
+                slot.source_label = " · ".join(
+                    part
+                    for part in (
+                        backend,
+                        str((patch or {}).get("category") or sample_status.get("engine") or "SynthForge import"),
+                    )
+                    if part
+                )
                 slot.level = float(part.get("level", 1.0))
                 slot.pan = float(part.get("pan", 0.0))
                 slot.mute = bool(part.get("mute", False))
                 slot.solo = bool(part.get("solo", False))
                 slot.midi_channel = int(part.get("midi_channel", 0))
-                slot.transpose = int(params.get("global.transpose", 0))
-                slot.polyphony = max(8, int(voices_per_part[slot_id] or 0) + 8)
-                slot.status = "imported-synthforge" if sample_status.get("loaded") else "idle"
+                slot.output_bus = _output_bus_index(str(part.get("output_bus", "main")))
+                slot.transpose = int(performance.get("master_transpose", params.get("global.transpose", 0)))
+                slot.polyphony = max(
+                    8,
+                    min(
+                        int(streaming.get("max_voices", 64)),
+                        int(voices_per_part[slot_id] or 0) + 8,
+                    ),
+                )
+                slot.velocity_curve = "mpe" if bool(mpe.get("enabled", False)) else (
+                    "legato" if bool(performance.get("legato", False)) else "linear"
+                )
+                slot.articulation_group = (
+                    "mono-legato"
+                    if bool(performance.get("mono_mode", False)) and bool(performance.get("legato", False))
+                    else ("mono" if bool(performance.get("mono_mode", False)) else "main")
+                )
+                slot.status = (
+                    f"imported-synthforge:{backend}:hot-reload"
+                    if bool(hot_reload.get("enabled", False))
+                    else f"imported-synthforge:{backend}"
+                )
                 if slot.mode == "chromatic":
                     slot.key_low = 24
                     slot.key_high = 108
+                if asset_type != "empty":
+                    active_slot_indices.append(slot_id)
+                unique_backends.add(backend)
+                total_voice_budget += int(streaming.get("max_voices", 0) or 0)
+                keyboard_zones.append(
+                    BrainKeyboardZoneModel(
+                        zone_id=f"synthforge-part-{slot_id + 1}",
+                        name=slot.name,
+                        midi_channel=max(1, int(part.get("midi_channel", slot_id + 1) or slot_id + 1)),
+                        key_low=0 if bool(mpe.get("enabled", False)) else slot.key_low,
+                        key_high=127 if bool(mpe.get("enabled", False)) else slot.key_high,
+                        transpose=slot.transpose,
+                        enabled=asset_type != "empty",
+                        aftertouch_mode="poly" if bool(mpe.get("enabled", False)) else "channel",
+                    )
+                )
+                for route in routes:
+                    controller_assignments.append(
+                        BrainControllerAssignmentModel(
+                            source=f"part:{slot_id + 1}:{route.get('source', 'mod')}",
+                            target=f"slot:{slot_id}:{route.get('destination', 'parameter')}",
+                            mode="mod-matrix",
+                            enabled=bool(route.get("enabled", True)),
+                        )
+                    )
+                if bool(scala.get("enabled", False)):
+                    warnings.append(f"Part {slot_id + 1} uses Scala tuning from {scala.get('scala_path', '')}.")
+                if hot_reload.get("last_error"):
+                    warnings.append(f"Part {slot_id + 1} hot reload reports: {hot_reload.get('last_error')}")
+                unsupported_opcodes = list(backend_status.get("unsupported_opcodes", []) or [])
+                if unsupported_opcodes:
+                    warnings.append(
+                        f"Part {slot_id + 1} backend {backend} reports unsupported opcodes: {', '.join(unsupported_opcodes[:4])}."
+                    )
+                unknown_opcodes = list(backend_status.get("unknown_opcodes", []) or [])
+                if unknown_opcodes:
+                    warnings.append(
+                        f"Part {slot_id + 1} backend {backend} reports unknown opcodes: {', '.join(unknown_opcodes[:4])}."
+                    )
 
             state.layers = [
                 BrainLayerModel(
                     layer_id="synthforge-multi",
                     name="SynthForge Multi",
-                    slot_indices=[index for index, slot in enumerate(state.slots) if slot.asset_type != "empty"],
-                    key_low=24,
-                    key_high=108,
+                    slot_indices=active_slot_indices,
+                    key_low=min((zone.key_low for zone in keyboard_zones if zone.enabled), default=24),
+                    key_high=max((zone.key_high for zone in keyboard_zones if zone.enabled), default=108),
                     polyphony=96,
                     scene_slot=0,
                     purpose="synthforge-import",
                 )
             ] or state.layers
+            state.set_name = (
+                f"{state.slots[active_slot_indices[0]].name} Multi Import"
+                if active_slot_indices
+                else "SynthForge Multi Import"
+            )
+            state.active_layer_id = "synthforge-multi"
+            state.inputs.keyboard_zones = keyboard_zones
+            state.inputs.trigger_profiles = []
+            state.inputs.controller_assignments = controller_assignments
+            patch_assets = [
+                BrainLibraryAssetModel(
+                    asset_id=f"patch:{int(patch.get('bank', 0))}:{int(patch.get('program', 0))}",
+                    name=str(patch.get("name") or f"Patch {index + 1}"),
+                    asset_type="patch",
+                    source=f"synthforge:{str(patch.get('category') or 'patch').lower()}",
+                    path=f"bank:{int(patch.get('bank', 0))}/program:{int(patch.get('program', 0))}",
+                    description=str(patch.get("description") or ""),
+                    default_slot_mode="chromatic",
+                    tags=[
+                        "patch",
+                        str(patch.get("category") or "uncategorized").lower(),
+                    ],
+                )
+                for index, patch in enumerate(patches[:24])
+            ]
+            library_state = self._build_library_state()
+            if patch_assets:
+                library_state.collections.append(
+                    BrainLibraryCollectionModel(
+                        collection_id="synthforge-patches",
+                        label="SynthForge Patches",
+                        asset_count=len(patch_assets),
+                        assets=patch_assets,
+                    )
+                )
+                library_state.featured_assets = [asset.asset_id for asset in patch_assets[:4]] + library_state.featured_assets
+            state.library = library_state
             state.diagnostics.active_voices = int(voice_metrics.get("active_voices", 0))
             state.diagnostics.peak_voices = int(voice_metrics.get("peak_voices", 0))
-            state.diagnostics.polyphony_headroom = max(0, 128 - state.diagnostics.peak_voices)
+            state.diagnostics.polyphony_headroom = max(0, total_voice_budget - state.diagnostics.peak_voices)
+            state.diagnostics.backend_mode = (
+                f"synthforge:{sorted(unique_backends)[0]}"
+                if len(unique_backends) == 1
+                else f"synthforge:mixed({', '.join(sorted(unique_backends))})"
+            )
+            state.diagnostics.warnings = list(dict.fromkeys(warnings))
             state.diagnostics.last_import_source = "synthforge"
             self._refresh_derived_state(state)
             self._persist_state(state)

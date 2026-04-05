@@ -122,7 +122,7 @@ class _FakeSynthForgeEngine:
             {
                 "part_index": index,
                 "midi_channel": index + 1,
-                "output_bus": "main",
+                "output_bus": "aux_2" if index == 0 else "main",
                 "level": 1.0,
                 "pan": 0.0,
                 "mute": False,
@@ -138,14 +138,100 @@ class _FakeSynthForgeEngine:
         return {
             "loaded": True,
             "sampler_mode": True,
-            "sfz_path": f"/sfz/{index}.sfz",
-            "soundfont_path": "",
+            "sfz_path": "" if index == 0 else f"/sfz/{index}.sfz",
+            "soundfont_path": "/soundfonts/studio-grand.sf2" if index == 0 else "",
+            "active_bank": 0,
+            "active_program": 0,
             "active_preset_name": f"Layer {index + 1}",
             "engine": "sfizz",
         }
 
     async def get_synthforge_part_parameters(self, index: int):
-        return {"global.transpose": 7 if index == 0 else 0}
+        return {
+            "global.transpose": 7 if index == 0 else 0,
+            "performance.velocity_curve": 0.25 if index == 0 else 0.0,
+            "performance.pitch_bend_range": 12 if index == 0 else 2,
+            "performance.mono_mode": 1.0 if index == 0 else 0.0,
+            "performance.legato": 1.0 if index == 0 else 0.0,
+        }
+
+    async def get_synthforge_part_sampler_backend(self, index: int):
+        return "native" if index == 0 else "sfizz"
+
+    async def get_synthforge_part_streaming_config(self, index: int):
+        return {
+            "enabled": True,
+            "preload_size": 131072,
+            "max_voices": 48 if index == 0 else 24,
+            "interpolation": "hermite",
+            "quality_live": 5,
+            "quality_freewheeling": 8,
+            "memory_limit_mb": 256,
+        }
+
+    async def get_synthforge_part_hot_reload_status(self, index: int):
+        return {
+            "enabled": index == 0,
+            "interval_ms": 1000,
+            "pending_reload": False,
+            "reloaded": False,
+            "generation": 0,
+            "last_reload_iso": "",
+            "last_error": "",
+        }
+
+    async def get_synthforge_part_scala_tuning(self, index: int):
+        return {
+            "enabled": index == 0,
+            "scala_path": "/tunings/studio-grand.scl" if index == 0 else "",
+            "root_key": 60,
+            "reference_hz": 440.0,
+        }
+
+    async def get_synthforge_part_mpe_config(self, index: int):
+        return {
+            "enabled": index == 0,
+            "lower_zone_channels": 5 if index == 0 else 0,
+            "upper_zone_channels": 0,
+            "pitch_bend_range_semitones": 48,
+        }
+
+    async def get_synthforge_part_mod_matrix_routes(self, index: int):
+        if index != 0:
+            return []
+        return [
+            {
+                "source": "modwheel",
+                "destination": "filter.cutoff",
+                "amount": 0.8,
+                "bipolar": False,
+                "enabled": True,
+            }
+        ]
+
+    async def get_synthforge_part_backend_status(self, index: int):
+        return {
+            "backend": "native" if index == 0 else "sfizz",
+            "sfizz_available": True,
+            "sfizz_loaded": index != 0,
+            "region_count": 14,
+            "group_count": 2,
+            "preloaded_samples": 128,
+            "unknown_opcodes": [],
+            "unsupported_opcodes": ["sw_lfo"] if index == 0 else [],
+        }
+
+    async def get_synthforge_patches(self, category: str = ""):
+        return [
+            {
+                "bank": 0,
+                "program": 0,
+                "name": "Studio Grand",
+                "category": "Piano",
+                "author": "MAP2",
+                "description": "Flagship piano patch",
+            }
+        ]
 
 
 class _FakeWsManager:
@@ -309,9 +395,34 @@ def test_brain_routes_import_synthforge_state(tmp_path):
     response = client.post("/api/engine/brain/import/synthforge?instance_id=42")
     assert response.status_code == 200
     payload = response.json()
+    assert payload["set_name"] == "Layer 1 Multi Import"
     assert payload["slots"][0]["name"] == "Layer 1"
+    assert payload["slots"][0]["asset_type"] == "soundfont"
+    assert payload["slots"][0]["source_label"] == "native · Piano"
+    assert payload["slots"][0]["output_bus"] == 2
     assert payload["slots"][0]["transpose"] == 7
+    assert payload["slots"][0]["velocity_curve"] == "mpe"
+    assert payload["slots"][0]["articulation_group"] == "mono-legato"
+    assert payload["slots"][0]["status"] == "imported-synthforge:native:hot-reload"
+    assert payload["inputs"]["keyboard_zones"][0]["aftertouch_mode"] == "poly"
+    assert payload["inputs"]["keyboard_zones"][0]["key_low"] == 0
+    assert payload["inputs"]["controller_assignments"][0] == {
+        "source": "part:1:modwheel",
+        "target": "slot:0:filter.cutoff",
+        "mode": "mod-matrix",
+        "enabled": True,
+    }
+    patch_collection = next(
+        collection
+        for collection in payload["library"]["collections"]
+        if collection["collection_id"] == "synthforge-patches"
+    )
+    assert patch_collection["assets"][0]["asset_type"] == "patch"
+    assert patch_collection["assets"][0]["name"] == "Studio Grand"
     assert payload["diagnostics"]["active_voices"] == 9
+    assert payload["diagnostics"]["backend_mode"] == "synthforge:mixed(native, sfizz)"
+    assert "Part 1 uses Scala tuning from /tunings/studio-grand.scl." in payload["diagnostics"]["warnings"]
+    assert "Part 1 backend native reports unsupported opcodes: sw_lfo." in payload["diagnostics"]["warnings"]
     assert payload["diagnostics"]["last_import_source"] == "synthforge"
     assert authority_sync.calls[-1] == {
         "instance_id": "42",
