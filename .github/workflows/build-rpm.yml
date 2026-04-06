@@ -128,7 +128,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rpm-artifacts
           path: |
@@ -146,7 +146,7 @@ jobs:
       
     steps:
       - name: Download RPM artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rpm-artifacts
           path: ./artifacts
@@ -187,7 +187,7 @@ jobs:
     
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rpm-artifacts
           path: ./artifacts
@@ -247,7 +247,7 @@ jobs:
           ref: rpm-repo
           
       - name: Download RPM artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rpm-artifacts
           path: ./rpms
