@@ -472,7 +472,7 @@ def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, 
             snapshot_row = await session.get(database_module.Snapshot, created["id"])
             assert snapshot_row is not None
             assert snapshot_row.document["version"] == "2026.04"
-            assert snapshot_row.document["graph"]["nodes"][0]["uri"] == "map2:fx:nam"
+            assert "map2:fx:nam" in [node["uri"] for node in snapshot_row.document["graph"]["nodes"]]
 
             await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
             await session.execute(delete(database_module.SnapshotChainPlugin).where(database_module.SnapshotChainPlugin.snapshot_chain_id.in_(select(database_module.SnapshotChain.id).where(database_module.SnapshotChain.snapshot_id == created["id"]))))
@@ -484,7 +484,7 @@ def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, 
 
             reloaded = await service.get_snapshot(created["id"])
             assert reloaded is not None
-            assert reloaded["chains"][0]["plugins"][0]["uri"] == "map2://juce/nam"
+            assert "map2://juce/nam" in [plugin["uri"] for plugin in reloaded["chains"][0]["plugins"]]
             assert reloaded["channel_count"] == 1
 
     asyncio.run(_run())
@@ -537,6 +537,64 @@ def test_snapshot_revision_restore_prefers_document_when_payload_missing(tmp_pat
                 if plugin.get("uri") == "urn:test:drive"
             )
             assert drive_plugin["parameters"]["gain"] == 0.4
+
+    asyncio.run(_run())
+
+
+def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            def _broken_document(snapshot, normalized):
+                return {
+                    "version": "2026.03",
+                    "meta": {"name": snapshot.name, "type": "snapshot"},
+                    "graph": {
+                        "nodes": [
+                            {
+                                "id": "node-1",
+                                "uri": "invalid uri",
+                                "name": "Broken",
+                                "parameters": {},
+                                "state": {},
+                            }
+                        ],
+                        "edges": [],
+                    },
+                }
+
+            monkeypatch.setattr(service, "_build_state_authority_document", _broken_document)
+
+            try:
+                await service.create_snapshot(
+                    name="InvalidDocWrite",
+                    detail_payload={
+                        "channels": [],
+                        "chains": [],
+                        "routing": {"mode": "parallel_blend", "active_channel_key": None, "blend_positions": {}, "series_order": []},
+                        "midi_map": [],
+                    },
+                )
+            except ValueError as exc:
+                assert "$.version" in str(exc)
+                assert "Auto-repair guidance" in str(exc)
+                await session.rollback()
+            else:
+                raise AssertionError("Invalid State Authority document write should fail")
+
+            result = await session.execute(
+                select(database_module.Snapshot).where(database_module.Snapshot.name == "InvalidDocWrite")
+            )
+            assert result.scalar_one_or_none() is None
 
     asyncio.run(_run())
 

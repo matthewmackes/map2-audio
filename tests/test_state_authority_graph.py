@@ -4,11 +4,13 @@ import hashlib
 import json
 
 from app.services.state_authority_graph import (
+    GraphDocumentValidationError,
     SNAPSHOT_GRAPH_SCHEMA_PATH,
     SNAPSHOT_GRAPH_VERSION,
     canonicalize_plugin_uri,
     extract_asset_references,
     load_snapshot_graph_schema,
+    normalize_and_validate_graph_document,
     normalize_graph_document,
     register_asset_file,
 )
@@ -85,3 +87,31 @@ def test_schema_file_is_valid_json():
     schema = json.loads(SNAPSHOT_GRAPH_SCHEMA_PATH.read_text(encoding="utf-8"))
 
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+
+
+def test_normalize_and_validate_graph_document_rejects_invalid_uri_with_guidance():
+    document = {
+        "version": SNAPSHOT_GRAPH_VERSION,
+        "meta": {"name": "Broken", "type": "snapshot"},
+        "graph": {
+            "nodes": [
+                {
+                    "id": "node-1",
+                    "uri": "not-a-valid-uri",
+                    "name": "Broken Node",
+                    "parameters": {},
+                    "state": {},
+                }
+            ],
+            "edges": [],
+        },
+    }
+
+    try:
+        normalize_and_validate_graph_document(document)
+    except GraphDocumentValidationError as exc:
+        assert exc.path == "$.graph.nodes[0].uri"
+        assert "locked schema pattern" in str(exc)
+        assert "canonical map2:{type}:{name}" in exc.guidance
+    else:
+        raise AssertionError("Invalid graph document should fail validation")

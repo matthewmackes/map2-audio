@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority document persistence bridge documented)
+> **Last Updated**: April 5, 2026 (State Authority write validation barrier documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1617,6 +1617,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or crud_activation_and_import'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py tests/test_snapshot_service.py`
 - **Lesson**: In a phased authority migration, durability and read precedence are separate decisions. Write the new document everywhere first, then switch read precedence only when every mutation path is actually document-native.
 
+**70. State Authority Graph Documents Need A Real Write Barrier, Not Just Normalization (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/state_authority_graph.py`, `app/services/snapshot_service.py`, `tests/test_state_authority_graph.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Once graph documents started persisting on snapshot and revision rows, malformed payloads could still slip into storage if a builder path regressed, because the write path only normalized documents and never enforced the locked schema contract.
+- **Root Cause**: The first T771 bridge assumed the document builder would stay correct and treated normalization as sufficient. That left later State Authority phases to discover corruption only after bad data had already become durable.
+- **Fix**: Add `GraphDocumentValidationError`, `validate_graph_document()`, and `normalize_and_validate_graph_document()` in `app/services/state_authority_graph.py`, then route every snapshot and revision document write through that shared validator in `app/services/snapshot_service.py`.
+- **Verification**: `pytest -q tests/test_state_authority_graph.py tests/test_snapshot_service.py -k 'state_authority_document or revision_restore_prefers_document or invalid_state_authority_document_write or normalize_and_validate_graph_document'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py app/services/snapshot_service.py tests/test_state_authority_graph.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: During the State Authority migration, normalization and validation are separate responsibilities. Always fail malformed graph-document writes before they reach durable storage.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1887,6 +1895,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Write Validation Barrier
+- **Section**: Gotchas & Learned Fixes (#70), Update Log
+- **Change**: Documented the next `T771` slice: State Authority graph documents now pass through a shared schema-guided write barrier before snapshot or revision persistence, and invalid writes return deterministic repair guidance instead of silently landing in storage.
+- **Reason**: The document persistence bridge made graph payloads durable, but Phase 1 still needed a correctness gate so T772+ does not build on corrupt graph rows.
+- **Impact**: Future State Authority work should reuse `normalize_and_validate_graph_document()` for any graph-document mutation path rather than adding per-service ad hoc checks or assuming normalization alone is enough.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/state_authority_graph.py`, `app/services/snapshot_service.py`, `tests/test_state_authority_graph.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Document Persistence Bridge
 - **Section**: Gotchas & Learned Fixes (#69), Update Log

@@ -688,8 +688,28 @@ Subtasks:
       - `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or crud_activation_and_import'` -> PASS (`2 passed, 41 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py app/services/state_authority_graph.py tests/test_snapshot_service.py tests/test_state_authority_graph.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T771-subC
+    Status: [✓] Done
+    Title: Enforce schema-guided validation on every graph-document write
+    Description:
+    - Goal / acceptance criteria: Add a reusable State Authority graph-document validator that runs on every snapshot/revision document write, rejects malformed documents before persistence, and returns deterministic repair guidance when normalization cannot produce a schema-valid result.
+    - Why it matters: Durable graph documents are not safe enough on their own; Phase 1 still needs a write barrier so later storage decomposition can trust persisted documents instead of treating them as best-effort side payloads.
+    - Dependencies: T771-subA, T771-subB
+    - Estimated effort: Medium
+    - Required outputs: Validator/helper updates, snapshot-service enforcement, focused regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 20:37 EDT - Codex
+    - Completion notes:
+      - Extended [app/services/state_authority_graph.py](/home/mm/map2-audio/app/services/state_authority_graph.py) with a reusable `GraphDocumentValidationError` plus schema-guided normalization/validation helpers that enforce the locked `version`, `meta`, `graph`, node, edge, and asset-entry contracts and return deterministic repair guidance on failure.
+      - Updated [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) so every snapshot `document` and revision `document` write now passes through the shared validator instead of persisting best-effort graph payloads unchecked.
+      - Added focused regressions in [tests/test_state_authority_graph.py](/home/mm/map2-audio/tests/test_state_authority_graph.py) and [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py) proving malformed URIs are rejected with repair guidance and invalid document writes fail before storage while the existing document-backed read and revision-restore bridges still pass.
+    - Validation:
+      - `pytest -q tests/test_state_authority_graph.py tests/test_snapshot_service.py -k 'state_authority_document or revision_restore_prefers_document or invalid_state_authority_document_write or normalize_and_validate_graph_document'` -> PASS (`4 passed, 46 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py app/services/snapshot_service.py tests/test_state_authority_graph.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 21:23 EDT - Codex
+Last updated: 2026-04-05 20:37 EDT - Codex
 
 ID: T772
 Status: [ ] Todo

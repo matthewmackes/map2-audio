@@ -69,7 +69,7 @@ from app.services.snapshot_footswitch_label_service import push_snapshot_footswi
 from app.services.state_authority_graph import (
     SNAPSHOT_GRAPH_VERSION,
     legacy_compatible_plugin_uri,
-    normalize_graph_document,
+    normalize_and_validate_graph_document,
 )
 from app.services.upload_service import AssetType, get_upload_service
 
@@ -3062,7 +3062,7 @@ class SnapshotService:
         result = await self.session.execute(select(Snapshot.display_order).order_by(Snapshot.display_order.desc()).limit(1))
         return int(result.scalar_one_or_none() or 0)
 
-    def _normalized_to_state_authority_document(
+    def _build_state_authority_document(
         self,
         snapshot: Snapshot,
         normalized: dict[str, Any],
@@ -3129,7 +3129,16 @@ class SnapshotService:
                     "state": dict(plugin.get("loader_state") or {}),
                 }
                 document["graph"]["nodes"].append(node)
-        return normalize_graph_document(document)
+        return document
+
+    def _validated_state_authority_document(
+        self,
+        snapshot: Snapshot,
+        normalized: dict[str, Any],
+    ) -> dict[str, Any]:
+        return normalize_and_validate_graph_document(
+            self._build_state_authority_document(snapshot, normalized)
+        )
 
     def _state_authority_document_to_normalized(self, document: dict[str, Any]) -> dict[str, Any]:
         graph = document.get("graph") if isinstance(document.get("graph"), dict) else {}
@@ -3173,7 +3182,7 @@ class SnapshotService:
         return self._normalize_detail_payload(normalized)
 
     def _persist_snapshot_document(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
-        snapshot.document = self._normalized_to_state_authority_document(snapshot, normalized)
+        snapshot.document = self._validated_state_authority_document(snapshot, normalized)
 
     async def _replace_snapshot_state(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
         snapshot.extensions_payload = copy.deepcopy(normalized.get("extensions") or {})
@@ -4603,7 +4612,7 @@ class SnapshotService:
             snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
             summary=self._build_snapshot_revision_summary(detail),
             payload=self._build_snapshot_revision_payload(detail),
-            document=self._normalized_to_state_authority_document(
+            document=self._validated_state_authority_document(
                 snapshot,
                 self._normalize_detail_payload(detail),
             ),
