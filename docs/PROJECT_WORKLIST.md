@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 11:30 EDT - T782-subC completed with desktop wallpaper and icon context menus.
+Last updated: 2026-04-06 12:13 EDT - T782 completed with empty-state and remediation watermarks.
 
 ## Performance Brain
 
@@ -17503,7 +17503,7 @@ Last updated: 2026-04-06 10:48 EDT - Codex
   - The Start Menu now opens from the bottom-left taskbar anchor as a two-column desktop shell with square pinned tiles, immediate close-on-action behavior, and a restart flow that returns to the boot splash once the backend reconnects.
 
 ID: T782
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build the desktop environment (wallpaper, icons, context menus)
 Description:
 - Goal / acceptance criteria: Replace the current HomePage with a Windows 10-style desktop. Wallpaper displays `NEW-map2-landing-bg.png` at native resolution, centered, with theme `$background` color behind if screen is larger. Desktop icons use Carbon icon tokens in a fixed grid (top-left aligned, columns top-to-bottom then left-to-right, ~64px icons, Carbon spacing tokens, `body-compact-01` labels). Single-click opens the app. Only "Audio Artifacts" pre-pinned by default with its custom SVG icon. Desktop icon data sourced from existing `landingTiles` (repurposed). Right-click wallpaper context menu: Refresh | Display settings (theme picker) | About. Right-click icon context menu: Open | Unpin from Desktop. Empty desktop shows bottom-right watermark hint to visit Workspace Catalog.
@@ -17573,7 +17573,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T782-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build desktop empty state watermark and remediation watermark
     Description:
     - Goal / acceptance criteria: When no desktop icons are pinned, show a bottom-right watermark (like Windows 10 "Activate Windows") hinting to visit Workspace Catalog. Platform remediation status also displayed as a bottom-right watermark; clicking it opens the remediation workflow modal. Watermarks are subtle, semi-transparent, positioned in bottom-right corner.
@@ -17581,10 +17581,25 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Empty state watermark component, remediation watermark component, modal trigger on click.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
-Assigned to: Unassigned
-Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 12:13 EDT - Codex
+    - Completion notes:
+      - Added a bottom-right empty-desktop watermark in `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` that routes directly to `/platforms/workspace-catalog` when the desktop has no pinned launchers.
+      - Added a second bottom-right remediation watermark that summarizes outstanding remediation pressure and opens the existing `PlatformRemediationWorkflow` modal from the home desktop shell.
+      - Expanded `web/src/app/pages/HomePage.test.tsx` with coverage for both watermark entry points so the empty-state hint and remediation modal launch remain regression-tested.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 12:13 EDT - Codex
+- Completion notes:
+  - Completed the Windows 10-style desktop shell in four slices: wallpaper renderer, pinned icon grid, desktop context menus, and subtle bottom-right watermarks for the empty-desktop hint plus remediation entry.
+  - The home route now functions as the canonical desktop surface with persistent wallpaper modes, `landingTiles` icon integration, icon unpin writes, workspace-catalog guidance, and a direct remediation modal launch path.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T783
 Status: [ ] Todo

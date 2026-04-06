@@ -316,6 +316,59 @@ describe('HomePage landing', () => {
     })
   })
 
+  it('shows the empty-desktop watermark and routes it to Workspace Catalog when nothing is pinned', async () => {
+    mockSpecialSettingsState.settings.landingTiles = []
+
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.click(await screen.findByTestId('home-desktop-empty-watermark'))
+
+    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/workspace-catalog')
+  })
+
+  it('shows the remediation watermark and opens the remediation workflow modal', async () => {
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+
+        if (url === '/api/platform-remediation/summary') {
+          return makeJsonResponse({
+            status: 'ok',
+            workflows: {
+              sync: { available: true },
+            },
+            counts: {
+              adoption: {},
+              sync: {
+                failed: 2,
+              },
+              clone: {},
+            },
+            nodes: [
+              {
+                node_id: 'NODE-2',
+                hostname: 'NODE-2',
+                adoption_state: null,
+                sync_states: ['failed'],
+                clone_states: [],
+              },
+            ],
+          })
+        }
+
+        return defaultFetchResponse(input, init)
+      },
+    )
+
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.click(await screen.findByTestId('home-desktop-remediation-watermark'))
+
+    expect((await screen.findAllByText('Platforms remediation')).length).toBeGreaterThan(0)
+  })
+
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {
     ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
       async (input: RequestInfo | URL, init?: RequestInit) => {

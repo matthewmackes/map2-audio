@@ -110,6 +110,10 @@ export function HomePage() {
     () => resolveDesktopLaunchers(specialSettings?.landingTiles),
     [specialSettings?.landingTiles],
   )
+  const hasPinnedDesktopIcons = useMemo(
+    () => normalizeLandingTiles(specialSettings?.landingTiles).length > 0,
+    [specialSettings?.landingTiles],
+  )
   const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
@@ -128,6 +132,10 @@ export function HomePage() {
     { workflow: 'clone' as const, state: 'confirmed_clone', count: remediationCounts?.clone?.confirmed_clone ?? 0, label: 'Confirmed Clone' },
     { workflow: 'clone' as const, state: 'suspected_clone', count: remediationCounts?.clone?.suspected_clone ?? 0, label: 'Suspected Clone' },
   ].filter((pill) => pill.count > 0 && (pill.workflow !== 'sync' || syncWorkflowAvailable))
+  const totalRemediationCount = remediationPills.reduce((sum, pill) => sum + pill.count, 0)
+  const remediationWatermarkEntry = remediationPills.find((pill) => pill.workflow === 'sync')
+    ?? remediationPills.find((pill) => pill.workflow === 'adoption')
+    ?? remediationPills[0]
 
   useEffect(() => {
     if (!showBootSplash) {
@@ -199,6 +207,22 @@ export function HomePage() {
     const nextTiles = normalizeLandingTiles(specialSettings?.landingTiles).filter((tile) => tile.route !== route)
     await updateSettings({ landingTiles: nextTiles })
     setContextMenu(null)
+  }
+
+  const handleOpenRemediationWatermark = () => {
+    if (!remediationWatermarkEntry) {
+      setActiveRemediation({ mode: 'sync', state: null, nodeIds: [] })
+      return
+    }
+
+    const nodeIds = (remediationSummary.data?.nodes ?? [])
+      .filter((node) => node.adoption_state === remediationWatermarkEntry.state || node.sync_states.includes(remediationWatermarkEntry.state) || node.clone_states.includes(remediationWatermarkEntry.state))
+      .map((node) => node.node_id)
+    setActiveRemediation({
+      mode: remediationWatermarkEntry.workflow,
+      state: remediationWatermarkEntry.state,
+      nodeIds,
+    })
   }
 
   if (showBootSplash) {
@@ -304,6 +328,32 @@ export function HomePage() {
           <footer className="hp2-footer">
             {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
           </footer>
+        </div>
+        <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
+          {!hasPinnedDesktopIcons ? (
+            <button
+              type="button"
+              className="hp2-desktop__watermark"
+              data-testid="home-desktop-empty-watermark"
+              onClick={() => navigate('/platforms/workspace-catalog')}
+            >
+              <span className="hp2-desktop__watermark-eyebrow">Desktop hint</span>
+              <strong>Visit Workspace Catalog</strong>
+              <span>Pin apps to the desktop to replace this empty-state hint.</span>
+            </button>
+          ) : null}
+          {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
+            <button
+              type="button"
+              className="hp2-desktop__watermark hp2-desktop__watermark--remediation"
+              data-testid="home-desktop-remediation-watermark"
+              onClick={handleOpenRemediationWatermark}
+            >
+              <span className="hp2-desktop__watermark-eyebrow">Platform remediation</span>
+              <strong>{totalRemediationCount > 0 ? `${totalRemediationCount} items need attention` : 'Sync unavailable'}</strong>
+              <span>Open the remediation workflow.</span>
+            </button>
+          ) : null}
         </div>
         {contextMenu ? (
           <div
