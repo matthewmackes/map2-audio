@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**973** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1408** total commits | **3** stars | **0** forks | **0** open issues
+**973** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1411** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`67237ad8`](https://github.com/matthewmackes/map2-audio/commit/67237ad8a6a370625ec4bf3157ae33fb452754e7) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`eda1da32`](https://github.com/matthewmackes/map2-audio/commit/eda1da32e44845c668917d9ca20e9a68cd3cfd8a) | Finalize Brain session media adjunct contract | Map2 Audio | 2026-04-05 |
+| [`b4fbc46b`](https://github.com/matthewmackes/map2-audio/commit/b4fbc46b8f912fd67998d090470ef3c3b20dc6c5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`bcfd69c9`](https://github.com/matthewmackes/map2-audio/commit/bcfd69c9678df1c777a13c1cefb619b7fc5d04bc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`0dd4b66d`](https://github.com/matthewmackes/map2-audio/commit/0dd4b66d8138d1c41e046cb6f7e2ea9fd9c0c78a) | Add Brain session media adjunct | Map2 Audio | 2026-04-05 |
 | [`7d9b42b8`](https://github.com/matthewmackes/map2-audio/commit/7d9b42b8a5c41688d7b79b188bc29fbd15c6b0bd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
 | [`cb7802ee`](https://github.com/matthewmackes/map2-audio/commit/cb7802ee375e25453d4b6aab6f1e312e284287ee) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`6c28d036`](https://github.com/matthewmackes/map2-audio/commit/6c28d036a5a9d72a7687ccb0f9b9f43f2dfa2101) | Qualify native Brain processor trigger isolation | Map2 Audio | 2026-04-05 |
-| [`e2fac4c4`](https://github.com/matthewmackes/map2-audio/commit/e2fac4c46de0f838af7f9602fe7c96b70eb96167) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-05 |
-| [`4f552fd4`](https://github.com/matthewmackes/map2-audio/commit/4f552fd4aca78bc92e00961fa15c7bdbd2142d00) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`70ffbc6f`](https://github.com/matthewmackes/map2-audio/commit/70ffbc6f5a5a6c1589c4d8dd6a00893c6a3e4030) | Surface Brain qualification posture in routed workspace | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
