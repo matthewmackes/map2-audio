@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1123** TypeScript | **136** C++/H | **132** Docs | **1502** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1123** TypeScript | **136** C++/H | **132** Docs | **1504** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0e174bfa`](https://github.com/matthewmackes/map2-audio/commit/0e174bfa74b08a7d8c91fdcc6960b9dad6aa2a6e) | Build desktop icon grid | Map2 Audio | 2026-04-06 |
+| [`26d8dd55`](https://github.com/matthewmackes/map2-audio/commit/26d8dd55f3d6c19e4abc841017f4990cdeedda80) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`1af4dffc`](https://github.com/matthewmackes/map2-audio/commit/1af4dffcd3055e7bf4f4887fb23c6264232e28c7) | Build desktop wallpaper container | Map2 Audio | 2026-04-06 |
 | [`d9124b9c`](https://github.com/matthewmackes/map2-audio/commit/d9124b9c3355240d11207bcaf408bff33ac844fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`ead43776`](https://github.com/matthewmackes/map2-audio/commit/ead437761753af77d419b2d82c9dfcb5f8c8ab8f) | Add Start Menu power actions | Map2 Audio | 2026-04-06 |
 | [`0ceaa87a`](https://github.com/matthewmackes/map2-audio/commit/0ceaa87a7f512ab5c806d49d16e20b4e86b3c94c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`1d7d2a2e`](https://github.com/matthewmackes/map2-audio/commit/1d7d2a2e3aefaafb9532eff6829e34cda65235cc) | Build Start Menu tile grid | Map2 Audio | 2026-04-06 |
 | [`52249a2e`](https://github.com/matthewmackes/map2-audio/commit/52249a2ecef13dedb8fc1906c29379ce47e8fd66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`ed582038`](https://github.com/matthewmackes/map2-audio/commit/ed582038b1cd852f879b73e0729659dab1bf240c) | Add static Start Menu shortcut rail | Map2 Audio | 2026-04-06 |
-| [`437b0c3c`](https://github.com/matthewmackes/map2-audio/commit/437b0c3c12ccfeb3dae9715c799167f3906032b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
