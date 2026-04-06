@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**981** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1453** total commits | **3** stars | **0** forks | **0** open issues
+**981** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1454** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8ffc20d8`](https://github.com/matthewmackes/map2-audio/commit/8ffc20d84b5541dfe53372096645b3920ebc2f27) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`d74ad08d`](https://github.com/matthewmackes/map2-audio/commit/d74ad08d3371fe0a16e1399d55a414082bd2e16f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 | [`8f392aae`](https://github.com/matthewmackes/map2-audio/commit/8f392aaea76b0d03589d219ab30fe943d03e3583) | Add activation phase progress reporting | Map2 Audio | 2026-04-06 |
 | [`32ff52e5`](https://github.com/matthewmackes/map2-audio/commit/32ff52e5df28309c95b69956e6de9655528d5cb3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`c943ecce`](https://github.com/matthewmackes/map2-audio/commit/c943ecce39eddfeb5617f7068ec8b75768456f0c) | Add graph-document crossfade activation | Map2 Audio | 2026-04-05 |
 | [`0af13a1e`](https://github.com/matthewmackes/map2-audio/commit/0af13a1eb80ea9691447047252a76b25c78766a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`7ae9636d`](https://github.com/matthewmackes/map2-audio/commit/7ae9636ddee65239552cbca489620d9d47139dba) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`f2d403c3`](https://github.com/matthewmackes/map2-audio/commit/f2d403c34797097135f298e06ab9d2e99f92cec8) | Test JUCE graph-document import | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
