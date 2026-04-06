@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 22:55 EDT - T774-subA completed with activation phase progress events on the existing activation-event topic.
+Last updated: 2026-04-06 23:12 EDT - T774-subB completed with structured validating-phase failure reports and repair guidance.
 
 ## Performance Brain
 
@@ -953,7 +953,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py app/services/state_authority_activation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T774-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add structured validation with reject-plus-auto-repair reporting and timeout enforcement
     Description:
     - Goal / acceptance criteria: Introduce an explicit validation stage that reports missing assets/devices/plugins plus auto-repair suggestions in structured form, fail before apply when validation cannot pass, and enforce the 10-second activation timeout contract.
@@ -962,8 +962,17 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Validation pipeline implementation, structured route/service error payloads, timeout behavior, and focused regressions for pre-apply vs post-apply failure cases.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 23:12 EDT - Codex
+    - Completion notes:
+      - Extended `SnapshotActivationPreflightError` so validating failures now carry a structured payload with `issues`, `repair_actions`, `blocking`, and `phase=VALIDATING` instead of flattening everything to a list of strings only.
+      - Updated snapshot preflight validation in `SnapshotService` to emit per-issue metadata for missing plugins, missing assets, and missing devices, including operator-facing repair guidance that can drive later auto-repair UI/workflow work.
+      - Updated the activation route error translation and validating failure path so activation retains explicit validating-phase semantics, and added a 10-second validating-stage timeout around preflight evaluation.
+      - Added focused regression coverage in `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, and `tests/test_state_authority_activation_service.py`, proving the structured payload shape and validating-phase failure behavior.
+    - Validation:
+      - `python3 -m pytest -q tests/test_snapshot_service.py::test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot tests/test_snapshot_routes.py::test_activate_snapshot_route_returns_structured_preflight_failures tests/test_state_authority_activation_service.py::test_activate_snapshot_marks_validating_phase_before_preflight_failure` -> PASS (`3 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T774-subC
     Status: [ ] Todo
     Title: Add config-ordered activation hooks and top-three likely snapshot preload planning
@@ -977,7 +986,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
 Assigned to: Codex
-Last updated: 2026-04-06 22:55 EDT - Codex
+Last updated: 2026-04-06 23:12 EDT - Codex
 
 ID: T775
 Status: [ ] Todo

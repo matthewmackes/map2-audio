@@ -8,6 +8,7 @@ instead of embedding it inline.
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
 import logging
@@ -622,7 +623,13 @@ class StateAuthorityActivationService:
             },
         }
         try:
-            await self.owner._validate_snapshot_activation_preflight(detail)
+            try:
+                await asyncio.wait_for(
+                    self.owner._validate_snapshot_activation_preflight(detail),
+                    timeout=10.0,
+                )
+            except TimeoutError as exc:
+                raise ValueError("Snapshot activation validation timed out after 10 seconds.") from exc
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="VALIDATING",
@@ -630,15 +637,14 @@ class StateAuthorityActivationService:
                 note="Preflight checks passed.",
             )
         except Exception as exc:
+            runtime_metrics = {}
+            detail_payload = getattr(exc, "detail_payload", None)
+            if isinstance(detail_payload, dict):
+                runtime_metrics["validation_report"] = copy.deepcopy(detail_payload)
             await runtime_state_service.fail_intent(
                 intent=intent,
                 failure_reason=str(exc),
-                runtime_metrics={
-                    "activation_progress": {
-                        "current_phase": "VALIDATING",
-                        "status": "failed",
-                    }
-                },
+                runtime_metrics=runtime_metrics,
             )
             raise
 

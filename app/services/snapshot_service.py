@@ -363,7 +363,13 @@ def _plugin_tag_haystack(plugin_uri: Any, plugin_name: Any = None, loader_state:
 class SnapshotActivationPreflightError(ValueError):
     """Activation failed before any runtime mutation because the snapshot is incomplete."""
 
-    def __init__(self, failures: Iterable[str]):
+    def __init__(
+        self,
+        failures: Iterable[str],
+        *,
+        issues: Optional[Iterable[dict[str, Any]]] = None,
+        repair_actions: Optional[Iterable[dict[str, Any]]] = None,
+    ):
         normalized_failures = [
             str(failure).strip()
             for failure in failures
@@ -372,7 +378,20 @@ class SnapshotActivationPreflightError(ValueError):
         if not normalized_failures:
             normalized_failures = ["Cannot go live: Snapshot pre-flight validation failed."]
         self.failures = normalized_failures
+        self.issues = [dict(issue) for issue in issues or [] if isinstance(issue, dict)]
+        self.repair_actions = [dict(action) for action in repair_actions or [] if isinstance(action, dict)]
         super().__init__("\n".join(normalized_failures))
+
+    @property
+    def detail_payload(self) -> dict[str, Any]:
+        return {
+            "message": self.failures[0],
+            "phase": "VALIDATING",
+            "blocking": True,
+            "failures": list(self.failures),
+            "issues": [dict(issue) for issue in self.issues],
+            "repair_actions": [dict(action) for action in self.repair_actions],
+        }
 
 
 class SnapshotService:
@@ -1395,6 +1414,22 @@ class SnapshotService:
             or fallback
         ).strip() or fallback
 
+    @staticmethod
+    def _preflight_repair_action(
+        *,
+        action: str,
+        message: str,
+        **metadata: Any,
+    ) -> dict[str, Any]:
+        payload = {
+            "action": action,
+            "message": message,
+        }
+        for key, value in metadata.items():
+            if value is not None:
+                payload[key] = value
+        return payload
+
     async def _validate_snapshot_activation_preflight(self, detail: dict[str, Any]) -> None:
         chain_by_id = {
             chain.get("id"): chain
@@ -1402,6 +1437,8 @@ class SnapshotService:
             if isinstance(chain, dict) and chain.get("id") is not None
         }
         failures: list[str] = []
+        issues: list[dict[str, Any]] = []
+        repair_actions: list[dict[str, Any]] = []
 
         for channel_index, channel in enumerate(detail.get("channels", [])):
             if not isinstance(channel, dict):
@@ -1428,8 +1465,29 @@ class SnapshotService:
                 plugin_name = str(plugin.get("name") or plugin_uri).strip() or plugin_uri
                 plugin_missing = bool(plugin.get("is_placeholder", False)) or not _plugin_available(plugin_uri)
                 if plugin_missing:
-                    failures.append(
+                    message = (
                         f"Cannot go live: Channel {channel_label} - plugin {plugin_name} is not installed on this node."
+                    )
+                    failures.append(message)
+                    issues.append(
+                        {
+                            "code": "missing_plugin",
+                            "category": "plugin",
+                            "channel_label": channel_label,
+                            "plugin_uri": plugin_uri,
+                            "plugin_name": plugin_name,
+                            "message": message,
+                            "auto_repair": False,
+                        }
+                    )
+                    repair_actions.append(
+                        self._preflight_repair_action(
+                            action="install_plugin",
+                            message=f"Install or redeploy plugin {plugin_name} on this node.",
+                            channel_label=channel_label,
+                            plugin_uri=plugin_uri,
+                            plugin_name=plugin_name,
+                        )
                     )
                     continue
 
@@ -1442,28 +1500,116 @@ class SnapshotService:
 
                 if plugin_uri in _NAM_PLUGIN_URIS:
                     asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="NAM model")
-                    failures.append(
-                        f"Cannot go live: Channel {channel_label} - NAM model {asset_name} not found on this node."
+                    message = f"Cannot go live: Channel {channel_label} - NAM model {asset_name} not found on this node."
+                    failures.append(message)
+                    issues.append(
+                        {
+                            "code": "missing_asset",
+                            "category": "asset",
+                            "asset_type": "nam_model",
+                            "channel_label": channel_label,
+                            "plugin_uri": plugin_uri,
+                            "asset_name": asset_name,
+                            "asset_path": asset_path,
+                            "message": message,
+                            "auto_repair": True,
+                        }
+                    )
+                    repair_actions.append(
+                        self._preflight_repair_action(
+                            action="restore_asset",
+                            message=f"Restore or redeploy NAM model {asset_name} on this node.",
+                            asset_type="nam_model",
+                            asset_name=asset_name,
+                            asset_path=asset_path,
+                            channel_label=channel_label,
+                        )
                     )
                     continue
 
                 if plugin_uri in _CABINET_IR_PLUGIN_URIS:
                     asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="cabinet IR")
-                    failures.append(
-                        f"Cannot go live: Channel {channel_label} - cabinet IR {asset_name} not found on this node."
+                    message = f"Cannot go live: Channel {channel_label} - cabinet IR {asset_name} not found on this node."
+                    failures.append(message)
+                    issues.append(
+                        {
+                            "code": "missing_asset",
+                            "category": "asset",
+                            "asset_type": "cabinet_ir",
+                            "channel_label": channel_label,
+                            "plugin_uri": plugin_uri,
+                            "asset_name": asset_name,
+                            "asset_path": asset_path,
+                            "message": message,
+                            "auto_repair": True,
+                        }
+                    )
+                    repair_actions.append(
+                        self._preflight_repair_action(
+                            action="restore_asset",
+                            message=f"Restore or redeploy cabinet IR {asset_name} on this node.",
+                            asset_type="cabinet_ir",
+                            asset_name=asset_name,
+                            asset_path=asset_path,
+                            channel_label=channel_label,
+                        )
                     )
                     continue
 
                 if plugin_uri in _REVERB_IR_PLUGIN_URIS:
                     asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="reverb IR")
-                    failures.append(
-                        f"Cannot go live: Channel {channel_label} - reverb IR {asset_name} not found on this node."
+                    message = f"Cannot go live: Channel {channel_label} - reverb IR {asset_name} not found on this node."
+                    failures.append(message)
+                    issues.append(
+                        {
+                            "code": "missing_asset",
+                            "category": "asset",
+                            "asset_type": "reverb_ir",
+                            "channel_label": channel_label,
+                            "plugin_uri": plugin_uri,
+                            "asset_name": asset_name,
+                            "asset_path": asset_path,
+                            "message": message,
+                            "auto_repair": True,
+                        }
+                    )
+                    repair_actions.append(
+                        self._preflight_repair_action(
+                            action="restore_asset",
+                            message=f"Restore or redeploy reverb IR {asset_name} on this node.",
+                            asset_type="reverb_ir",
+                            asset_name=asset_name,
+                            asset_path=asset_path,
+                            channel_label=channel_label,
+                        )
                     )
                     continue
 
                 asset_name = self._preflight_asset_label(loader_state, asset_path, fallback="plugin asset")
-                failures.append(
-                    f"Cannot go live: Channel {channel_label} - plugin asset {asset_name} not found on this node."
+                message = f"Cannot go live: Channel {channel_label} - plugin asset {asset_name} not found on this node."
+                failures.append(message)
+                issues.append(
+                    {
+                        "code": "missing_asset",
+                        "category": "asset",
+                        "asset_type": "plugin_asset",
+                        "channel_label": channel_label,
+                        "plugin_uri": plugin_uri,
+                        "asset_name": asset_name,
+                        "asset_path": asset_path,
+                        "message": message,
+                        "auto_repair": True,
+                    }
+                )
+                repair_actions.append(
+                    self._preflight_repair_action(
+                        action="restore_asset",
+                        message=f"Restore or redeploy plugin asset {asset_name} on this node.",
+                        asset_type="plugin_asset",
+                        asset_name=asset_name,
+                        asset_path=asset_path,
+                        channel_label=channel_label,
+                    )
                 )
 
         inventory = self._get_audio_device_inventory()
@@ -1477,8 +1623,25 @@ class SnapshotService:
             and inventory["has_explicit_input_inventory"]
             and input_device not in inventory["input_names"]
         ):
-            failures.append(
-                f"Cannot go live: Input device {input_device} is not available on this node."
+            message = f"Cannot go live: Input device {input_device} is not available on this node."
+            failures.append(message)
+            issues.append(
+                {
+                    "code": "missing_input_device",
+                    "category": "device",
+                    "device_role": "input",
+                    "requested_device": input_device,
+                    "message": message,
+                    "auto_repair": False,
+                }
+            )
+            repair_actions.append(
+                self._preflight_repair_action(
+                    action="select_available_device",
+                    message=f"Select an available input device instead of {input_device}.",
+                    device_role="input",
+                    requested_device=input_device,
+                )
             )
 
         if (
@@ -1486,12 +1649,33 @@ class SnapshotService:
             and inventory["has_explicit_output_inventory"]
             and output_device not in inventory["output_names"]
         ):
-            failures.append(
-                f"Cannot go live: Output device {output_device} is not available on this node."
+            message = f"Cannot go live: Output device {output_device} is not available on this node."
+            failures.append(message)
+            issues.append(
+                {
+                    "code": "missing_output_device",
+                    "category": "device",
+                    "device_role": "output",
+                    "requested_device": output_device,
+                    "message": message,
+                    "auto_repair": False,
+                }
+            )
+            repair_actions.append(
+                self._preflight_repair_action(
+                    action="select_available_device",
+                    message=f"Select an available output device instead of {output_device}.",
+                    device_role="output",
+                    requested_device=output_device,
+                )
             )
 
         if failures:
-            raise SnapshotActivationPreflightError(failures)
+            raise SnapshotActivationPreflightError(
+                failures,
+                issues=issues,
+                repair_actions=repair_actions,
+            )
 
     def _normalize_controls_payload(
         self,

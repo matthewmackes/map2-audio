@@ -3618,6 +3618,20 @@ def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_s
                     "Cannot go live: Channel Ambient - cabinet IR WideCab.wav not found on this node.",
                     "Cannot go live: Input device Tour Rack is not available on this node.",
                 ]
+                assert exc.detail_payload["phase"] == "VALIDATING"
+                assert exc.detail_payload["blocking"] is True
+                assert [issue["code"] for issue in exc.detail_payload["issues"]] == [
+                    "missing_plugin",
+                    "missing_asset",
+                    "missing_asset",
+                    "missing_input_device",
+                ]
+                assert [action["action"] for action in exc.detail_payload["repair_actions"]] == [
+                    "install_plugin",
+                    "restore_asset",
+                    "restore_asset",
+                    "select_available_device",
+                ]
             else:
                 raise AssertionError("Activation should fail when snapshot pre-flight validation finds missing dependencies")
 

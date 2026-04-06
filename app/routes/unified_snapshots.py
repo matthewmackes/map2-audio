@@ -306,7 +306,7 @@ def _translate_value_error(exc: ValueError) -> None:
 
 def _activation_error_detail(exc: ValueError) -> Any:
     if isinstance(exc, SnapshotActivationPreflightError):
-        return exc.failures[0] if len(exc.failures) == 1 else list(exc.failures)
+        return exc.detail_payload
     return str(exc)
 
 

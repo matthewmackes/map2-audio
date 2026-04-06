@@ -903,10 +903,22 @@ def test_activate_snapshot_route_returns_structured_preflight_failures(tmp_path,
             await routes.activate_snapshot(created["snapshot_id"])
         except HTTPException as exc:
             assert exc.status_code == 422
-            assert exc.detail == [
+            assert exc.detail["phase"] == "VALIDATING"
+            assert exc.detail["blocking"] is True
+            assert exc.detail["failures"] == [
                 "Cannot go live: Channel Lead - plugin urn:test:missing-plugin is not installed on this node.",
                 "Cannot go live: Channel Lead - NAM model CleanTone.nam not found on this node.",
                 "Cannot go live: Input device Tour Rack is not available on this node.",
+            ]
+            assert [issue["code"] for issue in exc.detail["issues"]] == [
+                "missing_plugin",
+                "missing_asset",
+                "missing_input_device",
+            ]
+            assert [action["action"] for action in exc.detail["repair_actions"]] == [
+                "install_plugin",
+                "restore_asset",
+                "select_available_device",
             ]
         else:
             raise AssertionError("Route activation should surface structured pre-flight failures as 422 responses")

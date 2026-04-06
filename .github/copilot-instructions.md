@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority activation phase progress documented)
+> **Last Updated**: April 6, 2026 (State Authority structured validation reporting documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1697,6 +1697,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py app/services/state_authority_activation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py`; `git diff --check`
 - **Lesson**: If activation phases are part of the operator contract, they must be emitted incrementally through the same durable intent metadata that success/failure uses. Do not try to infer the whole phase story only after activation finishes.
 
+**80. Snapshot Validation Failures Need Structured Issues And Repair Guidance, Not Just Flat Strings (HIGH - Apr 6, 2026)**
+- **Files**: `app/services/snapshot_service.py`, `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`
+- **Problem**: Snapshot activation preflight could tell operators that activation was blocked, but only as a flat list of strings. That made it impossible to distinguish missing plugins from missing assets or device mismatches in a machine-readable way, and the activation state machine could not report validating failures with repair guidance.
+- **Root Cause**: `SnapshotActivationPreflightError` only stored normalized message strings, and the route translator collapsed the failure into either a string or a list without any issue metadata.
+- **Fix**: Extend preflight validation to emit structured issue records plus repair-action guidance, expose that through `SnapshotActivationPreflightError.detail_payload`, return the structured payload from unified snapshot activation routes, and preserve the validating-phase failure semantics in the activation service with an explicit 10-second preflight timeout.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py::test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot tests/test_snapshot_routes.py::test_activate_snapshot_route_returns_structured_preflight_failures tests/test_state_authority_activation_service.py::test_activate_snapshot_marks_validating_phase_before_preflight_failure`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py`; `git diff --check`
+- **Lesson**: Once validation becomes part of a formal activation state machine, failures need typed issue metadata and repair guidance. A flat error string is not enough for operator UX or future auto-repair flows.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1967,6 +1975,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Structured Validation Reporting
+- **Section**: Gotchas & Learned Fixes (#80), Update Log
+- **Change**: Documented the second `T774` slice: validating failures now return structured issue/repair payloads and the activation service treats validation timeout/failure as an explicit validating-phase outcome.
+- **Reason**: `T774` requires reject-plus-auto-repair reporting, and the existing preflight list-of-strings format could not support that contract.
+- **Impact**: Future activation UI, hooks, and repair workflows should consume `detail_payload` / `validation_report` rather than reparsing plain failure strings.
 
 ### [2026-04-06] - State Authority Activation Phase Progress
 - **Section**: Gotchas & Learned Fixes (#79), Update Log
