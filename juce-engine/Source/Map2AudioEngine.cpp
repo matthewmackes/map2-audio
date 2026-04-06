@@ -494,6 +494,16 @@ std::optional<float> coerceFloatVar(const juce::var& value) {
     return std::nullopt;
 }
 
+float clampUnitFloat(float value) {
+    return juce::jlimit(0.0f, 1.0f, value);
+}
+
+float bilinearMorphValue(float a, float b, float c, float d, float x, float y) {
+    const auto top = a + ((b - a) * x);
+    const auto bottom = c + ((d - c) * x);
+    return top + ((bottom - top) * y);
+}
+
 uint64_t deriveNumericStreamId(const std::string& streamId) {
     if (!streamId.empty()) {
         try {
@@ -3484,6 +3494,255 @@ bool Map2AudioEngine::loadGraphDocument(
     }
 
     return true;
+}
+
+bool Map2AudioEngine::clearMorphEndpoints() {
+    const std::lock_guard<std::mutex> lock(morphStateMutex_);
+    quadMorphState_ = {};
+    return true;
+}
+
+bool Map2AudioEngine::setMorphEndpoint(const std::string& cornerId, const std::string& graphDocumentJson) {
+    const auto cornerIndex = morphCornerIndexForId(cornerId);
+    if (cornerIndex < 0) {
+        return false;
+    }
+
+    const auto parsed = juce::JSON::parse(graphDocumentJson);
+    if (!parsed.isObject()) {
+        return false;
+    }
+
+    auto endpoint = buildMorphEndpointState(parsed);
+    if (!endpoint.configured) {
+        return false;
+    }
+
+    const std::lock_guard<std::mutex> lock(morphStateMutex_);
+    quadMorphState_.endpoints[static_cast<size_t>(cornerIndex)] = std::move(endpoint);
+    return true;
+}
+
+bool Map2AudioEngine::setMorphPosition(float x, float y) {
+    x = clampUnitFloat(x);
+    y = clampUnitFloat(y);
+    {
+        const std::lock_guard<std::mutex> lock(morphStateMutex_);
+        quadMorphState_.x = x;
+        quadMorphState_.y = y;
+    }
+    return applyMorphPosition(x, y);
+}
+
+std::string Map2AudioEngine::getMorphStateJson() const {
+    auto stateObject = juce::DynamicObject::Ptr(new juce::DynamicObject());
+    juce::Array<juce::var> configuredCorners;
+
+    {
+        const std::lock_guard<std::mutex> lock(morphStateMutex_);
+        stateObject->setProperty("x", quadMorphState_.x);
+        stateObject->setProperty("y", quadMorphState_.y);
+        for (size_t index = 0; index < quadMorphState_.endpoints.size(); ++index) {
+            if (quadMorphState_.endpoints[index].configured) {
+                configuredCorners.add(juce::String(morphCornerKey(static_cast<int>(index))));
+            }
+        }
+    }
+
+    stateObject->setProperty("configured_corners", juce::var(configuredCorners));
+    return juce::JSON::toString(juce::var(stateObject.get()), true).toStdString();
+}
+
+int Map2AudioEngine::morphCornerIndexForId(const std::string& cornerId) {
+    std::string normalized;
+    normalized.reserve(cornerId.size());
+    for (const unsigned char ch : cornerId) {
+        normalized.push_back(static_cast<char>(std::tolower(ch)));
+    }
+    if (normalized == "a") {
+        return 0;
+    }
+    if (normalized == "b") {
+        return 1;
+    }
+    if (normalized == "c") {
+        return 2;
+    }
+    if (normalized == "d") {
+        return 3;
+    }
+    return -1;
+}
+
+std::string Map2AudioEngine::morphCornerKey(int index) {
+    switch (index) {
+        case 0: return "a";
+        case 1: return "b";
+        case 2: return "c";
+        case 3: return "d";
+        default: return "unknown";
+    }
+}
+
+std::string Map2AudioEngine::makeMorphPluginKey(const std::string& uri, int position) {
+    return uri + "#" + std::to_string(position);
+}
+
+Map2AudioEngine::MorphEndpointState Map2AudioEngine::buildMorphEndpointState(const juce::var& graphDocumentVar) {
+    MorphEndpointState endpoint;
+    if (!graphDocumentVar.isObject()) {
+        return endpoint;
+    }
+
+    const auto documentTree = jsonVarToValueTree(graphDocumentVar, "document");
+    const auto graphTree = findJsonChildByKey(documentTree, "graph");
+    if (!graphTree.isValid()) {
+        return endpoint;
+    }
+
+    std::vector<juce::var> pluginSpecs;
+    const auto chainsTree = findJsonChildByKey(graphTree, "chains");
+    if (chainsTree.isValid()) {
+        for (int chainIndex = 0; chainIndex < chainsTree.getNumChildren(); ++chainIndex) {
+            const auto chainVar = valueTreeToJsonVar(chainsTree.getChild(chainIndex));
+            if (!chainVar.isObject()) {
+                continue;
+            }
+            auto* chainObject = chainVar.getDynamicObject();
+            if (chainObject == nullptr) {
+                continue;
+            }
+            const auto pluginsVar = chainObject->getProperty("plugins");
+            if (const auto* pluginArray = pluginsVar.getArray()) {
+                for (const auto& pluginVar : *pluginArray) {
+                    pluginSpecs.push_back(pluginVar);
+                }
+            }
+        }
+    }
+
+    if (pluginSpecs.empty()) {
+        const auto nodesTree = findJsonChildByKey(graphTree, "nodes");
+        if (!nodesTree.isValid()) {
+            return endpoint;
+        }
+        for (int index = 0; index < nodesTree.getNumChildren(); ++index) {
+            pluginSpecs.push_back(valueTreeToJsonVar(nodesTree.getChild(index)));
+        }
+    }
+
+    for (const auto& pluginVar : pluginSpecs) {
+        const auto uri = loadableEngineUri(pluginVar);
+        if (uri.empty() || !pluginVar.isObject()) {
+            continue;
+        }
+        auto* pluginObject = pluginVar.getDynamicObject();
+        if (pluginObject == nullptr) {
+            continue;
+        }
+
+        MorphEndpointPluginState pluginState;
+        pluginState.uri = uri;
+        pluginState.position = static_cast<int>(pluginObject->getProperty("position"));
+        pluginState.bypass = static_cast<bool>(pluginObject->getProperty("bypass"));
+
+        const auto parametersVar = pluginObject->getProperty("parameters");
+        if (parametersVar.isObject()) {
+            if (auto* parametersObject = parametersVar.getDynamicObject()) {
+                for (const auto& property : parametersObject->getProperties()) {
+                    if (const auto value = coerceFloatVar(property.value)) {
+                        pluginState.parameters[property.name.toString().toStdString()] = *value;
+                    }
+                }
+            }
+        }
+
+        endpoint.plugins[makeMorphPluginKey(pluginState.uri, pluginState.position)] = std::move(pluginState);
+    }
+
+    endpoint.configured = !endpoint.plugins.empty();
+    return endpoint;
+}
+
+bool Map2AudioEngine::applyMorphPosition(float x, float y) {
+    QuadMorphState stateCopy;
+    {
+        const std::lock_guard<std::mutex> lock(morphStateMutex_);
+        stateCopy = quadMorphState_;
+    }
+
+    for (const auto& endpoint : stateCopy.endpoints) {
+        if (!endpoint.configured) {
+            return false;
+        }
+    }
+
+    const auto order = audioGraph_->getChainOrder();
+    const auto loadedPlugins = pluginHost_.getLoadedPlugins();
+    std::map<InstanceId, PluginInstance> loadedById;
+    for (const auto& plugin : loadedPlugins) {
+        loadedById[plugin.id] = plugin;
+    }
+
+    bool applied = false;
+    const int selectedCornerIndex = (y >= 0.5f ? 2 : 0) + (x >= 0.5f ? 1 : 0);
+
+    for (size_t index = 0; index < order.size(); ++index) {
+        const auto instanceId = order[index];
+        const auto loadedIt = loadedById.find(instanceId);
+        if (loadedIt == loadedById.end()) {
+            continue;
+        }
+
+        const auto pluginKey = makeMorphPluginKey(loadedIt->second.uri, static_cast<int>(index));
+        const auto endpointA = stateCopy.endpoints[0].plugins.find(pluginKey);
+        const auto endpointB = stateCopy.endpoints[1].plugins.find(pluginKey);
+        const auto endpointC = stateCopy.endpoints[2].plugins.find(pluginKey);
+        const auto endpointD = stateCopy.endpoints[3].plugins.find(pluginKey);
+        if (endpointA == stateCopy.endpoints[0].plugins.end()
+            || endpointB == stateCopy.endpoints[1].plugins.end()
+            || endpointC == stateCopy.endpoints[2].plugins.end()
+            || endpointD == stateCopy.endpoints[3].plugins.end()) {
+            continue;
+        }
+
+        std::set<std::string> parameterNames;
+        for (const auto& [name, _] : endpointA->second.parameters) {
+            parameterNames.insert(name);
+        }
+        for (const auto& [name, _] : endpointB->second.parameters) {
+            parameterNames.insert(name);
+        }
+        for (const auto& [name, _] : endpointC->second.parameters) {
+            parameterNames.insert(name);
+        }
+        for (const auto& [name, _] : endpointD->second.parameters) {
+            parameterNames.insert(name);
+        }
+
+        for (const auto& name : parameterNames) {
+            const auto a = endpointA->second.parameters.find(name);
+            const auto b = endpointB->second.parameters.find(name);
+            const auto c = endpointC->second.parameters.find(name);
+            const auto d = endpointD->second.parameters.find(name);
+            if (a == endpointA->second.parameters.end()
+                || b == endpointB->second.parameters.end()
+                || c == endpointC->second.parameters.end()
+                || d == endpointD->second.parameters.end()) {
+                continue;
+            }
+            if (setParameterByName(instanceId, name, bilinearMorphValue(a->second, b->second, c->second, d->second, x, y))) {
+                applied = true;
+            }
+        }
+
+        const auto& selectedPlugin = stateCopy.endpoints[static_cast<size_t>(selectedCornerIndex)].plugins.at(pluginKey);
+        if (setBypass(instanceId, selectedPlugin.bypass)) {
+            applied = true;
+        }
+    }
+
+    return applied;
 }
 
 // ========================================

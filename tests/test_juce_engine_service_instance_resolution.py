@@ -55,6 +55,9 @@ class _FakeGraphDocumentEngine:
         self.loaded_payload = None
         self.loaded_crossfade = None
         self.loaded_max_crossfade_ms = None
+        self.cleared_morph = False
+        self.morph_endpoint_calls = []
+        self.morph_xy = None
 
     def save_graph_document(self, seed_document=None):
         self.saved_seed = seed_document
@@ -69,6 +72,21 @@ class _FakeGraphDocumentEngine:
         self.loaded_crossfade = use_independent_crossfade
         self.loaded_max_crossfade_ms = max_crossfade_ms
         return True
+
+    def clear_morph_endpoints(self):
+        self.cleared_morph = True
+        return True
+
+    def set_morph_endpoint(self, corner_id, graph_document):
+        self.morph_endpoint_calls.append((corner_id, graph_document))
+        return True
+
+    def set_morph_position_2d(self, x, y):
+        self.morph_xy = (x, y)
+        return True
+
+    def get_morph_state(self):
+        return {"configured_corners": ["a", "b"], "x": 0.25, "y": 0.75}
 
 
 def test_get_instance_id_for_uri_prefers_matching_position_for_duplicates():
@@ -220,6 +238,29 @@ def test_load_graph_document_passes_options_through_service():
     assert service._engine.loaded_payload == document  # noqa: SLF001
     assert service._engine.loaded_crossfade is True  # noqa: SLF001
     assert service._engine.loaded_max_crossfade_ms == 240  # noqa: SLF001
+
+
+def test_morph_engine_wrappers_pass_through_service():
+    service = JuceEngineService()
+    service._engine = _FakeGraphDocumentEngine()  # noqa: SLF001 - explicit unit isolation
+    document = {
+        "version": "2026.04",
+        "meta": {"name": "Morph A", "type": "snapshot"},
+        "graph": {"nodes": [], "edges": [], "chains": []},
+    }
+
+    assert asyncio.run(service.clear_morph_endpoints()) is True
+    assert asyncio.run(service.set_morph_endpoint("a", document)) is True
+    assert asyncio.run(service.set_morph_position_2d(0.25, 0.75)) is True
+    assert asyncio.run(service.get_morph_state()) == {
+        "configured_corners": ["a", "b"],
+        "x": 0.25,
+        "y": 0.75,
+    }
+
+    assert service._engine.cleared_morph is True  # noqa: SLF001
+    assert service._engine.morph_endpoint_calls == [("a", document)]  # noqa: SLF001
+    assert service._engine.morph_xy == (0.25, 0.75)  # noqa: SLF001
 
 
 class _FakeFixedNativeEngine:

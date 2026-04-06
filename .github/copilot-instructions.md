@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority graph-document morph persistence documented)
+> **Last Updated**: April 7, 2026 (JUCE quad MorphEngine bindings documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - State Authority JUCE Quad MorphEngine Bindings
+- **Section**: Update Log
+- **Change**: Documented the second `T775` slice: the JUCE engine now exposes quad morph endpoint capture, atomic 2D morph-position application, and morph-state inspection through Python bindings and `JuceEngineService`, with direct interpolation and snap regressions.
+- **Reason**: `T775` could not reach activation cutover while morph behavior still depended on Python-only interpolation and had no engine-owned runtime surface.
+- **Impact**: Future morph activation work should configure engine endpoints and drive `set_morph_position_2d()` instead of reintroducing ad hoc parameter blending in Python.
 
 ### [2026-04-06] - State Authority Graph-Document Morph Persistence
 - **Section**: Update Log

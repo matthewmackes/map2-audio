@@ -62,7 +62,9 @@ class AvbAudioIODevice;
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace map2 {
@@ -365,6 +367,10 @@ public:
         const std::string& graphDocumentJson,
         bool useIndependentCrossfade = false,
         int maxCrossfadeMs = 500);
+    bool clearMorphEndpoints();
+    bool setMorphEndpoint(const std::string& cornerId, const std::string& graphDocumentJson);
+    bool setMorphPosition(float x, float y);
+    std::string getMorphStateJson() const;
 
     // ========================================
     // Snapshots
@@ -1447,6 +1453,24 @@ private:
         double estimatedTailSeconds = 0.0;
     };
 
+    struct MorphEndpointPluginState {
+        std::string uri;
+        int position = 0;
+        bool bypass = false;
+        std::map<std::string, float> parameters;
+    };
+
+    struct MorphEndpointState {
+        bool configured = false;
+        std::map<std::string, MorphEndpointPluginState> plugins;
+    };
+
+    struct QuadMorphState {
+        std::array<MorphEndpointState, 4> endpoints;
+        float x = 0.0f;
+        float y = 0.0f;
+    };
+
     struct ShoeGazeSpilloverState {
         int id = 0;
         std::unique_ptr<ShoeGazeProcessor> processor;
@@ -1479,6 +1503,11 @@ private:
         const std::vector<InstanceId>& order,
         int maxCrossfadeMs);
     std::shared_ptr<IndependentGraphCrossfade> buildIndependentGraphCrossfadeFromCurrentOrder(int maxCrossfadeMs);
+    static int morphCornerIndexForId(const std::string& cornerId);
+    static std::string morphCornerKey(int index);
+    static std::string makeMorphPluginKey(const std::string& uri, int position);
+    static MorphEndpointState buildMorphEndpointState(const juce::var& graphDocumentVar);
+    bool applyMorphPosition(float x, float y);
     void cleanupExpiredNativeSpillovers();
     void clearAllNativeSpillovers();
     void processNativeSpillovers(juce::AudioBuffer<float>& buffer, int numSamples);
@@ -1559,6 +1588,8 @@ private:
     mutable std::mutex graphCrossfadeMutex_;
     std::vector<std::shared_ptr<IndependentGraphCrossfade>> independentGraphCrossfades_;
     int nextIndependentGraphCrossfadeId_ = 1;
+    mutable std::mutex morphStateMutex_;
+    QuadMorphState quadMorphState_;
     mutable std::mutex nativeSpilloverMutex_;
     std::vector<std::shared_ptr<DelaySpilloverState>> delaySpillovers_;
     std::vector<std::shared_ptr<ShoeGazeSpilloverState>> shoegazeSpillovers_;

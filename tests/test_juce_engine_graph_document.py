@@ -117,3 +117,59 @@ def test_graph_document_load_can_arm_independent_crossfade_transition():
         assert reloaded["graph"]["chains"][0]["plugins"][0]["uri"] == "map2://juce/brain"
     finally:
         engine.shutdown()
+
+
+@pytest.mark.skipif(_engine_module_dir() is None, reason="JUCE build output not found")
+def test_quad_morph_engine_interpolates_parameters_and_snaps_bypass():
+    module_dir = _engine_module_dir()
+    assert module_dir is not None
+    sys.path.insert(0, str(module_dir))
+    import map2_audio_engine  # noqa: WPS433 - imported from local build output on demand
+
+    engine = map2_audio_engine.create_engine()
+    engine.set_sample_rate(48000)
+    engine.set_buffer_size(64)
+
+    try:
+        assert engine.initialize("")
+
+        instance_id = engine.load_plugin("map2://juce/delay")
+        assert instance_id > 0
+        assert engine.replace_chain([instance_id]) is True
+
+        seed_document = {
+            "version": "2026.04",
+            "meta": {"name": "Morph Seed", "type": "snapshot"},
+            "graph": {"nodes": [], "edges": []},
+        }
+        endpoint_seed = engine.save_graph_document(seed_document)
+        plugin = endpoint_seed["graph"]["chains"][0]["plugins"][0]
+        parameter_keys = list((plugin.get("parameters") or {}).keys())
+        if not parameter_keys:
+            pytest.skip("Delay plugin did not expose named parameters for morph regression")
+        parameter_key = parameter_keys[0]
+
+        def _corner_doc(value: float, *, bypass: bool):
+            document = engine.save_graph_document(seed_document)
+            graph_plugin = document["graph"]["chains"][0]["plugins"][0]
+            graph_plugin["parameters"][parameter_key] = value
+            graph_plugin["bypass"] = bypass
+            return document
+
+        assert engine.clear_morph_endpoints() is True
+        assert engine.set_morph_endpoint("a", _corner_doc(0.0, bypass=False)) is True
+        assert engine.set_morph_endpoint("b", _corner_doc(1.0, bypass=True)) is True
+        assert engine.set_morph_endpoint("c", _corner_doc(1.0, bypass=False)) is True
+        assert engine.set_morph_endpoint("d", _corner_doc(0.0, bypass=False)) is True
+
+        morph_state = engine.get_morph_state()
+        assert sorted(morph_state["configured_corners"]) == ["a", "b", "c", "d"]
+
+        assert engine.set_morph_position_2d(0.25, 0.75) is True
+        assert engine.get_parameter_by_name(instance_id, parameter_key) == pytest.approx(0.625, rel=1e-3, abs=1e-3)
+
+        assert engine.set_morph_position_2d(0.75, 0.25) is True
+        reloaded = engine.save_graph_document(seed_document)
+        assert reloaded["graph"]["chains"][0]["plugins"][0]["bypass"] is True
+    finally:
+        engine.shutdown()

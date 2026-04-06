@@ -2941,6 +2941,25 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return self.loadGraphDocument(json, useIndependentCrossfade, maxCrossfadeMs);
         }, py::arg("graph_document"), py::arg("use_independent_crossfade") = false, py::arg("max_crossfade_ms") = 500,
              "Load a State Authority graph document into the active runtime chain")
+        .def("clear_morph_endpoints", &Map2AudioEngine::clearMorphEndpoints,
+             "Clear all configured quad morph endpoints")
+        .def("set_morph_endpoint", [](Map2AudioEngine& self, const std::string& cornerId, py::object graphDocument) {
+            std::string json;
+            if (py::isinstance<py::str>(graphDocument)) {
+                json = graphDocument.cast<std::string>();
+            } else {
+                json = py::module_::import("json").attr("dumps")(graphDocument).cast<std::string>();
+            }
+            return self.setMorphEndpoint(cornerId, json);
+        }, py::arg("corner_id"), py::arg("graph_document"),
+             "Configure one quad morph endpoint from a graph document")
+        .def("set_morph_position_2d", &Map2AudioEngine::setMorphPosition,
+             py::arg("x"), py::arg("y"),
+             "Apply the configured quad morph position across the active runtime chain")
+        .def("get_morph_state", [](const Map2AudioEngine& self) {
+            const auto json = self.getMorphStateJson();
+            return py::module_::import("json").attr("loads")(json);
+        }, "Inspect configured quad morph state")
         .def("begin_topology_update", [](Map2AudioEngine& self) {
             self.getAudioGraph().beginTopologyUpdate();
         }, "Begin a batched topology update")

@@ -477,6 +477,31 @@ class JuceEngineService(Singleton):
             bool(use_independent_crossfade),
             int(max_crossfade_ms),
         )
+
+    async def clear_morph_endpoints(self) -> bool:
+        """Clear all configured quad morph endpoints in the JUCE runtime."""
+        if not self._engine or not hasattr(self._engine, "clear_morph_endpoints"):
+            return False
+        return bool(await asyncio.to_thread(self._engine.clear_morph_endpoints))
+
+    async def set_morph_endpoint(self, corner_id: str, graph_document: Dict[str, Any]) -> bool:
+        """Configure one quad morph endpoint from a graph document."""
+        if not self._engine or not hasattr(self._engine, "set_morph_endpoint"):
+            return False
+        return bool(await asyncio.to_thread(self._engine.set_morph_endpoint, str(corner_id), graph_document))
+
+    async def set_morph_position_2d(self, x: float, y: float) -> bool:
+        """Apply quad morph interpolation and snap behavior in the JUCE runtime."""
+        if not self._engine or not hasattr(self._engine, "set_morph_position_2d"):
+            return False
+        return bool(await asyncio.to_thread(self._engine.set_morph_position_2d, float(x), float(y)))
+
+    async def get_morph_state(self) -> Dict[str, Any]:
+        """Inspect the configured quad morph state."""
+        if not self._engine or not hasattr(self._engine, "get_morph_state"):
+            return {}
+        state = await asyncio.to_thread(self._engine.get_morph_state)
+        return dict(state or {}) if isinstance(state, dict) else {}
     
     # Chain Management
     

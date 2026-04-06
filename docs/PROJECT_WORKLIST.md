@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 00:05 EDT - T775-subA completed with graph-document morph persistence and restore coverage.
+Last updated: 2026-04-07 00:19 EDT - T775-subB completed with JUCE quad MorphEngine bindings and regression coverage.
 
 ## Performance Brain
 
@@ -1019,7 +1019,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 00:05 EDT - Codex
   - ID: T775-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add the JUCE quad MorphEngine surface and Python bindings
     Description:
     - Goal / acceptance criteria: Introduce the C++ `MorphEngine` runtime surface with A/B/C/D endpoints and atomic morph-position control exposed through Python bindings and the JUCE engine service.
@@ -1028,7 +1028,7 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: JUCE engine implementation, binding/service support, and focused runtime regression coverage.
     Assigned to: Codex
-    Last updated: 2026-04-07 00:05 EDT - Codex
+    Last updated: 2026-04-07 00:19 EDT - Codex
   - ID: T775-subC
     Status: [ ] Todo
     Title: Cut activation and cross-snapshot morph over to the authority-backed engine path
@@ -1041,7 +1041,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 00:05 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-07 00:05 EDT - Codex
+Last updated: 2026-04-07 00:19 EDT - Codex
 
 ID: T776
 Status: [ ] Todo
