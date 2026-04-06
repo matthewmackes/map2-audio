@@ -99,6 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false)
   const [restartProgressStage, setRestartProgressStage] = useState<RestartProgressStage>('idle')
   const [restartError, setRestartError] = useState<string | null>(null)
+  const [performFullscreen, setPerformFullscreen] = useState(location.pathname === '/perform')
   const navMenuRef = useRef<HTMLDivElement>(null)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
   const topHardwareMenuRef = useRef<HTMLDivElement>(null)
@@ -192,10 +193,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     || location.pathname.startsWith('/artifacts')
     || location.pathname.startsWith('/audio-artifacts')
   const isAudioGridWorkspaceRoute = location.pathname === '/juce-grid' || location.pathname === '/snapshot-editor'
+  const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
-  const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
+  const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute || showPerformFullscreen
   const isDesktopRoute = location.pathname === '/'
-  const showTaskbarShell = true
+  const showTaskbarShell = !showPerformFullscreen
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   const closeShellMenus = () => {
@@ -227,6 +229,27 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     closeShellMenus()
   }, [location.pathname])
+
+  useEffect(() => {
+    setPerformFullscreen(location.pathname === '/perform')
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!showPerformFullscreen) {
+      return undefined
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPerformFullscreen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showPerformFullscreen])
 
   useEffect(() => {
     if (!isDesktopRoute) {
@@ -562,7 +585,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         {isDesktopRoute ? (
           <PageTransition>{children}</PageTransition>
@@ -571,16 +594,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             className={`app-window${closingAppRoute === location.pathname ? ' is-closing' : ' is-open'}`}
             aria-label={`${shellWorkspaceLabel} window`}
           >
-            <div className="app-window__controls">
-              <button
-                type="button"
-                className="app-window__close"
-                aria-label={`Close ${shellWorkspaceLabel}`}
-                onClick={handleCloseCurrentApp}
-              >
-                X
-              </button>
-            </div>
+            {!showPerformFullscreen ? (
+              <div className="app-window__controls">
+                <button
+                  type="button"
+                  className="app-window__close"
+                  aria-label={`Close ${shellWorkspaceLabel}`}
+                  onClick={handleCloseCurrentApp}
+                >
+                  X
+                </button>
+              </div>
+            ) : null}
             <div className="app-window__body">
               <PageTransition>{children}</PageTransition>
             </div>

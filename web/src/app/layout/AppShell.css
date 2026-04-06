@@ -81,6 +81,11 @@
   min-height: calc(100vh - var(--window-taskbar-height));
 }
 
+.app-shell--perform-fullscreen .app-window,
+.app-shell--perform-fullscreen .app-window__body {
+  min-height: 100vh;
+}
+
 @keyframes app-window-slide-up {
   from {
     opacity: 0.76;

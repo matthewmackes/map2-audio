@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 12:31 EDT - T783-subA completed with routed app-window wrapper and close transitions.
+Last updated: 2026-04-06 12:42 EDT - T783 completed with Perform fullscreen escape handling.
 
 ## Performance Brain
 
@@ -17602,7 +17602,7 @@ Last updated: 2026-04-06 12:13 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T783
-Status: [>] In Progress
+Status: [✓] Done
 Title: Build the full-screen app window behavior with transitions
 Description:
 - Goal / acceptance criteria: When a user opens an app (from desktop icon, Start Menu, or taskbar), the app opens full-screen with the taskbar always visible at the bottom. A minimal close "X" button appears in the top-right corner (no title text, no icon — just the X, flush right). Closing returns to the desktop. Open transition: slide up from the bottom. Close transition: reverse slide down revealing the desktop. The WebSocket disconnect banner appears as a persistent bar between the app content and the taskbar. The Perform page (`/perform`) is an exception: true full-screen hiding the taskbar, press Escape to exit. No other pages get true full-screen.
@@ -17631,7 +17631,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T783-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Handle Perform page true full-screen exception
     Description:
     - Goal / acceptance criteria: The Perform page (`/perform`) hides the taskbar when opened, entering true full-screen. Press Escape to exit back to normal view (taskbar visible, app still running). No other pages get this behavior.
@@ -17639,8 +17639,16 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Full-screen mode toggle for Perform route, Escape key listener, taskbar hide/show logic.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 12:42 EDT - Codex
+    - Completion notes:
+      - Added the Perform-only fullscreen exception in `web/src/app/layout/AppShell.tsx`, so `/perform` now hides the taskbar by default and exits fullscreen on `Escape` without changing routes.
+      - Extended `web/src/app/layout/AppShell.css` so the app-window shell stretches to full viewport height while Perform is in fullscreen mode.
+      - Expanded `web/src/app/layout/AppShell.test.tsx` with a dedicated fullscreen regression that proves the taskbar is initially hidden on `/perform` and restored after pressing `Escape`.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T783-subC
     Status: [✓] Done
     Title: Reposition WebSocket disconnect banner above the taskbar
@@ -17661,7 +17669,14 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-06 12:31 EDT - Codex
+Last updated: 2026-04-06 12:42 EDT - Codex
+- Completion notes:
+  - Completed the app-window behavior shell in `web/src/app/layout/AppShell.tsx` and `web/src/app/layout/AppShell.css`, including route-wrapped window chrome, close-to-desktop transitions, and the Perform-only true fullscreen exception.
+  - Kept the taskbar visible for standard app routes while making `/perform` the only fullscreen surface that hides the taskbar until `Escape` restores the normal shell.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T784
 Status: [ ] Todo

@@ -214,6 +214,23 @@ describe('AppShell desktop taskbar shell', () => {
     expect(container.querySelector('.app-window')).toBeNull()
   })
 
+  it('starts Perform in true fullscreen and restores the taskbar on Escape', async () => {
+    const { container } = renderInRouter(
+      <AppShell>
+        <div>perform content</div>
+      </AppShell>,
+      ['/perform'],
+    )
+
+    expect(container.querySelector('.window-taskbar')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    await waitFor(() => expect(container.querySelector('.window-taskbar')).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
+  })
+
   it('uses the first non-active pinned route as the quick-launch slot', () => {
     mockSpecialSettings.pinnedRoutes = ['/intelfx', '/midi-hub', '/juce-grid']
 
