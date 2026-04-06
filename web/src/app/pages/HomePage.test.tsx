@@ -1,9 +1,11 @@
 import React from 'react'
+import '@testing-library/jest-dom'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
+import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 
 const originalFetch = global.fetch
 const mockSpecialSettingsState = {
@@ -183,11 +185,11 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Platforms' })).toBeNull()
+    expect(screen.queryByTestId('home-desktop')).toBeNull()
 
     finishBootSplash()
 
-    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -199,75 +201,59 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
   })
 
-  it('renders the current workspace tiles and online node summary', async () => {
+  it('renders the desktop shell with the platform status card and online node summary', async () => {
     renderHome()
     finishBootSplash()
 
-    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
-    expect(screen.queryByText('Promoted launchers')).toBeNull()
-    expect(screen.queryByText('Landing Page')).toBeNull()
-    expect(screen.queryByText('No Tiles Yet')).toBeNull()
-    expect(screen.queryByText('Landing-page launchers are not configured.')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Open launcher organizer in Theme' })).toBeNull()
-    expect(screen.queryByText('Audio Grid')).toBeNull()
-    expect(screen.queryByText('Workspace Catalog')).toBeNull()
-    expect(screen.queryByText('Audio Artifacts')).toBeNull()
+    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
   })
 
-  it('opens Platforms from the landing tile using the canonical route', async () => {
+  it('opens Platforms from the desktop status card using the canonical route', async () => {
     renderHome()
     finishBootSplash()
 
-    const platformsCard = await screen.findByRole('heading', { name: 'Platforms' })
-    fireEvent.click(platformsCard.closest('.hp2-launchers__tile') as HTMLElement)
+    fireEvent.click(await screen.findByRole('button', { name: /Platforms/i }))
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
 
-  it('renders configured landing tiles and keeps Platforms first', async () => {
-    mockSpecialSettingsState.settings.landingTiles = [
-      { route: '/midi-hub', size: 'small' },
-      { route: '/audio-table', size: 'medium' },
-      { route: '/platforms/overview', size: 'large' },
-    ]
-
+  it('renders the default wallpaper image when no desktop wallpaper preference exists', async () => {
     renderHome()
     finishBootSplash()
 
-    const landingTile = await screen.findByText('MIDI Hub')
-    expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Audio Table' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Platforms' }).closest('.hp2-launchers__tile--large')).toBeTruthy()
-    expect(screen.queryByText(/^small$/i)).toBeNull()
-    expect(screen.queryByText(/^medium$/i)).toBeNull()
-    expect(screen.queryByText(/^large$/i)).toBeNull()
-
-    const landingTiles = screen.getAllByRole('listitem')
-    expect(landingTiles[0]?.textContent).toContain('Platforms')
-
-    fireEvent.click(landingTile.closest('.hp2-launchers__tile') as HTMLElement)
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/midi-hub')
+    expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'NEW-map2-landing-bg.png')
   })
 
-  it('injects Platforms as slot 1 when saved layouts omit it', async () => {
-    mockSpecialSettingsState.settings.landingTiles = [
-      { route: '/midi-hub', size: 'small' },
-    ]
+  it('supports a solid theme wallpaper mode without rendering the default image', async () => {
+    window.localStorage.setItem(
+      HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
+      JSON.stringify({ version: 1, mode: 'solid-theme' }),
+    )
 
     renderHome()
     finishBootSplash()
 
-    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
-    expect(await screen.findByRole('heading', { name: 'MIDI Hub' })).toBeTruthy()
-    const landingTiles = screen.getAllByRole('listitem')
-    expect(landingTiles[0]?.textContent).toContain('Platforms')
+    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'solid-theme')
+    expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
+  })
+
+  it('supports an uploaded wallpaper image stored in localStorage', async () => {
+    window.localStorage.setItem(
+      HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
+      JSON.stringify({ version: 1, mode: 'uploaded-image', imageDataUrl: 'data:image/png;base64,abc123' }),
+    )
+
+    renderHome()
+    finishBootSplash()
+
+    expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {

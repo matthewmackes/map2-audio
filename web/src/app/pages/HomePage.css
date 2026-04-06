@@ -80,123 +80,44 @@
 }
 
 .hp2-root {
-  --hp2-shell-width: 1040px;
-  display: flex;
-  flex-direction: column;
   min-height: 100%;
-  padding: 0 0 1rem;
   color: var(--cds-text-primary);
 }
 
-.hp2-shell {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  width: min(100%, var(--hp2-shell-width));
-  margin: 0 auto;
-}
-
-/* ── Hero banner ──────────────────────────────────────────────────────────── */
-
-.hp2-hero {
+.hp2-desktop {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1536 / 714;
-  min-block-size: clamp(20rem, 34vw, 32rem);
+  min-height: calc(100vh - var(--window-taskbar-height, 2.1rem));
   overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, var(--cds-background, var(--bg)));
+  background: var(--cds-background, var(--bg));
 }
 
-.hp2-hero__img {
+.hp2-desktop__wallpaper {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: none;
   object-position: center center;
   display: block;
 }
 
-.hp2-hero__scrim {
+.hp2-desktop__scrim {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer, var(--surface)) 6%, transparent), color-mix(in srgb, var(--cds-background, var(--bg)) 14%, transparent));
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, black 12%, transparent) 100%);
   pointer-events: none;
 }
 
-.hp2-launchers {
-  margin-top: 1px;
-}
-
-.hp2-launchers__grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-flow: dense;
-  grid-auto-rows: minmax(8rem, auto);
-  gap: 1px;
-}
-
-.hp2-launchers__grid--single {
-  grid-template-columns: 1fr;
-}
-
-.hp2-launchers__tile.cds--tile--clickable,
-.hp2-launchers__tile {
+.hp2-desktop__status {
+  position: relative;
+  z-index: 1;
   display: flex;
-  min-block-size: 8rem;
-  padding: 1.25rem 1.5rem;
-  background: var(--cds-layer-01);
-  color: var(--cds-text-primary);
-  text-align: left;
-  border: 0;
-}
-
-.hp2-launchers__tile.cds--tile--clickable:hover,
-.hp2-launchers__tile:hover {
-  background: var(--cds-layer-hover-01);
-}
-
-.hp2-launchers__tile--medium {
-  grid-column: span 3;
-}
-
-.hp2-launchers__tile--large {
-  grid-column: span 6;
-  grid-row: span 2;
-  min-block-size: calc(16rem + 1px);
-}
-
-.hp2-launchers__tile-body {
-  display: grid;
-  align-content: start;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.hp2-launchers__tile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.hp2-launchers__tile-icon {
-  color: var(--cds-text-secondary);
-}
-
-.hp2-launchers__tile-title {
-  margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.2;
-}
-
-.hp2-launchers__tile-desc {
-  margin: 0;
-  color: var(--cds-text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.45;
+  min-height: inherit;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.75rem;
 }
 
 .hp2-card__pills {
@@ -224,32 +145,48 @@
   background: var(--cds-layer-01);
 }
 
-/* ── Arrow on hover ─────────────────────────────────────────────────────── */
-
-.hp2-card__arrow {
-  position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  color: var(--cds-text-secondary);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 120ms ease, transform 120ms ease;
+.hp2-desktop__platform-card {
+  display: grid;
+  gap: 0.75rem;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.95rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+    0 18px 40px color-mix(in srgb, black 20%, transparent);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
 }
 
-.hp2-card:hover .hp2-card__arrow {
-  opacity: 1;
-  transform: translateX(0);
+.hp2-desktop__platform-card:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+.hp2-desktop__platform-card p {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.86rem;
+}
+
+.hp2-desktop__platform-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 .hp2-footer {
   margin-top: auto;
-  padding: 1.5rem 1.5rem 0.5rem;
-  width: 100%;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.35rem 0.55rem;
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 70%, transparent);
   color: var(--cds-text-helper, var(--cds-text-secondary));
   font-size: 0.75rem;
-  text-align: center;
+  backdrop-filter: blur(6px);
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
@@ -259,41 +196,11 @@
     padding-top: 2.75rem;
   }
 
-  .hp2-root {
-    padding: 0 0 0.5rem;
+  .hp2-desktop__status {
+    padding-inline: 0.75rem;
   }
 
-  .hp2-hero {
-    min-block-size: 12rem;
-  }
-
-  .hp2-launchers__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hp2-launchers__tile--medium,
-  .hp2-launchers__tile--large {
-    grid-column: auto;
-    grid-row: auto;
-    min-block-size: 8rem;
-  }
-
-}
-
-@media (min-width: 672px) and (max-width: 1055px) {
-  .hp2-launchers__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .hp2-launchers__tile--small {
-    grid-column: span 2;
-  }
-
-  .hp2-launchers__tile--medium {
-    grid-column: span 2;
-  }
-
-  .hp2-launchers__tile--large {
-    grid-column: span 4;
+  .hp2-footer {
+    max-width: calc(100vw - 1.5rem);
   }
 }

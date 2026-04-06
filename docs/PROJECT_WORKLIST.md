@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 10:48 EDT - T781 completed with Power actions for backend restart, refresh, and log out.
+Last updated: 2026-04-06 11:07 EDT - T782-subA completed with the desktop wallpaper container and persisted wallpaper modes.
 
 ## Performance Brain
 
@@ -17513,7 +17513,7 @@ Description:
 - Required outputs: Desktop component, wallpaper renderer, icon grid with pin data integration, context menus (Carbon + custom CSS for Windows 10 style), empty state watermark.
 Subtasks:
   - ID: T782-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the wallpaper renderer and desktop container
     Description:
     - Goal / acceptance criteria: Create the desktop container that fills the screen above the taskbar. Render `NEW-map2-landing-bg.png` at native resolution, centered, with `$background` fill behind. Support alternative wallpapers: solid colors from active Carbon theme tokens, or user-uploaded images stored in localStorage/IndexedDB. When theme changes and user has a solid color wallpaper, auto-update to the equivalent token in the new theme.
@@ -17521,8 +17521,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Desktop container component, wallpaper renderer supporting image/solid-color/uploaded modes, theme-reactive solid colors, localStorage persistence.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 11:07 EDT - Codex
+    - Completion notes:
+      - Replaced the old launcher-grid home surface in `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` with a true desktop container that fills the screen above the taskbar, centers the default MAP2 wallpaper at native scale, and falls back to theme background color behind it.
+      - Added `web/src/app/pages/desktopWallpaper.ts` to persist wallpaper mode in localStorage, supporting the default bundled wallpaper, a theme-reactive solid-color mode, and uploaded-image data URLs as the storage-backed first pass for later desktop settings flows.
+      - Preserved the boot splash and platform-status/remediation entry points while removing the old landing tile shell, so the desktop container now serves as the canonical home-route base for follow-on icon and context-menu work.
+      - Updated `web/src/app/pages/HomePage.test.tsx` to cover the new desktop container, canonical Platforms entry card, and persisted wallpaper modes.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T782-subB
     Status: [ ] Todo
     Title: Build the desktop icon grid with pin data integration

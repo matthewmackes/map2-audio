@@ -1,7 +1,6 @@
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight } from '@carbon/icons-react'
-import { ClickableTile, ProgressBar, Tag } from '@carbon/react'
+import { ProgressBar, Tag } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
   MAP2_PLATFORM_VERSION,
@@ -13,16 +12,10 @@ import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import {
-  ensureRequiredHomeLauncher,
-  getLauncherCatalogItem,
-  prioritizeRequiredHomeLauncher,
-  REQUIRED_HOME_LAUNCHER_ROUTE,
-} from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
+import { readDesktopWallpaperState } from './desktopWallpaper'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
@@ -46,54 +39,6 @@ function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string 
   return `${nodes.length} node${nodes.length !== 1 ? 's' : ''} online`
 }
 
-// ── Landing launcher rendering helpers ──────────────────────────────────────
-
-interface LandingLauncherTile {
-  route: string
-  size: 'small' | 'medium' | 'large'
-  launcher: NonNullable<ReturnType<typeof getLauncherCatalogItem>>
-}
-
-function toLandingLaunchers(
-  landingTiles: Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
-): LandingLauncherTile[] {
-  const seen = new Set<string>()
-  const mapped = landingTiles
-    .map((tile) => {
-      const launcher = getLauncherCatalogItem(tile.route)
-      if (!launcher || !launcher.landingEligible || seen.has(tile.route)) {
-        return null
-      }
-      seen.add(tile.route)
-      return { ...tile, launcher }
-    })
-    .filter((tile): tile is LandingLauncherTile => Boolean(tile))
-
-  const platformsIndex = mapped.findIndex((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)
-  if (platformsIndex <= 0) {
-    return mapped
-  }
-
-  const next = [...mapped]
-  const [platformsTile] = next.splice(platformsIndex, 1)
-  next.unshift(platformsTile)
-  return next
-}
-
-function resolveLandingLaunchers(
-  landingTiles: Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
-): LandingLauncherTile[] {
-  const normalizedTiles = prioritizeRequiredHomeLauncher(ensureRequiredHomeLauncher(landingTiles))
-  return toLandingLaunchers(normalizedTiles)
-}
-
-const LANDING_DIRECTORY_LABELS = {
-  core: 'Core',
-  labs: 'Labs',
-  platforms: 'Platforms',
-  'nav-only': 'Nav only',
-} as const
-
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function HomePage() {
@@ -101,13 +46,13 @@ export function HomePage() {
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const topology = useNodeTopology()
   const remediationSummary = usePlatformRemediationSummary()
-  const { settings: specialSettings, isLoading: specialSettingsLoading } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
     state: string | null
     nodeIds: string[]
   } | null>(null)
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
+  const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
@@ -115,9 +60,6 @@ export function HomePage() {
   const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
-  const landingTileLaunchers = useMemo(() => {
-    return resolveLandingLaunchers(specialSettings?.landingTiles ?? [])
-  }, [specialSettings?.landingTiles])
 
   const remediationPills = [
     { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
@@ -176,80 +118,66 @@ export function HomePage() {
 
   return (
     <div className="hp2-root">
-      <div className="hp2-shell">
-        <div className="hp2-hero" role="img" aria-label="Mackes Audio Platform">
-          <img src={landingBg} alt="" className="hp2-hero__img" aria-hidden="true" />
-          <div className="hp2-hero__scrim" aria-hidden="true" />
-        </div>
-        {!specialSettingsLoading && landingTileLaunchers.length > 0 ? (
-          <section className="hp2-launchers" aria-label="Landing launchers">
-            <div className={`hp2-launchers__grid${landingTileLaunchers.length === 1 ? ' hp2-launchers__grid--single' : ''}`} role="list">
-              {landingTileLaunchers.map((tile) => {
-                const Icon = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE ? MapClusterFabricIcon : tile.launcher.icon
-                const tileTitle = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE ? 'Platforms' : tile.launcher.label
-                const tileDescription = tile.route === REQUIRED_HOME_LAUNCHER_ROUTE
-                  ? (syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable')
-                  : tile.launcher.description
-
-                return (
-                  <ClickableTile
-                    key={tile.route}
-                    className={`hp2-launchers__tile hp2-launchers__tile--${tile.size}`}
-                    onClick={() => navigate(tile.route)}
-                    role="listitem"
-                  >
-                    <div className="hp2-launchers__tile-body">
-                      <div className="hp2-launchers__tile-meta">
-                        <Tag type="blue" size="sm">
-                          {LANDING_DIRECTORY_LABELS[tile.launcher.directory]}
-                        </Tag>
-                      </div>
-                      <div className="hp2-launchers__tile-icon" aria-hidden>
-                        <Icon size={tile.size === 'large' ? 28 : 22} />
-                      </div>
-                      <h3 className="hp2-launchers__tile-title">{tileTitle}</h3>
-                      {tile.route === REQUIRED_HOME_LAUNCHER_ROUTE && (remediationPills.length > 0 || !syncWorkflowAvailable) ? (
-                        <div className="hp2-card__pills" aria-label="Platforms remediation pills">
-                          {remediationPills.map((pill) => (
-                            <button
-                              key={`${pill.workflow}-${pill.state}`}
-                              type="button"
-                              className="hp2-card__pill"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                const nodeIds = (remediationSummary.data?.nodes ?? [])
-                                  .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
-                                  .map((node) => node.node_id)
-                                if (pill.workflow === 'adoption') {
-                                  navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
-                                  return
-                                }
-                                setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
-                              }}
-                            >
-                              {pill.label}: {pill.count}
-                            </button>
-                          ))}
-                          {!syncWorkflowAvailable ? (
-                            <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
-                          ) : null}
-                        </div>
-                      ) : null}
-                      <p className="hp2-launchers__tile-desc">{tileDescription}</p>
-                    </div>
-                    <ArrowRight size={18} className="hp2-card__arrow" />
-                  </ClickableTile>
-                )
-              })}
-            </div>
-          </section>
+      <section
+        className={`hp2-desktop hp2-desktop--${wallpaper.mode}`}
+        data-testid="home-desktop"
+        data-wallpaper-mode={wallpaper.mode}
+      >
+        {wallpaper.mode !== 'solid-theme' ? (
+          <img
+            src={wallpaper.mode === 'uploaded-image' ? wallpaper.imageDataUrl : landingBg}
+            alt=""
+            className="hp2-desktop__wallpaper"
+            data-testid="home-desktop-wallpaper-image"
+            aria-hidden="true"
+          />
         ) : null}
-
-        {/* ── Footer ───────────────────────────────────────────── */}
-        <footer className="hp2-footer">
-          {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
-        </footer>
-      </div>
+        <div className="hp2-desktop__scrim" aria-hidden="true" />
+        <div className="hp2-desktop__status">
+          <div className="hp2-desktop__platform-card" role="button" tabIndex={0} onClick={() => navigate('/platforms/overview')} onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              navigate('/platforms/overview')
+            }
+          }}>
+            <div className="hp2-desktop__platform-meta">
+              <MapClusterFabricIcon size={20} aria-hidden />
+              <strong>Platforms</strong>
+            </div>
+            <p>{syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable'}</p>
+            {(remediationPills.length > 0 || !syncWorkflowAvailable) ? (
+              <div className="hp2-card__pills" aria-label="Platforms remediation pills">
+                {remediationPills.map((pill) => (
+                  <button
+                    key={`${pill.workflow}-${pill.state}`}
+                    type="button"
+                    className="hp2-card__pill"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      const nodeIds = (remediationSummary.data?.nodes ?? [])
+                        .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
+                        .map((node) => node.node_id)
+                      if (pill.workflow === 'adoption') {
+                        navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
+                        return
+                      }
+                      setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
+                    }}
+                  >
+                    {pill.label}: {pill.count}
+                  </button>
+                ))}
+                {!syncWorkflowAvailable ? (
+                  <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <footer className="hp2-footer">
+            {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
+          </footer>
+        </div>
+      </section>
       {activeRemediation ? (
         <PlatformRemediationWorkflow
           mode={activeRemediation.mode}
