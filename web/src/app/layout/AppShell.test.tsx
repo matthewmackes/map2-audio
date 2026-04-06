@@ -1,11 +1,14 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
 
 const mockUpdateSettings = jest.fn()
+const mockRestartBackend = jest.fn()
+const mockReloadHomeDesktopShell = jest.fn()
+const mockReturnHomeDesktopToBoot = jest.fn()
 const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {}
 const mockSpecialSettings = {
   enabled: true,
@@ -30,6 +33,21 @@ jest.mock('../hooks/useDeviceLocation', () => ({
     locationsByRoute: mockHardwareLocationNotes,
   }),
 }))
+
+jest.mock('../../map2/clients/platform', () => ({
+  systemApi: {
+    restartBackend: (...args: unknown[]) => mockRestartBackend(...args),
+  },
+}))
+
+jest.mock('../pages/homeDesktopSession', () => {
+  const actual = jest.requireActual('../pages/homeDesktopSession')
+  return {
+    ...actual,
+    reloadHomeDesktopShell: () => mockReloadHomeDesktopShell(),
+    returnHomeDesktopToBoot: () => mockReturnHomeDesktopToBoot(),
+  }
+})
 
 const mockUseWebSocketConnection = jest.fn()
 
@@ -92,11 +110,21 @@ function LocationProbe() {
 
 describe('AppShell desktop taskbar shell', () => {
   beforeEach(() => {
+    jest.useFakeTimers()
+    ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as typeof ResizeObserver
     mockUseWebSocketConnection.mockReturnValue({
       status: 'connected',
       client: null,
     })
     mockUpdateSettings.mockReset()
+    mockRestartBackend.mockReset()
+    mockRestartBackend.mockResolvedValue({ status: 'restarting', message: 'Backend service is restarting...' })
+    mockReloadHomeDesktopShell.mockReset()
+    mockReturnHomeDesktopToBoot.mockReset()
     mockSpecialSettings.pinnedRoutes = []
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -123,6 +151,11 @@ describe('AppShell desktop taskbar shell', () => {
     for (const key of Object.keys(mockHardwareLocationNotes)) {
       delete mockHardwareLocationNotes[key]
     }
+  })
+
+  afterEach(() => {
+    jest.clearAllTimers()
+    jest.useRealTimers()
   })
 
   it('renders the bottom taskbar shell on the landing route without a titlebar', () => {
@@ -227,6 +260,57 @@ describe('AppShell desktop taskbar shell', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
     expect(screen.queryByText('Pin apps from the Workspace Catalog.')).toBeNull()
+  })
+
+  it('opens the Power submenu and runs refresh and logout actions', () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
+
+    expect(screen.getByRole('button', { name: 'Restart Backend' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh Page' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log Out' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Page' }))
+    expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
+    expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
+  })
+
+  it('confirms backend restart from the Power submenu and shows restart progress', async () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
+
+    expect(screen.getByText(/Audio processing will pause briefly/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))
+
+    await waitFor(() => expect(mockRestartBackend).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.getByText('Restarting backend')).toBeInTheDocument())
+    expect(screen.getAllByText('Stopping engine').length).toBeGreaterThan(0)
+
+    await act(async () => {
+      jest.advanceTimersByTime(1300)
+    })
+
+    expect(screen.getAllByText('Restarting service').length).toBeGreaterThan(0)
   })
 
   it('renders MPX1 as a Start menu card that opens its pinned mega menu', () => {

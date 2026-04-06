@@ -2,7 +2,7 @@ import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronRight } from '@carbon/icons-react'
-import { Layer, Tag } from '@carbon/react'
+import { Button, ComposedModal, Layer, ModalBody, ModalFooter, ModalHeader, ProgressBar, Tag } from '@carbon/react'
 
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
@@ -27,8 +27,10 @@ import {
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
+import { systemApi } from '../../map2/clients/platform'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
+import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDesktopSession'
 import { prefetchAppRoute } from '../routePrefetch'
 import { buildPlatformWorkspacePath } from '../platform/routes'
 import './AppShell.css'
@@ -45,6 +47,7 @@ interface TopNavItem {
 }
 
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
+type RestartProgressStage = 'idle' | 'stopping' | 'restarting' | 'reconnecting' | 'ready' | 'error'
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
@@ -90,9 +93,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false)
   const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
   const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
+  const [powerMenuOpen, setPowerMenuOpen] = useState(false)
+  const [restartConfirmOpen, setRestartConfirmOpen] = useState(false)
+  const [restartProgressStage, setRestartProgressStage] = useState<RestartProgressStage>('idle')
+  const [restartError, setRestartError] = useState<string | null>(null)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
   const topHardwareMenuRef = useRef<HTMLDivElement>(null)
+  const restartSawUnavailableRef = useRef(false)
+  const restartSawReconnectRef = useRef(false)
+  const restartCompletionRequestedRef = useRef(false)
 
   const {
     state: mpx1State,
@@ -186,6 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setNavOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
+    setPowerMenuOpen(false)
   }
 
   useEffect(() => {
@@ -225,6 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setNavOpen(nextOpen)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
+    setPowerMenuOpen(false)
   }
 
   const handleMpx1Rescan = async () => {
@@ -240,6 +252,33 @@ export function AppShell({ children }: { children: ReactNode }) {
     closeShellMenus()
     if (to) {
       navigate(to)
+    }
+  }
+
+  const handleRefreshPage = () => {
+    closeShellMenus()
+    reloadHomeDesktopShell()
+  }
+
+  const handleLogOut = () => {
+    closeShellMenus()
+    returnHomeDesktopToBoot()
+  }
+
+  const handleConfirmRestartBackend = async () => {
+    setRestartConfirmOpen(false)
+    closeShellMenus()
+    restartSawUnavailableRef.current = false
+    restartSawReconnectRef.current = false
+    restartCompletionRequestedRef.current = false
+    setRestartError(null)
+
+    try {
+      await systemApi.restartBackend()
+      setRestartProgressStage('stopping')
+    } catch (err) {
+      setRestartError(err instanceof Error ? err.message : 'Failed to restart backend.')
+      setRestartProgressStage('error')
     }
   }
 
@@ -275,6 +314,95 @@ export function AppShell({ children }: { children: ReactNode }) {
       ))}
     </Layer>
   )
+
+  useEffect(() => {
+    if (restartProgressStage === 'idle' || restartProgressStage === 'error') {
+      return undefined
+    }
+
+    if (restartProgressStage === 'stopping') {
+      const timerId = window.setTimeout(() => setRestartProgressStage('restarting'), 1100)
+      return () => window.clearTimeout(timerId)
+    }
+
+    if (restartProgressStage === 'restarting') {
+      const timerId = window.setTimeout(() => setRestartProgressStage('reconnecting'), 1200)
+      return () => window.clearTimeout(timerId)
+    }
+
+    if (restartProgressStage === 'ready' && !restartCompletionRequestedRef.current) {
+      restartCompletionRequestedRef.current = true
+      const timerId = window.setTimeout(() => {
+        returnHomeDesktopToBoot()
+      }, 900)
+      return () => window.clearTimeout(timerId)
+    }
+
+    return undefined
+  }, [restartProgressStage])
+
+  useEffect(() => {
+    if (!['stopping', 'restarting', 'reconnecting'].includes(restartProgressStage)) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    const probeHealth = async () => {
+      try {
+        const response = await fetch('/api/health', { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        if (!cancelled && restartSawUnavailableRef.current) {
+          setRestartProgressStage('ready')
+        }
+      } catch {
+        restartSawUnavailableRef.current = true
+      }
+    }
+
+    void probeHealth()
+    const intervalId = window.setInterval(() => {
+      void probeHealth()
+    }, 1000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [restartProgressStage])
+
+  useEffect(() => {
+    if (!['stopping', 'restarting', 'reconnecting'].includes(restartProgressStage)) {
+      return
+    }
+
+    if (websocketStatus === 'reconnecting' || websocketStatus === 'error') {
+      restartSawReconnectRef.current = true
+      setRestartProgressStage('reconnecting')
+      return
+    }
+
+    if (websocketStatus === 'connected' && restartSawReconnectRef.current) {
+      setRestartProgressStage('ready')
+    }
+  }, [restartProgressStage, websocketStatus])
+
+  const restartProgressSteps = [
+    { key: 'stopping', label: 'Stopping engine', description: 'Closing active backend processes and preparing the shell for restart.' },
+    { key: 'restarting', label: 'Restarting service', description: 'Waiting for the MAP2 backend service manager to bring the runtime back.' },
+    { key: 'reconnecting', label: 'Reconnecting', description: 'Restoring live shell connectivity and validating the desktop session.' },
+    { key: 'ready', label: 'Ready', description: 'Backend is reachable again. Returning to the boot splash.' },
+  ] as const
+
+  const restartProgressIndex = Math.max(
+    0,
+    restartProgressSteps.findIndex((step) => step.key === restartProgressStage),
+  )
+  const restartCurrentStep = restartProgressStage === 'error'
+    ? null
+    : restartProgressSteps[restartProgressIndex] ?? restartProgressSteps[0]
 
   const renderStartMenuItem = (item: TopNavItem) => {
     const Icon = item.icon
@@ -433,14 +561,61 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div className="start-menu-panel__shell">
                     <div className="start-menu-panel__static-column" role="group" aria-label="Start Menu shortcuts">
                       {startMenuStaticItems.map((item) => (
-                        <button
-                          key={item.key}
-                          type="button"
-                          className="start-menu-panel__static-item"
-                          onClick={() => handleStartMenuStaticAction(item.to)}
-                        >
-                          {item.label}
-                        </button>
+                        item.key === 'power' ? (
+                          <div key={item.key} className="start-menu-panel__static-item-root">
+                            <button
+                              type="button"
+                              className={`start-menu-panel__static-item${powerMenuOpen ? ' is-active' : ''}`}
+                              onClick={() => {
+                                setPowerMenuOpen((current) => !current)
+                                setMpx1MenuOpen(false)
+                                setTopHardwareSubmenuOpen(false)
+                              }}
+                              aria-haspopup="menu"
+                              aria-expanded={powerMenuOpen}
+                              aria-controls="start-menu-power-menu"
+                            >
+                              {item.label}
+                            </button>
+                            {powerMenuOpen ? (
+                              <div id="start-menu-power-menu" className="start-menu-power-menu" role="menu" aria-label="Power actions">
+                                <button
+                                  type="button"
+                                  className="start-menu-power-menu__item"
+                                  onClick={() => {
+                                    setPowerMenuOpen(false)
+                                    setRestartConfirmOpen(true)
+                                  }}
+                                >
+                                  Restart Backend
+                                </button>
+                                <button
+                                  type="button"
+                                  className="start-menu-power-menu__item"
+                                  onClick={handleRefreshPage}
+                                >
+                                  Refresh Page
+                                </button>
+                                <button
+                                  type="button"
+                                  className="start-menu-power-menu__item"
+                                  onClick={handleLogOut}
+                                >
+                                  Log Out
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <button
+                            key={item.key}
+                            type="button"
+                            className="start-menu-panel__static-item"
+                            onClick={() => handleStartMenuStaticAction(item.to)}
+                          >
+                            {item.label}
+                          </button>
+                        )
                       ))}
                     </div>
                     <div className="start-menu-panel__tiles-column">
@@ -497,6 +672,65 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="window-taskbar__status window-taskbar__status--clock">
               <TaskbarClock />
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      <ComposedModal open={restartConfirmOpen} onClose={() => setRestartConfirmOpen(false)} size="sm">
+        <ModalHeader title="Restart backend" label="Power" closeModal={() => setRestartConfirmOpen(false)} />
+        <ModalBody>
+          Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="secondary" onClick={() => setRestartConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button kind="primary" onClick={() => void handleConfirmRestartBackend()}>
+            Confirm restart
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
+
+      {restartProgressStage !== 'idle' ? (
+        <div className="shell-restart-overlay" role="status" aria-live="polite">
+          <div className="shell-restart-overlay__panel">
+            <div className="shell-restart-overlay__eyebrow">Power</div>
+            <h2 className="shell-restart-overlay__title">
+              {restartProgressStage === 'error' ? 'Restart failed' : 'Restarting backend'}
+            </h2>
+            <p className="shell-restart-overlay__subtitle">
+              {restartProgressStage === 'error'
+                ? (restartError ?? 'The backend restart request did not complete.')
+                : restartCurrentStep?.description}
+            </p>
+            {restartProgressStage === 'error' ? (
+              <Button kind="primary" onClick={() => setRestartProgressStage('idle')}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <ProgressBar
+                  label="Restart progress"
+                  hideLabel
+                  helperText={restartCurrentStep?.label}
+                  value={((restartProgressIndex + 1) / restartProgressSteps.length) * 100}
+                />
+                <div className="shell-restart-overlay__steps" aria-label="Restart progress steps">
+                  {restartProgressSteps.map((step, index) => {
+                    const isActive = step.key === restartProgressStage
+                    const isComplete = index < restartProgressIndex || restartProgressStage === 'ready'
+                    return (
+                      <div
+                        key={step.key}
+                        className={`shell-restart-overlay__step${isActive ? ' is-active' : ''}${isComplete ? ' is-complete' : ''}`}
+                      >
+                        <span className="shell-restart-overlay__step-label">{step.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 10:24 EDT - T781-subB completed with a pinned live-tile grid and Workspace Catalog empty-state CTA.
+Last updated: 2026-04-06 10:48 EDT - T781 completed with Power actions for backend restart, refresh, and log out.
 
 ## Performance Brain
 
@@ -17477,7 +17477,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T781-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the Power submenu (Restart Backend, Refresh Page, Log Out)
     Description:
     - Goal / acceptance criteria: Implement the Power submenu in the Start Menu with three actions. "Restart Backend": shows a Carbon modal with UAC-style dimmed background confirmation, then full-screen progress takeover showing status steps (Stopping engine → Restarting service → Reconnecting → Ready), then boot splash on completion. "Refresh Page": standard browser refresh, state restores from localStorage, skips splash. "Log Out": clears session state (running apps, current view) but keeps pins/wallpaper/theme, returns to boot splash.
@@ -17485,10 +17485,22 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Power submenu component, restart confirmation modal + full-screen progress, refresh behavior, log out state clearing + splash trigger.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
-Assigned to: Unassigned
-Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 10:48 EDT - Codex
+    - Completion notes:
+      - Added a Power submenu to the Start Menu in `web/src/app/layout/AppShell.tsx` and `web/src/app/layout/AppShell.css`, with the required `Restart Backend`, `Refresh Page`, and `Log Out` actions anchored in the static shortcut rail.
+      - Wired `Restart Backend` to the existing `systemApi.restartBackend()` endpoint, added the confirmation modal, and introduced a full-screen restart takeover that walks through stopping, restarting, reconnecting, and ready states before returning the user to the desktop boot splash.
+      - Kept refresh/logout scoped to desktop-session behavior by extending `web/src/app/pages/homeDesktopSession.ts`, so refresh preserves local state and skips the splash while log out clears only the desktop-session gate and returns to boot.
+      - Expanded `web/src/app/layout/AppShell.test.tsx` with Power-submenu, refresh/logout, and restart-progress coverage.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 10:48 EDT - Codex
+- Completion notes:
+  - Completed the Windows 10-style Start Menu shell in three slices: static left rail, right-side pinned tile grid with Workspace Catalog CTA, and the Power submenu with restart/refresh/logout behavior.
+  - The Start Menu now opens from the bottom-left taskbar anchor as a two-column desktop shell with square pinned tiles, immediate close-on-action behavior, and a restart flow that returns to the boot splash once the backend reconnects.
 
 ID: T782
 Status: [ ] Todo

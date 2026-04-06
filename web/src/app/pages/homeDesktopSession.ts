@@ -59,6 +59,23 @@ export function clearHomeDesktopSession(): void {
   window.localStorage.removeItem(HOME_DESKTOP_SESSION_STORAGE_KEY)
 }
 
+export function reloadHomeDesktopShell(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.location.reload()
+}
+
+export function returnHomeDesktopToBoot(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  clearHomeDesktopSession()
+  window.location.assign('/')
+}
+
 export function shouldShowHomeBootSplash(): boolean {
   return readHomeDesktopSession() === null
 }
