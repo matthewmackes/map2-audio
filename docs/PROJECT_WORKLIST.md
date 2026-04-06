@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 22:02 EDT - T772-subD completed with direct snapshot route wiring for revision and activation flows.
+Last updated: 2026-04-05 22:16 EDT - T772-subE completed with categorized revision summary metadata persistence.
 
 ## Performance Brain
 
@@ -822,8 +822,29 @@ Subtasks:
       - `pytest -q tests/test_snapshot_routes.py -k 'revision_routes_call_state_authority_revision_service_directly or activation_routes_call_state_authority_activation_service_directly or activate_snapshot_route'` -> PASS (`4 passed, 2 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/unified_snapshots.py tests/test_snapshot_routes.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T772-subE
+    Status: [✓] Done
+    Title: Persist categorized revision summary metadata at save time
+    Description:
+    - Goal / acceptance criteria: Extend snapshot revision persistence so each saved revision stores categorized summary metadata alongside the existing summary string and returns that metadata through revision listing APIs without recomputing it at read time.
+    - Why it matters: T772 explicitly calls for categorized revision summaries generated at save time; the current revision owner still persists only a flat summary string.
+    - Dependencies: T772-subB
+    - Estimated effort: Medium
+    - Required outputs: Schema-compatible revision metadata persistence, revision-service serialization updates, focused revision regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 22:16 EDT - Codex
+    - Completion notes:
+      - Updated [app/database.py](/home/mm/map2-audio/app/database.py) so `snapshot_revisions` now persists additive `summary_metadata` JSON with restart-safe schema upgrades for existing SQLite installs.
+      - Updated [app/services/state_authority_revision_service.py](/home/mm/map2-audio/app/services/state_authority_revision_service.py) so revision saves generate categorized summary metadata at write time and revision listing returns that stored metadata directly alongside the existing summary string.
+      - Extended [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py) to lock the structured revision categories into the explicit save/restore path, proving the metadata survives revision append and restore flows.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'save_explicit_revision_and_restore or revision_restore_prefers_document'` -> PASS (`1 passed, 44 deselected`)
+      - `pytest -q tests/test_snapshot_service.py -k 'revision_round_trips_snapshot_owned_extensions or revision_restore_prefers_document_when_payload_missing'` -> PASS (`2 passed, 43 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/state_authority_revision_service.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 22:02 EDT - Codex
+Last updated: 2026-04-05 22:16 EDT - Codex
 
 ID: T773
 Status: [ ] Todo

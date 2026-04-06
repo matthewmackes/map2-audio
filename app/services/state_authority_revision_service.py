@@ -131,6 +131,7 @@ class StateAuthorityRevisionService:
             revision_number=next_revision_number,
             snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
             summary=self.build_revision_summary(detail),
+            summary_metadata=self.build_revision_summary_metadata(detail),
             payload=self.build_revision_payload(detail),
             document=self.document_service.build_validated_document(
                 snapshot,
@@ -172,12 +173,53 @@ class StateAuthorityRevisionService:
         }
 
     def build_revision_summary(self, detail: dict[str, Any]) -> str:
-        block_count = self.count_snapshot_blocks(detail)
-        channel_count = len([item for item in detail.get("channels", []) if isinstance(item, dict)])
-        routing_mode = str((detail.get("routing") or {}).get("mode") or "parallel_blend").replace("_", " ")
+        summary_metadata = self.build_revision_summary_metadata(detail)
+        values = {
+            item["key"]: item["value"]
+            for item in summary_metadata.get("categories", [])
+            if isinstance(item, dict) and item.get("key") is not None
+        }
+        block_count = int(values.get("blocks", 0))
+        channel_count = int(values.get("channels", 0))
+        routing_mode = str(values.get("routing", "parallel blend"))
         block_label = "block" if block_count == 1 else "blocks"
         channel_label = "channel" if channel_count == 1 else "channels"
         return f"{block_count} {block_label}, {channel_count} {channel_label}, {routing_mode} routing"
+
+    def build_revision_summary_metadata(self, detail: dict[str, Any]) -> dict[str, Any]:
+        channel_count = len([item for item in detail.get("channels", []) if isinstance(item, dict)])
+        loop_insertion_count = sum(
+            len([loop for loop in chain.get("loop_insertions", []) if isinstance(loop, dict)])
+            for chain in detail.get("chains", [])
+            if isinstance(chain, dict)
+        )
+        effects_loop_count = sum(
+            len([loop for loop in chain.get("effects_loops", []) if isinstance(loop, dict)])
+            for chain in detail.get("chains", [])
+            if isinstance(chain, dict)
+        )
+        midi_map_count = len([item for item in detail.get("midi_map", []) if isinstance(item, dict)])
+        extensions = detail.get("extensions") if isinstance(detail.get("extensions"), dict) else {}
+        extension_keys = sorted(
+            str(key)
+            for key, value in extensions.items()
+            if value not in (None, {}, [], "")
+        )
+        return {
+            "categories": [
+                {"key": "blocks", "label": "Blocks", "value": self.count_snapshot_blocks(detail)},
+                {"key": "channels", "label": "Channels", "value": channel_count},
+                {
+                    "key": "routing",
+                    "label": "Routing",
+                    "value": str((detail.get("routing") or {}).get("mode") or "parallel_blend").replace("_", " "),
+                },
+                {"key": "loop_insertions", "label": "Loop Insertions", "value": loop_insertion_count},
+                {"key": "effects_loops", "label": "Effects Loops", "value": effects_loop_count},
+                {"key": "midi_map", "label": "MIDI Map", "value": midi_map_count},
+                {"key": "extensions", "label": "Extensions", "value": extension_keys},
+            ]
+        }
 
     @staticmethod
     def count_snapshot_blocks(detail: dict[str, Any]) -> int:
@@ -202,5 +244,6 @@ class StateAuthorityRevisionService:
             "revision_number": int(revision.revision_number),
             "snapshot_revision": revision.snapshot_revision,
             "summary": revision.summary,
+            "summary_metadata": copy.deepcopy(revision.summary_metadata or {}),
             "saved_at": revision.saved_at.isoformat() if revision.saved_at else None,
         }

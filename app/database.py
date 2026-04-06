@@ -519,6 +519,7 @@ def _ensure_snapshot_device_schema_sync() -> None:
                 "revision_number INTEGER NOT NULL, "
                 "snapshot_revision VARCHAR(64), "
                 "summary TEXT NOT NULL, "
+                "summary_metadata JSON NOT NULL DEFAULT '{}', "
                 "payload JSON NOT NULL, "
                 "saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
                 ")"
@@ -534,6 +535,7 @@ def _ensure_snapshot_graph_document_schema_sync() -> None:
     with _engine.begin() as conn:
         _add_sqlite_column_if_missing(conn, "snapshots", "document", "JSON")
         _add_sqlite_column_if_missing(conn, "snapshot_revisions", "document", "JSON")
+        _add_sqlite_column_if_missing(conn, "snapshot_revisions", "summary_metadata", "JSON DEFAULT '{}'")
         conn.execute(
             text(
                 "CREATE TABLE IF NOT EXISTS state_authority_assets ("
@@ -732,6 +734,7 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
             "revision_number INTEGER NOT NULL, "
             "snapshot_revision VARCHAR(64), "
             "summary TEXT NOT NULL, "
+            "summary_metadata JSON NOT NULL DEFAULT '{}', "
             "payload JSON NOT NULL, "
             "saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
             ")"
@@ -746,6 +749,7 @@ async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
 
     await _add_sqlite_column_if_missing_async(conn, "snapshots", "document", "JSON")
     await _add_sqlite_column_if_missing_async(conn, "snapshot_revisions", "document", "JSON")
+    await _add_sqlite_column_if_missing_async(conn, "snapshot_revisions", "summary_metadata", "JSON DEFAULT '{}'")
     await conn.execute(
         text(
             "CREATE TABLE IF NOT EXISTS state_authority_assets ("
@@ -1462,6 +1466,7 @@ class SnapshotRevision(Base):
     revision_number = Column(Integer, nullable=False)
     snapshot_revision = Column(String(64), nullable=True, index=True)
     summary = Column(Text, nullable=False)
+    summary_metadata = Column(JSON, default=dict, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
     document = Column(JSON, default=dict, nullable=False)
     saved_at = Column(DateTime, default=datetime.utcnow, nullable=False)

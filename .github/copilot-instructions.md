@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority route rewiring to direct sub-services documented)
+> **Last Updated**: April 5, 2026 (State Authority categorized revision summaries documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1665,6 +1665,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_routes.py -k 'revision_routes_call_state_authority_revision_service_directly or activation_routes_call_state_authority_activation_service_directly or activate_snapshot_route'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/unified_snapshots.py tests/test_snapshot_routes.py`; `git diff --check`
 - **Lesson**: For T772, “decomposition” is not finished when helpers move. Endpoints that exist only for a dedicated sub-service must call that sub-service directly, or the facade boundary still exists in practice.
 
+**76. Categorized Revision Summaries Have To Be Persisted At Save Time, Not Rebuilt Opportunistically Later (HIGH - Apr 5, 2026)**
+- **Files**: `app/database.py`, `app/services/state_authority_revision_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The revision service still stored only a flat summary string, so the epic requirement for categorized revision summaries was unmet and any richer UI or route consumer would have had to recompute categories from payloads on every read.
+- **Root Cause**: The first revision extraction moved ownership but kept the minimal summary format from the monolith, leaving structured revision metadata as an implicit follow-up instead of part of the write contract.
+- **Fix**: Add additive `summary_metadata` persistence to `snapshot_revisions`, generate categorized summary data during revision append in `StateAuthorityRevisionService`, and return the stored metadata directly from revision list serialization.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'save_explicit_revision_and_restore or revision_restore_prefers_document'`; `pytest -q tests/test_snapshot_service.py -k 'revision_round_trips_snapshot_owned_extensions or revision_restore_prefers_document_when_payload_missing'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/state_authority_revision_service.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: If revision summaries are part of the State Authority contract, persist the structured form when the revision is written. Do not defer summary categorization to read time or UI-only helpers.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1935,6 +1943,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Categorized Revision Summaries
+- **Section**: Gotchas & Learned Fixes (#76), Update Log
+- **Change**: Documented the next `T772` slice: revision saves now persist categorized `summary_metadata` and revision listing returns that stored metadata with the existing summary string.
+- **Reason**: T772 required categorized revision summaries generated at save time, and the earlier revision-service extraction still left that requirement incomplete.
+- **Impact**: Future revision UIs and route surfaces can read structured revision categories directly instead of re-deriving them from payloads.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/database.py`, `app/services/state_authority_revision_service.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Direct Route Wiring
 - **Section**: Gotchas & Learned Fixes (#75), Update Log

@@ -3722,6 +3722,15 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
             assert len(revisions) == 1
             assert revisions[0]["revision_number"] == 1
             assert revisions[0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
+            assert revisions[0]["summary_metadata"]["categories"] == [
+                {"key": "blocks", "label": "Blocks", "value": 2},
+                {"key": "channels", "label": "Channels", "value": 1},
+                {"key": "routing", "label": "Routing", "value": "parallel blend"},
+                {"key": "loop_insertions", "label": "Loop Insertions", "value": 0},
+                {"key": "effects_loops", "label": "Effects Loops", "value": 0},
+                {"key": "midi_map", "label": "MIDI Map", "value": 0},
+                {"key": "extensions", "label": "Extensions", "value": []},
+            ]
 
             restored = await service.restore_revision(created["id"], 1)
             assert restored is not None
@@ -3732,6 +3741,11 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
             assert len(revisions_after_restore) == 2
             assert revisions_after_restore[0]["revision_number"] == 2
             assert revisions_after_restore[0]["summary"] == "2 blocks, 1 channel, parallel blend routing"
+            assert revisions_after_restore[0]["summary_metadata"]["categories"][0] == {
+                "key": "blocks",
+                "label": "Blocks",
+                "value": 2,
+            }
 
     asyncio.run(_run())
 
