@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1498** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1500** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ead43776`](https://github.com/matthewmackes/map2-audio/commit/ead437761753af77d419b2d82c9dfcb5f8c8ab8f) | Add Start Menu power actions | Map2 Audio | 2026-04-06 |
+| [`0ceaa87a`](https://github.com/matthewmackes/map2-audio/commit/0ceaa87a7f512ab5c806d49d16e20b4e86b3c94c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`1d7d2a2e`](https://github.com/matthewmackes/map2-audio/commit/1d7d2a2e3aefaafb9532eff6829e34cda65235cc) | Build Start Menu tile grid | Map2 Audio | 2026-04-06 |
 | [`52249a2e`](https://github.com/matthewmackes/map2-audio/commit/52249a2ecef13dedb8fc1906c29379ce47e8fd66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`ed582038`](https://github.com/matthewmackes/map2-audio/commit/ed582038b1cd852f879b73e0729659dab1bf240c) | Add static Start Menu shortcut rail | Map2 Audio | 2026-04-06 |
 | [`437b0c3c`](https://github.com/matthewmackes/map2-audio/commit/437b0c3c12ccfeb3dae9715c799167f3906032b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`726f5486`](https://github.com/matthewmackes/map2-audio/commit/726f54865b118efe769b55f3f83a5b757cfaf0b5) | Move reconnect banner above the taskbar | Map2 Audio | 2026-04-06 |
 | [`e06664fd`](https://github.com/matthewmackes/map2-audio/commit/e06664fdba38a7b0448f8947201a98b6f1f473b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`c71fc3b0`](https://github.com/matthewmackes/map2-audio/commit/c71fc3b0e3724b4f8ff8f30df1add47f2f13d46f) | Clarify desktop and Start Menu pin targets | Map2 Audio | 2026-04-06 |
-| [`0e979332`](https://github.com/matthewmackes/map2-audio/commit/0e979332f46a0d1a04923a3e8853e65823e11f8c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
