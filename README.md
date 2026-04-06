@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1492** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1494** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`726f5486`](https://github.com/matthewmackes/map2-audio/commit/726f54865b118efe769b55f3f83a5b757cfaf0b5) | Move reconnect banner above the taskbar | Map2 Audio | 2026-04-06 |
+| [`e06664fd`](https://github.com/matthewmackes/map2-audio/commit/e06664fdba38a7b0448f8947201a98b6f1f473b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`c71fc3b0`](https://github.com/matthewmackes/map2-audio/commit/c71fc3b0e3724b4f8ff8f30df1add47f2f13d46f) | Clarify desktop and Start Menu pin targets | Map2 Audio | 2026-04-06 |
 | [`0e979332`](https://github.com/matthewmackes/map2-audio/commit/0e979332f46a0d1a04923a3e8853e65823e11f8c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`3f38c3c3`](https://github.com/matthewmackes/map2-audio/commit/3f38c3c3ee13490bfb7507c2dd0cae309818e35f) | Keep platform status polling alive across routes | Map2 Audio | 2026-04-06 |
 | [`2724b558`](https://github.com/matthewmackes/map2-audio/commit/2724b558e50c5117f225603469ce5ac6d7b65213) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`41ee6df0`](https://github.com/matthewmackes/map2-audio/commit/41ee6df06967cff25c5a903e2509872c5082a15a) | Expand taskbar system tray controls | Map2 Audio | 2026-04-06 |
 | [`8f8e5a75`](https://github.com/matthewmackes/map2-audio/commit/8f8e5a75ac65082c77bcc23806ec08740b0d3968) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`374ab684`](https://github.com/matthewmackes/map2-audio/commit/374ab684da7c3fb715ed6977bdf38b9b52a91073) | Make taskbar the primary app shell | Map2 Audio | 2026-04-06 |
-| [`efe6123c`](https://github.com/matthewmackes/map2-audio/commit/efe6123cd1322752810110d96c37c206cf759f4f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
