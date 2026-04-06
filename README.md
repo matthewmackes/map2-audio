@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1496** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1122** TypeScript | **136** C++/H | **132** Docs | **1498** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1d7d2a2e`](https://github.com/matthewmackes/map2-audio/commit/1d7d2a2e3aefaafb9532eff6829e34cda65235cc) | Build Start Menu tile grid | Map2 Audio | 2026-04-06 |
+| [`52249a2e`](https://github.com/matthewmackes/map2-audio/commit/52249a2ecef13dedb8fc1906c29379ce47e8fd66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`ed582038`](https://github.com/matthewmackes/map2-audio/commit/ed582038b1cd852f879b73e0729659dab1bf240c) | Add static Start Menu shortcut rail | Map2 Audio | 2026-04-06 |
 | [`437b0c3c`](https://github.com/matthewmackes/map2-audio/commit/437b0c3c12ccfeb3dae9715c799167f3906032b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`726f5486`](https://github.com/matthewmackes/map2-audio/commit/726f54865b118efe769b55f3f83a5b757cfaf0b5) | Move reconnect banner above the taskbar | Map2 Audio | 2026-04-06 |
 | [`e06664fd`](https://github.com/matthewmackes/map2-audio/commit/e06664fdba38a7b0448f8947201a98b6f1f473b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`c71fc3b0`](https://github.com/matthewmackes/map2-audio/commit/c71fc3b0e3724b4f8ff8f30df1add47f2f13d46f) | Clarify desktop and Start Menu pin targets | Map2 Audio | 2026-04-06 |
 | [`0e979332`](https://github.com/matthewmackes/map2-audio/commit/0e979332f46a0d1a04923a3e8853e65823e11f8c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`3f38c3c3`](https://github.com/matthewmackes/map2-audio/commit/3f38c3c3ee13490bfb7507c2dd0cae309818e35f) | Keep platform status polling alive across routes | Map2 Audio | 2026-04-06 |
-| [`2724b558`](https://github.com/matthewmackes/map2-audio/commit/2724b558e50c5117f225603469ce5ac6d7b65213) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
