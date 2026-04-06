@@ -172,6 +172,7 @@ describe('HomePage landing', () => {
       landingTiles: [],
     }
     mockSpecialSettingsState.isLoading = false
+    mockSpecialSettingsState.updateSettings.mockReset()
   })
 
   afterEach(() => {
@@ -281,6 +282,38 @@ describe('HomePage landing', () => {
     expect(screen.getByLabelText('Open MIDI Hub')).toBeInTheDocument()
     expect(screen.getByLabelText('Open Overview')).toBeInTheDocument()
     expect(screen.queryByLabelText('Open Audio Artifacts')).toBeNull()
+  })
+
+  it('opens the wallpaper context menu and routes its actions', async () => {
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.contextMenu(await screen.findByTestId('home-desktop'), { clientX: 80, clientY: 120 })
+
+    expect(screen.getByRole('menu', { name: 'Desktop context menu' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Display settings' }))
+    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme')
+  })
+
+  it('opens the icon context menu and unpins desktop icons through special settings', async () => {
+    mockSpecialSettingsState.settings.landingTiles = [
+      { route: '/artifacts', size: 'medium' },
+      { route: '/midi-hub', size: 'small' },
+    ]
+
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.contextMenu(await screen.findByLabelText('Open MIDI Hub'), { clientX: 24, clientY: 36 })
+
+    expect(screen.getByRole('menu', { name: 'Desktop icon menu for MIDI Hub' })).toBeInTheDocument()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Unpin from Desktop' }))
+    })
+
+    expect(mockSpecialSettingsState.updateSettings).toHaveBeenCalledWith({
+      landingTiles: [{ route: '/artifacts', size: 'medium' }],
+    })
   })
 
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {

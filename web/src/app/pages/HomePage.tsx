@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressBar, Tag } from '@carbon/react'
@@ -54,6 +54,14 @@ interface DesktopLauncher {
   Icon: ComponentType<{ size?: number }>
 }
 
+interface DesktopContextMenuState {
+  kind: 'wallpaper' | 'icon'
+  x: number
+  y: number
+  route?: string
+  label?: string
+}
+
 function resolveDesktopLaunchers(
   landingTiles: Array<LandingTilePlacement | { route?: string | null; size?: string | null }> | undefined,
 ): DesktopLauncher[] {
@@ -85,13 +93,14 @@ export function HomePage() {
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const topology = useNodeTopology()
   const remediationSummary = usePlatformRemediationSummary()
-  const { settings: specialSettings } = useSpecialSettings()
+  const { settings: specialSettings, updateSettings } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
     state: string | null
     nodeIds: string[]
   } | null>(null)
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
+  const [contextMenu, setContextMenu] = useState<DesktopContextMenuState | null>(null)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
@@ -137,6 +146,61 @@ export function HomePage() {
     }
   }, [showBootSplash])
 
+  useEffect(() => {
+    if (!contextMenu) {
+      return undefined
+    }
+
+    const handleDismiss = () => setContextMenu(null)
+    window.addEventListener('click', handleDismiss)
+    window.addEventListener('contextmenu', handleDismiss)
+    return () => {
+      window.removeEventListener('click', handleDismiss)
+      window.removeEventListener('contextmenu', handleDismiss)
+    }
+  }, [contextMenu])
+
+  const openWallpaperMenu = (event: MouseEvent<HTMLElement>) => {
+    event.preventDefault()
+    setContextMenu({
+      kind: 'wallpaper',
+      x: event.clientX,
+      y: event.clientY,
+    })
+  }
+
+  const openIconMenu = (event: MouseEvent<HTMLButtonElement>, launcher: DesktopLauncher) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setContextMenu({
+      kind: 'icon',
+      x: event.clientX,
+      y: event.clientY,
+      route: launcher.route,
+      label: launcher.label,
+    })
+  }
+
+  const handleRefreshDesktop = () => {
+    setContextMenu(null)
+    window.location.reload()
+  }
+
+  const handleOpenDesktopRoute = (route: string) => {
+    setContextMenu(null)
+    navigate(route)
+  }
+
+  const handleUnpinDesktopRoute = async (route: string | undefined) => {
+    if (!route) {
+      return
+    }
+
+    const nextTiles = normalizeLandingTiles(specialSettings?.landingTiles).filter((tile) => tile.route !== route)
+    await updateSettings({ landingTiles: nextTiles })
+    setContextMenu(null)
+  }
+
   if (showBootSplash) {
     return (
       <section className="hp2-boot" aria-label="MAP2 boot splash">
@@ -166,6 +230,7 @@ export function HomePage() {
         className={`hp2-desktop hp2-desktop--${wallpaper.mode}`}
         data-testid="home-desktop"
         data-wallpaper-mode={wallpaper.mode}
+        onContextMenu={openWallpaperMenu}
       >
         {wallpaper.mode !== 'solid-theme' ? (
           <img
@@ -188,6 +253,7 @@ export function HomePage() {
                 aria-label={`Open ${launcher.label}`}
                 title={launcher.description}
                 onClick={() => navigate(launcher.route)}
+                onContextMenu={(event) => openIconMenu(event, launcher)}
               >
                 <span className="hp2-desktop__icon-glyph" aria-hidden="true">
                   <launcher.Icon size={40} />
@@ -239,6 +305,37 @@ export function HomePage() {
             {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
           </footer>
         </div>
+        {contextMenu ? (
+          <div
+            className="hp2-desktop__context-menu"
+            role="menu"
+            aria-label={contextMenu.kind === 'wallpaper' ? 'Desktop context menu' : `Desktop icon menu for ${contextMenu.label ?? 'item'}`}
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            {contextMenu.kind === 'wallpaper' ? (
+              <>
+                <button type="button" className="hp2-desktop__context-item" onClick={handleRefreshDesktop}>
+                  Refresh
+                </button>
+                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/theme')}>
+                  Display settings
+                </button>
+                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/about')}>
+                  About
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute(contextMenu.route ?? '/')}>
+                  Open
+                </button>
+                <button type="button" className="hp2-desktop__context-item" onClick={() => void handleUnpinDesktopRoute(contextMenu.route)}>
+                  Unpin from Desktop
+                </button>
+              </>
+            )}
+          </div>
+        ) : null}
       </section>
       {activeRemediation ? (
         <PlatformRemediationWorkflow

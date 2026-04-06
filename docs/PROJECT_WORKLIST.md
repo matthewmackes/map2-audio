@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 11:19 EDT - T782-subB completed with the desktop icon grid and desktop pin integration.
+Last updated: 2026-04-06 11:30 EDT - T782-subC completed with desktop wallpaper and icon context menus.
 
 ## Performance Brain
 
@@ -17553,7 +17553,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T782-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build desktop context menus (wallpaper and icon right-click)
     Description:
     - Goal / acceptance criteria: Right-click empty wallpaper shows context menu: Refresh | Display settings (opens theme picker) | About. Right-click a desktop icon shows: Open | Unpin from Desktop. Context menus styled with Carbon components + custom CSS for Windows 10 visual fidelity. "Unpin from Desktop" removes the icon and updates the pin state.
@@ -17561,8 +17561,17 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Context menu components (wallpaper and icon variants), unpin action, navigation to display settings/about.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 11:30 EDT - Codex
+    - Completion notes:
+      - Added desktop-local right-click menus in `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` for both wallpaper and icon targets, styled as lightweight Windows-style desktop menus within the home desktop shell.
+      - Wired wallpaper actions to `Refresh`, `Display settings`, and `About`, and wired icon actions to `Open` plus `Unpin from Desktop`.
+      - Hooked `Unpin from Desktop` back into `useSpecialSettings().updateSettings()` so desktop pin removal updates the canonical `landingTiles` state instead of mutating local-only UI state.
+      - Expanded `web/src/app/pages/HomePage.test.tsx` to cover wallpaper-menu routing and icon-menu unpin behavior.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T782-subD
     Status: [ ] Todo
     Title: Build desktop empty state watermark and remediation watermark
