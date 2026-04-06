@@ -4,6 +4,8 @@ import { render, screen } from '@testing-library/react'
 
 import { App } from './App'
 
+const mockUseHomePlatformStatus = jest.fn()
+
 jest.mock('./layout/AppShell', () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="app-shell">{children}</div>
@@ -24,6 +26,10 @@ jest.mock('./components/Toasts', () => ({
 
 jest.mock('./contexts/ClusterContext', () => ({
   ClusterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+jest.mock('./hooks/useHomePlatformStatus', () => ({
+  useHomePlatformStatus: (...args: unknown[]) => mockUseHomePlatformStatus(...args),
 }))
 
 jest.mock('@tanstack/react-query-devtools', () => ({
@@ -101,6 +107,10 @@ jest.mock('./pages/AudioArtifactsPage', () => ({
 }))
 
 describe('App routing', () => {
+  beforeEach(() => {
+    mockUseHomePlatformStatus.mockReset()
+  })
+
   it('keeps /perform outside AppShell chrome', async () => {
     window.history.pushState({}, '', '/perform')
 
@@ -181,5 +191,13 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('ground-control-pro-route')).toHaveTextContent('/ground-control-pro')
+  })
+
+  it('keeps platform-status polling alive and slows it outside the desktop route', async () => {
+    window.history.pushState({}, '', '/intelfx')
+
+    render(<App />)
+
+    expect(mockUseHomePlatformStatus).toHaveBeenCalledWith({ pollMs: 30_000, staleMs: 25_000 })
   })
 })

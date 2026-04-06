@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
 import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath } from './platform/routes'
+import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -117,6 +118,18 @@ function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'aud
   return <Navigate to={`${buildPlatformWorkspacePath(panel)}${search}`} replace />
 }
 
+function PlatformStatusHeartbeat() {
+  const location = useLocation()
+  const isDesktopRoute = location.pathname === '/'
+
+  useHomePlatformStatus({
+    pollMs: isDesktopRoute ? 10_000 : 30_000,
+    staleMs: isDesktopRoute ? 8_000 : 25_000,
+  })
+
+  return null
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -182,6 +195,7 @@ export function App() {
         <BrowserRouter>
           <ClusterProvider>
             <ToastProvider>
+              <PlatformStatusHeartbeat />
               <BackendConnectionMonitor />
               <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
                 <div className="platform-brand-frame">

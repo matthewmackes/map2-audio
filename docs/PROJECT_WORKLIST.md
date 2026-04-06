@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 09:42 EDT - T780-subC completed with expanded node tray visibility, clickable latency detail, and taskbar clock status popover.
+Last updated: 2026-04-06 09:52 EDT - T787 completed with route-aware platform-status heartbeat cadence for the desktop shell.
 
 ## Performance Brain
 
@@ -17617,7 +17617,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-05
 
 ID: T787
-Status: [ ] Todo
+Status: [✓] Done
 Title: Integrate platform status polling with desktop lifecycle
 Description:
 - Goal / acceptance criteria: Ensure `useHomePlatformStatus()` runs in the background at all times, feeding the system tray indicators regardless of which app is open. When an app is in the foreground, reduce the polling interval to save resources. When on the desktop, use the standard interval.
@@ -17626,8 +17626,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: Global platform status hook integration, polling interval adjustment based on foreground/background state.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 09:52 EDT - Codex
+- Completion notes:
+  - Added a route-aware `PlatformStatusHeartbeat` in `web/src/app/App.tsx` so `useHomePlatformStatus()` now stays mounted across the routed shell instead of only when `HomePage` or the taskbar clock happen to be visible.
+  - Extended `web/src/app/hooks/useHomePlatformStatus.ts` with cadence overrides and set the desktop route to the original 10s poll cadence while slowing non-desktop app routes to 30s, keeping the system tray fresh without polling at desktop frequency everywhere.
+  - Added focused regression coverage in `web/src/app/hooks/useHomePlatformStatus.test.tsx` and `web/src/app/App.platformRoute.test.tsx` for the default cadence and the slower background route cadence.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useHomePlatformStatus.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T788
 Status: [ ] Todo

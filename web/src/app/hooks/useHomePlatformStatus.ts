@@ -56,36 +56,44 @@ async function fetchAdoptionCandidates(): Promise<{ items: AdoptionCandidate[] }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
-const POLL_MS = 10_000
-const STALE_MS = 8_000
+const DEFAULT_POLL_MS = 10_000
+const DEFAULT_STALE_MS = 8_000
+
+export interface HomePlatformStatusOptions {
+  pollMs?: number
+  staleMs?: number
+}
 
 const retryPolicy = (failureCount: number, error: Error) => {
   if (error.message.includes('503')) return false
   return failureCount < 3
 }
 
-export function useHomePlatformStatus(): HomePlatformStatus {
+export function useHomePlatformStatus(options: HomePlatformStatusOptions = {}): HomePlatformStatus {
+  const pollMs = options.pollMs ?? DEFAULT_POLL_MS
+  const staleMs = options.staleMs ?? DEFAULT_STALE_MS
+
   const avb = useQuery({
     queryKey: ['home', 'avb-status'],
     queryFn: fetchAvbStatus,
-    refetchInterval: POLL_MS,
-    staleTime: STALE_MS,
+    refetchInterval: pollMs,
+    staleTime: staleMs,
     retry: retryPolicy,
   })
 
   const avdecc = useQuery({
     queryKey: ['home', 'avdecc-stats'],
     queryFn: fetchAvdeccStats,
-    refetchInterval: POLL_MS,
-    staleTime: STALE_MS,
+    refetchInterval: pollMs,
+    staleTime: staleMs,
     retry: retryPolicy,
   })
 
   const adoption = useQuery({
     queryKey: ['home', 'adoption-candidates'],
     queryFn: fetchAdoptionCandidates,
-    refetchInterval: POLL_MS,
-    staleTime: STALE_MS,
+    refetchInterval: pollMs,
+    staleTime: staleMs,
     retry: retryPolicy,
   })
 
