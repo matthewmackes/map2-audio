@@ -30,6 +30,11 @@ _EXACT_URI_MAP = {
     "urn:map2:ir-cabinet": "map2:fx:cabinet-ir",
     "urn:map2:ir-reverb": "map2:fx:reverb-ir",
 }
+_LEGACY_COMPAT_URI_MAP = {
+    "map2:fx:nam": "map2://juce/nam",
+    "map2:fx:cabinet-ir": "map2://juce/convolution/cabinet",
+    "map2:fx:reverb-ir": "map2://juce/convolution/reverb",
+}
 _ASSET_STATE_KEY_SUFFIXES = ("_path", "_file", "_asset")
 
 
@@ -81,6 +86,11 @@ def register_asset_file(file_path: str | Path, *, asset_type: str = "binary") ->
         size_bytes=path.stat().st_size,
         asset_type=str(asset_type or "binary"),
     )
+
+
+def legacy_compatible_plugin_uri(uri: str) -> str:
+    value = str(uri or "").strip()
+    return _LEGACY_COMPAT_URI_MAP.get(value, value)
 
 
 def extract_asset_references(document: Mapping[str, Any]) -> set[str]:

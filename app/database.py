@@ -265,6 +265,7 @@ def init_db(database_url: str = None) -> None:
     _ensure_midi_automation_identity_schema_sync()
     _ensure_chain_plugin_loader_state_schema_sync()
     _ensure_snapshot_device_schema_sync()
+    _ensure_snapshot_graph_document_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -523,6 +524,16 @@ def _ensure_snapshot_device_schema_sync() -> None:
                 ")"
             )
         )
+
+
+def _ensure_snapshot_graph_document_schema_sync() -> None:
+    """Apply additive schema upgrades for State Authority graph-document persistence."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        _add_sqlite_column_if_missing(conn, "snapshots", "document", "JSON")
+        _add_sqlite_column_if_missing(conn, "snapshot_revisions", "document", "JSON")
         conn.execute(
             text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
@@ -706,6 +717,15 @@ async def _ensure_snapshot_device_schema_async(conn) -> None:
             ")"
         )
     )
+
+
+async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
+    """Apply additive async schema upgrades for State Authority graph-document persistence."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    await _add_sqlite_column_if_missing_async(conn, "snapshots", "document", "JSON")
+    await _add_sqlite_column_if_missing_async(conn, "snapshot_revisions", "document", "JSON")
     await conn.execute(
         text(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
@@ -741,6 +761,7 @@ async def _ensure_tables_created() -> None:
             await _ensure_midi_automation_identity_schema_async(conn)
             await _ensure_chain_plugin_loader_state_schema_async(conn)
             await _ensure_snapshot_device_schema_async(conn)
+            await _ensure_snapshot_graph_document_schema_async(conn)
         _tables_created = True
 
 
@@ -1137,6 +1158,7 @@ class Snapshot(Base):
     is_locked = Column(Boolean, default=False)
     input_device = Column(String(255), nullable=True)
     output_device = Column(String(255), nullable=True)
+    document = Column(JSON, default=dict)
     controls_payload = Column(JSON, default=dict)
     extensions_payload = Column(JSON, default=dict)
     live_state_payload = Column(JSON, default=dict)
@@ -1401,6 +1423,7 @@ class SnapshotRevision(Base):
     snapshot_revision = Column(String(64), nullable=True, index=True)
     summary = Column(Text, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
+    document = Column(JSON, default=dict, nullable=False)
     saved_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     snapshot = relationship("Snapshot", back_populates="revisions")

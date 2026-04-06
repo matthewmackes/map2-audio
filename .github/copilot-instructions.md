@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority schema and canonical URI foundation documented)
+> **Last Updated**: April 5, 2026 (State Authority document persistence bridge documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1609,6 +1609,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_state_authority_graph.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py tests/test_state_authority_graph.py`; `git diff --check`
 - **Lesson**: Before replacing the snapshot store, lock the canonical graph contract and normalization rules in code. Otherwise every migration and activation path invents its own “temporary” URI and asset policy.
 
+**69. State Authority Document Reads Must Be A Fallback For Missing Compatibility Rows, Not A Blind Override Of Fresh Relational Mutations (HIGH - Apr 5, 2026)**
+- **Files**: `app/database.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: As soon as snapshot rows started persisting the new State Authority `document`, it became tempting to read from that document unconditionally. That broke live relational mutations such as `add_channel()` because the freshly-mutated compatibility rows had not yet been mirrored through every path, so the older document overwrote newer in-transaction state.
+- **Root Cause**: The first document-bridge implementation treated the graph document as always more authoritative than the relational projection. In the current hybrid phase, that assumption is false: many existing mutation paths still write the compatibility rows first and only some of them rewrite the document immediately.
+- **Fix**: Persist the graph document on snapshot and revision saves, but make document-backed reads a fallback only when the relational channel/chain/routing projection is absent. That preserves current mutations while still proving the service can recover from the stored document after compatibility rows are removed.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or crud_activation_and_import'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py tests/test_snapshot_service.py`
+- **Lesson**: In a phased authority migration, durability and read precedence are separate decisions. Write the new document everywhere first, then switch read precedence only when every mutation path is actually document-native.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1879,6 +1887,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Document Persistence Bridge
+- **Section**: Gotchas & Learned Fixes (#69), Update Log
+- **Change**: Documented the next `T771` slice: graph documents and revision documents now persist on snapshot rows, and snapshot-service reads can recover from them when the relational compatibility projection is missing.
+- **Reason**: The State Authority storage rewrite needed a real database bridge after the schema/normalization foundation, but the hybrid snapshot service still required a careful fallback rule so existing relational mutations stayed correct.
+- **Impact**: Future T771/T772 work should keep writing the State Authority document on every snapshot mutation and can progressively retire compatibility rows only after the remaining mutation paths stop depending on them.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/database.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Schema And Canonical URI Foundation
 - **Section**: Gotchas & Learned Fixes (#68), Update Log

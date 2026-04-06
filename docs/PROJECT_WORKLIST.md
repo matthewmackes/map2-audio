@@ -668,8 +668,28 @@ Subtasks:
       - `pytest -q tests/test_state_authority_graph.py` -> PASS (`5 passed`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py tests/test_state_authority_graph.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T771-subB
+    Status: [✓] Done
+    Title: Add document-backed snapshot and revision persistence bridge
+    Description:
+    - Goal / acceptance criteria: Add a graph-document persistence bridge to the existing snapshot service by storing a State Authority `document` on snapshot rows and revision rows, writing that document on every save/update, and proving reads plus revision restores can recover from the document even when the relational compatibility projection is missing.
+    - Why it matters: The storage redesign cannot safely progress until graph documents are durable in the database and snapshot CRUD can fall back to them instead of assuming the old relational fan-out is always present.
+    - Dependencies: T771-subA
+    - Estimated effort: Medium
+    - Required outputs: DB schema additions, snapshot-service document write/read bridge, revision-document persistence, focused regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 21:23 EDT - Codex
+    - Completion notes:
+      - Added `document` JSON columns to `snapshots` and `snapshot_revisions` in [app/database.py](/home/mm/map2-audio/app/database.py) plus additive SQLite schema-sync hooks so State Authority graph documents are now durable alongside the compatibility projection.
+      - Extended [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) to write a graph-style State Authority document on create/update/revision save, restore revisions from the stored document when the old revision payload is absent, and fall back to document-backed reads when the relational channel/chain/routing projection has been removed.
+      - Added focused regression coverage in [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py) proving `get_snapshot()` can recover from the document after deleting the compatibility rows and that revision restore prefers the persisted document when the legacy revision payload is empty.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or crud_activation_and_import'` -> PASS (`2 passed, 41 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py app/services/state_authority_graph.py tests/test_snapshot_service.py tests/test_state_authority_graph.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 21:03 EDT - Codex
+Last updated: 2026-04-05 21:23 EDT - Codex
 
 ID: T772
 Status: [ ] Todo

@@ -23,7 +23,7 @@ from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateServ
 from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 
 def _init_temp_db(tmp_path):
@@ -412,6 +412,131 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert by_program["id"] == created["id"]
             assert by_program["input_device"] == "Capture 2"
             assert by_program["output_device"] is None
+
+    asyncio.run(_run())
+
+
+def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="DocumentBacked",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "name": "NAM",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            snapshot_row = await session.get(database_module.Snapshot, created["id"])
+            assert snapshot_row is not None
+            assert snapshot_row.document["version"] == "2026.04"
+            assert snapshot_row.document["graph"]["nodes"][0]["uri"] == "map2:fx:nam"
+
+            await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotChainPlugin).where(database_module.SnapshotChainPlugin.snapshot_chain_id.in_(select(database_module.SnapshotChain.id).where(database_module.SnapshotChain.snapshot_id == created["id"]))))
+            await session.execute(delete(database_module.SnapshotChain).where(database_module.SnapshotChain.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotRouting).where(database_module.SnapshotRouting.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotMidiMap).where(database_module.SnapshotMidiMap.snapshot_id == created["id"]))
+            await session.flush()
+            session.expire_all()
+
+            reloaded = await service.get_snapshot(created["id"])
+            assert reloaded is not None
+            assert reloaded["chains"][0]["plugins"][0]["uri"] == "map2://juce/nam"
+            assert reloaded["channel_count"] == 1
+
+    asyncio.run(_run())
+
+
+def test_snapshot_revision_restore_prefers_document_when_payload_missing(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="RevisionDoc",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-0", "label": "A", "color": "#2563eb", "muted": False, "solo": False, "dry_wet_mix": 100.0, "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:drive", "name": "Drive", "position": 0, "bypass": False, "parameters": {"gain": 0.4}, "loader_state": {}}]}],
+                    "routing": {"mode": "parallel_blend", "active_channel_key": "channel-0", "blend_positions": {"channel-0": 100.0}, "series_order": ["channel-0"]},
+                    "midi_map": [],
+                },
+            )
+
+            await service.update_snapshot(
+                created["id"],
+                detail_payload={
+                    "channels": created["channels"],
+                    "chains": [{"id": created["chains"][0]["id"], "name": "Chain A", "plugins": [{"uri": "urn:test:drive", "name": "Drive", "position": 0, "bypass": False, "parameters": {"gain": 0.7}, "loader_state": {}}]}],
+                    "routing": created["routing"],
+                    "midi_map": [],
+                },
+                create_revision=True,
+            )
+
+            result = await session.execute(select(database_module.SnapshotRevision).where(database_module.SnapshotRevision.snapshot_id == created["id"]))
+            revision = result.scalar_one()
+            revision.payload = {}
+            await session.flush()
+
+            restored = await service.restore_revision(created["id"], 1)
+            assert restored is not None
+            drive_plugin = next(
+                plugin
+                for plugin in restored["chains"][0]["plugins"]
+                if plugin.get("uri") == "urn:test:drive"
+            )
+            assert drive_plugin["parameters"]["gain"] == 0.4
 
     asyncio.run(_run())
 

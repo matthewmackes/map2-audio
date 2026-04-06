@@ -66,6 +66,11 @@ from app.services.snapshot_system_blocks import (
     is_system_noise_gate_loader_state,
 )
 from app.services.snapshot_footswitch_label_service import push_snapshot_footswitch_labels
+from app.services.state_authority_graph import (
+    SNAPSHOT_GRAPH_VERSION,
+    legacy_compatible_plugin_uri,
+    normalize_graph_document,
+)
 from app.services.upload_service import AssetType, get_upload_service
 
 logger = logging.getLogger(__name__)
@@ -1594,6 +1599,7 @@ class SnapshotService:
         normalized = await self._enrich_normalized_payload(normalized)
         await self._replace_snapshot_state(snapshot, normalized)
         snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
+        self._persist_snapshot_document(snapshot, normalized)
         await self.session.flush()
 
         detail = await self.get_snapshot(snapshot.id)
@@ -1686,6 +1692,9 @@ class SnapshotService:
             snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
         else:
             snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
+            normalized = await self._snapshot_to_normalized(snapshot)
+
+        self._persist_snapshot_document(snapshot, normalized)
 
         await self.session.flush()
         if create_revision and revision_source is not None:
@@ -1793,7 +1802,10 @@ class SnapshotService:
         if revision is None:
             return None
 
-        payload = dict(revision.payload or {})
+        if isinstance(revision.document, dict) and revision.document.get("version") == SNAPSHOT_GRAPH_VERSION:
+            payload = self._state_authority_document_to_normalized(revision.document)
+        else:
+            payload = dict(revision.payload or {})
         restored = await self.update_snapshot(
             snapshot_id,
             tempo_bpm=payload["tempo_bpm"] if "tempo_bpm" in payload else UNSET,
@@ -3050,6 +3062,119 @@ class SnapshotService:
         result = await self.session.execute(select(Snapshot.display_order).order_by(Snapshot.display_order.desc()).limit(1))
         return int(result.scalar_one_or_none() or 0)
 
+    def _normalized_to_state_authority_document(
+        self,
+        snapshot: Snapshot,
+        normalized: dict[str, Any],
+    ) -> dict[str, Any]:
+        document = {
+            "version": SNAPSHOT_GRAPH_VERSION,
+            "meta": {
+                "name": snapshot.name,
+                "description": snapshot.description or "",
+                "tags": list(snapshot.tags or []),
+                "program_number": snapshot.program_number,
+                "type": "snapshot",
+                "is_favorite": bool(snapshot.is_favorite),
+                "is_locked": bool(snapshot.is_locked),
+                "display_order": int(snapshot.display_order or 0),
+                "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
+                "io_bindings": {
+                    "input_device": snapshot.input_device,
+                    "output_device": snapshot.output_device,
+                    "monitoring_output_index": self._normalize_controls_payload(
+                        snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
+                        None,
+                    ).get("monitoring_output_index"),
+                },
+                "community": {
+                    "uuid": snapshot.community_uuid,
+                    "shared": bool(snapshot.community_shared),
+                    "author": snapshot.community_author,
+                    "download_count": int(snapshot.community_download_count or 0),
+                    "rating_sum": float(snapshot.community_rating_sum or 0.0),
+                    "rating_count": int(snapshot.community_rating_count or 0),
+                },
+            },
+            "graph": {
+                "channels": copy.deepcopy(normalized.get("channels") or []),
+                "chains": copy.deepcopy(normalized.get("chains") or []),
+                "routing": copy.deepcopy(normalized.get("routing") or {}),
+                "midi_map": copy.deepcopy(normalized.get("midi_map") or []),
+                "tempo_bpm": _safe_float(snapshot.tempo_bpm, DEFAULT_SNAPSHOT_TEMPO_BPM),
+                "output_level_reference_dbfs": snapshot.output_level_reference_dbfs,
+                "output_level_warning_threshold_db": (
+                    float(snapshot.output_level_warning_threshold_db)
+                    if snapshot.output_level_warning_threshold_db is not None
+                    else 3.0
+                ),
+                "nodes": [],
+                "edges": [],
+            },
+            "controls": copy.deepcopy(snapshot.controls_payload or {}),
+            "extensions": copy.deepcopy(normalized.get("extensions") or {}),
+        }
+        for chain in document["graph"]["chains"]:
+            if not isinstance(chain, dict):
+                continue
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                node = {
+                    "id": f"{chain.get('source_key', 'chain')}:{plugin.get('position', 0)}",
+                    "uri": plugin.get("uri"),
+                    "name": plugin.get("name") or plugin.get("uri") or "Plugin",
+                    "bypass": bool(plugin.get("bypass", False)),
+                    "parameters": dict(plugin.get("parameters") or {}),
+                    "state": dict(plugin.get("loader_state") or {}),
+                }
+                document["graph"]["nodes"].append(node)
+        return normalize_graph_document(document)
+
+    def _state_authority_document_to_normalized(self, document: dict[str, Any]) -> dict[str, Any]:
+        graph = document.get("graph") if isinstance(document.get("graph"), dict) else {}
+        assets = document.get("assets") if isinstance(document.get("assets"), list) else []
+        asset_paths = {
+            str(item.get("hash")): str(item.get("path"))
+            for item in assets
+            if isinstance(item, dict) and item.get("hash") and item.get("path")
+        }
+
+        def _restore_loader_state(value: Any) -> Any:
+            if isinstance(value, dict):
+                restored: dict[str, Any] = {}
+                for key, nested in value.items():
+                    if isinstance(nested, str) and nested.startswith("sha256:") and nested in asset_paths:
+                        restored[key] = asset_paths[nested]
+                    else:
+                        restored[key] = _restore_loader_state(nested)
+                return restored
+            if isinstance(value, list):
+                return [_restore_loader_state(item) for item in value]
+            return value
+
+        normalized = {
+            "channels": copy.deepcopy(graph.get("channels") or []),
+            "chains": copy.deepcopy(graph.get("chains") or []),
+            "routing": copy.deepcopy(graph.get("routing") or {}),
+            "midi_map": copy.deepcopy(graph.get("midi_map") or []),
+            "input_device": ((document.get("meta") or {}).get("io_bindings") or {}).get("input_device"),
+            "output_device": ((document.get("meta") or {}).get("io_bindings") or {}).get("output_device"),
+            "extensions": copy.deepcopy(document.get("extensions") or {}),
+        }
+        for chain in normalized["chains"]:
+            if not isinstance(chain, dict):
+                continue
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                plugin["uri"] = legacy_compatible_plugin_uri(str(plugin.get("uri") or ""))
+                plugin["loader_state"] = _restore_loader_state(plugin.get("loader_state") or {})
+        return self._normalize_detail_payload(normalized)
+
+    def _persist_snapshot_document(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
+        snapshot.document = self._normalized_to_state_authority_document(snapshot, normalized)
+
     async def _replace_snapshot_state(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
         snapshot.extensions_payload = copy.deepcopy(normalized.get("extensions") or {})
         await self.session.execute(delete(SnapshotChannel).where(SnapshotChannel.snapshot_id == snapshot.id))
@@ -4015,6 +4140,14 @@ class SnapshotService:
         }
 
     async def _snapshot_to_normalized(self, snapshot: Snapshot) -> dict[str, Any]:
+        has_relational_projection = bool(snapshot.chains or snapshot.channels or snapshot.routing or snapshot.midi_map)
+        if (
+            not has_relational_projection
+            and isinstance(snapshot.document, dict)
+            and snapshot.document.get("version") == SNAPSHOT_GRAPH_VERSION
+        ):
+            return self._state_authority_document_to_normalized(snapshot.document)
+
         loop_ids = {
             loop.loop_id
             for chain in snapshot.chains
@@ -4453,6 +4586,9 @@ class SnapshotService:
         }
 
     async def _append_snapshot_revision(self, snapshot_id: int, detail: dict[str, Any]) -> dict[str, Any]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            raise ValueError(f"Snapshot {snapshot_id} not found")
         result = await self.session.execute(
             select(SnapshotRevision)
             .where(SnapshotRevision.snapshot_id == snapshot_id)
@@ -4467,6 +4603,10 @@ class SnapshotService:
             snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
             summary=self._build_snapshot_revision_summary(detail),
             payload=self._build_snapshot_revision_payload(detail),
+            document=self._normalized_to_state_authority_document(
+                snapshot,
+                self._normalize_detail_payload(detail),
+            ),
             saved_at=_utcnow(),
         )
         self.session.add(revision)
