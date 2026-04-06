@@ -924,3 +924,27 @@ def test_activate_snapshot_route_returns_structured_preflight_failures(tmp_path,
             raise AssertionError("Route activation should surface structured pre-flight failures as 422 responses")
 
     asyncio.run(_run())
+
+
+def test_get_snapshot_preload_plan_route_returns_top_candidates(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = snapshot_service_module.SnapshotService(session)
+            first = await service.create_snapshot(name="One", program_number=1)
+            second = await service.create_snapshot(name="Two", program_number=2)
+            third = await service.create_snapshot(name="Three", program_number=3)
+            fourth = await service.create_snapshot(name="Four", program_number=4)
+
+        payload = await routes.get_snapshot_preload_plan(first["id"], limit=3)
+        assert payload["source_snapshot_name"] == "One"
+        assert payload["candidate_reason"] == "program_number"
+        assert [item["snapshot_name"] for item in payload["candidates"]] == ["Two", "Three", "Four"]
+
+    asyncio.run(_run())

@@ -43,6 +43,7 @@ from app.database import (
     SnapshotMidiMap,
     SnapshotRevision,
     SnapshotRouting,
+    get_or_create_system_config,
     get_session,
 )
 from app.services.juce_engine_service import get_audio_engine
@@ -430,6 +431,7 @@ class SnapshotService:
             push_snapshot_footswitch_labels=push_snapshot_footswitch_labels,
             push_snapshot_controller_display_preview=push_snapshot_controller_display_preview,
             schedule_snapshot_preload_for_live_snapshot=schedule_snapshot_preload_for_live_snapshot,
+            get_activation_hook_plan=self.get_activation_hook_plan,
             build_snapshot_controller_display_preview=build_snapshot_controller_display_preview,
             utcnow=_utcnow,
             safe_int=_safe_int,
@@ -671,6 +673,16 @@ class SnapshotService:
         self,
         current_snapshot: Snapshot,
     ) -> tuple[Optional[Snapshot], Optional[str]]:
+        candidates, reason = await self._resolve_preload_candidate_snapshots(current_snapshot, limit=1)
+        return (candidates[0], reason) if candidates else (None, None)
+
+    async def _resolve_preload_candidate_snapshots(
+        self,
+        current_snapshot: Snapshot,
+        *,
+        limit: int = 3,
+    ) -> tuple[list[Snapshot], Optional[str]]:
+        bounded_limit = max(1, int(limit))
         current_program_number = (
             int(current_snapshot.program_number)
             if current_snapshot.program_number is not None
@@ -687,10 +699,12 @@ class SnapshotService:
             )
             candidates = result.scalars().all()
             if candidates:
+                ordered: list[Snapshot] = []
                 for candidate in candidates:
                     if candidate.program_number is not None and int(candidate.program_number) > current_program_number:
-                        return candidate, "program_number"
-                return candidates[0], "program_number"
+                        ordered.append(candidate)
+                ordered.extend(candidate for candidate in candidates if candidate not in ordered)
+                return ordered[:bounded_limit], "program_number"
 
         current_display_order = int(current_snapshot.display_order or 0)
         result = await self.session.execute(
@@ -700,11 +714,61 @@ class SnapshotService:
         )
         candidates = result.scalars().all()
         if not candidates:
-            return None, None
-        for candidate in candidates:
-            if int(candidate.display_order or 0) > current_display_order:
-                return candidate, "display_order"
-        return candidates[0], "display_order"
+            return [], None
+        ordered = [
+            candidate
+            for candidate in candidates
+            if int(candidate.display_order or 0) > current_display_order
+        ]
+        ordered.extend(candidate for candidate in candidates if candidate not in ordered)
+        return ordered[:bounded_limit], "display_order"
+
+    async def plan_preload_candidates_for_snapshot(
+        self,
+        snapshot_id: int,
+        *,
+        limit: int = 3,
+    ) -> Optional[dict[str, Any]]:
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return None
+        candidates, reason = await self._resolve_preload_candidate_snapshots(snapshot, limit=limit)
+        return {
+            "source_snapshot_id": int(snapshot.id),
+            "source_snapshot_name": str(snapshot.name or f"Snapshot {snapshot.id}"),
+            "candidate_reason": reason,
+            "candidates": [
+                {
+                    "snapshot_id": int(candidate.id),
+                    "snapshot_name": str(candidate.name or f"Snapshot {candidate.id}"),
+                    "program_number": int(candidate.program_number) if candidate.program_number is not None else None,
+                    "display_order": int(candidate.display_order or 0),
+                }
+                for candidate in candidates
+            ],
+        }
+
+    async def get_activation_hook_plan(self) -> list[str]:
+        default_hooks = [
+            "push_footswitch_labels",
+            "push_controller_display_preview",
+            "schedule_preload",
+        ]
+        raw_value = await get_or_create_system_config(
+            self.session,
+            "state_authority.activation_hooks",
+            default_value=json.dumps(default_hooks),
+        )
+        try:
+            parsed = json.loads(raw_value or "[]")
+        except Exception:
+            parsed = default_hooks
+        hooks = [
+            str(item).strip()
+            for item in parsed
+            if isinstance(item, str) and str(item).strip()
+        ]
+        return hooks or default_hooks
 
     def _snapshot_preload_stage_plugins(self, snapshot: Snapshot) -> list[Any]:
         chain_by_id = {chain.id: chain for chain in snapshot.chains}

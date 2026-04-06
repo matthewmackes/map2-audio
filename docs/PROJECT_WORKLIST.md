@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 23:12 EDT - T774-subB completed with structured validating-phase failure reports and repair guidance.
+Last updated: 2026-04-06 23:28 EDT - T774-subC completed with config-ordered activation hooks and top-three preload planning surfaces.
 
 ## Performance Brain
 
@@ -974,7 +974,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T774-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add config-ordered activation hooks and top-three likely snapshot preload planning
     Description:
     - Goal / acceptance criteria: Support config-ordered activation hooks around staging/apply/verify phases and eagerly plan/preload the top three likely next snapshots when an operator selects a snapshot or when the live activation settles.
@@ -983,10 +983,19 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Hook config/execution support, top-three preload planning, selection/activation integration, and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 23:28 EDT - Codex
+    - Completion notes:
+      - Added a reusable preload-candidate planner in `SnapshotService`, so the State Authority can now compute the top three likely next snapshots by program order or display order instead of only resolving a single implicit preload target.
+      - Added `GET /api/snapshots/{snapshot_id}/preload-plan` for selection-time preload planning, and included the same preload-plan payload in activation runtime metrics so the live state reports what the next preload candidates are.
+      - Added config-ordered activation hook execution in `StateAuthorityActivationService`, moving post-live footswitch-label pushes, controller-display pushes, and preload scheduling behind a shared ordered hook plan sourced from `system_config`.
+      - Added focused regressions in `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, and `tests/test_state_authority_activation_service.py`, proving top-three planning order and configured hook execution ordering.
+    - Validation:
+      - `python3 -m pytest -q tests/test_snapshot_service.py::test_plan_preload_candidates_for_snapshot_returns_top_three_candidates tests/test_snapshot_routes.py::test_get_snapshot_preload_plan_route_returns_top_candidates tests/test_state_authority_activation_service.py::test_run_activation_hooks_uses_configured_order` -> PASS (`3 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-06 23:12 EDT - Codex
+Last updated: 2026-04-06 23:28 EDT - Codex
 
 ID: T775
 Status: [ ] Todo

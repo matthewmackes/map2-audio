@@ -2106,6 +2106,60 @@ def test_preload_next_snapshot_falls_back_to_display_order_when_program_numbers_
     asyncio.run(_run())
 
 
+def test_plan_preload_candidates_for_snapshot_returns_top_three_candidates(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            first = await service.create_snapshot(name="One", program_number=1)
+            second = await service.create_snapshot(name="Two", program_number=2)
+            third = await service.create_snapshot(name="Three", program_number=3)
+            fourth = await service.create_snapshot(name="Four", program_number=4)
+            fifth = await service.create_snapshot(name="Five", program_number=5)
+
+            plan = await service.plan_preload_candidates_for_snapshot(first["id"], limit=3)
+            assert plan == {
+                "source_snapshot_id": first["id"],
+                "source_snapshot_name": "One",
+                "candidate_reason": "program_number",
+                "candidates": [
+                    {
+                        "snapshot_id": second["id"],
+                        "snapshot_name": "Two",
+                        "program_number": 2,
+                        "display_order": second["display_order"],
+                    },
+                    {
+                        "snapshot_id": third["id"],
+                        "snapshot_name": "Three",
+                        "program_number": 3,
+                        "display_order": third["display_order"],
+                    },
+                    {
+                        "snapshot_id": fourth["id"],
+                        "snapshot_name": "Four",
+                        "program_number": 4,
+                        "display_order": fourth["display_order"],
+                    },
+                ],
+            }
+
+            wrapped_plan = await service.plan_preload_candidates_for_snapshot(fifth["id"], limit=3)
+            assert [item["snapshot_id"] for item in wrapped_plan["candidates"]] == [
+                first["id"],
+                second["id"],
+                third["id"],
+            ]
+
+    asyncio.run(_run())
+
+
 def test_activate_snapshot_consumes_preloaded_instances_on_preload_hit(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     preferred_calls: list[list[int]] = []

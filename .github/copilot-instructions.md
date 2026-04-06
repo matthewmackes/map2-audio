@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority structured validation reporting documented)
+> **Last Updated**: April 6, 2026 (State Authority activation hooks and preload planning documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1705,6 +1705,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py::test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot tests/test_snapshot_routes.py::test_activate_snapshot_route_returns_structured_preflight_failures tests/test_state_authority_activation_service.py::test_activate_snapshot_marks_validating_phase_before_preflight_failure`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py`; `git diff --check`
 - **Lesson**: Once validation becomes part of a formal activation state machine, failures need typed issue metadata and repair guidance. A flat error string is not enough for operator UX or future auto-repair flows.
 
+**81. Activation Hooks And Preload Planning Should Run Through Shared Ordered Contracts, Not Hardcoded Post-Live Side Effects (HIGH - Apr 6, 2026)**
+- **Files**: `app/services/snapshot_service.py`, `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, `tests/test_state_authority_activation_service.py`
+- **Problem**: Post-live snapshot side effects were hardcoded in activation order, and preload logic only exposed one implicit “next snapshot” target. That made hooks hard to reorder safely and gave the new activation state machine no reusable top-three preload planning surface for selection-time UX.
+- **Root Cause**: The activation service directly called each side effect, while preload resolution lived as a single-target helper with no public planning contract.
+- **Fix**: Add a configurable activation hook plan sourced from `system_config`, execute those hooks in order through one activation-service helper, add a reusable top-three preload-candidate planner in `SnapshotService`, expose it via `GET /api/snapshots/{snapshot_id}/preload-plan`, and include the plan in activation runtime metrics.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py::test_plan_preload_candidates_for_snapshot_returns_top_three_candidates tests/test_snapshot_routes.py::test_get_snapshot_preload_plan_route_returns_top_candidates tests/test_state_authority_activation_service.py::test_run_activation_hooks_uses_configured_order`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/state_authority_activation_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py tests/test_state_authority_activation_service.py`; `git diff --check`
+- **Lesson**: Once activation becomes a formal state machine, post-live behavior needs an ordered hook contract and preload needs a reusable planning surface. Hardcoded side effects and single-target heuristics do not scale.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1975,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Activation Hooks And Preload Planning
+- **Section**: Gotchas & Learned Fixes (#81), Update Log
+- **Change**: Documented the third `T774` slice: activation now runs ordered hooks from config, snapshot selection can query a top-three preload plan, and the same preload plan is persisted in activation runtime metrics.
+- **Reason**: `T774` required hooks and preload flow to live inside the same authority contract as the phase machine instead of remaining one-off side effects.
+- **Impact**: Future activation UX or preload warming logic should extend the hook plan and preload-plan contracts, not add new hardcoded post-live calls.
 
 ### [2026-04-06] - State Authority Structured Validation Reporting
 - **Section**: Gotchas & Learned Fixes (#80), Update Log

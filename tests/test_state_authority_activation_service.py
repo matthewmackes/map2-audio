@@ -17,9 +17,21 @@ class _FakeAudioEngine:
         return True
 
 
+class _FakeSession:
+    async def flush(self):
+        return None
+
+
 def _build_service(fake_engine: _FakeAudioEngine, *, owner=None) -> StateAuthorityActivationService:
+    async def _default_hook_plan():
+        return [
+            "push_footswitch_labels",
+            "push_controller_display_preview",
+            "schedule_preload",
+        ]
+
     return StateAuthorityActivationService(
-        session=None,
+        session=_FakeSession(),
         owner=owner or SimpleNamespace(
             state_authority_documents=SimpleNamespace(
                 build_validated_document=lambda snapshot, normalized: {
@@ -36,6 +48,7 @@ def _build_service(fake_engine: _FakeAudioEngine, *, owner=None) -> StateAuthori
         push_snapshot_footswitch_labels=lambda *args, **kwargs: None,
         push_snapshot_controller_display_preview=lambda *args, **kwargs: None,
         schedule_snapshot_preload_for_live_snapshot=lambda snapshot_id: None,
+        get_activation_hook_plan=_default_hook_plan,
         build_snapshot_controller_display_preview=lambda *args, **kwargs: {},
         utcnow=lambda: None,
         safe_int=lambda value: int(value) if value is not None else None,
@@ -171,3 +184,57 @@ def test_activate_snapshot_marks_validating_phase_before_preflight_failure(monke
 
     assert recorded_calls[0] == ("VALIDATING", "in_progress", "Running activation preflight checks.")
     assert recorded_calls[-1] == ("FAIL", "VALIDATING", "preflight failed")
+
+
+def test_run_activation_hooks_uses_configured_order():
+    fake_engine = _FakeAudioEngine()
+    executed: list[str] = []
+
+    async def _push_footswitch_labels(**kwargs):
+        executed.append("push_footswitch_labels")
+
+    async def _push_controller_display_preview(**kwargs):
+        executed.append("push_controller_display_preview")
+
+    async def _hook_plan():
+        return ["schedule_preload", "push_footswitch_labels", "unknown_hook"]
+
+    service = StateAuthorityActivationService(
+        session=_FakeSession(),
+        owner=SimpleNamespace(),
+        chain_service=SimpleNamespace(),
+        runtime_service_module=SimpleNamespace(),
+        midi_service=SimpleNamespace(),
+        get_audio_engine=lambda: fake_engine,
+        push_snapshot_footswitch_labels=_push_footswitch_labels,
+        push_snapshot_controller_display_preview=_push_controller_display_preview,
+        schedule_snapshot_preload_for_live_snapshot=lambda snapshot_id: executed.append("schedule_preload"),
+        get_activation_hook_plan=_hook_plan,
+        build_snapshot_controller_display_preview=lambda *args, **kwargs: {},
+        utcnow=lambda: None,
+        safe_int=lambda value: int(value) if value is not None else None,
+        safe_float=lambda value, default: float(value) if value is not None else default,
+        normalize_topology_mutation_stats=lambda payload: payload or {},
+        build_activation_topology_metrics=lambda before, after: {},
+        snapshot_spillover_native_uris=(),
+        canonical_transient_keys=set(),
+        canonical_effects_loop_keys=set(),
+    )
+    snapshot = SimpleNamespace(id=9, name="Verse")
+
+    results = asyncio.run(
+        service._run_activation_hooks(
+            snapshot=snapshot,
+            refreshed_detail={"controls": {"midi_map": []}, "controller_display_preview": {"name": "Preview"}},
+            preload_plan={"candidates": [{"snapshot_id": 10}, {"snapshot_id": 11}]},
+        )
+    )
+
+    assert executed == ["schedule_preload", "push_footswitch_labels"]
+    assert [item["hook"] for item in results] == [
+        "schedule_preload",
+        "push_footswitch_labels",
+        "unknown_hook",
+    ]
+    assert results[0]["preload_candidate_count"] == 2
+    assert results[2]["status"] == "skipped"

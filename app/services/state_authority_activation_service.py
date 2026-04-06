@@ -39,6 +39,7 @@ class StateAuthorityActivationService:
         push_snapshot_footswitch_labels: Callable[..., Any],
         push_snapshot_controller_display_preview: Callable[..., Any],
         schedule_snapshot_preload_for_live_snapshot: Callable[[int], None],
+        get_activation_hook_plan: Callable[[], Any],
         build_snapshot_controller_display_preview: Callable[..., Any],
         utcnow: Callable[[], Any],
         safe_int: Callable[[Any], int | None],
@@ -58,6 +59,7 @@ class StateAuthorityActivationService:
         self.push_snapshot_footswitch_labels = push_snapshot_footswitch_labels
         self.push_snapshot_controller_display_preview = push_snapshot_controller_display_preview
         self.schedule_snapshot_preload_for_live_snapshot = schedule_snapshot_preload_for_live_snapshot
+        self.get_activation_hook_plan = get_activation_hook_plan
         self.build_snapshot_controller_display_preview = build_snapshot_controller_display_preview
         self._utcnow = utcnow
         self._safe_int = safe_int
@@ -926,6 +928,13 @@ class StateAuthorityActivationService:
                 "performance_brain_runtime": brain_runtime_reconcile_result or {},
                 "topology_mutation": activation_topology_metrics,
             }
+            preload_plan = await self.owner.plan_preload_candidates_for_snapshot(snapshot.id, limit=3)
+            runtime_metrics["preload_plan"] = preload_plan or {
+                "source_snapshot_id": int(snapshot.id),
+                "source_snapshot_name": str(snapshot.name or f"Snapshot {snapshot.id}"),
+                "candidate_reason": None,
+                "candidates": [],
+            }
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="VERIFYING",
@@ -955,27 +964,6 @@ class StateAuthorityActivationService:
             except Exception as exc:
                 logger.debug("Post-activation health check scheduling skipped for %s: %s", snapshot.id, exc)
 
-            try:
-                await self.push_snapshot_footswitch_labels(
-                    snapshot_id=snapshot.id,
-                    snapshot_name=snapshot.name,
-                    midi_map_entries=[
-                        dict(entry)
-                        for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
-                        if isinstance(entry, dict)
-                    ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot footswitch label push skipped for %s: %s", snapshot.id, exc)
-
-            try:
-                await self.push_snapshot_controller_display_preview(
-                    snapshot_id=snapshot.id,
-                    snapshot_name=snapshot.name,
-                    preview_payload=refreshed_detail.get("controller_display_preview"),
-                )
-            except Exception as exc:
-                logger.debug("Snapshot controller-display push skipped for %s: %s", snapshot.id, exc)
         except Exception as exc:
             await self.owner._clear_compatibility_live_projections()
             await self.session.flush()
@@ -985,6 +973,22 @@ class StateAuthorityActivationService:
                 runtime_metrics={},
             )
             raise
+
+        try:
+            hook_results = await self._run_activation_hooks(
+                snapshot=snapshot,
+                refreshed_detail=refreshed_detail,
+                preload_plan=runtime_metrics.get("preload_plan"),
+            )
+            runtime_metrics["activation_hooks"] = hook_results
+            await runtime_state_service.sync_live_snapshot_payload(
+                snapshot_id=snapshot.id,
+                live_snapshot_payload=refreshed_detail,
+                snapshot_revision=snapshot_revision,
+                runtime_metrics=runtime_metrics,
+            )
+        except Exception as exc:
+            logger.debug("Snapshot activation hook update skipped for %s: %s", snapshot.id, exc)
 
         try:
             from app.services.websocket_manager import ws_manager
@@ -1023,11 +1027,6 @@ class StateAuthorityActivationService:
         except Exception as exc:
             logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
 
-        try:
-            self.schedule_snapshot_preload_for_live_snapshot(snapshot.id)
-        except Exception as exc:
-            logger.debug("Snapshot preload scheduling skipped for %s: %s", snapshot.id, exc)
-
         return {
             "status": "success",
             "snapshot_id": snapshot.id,
@@ -1041,3 +1040,69 @@ class StateAuthorityActivationService:
             "topology_reused": topology_reused,
             "topology_mutation": activation_topology_metrics,
         }
+
+    async def _run_activation_hooks(
+        self,
+        *,
+        snapshot: Snapshot,
+        refreshed_detail: dict[str, Any],
+        preload_plan: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
+        configured_hooks = await self.get_activation_hook_plan()
+        midi_map_entries = [
+            dict(entry)
+            for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
+            if isinstance(entry, dict)
+        ]
+
+        async def _push_footswitch_labels() -> None:
+            await self.push_snapshot_footswitch_labels(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                midi_map_entries=midi_map_entries,
+            )
+
+        async def _push_controller_preview() -> None:
+            await self.push_snapshot_controller_display_preview(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                preview_payload=refreshed_detail.get("controller_display_preview"),
+            )
+
+        async def _schedule_preload() -> None:
+            self.schedule_snapshot_preload_for_live_snapshot(snapshot.id)
+
+        hook_map = {
+            "push_footswitch_labels": _push_footswitch_labels,
+            "push_controller_display_preview": _push_controller_preview,
+            "schedule_preload": _schedule_preload,
+        }
+        results: list[dict[str, Any]] = []
+        for hook_name in configured_hooks:
+            hook = hook_map.get(str(hook_name))
+            if hook is None:
+                results.append({"hook": str(hook_name), "status": "skipped", "reason": "unknown_hook"})
+                continue
+            try:
+                await hook()
+                results.append(
+                    {
+                        "hook": str(hook_name),
+                        "status": "completed",
+                        "preload_candidate_count": (
+                            len(preload_plan.get("candidates", []))
+                            if str(hook_name) == "schedule_preload" and isinstance(preload_plan, dict)
+                            else None
+                        ),
+                    }
+                )
+            except Exception as exc:
+                logger.debug("Snapshot activation hook %s skipped for %s: %s", hook_name, snapshot.id, exc)
+                results.append(
+                    {
+                        "hook": str(hook_name),
+                        "status": "failed",
+                        "reason": str(exc),
+                    }
+                )
+        return results

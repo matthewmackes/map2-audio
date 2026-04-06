@@ -851,6 +851,22 @@ async def get_snapshot_by_program(program_number: int) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.get("/api/snapshots/{snapshot_id}/preload-plan")
+async def get_snapshot_preload_plan(snapshot_id: int, limit: int = Query(default=3, ge=1, le=10)) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            payload = await service.plan_preload_candidates_for_snapshot(snapshot_id, limit=limit)
+            if payload is None:
+                _raise_not_found("Snapshot")
+            return payload
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error building preload plan for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.post("/api/snapshots/program-change/{program_number}/activate")
 async def activate_snapshot_by_program(program_number: int) -> dict[str, Any]:
     try:
