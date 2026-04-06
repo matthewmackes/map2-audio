@@ -4207,6 +4207,8 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
 
 class _OpenGapMatrixEngineStub:
     def __init__(self) -> None:
+        self.is_available = False
+        self.is_running = False
         self.loop_calls: list[tuple[int, list[dict[str, object]]]] = []
         self.parallel_group_calls: list[tuple[int, int]] = []
         self.parallel_branch_calls: list[tuple[int, int, int, int]] = []
@@ -4215,6 +4217,9 @@ class _OpenGapMatrixEngineStub:
         self.chain_solo_calls: list[tuple[int, bool]] = []
         self.chain_mix_calls: list[tuple[int, float]] = []
         self.parameter_calls: list[tuple[int | None, int, float]] = []
+        self.morph_endpoint_calls: list[tuple[str, dict[str, object]]] = []
+        self.morph_positions: list[tuple[float, float]] = []
+        self.morph_cleared = 0
         self._instance_ids: dict[tuple[str, int | None], int] = {}
 
     async def set_all_midi_commands(self, commands):
@@ -4253,6 +4258,18 @@ class _OpenGapMatrixEngineStub:
 
     async def set_parameter(self, instance_id: int | None, param_index: int, value: float) -> bool:
         self.parameter_calls.append((instance_id, int(param_index), float(value)))
+        return True
+
+    async def clear_morph_endpoints(self) -> bool:
+        self.morph_cleared += 1
+        return True
+
+    async def set_morph_endpoint(self, corner_id: str, graph_document: dict[str, object]) -> bool:
+        self.morph_endpoint_calls.append((str(corner_id), dict(graph_document)))
+        return True
+
+    async def set_morph_position_2d(self, x: float, y: float) -> bool:
+        self.morph_positions.append((float(x), float(y)))
         return True
 
     def _get_instance_id_for_uri(self, plugin_uri: str, plugin_position: int | None = None) -> int | None:
@@ -4697,12 +4714,15 @@ def test_t741_set_morph_position_should_drive_runtime_parameter_interpolation(tm
             },
         )
         assert activated is not None
-        before_calls = len(engine_stub.parameter_calls)
+        before_positions = len(engine_stub.morph_positions)
         updated = await service.set_morph_position(created["id"], 0.75)
         assert updated is not None
-        assert len(engine_stub.parameter_calls) > before_calls
+        assert len(engine_stub.morph_positions) > before_positions
+        assert engine_stub.morph_cleared >= 1
+        assert [corner for corner, _document in engine_stub.morph_endpoint_calls[-4:]] == ["a", "b", "c", "d"]
         assert updated["morph_apply"]["applied"] is True
+        assert updated["morph_apply"]["engine_mode"] == "quad_morph"
         assert updated["morph_apply"]["applied_count"] == 1
-        assert engine_stub.parameter_calls[-1][2] == pytest.approx(0.75)
+        assert engine_stub.morph_positions[-1] == pytest.approx((0.75, 0.0))
 
     asyncio.run(_run())

@@ -335,7 +335,7 @@ async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dic
     from app.services.juce_engine_service import get_audio_engine
 
     engine = get_audio_engine()
-    if engine is None or not hasattr(engine, "set_parameter"):
+    if engine is None:
         return {
             "applied": False,
             "reason": "engine_unavailable",
@@ -393,6 +393,48 @@ async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dic
             "applied_count": 0,
         }
 
+    if all(
+        hasattr(engine, attribute)
+        for attribute in ("clear_morph_endpoints", "set_morph_endpoint", "set_morph_position_2d")
+    ):
+        try:
+            await engine.clear_morph_endpoints()
+            source_document = _build_chain_morph_document(snapshot_detail, source_chain)
+            target_document = _build_chain_morph_document(snapshot_detail, target_chain)
+            for corner_id, document in (
+                ("a", source_document),
+                ("b", target_document),
+                ("c", source_document),
+                ("d", target_document),
+            ):
+                configured = await engine.set_morph_endpoint(corner_id, document)
+                if not configured:
+                    return {
+                        "applied": False,
+                        "reason": f"endpoint_config_failed:{corner_id}",
+                        "plugin_count": len(source_chain.get("plugins", [])),
+                        "applied_count": 0,
+                    }
+            applied = await engine.set_morph_position_2d(morph_position, 0.0)
+            return {
+                "applied": bool(applied),
+                "reason": "applied" if applied else "engine_morph_rejected",
+                "plugin_count": len(source_chain.get("plugins", [])),
+                "applied_count": len(source_chain.get("plugins", [])) if applied else 0,
+                "morph_position": morph_position,
+                "engine_mode": "quad_morph",
+            }
+        except Exception as exc:
+            logger.debug("Engine quad morph apply failed, falling back to legacy interpolation: %s", exc)
+
+    if not hasattr(engine, "set_parameter"):
+        return {
+            "applied": False,
+            "reason": "engine_morph_unsupported",
+            "plugin_count": 0,
+            "applied_count": 0,
+        }
+
     target_plugins = {
         (str(plugin.get("uri") or ""), snapshot_plugin_position(plugin)): dict(plugin)
         for plugin in target_chain.get("plugins", [])
@@ -438,6 +480,57 @@ async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dic
         "plugin_count": plugin_count,
         "applied_count": applied_count,
         "morph_position": morph_position,
+    }
+
+
+def _build_chain_morph_document(snapshot_detail: Dict[str, Any], chain: Dict[str, Any]) -> Dict[str, Any]:
+    plugins = [dict(plugin) for plugin in chain.get("plugins", []) if isinstance(plugin, dict)]
+    nodes: List[Dict[str, Any]] = []
+    edges: List[Dict[str, Any]] = []
+    for index, plugin in enumerate(plugins):
+        node_id = f"main-chain:{index}"
+        position = snapshot_plugin_position(plugin)
+        nodes.append(
+            {
+                "id": node_id,
+                "uri": str(plugin.get("canonical_uri") or plugin.get("uri") or ""),
+                "engine_uri": str(plugin.get("uri") or ""),
+                "name": str(plugin.get("name") or plugin.get("uri") or f"Plugin {index}"),
+                "bypass": bool(plugin.get("bypass", False)),
+                "parameters": dict(plugin.get("parameters") or {}),
+                "state": dict(plugin.get("loader_state") or {}),
+            }
+        )
+        if index > 0:
+            edges.append({"from": f"main-chain:{index - 1}", "to": node_id})
+        plugin["position"] = position if position is not None else index
+        plugin["plugin_position"] = position if position is not None else index
+
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    return {
+        "version": "2026.04",
+        "meta": {
+            "name": str(snapshot_detail.get("name") or chain.get("name") or "Morph Endpoint"),
+            "type": "snapshot",
+        },
+        "graph": {
+            "nodes": nodes,
+            "edges": edges,
+            "chains": [
+                {
+                    "id": int(chain.get("id") or 1),
+                    "source_key": "main-chain",
+                    "name": str(chain.get("name") or "Main Chain"),
+                    "plugins": plugins,
+                }
+            ],
+            "morph": {
+                "mode": "intra_snapshot" if str(routing.get("mode") or "") == "morph" else "off",
+                "position": max(0.0, min(1.0, float(routing.get("morph_position", 0.5) or 0.5))),
+                "source_channel_key": routing.get("morph_source_channel_key"),
+                "target_channel_key": routing.get("morph_target_channel_key"),
+            },
+        },
     }
 
 

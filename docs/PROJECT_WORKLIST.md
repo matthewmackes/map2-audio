@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 00:19 EDT - T775-subB completed with JUCE quad MorphEngine bindings and regression coverage.
+Last updated: 2026-04-07 00:33 EDT - T775 completed with engine-backed morph cutover for activation and live routing.
 
 ## Performance Brain
 
@@ -998,7 +998,7 @@ Assigned to: Codex
 Last updated: 2026-04-06 23:28 EDT - Codex
 
 ID: T775
-Status: [>] In Progress
+Status: [✓] Done
 Title: Deliver graph-document morph persistence and the C++ quad MorphEngine
 Description:
 - Goal / acceptance criteria: Persist morph metadata in the graph document, add the planned C++ `MorphEngine` with A/B/C/D endpoints plus atomic `set_morph_position(x, y)`, support continuous-parameter interpolation with discrete snap-at-50% behavior, and wire both intra-snapshot and cross-snapshot morph modes through the Python/C++ authority surface.
@@ -1030,7 +1030,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 00:19 EDT - Codex
   - ID: T775-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Cut activation and cross-snapshot morph over to the authority-backed engine path
     Description:
     - Goal / acceptance criteria: Replace the legacy runtime morph apply path with authority-backed document/engine morph orchestration for both intra-snapshot and cross-snapshot activation flows, including continuous interpolation and discrete snap-at-50% behavior.
@@ -1039,9 +1039,9 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Activation/runtime integration, route/service updates, and focused verification for interpolation, snapping, and cross-snapshot transitions.
     Assigned to: Codex
-    Last updated: 2026-04-07 00:05 EDT - Codex
+    Last updated: 2026-04-07 00:33 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-07 00:19 EDT - Codex
+Last updated: 2026-04-07 00:33 EDT - Codex
 
 ID: T776
 Status: [ ] Todo

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (JUCE quad MorphEngine bindings documented)
+> **Last Updated**: April 7, 2026 (State Authority morph engine cutover documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - State Authority Morph Runtime Cutover
+- **Section**: Update Log
+- **Change**: Documented the final `T775` slice: snapshot activation and live morph-position updates now prefer the JUCE quad morph engine path by configuring source/target endpoint documents and driving `set_morph_position_2d()` instead of relying on the older Python-only parameter blender.
+- **Reason**: `T775` was not complete while activation metrics and live routing still exercised the legacy morph implementation after the engine surface already existed.
+- **Impact**: Future morph work should extend the engine-backed endpoint/document contract, and the Python interpolation path should remain compatibility-only.
 
 ### [2026-04-07] - State Authority JUCE Quad MorphEngine Bindings
 - **Section**: Update Log
