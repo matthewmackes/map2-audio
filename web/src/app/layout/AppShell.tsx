@@ -11,6 +11,7 @@ import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { PageTransition } from '../components/PageTransition'
 import { Map2BrandMark } from '../components/branding/map2Branding'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
+import { TaskbarClock } from '../components/TaskbarClock'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
@@ -453,6 +454,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <div className="window-taskbar__status window-taskbar__status--latency">
               <LatencyPressureShellReadout />
+            </div>
+            <div className="window-taskbar__status window-taskbar__status--clock">
+              <TaskbarClock />
             </div>
           </div>
         </div>

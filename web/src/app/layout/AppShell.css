@@ -249,7 +249,29 @@
   padding-left: 0.28rem;
 }
 
+.window-taskbar__status--clock {
+  position: relative;
+  margin-left: 0.18rem;
+  padding-left: 0.28rem;
+}
+
 .window-taskbar__status--latency::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--window-shell-border) 84%, transparent) 22%,
+    color-mix(in srgb, var(--window-shell-border) 84%, transparent) 78%,
+    transparent 100%
+  );
+}
+
+.window-taskbar__status--clock::before {
   content: '';
   position: absolute;
   left: 0;
@@ -423,6 +445,8 @@
   min-width: 4.25rem;
   height: var(--window-taskbar-latency-height);
   padding: 0 0.55rem 0 0.5rem;
+  color: var(--cds-text-primary, var(--text-primary));
+  cursor: pointer;
   border-inline: 1px solid color-mix(in srgb, var(--interactive) 24%, var(--border));
   background:
     linear-gradient(
@@ -430,6 +454,11 @@
       color-mix(in srgb, var(--interactive) 10%, var(--surface)) 0%,
       color-mix(in srgb, var(--interactive) 6%, var(--surface-2)) 100%
     );
+}
+
+button.topbar-pro__latency-pressure {
+  border-block: 0;
+  font: inherit;
 }
 
 .topbar-pro__latency-pressure--critical {
@@ -463,6 +492,77 @@
 .topbar-pro__latency-pressure-digits {
   font-size: 0.9rem;
   line-height: 1;
+}
+
+.window-taskbar__clock {
+  display: inline-grid;
+  justify-items: end;
+  min-width: 4.7rem;
+  min-height: var(--window-taskbar-latency-height);
+  padding: 0.08rem 0 0.08rem 0.46rem;
+  border: 0;
+  background: transparent;
+  color: var(--cds-text-primary, var(--text-primary));
+  font: inherit;
+  cursor: pointer;
+}
+
+.window-taskbar__clock-time,
+.window-taskbar__clock-date {
+  font-size: 0.68rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.window-taskbar__clock-date {
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.window-taskbar__popover {
+  padding: 0;
+}
+
+.window-taskbar__popover-body {
+  display: grid;
+  gap: 0.38rem;
+  min-width: 15rem;
+  padding: 0.85rem 0.95rem;
+}
+
+.window-taskbar__popover-kicker {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.window-taskbar__popover-title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.window-taskbar__popover-copy {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.window-taskbar__popover-status-list {
+  display: grid;
+  gap: 0.24rem;
+  margin-top: 0.2rem;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: 0.76rem;
+}
+
+.window-taskbar__clock:focus-visible,
+button.topbar-pro__latency-pressure:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
 }
 
 .topbar-pro--juce-grid-tablet {

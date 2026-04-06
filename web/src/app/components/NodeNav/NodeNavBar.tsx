@@ -11,7 +11,7 @@ import { NodeAlertToast } from '../NodeAlerts/NodeAlertToast'
 import { NodeMiniCard } from './NodeMiniCard'
 import { NodeNavChip } from './NodeNavChip'
 
-const MAX_VISIBLE_NODE_CHIPS = 3
+const MAX_VISIBLE_NODE_CHIPS = 5
 
 export function NodeNavBar() {
   const location = useLocation()

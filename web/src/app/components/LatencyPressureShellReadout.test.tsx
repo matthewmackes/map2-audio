@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { LatencyPressureShellReadout } from './LatencyPressureShellReadout'
@@ -14,6 +14,23 @@ jest.mock('../hooks/useNodePageContext', () => ({
 jest.mock('../hooks/useLatencyPressure', () => ({
   useLatencyPressure: (...args: unknown[]) => mockUseLatencyPressure(...args),
 }))
+
+jest.mock('@carbon/react', () => {
+  const actual = jest.requireActual('@carbon/react')
+  return {
+    ...actual,
+    Popover: ({ children, open }: any) => {
+      const childArray = Array.isArray(children) ? children : [children]
+      return (
+        <div>
+          {childArray[0]}
+          {open ? childArray[1] : null}
+        </div>
+      )
+    },
+    PopoverContent: ({ children, className }: any) => <div className={className}>{children}</div>,
+  }
+})
 
 describe('LatencyPressureShellReadout', () => {
   beforeEach(() => {
@@ -99,5 +116,25 @@ describe('LatencyPressureShellReadout', () => {
 
     expect(getByTestId('shell-latency-pressure-readout')).toHaveClass('topbar-pro__latency-pressure--warning')
     expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('06')
+  })
+
+  it('opens a detail popover when the tray readout is clicked', () => {
+    render(
+      <MemoryRouter
+        initialEntries={['/platforms/audio-engine']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <LatencyPressureShellReadout />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByTestId('shell-latency-pressure-readout'))
+
+    expect(screen.getByText('Latency pressure')).toBeInTheDocument()
+    expect(screen.getByText('Score 04/10')).toBeInTheDocument()
+    expect(screen.getByText('Scoped to local-rack')).toBeInTheDocument()
   })
 })

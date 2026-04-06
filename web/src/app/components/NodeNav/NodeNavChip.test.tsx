@@ -206,6 +206,8 @@ describe('NodeNavChip', () => {
           { ...baseNode, hostname: 'node-c', node_id: 'node-c', is_local: false, is_viewed: false },
           { ...baseNode, hostname: 'node-d', node_id: 'node-d', is_local: false, is_viewed: false },
           { ...baseNode, hostname: 'node-e', node_id: 'node-e', is_local: false, is_viewed: false },
+          { ...baseNode, hostname: 'node-f', node_id: 'node-f', is_local: false, is_viewed: false, status: 'critical' },
+          { ...baseNode, hostname: 'node-g', node_id: 'node-g', is_local: false, is_viewed: false },
         ],
         audio_edges: [],
         network_edges: [],
@@ -216,6 +218,8 @@ describe('NodeNavChip', () => {
         { ...baseNode, hostname: 'node-c', node_id: 'node-c', is_local: false, is_viewed: false },
         { ...baseNode, hostname: 'node-d', node_id: 'node-d', is_local: false, is_viewed: false, status: 'critical' },
         { ...baseNode, hostname: 'node-e', node_id: 'node-e', is_local: false, is_viewed: false },
+        { ...baseNode, hostname: 'node-f', node_id: 'node-f', is_local: false, is_viewed: false, status: 'critical' },
+        { ...baseNode, hostname: 'node-g', node_id: 'node-g', is_local: false, is_viewed: false },
       ],
       viewedNodeId: 'node-a',
       nodeTopologyQuery: { isLoading: false, isError: false },
@@ -227,7 +231,7 @@ describe('NodeNavChip', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getAllByRole('button', { name: /node /i })).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: /node /i })).toHaveLength(5)
     expect(screen.getByText('+2')).toHaveClass('node-nav-bar__overflow--critical')
   })
 })

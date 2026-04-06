@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 09:36 EDT - T780-subA completed with always-on bottom taskbar shell and titlebar removal.
+Last updated: 2026-04-06 09:42 EDT - T780-subC completed with expanded node tray visibility, clickable latency detail, and taskbar clock status popover.
 
 ## Performance Brain
 
@@ -17407,7 +17407,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-05
   - ID: T780-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the system tray (node chips, latency, clock)
     Description:
     - Goal / acceptance criteria: Implement the system tray on the right side of the taskbar containing: up to 5 NodeNavChip pills + overflow badge (click-only popovers with NodeMiniCard, not hover), latency numeric readout always visible (e.g. "1.3ms") with click for detailed popover matching current latency pressure content, and a 12-hour clock with date on hover tooltip. Click clock opens a popover showing full date, uptime, and platform version. Move hostname/AVB/AVDECC status into system tray hover/click details.
@@ -17415,8 +17415,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: System tray container, NodeNavChip integration (up to 5 + overflow), latency readout + detail popover, clock + date/uptime popover.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 09:42 EDT - Codex
+    - Completion notes:
+      - Expanded `NodeNavBar` to keep up to five node chips visible before collapsing into the overflow pill, which better matches the system-tray budget defined for the Windows 10 desktop shell.
+      - Upgraded `LatencyPressureShellReadout` from a passive badge into a clickable tray control with a focused Carbon popover summarizing score, helper text, and node scope.
+      - Added `web/src/app/components/TaskbarClock.tsx` and integrated it into `AppShell` so the taskbar now shows a 12-hour clock/date with click-to-open popover details for hostname, uptime, platform version, and current AVB/AVDECC/node status labels.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NodeNav/NodeNavChip.test.tsx src/app/components/LatencyPressureShellReadout.test.tsx src/app/components/TaskbarClock.test.tsx src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
 Last updated: 2026-04-06 09:33 EDT - Codex
 

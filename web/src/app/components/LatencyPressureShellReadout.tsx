@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
+import { Popover, PopoverContent } from '@carbon/react'
 
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -23,6 +24,7 @@ function resolveShellLatencyPageKey(pathname: string, panel: string | null): str
 export function LatencyPressureShellReadout() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
+  const [open, setOpen] = useState(false)
   const pageKey = useMemo(
     () => resolveShellLatencyPageKey(location.pathname, searchParams.get('panel')),
     [location.pathname, searchParams],
@@ -41,19 +43,34 @@ export function LatencyPressureShellReadout() {
     : 'Latency pressure score is waiting for realtime telemetry.'
 
   return (
-    <div
-      className={`topbar-pro__latency-pressure topbar-pro__latency-pressure--${pressureBand}`}
-      title={title}
-      data-testid="shell-latency-pressure-readout"
-    >
-      <span className="topbar-pro__latency-pressure-label" aria-hidden="true">LAT</span>
-      <SegmentedLedText
-        value={pressure.scoreDisplay}
-        size="sm"
-        color={displayColor}
-        className="topbar-pro__latency-pressure-digits"
-      />
-    </div>
+    <Popover align="bottom-end" caret open={open} onRequestClose={() => setOpen(false)}>
+      <button
+        type="button"
+        className={`topbar-pro__latency-pressure topbar-pro__latency-pressure--${pressureBand}`}
+        title={title}
+        data-testid="shell-latency-pressure-readout"
+        onClick={() => setOpen((current) => !current)}
+        aria-label={`Latency pressure ${pressure.scoreDisplay}`}
+      >
+        <span className="topbar-pro__latency-pressure-label" aria-hidden="true">LAT</span>
+        <SegmentedLedText
+          value={pressure.scoreDisplay}
+          size="sm"
+          color={displayColor}
+          className="topbar-pro__latency-pressure-digits"
+        />
+      </button>
+      <PopoverContent className="window-taskbar__popover">
+        <div className="window-taskbar__popover-body">
+          <p className="window-taskbar__popover-kicker">Latency pressure</p>
+          <h3 className="window-taskbar__popover-title">Score {pressure.scoreDisplay}/10</h3>
+          <p className="window-taskbar__popover-copy">{pressure.helperText}</p>
+          <p className="window-taskbar__popover-copy">
+            {viewedNode ? `Scoped to ${viewedNode.hostname}` : 'Using global realtime telemetry.'}
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 

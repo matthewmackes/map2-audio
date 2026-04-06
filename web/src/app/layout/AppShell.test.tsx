@@ -68,6 +68,10 @@ jest.mock('../components/LatencyPressureShellReadout', () => ({
   LatencyPressureShellReadout: () => <div data-testid="shell-latency-pressure-readout">09</div>,
 }))
 
+jest.mock('../components/TaskbarClock', () => ({
+  TaskbarClock: () => <div data-testid="taskbar-clock">9:41 AM</div>,
+}))
+
 function renderInRouter(ui: React.ReactNode, initialEntries: string[] = ['/']) {
   return render(
     <MemoryRouter
@@ -149,6 +153,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+    expect(container.querySelector('.window-taskbar__status--clock')?.contains(screen.getByTestId('taskbar-clock'))).toBe(true)
   })
 
   it('uses the first non-active pinned route as the quick-launch slot', () => {
