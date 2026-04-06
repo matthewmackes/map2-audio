@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 10:10 EDT - T781-subA completed with a two-column Start Menu shell and static left-rail shortcuts.
+Last updated: 2026-04-06 10:24 EDT - T781-subB completed with a pinned live-tile grid and Workspace Catalog empty-state CTA.
 
 ## Performance Brain
 
@@ -17458,7 +17458,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T781-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the Start Menu right column — pinned live tiles grid
     Description:
     - Goal / acceptance criteria: Implement the right column of the Start Menu as a 3x3 grid of uniform square tiles. Tiles are populated from the existing Start Menu pin group in the Workspace Catalog. Each tile shows a static app icon/logo. Empty state: message "Pin apps from the Workspace Catalog" with a clickable link to open `/platforms/workspace-catalog`. Tiles are scrollable if more than 9 are pinned.
@@ -17466,8 +17466,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Live tile grid component, pin group data integration, empty state, scroll overflow.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 10:24 EDT - Codex
+    - Completion notes:
+      - Reworked the Start Menu right column in `web/src/app/layout/AppShell.tsx` and `web/src/app/layout/AppShell.css` into a uniform square-tile grid that renders pinned Start Menu routes as 3-column live tiles, while preserving direct links plus the existing MPX1 and hardware submenu cards.
+      - Added tile-grid overflow handling so the pinned area scrolls once more than nine tiles are present, and replaced the old empty card with the required Workspace Catalog call-to-action that routes directly into `/platforms/workspace-catalog`.
+      - Extended `web/src/app/layout/AppShell.test.tsx` with coverage for the tile rendering and the empty-state CTA so the new Start Menu shape stays locked.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T781-subC
     Status: [ ] Todo
     Title: Build the Power submenu (Restart Backend, Refresh Page, Log Out)

@@ -194,6 +194,7 @@ describe('AppShell desktop taskbar shell', () => {
 
     const labels = Array.from(container.querySelectorAll('.start-menu-card__label')).map((node) => node.textContent)
     expect(labels).toEqual(['Audio Grid', 'IntelFX Rack', 'MIDI Hub', 'Stage Mode'])
+    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(4)
   })
 
   it('closes the Start menu when a static shortcut is used', () => {
@@ -209,6 +210,23 @@ describe('AppShell desktop taskbar shell', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
     expect(screen.queryByRole('button', { name: 'Audio Artifacts' })).toBeNull()
+  })
+
+  it('shows the Workspace Catalog CTA when no Start menu tiles are pinned', () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    expect(screen.getByText('Pin apps from the Workspace Catalog.')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Workspace Catalog' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
+    expect(screen.queryByText('Pin apps from the Workspace Catalog.')).toBeNull()
   })
 
   it('renders MPX1 as a Start menu card that opens its pinned mega menu', () => {

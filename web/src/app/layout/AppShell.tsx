@@ -291,7 +291,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <button
             type="button"
-            className={`start-menu-card start-menu-card--submenu${isItemActive ? ' is-active' : ''}${mpx1MenuOpen ? ' is-open' : ''}`}
+            className={`start-menu-card start-menu-card--tile start-menu-card--submenu${isItemActive ? ' is-active' : ''}${mpx1MenuOpen ? ' is-open' : ''}`}
             style={{ '--item-color': item.color } as CSSProperties}
             title={`${item.description} • ${item.maturity}`}
             onClick={() => {
@@ -305,11 +305,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-expanded={mpx1MenuOpen}
             aria-controls="mpx1-mega-menu"
           >
-            <span className="start-menu-card__icon">
+            <span className="start-menu-card__icon start-menu-card__icon--tile">
               <Icon size={18} aria-hidden />
             </span>
-            <span className="start-menu-card__label">{item.label}</span>
-            <ChevronRight size={14} className={`start-menu-card__caret${mpx1MenuOpen ? ' is-open' : ''}`} aria-hidden />
+            <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
+            <ChevronRight size={14} className={`start-menu-card__caret start-menu-card__caret--tile${mpx1MenuOpen ? ' is-open' : ''}`} aria-hidden />
           </button>
 
           {mpx1MenuOpen && (
@@ -347,7 +347,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <button
             type="button"
-            className={`start-menu-card start-menu-card--submenu${isItemActive ? ' is-active' : ''}${topHardwareSubmenuOpen ? ' is-open' : ''}`}
+            className={`start-menu-card start-menu-card--tile start-menu-card--submenu${isItemActive ? ' is-active' : ''}${topHardwareSubmenuOpen ? ' is-open' : ''}`}
             style={{ '--item-color': item.color } as CSSProperties}
             title={`${item.description} • ${item.maturity}`}
             onClick={() => {
@@ -361,11 +361,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-expanded={topHardwareSubmenuOpen}
             aria-controls="top-hardware-menu"
           >
-            <span className="start-menu-card__icon">
+            <span className="start-menu-card__icon start-menu-card__icon--tile">
               <Icon size={18} aria-hidden />
             </span>
-            <span className="start-menu-card__label">{item.label}</span>
-            <ChevronRight size={14} className={`start-menu-card__caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} aria-hidden />
+            <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
+            <ChevronRight size={14} className={`start-menu-card__caret start-menu-card__caret--tile${topHardwareSubmenuOpen ? ' is-open' : ''}`} aria-hidden />
           </button>
 
           {topHardwareSubmenuOpen && renderHardwareSubmenuPanel()}
@@ -377,17 +377,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <NavLink
         key={`start-link-${item.to}`}
         to={item.to}
-        className={({ isActive }) => `start-menu-card${isActive ? ' is-active' : ''}`}
+        className={({ isActive }) => `start-menu-card start-menu-card--tile${isActive ? ' is-active' : ''}`}
         style={{ '--item-color': item.color } as CSSProperties}
         title={`${item.description} • ${item.maturity}`}
         onClick={closeShellMenus}
         onMouseEnter={() => prefetchAppRoute(item.to)}
         onFocus={() => prefetchAppRoute(item.to)}
       >
-        <span className="start-menu-card__icon">
+        <span className="start-menu-card__icon start-menu-card__icon--tile">
           <Icon size={18} aria-hidden />
         </span>
-        <span className="start-menu-card__label">{item.label}</span>
+        <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
       </NavLink>
     )
   }
@@ -450,7 +450,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </div>
                       ) : (
                         <div className="start-menu-panel__empty" role="note">
-                          No pinned routes selected.
+                          <p>Pin apps from the Workspace Catalog.</p>
+                          <button
+                            type="button"
+                            className="start-menu-panel__empty-link"
+                            onClick={() => handleStartMenuStaticAction('/platforms/workspace-catalog')}
+                          >
+                            Open Workspace Catalog
+                          </button>
                         </div>
                       )}
                     </div>
