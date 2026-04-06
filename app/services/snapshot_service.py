@@ -69,6 +69,9 @@ from app.services.snapshot_footswitch_label_service import push_snapshot_footswi
 from app.services.state_authority_document_service import (
     StateAuthorityDocumentService,
 )
+from app.services.state_authority_revision_service import (
+    StateAuthorityRevisionService,
+)
 from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 from app.services.upload_service import AssetType, get_upload_service
 
@@ -382,6 +385,18 @@ class SnapshotService:
             safe_float=_safe_float,
             safe_int=_safe_int,
             default_snapshot_tempo_bpm=DEFAULT_SNAPSHOT_TEMPO_BPM,
+        )
+        self.state_authority_revisions = StateAuthorityRevisionService(
+            session,
+            document_service=self.state_authority_documents,
+            get_snapshot_model=self._get_snapshot_model,
+            update_snapshot=self.update_snapshot,
+            normalize_detail_payload=self._normalize_detail_payload,
+            safe_float=_safe_float,
+            default_snapshot_tempo_bpm=DEFAULT_SNAPSHOT_TEMPO_BPM,
+            utcnow=_utcnow,
+            max_snapshot_revisions=MAX_SNAPSHOT_REVISIONS,
+            unset=UNSET,
         )
 
     async def list_snapshots(
@@ -1778,62 +1793,14 @@ class SnapshotService:
         return True
 
     async def list_revisions(self, snapshot_id: int) -> Optional[list[dict[str, Any]]]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            return None
-
-        result = await self.session.execute(
-            select(SnapshotRevision)
-            .where(SnapshotRevision.snapshot_id == snapshot_id)
-            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
-        )
-        revisions = result.scalars().all()
-        return [self._serialize_snapshot_revision(revision) for revision in revisions]
+        return await self.state_authority_revisions.list_revisions(snapshot_id)
 
     async def restore_revision(
         self,
         snapshot_id: int,
         revision_number: int,
     ) -> Optional[dict[str, Any]]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            return None
-
-        result = await self.session.execute(
-            select(SnapshotRevision).where(
-                SnapshotRevision.snapshot_id == snapshot_id,
-                SnapshotRevision.revision_number == revision_number,
-            )
-        )
-        revision = result.scalar_one_or_none()
-        if revision is None:
-            return None
-
-        if isinstance(revision.document, dict) and revision.document.get("version") == SNAPSHOT_GRAPH_VERSION:
-            payload = await self.state_authority_documents.document_to_normalized(revision.document)
-        else:
-            payload = dict(revision.payload or {})
-        restored = await self.update_snapshot(
-            snapshot_id,
-            tempo_bpm=payload["tempo_bpm"] if "tempo_bpm" in payload else UNSET,
-            output_level_reference_dbfs=(
-                payload["output_level_reference_dbfs"]
-                if "output_level_reference_dbfs" in payload
-                else UNSET
-            ),
-            output_level_warning_threshold_db=(
-                payload["output_level_warning_threshold_db"]
-                if "output_level_warning_threshold_db" in payload
-                else UNSET
-            ),
-            input_device=payload["input_device"] if "input_device" in payload else UNSET,
-            output_device=payload["output_device"] if "output_device" in payload else UNSET,
-            controls_payload=payload["controls"] if "controls" in payload else UNSET,
-            detail_payload=payload,
-            create_revision=True,
-            capture_current_authority_extensions=False,
-        )
-        return restored
+        return await self.state_authority_revisions.restore_revision(snapshot_id, revision_number)
 
     async def duplicate_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         snapshot = await self.get_snapshot(snapshot_id)
@@ -4483,87 +4450,7 @@ class SnapshotService:
         }
 
     async def _append_snapshot_revision(self, snapshot_id: int, detail: dict[str, Any]) -> dict[str, Any]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            raise ValueError(f"Snapshot {snapshot_id} not found")
-        result = await self.session.execute(
-            select(SnapshotRevision)
-            .where(SnapshotRevision.snapshot_id == snapshot_id)
-            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
-            .limit(1)
-        )
-        latest = result.scalar_one_or_none()
-        next_revision_number = int(latest.revision_number if latest is not None else 0) + 1
-        revision = SnapshotRevision(
-            snapshot_id=snapshot_id,
-            revision_number=next_revision_number,
-            snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
-            summary=self._build_snapshot_revision_summary(detail),
-            payload=self._build_snapshot_revision_payload(detail),
-            document=self.state_authority_documents.build_validated_document(
-                snapshot,
-                self._normalize_detail_payload(detail),
-            ),
-            saved_at=_utcnow(),
-        )
-        self.session.add(revision)
-        await self.state_authority_documents.sync_asset_registry(revision.document)
-        await self.session.flush()
-        await self._prune_snapshot_revisions(snapshot_id)
-        return self._serialize_snapshot_revision(revision)
-
-    async def _prune_snapshot_revisions(self, snapshot_id: int) -> None:
-        result = await self.session.execute(
-            select(SnapshotRevision)
-            .where(SnapshotRevision.snapshot_id == snapshot_id)
-            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
-        )
-        revisions = result.scalars().all()
-        for revision in revisions[MAX_SNAPSHOT_REVISIONS:]:
-            await self.session.delete(revision)
-        if len(revisions) > MAX_SNAPSHOT_REVISIONS:
-            await self.session.flush()
-
-    def _build_snapshot_revision_payload(self, detail: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "tempo_bpm": _safe_float(detail.get("tempo_bpm"), DEFAULT_SNAPSHOT_TEMPO_BPM),
-            "output_level_reference_dbfs": detail.get("output_level_reference_dbfs"),
-            "output_level_warning_threshold_db": detail.get("output_level_warning_threshold_db"),
-            "input_device": detail.get("input_device"),
-            "output_device": detail.get("output_device"),
-            "controls": copy.deepcopy(detail.get("controls") or {}),
-            "channels": copy.deepcopy(detail.get("channels") or []),
-            "chains": copy.deepcopy(detail.get("chains") or []),
-            "routing": copy.deepcopy(detail.get("routing") or {}),
-            "midi_map": copy.deepcopy(detail.get("midi_map") or []),
-            "extensions": copy.deepcopy(detail.get("extensions") or {}),
-        }
-
-    def _build_snapshot_revision_summary(self, detail: dict[str, Any]) -> str:
-        block_count = self._count_snapshot_blocks(detail)
-        channel_count = len([item for item in detail.get("channels", []) if isinstance(item, dict)])
-        routing_mode = str((detail.get("routing") or {}).get("mode") or "parallel_blend").replace("_", " ")
-        block_label = "block" if block_count == 1 else "blocks"
-        channel_label = "channel" if channel_count == 1 else "channels"
-        return f"{block_count} {block_label}, {channel_count} {channel_label}, {routing_mode} routing"
-
-    def _count_snapshot_blocks(self, detail: dict[str, Any]) -> int:
-        chains = [item for item in detail.get("chains", []) if isinstance(item, dict)]
-        block_count = sum(len([plugin for plugin in chain.get("plugins", []) if isinstance(plugin, dict)]) for chain in chains)
-        if block_count > 0:
-            return block_count
-        paths = [item for item in detail.get("paths", []) if isinstance(item, dict)]
-        return sum(len([plugin for plugin in path.get("plugins", []) if isinstance(plugin, dict)]) for path in paths)
-
-    def _serialize_snapshot_revision(self, revision: SnapshotRevision) -> dict[str, Any]:
-        return {
-            "id": revision.id,
-            "snapshot_id": revision.snapshot_id,
-            "revision_number": int(revision.revision_number),
-            "snapshot_revision": revision.snapshot_revision,
-            "summary": revision.summary,
-            "saved_at": revision.saved_at.isoformat() if revision.saved_at else None,
-        }
+        return await self.state_authority_revisions.append_revision(snapshot_id, detail)
 
     def _serialize_deployment(self, deployment: SnapshotDeployment) -> dict[str, Any]:
         state = inspect(deployment)

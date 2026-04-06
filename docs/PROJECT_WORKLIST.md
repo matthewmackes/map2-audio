@@ -761,8 +761,28 @@ Subtasks:
       - `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'` -> PASS (`3 passed, 42 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T772-subB
+    Status: [✓] Done
+    Title: Extract snapshot revision ownership into a dedicated State Authority revision service
+    Description:
+    - Goal / acceptance criteria: Move revision list/save/restore/payload-summary behavior out of `SnapshotService` into a dedicated revision service module while preserving explicit revision and document-backed restore behavior.
+    - Why it matters: T772 needs revision ownership separated before route rewiring and categorized revision summaries can progress cleanly; keeping revision logic inside the monolith would block the next service splits.
+    - Dependencies: T772-subA
+    - Estimated effort: Medium
+    - Required outputs: New revision service module, snapshot-service delegation, focused regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 21:23 EDT - Codex
+    - Completion notes:
+      - Added [app/services/state_authority_revision_service.py](/home/mm/map2-audio/app/services/state_authority_revision_service.py) to own revision listing, append/prune, restore, payload building, summary generation, and serialization.
+      - Updated [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) so revision CRUD now delegates directly to the new revision service while continuing to use the extracted document service for document-backed restore and revision document persistence.
+      - Kept the explicit revision-save and document-backed restore regressions green in [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py), proving the ownership split preserved current behavior.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'revision_restore_prefers_document or save_explicit_revision_and_restore or document_backed or restores_asset_paths_from_state_authority_registry'` -> PASS (`2 passed, 43 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_revision_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 20:47 EDT - Codex
+Last updated: 2026-04-05 21:23 EDT - Codex
 
 ID: T773
 Status: [ ] Todo

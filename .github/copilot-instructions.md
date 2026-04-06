@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority document-service extraction documented)
+> **Last Updated**: April 5, 2026 (State Authority revision-service extraction documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1641,6 +1641,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: Once a State Authority behavior is proven in the monolith, extract ownership immediately. Do not let validated storage foundations stay trapped inside `SnapshotService` if the next epic is decomposition.
 
+**73. Revision Ownership Must Leave SnapshotService Before Categorized Revision Summaries Can Evolve Safely (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/state_authority_revision_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Revision list/save/restore behavior was still embedded in `SnapshotService`, which meant the next `T772` work on categorized revision summaries and route rewiring would keep touching the monolith instead of a dedicated revision owner.
+- **Root Cause**: The first decomposition slice only extracted document persistence. Revisions still depended on inline summary builders, persistence helpers, and restore logic living beside unrelated snapshot CRUD behavior.
+- **Fix**: Add `StateAuthorityRevisionService` and move revision listing, append/prune, restore, payload building, and summary generation into it, with `SnapshotService` delegating directly to that service.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'revision_restore_prefers_document or save_explicit_revision_and_restore or document_backed or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_revision_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: Once revision behavior is proven, move it out immediately. Do not build richer revision summaries or revision routes on top of monolithic snapshot ownership.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1911,6 +1919,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Revision-Service Extraction
+- **Section**: Gotchas & Learned Fixes (#73), Update Log
+- **Change**: Documented the next `T772` slice: revision list/save/restore/payload-summary behavior now lives in `StateAuthorityRevisionService`, with `SnapshotService` delegating directly to that service.
+- **Reason**: The document-service extraction started decomposition, but revision ownership was still trapped inside the snapshot monolith and would have blocked the next route and summary work.
+- **Impact**: Future `T772` slices should evolve revision summaries and route wiring through the dedicated revision service instead of re-expanding snapshot-monolith revision logic.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/state_authority_revision_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Document-Service Extraction
 - **Section**: Gotchas & Learned Fixes (#72), Update Log
