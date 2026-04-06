@@ -732,7 +732,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 20:40 EDT - Codex
 
 ID: T772
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Decompose the snapshot monolith into direct State Authority sub-services and route wiring
 Description:
 - Goal / acceptance criteria: Split the current snapshot authority into the planned service modules under `app/services/`, including CRUD, activation, topology, portability, revision, control-map, community, reconciliation, template, asset, runtime, runtime-state, preload, and device-registry owners, with routes calling sub-services directly and categorized revision summaries generated at save time.
@@ -740,9 +740,29 @@ Description:
 - Dependencies: T771
 - Estimated effort: High
 - Required outputs: New/refactored service modules, route rewiring without a facade layer, revision-summary generation, and focused backend coverage for the decomposed surface.
-Subtasks: None
+Subtasks:
+  - ID: T772-subA
+    Status: [✓] Done
+    Title: Extract graph-document persistence and asset-registry ownership into a dedicated service
+    Description:
+    - Goal / acceptance criteria: Move State Authority document build/validate/readback and asset-registry sync logic out of `SnapshotService` into a dedicated service module with the snapshot service calling it directly, while preserving current CRUD and revision behavior.
+    - Why it matters: T771 proved the document, validator, and registry foundations, but T772 cannot start until that storage responsibility stops living inline inside the snapshot monolith.
+    - Dependencies: T771
+    - Estimated effort: Medium
+    - Required outputs: New service module, snapshot-service rewiring, focused regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 20:47 EDT - Codex
+    - Completion notes:
+      - Added [app/services/state_authority_document_service.py](/home/mm/map2-audio/app/services/state_authority_document_service.py) to own State Authority graph-document build/validation, asset-registry synchronization, and document-backed read restoration instead of keeping that storage logic inline inside the snapshot monolith.
+      - Updated [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) to delegate snapshot and revision document persistence plus document-backed restores directly to the new service while preserving the existing CRUD/revision behavior.
+      - Kept the already-published T771 document/validator/registry regressions green in [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py), proving the first ownership split did not change the current storage semantics.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'` -> PASS (`3 passed, 42 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-05 20:47 EDT - Codex
 
 ID: T773
 Status: [ ] Todo

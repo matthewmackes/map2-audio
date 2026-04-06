@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority asset registry bridge documented)
+> **Last Updated**: April 5, 2026 (State Authority document-service extraction documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1633,6 +1633,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: Content-addressed asset hashes are only useful if there is a durable registry behind them. Do not rely on per-document inline asset metadata as the sole hash-to-path resolution source during the State Authority migration.
 
+**72. State Authority Storage Logic Must Move Into Dedicated Services Before Decomposition Can Progress (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/state_authority_document_service.py`, `app/services/snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Even after T771 landed the graph document, validator, and asset registry, the snapshot monolith still owned all of that persistence code inline. That blocked T772 because the new foundations existed, but there was still no service boundary to decompose around.
+- **Root Cause**: The T771 work intentionally proved behavior inside `SnapshotService` first. Without a follow-up extraction, the repo would keep accruing more State Authority responsibilities inside the same large facade.
+- **Fix**: Add `StateAuthorityDocumentService` and move graph-document build/validation, asset-registry sync, and document-backed restore logic into it, with `SnapshotService` delegating directly to the new service.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: Once a State Authority behavior is proven in the monolith, extract ownership immediately. Do not let validated storage foundations stay trapped inside `SnapshotService` if the next epic is decomposition.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1903,6 +1911,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Document-Service Extraction
+- **Section**: Gotchas & Learned Fixes (#72), Update Log
+- **Change**: Documented the first concrete `T772` slice: graph-document build/validate/readback and asset-registry sync now live in `StateAuthorityDocumentService`, with `SnapshotService` delegating directly to that service.
+- **Reason**: The T771 storage foundations were working, but T772 could not begin until the storage logic had a real service boundary instead of remaining inline in the snapshot monolith.
+- **Impact**: Future T772 slices should keep splitting remaining snapshot responsibilities into direct State Authority services rather than adding new document/asset logic back into `SnapshotService`.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/state_authority_document_service.py`, `app/services/snapshot_service.py`
 
 ### [2026-04-05] - State Authority Asset Registry Bridge
 - **Section**: Gotchas & Learned Fixes (#71), Update Log

@@ -572,7 +572,7 @@ def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_pat
                     },
                 }
 
-            monkeypatch.setattr(service, "_build_state_authority_document", _broken_document)
+            monkeypatch.setattr(service.state_authority_documents, "build_document", _broken_document)
 
             try:
                 await service.create_snapshot(
