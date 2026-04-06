@@ -131,6 +131,15 @@ def normalize_graph_document(document: Mapping[str, Any]) -> dict[str, Any]:
     normalized.setdefault("version", SNAPSHOT_GRAPH_VERSION)
     graph = normalized.setdefault("graph", {})
     nodes = graph.setdefault("nodes", [])
+    morph = graph.get("morph")
+    if not isinstance(morph, Mapping):
+        morph = {}
+    graph["morph"] = {
+        "mode": _normalize_graph_morph_mode(morph.get("mode")),
+        "position": _clamp01(morph.get("position", 0.5)),
+        "source_channel_key": _normalize_optional_string(morph.get("source_channel_key")),
+        "target_channel_key": _normalize_optional_string(morph.get("target_channel_key")),
+    }
     normalized_assets: list[dict[str, Any]] = []
 
     for node in nodes:
@@ -232,6 +241,35 @@ def validate_graph_document(document: Mapping[str, Any]) -> None:
     graph = _require_mapping(document, "graph")
     nodes = _require_list(graph, "nodes")
     edges = _require_list(graph, "edges")
+    morph = _require_mapping_value(
+        graph.get("morph"),
+        "$.graph.morph",
+        "Persist graph.morph as an object with explicit mode, position, and source/target channel keys.",
+    )
+    allowed_morph_modes = {"off", "snapshot", "intra_snapshot", "cross_snapshot"}
+    morph_mode = morph.get("mode")
+    if morph_mode not in allowed_morph_modes:
+        _raise_validation_error(
+            "$.graph.morph.mode",
+            f"mode must be one of {sorted(allowed_morph_modes)!r}",
+            "Persist graph.morph.mode as off, snapshot, intra_snapshot, or cross_snapshot.",
+        )
+    morph_position = morph.get("position")
+    if not isinstance(morph_position, (int, float)) or not 0.0 <= float(morph_position) <= 1.0:
+        _raise_validation_error(
+            "$.graph.morph.position",
+            "position must be a number between 0.0 and 1.0",
+            "Clamp graph.morph.position into the inclusive 0.0-1.0 range before persisting.",
+        )
+    for field_name in ("source_channel_key", "target_channel_key"):
+        field_value = morph.get(field_name)
+        if field_value is not None and (not isinstance(field_value, str) or not field_value.strip()):
+            _raise_validation_error(
+                f"$.graph.morph.{field_name}",
+                "value must be null or a non-empty string",
+                f"Persist graph.morph.{field_name} as null or the stable channel_key string.",
+            )
+
     for index, node in enumerate(nodes):
         path = f"$.graph.nodes[{index}]"
         node_map = _require_mapping_entry(node, path)
@@ -334,6 +372,26 @@ def _infer_asset_type(state_key: str) -> str:
     if "sample" in lowered:
         return "sample"
     return "binary"
+
+
+def _normalize_graph_morph_mode(value: Any) -> str:
+    lowered = str(value or "").strip().lower()
+    if lowered in {"snapshot", "intra_snapshot", "cross_snapshot"}:
+        return lowered
+    return "off"
+
+
+def _normalize_optional_string(value: Any) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _clamp01(value: Any) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return 0.5
+    return max(0.0, min(1.0, numeric))
 
 
 def _try_register_asset_reference(value: str, *, asset_type: str) -> AssetRegistryEntry | None:

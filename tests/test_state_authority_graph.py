@@ -13,6 +13,7 @@ from app.services.state_authority_graph import (
     normalize_and_validate_graph_document,
     normalize_graph_document,
     register_asset_file,
+    validate_graph_document,
 )
 
 
@@ -81,6 +82,37 @@ def test_normalize_graph_document_canonicalizes_uris_and_asset_paths(tmp_path):
         }
     ]
     assert extract_asset_references(normalized) == {expected_hash}
+    assert normalized["graph"]["morph"] == {
+        "mode": "off",
+        "position": 0.5,
+        "source_channel_key": None,
+        "target_channel_key": None,
+    }
+
+
+def test_normalize_graph_document_clamps_and_normalizes_morph_block():
+    document = {
+        "meta": {"name": "Lead", "type": "snapshot"},
+        "graph": {
+            "nodes": [],
+            "edges": [],
+            "morph": {
+                "mode": "Intra_Snapshot",
+                "position": 2.0,
+                "source_channel_key": " channel-a ",
+                "target_channel_key": "",
+            },
+        },
+    }
+
+    normalized = normalize_graph_document(document)
+
+    assert normalized["graph"]["morph"] == {
+        "mode": "intra_snapshot",
+        "position": 1.0,
+        "source_channel_key": "channel-a",
+        "target_channel_key": None,
+    }
 
 
 def test_schema_file_is_valid_json():
@@ -115,3 +147,28 @@ def test_normalize_and_validate_graph_document_rejects_invalid_uri_with_guidance
         assert "canonical map2:{type}:{name}" in exc.guidance
     else:
         raise AssertionError("Invalid graph document should fail validation")
+
+
+def test_validate_graph_document_rejects_invalid_morph_position():
+    document = {
+        "version": SNAPSHOT_GRAPH_VERSION,
+        "meta": {"name": "Broken Morph", "type": "snapshot"},
+        "graph": {
+            "nodes": [],
+            "edges": [],
+            "morph": {
+                "mode": "cross_snapshot",
+                "position": "far",
+                "source_channel_key": "channel-a",
+                "target_channel_key": "channel-b",
+            },
+        },
+    }
+
+    try:
+        validate_graph_document(document)
+    except GraphDocumentValidationError as exc:
+        assert exc.path == "$.graph.morph.position"
+        assert "0.0 and 1.0" in str(exc)
+    else:
+        raise AssertionError("Expected morph validation failure")

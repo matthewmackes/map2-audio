@@ -52,6 +52,7 @@ class StateAuthorityDocumentService:
         snapshot: Snapshot,
         normalized: dict[str, Any],
     ) -> dict[str, Any]:
+        routing = normalized.get("routing") if isinstance(normalized.get("routing"), dict) else {}
         document = {
             "version": SNAPSHOT_GRAPH_VERSION,
             "meta": {
@@ -85,6 +86,7 @@ class StateAuthorityDocumentService:
                 "channels": copy.deepcopy(normalized.get("channels") or []),
                 "chains": copy.deepcopy(normalized.get("chains") or []),
                 "routing": copy.deepcopy(normalized.get("routing") or {}),
+                "morph": self._build_morph_document_block(routing),
                 "midi_map": copy.deepcopy(normalized.get("midi_map") or []),
                 "tempo_bpm": self._safe_float(snapshot.tempo_bpm, self._default_snapshot_tempo_bpm),
                 "output_level_reference_dbfs": snapshot.output_level_reference_dbfs,
@@ -195,10 +197,20 @@ class StateAuthorityDocumentService:
                 return [_restore_loader_state(item) for item in value]
             return value
 
+        graph_morph = graph.get("morph") if isinstance(graph.get("morph"), dict) else {}
+        restored_routing = copy.deepcopy(graph.get("routing") or {})
+        if graph_morph:
+            restored_routing["morph_position"] = self._safe_float(graph_morph.get("position"), 0.5)
+            restored_routing["morph_source_channel_key"] = graph_morph.get("source_channel_key")
+            restored_routing["morph_target_channel_key"] = graph_morph.get("target_channel_key")
+            morph_mode = self._routing_mode_from_graph_morph(str(graph_morph.get("mode") or ""))
+            if morph_mode is not None:
+                restored_routing["mode"] = morph_mode
+
         normalized = {
             "channels": copy.deepcopy(graph.get("channels") or []),
             "chains": copy.deepcopy(graph.get("chains") or []),
-            "routing": copy.deepcopy(graph.get("routing") or {}),
+            "routing": restored_routing,
             "midi_map": copy.deepcopy(graph.get("midi_map") or []),
             "input_device": ((document.get("meta") or {}).get("io_bindings") or {}).get("input_device"),
             "output_device": ((document.get("meta") or {}).get("io_bindings") or {}).get("output_device"),
@@ -232,3 +244,30 @@ class StateAuthorityDocumentService:
 
         _walk(document)
         return references
+
+    def _build_morph_document_block(self, routing: dict[str, Any]) -> dict[str, Any]:
+        route_mode = str(routing.get("mode") or "").strip().lower()
+        if route_mode == "morph":
+            morph_mode = "intra_snapshot"
+        else:
+            morph_mode = "off"
+        return {
+            "mode": morph_mode,
+            "position": self._safe_float(routing.get("morph_position"), 0.5),
+            "source_channel_key": self._optional_string(routing.get("morph_source_channel_key")),
+            "target_channel_key": self._optional_string(routing.get("morph_target_channel_key")),
+        }
+
+    @staticmethod
+    def _optional_string(value: Any) -> str | None:
+        text = str(value or "").strip()
+        return text or None
+
+    @staticmethod
+    def _routing_mode_from_graph_morph(mode: str) -> str | None:
+        normalized = str(mode or "").strip().lower()
+        if normalized in {"snapshot", "intra_snapshot", "cross_snapshot"}:
+            return "morph"
+        if normalized == "off":
+            return None
+        return None

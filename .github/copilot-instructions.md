@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority activation hooks and preload planning documented)
+> **Last Updated**: April 6, 2026 (State Authority graph-document morph persistence documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Graph-Document Morph Persistence
+- **Section**: Update Log
+- **Change**: Documented the first `T775` slice: graph documents now persist a locked `graph.morph` block that mirrors morph mode, position, and source/target channel truth, and document-backed reads restore that same truth into snapshot routing.
+- **Reason**: `T775` cannot progress to a real engine-backed morph subsystem while morph semantics remain implicit in legacy routing rows only.
+- **Impact**: Future morph engine and activation work should consume `graph.morph` as the authority source instead of introducing parallel morph metadata fields.
 
 ### [2026-04-06] - State Authority Activation Hooks And Preload Planning
 - **Section**: Gotchas & Learned Fixes (#81), Update Log

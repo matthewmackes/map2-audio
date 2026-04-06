@@ -67,6 +67,28 @@
         "effects_loops": {
           "type": "array",
           "items": { "type": "object", "additionalProperties": true }
+        },
+        "morph": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["mode", "position", "source_channel_key", "target_channel_key"],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["off", "snapshot", "intra_snapshot", "cross_snapshot"]
+            },
+            "position": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "source_channel_key": {
+              "type": ["string", "null"]
+            },
+            "target_channel_key": {
+              "type": ["string", "null"]
+            }
+          }
         }
       }
     },

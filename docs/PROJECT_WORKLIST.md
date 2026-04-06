@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 23:28 EDT - T774-subC completed with config-ordered activation hooks and top-three preload planning surfaces.
+Last updated: 2026-04-07 00:05 EDT - T775-subA completed with graph-document morph persistence and restore coverage.
 
 ## Performance Brain
 
@@ -998,7 +998,7 @@ Assigned to: Codex
 Last updated: 2026-04-06 23:28 EDT - Codex
 
 ID: T775
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Deliver graph-document morph persistence and the C++ quad MorphEngine
 Description:
 - Goal / acceptance criteria: Persist morph metadata in the graph document, add the planned C++ `MorphEngine` with A/B/C/D endpoints plus atomic `set_morph_position(x, y)`, support continuous-parameter interpolation with discrete snap-at-50% behavior, and wire both intra-snapshot and cross-snapshot morph modes through the Python/C++ authority surface.
@@ -1006,9 +1006,42 @@ Description:
 - Dependencies: T771, T773
 - Estimated effort: High
 - Required outputs: Morph document schema/runtime support, JUCE engine/binding additions, service/API integration, and verification of smooth interpolation plus discrete snapping behavior.
-Subtasks: None
+Subtasks:
+  - ID: T775-subA
+    Status: [✓] Done
+    Title: Persist morph metadata in the State Authority graph document
+    Description:
+    - Goal / acceptance criteria: Add a locked `graph.morph` contract to the graph-document schema, persist routed morph mode/source/target/position truth into document writes, and restore the same truth during document-backed snapshot reads.
+    - Why it matters: The State Authority cannot own morph behavior while morph semantics remain implicit in legacy routing rows only.
+    - Dependencies: T771
+    - Estimated effort: Medium
+    - Required outputs: Schema updates, document builder/restore wiring, focused validation for persisted morph metadata, and canonical worklist updates.
+    Assigned to: Codex
+    Last updated: 2026-04-07 00:05 EDT - Codex
+  - ID: T775-subB
+    Status: [ ] Todo
+    Title: Add the JUCE quad MorphEngine surface and Python bindings
+    Description:
+    - Goal / acceptance criteria: Introduce the C++ `MorphEngine` runtime surface with A/B/C/D endpoints and atomic morph-position control exposed through Python bindings and the JUCE engine service.
+    - Why it matters: Document-backed morph truth still needs a sample-rate-capable engine path instead of Python-only interpolation.
+    - Dependencies: T775-subA
+    - Estimated effort: High
+    - Required outputs: JUCE engine implementation, binding/service support, and focused runtime regression coverage.
+    Assigned to: Codex
+    Last updated: 2026-04-07 00:05 EDT - Codex
+  - ID: T775-subC
+    Status: [ ] Todo
+    Title: Cut activation and cross-snapshot morph over to the authority-backed engine path
+    Description:
+    - Goal / acceptance criteria: Replace the legacy runtime morph apply path with authority-backed document/engine morph orchestration for both intra-snapshot and cross-snapshot activation flows, including continuous interpolation and discrete snap-at-50% behavior.
+    - Why it matters: The epic is only complete when activation consumes the new morph engine end to end instead of post-applying an older Python algorithm.
+    - Dependencies: T775-subA, T775-subB
+    - Estimated effort: High
+    - Required outputs: Activation/runtime integration, route/service updates, and focused verification for interpolation, snapping, and cross-snapshot transitions.
+    Assigned to: Codex
+    Last updated: 2026-04-07 00:05 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-07 00:05 EDT - Codex
 
 ID: T776
 Status: [ ] Todo

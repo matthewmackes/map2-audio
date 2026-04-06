@@ -541,6 +541,70 @@ def test_snapshot_revision_restore_prefers_document_when_payload_missing(tmp_pat
     asyncio.run(_run())
 
 
+def test_snapshot_service_persists_and_restores_graph_document_morph_metadata(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="MorphDoc",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "muted": False, "solo": False, "dry_wet_mix": 100.0, "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "muted": False, "solo": False, "dry_wet_mix": 100.0, "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "Chain A", "plugins": []},
+                        {"id": 2, "name": "Chain B", "plugins": []},
+                    ],
+                    "routing": {
+                        "mode": "morph",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {},
+                        "morph_position": 0.25,
+                        "morph_source_channel_key": "channel-a",
+                        "morph_target_channel_key": "channel-b",
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            snapshot_row = await session.get(database_module.Snapshot, created["id"])
+            assert snapshot_row is not None
+            assert snapshot_row.document["graph"]["morph"] == {
+                "mode": "intra_snapshot",
+                "position": 0.25,
+                "source_channel_key": "channel-a",
+                "target_channel_key": "channel-b",
+            }
+
+            await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotChainPlugin).where(database_module.SnapshotChainPlugin.snapshot_chain_id.in_(select(database_module.SnapshotChain.id).where(database_module.SnapshotChain.snapshot_id == created["id"]))))
+            await session.execute(delete(database_module.SnapshotChain).where(database_module.SnapshotChain.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotRouting).where(database_module.SnapshotRouting.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotMidiMap).where(database_module.SnapshotMidiMap.snapshot_id == created["id"]))
+            await session.flush()
+            session.expire_all()
+
+            reloaded = await service.get_snapshot(created["id"])
+            assert reloaded is not None
+            assert reloaded["routing"]["mode"] == "morph"
+            assert reloaded["routing"]["morph_position"] == pytest.approx(0.25)
+            assert reloaded["routing"]["morph_source_channel_key"] == "channel-a"
+            assert reloaded["routing"]["morph_target_channel_key"] == "channel-b"
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 
