@@ -43,6 +43,7 @@ from app.database import (
     SnapshotMidiMap,
     SnapshotRevision,
     SnapshotRouting,
+    StateAuthorityAsset,
     get_session,
 )
 from app.services.juce_engine_service import get_audio_engine
@@ -1599,7 +1600,7 @@ class SnapshotService:
         normalized = await self._enrich_normalized_payload(normalized)
         await self._replace_snapshot_state(snapshot, normalized)
         snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
-        self._persist_snapshot_document(snapshot, normalized)
+        await self._persist_snapshot_document(snapshot, normalized)
         await self.session.flush()
 
         detail = await self.get_snapshot(snapshot.id)
@@ -1694,7 +1695,7 @@ class SnapshotService:
             snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
             normalized = await self._snapshot_to_normalized(snapshot)
 
-        self._persist_snapshot_document(snapshot, normalized)
+        await self._persist_snapshot_document(snapshot, normalized)
 
         await self.session.flush()
         if create_revision and revision_source is not None:
@@ -1803,7 +1804,7 @@ class SnapshotService:
             return None
 
         if isinstance(revision.document, dict) and revision.document.get("version") == SNAPSHOT_GRAPH_VERSION:
-            payload = self._state_authority_document_to_normalized(revision.document)
+            payload = await self._state_authority_document_to_normalized(revision.document)
         else:
             payload = dict(revision.payload or {})
         restored = await self.update_snapshot(
@@ -3140,14 +3141,74 @@ class SnapshotService:
             self._build_state_authority_document(snapshot, normalized)
         )
 
-    def _state_authority_document_to_normalized(self, document: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _extract_document_asset_hashes(document: dict[str, Any]) -> set[str]:
+        references: set[str] = set()
+
+        def _walk(value: Any) -> None:
+            if isinstance(value, dict):
+                for nested in value.values():
+                    _walk(nested)
+                return
+            if isinstance(value, list):
+                for nested in value:
+                    _walk(nested)
+                return
+            if isinstance(value, str) and value.startswith("sha256:"):
+                references.add(value)
+
+        _walk(document)
+        return references
+
+    async def _sync_state_authority_asset_registry(self, document: dict[str, Any]) -> None:
+        assets = document.get("assets") if isinstance(document.get("assets"), list) else []
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
+            asset_hash = str(asset.get("hash") or "").strip()
+            source_path = str(asset.get("path") or "").strip()
+            if not asset_hash or not source_path:
+                continue
+            result = await self.session.execute(
+                select(StateAuthorityAsset).where(StateAuthorityAsset.asset_hash == asset_hash)
+            )
+            existing = result.scalar_one_or_none()
+            if existing is None:
+                self.session.add(
+                    StateAuthorityAsset(
+                        asset_hash=asset_hash,
+                        source_path=source_path,
+                        file_name=str(asset.get("name") or Path(source_path).name or asset_hash),
+                        size_bytes=_safe_int(asset.get("size_bytes")) or 0,
+                        asset_type=str(asset.get("type") or "binary"),
+                    )
+                )
+                continue
+            existing.source_path = source_path
+            existing.file_name = str(asset.get("name") or existing.file_name or Path(source_path).name or asset_hash)
+            existing.size_bytes = _safe_int(asset.get("size_bytes")) or existing.size_bytes or 0
+            existing.asset_type = str(asset.get("type") or existing.asset_type or "binary")
+
+    async def _state_authority_document_to_normalized(self, document: dict[str, Any]) -> dict[str, Any]:
         graph = document.get("graph") if isinstance(document.get("graph"), dict) else {}
         assets = document.get("assets") if isinstance(document.get("assets"), list) else []
-        asset_paths = {
+        asset_paths: dict[str, str] = {
             str(item.get("hash")): str(item.get("path"))
             for item in assets
             if isinstance(item, dict) and item.get("hash") and item.get("path")
         }
+        missing_hashes = sorted(
+            hash_ref
+            for hash_ref in self._extract_document_asset_hashes(document)
+            if hash_ref not in asset_paths
+        )
+        if missing_hashes:
+            result = await self.session.execute(
+                select(StateAuthorityAsset).where(StateAuthorityAsset.asset_hash.in_(missing_hashes))
+            )
+            for asset in result.scalars():
+                if asset.asset_hash and asset.source_path:
+                    asset_paths[str(asset.asset_hash)] = str(asset.source_path)
 
         def _restore_loader_state(value: Any) -> Any:
             if isinstance(value, dict):
@@ -3181,8 +3242,9 @@ class SnapshotService:
                 plugin["loader_state"] = _restore_loader_state(plugin.get("loader_state") or {})
         return self._normalize_detail_payload(normalized)
 
-    def _persist_snapshot_document(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
+    async def _persist_snapshot_document(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
         snapshot.document = self._validated_state_authority_document(snapshot, normalized)
+        await self._sync_state_authority_asset_registry(snapshot.document)
 
     async def _replace_snapshot_state(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
         snapshot.extensions_payload = copy.deepcopy(normalized.get("extensions") or {})
@@ -4155,7 +4217,7 @@ class SnapshotService:
             and isinstance(snapshot.document, dict)
             and snapshot.document.get("version") == SNAPSHOT_GRAPH_VERSION
         ):
-            return self._state_authority_document_to_normalized(snapshot.document)
+            return await self._state_authority_document_to_normalized(snapshot.document)
 
         loop_ids = {
             loop.loop_id
@@ -4612,13 +4674,11 @@ class SnapshotService:
             snapshot_revision=str(detail.get("snapshot_revision") or "").strip() or None,
             summary=self._build_snapshot_revision_summary(detail),
             payload=self._build_snapshot_revision_payload(detail),
-            document=self._validated_state_authority_document(
-                snapshot,
-                self._normalize_detail_payload(detail),
-            ),
+            document=self._validated_state_authority_document(snapshot, self._normalize_detail_payload(detail)),
             saved_at=_utcnow(),
         )
         self.session.add(revision)
+        await self._sync_state_authority_asset_registry(revision.document)
         await self.session.flush()
         await self._prune_snapshot_revisions(snapshot_id)
         return self._serialize_snapshot_revision(revision)

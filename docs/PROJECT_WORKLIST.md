@@ -708,8 +708,28 @@ Subtasks:
       - `pytest -q tests/test_state_authority_graph.py tests/test_snapshot_service.py -k 'state_authority_document or revision_restore_prefers_document or invalid_state_authority_document_write or normalize_and_validate_graph_document'` -> PASS (`4 passed, 46 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py app/services/snapshot_service.py tests/test_state_authority_graph.py tests/test_snapshot_service.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T771-subD
+    Status: [✓] Done
+    Title: Persist content-addressed graph assets in a database-backed registry
+    Description:
+    - Goal / acceptance criteria: Add a durable State Authority asset-registry table, sync normalized graph-document assets into it on snapshot and revision writes, and make document-backed reads resolve `sha256:` loader references from the registry when the inline asset list is absent or incomplete.
+    - Why it matters: Phase 1 still lacks a durable asset identity layer. Without a registry, graph documents only know how to restore asset paths when their own inline `assets` list survives intact, which is too weak for the storage rewrite and revision recall path.
+    - Dependencies: T771-subA, T771-subB, T771-subC
+    - Estimated effort: Medium
+    - Required outputs: DB asset-registry storage, snapshot-service sync/read fallback wiring, focused regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 20:40 EDT - Codex
+    - Completion notes:
+      - Added [app/database.py](/home/mm/map2-audio/app/database.py) support for a durable `state_authority_assets` table plus SQLite bootstrap/upgrade hooks so content-addressed graph assets now have a database-backed registry instead of existing only inside each document payload.
+      - Updated [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) to sync normalized document `assets` entries into that registry on snapshot and revision writes and to resolve missing `sha256:` loader references from the registry during document-backed reads.
+      - Added focused regression coverage in [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py) proving a `NAM` asset path is restored from the registry even after the inline document `assets` list and relational compatibility rows are removed.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'` -> PASS (`3 passed, 42 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 20:37 EDT - Codex
+Last updated: 2026-04-05 20:40 EDT - Codex
 
 ID: T772
 Status: [ ] Todo

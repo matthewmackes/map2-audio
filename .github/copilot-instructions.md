@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority write validation barrier documented)
+> **Last Updated**: April 5, 2026 (State Authority asset registry bridge documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1625,6 +1625,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_state_authority_graph.py tests/test_snapshot_service.py -k 'state_authority_document or revision_restore_prefers_document or invalid_state_authority_document_write or normalize_and_validate_graph_document'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py app/services/snapshot_service.py tests/test_state_authority_graph.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: During the State Authority migration, normalization and validation are separate responsibilities. Always fail malformed graph-document writes before they reach durable storage.
 
+**71. State Authority Asset Hashes Must Resolve Through A Durable Registry, Not Only The Inline Document Asset List (HIGH - Apr 5, 2026)**
+- **Files**: `app/database.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Graph documents were already normalizing file-backed loader references to `sha256:` values, but readback still depended on the same document carrying a full inline `assets` list with source paths. If that list was stripped, partial, or omitted in a later migration, the snapshot could no longer restore real asset paths from its hashes.
+- **Root Cause**: The first graph-document bridge treated the inline `assets` list as both the canonical identity layer and the only path-resolution source. That is not durable enough for revision recall or the planned minimal storage model.
+- **Fix**: Add the `state_authority_assets` registry table in `app/database.py`, sync normalized document assets into it on snapshot and revision writes in `app/services/snapshot_service.py`, and resolve missing `sha256:` loader references from the registry during document-backed reads.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'document_backed or revision_restore_prefers_document or invalid_state_authority_document_write or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: Content-addressed asset hashes are only useful if there is a durable registry behind them. Do not rely on per-document inline asset metadata as the sole hash-to-path resolution source during the State Authority migration.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1895,6 +1903,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Asset Registry Bridge
+- **Section**: Gotchas & Learned Fixes (#71), Update Log
+- **Change**: Documented the next `T771` slice: normalized graph-document assets now sync into a durable `state_authority_assets` registry table, and document-backed reads can restore `sha256:` loader references from that registry when the inline document asset list is absent.
+- **Reason**: The graph-document bridge and write validator were in place, but Phase 1 still needed a durable hash-to-path registry so asset-backed snapshots and revisions remain recoverable through later storage simplifications.
+- **Impact**: Future T771/T772/T775 work should treat the DB-backed asset registry as the durable resolver for content-addressed graph assets and avoid coupling readback to the inline document `assets` list alone.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/database.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Write Validation Barrier
 - **Section**: Gotchas & Learned Fixes (#70), Update Log

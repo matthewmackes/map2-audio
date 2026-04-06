@@ -536,6 +536,20 @@ def _ensure_snapshot_graph_document_schema_sync() -> None:
         _add_sqlite_column_if_missing(conn, "snapshot_revisions", "document", "JSON")
         conn.execute(
             text(
+                "CREATE TABLE IF NOT EXISTS state_authority_assets ("
+                "id INTEGER PRIMARY KEY, "
+                "asset_hash VARCHAR(71) NOT NULL UNIQUE, "
+                "source_path VARCHAR(2048) NOT NULL, "
+                "file_name VARCHAR(512) NOT NULL, "
+                "size_bytes INTEGER NOT NULL DEFAULT 0, "
+                "asset_type VARCHAR(128) NOT NULL, "
+                "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+                "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
                 "ON snapshot_revisions (snapshot_id, revision_number)"
             )
@@ -544,6 +558,12 @@ def _ensure_snapshot_graph_document_schema_sync() -> None:
             text(
                 "CREATE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_saved_at "
                 "ON snapshot_revisions (snapshot_id, saved_at)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_state_authority_assets_asset_hash "
+                "ON state_authority_assets (asset_hash)"
             )
         )
 
@@ -728,6 +748,20 @@ async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
     await _add_sqlite_column_if_missing_async(conn, "snapshot_revisions", "document", "JSON")
     await conn.execute(
         text(
+            "CREATE TABLE IF NOT EXISTS state_authority_assets ("
+            "id INTEGER PRIMARY KEY, "
+            "asset_hash VARCHAR(71) NOT NULL UNIQUE, "
+            "source_path VARCHAR(2048) NOT NULL, "
+            "file_name VARCHAR(512) NOT NULL, "
+            "size_bytes INTEGER NOT NULL DEFAULT 0, "
+            "asset_type VARCHAR(128) NOT NULL, "
+            "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+            "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            ")"
+        )
+    )
+    await conn.execute(
+        text(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_revision_number "
             "ON snapshot_revisions (snapshot_id, revision_number)"
         )
@@ -736,6 +770,12 @@ async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
         text(
             "CREATE INDEX IF NOT EXISTS idx_snapshot_revisions_snapshot_saved_at "
             "ON snapshot_revisions (snapshot_id, saved_at)"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_state_authority_assets_asset_hash "
+            "ON state_authority_assets (asset_hash)"
         )
     )
 
@@ -1431,6 +1471,24 @@ class SnapshotRevision(Base):
     __table_args__ = (
         Index("idx_snapshot_revisions_snapshot_revision_number", "snapshot_id", "revision_number", unique=True),
         Index("idx_snapshot_revisions_snapshot_saved_at", "snapshot_id", "saved_at"),
+    )
+
+
+class StateAuthorityAsset(Base):
+    """Durable registry for content-addressed State Authority graph assets."""
+    __tablename__ = "state_authority_assets"
+
+    id = Column(Integer, primary_key=True)
+    asset_hash = Column(String(71), nullable=False, unique=True, index=True)
+    source_path = Column(String(2048), nullable=False)
+    file_name = Column(String(512), nullable=False)
+    size_bytes = Column(Integer, nullable=False, default=0)
+    asset_type = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_state_authority_assets_asset_hash", "asset_hash", unique=True),
     )
 
 

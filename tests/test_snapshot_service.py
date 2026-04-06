@@ -599,6 +599,85 @@ def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_pat
     asyncio.run(_run())
 
 
+def test_snapshot_service_restores_asset_paths_from_state_authority_registry(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    asset_path = tmp_path / "RegistryTone.nam"
+    asset_path.write_bytes(b"registry-tone")
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="RegistryBacked",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-0", "label": "A", "color": "#2563eb", "muted": False, "solo": False, "dry_wet_mix": 100.0, "chain_id": 1}],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "name": "NAM",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {
+                                        "selected_asset_path": str(asset_path),
+                                        "selected_model": "RegistryTone",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {"mode": "parallel_blend", "active_channel_key": "channel-0", "blend_positions": {"channel-0": 100.0}, "series_order": ["channel-0"]},
+                    "midi_map": [],
+                },
+            )
+
+            asset_row = (
+                await session.execute(select(database_module.StateAuthorityAsset))
+            ).scalar_one()
+            assert asset_row.asset_hash.startswith("sha256:")
+            assert asset_row.source_path == str(asset_path.resolve())
+
+            snapshot_row = await session.get(database_module.Snapshot, created["id"])
+            document = dict(snapshot_row.document)
+            graph = dict(document["graph"])
+            nodes = list(graph["nodes"])
+            nam_node = next(node for node in nodes if node["uri"] == "map2:fx:nam")
+            assert nam_node["state"]["selected_asset_path"] == asset_row.asset_hash
+            document["assets"] = []
+            snapshot_row.document = document
+
+            await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotChainPlugin).where(database_module.SnapshotChainPlugin.snapshot_chain_id.in_(select(database_module.SnapshotChain.id).where(database_module.SnapshotChain.snapshot_id == created["id"]))))
+            await session.execute(delete(database_module.SnapshotChain).where(database_module.SnapshotChain.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotRouting).where(database_module.SnapshotRouting.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotMidiMap).where(database_module.SnapshotMidiMap.snapshot_id == created["id"]))
+            await session.flush()
+            session.expire_all()
+
+            reloaded = await service.get_snapshot(created["id"])
+            assert reloaded is not None
+            nam_plugin = next(
+                plugin
+                for plugin in reloaded["chains"][0]["plugins"]
+                if plugin.get("uri") == "map2://juce/nam"
+            )
+            assert nam_plugin["loader_state"]["selected_asset_path"] == str(asset_path.resolve())
+            assert nam_plugin["loader_state"]["selected_model"] == "RegistryTone"
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_rejects_invalid_names(tmp_path):
     _init_temp_db(tmp_path)
 
