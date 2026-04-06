@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 10:03 EDT - T783-subC completed with the reconnect banner moved above the taskbar.
+Last updated: 2026-04-06 10:10 EDT - T781-subA completed with a two-column Start Menu shell and static left-rail shortcuts.
 
 ## Performance Brain
 
@@ -17439,7 +17439,7 @@ Description:
 - Required outputs: Start Menu component with left column (static items) and right column (pinned live tiles grid), Power submenu, animation, click-outside-to-close behavior.
 Subtasks:
   - ID: T781-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the Start Menu shell, left column static items, and open/close behavior
     Description:
     - Goal / acceptance criteria: Create the Start Menu panel anchored to bottom-left with proper dimensions (~30% width, ~60% height). Left column with 5 text-only static items: Audio Artifacts, Platforms, Workspace Catalog, Settings, Power. Carbon productive motion for open/close animation. Click-outside-to-close. Click-any-item-to-close. Styled with $layer-01 background, $border-subtle outline, drop shadow.
@@ -17447,8 +17447,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Start Menu container, left column with navigation items, open/close animation, dismiss behavior.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 10:10 EDT - Codex
+    - Completion notes:
+      - Restructured the existing Start Menu panel in `web/src/app/layout/AppShell.tsx` into a two-column shell with the required static left-rail shortcuts: Audio Artifacts, Platforms, Workspace Catalog, Settings, and Power.
+      - Updated `web/src/app/layout/AppShell.css` so the Start Menu now opens as a broader Windows-style shell with a dedicated left shortcut column and a separate right tile area.
+      - Added focused `AppShell` coverage proving the static shortcut rail renders and that selecting a shortcut closes the Start Menu immediately while routing to the requested destination.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T781-subB
     Status: [ ] Todo
     Title: Build the Start Menu right column — pinned live tiles grid

@@ -188,8 +188,27 @@ describe('AppShell desktop taskbar shell', () => {
 
     fireEvent.click(screen.getByLabelText('Open Start menu'))
 
+    for (const label of ['Audio Artifacts', 'Platforms', 'Workspace Catalog', 'Settings', 'Power']) {
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
+    }
+
     const labels = Array.from(container.querySelectorAll('.start-menu-card__label')).map((node) => node.textContent)
     expect(labels).toEqual(['Audio Grid', 'IntelFX Rack', 'MIDI Hub', 'Stage Mode'])
+  })
+
+  it('closes the Start menu when a static shortcut is used', () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Workspace Catalog' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
+    expect(screen.queryByRole('button', { name: 'Audio Artifacts' })).toBeNull()
   })
 
   it('renders MPX1 as a Start menu card that opens its pinned mega menu', () => {

@@ -1,6 +1,6 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronRight } from '@carbon/icons-react'
 import { Layer, Tag } from '@carbon/react'
 
@@ -30,6 +30,7 @@ import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { prefetchAppRoute } from '../routePrefetch'
+import { buildPlatformWorkspacePath } from '../platform/routes'
 import './AppShell.css'
 
 interface TopNavItem {
@@ -83,6 +84,7 @@ function toTopNavItem(item: PinnedMenuItem): TopNavItem {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
@@ -137,6 +139,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => [...pinnedTopNavItems].sort((left, right) => left.label.localeCompare(right.label)),
     [pinnedTopNavItems],
   )
+  const startMenuStaticItems = useMemo(() => [
+    { key: 'artifacts', label: 'Audio Artifacts', to: '/artifacts' },
+    { key: 'platforms', label: 'Platforms', to: buildPlatformWorkspacePath('overview') },
+    { key: 'catalog', label: 'Workspace Catalog', to: '/platforms/workspace-catalog' },
+    { key: 'settings', label: 'Settings', to: buildPlatformWorkspacePath('theme') },
+    { key: 'power', label: 'Power', to: null },
+  ], [])
   const shellQuickLaunchItem = useMemo(
     () => pinnedTopNavItems.find((item) => item.kind === 'link' && !isRouteMatch(location.pathname, item.to))
       ?? pinnedTopNavItems.find((item) => item.kind === 'link')
@@ -224,6 +233,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       await refreshMpx1State()
     } catch (err) {
       console.error('MPX1 MIDI rescan failed:', err)
+    }
+  }
+
+  const handleStartMenuStaticAction = (to: string | null) => {
+    closeShellMenus()
+    if (to) {
+      navigate(to)
     }
   }
 
@@ -414,15 +430,31 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               {navOpen && (
                 <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Pinned navigation">
-                  {pinnedStartMenuItems.length > 0 ? (
-                    <div className="start-menu-panel__grid">
-                      {pinnedStartMenuItems.map((item) => renderStartMenuItem(item))}
+                  <div className="start-menu-panel__shell">
+                    <div className="start-menu-panel__static-column" role="group" aria-label="Start Menu shortcuts">
+                      {startMenuStaticItems.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className="start-menu-panel__static-item"
+                          onClick={() => handleStartMenuStaticAction(item.to)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="start-menu-panel__empty" role="note">
-                      No pinned routes selected.
+                    <div className="start-menu-panel__tiles-column">
+                      {pinnedStartMenuItems.length > 0 ? (
+                        <div className="start-menu-panel__grid">
+                          {pinnedStartMenuItems.map((item) => renderStartMenuItem(item))}
+                        </div>
+                      ) : (
+                        <div className="start-menu-panel__empty" role="note">
+                          No pinned routes selected.
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </Layer>
               )}
             </div>
