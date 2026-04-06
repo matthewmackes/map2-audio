@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 09:52 EDT - T787 completed with route-aware platform-status heartbeat cadence for the desktop shell.
+Last updated: 2026-04-06 09:58 EDT - T786 completed with Desktop/Start Menu pin labels and preview illustrations in the Workspace Catalog.
 
 ## Performance Brain
 
@@ -17604,7 +17604,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-05
 
 ID: T786
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update Workspace Catalog with Desktop/Start Menu pin labels and visual previews
 Description:
 - Goal / acceptance criteria: Relabel the existing two pin groups in the Workspace Catalog to explicitly say "Desktop" and "Start Menu" for clarity. Add visual previews showing a mini desktop grid and mini Start Menu tile grid so users understand where their pins will appear. No functional changes to the pin system — just UX clarity improvements.
@@ -17613,8 +17613,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: Relabeled pin group headers, mini-preview illustrations for desktop and Start Menu pin targets.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 09:58 EDT - Codex
+- Completion notes:
+  - Relabeled the two existing placement controls in `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` so the catalog now speaks in desktop terms: `Desktop` for the old Home/landing surface and `Start Menu` for the old shell-nav surface.
+  - Added lightweight `Desktop preview` and `Start Menu preview` illustrations inside the workspace configure modal so operators can see the icon-grid and live-tile targets before pinning.
+  - Updated the focused workspace-catalog regression coverage to lock the new labels and preview affordances in place.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T787
 Status: [✓] Done

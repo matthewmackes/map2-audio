@@ -220,6 +220,52 @@
   inline-size: fit-content;
 }
 
+.platform-launchers__placement-preview {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 78%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-02) 88%, transparent);
+}
+
+.platform-launchers__placement-preview.is-active {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 26%, var(--cds-border-subtle-01));
+  background: color-mix(in srgb, var(--cds-link-primary) 7%, var(--cds-layer-02));
+}
+
+.platform-launchers__placement-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.72rem;
+}
+
+.platform-launchers__placement-preview-grid {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.platform-launchers__placement-preview-grid--6 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-launchers__placement-preview-grid--9 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-launchers__placement-preview-slot {
+  min-height: 1.6rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 74%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 94%, transparent);
+}
+
+.platform-launchers__placement-preview-slot.is-filled {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 28%, var(--cds-border-subtle-01));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary) 22%, transparent), color-mix(in srgb, var(--cds-support-success) 14%, transparent));
+}
+
 .platform-launchers__empty {
   padding: 1rem;
   background: var(--cds-layer-01);

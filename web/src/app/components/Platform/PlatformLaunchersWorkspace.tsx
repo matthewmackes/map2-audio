@@ -134,6 +134,36 @@ function sortCatalogItems(left: LauncherCatalogItem, right: LauncherCatalogItem)
   return left.heroTitle.localeCompare(right.heroTitle)
 }
 
+function PlacementPreview({
+  title,
+  subtitle,
+  active,
+  slots,
+}: {
+  title: string
+  subtitle: string
+  active: boolean
+  slots: number
+}) {
+  return (
+    <div className={`platform-launchers__placement-preview${active ? ' is-active' : ''}`} aria-label={`${title} preview`}>
+      <div className="platform-launchers__placement-preview-head">
+        <span>{title}</span>
+        <span>{subtitle}</span>
+      </div>
+      <div className={`platform-launchers__placement-preview-grid platform-launchers__placement-preview-grid--${slots}`}>
+        {Array.from({ length: slots }, (_, index) => (
+          <span
+            key={`${title}-slot-${index + 1}`}
+            className={`platform-launchers__placement-preview-slot${active && index === 0 ? ' is-filled' : ''}`}
+            aria-hidden="true"
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface PlatformLaunchersWorkspaceProps {
   settings: SpecialSettings | null
   isLoading: boolean
@@ -225,8 +255,8 @@ export function PlatformLaunchersWorkspace({
         <Tag type={categoryTagType(item.category)} size="sm">{item.category}</Tag>
         <Tag type={maturityTagType(item.maturity)} size="sm">{getLauncherCatalogMaturityLabel(item.maturity)}</Tag>
         <Tag type="blue" size="sm">{DIRECTORY_LABELS[item.directory]}</Tag>
-        {landingTile ? <Tag type="green" size="sm">{`Home ${landingTile.size}`}</Tag> : <Tag type="cool-gray" size="sm">Home off</Tag>}
-        {navIndex >= 0 ? <Tag type="cyan" size="sm">{`Nav ${navIndex + 1}`}</Tag> : <Tag type="cool-gray" size="sm">Nav off</Tag>}
+        {landingTile ? <Tag type="green" size="sm">{`Desktop ${landingTile.size}`}</Tag> : <Tag type="cool-gray" size="sm">Desktop off</Tag>}
+        {navIndex >= 0 ? <Tag type="cyan" size="sm">{`Start Menu ${navIndex + 1}`}</Tag> : <Tag type="cool-gray" size="sm">Start Menu off</Tag>}
       </div>
     )
   }
@@ -386,17 +416,23 @@ export function PlatformLaunchersWorkspace({
             <section className="platform-launchers__configure-card">
               <div className="platform-launchers__configure-head">
                 <div>
-                  <p className="platform-launchers__eyebrow">Home</p>
-                  <h4>Landing tile</h4>
+                  <p className="platform-launchers__eyebrow">Desktop</p>
+                  <h4>Desktop pin</h4>
                 </div>
                 <Tag type={configureLandingTile ? 'green' : 'cool-gray'} size="sm">
-                  {configureLandingTile ? configureLandingTile.size : 'Not on Home'}
+                  {configureLandingTile ? configureLandingTile.size : 'Not on Desktop'}
                 </Tag>
               </div>
+              <PlacementPreview
+                title="Desktop"
+                subtitle="Icon grid preview"
+                active={Boolean(configureLandingTile)}
+                slots={6}
+              />
 
               {configureItem.landingEligible ? (
                 <>
-                  <p>Promote this workspace onto Home and control its landing-card scale and order.</p>
+                  <p>Pin this workspace onto the desktop surface and control its tile scale and order.</p>
                   <div className="platform-launchers__configure-actions">
                     <Button
                       size="sm"
@@ -417,13 +453,13 @@ export function PlatformLaunchersWorkspace({
                       }}
                     >
                       {configureLandingTile
-                        ? (isRequiredHomeLauncher ? 'Required on landing' : 'Remove from landing')
-                        : 'Add to landing'}
+                        ? (isRequiredHomeLauncher ? 'Required on desktop' : 'Remove from desktop')
+                        : 'Add to desktop'}
                     </Button>
                   </div>
                   {isRequiredHomeLauncher && configureLandingTile ? (
                     <p className="platform-launchers__configure-note">
-                      Platforms is always visible on Home and remains the first launcher card.
+                      Platforms is always visible on the desktop and remains the first launcher card.
                     </p>
                   ) : null}
 
@@ -454,7 +490,7 @@ export function PlatformLaunchersWorkspace({
                       </div>
 
                       <div className="platform-launchers__configure-section">
-                        <span className="platform-launchers__configure-label">Home order</span>
+                        <span className="platform-launchers__configure-label">Desktop order</span>
                         <div className="platform-launchers__configure-actions">
                           <Button
                             size="sm"
@@ -492,7 +528,7 @@ export function PlatformLaunchersWorkspace({
                   ) : null}
                 </>
               ) : (
-                <p>This workspace is nav-only and cannot appear on the landing page.</p>
+                <p>This workspace is Start Menu only and cannot appear on the desktop icon surface.</p>
               )}
             </section>
           </Column>
@@ -501,17 +537,23 @@ export function PlatformLaunchersWorkspace({
             <section className="platform-launchers__configure-card">
               <div className="platform-launchers__configure-head">
                 <div>
-                  <p className="platform-launchers__eyebrow">Shell</p>
-                  <h4>Global nav pin</h4>
+                  <p className="platform-launchers__eyebrow">Start Menu</p>
+                  <h4>Start Menu pin</h4>
                 </div>
                 <Tag type={configureNavIndex >= 0 ? 'cyan' : 'cool-gray'} size="sm">
-                  {configureNavIndex >= 0 ? `Pinned ${configureNavIndex + 1}` : 'Not pinned'}
+                  {configureNavIndex >= 0 ? `Pinned ${configureNavIndex + 1}` : 'Not in Start Menu'}
                 </Tag>
               </div>
+              <PlacementPreview
+                title="Start Menu"
+                subtitle="Live tiles preview"
+                active={configureNavIndex >= 0}
+                slots={9}
+              />
 
               {configureItem.navEligible ? (
                 <>
-                  <p>Pin this workspace into the ordered global navigation list shared by the shell.</p>
+                  <p>Pin this workspace into the ordered Start Menu tile list shared by the desktop shell.</p>
                   <div className="platform-launchers__configure-actions">
                     <Button
                       size="sm"
@@ -528,13 +570,13 @@ export function PlatformLaunchersWorkspace({
                         })
                       }}
                     >
-                      {configureNavIndex >= 0 ? 'Remove from nav' : navFull ? 'Nav full' : 'Pin to nav'}
+                      {configureNavIndex >= 0 ? 'Remove from Start Menu' : navFull ? 'Start Menu full' : 'Pin to Start Menu'}
                     </Button>
                   </div>
 
                   {configureNavIndex >= 0 ? (
                     <div className="platform-launchers__configure-section">
-                      <span className="platform-launchers__configure-label">Nav order</span>
+                      <span className="platform-launchers__configure-label">Start Menu order</span>
                       <div className="platform-launchers__configure-actions">
                         <Button
                           size="sm"
@@ -566,12 +608,12 @@ export function PlatformLaunchersWorkspace({
 
                   {navFull && configureNavIndex < 0 ? (
                     <p className="platform-launchers__configure-note">
-                      The global nav is already at its {MAX_PINNED_NAV_ITEMS}-item cap. Remove or reorder an existing pin first.
+                      The Start Menu is already at its {MAX_PINNED_NAV_ITEMS}-item cap. Remove or reorder an existing pin first.
                     </p>
                   ) : null}
                 </>
               ) : (
-                <p>This workspace cannot be pinned into the global nav.</p>
+                <p>This workspace cannot be pinned into the Start Menu.</p>
               )}
             </section>
           </Column>
@@ -641,8 +683,8 @@ export function PlatformLaunchersWorkspace({
 
               <div className="platform-launchers__toolbar-tags">
                 <Tag type="cool-gray">{`${catalogItems.length} visible`}</Tag>
-                <Tag type="cool-gray">{`${landingTiles.length} on Home`}</Tag>
-                <Tag type="cool-gray">{`${pinnedRoutes.length} pinned`}</Tag>
+                <Tag type="cool-gray">{`${landingTiles.length} on Desktop`}</Tag>
+                <Tag type="cool-gray">{`${pinnedRoutes.length} in Start Menu`}</Tag>
                 <Tag type={selectedCategory === 'all' ? 'cool-gray' : categoryTagType(selectedCategory)}>
                   {selectedCategory === 'all' ? 'All categories' : selectedCategory}
                 </Tag>

@@ -87,7 +87,7 @@ describe('PlatformLaunchersWorkspace', () => {
       '/api/system/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md',
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add to landing' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to desktop' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       landingTiles: [
@@ -96,7 +96,10 @@ describe('PlatformLaunchersWorkspace', () => {
       ],
     }))
 
-    const pinToNavButton = screen.getByRole('button', { name: 'Pin to nav' })
+    expect(screen.getByLabelText('Desktop preview')).toBeInTheDocument()
+    expect(screen.getByLabelText('Start Menu preview')).toBeInTheDocument()
+
+    const pinToNavButton = screen.getByRole('button', { name: 'Pin to Start Menu' })
     await waitFor(() => expect(pinToNavButton).toBeEnabled())
     fireEvent.click(pinToNavButton)
 
@@ -131,7 +134,7 @@ describe('PlatformLaunchersWorkspace', () => {
       ],
     }))
 
-    expect(screen.getByRole('button', { name: 'Nav full' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Start Menu full' })).toBeDisabled()
   })
 
   it('filters launcher cards by category and search terms', () => {
@@ -199,7 +202,7 @@ describe('PlatformLaunchersWorkspace', () => {
 
     fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure Overview' }))
 
-    expect(screen.getByRole('button', { name: 'Required on landing' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Required on desktop' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Move down' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Move up' })).toBeDisabled()
 
