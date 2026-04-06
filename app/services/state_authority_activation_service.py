@@ -587,6 +587,12 @@ class StateAuthorityActivationService:
             normalized_snapshot_payload=self.owner._canonicalize_snapshot_normalized(normalized),
             triggered_by=triggered_by,
         )
+        intent = await runtime_state_service.mark_intent_phase(
+            intent=intent,
+            phase="VALIDATING",
+            status="in_progress",
+            note="Running activation preflight checks.",
+        )
 
         detail = await self.owner.get_snapshot(snapshot_id)
         if detail is None:
@@ -617,15 +623,32 @@ class StateAuthorityActivationService:
         }
         try:
             await self.owner._validate_snapshot_activation_preflight(detail)
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="VALIDATING",
+                status="completed",
+                note="Preflight checks passed.",
+            )
         except Exception as exc:
             await runtime_state_service.fail_intent(
                 intent=intent,
                 failure_reason=str(exc),
-                runtime_metrics={},
+                runtime_metrics={
+                    "activation_progress": {
+                        "current_phase": "VALIDATING",
+                        "status": "failed",
+                    }
+                },
             )
             raise
 
         try:
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="STAGING",
+                status="in_progress",
+                note="Preparing runtime resources and preload state.",
+            )
             activation_topology_metrics["before"] = self._normalize_topology_mutation_stats(
                 await self.get_audio_engine().get_topology_mutation_stats()
             )
@@ -669,6 +692,16 @@ class StateAuthorityActivationService:
             if preload_instance_ids and preload_hit:
                 await self.chain_service.release_detached_instance_ids(preload_instance_ids)
             await self.session.flush()
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="STAGING",
+                status="completed",
+                note="Runtime staging complete.",
+                extra={
+                    "topology_reused": topology_reused,
+                    "preload_hit": preload_hit,
+                },
+            )
 
             refreshed_detail = await self.owner._serialize_snapshot_detail(
                 snapshot,
@@ -682,6 +715,12 @@ class StateAuthorityActivationService:
             refreshed_detail = channel_health["snapshot_payload"]
 
             legacy_payload = self.owner.to_legacy_snapshot_data(refreshed_detail)
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="APPLYING",
+                status="in_progress",
+                note="Applying snapshot runtime state to the engine.",
+            )
             graph_document_apply_result = await self.apply_graph_document_to_engine(
                 snapshot=snapshot,
                 normalized=normalized,
@@ -696,6 +735,16 @@ class StateAuthorityActivationService:
             activation_topology_metrics = self._build_activation_topology_metrics(
                 activation_topology_metrics["before"],
                 await self.get_audio_engine().get_topology_mutation_stats(),
+            )
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="APPLYING",
+                status="completed",
+                note="Engine apply finished.",
+                extra={
+                    "params_applied": params_applied,
+                    "bypass_applied": bypass_applied,
+                },
             )
 
             activated_at = self._utcnow()
@@ -730,6 +779,12 @@ class StateAuthorityActivationService:
             except Exception as exc:
                 logger.debug("Snapshot controller-display preview skipped for %s: %s", snapshot.id, exc)
             pre_activation_extensions = await self.owner._load_current_audio_state_extensions()
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="VERIFYING",
+                status="in_progress",
+                note="Running post-apply verification and synchronization.",
+            )
             try:
                 routing_apply_result = await self.runtime_service_module.apply_snapshot_routing_to_engine(
                     refreshed_detail
@@ -865,6 +920,16 @@ class StateAuthorityActivationService:
                 "performance_brain_runtime": brain_runtime_reconcile_result or {},
                 "topology_mutation": activation_topology_metrics,
             }
+            intent = await runtime_state_service.mark_intent_phase(
+                intent=intent,
+                phase="VERIFYING",
+                status="completed",
+                note="Verification and sync steps completed.",
+                extra={
+                    "channel_activity": runtime_metrics["channel_activity"],
+                    "graph_document_apply": runtime_metrics["graph_document_apply"],
+                },
+            )
             live_runtime_state = await runtime_state_service.confirm_live_intent(
                 intent=intent,
                 live_snapshot_payload=refreshed_detail,

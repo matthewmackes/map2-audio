@@ -38,6 +38,8 @@ OFFLINE_AFTER_SECONDS = 15.0
 HEARTBEAT_INTERVAL_SECONDS = 1.0
 ACTIVATION_EVENT_LIMIT_PER_NODE = 100
 POST_ACTIVATION_VERIFY_DELAY_SECONDS = 2.5
+ACTIVATION_PROGRESS_TIMEOUT_SECONDS = 10.0
+ACTIVATION_PHASES = ("VALIDATING", "STAGING", "APPLYING", "VERIFYING", "LIVE")
 CHANNEL_STATUS_ACTIVE = "active"
 CHANNEL_STATUS_NOT_LOADED = "not_loaded"
 CHANNEL_STATUS_OFFLINE = "offline"
@@ -107,6 +109,11 @@ def _normalize_channel_health_status(value: Any) -> Optional[str]:
     if normalized in {"not_loaded", "inactive", "partial", "degraded", "capability_gap", "missing"}:
         return CHANNEL_STATUS_NOT_LOADED
     return None
+
+
+def _normalize_activation_phase(value: Any) -> str:
+    candidate = str(value or "").strip().upper()
+    return candidate if candidate in ACTIVATION_PHASES else ACTIVATION_PHASES[0]
 
 
 def _channel_health_message(label: str, status: str) -> str:
@@ -262,6 +269,64 @@ class SnapshotRuntimeStateService:
             "activation_latency_ms": row.activation_latency_ms,
             "runtime_metrics": copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {},
         }
+
+    def _merge_activation_progress(
+        self,
+        runtime_metrics: Optional[dict[str, Any]],
+        *,
+        phase: str,
+        status: str,
+        emitted_at: datetime,
+        note: Optional[str] = None,
+        extra: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        next_metrics = copy.deepcopy(runtime_metrics) if isinstance(runtime_metrics, dict) else {}
+        existing_progress = (
+            copy.deepcopy(next_metrics.get("activation_progress"))
+            if isinstance(next_metrics.get("activation_progress"), dict)
+            else {}
+        )
+        phase_value = _normalize_activation_phase(phase)
+        phase_history = [
+            dict(item)
+            for item in existing_progress.get("phase_history", [])
+            if isinstance(item, dict)
+        ]
+        phase_history.append(
+            {
+                "phase": phase_value,
+                "status": str(status or "in_progress"),
+                "at": emitted_at.isoformat(),
+                "note": str(note).strip() if isinstance(note, str) and note.strip() else None,
+            }
+        )
+        completed_phases = [
+            str(item).upper()
+            for item in existing_progress.get("completed_phases", [])
+            if str(item).upper() in ACTIVATION_PHASES
+        ]
+        if phase_value not in completed_phases and status in {"completed", "success"}:
+            completed_phases.append(phase_value)
+
+        next_progress = {
+            "current_phase": phase_value,
+            "status": str(status or "in_progress"),
+            "updated_at": emitted_at.isoformat(),
+            "timeout_seconds": ACTIVATION_PROGRESS_TIMEOUT_SECONDS,
+            "phase_history": phase_history,
+            "completed_phases": completed_phases,
+        }
+        if isinstance(existing_progress.get("started_at"), str) and existing_progress.get("started_at"):
+            next_progress["started_at"] = existing_progress["started_at"]
+        else:
+            next_progress["started_at"] = emitted_at.isoformat()
+        if note:
+            next_progress["note"] = note
+        if isinstance(extra, dict):
+            for key, value in extra.items():
+                next_progress[key] = copy.deepcopy(value)
+        next_metrics["activation_progress"] = next_progress
+        return next_metrics
 
     async def _broadcast_runtime_state(self, payload: dict[str, Any], *, emitted_at: datetime) -> None:
         try:
@@ -587,7 +652,66 @@ class SnapshotRuntimeStateService:
             "triggered_by": triggered_by,
             "requested_at": requested_at.isoformat(),
             "normalized_snapshot_payload": copy.deepcopy(normalized_snapshot_payload),
+            "activation_progress": {
+                "current_phase": ACTIVATION_PHASES[0],
+                "status": "requested",
+                "started_at": requested_at.isoformat(),
+                "updated_at": requested_at.isoformat(),
+                "timeout_seconds": ACTIVATION_PROGRESS_TIMEOUT_SECONDS,
+                "phase_history": [],
+                "completed_phases": [],
+            },
         }
+
+    async def mark_intent_phase(
+        self,
+        *,
+        intent: dict[str, Any],
+        phase: str,
+        status: str = "in_progress",
+        note: Optional[str] = None,
+        extra: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        emitted_at = _utcnow()
+        activation_payload: Optional[dict[str, Any]] = None
+        phase_value = _normalize_activation_phase(phase)
+
+        async with self._session_scope() as session:
+            result = await session.execute(
+                select(SnapshotActivationEvent).where(SnapshotActivationEvent.request_id == str(intent["request_id"]))
+            )
+            event_row = result.scalar_one_or_none()
+            if event_row is None:
+                return intent
+            event_row.runtime_metrics = self._merge_activation_progress(
+                event_row.runtime_metrics if isinstance(event_row.runtime_metrics, dict) else {},
+                phase=phase_value,
+                status=status,
+                emitted_at=emitted_at,
+                note=note,
+                extra=extra,
+            )
+            activation_payload = self._serialize_activation_event(event_row)
+            await session.flush()
+
+        if activation_payload is not None:
+            cache = self._activation_event_cache[self.local_node_id]
+            cache.appendleft(activation_payload)
+            await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
+
+        next_intent = dict(intent)
+        next_intent["activation_progress"] = copy.deepcopy(
+            (activation_payload or {}).get("runtime_metrics", {}).get("activation_progress")
+            or self._merge_activation_progress(
+                next_intent.get("activation_progress"),
+                phase=phase_value,
+                status=status,
+                emitted_at=emitted_at,
+                note=note,
+                extra=extra,
+            ).get("activation_progress")
+        )
+        return next_intent
 
     async def confirm_live_intent(
         self,
@@ -598,6 +722,16 @@ class SnapshotRuntimeStateService:
     ) -> dict[str, Any]:
         emitted_at = _utcnow()
         activation_payload: Optional[dict[str, Any]] = None
+        merged_runtime_metrics = copy.deepcopy(runtime_metrics) if isinstance(runtime_metrics, dict) else {}
+        if isinstance(intent.get("activation_progress"), dict):
+            merged_runtime_metrics["activation_progress"] = copy.deepcopy(intent["activation_progress"])
+        runtime_metrics = self._merge_activation_progress(
+            merged_runtime_metrics,
+            phase="LIVE",
+            status="completed",
+            emitted_at=emitted_at,
+            note="Activation is live.",
+        )
 
         async with self._session_scope() as session:
             row = await self._get_or_create_local_state_row(session)
@@ -648,6 +782,22 @@ class SnapshotRuntimeStateService:
     ) -> dict[str, Any]:
         emitted_at = _utcnow()
         activation_payload: Optional[dict[str, Any]] = None
+        merged_runtime_metrics = copy.deepcopy(runtime_metrics) if isinstance(runtime_metrics, dict) else {}
+        if isinstance(intent.get("activation_progress"), dict):
+            merged_runtime_metrics["activation_progress"] = copy.deepcopy(intent["activation_progress"])
+        activation_progress = intent.get("activation_progress") if isinstance(intent, dict) else {}
+        current_phase = (
+            activation_progress.get("current_phase")
+            if isinstance(activation_progress, dict)
+            else ACTIVATION_PHASES[0]
+        )
+        runtime_metrics = self._merge_activation_progress(
+            merged_runtime_metrics,
+            phase=str(current_phase or ACTIVATION_PHASES[0]),
+            status="failed",
+            emitted_at=emitted_at,
+            note=str(failure_reason or "Activation failed."),
+        )
 
         async with self._session_scope() as session:
             row = await self._get_or_create_local_state_row(session)

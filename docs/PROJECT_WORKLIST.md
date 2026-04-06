@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 22:02 EDT - T773 completed with independent-graph crossfade activation wiring.
+Last updated: 2026-04-06 22:55 EDT - T774-subA completed with activation phase progress events on the existing activation-event topic.
 
 ## Performance Brain
 
@@ -923,7 +923,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 22:02 EDT - Codex
 
 ID: T774
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Build the State Authority activation state machine, validation pipeline, hooks, and preload flow
 Description:
 - Goal / acceptance criteria: Implement the `VALIDATING -> STAGING -> APPLYING -> VERIFYING -> LIVE` activation flow with 10-second timeout handling, missing-asset/device/plugin validation, reject-plus-auto-repair reporting, config-ordered activation hooks, existing-topic WebSocket progress events, and eager preload of the top three likely snapshots on selection.
@@ -931,9 +931,53 @@ Description:
 - Dependencies: T772, T773
 - Estimated effort: High
 - Required outputs: Activation service/state-machine implementation, preload service, hook config support, WS/runtime reporting, and focused verification for failure-before-apply versus failure-after-apply behavior.
-Subtasks: None
+Subtasks:
+  - ID: T774-subA
+    Status: [✓] Done
+    Title: Add explicit activation phases and existing-topic progress events
+    Description:
+    - Goal / acceptance criteria: Record `VALIDATING -> STAGING -> APPLYING -> VERIFYING -> LIVE` phase progress on the existing snapshot activation event topic, preserve a durable phase timeline in activation/runtime metadata, and keep activation results explicit about the phase that succeeded or failed.
+    - Why it matters: The redesign requires observable activation behavior; without explicit phase progress, validation/hook/preload work would still be opaque.
+    - Dependencies: T773
+    - Estimated effort: Medium
+    - Required outputs: Runtime-state progress helper, activation-service phase wiring, focused runtime-state/activation regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-06 22:55 EDT - Codex
+    - Completion notes:
+      - Extended `SnapshotRuntimeStateService` to persist and broadcast activation progress on the existing `snapshot_activation_events` topic, with a durable phase timeline and `activation_progress` metadata covering `VALIDATING -> ... -> LIVE`.
+      - Updated `StateAuthorityActivationService.activate_snapshot()` to emit phase transitions for validation, staging, applying, and verification before final live confirmation instead of exposing activation as one opaque step.
+      - Added focused regressions in `tests/test_snapshot_runtime_state_progress.py` and `tests/test_state_authority_activation_service.py`, proving phase progress persists through success/failure flows and that activation emits the validating phase before a preflight failure.
+    - Validation:
+      - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py` -> PASS (`5 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py app/services/state_authority_activation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py` -> PASS
+      - `git diff --check` -> PASS
+  - ID: T774-subB
+    Status: [ ] Todo
+    Title: Add structured validation with reject-plus-auto-repair reporting and timeout enforcement
+    Description:
+    - Goal / acceptance criteria: Introduce an explicit validation stage that reports missing assets/devices/plugins plus auto-repair suggestions in structured form, fail before apply when validation cannot pass, and enforce the 10-second activation timeout contract.
+    - Why it matters: The redesign promises clear failure semantics rather than a binary exception surface.
+    - Dependencies: T774-subA
+    - Estimated effort: High
+    - Required outputs: Validation pipeline implementation, structured route/service error payloads, timeout behavior, and focused regressions for pre-apply vs post-apply failure cases.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T774-subC
+    Status: [ ] Todo
+    Title: Add config-ordered activation hooks and top-three likely snapshot preload planning
+    Description:
+    - Goal / acceptance criteria: Support config-ordered activation hooks around staging/apply/verify phases and eagerly plan/preload the top three likely next snapshots when an operator selects a snapshot or when the live activation settles.
+    - Why it matters: Hooks and preload are locked behavioral guarantees of the redesign, and they should execute through the same state machine rather than side paths.
+    - Dependencies: T774-subA
+    - Estimated effort: High
+    - Required outputs: Hook config/execution support, top-three preload planning, selection/activation integration, and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-06 22:55 EDT - Codex
 
 ID: T775
 Status: [ ] Todo
@@ -16755,6 +16799,418 @@ Description:
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-04-05
+
+## Backend Audit Follow-Up
+
+ID: T789
+Status: [ ] Todo
+Title: Close the audit's critical correctness and security faults
+Description:
+- Goal / acceptance criteria: Land the backend fixes the audit marked as critical before the affected cluster, auth-proxy, and MIDI-buffer features are treated as trustworthy: correct Raft election majority behavior, add durable Raft term/vote/log persistence, fix the Raft log-apply off-by-one, fix the MIDI ring-buffer overwrite bug, and correct middleware ordering so cluster proxying cannot bypass authentication.
+- Why it matters: These are the audit's highest-risk issues because they can break distributed correctness, silently drop real-time data, or allow unauthorized cross-node proxying.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Code fixes, focused backend regressions, and updated operator/developer notes where behavior changes.
+Subtasks:
+  - ID: T789-subA
+    Status: [ ] Todo
+    Title: Fix Raft self-vote majority calculation and stale-term response handling
+    Description:
+    - Goal / acceptance criteria: Correct leader-election majority math so local self-votes count properly, and ensure vote/append response terms can force stale leaders or candidates to step down.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: `raft_consensus.py` fixes and focused election-term regression coverage.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T789-subB
+    Status: [ ] Todo
+    Title: Add durable Raft state persistence for term, vote, and log
+    Description:
+    - Goal / acceptance criteria: Persist Raft-required stable state before RPC acknowledgement so crash/restart behavior preserves election safety and committed-log continuity.
+    - Dependencies: T789-subA
+    - Estimated effort: High
+    - Required outputs: Durable storage wiring, restart-safe recovery path, and focused crash/restart tests.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T789-subC
+    Status: [ ] Todo
+    Title: Fix the Raft committed-log application off-by-one
+    Description:
+    - Goal / acceptance criteria: Ensure the first committed log entry is applied exactly once and `last_applied` advances only after a successful apply.
+    - Dependencies: T789-subA
+    - Estimated effort: Low
+    - Required outputs: Apply-loop fix and focused regression coverage.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T789-subD
+    Status: [ ] Todo
+    Title: Fix the MIDI ring-buffer overwrite semantics
+    Description:
+    - Goal / acceptance criteria: Correct overwrite mode so a full buffer discards the oldest entry, not the newest one that was just written, and document/enforce the concurrency contract used by the buffer implementation.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: `ring_buffer.py` fix, concurrency notes, and focused regression tests.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T789-subE
+    Status: [ ] Todo
+    Title: Fix middleware order so ClusterProxy cannot bypass API auth
+    Description:
+    - Goal / acceptance criteria: Reorder middleware registration so authentication gates cluster-proxied requests, and align request-id propagation so proxy, logging, and traffic-capture layers share one stable request id.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: `main.py` middleware-stack fix and route/middleware regressions covering auth and request-id behavior.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T790
+Status: [ ] Todo
+Title: Harden backend concurrency, scheduling, and realtime broadcast safety
+Description:
+- Goal / acceptance criteria: Resolve the audit's cross-service concurrency and resource-lifecycle faults across the MIDI hub/router, realtime parameter bridge, websocket manager, event bus, heartbeat monitor, proxy clients, and related singleton factories so the backend no longer relies on unsafe mutation races, unbounded timers/tasks, or per-call loop/client creation in hot paths.
+- Why it matters: These issues degrade real-time stability and observability under load, and several can silently leak resources or corrupt shared state.
+- Dependencies: T789
+- Estimated effort: High
+- Required outputs: Concurrency-safe service changes, lifecycle cleanup hooks, focused regressions, and any required runtime instrumentation updates.
+Subtasks:
+  - ID: T790-subA
+    Status: [ ] Todo
+    Title: Replace MIDI router timer threads with a bounded scheduler and fix hub startup race
+    Description:
+    - Goal / acceptance criteria: Remove per-message `threading.Timer` leaks, provide a bounded delayed-routing scheduler, and set hub running state before worker threads begin scanning or polling.
+    - Dependencies: T789-subD
+    - Estimated effort: Medium
+    - Required outputs: `midi_hub/router.py` and `midi_hub/hub.py` fixes plus focused lifecycle tests.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T790-subB
+    Status: [ ] Todo
+    Title: Make realtime parameter broadcasting and websocket disconnect paths concurrency-safe
+    Description:
+    - Goal / acceptance criteria: Broadcast parameter updates without one slow subscriber serializing the hot path, validate binary frame bounds, use bounded latency sampling, and make websocket disconnect/mutation paths lock-safe.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: `realtime_parameter_bridge.py` and `websocket_manager.py` fixes with focused realtime/websocket regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T790-subC
+    Status: [ ] Todo
+    Title: Make event-bus, singleton-factory, and graceful-degradation state mutation thread-safe
+    Description:
+    - Goal / acceptance criteria: Add consistent locking or single-threaded mutation guarantees for event subscribers/history, singleton factories, and degradation feature registration/recovery loops so concurrent subscribe/unsubscribe/init paths stop racing.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Event bus and shared-factory fixes, bounded history storage, and focused concurrency regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T790-subD
+    Status: [ ] Todo
+    Title: Rework heartbeat and proxy client lifecycles to reuse and close network clients cleanly
+    Description:
+    - Goal / acceptance criteria: Reuse shared `httpx.AsyncClient` instances where appropriate, skip self-monitoring, trim removed-node health state, emit first-online events, and close long-lived proxy/heartbeat clients on shutdown.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Heartbeat/proxy lifecycle fixes and focused health-monitor regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T791
+Status: [ ] Todo
+Title: Consolidate database, migration, and timestamp foundations
+Description:
+- Goal / acceptance criteria: Resolve the audit's database-layer inconsistencies by consolidating session/engine ownership, fixing health checks, replacing naive/deprecated UTC usage, adopting a tracked migration strategy, and normalizing inconsistent JSON-vs-text persistence contracts.
+- Why it matters: The current DB layer spreads ownership across competing globals and keeps migration/timestamp behavior fragile, which undermines reliability for every service that persists state.
+- Dependencies: T789
+- Estimated effort: High
+- Required outputs: Database architecture changes, migration/versioning plan implemented in code, timestamp normalization, and focused regressions/migration proof.
+Subtasks:
+  - ID: T791-subA
+    Status: [ ] Todo
+    Title: Fix DB health checks and collapse duplicate engine/session boundaries
+    Description:
+    - Goal / acceptance criteria: Make health checks SQLAlchemy-2-safe and converge the codebase on one coherent database/session ownership path rather than parallel globals plus `DatabasePoolManager`.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: `database.py` / `db_pool_manager.py` cleanup and focused DB regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T791-subB
+    Status: [ ] Todo
+    Title: Replace hand-rolled schema drift logic with tracked migrations
+    Description:
+    - Goal / acceptance criteria: Add schema version tracking with safe forward migration semantics, remove destructive startup drift patterns, and document the supported migration workflow.
+    - Dependencies: T791-subA
+    - Estimated effort: High
+    - Required outputs: Migration framework or equivalent tracked system, migration metadata, and upgrade-path validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T791-subC
+    Status: [ ] Todo
+    Title: Eliminate naive UTC handling across the backend
+    Description:
+    - Goal / acceptance criteria: Replace `datetime.utcnow()` and related naive-UTC helpers with timezone-aware UTC timestamps, including the snapshot-service `_utcnow()` path called out in the audit.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Backend-wide timestamp updates, compatibility shims if required, and focused regressions around persisted time fields.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T791-subD
+    Status: [ ] Todo
+    Title: Normalize database JSON contracts and close thread-local connection leaks
+    Description:
+    - Goal / acceptance criteria: Normalize manual JSON-text columns toward proper typed storage where supported, remove thread-local connection leaks, and eliminate avoidable TOCTOU update paths in cluster-registry writes.
+    - Dependencies: T791-subA
+    - Estimated effort: Medium
+    - Required outputs: Schema/model cleanup, cluster-registry fixes, and focused persistence regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T792
+Status: [ ] Todo
+Title: Decompose the JUCE engine bridge and signal-chain backend hotspots
+Description:
+- Goal / acceptance criteria: Split the current JUCE engine monolith into focused services, ensure all C++ bridge calls follow a consistent engine-thread isolation strategy, reduce duplicate plugin-URI constant drift, and repair chain-service lifecycle/cache problems the audit identified.
+- Why it matters: The engine bridge is one of the most critical backend boundaries, and its current monolithic shape plus inconsistent threading makes correctness and latency regressions harder to control.
+- Dependencies: T790, T791
+- Estimated effort: High
+- Required outputs: Service decomposition, thread-isolation wrapper strategy, chain-service lifecycle fixes, constant consolidation, and focused regressions.
+Subtasks:
+  - ID: T792-subA
+    Status: [ ] Todo
+    Title: Apply a consistent engine-thread wrapper to unsafe JUCE bridge calls
+    Description:
+    - Goal / acceptance criteria: Ensure topology, MIDI, bypass, snapshot, and related engine calls do not run directly on the event loop thread when they must cross into C++.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Engine-thread helper/decorator rollout and focused regression coverage for the affected methods.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T792-subB
+    Status: [ ] Todo
+    Title: Split `juce_engine_service.py` into focused runtime services
+    Description:
+    - Goal / acceptance criteria: Decompose device, plugin lifecycle, parameter, MIDI, and metering concerns into clearer service boundaries without regressing the current route/facade contract.
+    - Dependencies: T792-subA
+    - Estimated effort: High
+    - Required outputs: New focused service modules, integration wiring, and regression coverage.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T792-subC
+    Status: [ ] Todo
+    Title: Repair ChainService lifecycle, queue ownership, and plugin metadata caching
+    Description:
+    - Goal / acceptance criteria: Move ChainService to a coherent application-scoped lifecycle, ensure its command queue actually runs, and give plugin metadata caching proper invalidation/locking.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Chain lifecycle/cache fixes and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T792-subD
+    Status: [ ] Todo
+    Title: Consolidate shared plugin URI constants and remove hardware-logic leakage from plugin listing
+    Description:
+    - Goal / acceptance criteria: Centralize duplicated plugin URI constants and keep hardware-specific listing behavior out of generic plugin catalog responses.
+    - Dependencies: T792-subB, T792-subC
+    - Estimated effort: Medium
+    - Required outputs: Shared constants module or equivalent, updated call sites, and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T793
+Status: [ ] Todo
+Title: Remove duplicated hardware-bridge scaffolding and device-service architectural drift
+Description:
+- Goal / acceptance criteria: Collapse near-verbatim device-bridge duplication, fix long-lived task/resource leaks in device integrations, and separate runtime discovery state from persisted operator configuration across the hardware-facing backend services audited here.
+- Why it matters: These services are large, stateful, and expensive to maintain; duplicated or leaky scaffolding multiplies bug-fix effort and restart risk.
+- Dependencies: T790, T791
+- Estimated effort: High
+- Required outputs: Shared hardware-bridge abstractions, device-service lifecycle fixes, focused regressions, and updated operator notes where runtime behavior changes.
+Subtasks:
+  - ID: T793-subA
+    Status: [ ] Todo
+    Title: Extract a shared SysEx bridge base for MPX-1 and IntelFX
+    Description:
+    - Goal / acceptance criteria: Replace the 4,000+ LOC duplicated hardware bridge scaffolding with a shared base plus device-specific protocol layers without losing T036/T037 behavior.
+    - Dependencies: None
+    - Estimated effort: High
+    - Required outputs: Shared base abstraction, migrated device services, and parity regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T793-subB
+    Status: [ ] Todo
+    Title: Fix Tesira task lifecycle and secret-handling issues
+    Description:
+    - Goal / acceptance criteria: Bound meter-push fanout, track/cancel reconnect tasks cleanly, and prevent password exposure through config repr/logging paths.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Tesira lifecycle/security fixes and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T793-subC
+    Status: [ ] Todo
+    Title: Separate Push-surface discovery state from persisted config
+    Description:
+    - Goal / acceptance criteria: Ensure device scans do not mutate durable operator preferences and keep runtime discovery state in a separate contract.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Push-surface config/runtime separation and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T793-subD
+    Status: [ ] Todo
+    Title: Make Ground Control Pro restart-safe and remove test-directory runtime dependencies
+    Description:
+    - Goal / acceptance criteria: Persist enough session/index state to survive restart safely and stop relying on `tests/` fixtures for production runtime defaults.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Restart-safe GCP state persistence, runtime fixture relocation, and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T793-subE
+    Status: [ ] Todo
+    Title: Fix PipeWire runtime assumptions and result reporting
+    Description:
+    - Goal / acceptance criteria: Remove hardcoded user/home assumptions, report command success truthfully, improve uptime semantics, and avoid avoidable quadratic stream scans.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: PipeWire-service fixes and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T794
+Status: [ ] Todo
+Title: Finish cross-cutting backend control, config, and recovery hardening from the audit
+Description:
+- Goal / acceptance criteria: Address the audit's remaining medium-severity architecture concerns around automation, circuit breaking, graceful degradation, configuration validation, websocket/event decoupling, and module-level mutable state so the backend's control-plane primitives behave consistently under failure.
+- Why it matters: These concerns affect system-wide recovery and operator trust even when they do not immediately crash the process.
+- Dependencies: T790, T791
+- Estimated effort: High
+- Required outputs: Control-plane hardening changes, focused regressions, and updated developer notes where conventions change.
+Subtasks:
+  - ID: T794-subA
+    Status: [ ] Todo
+    Title: Fix automation engine locking, random-waveform semantics, and durable save behavior
+    Description:
+    - Goal / acceptance criteria: Remove blocking lock misuse from async-only paths, separate random-wave phase tracking from amplitude state, and stop destructive save flows from risking partial data loss.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Automation engine fixes and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T794-subB
+    Status: [ ] Todo
+    Title: Correct circuit-breaker and graceful-degradation recovery behavior
+    Description:
+    - Goal / acceptance criteria: Enforce single HALF_OPEN probe semantics, adopt windowed failure accounting, and make degradation recovery checks/run loops actually drive recovery instead of remaining dead code.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Circuit-breaker/degradation fixes and focused failure-recovery regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T794-subC
+    Status: [ ] Todo
+    Title: Strengthen configuration validation and Tier A lock enforcement
+    Description:
+    - Goal / acceptance criteria: Make lock enforcement explicit and validated, and add element-type validation for list-valued config settings so invalid runtime config shapes are rejected consistently.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Config validation/lock changes and focused config regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T794-subD
+    Status: [ ] Todo
+    Title: Reduce module-level mutable state and websocket coupling across backend services
+    Description:
+    - Goal / acceptance criteria: Move hidden module globals into owned service objects where practical and introduce a thinner publish abstraction between backend services and websocket fanout so hardware/service code stops depending directly on websocket-manager internals.
+    - Dependencies: T790-subB, T790-subC
+    - Estimated effort: High
+    - Required outputs: Refactors for the audited module-global/websocket-coupling hotspots and focused regressions.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
+
+ID: T795
+Status: [ ] Todo
+Title: Clean up backend maintainability debt captured by the architecture audit
+Description:
+- Goal / acceptance criteria: Close the audit's lower-severity cleanup items that still carry long-term maintenance cost, including model/package organization, logging hygiene, import consistency, config shape readability, and similar repo-wide cleanup work that should not be forgotten after the critical fixes land.
+- Why it matters: The lower-severity items are not release blockers by themselves, but they compound the cost of future backend work if left untracked.
+- Dependencies: T789, T790, T791, T792, T793, T794
+- Estimated effort: Medium
+- Required outputs: Cleanup changes, any small supporting refactors, and lightweight validation evidence.
+Subtasks:
+  - ID: T795-subA
+    Status: [ ] Todo
+    Title: Split large backend model/config files into clearer packages
+    Description:
+    - Goal / acceptance criteria: Break up oversized single-file model/config definitions such as Performance Brain models and the large config schema dict into clearer module groupings without changing external behavior.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: File/package reorganization and focused import/regression checks.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T795-subB
+    Status: [ ] Todo
+    Title: Remove avoidable blocking/threading primitives from async-only utility paths
+    Description:
+    - Goal / acceptance criteria: Replace remaining audited async-path `threading.Lock` usage and similar blocking primitives where a non-blocking or single-threaded pattern is more appropriate.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Utility/middleware cleanup and focused regressions where needed.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+  - ID: T795-subC
+    Status: [ ] Todo
+    Title: Standardize backend hygiene patterns called out by the audit
+    Description:
+    - Goal / acceptance criteria: Reduce silent `except Exception: pass` usage where practical, normalize `from __future__ import annotations` policy, and clean up low-value log formatting issues such as emoji-driven logger output.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Small repo-wide hygiene updates with targeted validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-06
+Assigned to: Unassigned
+Last updated: 2026-04-06
 
 ID: T780
 Status: [ ] Todo

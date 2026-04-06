@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority graph-document crossfade activation documented)
+> **Last Updated**: April 6, 2026 (State Authority activation phase progress documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1689,6 +1689,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py`; `cmake --build juce-engine/build --target map2_audio_engine -j4`; `git diff --check`
 - **Lesson**: A document-authoritative runtime still needs explicit transition handling in the audio callback. Load/save support alone is not enough to make activation seamless.
 
+**79. State Authority Activation Progress Must Be Carried Through Intent Metadata, Not Reconstructed Only At The End (HIGH - Apr 6, 2026)**
+- **Files**: `app/services/snapshot_runtime_state_service.py`, `app/services/state_authority_activation_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_state_authority_activation_service.py`
+- **Problem**: The activation path already had durable intent and success/failure events, but it still behaved like one opaque step. Earlier validation/staging/apply work would disappear unless a later confirmation reconstructed the whole state from scratch.
+- **Root Cause**: Activation-event storage only persisted the latest outcome payload. There was no shared helper to merge phase progress into the intent/event metadata as the activation advanced.
+- **Fix**: Add an activation-progress merge helper in `SnapshotRuntimeStateService`, persist/broadcast phase updates on the existing `snapshot_activation_events` topic, and have `StateAuthorityActivationService` mark `VALIDATING`, `STAGING`, `APPLYING`, and `VERIFYING` before live confirmation/failure finalization adds `LIVE` or the failing phase.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py app/services/state_authority_activation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py`; `git diff --check`
+- **Lesson**: If activation phases are part of the operator contract, they must be emitted incrementally through the same durable intent metadata that success/failure uses. Do not try to infer the whole phase story only after activation finishes.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1959,6 +1967,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Activation Phase Progress
+- **Section**: Gotchas & Learned Fixes (#79), Update Log
+- **Change**: Documented the first `T774` slice: activation intents now persist and broadcast incremental phase progress on the existing activation-event topic, and the activation service marks validation, staging, apply, and verification transitions before final live confirmation or failure.
+- **Reason**: The State Authority activation redesign requires observable state-machine progress. The repo already had durable intent events, so the correct implementation path was to extend that existing channel rather than invent a second progress surface.
+- **Impact**: Future `T774` work for structured validation, timeout handling, hooks, and preload planning should report through `activation_progress` instead of adding parallel activation-status fields.
 
 ### [2026-04-05] - State Authority Graph-Document Crossfade Activation
 - **Section**: Gotchas & Learned Fixes (#78), Update Log
