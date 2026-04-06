@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1472** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1475** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4ec14189`](https://github.com/matthewmackes/map2-audio/commit/4ec141895fdbcbfd27b39c8b81ed7299e4897622) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
+| [`cf993d8c`](https://github.com/matthewmackes/map2-audio/commit/cf993d8c49a59c4393bd17335c62615009530f4c) | Add heartbeat State Authority reconciliation | Map2 Audio | 2026-04-06 |
+| [`2902d943`](https://github.com/matthewmackes/map2-audio/commit/2902d9437da50b0897eeb22a2780ad7bb8186aef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`33a27908`](https://github.com/matthewmackes/map2-audio/commit/33a27908aa9f65a7dfce225fa9dae14ff52bd132) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 | [`bd7620a5`](https://github.com/matthewmackes/map2-audio/commit/bd7620a59562d2e16697ee9db222a5c1fd5c8aae) | Add State Authority reconciliation core | Map2 Audio | 2026-04-06 |
 | [`46fed568`](https://github.com/matthewmackes/map2-audio/commit/46fed568a70c051cfc5e7003197e568a44e40c4e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`9b3a8781`](https://github.com/matthewmackes/map2-audio/commit/9b3a8781ab3a4744121c954eeb95f356c5b9f5f6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 | [`03648098`](https://github.com/matthewmackes/map2-audio/commit/03648098b37d3a0b5bdc3e116569d36a59d1868c) | Cut over snapshot morph to engine runtime | Map2 Audio | 2026-04-06 |
-| [`49401df1`](https://github.com/matthewmackes/map2-audio/commit/49401df1406e8844a85ebebdf030c0044d8c1228) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`45b9b5d5`](https://github.com/matthewmackes/map2-audio/commit/45b9b5d52a52c9f881a66d5d24b812035f042743) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
-| [`8e49ddc7`](https://github.com/matthewmackes/map2-audio/commit/8e49ddc78f86f0574d9812f6d04725422f2b86d8) | Add JUCE quad morph engine bindings | Map2 Audio | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
