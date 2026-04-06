@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**975** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1426** total commits | **3** stars | **0** forks | **0** open issues
+**976** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1429** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3902df1d`](https://github.com/matthewmackes/map2-audio/commit/3902df1d44a16d2ea09c1415eae45358d8e80916) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`ee7bfd57`](https://github.com/matthewmackes/map2-audio/commit/ee7bfd571fed7776c4b4f1e1273dce01e1be3b64) | Extract State Authority document service | Map2 Audio | 2026-04-05 |
+| [`7f5d4d26`](https://github.com/matthewmackes/map2-audio/commit/7f5d4d2629fb586fbd03c55ccd6d0f543f9d7434) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`cb86ebac`](https://github.com/matthewmackes/map2-audio/commit/cb86ebac2e82fa5f486871e1862ace6c26afa489) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`ff7326a7`](https://github.com/matthewmackes/map2-audio/commit/ff7326a71087da6d4c12eff1e53510713982cbaf) | Add State Authority asset registry bridge | Map2 Audio | 2026-04-05 |
 | [`61705873`](https://github.com/matthewmackes/map2-audio/commit/61705873327d2d8d51b0e450018b4cfee64aac14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`6032f9ec`](https://github.com/matthewmackes/map2-audio/commit/6032f9ec671ff4925634db812b75ae1c81821bbc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`bd696ffd`](https://github.com/matthewmackes/map2-audio/commit/bd696ffdc90ff6395124ca4075b15cc1a1779452) | Add State Authority write validation barrier | Map2 Audio | 2026-04-05 |
-| [`257ba176`](https://github.com/matthewmackes/map2-audio/commit/257ba176ee362424c635bcd2ca4f03b34689f4c7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`66aae82b`](https://github.com/matthewmackes/map2-audio/commit/66aae82b6ab10ec8c9d055c795cdf21ed1e901ca) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`bb9e6c95`](https://github.com/matthewmackes/map2-audio/commit/bb9e6c95780d40134098d8e6c5ddfd2f38301667) | Add State Authority document persistence bridge | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
