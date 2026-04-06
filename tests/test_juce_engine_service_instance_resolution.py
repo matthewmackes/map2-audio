@@ -49,6 +49,28 @@ class _FakeNamInstanceInfoEngine:
         }
 
 
+class _FakeGraphDocumentEngine:
+    def __init__(self):
+        self.saved_seed = None
+        self.loaded_payload = None
+        self.loaded_crossfade = None
+        self.loaded_max_crossfade_ms = None
+
+    def save_graph_document(self, seed_document=None):
+        self.saved_seed = seed_document
+        return {
+            "version": "2026.04",
+            "meta": {"name": "Live Graph", "type": "snapshot"},
+            "graph": {"nodes": [], "edges": [], "chains": []},
+        }
+
+    def load_graph_document(self, graph_document, use_independent_crossfade=False, max_crossfade_ms=500):
+        self.loaded_payload = graph_document
+        self.loaded_crossfade = use_independent_crossfade
+        self.loaded_max_crossfade_ms = max_crossfade_ms
+        return True
+
+
 def test_get_instance_id_for_uri_prefers_matching_position_for_duplicates():
     service = JuceEngineService()
     service._engine = _FakePedalboardEngine([  # noqa: SLF001 - explicit unit isolation
@@ -165,6 +187,39 @@ def test_get_nam_status_instance_reads_duplicate_safe_instance_info():
             "normalize": False,
         },
     }
+
+
+def test_save_graph_document_passes_seed_payload_through_service():
+    service = JuceEngineService()
+    service._engine = _FakeGraphDocumentEngine()  # noqa: SLF001 - explicit unit isolation
+
+    payload = asyncio.run(service.save_graph_document({"meta": {"name": "Seed"}}))
+
+    assert payload["meta"]["name"] == "Live Graph"
+    assert service._engine.saved_seed == {"meta": {"name": "Seed"}}  # noqa: SLF001
+
+
+def test_load_graph_document_passes_options_through_service():
+    service = JuceEngineService()
+    service._engine = _FakeGraphDocumentEngine()  # noqa: SLF001 - explicit unit isolation
+    document = {
+        "version": "2026.04",
+        "meta": {"name": "Snapshot", "type": "snapshot"},
+        "graph": {"nodes": [], "edges": [], "chains": []},
+    }
+
+    result = asyncio.run(
+        service.load_graph_document(
+            document,
+            use_independent_crossfade=True,
+            max_crossfade_ms=240,
+        )
+    )
+
+    assert result is True
+    assert service._engine.loaded_payload == document  # noqa: SLF001
+    assert service._engine.loaded_crossfade is True  # noqa: SLF001
+    assert service._engine.loaded_max_crossfade_ms == 240  # noqa: SLF001
 
 
 class _FakeFixedNativeEngine:

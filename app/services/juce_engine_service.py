@@ -453,6 +453,30 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         return await asyncio.to_thread(self._engine.prewarm_plugin_node, instance_id)
+
+    async def save_graph_document(self, seed_document: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        """Serialize the active JUCE runtime chain into a graph document payload."""
+        if not self._engine or not hasattr(self._engine, "save_graph_document"):
+            return {}
+        payload = await asyncio.to_thread(self._engine.save_graph_document, seed_document)
+        return payload if isinstance(payload, dict) else {}
+
+    async def load_graph_document(
+        self,
+        graph_document: Dict[str, Any],
+        *,
+        use_independent_crossfade: bool = False,
+        max_crossfade_ms: int = 500,
+    ) -> bool:
+        """Load a graph document directly into the JUCE runtime chain."""
+        if not self._engine or not hasattr(self._engine, "load_graph_document"):
+            return False
+        return await asyncio.to_thread(
+            self._engine.load_graph_document,
+            graph_document,
+            bool(use_independent_crossfade),
+            int(max_crossfade_ms),
+        )
     
     # Chain Management
     

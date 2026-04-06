@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 22:16 EDT - T772-subE completed with categorized revision summary metadata persistence.
+Last updated: 2026-04-05 22:02 EDT - T773-subA completed with JUCE graph-document export/import bindings.
 
 ## Performance Brain
 
@@ -847,7 +847,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 22:16 EDT - Codex
 
 ID: T773
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Add JUCE graph-document load/save bindings and independent-graph crossfade runtime support
 Description:
 - Goal / acceptance criteria: Expose `load_graph_document` / `save_graph_document` through the pybind11 layer, implement JSON-to-`ValueTree` and `ValueTree`-to-JSON conversion on the C++ side, and add an independent-graph crossfade path that runs old and new graphs in parallel with equal-power mixing and a 500ms maximum duration.
@@ -855,9 +855,55 @@ Description:
 - Dependencies: T771
 - Estimated effort: High
 - Required outputs: JUCE engine/binding changes, crossfade runtime class(es), Python service integration hooks, and focused C++/Python validation for Phase 1 and Phase 3 runtime primitives.
-Subtasks: None
+Subtasks:
+  - ID: T773-subA
+    Status: [✓] Done
+    Title: Add JUCE graph-document export bindings with `ValueTree` round-trip helpers
+    Description:
+    - Goal / acceptance criteria: Add a real engine export path that serializes the active runtime chain into the State Authority graph-document shape, using explicit JSON-to-`ValueTree` / `ValueTree`-to-JSON helpers and exposing the result through pybind11 plus the Python engine service.
+    - Why it matters: The engine cannot be an authority participant until it can emit its live graph state in the canonical document format instead of only legacy snapshot slots.
+    - Dependencies: T771
+    - Estimated effort: Medium
+    - Required outputs: C++ document export helpers, pybind/API wiring, Python service hook, focused engine/service tests, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 22:02 EDT - Codex
+    - Completion notes:
+      - Added [juce-engine/Source/Map2AudioEngine.h](/home/mm/map2-audio/juce-engine/Source/Map2AudioEngine.h) and [juce-engine/Source/Map2AudioEngine.cpp](/home/mm/map2-audio/juce-engine/Source/Map2AudioEngine.cpp) graph-document save/load methods backed by explicit JSON-to-`ValueTree` and `ValueTree`-to-JSON helpers, runtime-chain export, reloadable `engine_uri` preservation, and base64 processor-state capture.
+      - Extended [juce-engine/Source/PythonBindings.cpp](/home/mm/map2-audio/juce-engine/Source/PythonBindings.cpp) so pybind11 exposes `save_graph_document()` and `load_graph_document()` directly on the JUCE engine surface using Python dict payloads.
+      - Added [app/services/juce_engine_service.py](/home/mm/map2-audio/app/services/juce_engine_service.py) wrappers and focused service coverage in [tests/test_juce_engine_service_instance_resolution.py](/home/mm/map2-audio/tests/test_juce_engine_service_instance_resolution.py), then proved the native module can initialize and round-trip an empty graph document through the new binding seam.
+    - Validation:
+      - `pytest -q tests/test_juce_engine_service_instance_resolution.py -k 'graph_document or duplicate or nam_status_instance'` -> PASS (`5 passed, 8 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py tests/test_juce_engine_service_instance_resolution.py` -> PASS
+      - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+      - `python3 - <<'PY' ... engine.save_graph_document(...); engine.load_graph_document(...) ... PY` -> PASS
+      - `git diff --check` -> PASS
+  - ID: T773-subB
+    Status: [ ] Todo
+    Title: Add JUCE graph-document import/rebuild bindings with plugin-state restore
+    Description:
+    - Goal / acceptance criteria: Add a real engine import path that consumes the State Authority graph-document shape, loads the required plugin instances, restores saved processor state/parameters/bypass, rebuilds the active runtime chain, and exposes the operation through pybind11 plus the Python engine service.
+    - Why it matters: Document export alone is insufficient; the engine must also be able to consume authoritative graph payloads directly or snapshot activation remains facade-only.
+    - Dependencies: T773-subA
+    - Estimated effort: High
+    - Required outputs: C++ document import/rebuild helpers, safe runtime replacement behavior, Python service hook, focused engine/service tests, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 22:02 EDT - Codex
+  - ID: T773-subC
+    Status: [ ] Todo
+    Title: Add independent-graph equal-power crossfade activation and wire snapshot activation to graph documents
+    Description:
+    - Goal / acceptance criteria: Add the bounded independent-graph crossfade runtime that runs old and new graphs in parallel with equal-power mixing for at most 500ms, then wire snapshot activation to use graph-document engine loading when the bridge is available.
+    - Why it matters: The redesign explicitly requires a first-class runtime transition path; without this, graph-document activation would still rely on the older topology/materialization path and leave `T773` unfinished.
+    - Dependencies: T773-subA, T773-subB, T772
+    - Estimated effort: High
+    - Required outputs: Crossfade runtime state/process path, activation integration hook, focused engine/activation regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 22:02 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-05 22:02 EDT - Codex
 
 ID: T774
 Status: [ ] Todo

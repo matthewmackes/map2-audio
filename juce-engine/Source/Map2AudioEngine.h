@@ -356,6 +356,16 @@ public:
     bool setBypass(InstanceId instanceId, bool bypass);
 
     // ========================================
+    // State Authority Graph Documents
+    // ========================================
+
+    std::string saveGraphDocument(const std::string& seedGraphDocumentJson = "") const;
+    bool loadGraphDocument(
+        const std::string& graphDocumentJson,
+        bool useIndependentCrossfade = false,
+        int maxCrossfadeMs = 500);
+
+    // ========================================
     // Snapshots
     // ========================================
 

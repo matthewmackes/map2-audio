@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority categorized revision summaries documented)
+> **Last Updated**: April 5, 2026 (State Authority graph-document engine bindings documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1673,6 +1673,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'save_explicit_revision_and_restore or revision_restore_prefers_document'`; `pytest -q tests/test_snapshot_service.py -k 'revision_round_trips_snapshot_owned_extensions or revision_restore_prefers_document_when_payload_missing'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py app/services/state_authority_revision_service.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: If revision summaries are part of the State Authority contract, persist the structured form when the revision is written. Do not defer summary categorization to read time or UI-only helpers.
 
+**77. Graph-Document Engine Bridges Must Preserve A Loadable Runtime URI Alongside Schema-Safe Node URIs (HIGH - Apr 5, 2026)**
+- **Files**: `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `tests/test_juce_engine_service_instance_resolution.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The State Authority schema wants canonical `map2:` or `urn:` node URIs, but the JUCE runtime still loads processors through legacy/native engine URIs such as `map2://juce/...` and plugin-specific runtime identifiers. A direct engine save/load bridge can easily become invalid in one direction: either it exports schema-breaking URIs or it exports schema-safe identifiers that the runtime cannot reload.
+- **Root Cause**: The engine had no graph-document bridge at all, so there was no established convention for separating schema-facing node identity from the concrete runtime URI needed to instantiate processors.
+- **Fix**: Add JUCE graph-document save/load methods that round-trip through explicit JSON/`ValueTree` helpers, export schema-safe node `uri` values plus `engine_uri` for runtime reload, preserve loader state as base64 processor state, and expose the bridge through pybind11 and `JuceEngineService`.
+- **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py -k 'graph_document or duplicate or nam_status_instance'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py tests/test_juce_engine_service_instance_resolution.py`; `cmake --build juce-engine/build --target map2_audio_engine -j4`; `python3 - <<'PY' ... engine.save_graph_document(...); engine.load_graph_document(...) ... PY`
+- **Lesson**: When a schema-facing identifier is stricter than the runtime loader identifier, export both intentionally. Do not force the engine to choose between emitting a valid document and emitting a reloadable one.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1943,6 +1951,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Graph-Document Engine Bindings
+- **Section**: Gotchas & Learned Fixes (#77), Update Log
+- **Change**: Documented the first `T773` slice: the JUCE engine now exposes graph-document save/load methods through explicit JSON/`ValueTree` helpers, pybind11 bindings, and `JuceEngineService` wrappers.
+- **Reason**: The State Authority graph cannot become authoritative in runtime until the engine can emit and consume the document shape directly instead of only exposing legacy snapshot slots.
+- **Impact**: Future `T773` slices should extend this bridge for full activation/crossfade work rather than adding new document translation logic only in Python services.
 
 ### [2026-04-05] - State Authority Categorized Revision Summaries
 - **Section**: Gotchas & Learned Fixes (#76), Update Log

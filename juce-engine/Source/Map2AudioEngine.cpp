@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <limits>
 #include <cmath>
+#include <set>
 #include <unordered_set>
 
 // RT-SAFE: Disable logging in release builds and production
@@ -235,6 +236,262 @@ std::string normalizeDeviceType(const std::string& deviceType) {
         return "unknown";
     }
     return normalized;
+}
+
+constexpr const char* kJsonTreeKeyProperty = "__json_key";
+constexpr const char* kJsonScalarProperty = "__json_scalar";
+constexpr const char* kJsonKindProperty = "__json_kind";
+constexpr const char* kGraphDocumentVersion = "2026.04";
+
+juce::Identifier sanitizeValueTreeType(const juce::String& raw) {
+    juce::String sanitized;
+    for (const auto character : raw) {
+        if (juce::CharacterFunctions::isLetterOrDigit(character) || character == '_' || character == '-') {
+            sanitized << character;
+        } else {
+            sanitized << '_';
+        }
+    }
+    if (sanitized.isEmpty()) {
+        sanitized = "object";
+    }
+    return juce::Identifier(sanitized);
+}
+
+bool isJsonScalar(const juce::var& value) {
+    return value.isVoid()
+        || value.isBool()
+        || value.isInt()
+        || value.isInt64()
+        || value.isDouble()
+        || value.isString();
+}
+
+juce::ValueTree jsonVarToValueTree(
+    const juce::var& value,
+    const juce::String& typeName,
+    const juce::String& key = {}) {
+    if (value.isArray()) {
+        juce::ValueTree tree(sanitizeValueTreeType(typeName));
+        if (key.isNotEmpty()) {
+            tree.setProperty(kJsonTreeKeyProperty, key, nullptr);
+        }
+        if (const auto* array = value.getArray()) {
+            for (const auto& item : *array) {
+                if (isJsonScalar(item)) {
+                    juce::ValueTree scalarNode("item");
+                    scalarNode.setProperty(kJsonKindProperty, "scalar", nullptr);
+                    scalarNode.setProperty(kJsonScalarProperty, item, nullptr);
+                    tree.addChild(scalarNode, -1, nullptr);
+                } else if (item.isArray()) {
+                    tree.addChild(jsonVarToValueTree(item, "array"), -1, nullptr);
+                } else {
+                    tree.addChild(jsonVarToValueTree(item, "object"), -1, nullptr);
+                }
+            }
+        }
+        return tree;
+    }
+
+    juce::ValueTree tree(sanitizeValueTreeType(typeName));
+    if (key.isNotEmpty()) {
+        tree.setProperty(kJsonTreeKeyProperty, key, nullptr);
+    }
+
+    if (!value.isObject()) {
+        tree.setProperty(kJsonKindProperty, "scalar", nullptr);
+        tree.setProperty(kJsonScalarProperty, value, nullptr);
+        return tree;
+    }
+
+    if (auto* object = value.getDynamicObject()) {
+        for (const auto& property : object->getProperties()) {
+            const auto propertyName = property.name.toString();
+            const auto propertyValue = property.value;
+            if (isJsonScalar(propertyValue)) {
+                tree.setProperty(propertyName, propertyValue, nullptr);
+                continue;
+            }
+            if (propertyValue.isArray()) {
+                tree.addChild(jsonVarToValueTree(propertyValue, "array", propertyName), -1, nullptr);
+                continue;
+            }
+            tree.addChild(jsonVarToValueTree(propertyValue, "object", propertyName), -1, nullptr);
+        }
+    }
+
+    return tree;
+}
+
+juce::var valueTreeToJsonVar(const juce::ValueTree& tree) {
+    if (!tree.isValid()) {
+        return {};
+    }
+
+    if (tree.hasProperty(kJsonKindProperty)
+        && tree.getProperty(kJsonKindProperty).toString() == "scalar") {
+        return tree.getProperty(kJsonScalarProperty);
+    }
+
+    if (tree.getType().toString() == "array") {
+        juce::Array<juce::var> array;
+        for (int index = 0; index < tree.getNumChildren(); ++index) {
+            array.add(valueTreeToJsonVar(tree.getChild(index)));
+        }
+        return juce::var(array);
+    }
+
+    auto object = juce::DynamicObject::Ptr(new juce::DynamicObject());
+    for (int index = 0; index < tree.getNumProperties(); ++index) {
+        const auto name = tree.getPropertyName(index).toString();
+        if (name == kJsonTreeKeyProperty || name == kJsonScalarProperty || name == kJsonKindProperty) {
+            continue;
+        }
+        object->setProperty(name, tree.getProperty(tree.getPropertyName(index)));
+    }
+
+    for (int index = 0; index < tree.getNumChildren(); ++index) {
+        const auto child = tree.getChild(index);
+        const auto key = child.getProperty(kJsonTreeKeyProperty).toString();
+        if (key.isEmpty()) {
+            continue;
+        }
+        object->setProperty(key, valueTreeToJsonVar(child));
+    }
+    return juce::var(object.get());
+}
+
+juce::ValueTree findJsonChildByKey(const juce::ValueTree& parent, const juce::String& key) {
+    for (int index = 0; index < parent.getNumChildren(); ++index) {
+        const auto child = parent.getChild(index);
+        if (child.getProperty(kJsonTreeKeyProperty).toString() == key) {
+            return child;
+        }
+    }
+    return {};
+}
+
+void replaceJsonChildByKey(juce::ValueTree& parent, const juce::String& key, juce::ValueTree child) {
+    for (int index = parent.getNumChildren() - 1; index >= 0; --index) {
+        if (parent.getChild(index).getProperty(kJsonTreeKeyProperty).toString() == key) {
+            parent.removeChild(index, nullptr);
+        }
+    }
+    if (child.isValid()) {
+        child.setProperty(kJsonTreeKeyProperty, key, nullptr);
+        parent.addChild(child, -1, nullptr);
+    }
+}
+
+juce::ValueTree ensureObjectChild(juce::ValueTree& parent, const juce::String& key) {
+    auto child = findJsonChildByKey(parent, key);
+    if (child.isValid() && child.getType().toString() != "array") {
+        return child;
+    }
+    juce::ValueTree next("object");
+    next.setProperty(kJsonTreeKeyProperty, key, nullptr);
+    replaceJsonChildByKey(parent, key, next);
+    return findJsonChildByKey(parent, key);
+}
+
+juce::ValueTree makeArrayTree(const juce::String& key) {
+    juce::ValueTree arrayTree("array");
+    arrayTree.setProperty(kJsonTreeKeyProperty, key, nullptr);
+    return arrayTree;
+}
+
+std::string canonicalGraphNodeUri(const std::string& engineUri) {
+    if (engineUri == "map2://juce/nam") {
+        return "map2:fx:nam";
+    }
+    if (engineUri == "map2://juce/convolution/cabinet") {
+        return "map2:fx:cabinet-ir";
+    }
+    if (engineUri == "map2://juce/convolution/reverb") {
+        return "map2:fx:reverb-ir";
+    }
+    if (engineUri.rfind("map2://juce/", 0) == 0) {
+        auto suffix = engineUri.substr(std::string("map2://juce/").size());
+        std::replace(suffix.begin(), suffix.end(), '/', '-');
+        return "map2:fx:" + suffix;
+    }
+    if (engineUri.rfind("map2:", 0) == 0 || engineUri.rfind("urn:", 0) == 0) {
+        return engineUri;
+    }
+
+    std::string slug;
+    slug.reserve(engineUri.size());
+    for (const unsigned char ch : engineUri) {
+        if (std::isalnum(ch) != 0) {
+            slug.push_back(static_cast<char>(std::tolower(ch)));
+        } else if (slug.empty() || slug.back() != '-') {
+            slug.push_back('-');
+        }
+    }
+    while (!slug.empty() && slug.back() == '-') {
+        slug.pop_back();
+    }
+    if (slug.empty()) {
+        slug = "unknown";
+    }
+    return "urn:plugin:" + slug;
+}
+
+std::string loadableEngineUri(const juce::var& pluginVar) {
+    if (!pluginVar.isObject()) {
+        return {};
+    }
+    auto* object = pluginVar.getDynamicObject();
+    if (object == nullptr) {
+        return {};
+    }
+    const auto engineUri = object->getProperty("engine_uri").toString().toStdString();
+    if (!engineUri.empty()) {
+        return engineUri;
+    }
+    const auto uri = object->getProperty("uri").toString().toStdString();
+    if (uri == "map2:fx:nam") {
+        return "map2://juce/nam";
+    }
+    if (uri == "map2:fx:cabinet-ir") {
+        return "map2://juce/convolution/cabinet";
+    }
+    if (uri == "map2:fx:reverb-ir") {
+        return "map2://juce/convolution/reverb";
+    }
+    if (uri == "map2:fx:drums") {
+        return "map2://juce/drums";
+    }
+    if (uri == "map2:fx:synthforge") {
+        return "map2://juce/synthforge";
+    }
+    if (uri == "map2:fx:brain") {
+        return "map2://juce/brain";
+    }
+    return uri;
+}
+
+std::vector<uint8_t> decodeBase64State(const juce::String& encoded) {
+    juce::MemoryOutputStream output;
+    if (!juce::Base64::convertFromBase64(output, encoded)) {
+        return {};
+    }
+    const auto* bytes = static_cast<const uint8_t*>(output.getData());
+    return std::vector<uint8_t>(bytes, bytes + output.getDataSize());
+}
+
+juce::String encodeBase64State(const std::vector<uint8_t>& state) {
+    if (state.empty()) {
+        return {};
+    }
+    return juce::Base64::toBase64(state.data(), static_cast<int>(state.size()));
+}
+
+std::optional<float> coerceFloatVar(const juce::var& value) {
+    if (value.isDouble() || value.isInt() || value.isInt64() || value.isBool()) {
+        return static_cast<float>(static_cast<double>(value));
+    }
+    return std::nullopt;
 }
 
 uint64_t deriveNumericStreamId(const std::string& streamId) {
@@ -2744,6 +3001,262 @@ bool Map2AudioEngine::saveSnapshot(int snapshotId, const std::string& name) {
 
 std::vector<Snapshot> Map2AudioEngine::listSnapshots() const {
     return snapshotManager_->listSnapshots();
+}
+
+std::string Map2AudioEngine::saveGraphDocument(const std::string& seedGraphDocumentJson) const {
+    juce::var documentVar;
+    if (!seedGraphDocumentJson.empty()) {
+        const auto parsed = juce::JSON::parse(seedGraphDocumentJson);
+        if (!parsed.isVoid()) {
+            documentVar = parsed;
+        }
+    }
+
+    if (!documentVar.isObject()) {
+        auto defaultDocument = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        auto defaultMeta = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        defaultMeta->setProperty("name", "Live Graph");
+        defaultMeta->setProperty("type", "snapshot");
+        defaultDocument->setProperty("version", kGraphDocumentVersion);
+        defaultDocument->setProperty("meta", juce::var(defaultMeta.get()));
+        defaultDocument->setProperty("graph", juce::var(juce::DynamicObject::Ptr(new juce::DynamicObject()).get()));
+        documentVar = juce::var(defaultDocument.get());
+    }
+
+    auto documentTree = jsonVarToValueTree(documentVar, "document");
+    auto metaTree = ensureObjectChild(documentTree, "meta");
+    if (!metaTree.hasProperty("name") || metaTree.getProperty("name").toString().trim().isEmpty()) {
+        metaTree.setProperty("name", "Live Graph", nullptr);
+    }
+    if (!metaTree.hasProperty("type") || metaTree.getProperty("type").toString().trim().isEmpty()) {
+        metaTree.setProperty("type", "snapshot", nullptr);
+    }
+    documentTree.setProperty("version", kGraphDocumentVersion, nullptr);
+
+    auto graphTree = ensureObjectChild(documentTree, "graph");
+    auto nodesTree = makeArrayTree("nodes");
+    auto edgesTree = makeArrayTree("edges");
+    auto chainsTree = makeArrayTree("chains");
+
+    const auto order = audioGraph_->getChainOrder();
+    const auto loadedPlugins = pluginHost_.getLoadedPlugins();
+    std::map<InstanceId, PluginInstance> loadedById;
+    for (const auto& plugin : loadedPlugins) {
+        loadedById[plugin.id] = plugin;
+    }
+
+    auto chainObject = juce::DynamicObject::Ptr(new juce::DynamicObject());
+    chainObject->setProperty("id", 1);
+    chainObject->setProperty("source_key", "main-chain");
+    chainObject->setProperty("name", "Main Chain");
+    juce::Array<juce::var> chainPlugins;
+
+    for (size_t index = 0; index < order.size(); ++index) {
+        const auto instanceId = order[index];
+        const auto loadedIt = loadedById.find(instanceId);
+        if (loadedIt == loadedById.end()) {
+            continue;
+        }
+
+        const auto& plugin = loadedIt->second;
+        auto parameters = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        for (const auto& [name, value] : plugin.parameterValues) {
+            parameters->setProperty(juce::Identifier(name), value);
+        }
+
+        auto state = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        const auto encodedState = encodeBase64State(pluginHost_.getPluginState(instanceId));
+        if (encodedState.isNotEmpty()) {
+            state->setProperty("state_chunk_base64", encodedState);
+        }
+
+        auto chainPlugin = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        chainPlugin->setProperty("instance_id", static_cast<int>(instanceId));
+        chainPlugin->setProperty("position", static_cast<int>(index));
+        chainPlugin->setProperty("uri", juce::String(plugin.uri));
+        chainPlugin->setProperty("canonical_uri", juce::String(canonicalGraphNodeUri(plugin.uri)));
+        chainPlugin->setProperty("name", juce::String(plugin.name));
+        chainPlugin->setProperty("bypass", plugin.bypassed);
+        chainPlugin->setProperty("parameters", juce::var(parameters.get()));
+        chainPlugin->setProperty("loader_state", juce::var(state.get()));
+        chainPlugins.add(juce::var(chainPlugin.get()));
+
+        auto node = juce::DynamicObject::Ptr(new juce::DynamicObject());
+        node->setProperty("id", "main-chain:" + juce::String(static_cast<int>(index)));
+        node->setProperty("uri", juce::String(canonicalGraphNodeUri(plugin.uri)));
+        node->setProperty("engine_uri", juce::String(plugin.uri));
+        node->setProperty("name", juce::String(plugin.name));
+        node->setProperty("bypass", plugin.bypassed);
+        node->setProperty("parameters", juce::var(parameters.get()));
+        node->setProperty("state", juce::var(state.get()));
+        nodesTree.addChild(jsonVarToValueTree(juce::var(node.get()), "object"), -1, nullptr);
+
+        if (index > 0) {
+            auto edge = juce::DynamicObject::Ptr(new juce::DynamicObject());
+            edge->setProperty("from", "main-chain:" + juce::String(static_cast<int>(index - 1)));
+            edge->setProperty("to", "main-chain:" + juce::String(static_cast<int>(index)));
+            edgesTree.addChild(jsonVarToValueTree(juce::var(edge.get()), "object"), -1, nullptr);
+        }
+    }
+
+    chainObject->setProperty("plugins", juce::var(chainPlugins));
+    chainsTree.addChild(jsonVarToValueTree(juce::var(chainObject.get()), "object"), -1, nullptr);
+
+    replaceJsonChildByKey(graphTree, "nodes", nodesTree);
+    replaceJsonChildByKey(graphTree, "edges", edgesTree);
+    replaceJsonChildByKey(graphTree, "chains", chainsTree);
+
+    return juce::JSON::toString(valueTreeToJsonVar(documentTree), true).toStdString();
+}
+
+bool Map2AudioEngine::loadGraphDocument(
+    const std::string& graphDocumentJson,
+    bool /*useIndependentCrossfade*/,
+    int /*maxCrossfadeMs*/) {
+    const auto parsed = juce::JSON::parse(graphDocumentJson);
+    if (!parsed.isObject()) {
+        return false;
+    }
+
+    const auto documentTree = jsonVarToValueTree(parsed, "document");
+    const auto graphTree = findJsonChildByKey(documentTree, "graph");
+    if (!graphTree.isValid()) {
+        return false;
+    }
+
+    std::vector<juce::var> pluginSpecs;
+    const auto chainsTree = findJsonChildByKey(graphTree, "chains");
+    if (chainsTree.isValid()) {
+        for (int chainIndex = 0; chainIndex < chainsTree.getNumChildren(); ++chainIndex) {
+            const auto chainVar = valueTreeToJsonVar(chainsTree.getChild(chainIndex));
+            if (!chainVar.isObject()) {
+                continue;
+            }
+            auto* chainObject = chainVar.getDynamicObject();
+            if (chainObject == nullptr) {
+                continue;
+            }
+            const auto pluginsVar = chainObject->getProperty("plugins");
+            if (const auto* pluginArray = pluginsVar.getArray()) {
+                for (const auto& pluginVar : *pluginArray) {
+                    pluginSpecs.push_back(pluginVar);
+                }
+            }
+        }
+    }
+
+    if (pluginSpecs.empty()) {
+        const auto nodesTree = findJsonChildByKey(graphTree, "nodes");
+        if (!nodesTree.isValid()) {
+            return false;
+        }
+        for (int index = 0; index < nodesTree.getNumChildren(); ++index) {
+            pluginSpecs.push_back(valueTreeToJsonVar(nodesTree.getChild(index)));
+        }
+    }
+
+    const auto previousOrder = audioGraph_->getChainOrder();
+    const auto loadedPlugins = pluginHost_.getLoadedPlugins();
+    std::map<std::string, std::vector<InstanceId>> loadedByUri;
+    for (const auto& plugin : loadedPlugins) {
+        loadedByUri[plugin.uri].push_back(plugin.id);
+    }
+
+    std::vector<InstanceId> nextOrder;
+    std::vector<InstanceId> newlyLoaded;
+    std::set<InstanceId> reused;
+
+    for (const auto& pluginVar : pluginSpecs) {
+        const auto uri = loadableEngineUri(pluginVar);
+        if (uri.empty()) {
+            for (const auto instanceId : newlyLoaded) {
+                unloadPlugin(instanceId);
+            }
+            return false;
+        }
+
+        InstanceId instanceId = INVALID_INSTANCE_ID;
+        auto loadedIt = loadedByUri.find(uri);
+        if (loadedIt != loadedByUri.end()) {
+            for (const auto candidate : loadedIt->second) {
+                if (reused.find(candidate) == reused.end()) {
+                    instanceId = candidate;
+                    reused.insert(candidate);
+                    break;
+                }
+            }
+        }
+
+        if (instanceId == INVALID_INSTANCE_ID) {
+            if (uri == LexiconHardwareProcessor::PLUGIN_URI) {
+                instanceId = loadLexiconPlugin();
+            } else {
+                instanceId = loadPlugin(uri);
+            }
+            if (instanceId == INVALID_INSTANCE_ID) {
+                for (const auto loadedId : newlyLoaded) {
+                    unloadPlugin(loadedId);
+                }
+                return false;
+            }
+            newlyLoaded.push_back(instanceId);
+        }
+
+        if (pluginVar.isObject()) {
+            if (auto* pluginObject = pluginVar.getDynamicObject()) {
+                juce::String encodedState;
+                const auto loaderState = pluginObject->getProperty("loader_state");
+                if (loaderState.isObject()) {
+                    if (auto* stateObject = loaderState.getDynamicObject()) {
+                        encodedState = stateObject->getProperty("state_chunk_base64").toString();
+                    }
+                }
+                if (encodedState.isEmpty()) {
+                    const auto state = pluginObject->getProperty("state");
+                    if (state.isObject()) {
+                        if (auto* stateObject = state.getDynamicObject()) {
+                            encodedState = stateObject->getProperty("state_chunk_base64").toString();
+                        }
+                    }
+                }
+                if (encodedState.isNotEmpty()) {
+                    pluginHost_.setPluginState(instanceId, decodeBase64State(encodedState));
+                }
+
+                const auto parametersVar = pluginObject->getProperty("parameters");
+                if (parametersVar.isObject()) {
+                    if (auto* parameters = parametersVar.getDynamicObject()) {
+                        for (const auto& property : parameters->getProperties()) {
+                            if (const auto value = coerceFloatVar(property.value)) {
+                                setParameterByName(instanceId, property.name.toString().toStdString(), *value);
+                            }
+                        }
+                    }
+                }
+
+                if (pluginObject->hasProperty("bypass")) {
+                    setBypass(instanceId, static_cast<bool>(pluginObject->getProperty("bypass")));
+                }
+            }
+        }
+
+        nextOrder.push_back(instanceId);
+    }
+
+    if (!replaceChain(nextOrder)) {
+        for (const auto loadedId : newlyLoaded) {
+            unloadPlugin(loadedId);
+        }
+        return false;
+    }
+
+    for (const auto instanceId : previousOrder) {
+        if (std::find(nextOrder.begin(), nextOrder.end(), instanceId) == nextOrder.end()) {
+            unloadPlugin(instanceId);
+        }
+    }
+
+    return true;
 }
 
 // ========================================

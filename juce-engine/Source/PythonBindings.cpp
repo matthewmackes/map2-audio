@@ -2918,6 +2918,29 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("prewarm_plugin_node", &Map2AudioEngine::prewarmPluginNode,
              py::arg("instance_id"),
              "Create a detached graph node for a loaded plugin before live placement")
+        .def("save_graph_document", [](const Map2AudioEngine& self, py::object seedDocument) {
+            std::string seedJson;
+            if (!seedDocument.is_none()) {
+                if (py::isinstance<py::str>(seedDocument)) {
+                    seedJson = seedDocument.cast<std::string>();
+                } else {
+                    seedJson = py::module_::import("json").attr("dumps")(seedDocument).cast<std::string>();
+                }
+            }
+            const auto json = self.saveGraphDocument(seedJson);
+            return py::module_::import("json").attr("loads")(json);
+        }, py::arg("seed_document") = py::none(),
+             "Serialize the active runtime graph into a State Authority graph document")
+        .def("load_graph_document", [](Map2AudioEngine& self, py::object graphDocument, bool useIndependentCrossfade, int maxCrossfadeMs) {
+            std::string json;
+            if (py::isinstance<py::str>(graphDocument)) {
+                json = graphDocument.cast<std::string>();
+            } else {
+                json = py::module_::import("json").attr("dumps")(graphDocument).cast<std::string>();
+            }
+            return self.loadGraphDocument(json, useIndependentCrossfade, maxCrossfadeMs);
+        }, py::arg("graph_document"), py::arg("use_independent_crossfade") = false, py::arg("max_crossfade_ms") = 500,
+             "Load a State Authority graph document into the active runtime chain")
         .def("begin_topology_update", [](Map2AudioEngine& self) {
             self.getAudioGraph().beginTopologyUpdate();
         }, "Begin a batched topology update")
