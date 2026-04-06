@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**978** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1435** total commits | **3** stars | **0** forks | **0** open issues
+**978** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1438** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5e6c0b86`](https://github.com/matthewmackes/map2-audio/commit/5e6c0b866118d6f29060c12c66b3d1401b8ced7f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`bd946471`](https://github.com/matthewmackes/map2-audio/commit/bd946471f8a27b9f231e457f8aebbf92445a0526) | Rewire snapshot routes to State Authority services | Map2 Audio | 2026-04-05 |
+| [`5cd849ea`](https://github.com/matthewmackes/map2-audio/commit/5cd849ea4b2093fb8a00b6ea8b91741e600d1c3e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`4069278b`](https://github.com/matthewmackes/map2-audio/commit/4069278bb1074e8bcd8bfefc2767a71021c698b0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`1f940891`](https://github.com/matthewmackes/map2-audio/commit/1f940891b9c42fe6fa92135f0223f0202494b0a4) | Extract State Authority activation service | Map2 Audio | 2026-04-05 |
 | [`547aed05`](https://github.com/matthewmackes/map2-audio/commit/547aed05678837c5af7922145a953f02f9f3c28a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`f20a460a`](https://github.com/matthewmackes/map2-audio/commit/f20a460adfbf33e6d1e7f24a85f83fc00ca4e3bc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`20f1b884`](https://github.com/matthewmackes/map2-audio/commit/20f1b88419309d2a6e75612208df8419e2051ef8) | Extract State Authority revision service | Map2 Audio | 2026-04-05 |
-| [`8c4c9bab`](https://github.com/matthewmackes/map2-audio/commit/8c4c9bab62972d326927e38292de002e2ef2ff24) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`3902df1d`](https://github.com/matthewmackes/map2-audio/commit/3902df1d44a16d2ea09c1415eae45358d8e80916) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`ee7bfd57`](https://github.com/matthewmackes/map2-audio/commit/ee7bfd571fed7776c4b4f1e1273dce01e1be3b64) | Extract State Authority document service | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
