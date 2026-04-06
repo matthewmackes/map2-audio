@@ -1,5 +1,6 @@
 export {
   MapAmplifierIcon,
+  MapArtifactsLibraryIcon,
   MapAudioGridIcon,
   MapCabinetIcon,
   MapClusterFabricIcon,

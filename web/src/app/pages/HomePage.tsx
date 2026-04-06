@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressBar, Tag } from '@carbon/react'
@@ -7,11 +8,14 @@ import {
   Map2BrandMark,
 } from '../components/branding/map2Branding'
 import { MapClusterFabricIcon } from '../components/icons/map/MapAppIcons'
+import { MapArtifactsLibraryIcon } from '../components/icons/map'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { getLauncherCatalogItem, normalizeLandingTiles, type LandingTilePlacement } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
@@ -39,6 +43,41 @@ function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string 
   return `${nodes.length} node${nodes.length !== 1 ? 's' : ''} online`
 }
 
+const DEFAULT_DESKTOP_TILES: LandingTilePlacement[] = [
+  { route: '/artifacts', size: 'medium' },
+]
+
+interface DesktopLauncher {
+  route: string
+  label: string
+  description: string
+  Icon: ComponentType<{ size?: number }>
+}
+
+function resolveDesktopLaunchers(
+  landingTiles: Array<LandingTilePlacement | { route?: string | null; size?: string | null }> | undefined,
+): DesktopLauncher[] {
+  const normalized = normalizeLandingTiles(landingTiles)
+  const sourceTiles = normalized.length > 0 ? normalized : DEFAULT_DESKTOP_TILES
+
+  return sourceTiles
+    .map((tile) => {
+      const launcher = getLauncherCatalogItem(tile.route)
+      if (!launcher) {
+        return null
+      }
+
+      const Icon = tile.route === '/artifacts' ? MapArtifactsLibraryIcon : launcher.icon
+      return {
+        route: tile.route,
+        label: launcher.label,
+        description: launcher.description,
+        Icon,
+      }
+    })
+    .filter((launcher): launcher is DesktopLauncher => Boolean(launcher))
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function HomePage() {
@@ -46,6 +85,7 @@ export function HomePage() {
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const topology = useNodeTopology()
   const remediationSummary = usePlatformRemediationSummary()
+  const { settings: specialSettings } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
     state: string | null
@@ -57,6 +97,10 @@ export function HomePage() {
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
   const nodes = topology.data?.nodes
+  const desktopLaunchers = useMemo(
+    () => resolveDesktopLaunchers(specialSettings?.landingTiles),
+    [specialSettings?.landingTiles],
+  )
   const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
@@ -134,7 +178,25 @@ export function HomePage() {
         ) : null}
         <div className="hp2-desktop__scrim" aria-hidden="true" />
         <div className="hp2-desktop__status">
-          <div className="hp2-desktop__platform-card" role="button" tabIndex={0} onClick={() => navigate('/platforms/overview')} onKeyDown={(event) => {
+          <div className="hp2-desktop__icons" role="list" aria-label="Desktop icons">
+            {desktopLaunchers.map((launcher) => (
+              <button
+                key={launcher.route}
+                type="button"
+                className="hp2-desktop__icon"
+                role="listitem"
+                aria-label={`Open ${launcher.label}`}
+                title={launcher.description}
+                onClick={() => navigate(launcher.route)}
+              >
+                <span className="hp2-desktop__icon-glyph" aria-hidden="true">
+                  <launcher.Icon size={40} />
+                </span>
+                <span className="hp2-desktop__icon-label">{launcher.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="hp2-desktop__platform-card" role="button" aria-label="Open Platforms overview" tabIndex={0} onClick={() => navigate('/platforms/overview')} onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault()
               navigate('/platforms/overview')

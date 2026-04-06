@@ -115,6 +115,18 @@ export function MapPatchLibraryIcon(props: MapIconProps) {
   )
 }
 
+export function MapArtifactsLibraryIcon(props: MapIconProps) {
+  return (
+    <MapIconBase {...props}>
+      <path d="M7 11h18v13H7z" {...STROKE} />
+      <path d="M10 8h12l2 3H8z" {...STROKE} />
+      <path d="M14 15h4" {...STROKE} />
+      <path d="M12 19h8" {...STROKE} />
+      <path d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8" {...STROKE} />
+    </MapIconBase>
+  )
+}
+
 export function MapStagePerformanceIcon(props: MapIconProps) {
   return (
     <MapIconBase {...props}>

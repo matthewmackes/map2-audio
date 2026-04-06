@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 11:07 EDT - T782-subA completed with the desktop wallpaper container and persisted wallpaper modes.
+Last updated: 2026-04-06 11:19 EDT - T782-subB completed with the desktop icon grid and desktop pin integration.
 
 ## Performance Brain
 
@@ -17533,7 +17533,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T782-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the desktop icon grid with pin data integration
     Description:
     - Goal / acceptance criteria: Render desktop icons in a fixed grid (top-left aligned, columns top-to-bottom then left-to-right). ~64px Carbon icon tokens, Carbon spacing tokens, `body-compact-01` labels. Single-click opens the app (navigates to route). Data sourced from existing `landingTiles` / desktop pin group. Only "Audio Artifacts" pre-pinned by default with custom SVG icon. No selection model, no multi-select, no drag.
@@ -17541,8 +17541,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Desktop icon grid component, pin data integration, Audio Artifacts default pin, single-click navigation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 11:19 EDT - Codex
+    - Completion notes:
+      - Restored desktop pin consumption in `web/src/app/pages/HomePage.tsx` by reading `landingTiles` through `useSpecialSettings`, but switched the desktop fallback behavior to a single default `Audio Artifacts` icon instead of forcing Platforms into the icon list.
+      - Added a fixed desktop icon grid in `web/src/app/pages/HomePage.css` with single-click launch behavior, top-left alignment, and top-to-bottom then left-to-right column flow, matching the Windows-style desktop direction for the first pass.
+      - Added the custom `MapArtifactsLibraryIcon` in `web/src/app/components/icons/map/MapAppIcons.tsx` and used it for the default Audio Artifacts desktop icon.
+      - Extended `web/src/app/pages/HomePage.test.tsx` to cover default desktop pins, icon launch routing, and configured `landingTiles` rendering without reintroducing the old Platforms-first home-tile logic.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T782-subC
     Status: [ ] Todo
     Title: Build desktop context menus (wallpaper and icon right-click)

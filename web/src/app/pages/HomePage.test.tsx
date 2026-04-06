@@ -210,16 +210,27 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(screen.getByRole('list', { name: 'Desktop icons' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Open Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
+  })
+
+  it('opens Audio Artifacts from the desktop icon using the canonical route', async () => {
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.click(await screen.findByLabelText('Open Audio Artifacts'))
+
+    expect(screen.getByTestId('location-probe').textContent).toBe('/artifacts')
   })
 
   it('opens Platforms from the desktop status card using the canonical route', async () => {
     renderHome()
     finishBootSplash()
 
-    fireEvent.click(await screen.findByRole('button', { name: /Platforms/i }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Platforms overview' }))
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
@@ -254,6 +265,22 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
+  })
+
+  it('renders configured desktop pins from landing tiles without forcing Platforms into the icon grid', async () => {
+    mockSpecialSettingsState.settings.landingTiles = [
+      { route: '/midi-hub', size: 'small' },
+      { route: '/platforms/overview', size: 'large' },
+    ]
+
+    renderHome()
+    finishBootSplash()
+
+    const desktopIcons = await screen.findAllByRole('listitem')
+    expect(desktopIcons).toHaveLength(2)
+    expect(screen.getByLabelText('Open MIDI Hub')).toBeInTheDocument()
+    expect(screen.getByLabelText('Open Overview')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Open Audio Artifacts')).toBeNull()
   })
 
   it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {
