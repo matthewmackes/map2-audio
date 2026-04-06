@@ -170,6 +170,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
     expect(container.querySelector('.window-titlebar')).toBeNull()
     expect(container.querySelector('.window-taskbar')).toBeTruthy()
+    expect(container.querySelector('.app-window')).toBeNull()
   })
 
   it('renders the taskbar shell on non-landing routes without the legacy titlebar', () => {
@@ -185,11 +186,32 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
     expect(screen.getByText('IntelFX Rack')).toBeTruthy()
     expect(screen.getByText('intelfx')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar')).toBeNull()
+    expect(container.querySelector('.app-window')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--clock')?.contains(screen.getByTestId('taskbar-clock'))).toBe(true)
+  })
+
+  it('closes the current app window back to the desktop route', async () => {
+    const { container } = renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close IntelFX Rack' }))
+    expect(container.querySelector('.app-window')).toHaveClass('is-closing')
+
+    await act(async () => {
+      jest.advanceTimersByTime(200)
+    })
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
+    expect(container.querySelector('.app-window')).toBeNull()
   })
 
   it('uses the first non-active pinned route as the quick-launch slot', () => {

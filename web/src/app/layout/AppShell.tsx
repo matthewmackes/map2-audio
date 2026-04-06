@@ -49,6 +49,8 @@ interface TopNavItem {
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 type RestartProgressStage = 'idle' | 'stopping' | 'restarting' | 'reconnecting' | 'ready' | 'error'
 
+const APP_WINDOW_CLOSE_DURATION_MS = 180
+
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
 }
@@ -103,6 +105,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const restartSawUnavailableRef = useRef(false)
   const restartSawReconnectRef = useRef(false)
   const restartCompletionRequestedRef = useRef(false)
+  const closeWindowTimerRef = useRef<number | null>(null)
+  const [closingAppRoute, setClosingAppRoute] = useState<string | null>(null)
+  const [runningRoutes, setRunningRoutes] = useState<string[]>([])
 
   const {
     state: mpx1State,
@@ -189,6 +194,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAudioGridWorkspaceRoute = location.pathname === '/juce-grid' || location.pathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
+  const isDesktopRoute = location.pathname === '/'
   const showTaskbarShell = true
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
@@ -221,6 +227,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     closeShellMenus()
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!isDesktopRoute) {
+      setRunningRoutes((current) => (current.includes(location.pathname) ? current : [...current, location.pathname]))
+    }
+
+    if (closingAppRoute && closingAppRoute !== location.pathname) {
+      setClosingAppRoute(null)
+    }
+  }, [closingAppRoute, isDesktopRoute, location.pathname])
+
+  useEffect(() => () => {
+    if (closeWindowTimerRef.current !== null) {
+      window.clearTimeout(closeWindowTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!pinnedRouteSet.has('/mpx1')) {
@@ -263,6 +285,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleLogOut = () => {
     closeShellMenus()
     returnHomeDesktopToBoot()
+  }
+
+  const handleCloseCurrentApp = () => {
+    if (isDesktopRoute) {
+      return
+    }
+
+    closeShellMenus()
+    setClosingAppRoute(location.pathname)
+    setRunningRoutes((current) => current.filter((route) => route !== location.pathname))
+
+    if (closeWindowTimerRef.current !== null) {
+      window.clearTimeout(closeWindowTimerRef.current)
+    }
+
+    closeWindowTimerRef.current = window.setTimeout(() => {
+      closeWindowTimerRef.current = null
+      navigate('/')
+    }, APP_WINDOW_CLOSE_DURATION_MS)
   }
 
   const handleConfirmRestartBackend = async () => {
@@ -523,7 +564,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
-        <PageTransition>{children}</PageTransition>
+        {isDesktopRoute ? (
+          <PageTransition>{children}</PageTransition>
+        ) : (
+          <section
+            className={`app-window${closingAppRoute === location.pathname ? ' is-closing' : ' is-open'}`}
+            aria-label={`${shellWorkspaceLabel} window`}
+          >
+            <div className="app-window__controls">
+              <button
+                type="button"
+                className="app-window__close"
+                aria-label={`Close ${shellWorkspaceLabel}`}
+                onClick={handleCloseCurrentApp}
+              >
+                X
+              </button>
+            </div>
+            <div className="app-window__body">
+              <PageTransition>{children}</PageTransition>
+            </div>
+          </section>
+        )}
       </main>
 
       {showMobileConnectionBanner ? (
@@ -537,6 +599,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div
           className="window-taskbar"
           aria-label="Primary navigation shell"
+          data-running-route-count={runningRoutes.length}
           style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
         >
           <div className="window-taskbar__left">

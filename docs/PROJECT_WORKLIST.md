@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 12:13 EDT - T782 completed with empty-state and remediation watermarks.
+Last updated: 2026-04-06 12:31 EDT - T783-subA completed with routed app-window wrapper and close transitions.
 
 ## Performance Brain
 
@@ -17602,7 +17602,7 @@ Last updated: 2026-04-06 12:13 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T783
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Build the full-screen app window behavior with transitions
 Description:
 - Goal / acceptance criteria: When a user opens an app (from desktop icon, Start Menu, or taskbar), the app opens full-screen with the taskbar always visible at the bottom. A minimal close "X" button appears in the top-right corner (no title text, no icon — just the X, flush right). Closing returns to the desktop. Open transition: slide up from the bottom. Close transition: reverse slide down revealing the desktop. The WebSocket disconnect banner appears as a persistent bar between the app content and the taskbar. The Perform page (`/perform`) is an exception: true full-screen hiding the taskbar, press Escape to exit. No other pages get true full-screen.
@@ -17612,7 +17612,7 @@ Description:
 - Required outputs: App window wrapper component, close X button, slide up/down transitions (Framer Motion or CSS), WebSocket disconnect bar repositioned, Perform page full-screen exception with Escape exit.
 Subtasks:
   - ID: T783-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the app window wrapper with close button and slide transitions
     Description:
     - Goal / acceptance criteria: Create a wrapper component for all app routes that renders full-screen above the desktop but below the taskbar. Top-right close "X" button (minimal, no title bar text). Slide-up animation on open, slide-down animation on close. Tracks which apps are "running" in state — app becomes running on navigate, stays running until explicitly closed via X button or taskbar indicator toggle.
@@ -17620,8 +17620,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: App window wrapper component, close button, slide transitions, running app state management.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 12:31 EDT - Codex
+    - Completion notes:
+      - Wrapped all non-home routes in a new app-window surface inside `web/src/app/layout/AppShell.tsx`, adding a minimal top-right close `X` that returns the shell to `/` instead of relying on browser history.
+      - Added route-scoped open/close slide animations and window chrome in `web/src/app/layout/AppShell.css`, keeping the taskbar visible while app routes now read as desktop windows layered above the home shell.
+      - Extended `web/src/app/layout/AppShell.test.tsx` with regression coverage for the routed app-window wrapper and the close-to-desktop flow.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T783-subB
     Status: [ ] Todo
     Title: Handle Perform page true full-screen exception
@@ -17652,8 +17660,8 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 12:31 EDT - Codex
 
 ID: T784
 Status: [ ] Todo
