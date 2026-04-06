@@ -19,6 +19,52 @@
   padding-bottom: calc(var(--window-taskbar-height) + 1.5rem);
 }
 
+.has-mobile-connection-banner.app-shell--windowed .app-content:not(.app-content--full) {
+  padding-bottom: calc(var(--space-9) + var(--window-taskbar-height) + 4rem);
+}
+
+.has-mobile-connection-banner.app-shell--windowed .app-content.app-content--full {
+  padding-bottom: calc(var(--window-taskbar-height) + 4rem);
+}
+
+.mobile-connection-banner {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(var(--window-taskbar-height) + 0.35rem);
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.2rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--cds-support-warning, #f1c21b) 45%, var(--window-shell-border));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 12%, var(--window-shell-surface-strong));
+  color: var(--cds-text-primary, var(--text-primary));
+  box-shadow: 0 12px 24px color-mix(in srgb, black 18%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.mobile-connection-banner-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--cds-support-warning, #f1c21b);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--cds-support-warning, #f1c21b) 0%, transparent);
+  animation: mobile-connection-banner-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mobile-connection-banner-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--cds-support-warning, #f1c21b) 36%, transparent);
+  }
+
+  60% {
+    box-shadow: 0 0 0 0.45rem color-mix(in srgb, var(--cds-support-warning, #f1c21b) 0%, transparent);
+  }
+}
+
 .window-taskbar {
   position: fixed;
   left: 0;

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 09:58 EDT - T786 completed with Desktop/Start Menu pin labels and preview illustrations in the Workspace Catalog.
+Last updated: 2026-04-06 10:03 EDT - T783-subC completed with the reconnect banner moved above the taskbar.
 
 ## Performance Brain
 
@@ -17564,7 +17564,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-05
   - ID: T783-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Reposition WebSocket disconnect banner above the taskbar
     Description:
     - Goal / acceptance criteria: Move the existing WebSocket connection banner from the top of the screen to a persistent bar between the app content area and the taskbar at the bottom. Restyle to fit the Windows 10 aesthetic. Only visible on disconnect, auto-dismisses on reconnect.
@@ -17572,8 +17572,16 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Repositioned and restyled disconnect banner.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 10:03 EDT - Codex
+    - Completion notes:
+      - Moved the websocket reconnect banner in `web/src/app/layout/AppShell.tsx` so it now renders between the app content and the bottom taskbar instead of above the whole shell.
+      - Added taskbar-adjacent Windows-style warning treatment in `web/src/app/layout/AppShell.css`, including bottom anchoring, warning tint, and a pulsing status dot.
+      - Extended `web/src/app/layout/AppShell.test.tsx` with a reconnect-state assertion that proves the banner is mounted immediately above the taskbar node in degraded websocket state.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Unassigned
 Last updated: 2026-04-05
 

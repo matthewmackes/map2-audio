@@ -31,11 +31,10 @@ jest.mock('../hooks/useDeviceLocation', () => ({
   }),
 }))
 
+const mockUseWebSocketConnection = jest.fn()
+
 jest.mock('../../map2/hooks/useWebSocket', () => ({
-  useWebSocketConnection: () => ({
-    status: 'connected',
-    client: null,
-  }),
+  useWebSocketConnection: () => mockUseWebSocketConnection(),
 }))
 
 jest.mock('../../map2/mpx1Api', () => ({
@@ -93,6 +92,10 @@ function LocationProbe() {
 
 describe('AppShell desktop taskbar shell', () => {
   beforeEach(() => {
+    mockUseWebSocketConnection.mockReturnValue({
+      status: 'connected',
+      client: null,
+    })
     mockUpdateSettings.mockReset()
     mockSpecialSettings.pinnedRoutes = []
     Object.defineProperty(window, 'innerWidth', {
@@ -239,5 +242,22 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.queryByText('HoTone JoGG')).toBeNull()
     expect(screen.getByText('Generic Interface')).toBeTruthy()
     expect(screen.getByText('On rack-b')).toBeTruthy()
+  })
+
+  it('renders the reconnect banner above the taskbar when websocket state degrades', () => {
+    mockUseWebSocketConnection.mockReturnValue({
+      status: 'reconnecting',
+      client: null,
+    })
+
+    const { container } = renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('Connection lost - reconnecting...')
+    expect(container.querySelector('.window-taskbar')?.previousElementSibling).toHaveClass('mobile-connection-banner')
   })
 })

@@ -378,16 +378,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
-      {showMobileConnectionBanner && (
+      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
+        <PageTransition>{children}</PageTransition>
+      </main>
+
+      {showMobileConnectionBanner ? (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
           <span>Connection lost - reconnecting...</span>
         </div>
-      )}
-
-      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
-        <PageTransition>{children}</PageTransition>
-      </main>
+      ) : null}
 
       {showTaskbarShell ? (
         <div
