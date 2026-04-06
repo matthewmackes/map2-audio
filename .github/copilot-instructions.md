@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority revision-service extraction documented)
+> **Last Updated**: April 5, 2026 (State Authority activation-service extraction documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1649,6 +1649,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'revision_restore_prefers_document or save_explicit_revision_and_restore or document_backed or restores_asset_paths_from_state_authority_registry'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_revision_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: Once revision behavior is proven, move it out immediately. Do not build richer revision summaries or revision routes on top of monolithic snapshot ownership.
 
+**74. Activation Decomposition Has To Move The Whole Live-State Lifecycle, Not Just Utility Helpers (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/state_authority_activation_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: After storage and revision extraction, `SnapshotService.activate_snapshot()` still owned intent lifecycle handling, runtime-chain reuse/materialization, spillover staging, authority publication, compatibility broadcasts, and preload cleanup inline.
+- **Root Cause**: The activation path looked like a bag of helpers, but the real coupling was the entire live-state lifecycle. Moving isolated helpers would have left the same monolith in place under a different shape.
+- **Fix**: Add `StateAuthorityActivationService` and move activation orchestration plus runtime-chain ownership into it, while keeping `SnapshotService` as a thin delegator for the public activation API and existing monkeypatch seams used by focused tests.
+- **Verification**: `pytest -q tests/test_snapshot_service.py -k 'same_topology or preload_hit or spillover or expression_mappings_and_automation_lanes or topology_reuse_should_reapply_routing_and_loop_state'`; `pytest -q tests/test_snapshot_service.py -k 'publishes_desired_state_to_audio_authority or preserves_existing_authority_extensions_when_publishing_desired_state or rehydrates_local_brain_runtime_and_broadcasts_runtime_updates or consumes_preloaded_instances_on_preload_hit or reuses_runtime_chains_for_same_topology or topology_reuse_should_reapply_routing_and_loop_state or syncs_expression_mappings_and_automation_lanes'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
+- **Lesson**: When decomposing State Authority runtime behavior, move complete orchestration lifecycles into dedicated services. Do not leave the live-state contract stranded inside `SnapshotService` while only helpers change names.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1919,6 +1927,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Activation-Service Extraction
+- **Section**: Gotchas & Learned Fixes (#74), Update Log
+- **Change**: Documented the next `T772` slice: activation intent orchestration, runtime-chain reuse/materialization, spillover staging, and post-activation publication now live in `StateAuthorityActivationService`, with `SnapshotService` delegating the activation surface.
+- **Reason**: T772 needed the live-state lifecycle to leave the snapshot monolith before direct route wiring and later activation-state-machine work could proceed safely.
+- **Impact**: Future `T772` and `T774` work should extend the dedicated activation service instead of adding more activation branches back into `SnapshotService`.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/state_authority_activation_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`
 
 ### [2026-04-05] - State Authority Revision-Service Extraction
 - **Section**: Gotchas & Learned Fixes (#73), Update Log

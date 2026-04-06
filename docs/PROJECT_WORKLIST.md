@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 20:15 EDT - Added Epic: Windows 10 Desktop Experience (T779-T788) — full landing page refactor spec locked via 100-question session.
+Last updated: 2026-04-05 21:50 EDT - T772-subC completed with delegated State Authority activation orchestration.
 
 ## Performance Brain
 
@@ -781,8 +781,29 @@ Subtasks:
       - `pytest -q tests/test_snapshot_service.py -k 'revision_restore_prefers_document or save_explicit_revision_and_restore or document_backed or restores_asset_paths_from_state_authority_registry'` -> PASS (`2 passed, 43 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_revision_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T772-subC
+    Status: [✓] Done
+    Title: Extract snapshot activation orchestration into a dedicated State Authority activation service
+    Description:
+    - Goal / acceptance criteria: Move snapshot activation intent handling, runtime-chain reuse/materialization decisions, authority publication, and post-activation broadcast/preload orchestration out of `SnapshotService` into a dedicated activation service module while preserving the current activation API and focused regressions.
+    - Why it matters: T772 cannot reach direct route wiring and future activation-state-machine work while the most complex runtime path still lives inline inside the snapshot monolith.
+    - Dependencies: T772-subA, T772-subB
+    - Estimated effort: High
+    - Required outputs: New activation service module, snapshot-service delegation, focused activation regressions, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 21:50 EDT - Codex
+    - Completion notes:
+      - Added [app/services/state_authority_activation_service.py](/home/mm/map2-audio/app/services/state_authority_activation_service.py) to own snapshot activation intent orchestration, runtime-chain reuse/materialization, native spillover staging, authority publication, preload scheduling, and compatibility broadcasts instead of keeping that flow inline in the snapshot monolith.
+      - Updated [app/services/snapshot_service.py](/home/mm/map2-audio/app/services/snapshot_service.py) so `activate_snapshot()` and the runtime-chain helper seam now delegate directly to the activation service while preserving the current API surface and targeted monkeypatch points.
+      - Kept the activation regressions green in [tests/test_snapshot_service.py](/home/mm/map2-audio/tests/test_snapshot_service.py), covering topology reuse, preload-hit materialization, State Authority publish paths, Brain runtime reconciliation, spillover staging, and expression/automation sync after the extraction.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'same_topology or preload_hit or spillover or expression_mappings_and_automation_lanes or topology_reuse_should_reapply_routing_and_loop_state'` -> PASS (`6 passed, 39 deselected`)
+      - `pytest -q tests/test_snapshot_service.py -k 'publishes_desired_state_to_audio_authority or preserves_existing_authority_extensions_when_publishing_desired_state or rehydrates_local_brain_runtime_and_broadcasts_runtime_updates or consumes_preloaded_instances_on_preload_hit or reuses_runtime_chains_for_same_topology or topology_reuse_should_reapply_routing_and_loop_state or syncs_expression_mappings_and_automation_lanes'` -> PASS (`7 passed, 38 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 21:23 EDT - Codex
+Last updated: 2026-04-05 21:50 EDT - Codex
 
 ID: T773
 Status: [ ] Todo

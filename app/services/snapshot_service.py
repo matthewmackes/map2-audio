@@ -69,6 +69,9 @@ from app.services.snapshot_footswitch_label_service import push_snapshot_footswi
 from app.services.state_authority_document_service import (
     StateAuthorityDocumentService,
 )
+from app.services.state_authority_activation_service import (
+    StateAuthorityActivationService,
+)
 from app.services.state_authority_revision_service import (
     StateAuthorityRevisionService,
 )
@@ -397,6 +400,26 @@ class SnapshotService:
             utcnow=_utcnow,
             max_snapshot_revisions=MAX_SNAPSHOT_REVISIONS,
             unset=UNSET,
+        )
+        self.state_authority_activation = StateAuthorityActivationService(
+            session,
+            owner=self,
+            chain_service=self.chain_service,
+            runtime_service_module=snapshot_runtime_service,
+            midi_service=midi_service,
+            get_audio_engine=get_audio_engine,
+            push_snapshot_footswitch_labels=push_snapshot_footswitch_labels,
+            push_snapshot_controller_display_preview=push_snapshot_controller_display_preview,
+            schedule_snapshot_preload_for_live_snapshot=schedule_snapshot_preload_for_live_snapshot,
+            build_snapshot_controller_display_preview=build_snapshot_controller_display_preview,
+            utcnow=_utcnow,
+            safe_int=_safe_int,
+            safe_float=_safe_float,
+            normalize_topology_mutation_stats=_normalize_topology_mutation_stats,
+            build_activation_topology_metrics=_build_activation_topology_metrics,
+            snapshot_spillover_native_uris=_SNAPSHOT_SPILLOVER_NATIVE_URIS,
+            canonical_transient_keys=_CANONICAL_TRANSIENT_KEYS,
+            canonical_effects_loop_keys=_CANONICAL_EFFECTS_LOOP_KEYS,
         )
 
     async def list_snapshots(
@@ -1905,39 +1928,10 @@ class SnapshotService:
         current_live_detail: dict[str, Any] | None,
         target_detail: dict[str, Any],
     ) -> None:
-        current_counts = self._snapshot_spillover_candidate_counts(current_live_detail)
-        target_counts = self._snapshot_spillover_candidate_counts(target_detail)
-        current_signatures = self._snapshot_spillover_candidate_signatures(current_live_detail)
-        target_signatures = self._snapshot_spillover_candidate_signatures(target_detail)
-        outgoing_uris = [
-            uri
-            for uri, current_count in current_counts.items()
-            if current_count > 0
-            and (
-                target_counts.get(uri, 0) == 0
-                or current_signatures.get(uri, []) != target_signatures.get(uri, [])
-            )
-        ]
-        if not outgoing_uris:
-            return
-
-        engine = get_audio_engine()
-        if not engine.is_available or not engine.is_running:
-            return
-
-        actions = {
-            "map2://juce/delay": getattr(engine, "stage_delay_spillover", None),
-            "map2://juce/multieffect/shoegaze": getattr(engine, "stage_shoegaze_spillover", None),
-            "map2://juce/reverb/pcm70": getattr(engine, "stage_lexilove_spillover", None),
-        }
-        for uri in outgoing_uris:
-            stage_spillover = actions.get(uri)
-            if not callable(stage_spillover):
-                continue
-            try:
-                await stage_spillover()
-            except Exception as exc:
-                logger.debug("Snapshot spillover arm skipped for %s: %s", uri, exc)
+        await self.state_authority_activation.arm_live_spillover_processors(
+            current_live_detail=current_live_detail,
+            target_detail=target_detail,
+        )
 
     async def activate_snapshot(
         self,
@@ -1945,397 +1939,10 @@ class SnapshotService:
         *,
         triggered_by: str = "ui",
     ) -> Optional[dict[str, Any]]:
-        snapshot = await self._get_snapshot_model(snapshot_id)
-        if snapshot is None:
-            return None
-
-        from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-
-        normalized = await self._snapshot_to_normalized(snapshot)
-        snapshot_revision = self._snapshot_revision_from_normalized(normalized)
-        runtime_state_service = SnapshotRuntimeStateService(self.session)
-        intent = await runtime_state_service.create_activation_intent(
-            snapshot_id=snapshot.id,
-            snapshot_name=snapshot.name,
-            snapshot_revision=snapshot_revision,
-            normalized_snapshot_payload=self._canonicalize_snapshot_normalized(normalized),
+        return await self.state_authority_activation.activate_snapshot(
+            snapshot_id,
             triggered_by=triggered_by,
         )
-
-        detail = await self.get_snapshot(snapshot_id)
-        if detail is None:
-            return None
-
-        params_applied = 0
-        bypass_applied = 0
-        topology_reused = False
-        audio_device_binding_result: dict[str, Any] | None = None
-        monitoring_output_result: dict[str, Any] | None = None
-        output_safety_result: dict[str, Any] | None = None
-        midi_map_sync_result: dict[str, Any] | None = None
-        expression_mapping_sync_result: dict[str, Any] | None = None
-        automation_lane_sync_result: dict[str, Any] | None = None
-        routing_apply_result: dict[str, Any] | None = None
-        loop_insertion_sync_result: dict[str, Any] | None = None
-        channel_state_sync_result: dict[str, Any] | None = None
-        morph_apply_result: dict[str, Any] | None = None
-        previous_preload_state: dict[str, Any] = {}
-        activation_topology_metrics = {
-            "before": _normalize_topology_mutation_stats(None),
-            "after": _normalize_topology_mutation_stats(None),
-            "delta": {
-                "mutation_count": 0,
-                "no_op_skip_count": 0,
-            },
-        }
-        try:
-            await self._validate_snapshot_activation_preflight(detail)
-        except Exception as exc:
-            await runtime_state_service.fail_intent(
-                intent=intent,
-                failure_reason=str(exc),
-                runtime_metrics={},
-            )
-            raise
-
-        try:
-            activation_topology_metrics["before"] = _normalize_topology_mutation_stats(
-                await get_audio_engine().get_topology_mutation_stats()
-            )
-            audio_device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
-            monitoring_output_result = await self._apply_snapshot_monitoring_output_binding(detail)
-            output_safety_result = await self._apply_snapshot_output_safety_settings(detail)
-            current_runtime_state = await runtime_state_service.get_live_state()
-            previous_preload_state = self._extract_preload_state(current_runtime_state.get("runtime_metrics"))
-            preload_instance_ids = [
-                int(instance_id)
-                for instance_id in previous_preload_state.get("staged_instance_ids", [])
-                if _safe_int(instance_id) is not None
-            ]
-            preload_hit = (
-                str(previous_preload_state.get("status") or "").lower() == "ready"
-                and _safe_int(previous_preload_state.get("target_snapshot_id")) == int(snapshot.id)
-            )
-            if preload_instance_ids and not preload_hit:
-                await self.chain_service.release_detached_instance_ids(preload_instance_ids)
-            current_live_detail = await runtime_state_service.get_live_snapshot_payload()
-            if not isinstance(current_live_detail, dict):
-                current_live_detail = await self.get_live_snapshot()
-            live_state_payload = await self._reuse_live_runtime_chains(
-                snapshot,
-                detail,
-                current_live_detail=current_live_detail,
-            )
-            if live_state_payload is None:
-                await self._arm_live_spillover_processors(
-                    current_live_detail=current_live_detail,
-                    target_detail=detail,
-                )
-                await self._clear_materialized_runtime_chains()
-                live_state_payload = await self._materialize_live_state(
-                    snapshot,
-                    detail,
-                    preloaded_instance_ids=preload_instance_ids if preload_hit else None,
-                )
-            else:
-                topology_reused = True
-            if preload_instance_ids and preload_hit:
-                await self.chain_service.release_detached_instance_ids(preload_instance_ids)
-            await self.session.flush()
-
-            refreshed_detail = await self._serialize_snapshot_detail(
-                snapshot,
-                compatibility_live_state_payload=live_state_payload,
-                compatibility_is_live=True,
-            )
-
-            channel_health = await runtime_state_service.assert_snapshot_channels_active(
-                live_snapshot_payload=refreshed_detail,
-            )
-            refreshed_detail = channel_health["snapshot_payload"]
-
-            legacy_payload = self.to_legacy_snapshot_data(refreshed_detail)
-            params_applied, bypass_applied = await snapshot_runtime_service.apply_snapshot_to_engine(
-                copy.deepcopy(legacy_payload)
-            )
-            activation_topology_metrics = _build_activation_topology_metrics(
-                activation_topology_metrics["before"],
-                await get_audio_engine().get_topology_mutation_stats(),
-            )
-
-            activated_at = _utcnow()
-            await self._clear_compatibility_live_projections()
-            snapshot.updated_at = activated_at
-            snapshot.activated_at = activated_at
-            await self.session.flush()
-
-            try:
-                from app.services.snapshot_tempo_service import get_snapshot_tempo_service
-
-                await get_snapshot_tempo_service().activate_snapshot(
-                    snapshot.id,
-                    snapshot.tempo_bpm,
-                    snapshot_data=copy.deepcopy(legacy_payload),
-                )
-            except Exception as exc:
-                logger.debug("Snapshot tempo activation skipped for %s: %s", snapshot.id, exc)
-
-            refreshed_detail = await self._serialize_snapshot_detail(
-                snapshot,
-                compatibility_live_state_payload=live_state_payload,
-                compatibility_is_live=True,
-                compatibility_activated_at=activated_at,
-            )
-            refreshed_detail["snapshot_revision"] = snapshot_revision
-            try:
-                refreshed_detail["controller_display_preview"] = build_snapshot_controller_display_preview(
-                    refreshed_detail,
-                    await midi_service.get_all_commands(self.session),
-                )
-            except Exception as exc:
-                logger.debug("Snapshot controller-display preview skipped for %s: %s", snapshot.id, exc)
-            pre_activation_extensions = await self._load_current_audio_state_extensions()
-            try:
-                routing_apply_result = await snapshot_runtime_service.apply_snapshot_routing_to_engine(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot routing apply skipped for %s: %s", snapshot.id, exc)
-                routing_apply_result = {
-                    "applied": False,
-                    "reason": f"apply_failed:{exc}",
-                    "removed_group_count": 0,
-                    "created_group_id": None,
-                    "branch_count": 0,
-                }
-            try:
-                loop_insertion_sync_result = await self._sync_snapshot_loop_insertions_to_runtime(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot loop insertion sync skipped for %s: %s", snapshot.id, exc)
-                loop_insertion_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "chain_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                channel_state_sync_result = await self._sync_snapshot_channel_state_to_runtime(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot channel-state sync skipped for %s: %s", snapshot.id, exc)
-                channel_state_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "channel_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                morph_apply_result = await snapshot_runtime_service.apply_snapshot_morph_to_engine(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot morph apply skipped for %s: %s", snapshot.id, exc)
-                morph_apply_result = {
-                    "applied": False,
-                    "reason": f"apply_failed:{exc}",
-                    "plugin_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                midi_map_sync_result = await self._sync_snapshot_midi_map_to_engine(
-                    snapshot.id,
-                    [
-                        dict(entry)
-                        for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
-                        if isinstance(entry, dict)
-                    ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot MIDI map sync skipped for %s: %s", snapshot.id, exc)
-                midi_map_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "global_command_count": 0,
-                    "snapshot_command_count": 0,
-                }
-            try:
-                expression_mapping_sync_result = await self._sync_snapshot_expression_mappings_to_runtime(
-                    [
-                        dict(entry)
-                        for entry in refreshed_detail.get("controls", {}).get("expression_mappings", [])
-                        if isinstance(entry, dict)
-                    ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot expression mapping sync skipped for %s: %s", snapshot.id, exc)
-                expression_mapping_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "cleared_count": 0,
-                    "applied_count": 0,
-                    "active_snapshot_count": 0,
-                }
-            try:
-                automation_lane_sync_result = await self._sync_snapshot_automation_lanes_to_runtime(
-                    [
-                        dict(entry)
-                        for entry in refreshed_detail.get("controls", {}).get("automation_lanes", [])
-                        if isinstance(entry, dict)
-                    ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot automation lane sync skipped for %s: %s", snapshot.id, exc)
-                automation_lane_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "cleared_count": 0,
-                    "applied_count": 0,
-                    "invalid_count": 0,
-                    "active_snapshot_count": 0,
-                }
-            brain_runtime_reconcile_result = await self._reconcile_snapshot_brain_runtime_extensions(
-                current_extensions=pre_activation_extensions,
-                snapshot_extensions=(
-                    refreshed_detail.get("extensions")
-                    if isinstance(refreshed_detail.get("extensions"), dict)
-                    else None
-                ),
-            )
-
-            runtime_metrics = {
-                "params_applied": params_applied,
-                "bypass_applied": bypass_applied,
-                "topology_reused": topology_reused,
-                "runtime_chain_count": len(refreshed_detail.get("live_state", {}).get("runtime_chains", [])),
-                "channel_activity": {
-                    "active_count": channel_health["active_count"],
-                    "total_count": channel_health["total_count"],
-                    "inactive_channels": channel_health["inactive_channels"],
-                },
-                "preload_hit": (
-                    preload_hit
-                ),
-                "audio_device_binding": audio_device_binding_result or {},
-                "monitoring_output": monitoring_output_result or {},
-                "output_safety": output_safety_result or {},
-                "routing_apply": routing_apply_result or {},
-                "loop_insertions": loop_insertion_sync_result or {},
-                "channel_state": channel_state_sync_result or {},
-                "morph_apply": morph_apply_result or {},
-                "snapshot_midi_map": midi_map_sync_result or {},
-                "expression_mappings": expression_mapping_sync_result or {},
-                "automation_lanes": automation_lane_sync_result or {},
-                "performance_brain_runtime": brain_runtime_reconcile_result or {},
-                "topology_mutation": activation_topology_metrics,
-            }
-            live_runtime_state = await runtime_state_service.confirm_live_intent(
-                intent=intent,
-                live_snapshot_payload=refreshed_detail,
-                runtime_metrics=runtime_metrics,
-            )
-            await self._publish_snapshot_desired_state(refreshed_detail)
-            brain_runtime_reconcile_result["broadcast_count"] = await self._broadcast_snapshot_brain_runtime_updates(
-                brain_runtime_reconcile_result
-            )
-            try:
-                from app.services.snapshot_runtime_state_service import schedule_post_activation_health_check
-
-                schedule_post_activation_health_check(
-                    snapshot_id=snapshot.id,
-                    request_id=str(intent["request_id"]),
-                )
-            except Exception as exc:
-                logger.debug("Post-activation health check scheduling skipped for %s: %s", snapshot.id, exc)
-
-            try:
-                await push_snapshot_footswitch_labels(
-                    snapshot_id=snapshot.id,
-                    snapshot_name=snapshot.name,
-                    midi_map_entries=[
-                        dict(entry)
-                        for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
-                        if isinstance(entry, dict)
-                    ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot footswitch label push skipped for %s: %s", snapshot.id, exc)
-
-            try:
-                await push_snapshot_controller_display_preview(
-                    snapshot_id=snapshot.id,
-                    snapshot_name=snapshot.name,
-                    preview_payload=refreshed_detail.get("controller_display_preview"),
-                )
-            except Exception as exc:
-                logger.debug("Snapshot controller-display push skipped for %s: %s", snapshot.id, exc)
-        except Exception as exc:
-            await self._clear_compatibility_live_projections()
-            await self.session.flush()
-            await runtime_state_service.fail_intent(
-                intent=intent,
-                failure_reason=str(exc),
-                runtime_metrics={},
-            )
-            raise
-
-        try:
-            from app.services.websocket_manager import ws_manager
-
-            timestamp = _utcnow().isoformat()
-            await ws_manager.broadcast_json(
-                {
-                    "type": "snapshot_loaded",
-                    "topic": "snapshots",
-                    "data": {
-                        "snapshot_id": snapshot.id,
-                        "snapshot_name": snapshot.name,
-                        "snapshot_data": refreshed_detail,
-                        "triggered_by": triggered_by,
-                        "program_number": snapshot.program_number,
-                    },
-                    "timestamp": timestamp,
-                },
-                topic="snapshots",
-            )
-            await ws_manager.broadcast_json(
-                {
-                    "type": "flow_snapshot_loaded",
-                    "topic": "flow_snapshots",
-                    "data": {
-                        "snapshot_id": snapshot.id,
-                        "snapshot_name": snapshot.name,
-                        "snapshot_data": legacy_payload,
-                        "triggered_by": triggered_by,
-                        "program_number": snapshot.program_number,
-                    },
-                    "timestamp": timestamp,
-                },
-                topic="flow_snapshots",
-            )
-        except Exception as exc:
-            logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
-
-        try:
-            schedule_snapshot_preload_for_live_snapshot(snapshot.id)
-        except Exception as exc:
-            logger.debug("Snapshot preload scheduling skipped for %s: %s", snapshot.id, exc)
-
-        return {
-            "status": "success",
-            "snapshot_id": snapshot.id,
-            "name": snapshot.name,
-            "snapshot_data": refreshed_detail,
-            "snapshot_revision": snapshot_revision,
-            "activation_intent": intent,
-            "runtime_live_state": live_runtime_state,
-            "params_applied": params_applied,
-            "bypass_applied": bypass_applied,
-            "topology_reused": topology_reused,
-            "topology_mutation": activation_topology_metrics,
-        }
 
     async def preview_snapshot(self, detail_payload: dict[str, Any]) -> dict[str, Any]:
         normalized = self._normalize_detail_payload(detail_payload)
@@ -3728,154 +3335,14 @@ class SnapshotService:
         *,
         current_live_detail: dict[str, Any] | None,
     ) -> dict[str, Any] | None:
-        if not isinstance(current_live_detail, dict):
-            return None
-        if self._snapshot_runtime_topology_signature(current_live_detail) != self._snapshot_runtime_topology_signature(detail):
-            return None
-
-        current_live_state = current_live_detail.get("live_state")
-        if not isinstance(current_live_state, dict):
-            return None
-
-        current_runtime_paths = [
-            dict(item)
-            for item in current_live_state.get("paths", [])
-            if isinstance(item, dict)
-        ]
-        target_channels = self._ordered_detail_channels(detail)
-        if len(current_runtime_paths) != len(target_channels):
-            return None
-
-        runtime_chain_ids: list[int] = []
-        for path in current_runtime_paths:
-            runtime_chain_id = _safe_int(path.get("runtime_chain_id"))
-            if runtime_chain_id is None:
-                return None
-            runtime_chain_ids.append(runtime_chain_id)
-
-        result = await self.session.execute(select(Chain).where(Chain.id.in_(runtime_chain_ids)))
-        runtime_chains = {chain.id: chain for chain in result.scalars().all()}
-        if len(runtime_chains) != len(runtime_chain_ids):
-            return None
-
-        runtime_plugin_result = await self.session.execute(
-            select(ChainPlugin)
-            .where(ChainPlugin.chain_id.in_(runtime_chain_ids))
-            .order_by(ChainPlugin.chain_id.asc(), ChainPlugin.position.asc(), ChainPlugin.id.asc())
+        return await self.state_authority_activation.reuse_live_runtime_chains(
+            snapshot,
+            detail,
+            current_live_detail=current_live_detail,
         )
-        runtime_plugins_by_chain_id: dict[int, list[ChainPlugin]] = {}
-        for runtime_plugin in runtime_plugin_result.scalars().all():
-            runtime_plugins_by_chain_id.setdefault(int(runtime_plugin.chain_id), []).append(runtime_plugin)
-
-        chain_by_id = {
-            _safe_int(chain.get("id")): chain
-            for chain in detail.get("chains", [])
-            if isinstance(chain, dict) and _safe_int(chain.get("id")) is not None
-        }
-
-        rebound_paths: list[dict[str, Any]] = []
-        active_runtime_chain_ids: list[int] = []
-        for runtime_path, channel in zip(current_runtime_paths, target_channels):
-            runtime_chain_id = _safe_int(runtime_path.get("runtime_chain_id"))
-            if runtime_chain_id is None:
-                return None
-
-            runtime_chain = runtime_chains.get(runtime_chain_id)
-            if runtime_chain is None:
-                return None
-
-            snapshot_chain_id = _safe_int(channel.get("chain_id"))
-            source_chain = chain_by_id.get(snapshot_chain_id)
-            target_plugins = (
-                [
-                    plugin
-                    for plugin in source_chain.get("plugins", [])
-                    if isinstance(plugin, dict)
-                ]
-                if isinstance(source_chain, dict)
-                else []
-            )
-            target_plugins = sorted(
-                target_plugins,
-                key=lambda item: (int(item.get("position", 0)), str(item.get("uri") or "")),
-            )
-            runtime_plugins = runtime_plugins_by_chain_id.get(runtime_chain_id, [])
-            if len(runtime_plugins) != len(target_plugins):
-                return None
-
-            for runtime_plugin, target_plugin in zip(runtime_plugins, target_plugins):
-                target_uri = str(target_plugin.get("uri") or "")
-                target_position = int(target_plugin.get("position", 0))
-                if runtime_plugin.plugin_uri != target_uri or int(runtime_plugin.position) != target_position:
-                    return None
-
-            chain_config = self.chain_service._parse_chain_config(runtime_chain.config)
-            if not isinstance(chain_config, dict):
-                chain_config = {}
-            chain_config.update(
-                {
-                    "source_kind": "snapshot_path",
-                    "snapshot_id": snapshot.id,
-                    "snapshot_chain_id": snapshot_chain_id,
-                    "path_id": channel.get("channel_key"),
-                    "system_blocks": extract_chain_system_blocks(
-                        source_chain.get("plugins") if isinstance(source_chain, dict) else []
-                    ),
-                }
-            )
-            runtime_chain.name = self._runtime_chain_name_for_channel(source_chain, channel)
-            runtime_chain.is_active = True
-            runtime_chain.config = json.dumps(chain_config)
-
-            for runtime_plugin, target_plugin in zip(runtime_plugins, target_plugins):
-                runtime_plugin.bypass = bool(target_plugin.get("bypass", False))
-                loader_state = (
-                    target_plugin.get("loader_state")
-                    if isinstance(target_plugin.get("loader_state"), dict)
-                    else None
-                )
-                for column, value in self.chain_service._chain_plugin_loader_columns(
-                    str(target_plugin.get("uri") or ""),
-                    loader_state,
-                ).items():
-                    setattr(runtime_plugin, column, value)
-
-            runtime_sync = chain_config.get("runtime_sync")
-            rebound_paths.append(
-                {
-                    "path_id": channel.get("channel_key"),
-                    "label": channel.get("label"),
-                    "color": channel.get("color"),
-                    "snapshot_chain_id": snapshot_chain_id,
-                    "runtime_chain_id": runtime_chain_id,
-                    "runtime_chain_name": runtime_chain.name,
-                    "activation_status": (
-                        runtime_sync.get("status")
-                        if isinstance(runtime_sync, dict) and runtime_sync.get("status")
-                        else "active"
-                    ),
-                }
-            )
-            active_runtime_chain_ids.append(runtime_chain_id)
-
-        await self.session.flush()
-        return {
-            "activated_at": _utcnow().isoformat(),
-            "paths": rebound_paths,
-            "active_runtime_chain_ids": active_runtime_chain_ids,
-        }
 
     async def _clear_materialized_runtime_chains(self) -> None:
-        result = await self.session.execute(select(Chain))
-        for chain in result.scalars().all():
-            config = self.chain_service._parse_chain_config(chain.config)
-            if not isinstance(config, dict):
-                continue
-            if config.get("source_kind") == "snapshot_path" or (
-                config.get("snapshot_id") is not None and config.get("path_id") is not None
-            ):
-                await self.session.delete(chain)
-        await self.session.flush()
+        await self.state_authority_activation.clear_materialized_runtime_chains()
 
     async def _materialize_live_state(
         self,
@@ -3884,124 +3351,11 @@ class SnapshotService:
         *,
         preloaded_instance_ids: Optional[list[int]] = None,
     ) -> dict[str, Any]:
-        await self.session.execute(update(Chain).values(is_active=False))
-        await self.session.flush()
-
-        chain_by_id = {
-            chain.get("id"): chain
-            for chain in detail.get("chains", [])
-            if chain.get("id") is not None
-        }
-        runtime_paths: list[dict[str, Any]] = []
-        activated_runtime_chain_ids: list[int] = []
-        remaining_preloaded_instance_ids = [
-            int(instance_id)
-            for instance_id in preloaded_instance_ids or []
-            if _safe_int(instance_id) is not None
-        ]
-
-        for channel in detail.get("channels", []):
-            snapshot_chain_id = channel.get("chain_id")
-            source_chain = chain_by_id.get(snapshot_chain_id) if snapshot_chain_id is not None else None
-            source_plugins = [
-                plugin
-                for plugin in (source_chain.get("plugins", []) if isinstance(source_chain, dict) else [])
-                if isinstance(plugin, dict)
-            ]
-            chain_preloaded_instance_ids = remaining_preloaded_instance_ids[:len(source_plugins)]
-            remaining_preloaded_instance_ids = remaining_preloaded_instance_ids[len(source_plugins):]
-            runtime_chain = Chain(
-                name=self._runtime_chain_name_for_channel(source_chain, channel),
-                is_active=False,
-                config=json.dumps(
-                    {
-                        "source_kind": "snapshot_path",
-                        "snapshot_id": snapshot.id,
-                        "snapshot_chain_id": snapshot_chain_id,
-                        "path_id": channel.get("channel_key"),
-                        "system_blocks": extract_chain_system_blocks(
-                            source_chain.get("plugins") if isinstance(source_chain, dict) else []
-                        ),
-                    }
-                ),
-            )
-            self.session.add(runtime_chain)
-            await self.session.flush()
-
-            if isinstance(source_chain, dict):
-                for plugin in source_plugins:
-                    self.session.add(
-                        ChainPlugin(
-                            chain_id=runtime_chain.id,
-                            plugin_uri=str(plugin.get("uri") or ""),
-                            position=int(plugin.get("position", 0)),
-                            bypass=bool(plugin.get("bypass", False)),
-                            **self.chain_service._chain_plugin_loader_columns(
-                                str(plugin.get("uri") or ""),
-                                plugin.get("loader_state") if isinstance(plugin.get("loader_state"), dict) else None,
-                            ),
-                        )
-                    )
-
-                for loop in source_chain.get("loop_insertions", []):
-                    if not isinstance(loop, dict):
-                        continue
-                    self.session.add(
-                        EffectsLoopInsertion(
-                            insertion_id=f"snapshot-{snapshot.id}-{uuid4().hex[:12]}",
-                            chain_id=runtime_chain.id,
-                            loop_id=str(loop.get("loop_id") or ""),
-                            slot_index=int(loop.get("slot_index", 0)),
-                            enabled=bool(loop.get("enabled", True)),
-                            mode=str(loop.get("mode") or "serial_insert"),
-                            blend_pct=_safe_float(loop.get("blend_pct"), 100.0),
-                            send_gain_db=_safe_float(loop.get("send_gain_db"), 0.0),
-                            return_gain_db=_safe_float(loop.get("return_gain_db"), 0.0),
-                            crossfade_ms=int(_safe_int(loop.get("crossfade_ms")) or 12),
-                            band_split_hz=list(loop.get("band_split_hz") or []),
-                        )
-                    )
-
-            await self.session.flush()
-            preferred_instance_ids = (
-                chain_preloaded_instance_ids if chain_preloaded_instance_ids else None
-            )
-            if preferred_instance_ids:
-                try:
-                    activated = await self.chain_service.activate_chain(
-                        runtime_chain.id,
-                        preferred_detached_instance_ids=preferred_instance_ids,
-                    )
-                except TypeError as exc:
-                    # Older test doubles and alternate ChainService implementations may
-                    # not accept the preload hint yet; fall back to the legacy call.
-                    if "preferred_detached_instance_ids" not in str(exc):
-                        raise
-                    activated = await self.chain_service.activate_chain(runtime_chain.id)
-            else:
-                activated = await self.chain_service.activate_chain(runtime_chain.id)
-            runtime_chain_id = runtime_chain.id
-            runtime_chain_name = runtime_chain.name
-            activation_status = "active" if activated else "degraded"
-            activated_runtime_chain_ids.append(runtime_chain.id)
-
-            runtime_paths.append(
-                {
-                    "path_id": channel.get("channel_key"),
-                    "label": channel.get("label"),
-                    "color": channel.get("color"),
-                    "snapshot_chain_id": snapshot_chain_id,
-                    "runtime_chain_id": runtime_chain_id,
-                    "runtime_chain_name": runtime_chain_name,
-                    "activation_status": activation_status,
-                }
-            )
-
-        return {
-            "activated_at": snapshot.activated_at.isoformat() if snapshot.activated_at else _utcnow().isoformat(),
-            "paths": runtime_paths,
-            "active_runtime_chain_ids": activated_runtime_chain_ids,
-        }
+        return await self.state_authority_activation.materialize_live_state(
+            snapshot,
+            detail,
+            preloaded_instance_ids=preloaded_instance_ids,
+        )
 
     async def _snapshot_to_normalized(self, snapshot: Snapshot) -> dict[str, Any]:
         has_relational_projection = bool(snapshot.chains or snapshot.channels or snapshot.routing or snapshot.midi_map)
