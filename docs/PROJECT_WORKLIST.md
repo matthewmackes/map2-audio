@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 21:50 EDT - T772-subC completed with delegated State Authority activation orchestration.
+Last updated: 2026-04-05 22:02 EDT - T772-subD completed with direct snapshot route wiring for revision and activation flows.
 
 ## Performance Brain
 
@@ -802,8 +802,28 @@ Subtasks:
       - `pytest -q tests/test_snapshot_service.py -k 'publishes_desired_state_to_audio_authority or preserves_existing_authority_extensions_when_publishing_desired_state or rehydrates_local_brain_runtime_and_broadcasts_runtime_updates or consumes_preloaded_instances_on_preload_hit or reuses_runtime_chains_for_same_topology or topology_reuse_should_reapply_routing_and_loop_state or syncs_expression_mappings_and_automation_lanes'` -> PASS (`7 passed, 38 deselected`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
       - `git diff --check` -> PASS
+  - ID: T772-subD
+    Status: [✓] Done
+    Title: Rewire activation and revision routes to call State Authority sub-services directly
+    Description:
+    - Goal / acceptance criteria: Update the snapshot route layer so activation and revision endpoints call the extracted State Authority activation/revision services directly instead of routing those flows back through the `SnapshotService` facade, while preserving HTTP behavior and focused route regressions.
+    - Why it matters: T772 explicitly requires direct route wiring without a facade layer; after the service extractions, the route surface still points at the monolith for activation-only and revision-only flows.
+    - Dependencies: T772-subB, T772-subC
+    - Estimated effort: Medium
+    - Required outputs: Route rewiring, preserved invalidation/error behavior, focused route validation, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 22:02 EDT - Codex
+    - Completion notes:
+      - Updated [app/routes/unified_snapshots.py](/home/mm/map2-audio/app/routes/unified_snapshots.py) so revision listing/restoration and both activation endpoints now call `state_authority_revisions` and `state_authority_activation` directly instead of routing those flows back through the `SnapshotService` facade.
+      - Added focused route assertions in [tests/test_snapshot_routes.py](/home/mm/map2-audio/tests/test_snapshot_routes.py) that fail if the facade methods are used, locking the route layer onto the extracted State Authority services.
+      - Preserved the existing activation error mapping and chain-list cache invalidation behavior while rewiring the route surface to the dedicated sub-services.
+    - Validation:
+      - `pytest -q tests/test_snapshot_routes.py -k 'revision_routes_call_state_authority_revision_service_directly or activation_routes_call_state_authority_activation_service_directly or activate_snapshot_route'` -> PASS (`4 passed, 2 deselected`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/unified_snapshots.py tests/test_snapshot_routes.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 21:50 EDT - Codex
+Last updated: 2026-04-05 22:02 EDT - Codex
 
 ID: T773
 Status: [ ] Todo

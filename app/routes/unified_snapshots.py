@@ -580,7 +580,7 @@ async def list_snapshot_revisions(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            revisions = await service.list_revisions(snapshot_id)
+            revisions = await service.state_authority_revisions.list_revisions(snapshot_id)
             if revisions is None:
                 _raise_not_found("Snapshot")
             return {
@@ -600,7 +600,7 @@ async def restore_snapshot_revision(snapshot_id: int, revision_number: int) -> d
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            restored = await service.restore_revision(snapshot_id, revision_number)
+            restored = await service.state_authority_revisions.restore_revision(snapshot_id, revision_number)
             if restored is None:
                 _raise_not_found("Snapshot revision")
             return {
@@ -646,7 +646,7 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            payload = await service.activate_snapshot(snapshot_id)
+            payload = await service.state_authority_activation.activate_snapshot(snapshot_id)
             if payload is None:
                 _raise_not_found("Snapshot")
         from app.routes.chains import _invalidate_chain_list_cache
@@ -859,7 +859,10 @@ async def activate_snapshot_by_program(program_number: int) -> dict[str, Any]:
             summary = await service.get_snapshot_by_program(program_number)
             if summary is None:
                 _raise_not_found("Snapshot")
-            payload = await service.activate_snapshot(summary["id"], triggered_by="midi_pc")
+            payload = await service.state_authority_activation.activate_snapshot(
+                summary["id"],
+                triggered_by="midi_pc",
+            )
             if payload is None:
                 _raise_not_found("Snapshot")
         from app.routes.chains import _invalidate_chain_list_cache

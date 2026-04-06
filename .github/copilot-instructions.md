@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority activation-service extraction documented)
+> **Last Updated**: April 5, 2026 (State Authority route rewiring to direct sub-services documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1657,6 +1657,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_snapshot_service.py -k 'same_topology or preload_hit or spillover or expression_mappings_and_automation_lanes or topology_reuse_should_reapply_routing_and_loop_state'`; `pytest -q tests/test_snapshot_service.py -k 'publishes_desired_state_to_audio_authority or preserves_existing_authority_extensions_when_publishing_desired_state or rehydrates_local_brain_runtime_and_broadcasts_runtime_updates or consumes_preloaded_instances_on_preload_hit or reuses_runtime_chains_for_same_topology or topology_reuse_should_reapply_routing_and_loop_state or syncs_expression_mappings_and_automation_lanes'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py app/services/snapshot_service.py tests/test_snapshot_service.py`; `git diff --check`
 - **Lesson**: When decomposing State Authority runtime behavior, move complete orchestration lifecycles into dedicated services. Do not leave the live-state contract stranded inside `SnapshotService` while only helpers change names.
 
+**75. Route Decomposition Is Not Complete Until Endpoints Bypass The Snapshot Facade (HIGH - Apr 5, 2026)**
+- **Files**: `app/routes/unified_snapshots.py`, `tests/test_snapshot_routes.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Even after revision and activation behavior moved into dedicated State Authority services, the HTTP route layer still called `SnapshotService.list_revisions()`, `restore_revision()`, and `activate_snapshot()`, which kept the facade in the execution path and masked whether decomposition had actually reached the route boundary.
+- **Root Cause**: Service extraction alone does not change call sites. Without a follow-up route pass, the codebase still behaves architecturally like a monolith even when the logic lives elsewhere.
+- **Fix**: Rewire the revision and activation endpoints in `app/routes/unified_snapshots.py` to call `state_authority_revisions` and `state_authority_activation` directly, and add route-level tests that fail if the facade methods are used instead.
+- **Verification**: `pytest -q tests/test_snapshot_routes.py -k 'revision_routes_call_state_authority_revision_service_directly or activation_routes_call_state_authority_activation_service_directly or activate_snapshot_route'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/unified_snapshots.py tests/test_snapshot_routes.py`; `git diff --check`
+- **Lesson**: For T772, “decomposition” is not finished when helpers move. Endpoints that exist only for a dedicated sub-service must call that sub-service directly, or the facade boundary still exists in practice.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1927,6 +1935,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Direct Route Wiring
+- **Section**: Gotchas & Learned Fixes (#75), Update Log
+- **Change**: Documented the next `T772` slice: revision and activation endpoints now call the extracted State Authority sub-services directly, with route-level tests locking that wiring in place.
+- **Reason**: T772’s route-wiring requirement was still unmet after the service extractions because the HTTP layer continued to traverse the snapshot facade.
+- **Impact**: Future decomposition slices should update route call sites as soon as a sub-service is stable, instead of leaving the monolith as the route-facing hop.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/routes/unified_snapshots.py`, `tests/test_snapshot_routes.py`
 
 ### [2026-04-05] - State Authority Activation-Service Extraction
 - **Section**: Gotchas & Learned Fixes (#74), Update Log

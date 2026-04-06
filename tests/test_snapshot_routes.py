@@ -2,6 +2,7 @@ import asyncio
 import io
 import json
 import zipfile
+from contextlib import asynccontextmanager
 
 import pytest
 from app import database as database_module
@@ -555,6 +556,83 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         restored_revision = await routes.restore_snapshot_revision(revision_snapshot_id, 1)
         assert restored_revision["status"] == "success"
         assert len(restored_revision["snapshot"]["chains"][0]["plugins"]) == 2
+
+    asyncio.run(_run())
+
+
+def test_revision_routes_call_state_authority_revision_service_directly(monkeypatch):
+    revision_calls: list[tuple[str, int, int | None]] = []
+
+    class _FakeRevisionService:
+        async def list_revisions(self, snapshot_id: int):
+            revision_calls.append(("list", snapshot_id, None))
+            return [{"revision_number": 3, "summary": "route summary"}]
+
+        async def restore_revision(self, snapshot_id: int, revision_number: int):
+            revision_calls.append(("restore", snapshot_id, revision_number))
+            return {"id": snapshot_id, "snapshot_revision": "rev-3"}
+
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_revisions = _FakeRevisionService()
+
+        async def list_revisions(self, _snapshot_id: int):
+            raise AssertionError("Route should call state_authority_revisions directly")
+
+        async def restore_revision(self, _snapshot_id: int, _revision_number: int):
+            raise AssertionError("Route should call state_authority_revisions directly")
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+
+    async def _run():
+        listed = await routes.list_snapshot_revisions(7)
+        restored = await routes.restore_snapshot_revision(7, 3)
+        assert listed["count"] == 1
+        assert restored["snapshot"]["snapshot_revision"] == "rev-3"
+        assert revision_calls == [("list", 7, None), ("restore", 7, 3)]
+
+    asyncio.run(_run())
+
+
+def test_activation_routes_call_state_authority_activation_service_directly(monkeypatch):
+    activation_calls: list[tuple[int, str]] = []
+    cache_invalidations: list[str] = []
+
+    class _FakeActivationService:
+        async def activate_snapshot(self, snapshot_id: int, *, triggered_by: str = "ui"):
+            activation_calls.append((snapshot_id, triggered_by))
+            return {"status": "success", "snapshot_id": snapshot_id, "triggered_by": triggered_by}
+
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_activation = _FakeActivationService()
+
+        async def activate_snapshot(self, _snapshot_id: int, *, triggered_by: str = "ui"):
+            raise AssertionError("Route should call state_authority_activation directly")
+
+        async def get_snapshot_by_program(self, program_number: int):
+            return {"id": 19 if program_number == 12 else None}
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
+
+    async def _run():
+        activated = await routes.activate_snapshot(11)
+        activated_pc = await routes.activate_snapshot_by_program(12)
+        assert activated["snapshot_id"] == 11
+        assert activated_pc["snapshot_id"] == 19
+        assert activation_calls == [(11, "ui"), (19, "midi_pc")]
+        assert cache_invalidations == ["chains", "chains"]
 
     asyncio.run(_run())
 
