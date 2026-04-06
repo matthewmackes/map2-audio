@@ -316,6 +316,7 @@ public:
     };
 
     std::vector<SpilloverChainState> getSpilloverChainStates() const;
+    int getIndependentGraphCrossfadeCount() const;
 
     // ========================================
     // Lexicon MPX-1 Hardware Plugin
@@ -1429,6 +1430,15 @@ private:
         double estimatedTailSeconds = 0.0;
     };
 
+    struct IndependentGraphCrossfade {
+        int id = 0;
+        std::vector<InstanceId> instanceIds;
+        std::atomic<int64_t> remainingSamples{0};
+        int64_t totalSamples = 0;
+        std::atomic<int64_t> processedSamples{0};
+        std::atomic<bool> expired{false};
+    };
+
     struct DelaySpilloverState {
         int id = 0;
         std::unique_ptr<DelayProcessor> processor;
@@ -1459,6 +1469,16 @@ private:
     bool stageSpilloverFromCurrentChain(const std::vector<InstanceId>& nextOrder);
     std::shared_ptr<SpilloverChain> buildSpilloverChainFromCurrentOrder(const std::vector<InstanceId>& nextOrder);
     std::optional<InstanceId> clonePluginInstanceForSpillover(InstanceId sourceInstanceId);
+    void cleanupExpiredIndependentGraphCrossfades();
+    void clearIndependentGraphCrossfades();
+    void processIndependentGraphCrossfades(
+        juce::AudioBuffer<float>& buffer,
+        const juce::AudioBuffer<float>& dryInputBuffer,
+        int numSamples);
+    bool replaceChainWithIndependentGraphCrossfade(
+        const std::vector<InstanceId>& order,
+        int maxCrossfadeMs);
+    std::shared_ptr<IndependentGraphCrossfade> buildIndependentGraphCrossfadeFromCurrentOrder(int maxCrossfadeMs);
     void cleanupExpiredNativeSpillovers();
     void clearAllNativeSpillovers();
     void processNativeSpillovers(juce::AudioBuffer<float>& buffer, int numSamples);
@@ -1469,6 +1489,9 @@ private:
     std::unique_ptr<JuceAudioGraph> audioGraph_;
     juce::AudioBuffer<float> callbackBuffer_;
     juce::AudioBuffer<float> spilloverBuffer_;
+    juce::AudioBuffer<float> graphCrossfadeInputBuffer_;
+    juce::AudioBuffer<float> graphCrossfadeOldBuffer_;
+    juce::AudioBuffer<float> graphCrossfadeNewBuffer_;
 
     // Lexicon MPX-1 Hardware Plugin
     // Raw pointer (non-owning) — lifetime managed by pluginHost_.hardwareInstances_
@@ -1533,6 +1556,9 @@ private:
     mutable std::mutex spilloverChainsMutex_;
     std::vector<std::shared_ptr<SpilloverChain>> spilloverChains_;
     int nextSpilloverChainId_ = 1;
+    mutable std::mutex graphCrossfadeMutex_;
+    std::vector<std::shared_ptr<IndependentGraphCrossfade>> independentGraphCrossfades_;
+    int nextIndependentGraphCrossfadeId_ = 1;
     mutable std::mutex nativeSpilloverMutex_;
     std::vector<std::shared_ptr<DelaySpilloverState>> delaySpillovers_;
     std::vector<std::shared_ptr<ShoeGazeSpilloverState>> shoegazeSpillovers_;

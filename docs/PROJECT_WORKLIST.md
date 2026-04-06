@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 22:02 EDT - T773-subB completed with JUCE graph-document import/runtime round-trip coverage.
+Last updated: 2026-04-05 22:02 EDT - T773 completed with independent-graph crossfade activation wiring.
 
 ## Performance Brain
 
@@ -847,7 +847,7 @@ Assigned to: Codex
 Last updated: 2026-04-05 22:16 EDT - Codex
 
 ID: T773
-Status: [>] In Progress
+Status: [✓] Done
 Title: Add JUCE graph-document load/save bindings and independent-graph crossfade runtime support
 Description:
 - Goal / acceptance criteria: Expose `load_graph_document` / `save_graph_document` through the pybind11 layer, implement JSON-to-`ValueTree` and `ValueTree`-to-JSON conversion on the C++ side, and add an independent-graph crossfade path that runs old and new graphs in parallel with equal-power mixing and a 500ms maximum duration.
@@ -899,7 +899,7 @@ Subtasks:
       - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
       - `git diff --check` -> PASS
   - ID: T773-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add independent-graph equal-power crossfade activation and wire snapshot activation to graph documents
     Description:
     - Goal / acceptance criteria: Add the bounded independent-graph crossfade runtime that runs old and new graphs in parallel with equal-power mixing for at most 500ms, then wire snapshot activation to use graph-document engine loading when the bridge is available.
@@ -910,6 +910,15 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
     Last updated: 2026-04-05 22:02 EDT - Codex
+    - Completion notes:
+      - Extended [juce-engine/Source/Map2AudioEngine.h](/home/mm/map2-audio/juce-engine/Source/Map2AudioEngine.h), [juce-engine/Source/Map2AudioEngine.cpp](/home/mm/map2-audio/juce-engine/Source/Map2AudioEngine.cpp), and [juce-engine/Source/PythonBindings.cpp](/home/mm/map2-audio/juce-engine/Source/PythonBindings.cpp) with the bounded independent-graph crossfade runtime, callback-path equal-power mixing, and a diagnostic count so graph-document loads can transition old and new graphs in parallel for up to 500ms.
+      - Updated [app/services/state_authority_activation_service.py](/home/mm/map2-audio/app/services/state_authority_activation_service.py) so snapshot activation prefers the direct engine graph-document bridge with independent crossfade when available, while preserving the legacy runtime apply path as fallback.
+      - Added focused coverage in [tests/test_juce_engine_graph_document.py](/home/mm/map2-audio/tests/test_juce_engine_graph_document.py) and [tests/test_state_authority_activation_service.py](/home/mm/map2-audio/tests/test_state_authority_activation_service.py), proving the native module arms crossfade transitions and the activation service forwards graph documents into the engine with the locked crossfade settings.
+    - Validation:
+      - `pytest -q tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py` -> PASS (`4 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py` -> PASS
+      - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
 Last updated: 2026-04-05 22:02 EDT - Codex
 

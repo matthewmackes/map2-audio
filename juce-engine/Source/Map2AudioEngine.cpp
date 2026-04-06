@@ -614,6 +614,12 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
                             false, false, true);
     spilloverBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                              false, false, true);
+    graphCrossfadeInputBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                                       false, false, true);
+    graphCrossfadeOldBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                                     false, false, true);
+    graphCrossfadeNewBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                                     false, false, true);
 
     // ============================================================================
     // REALTIME OPTIMIZATION: Lock ALL memory to RAM to prevent page faults
@@ -867,6 +873,7 @@ void Map2AudioEngine::shutdown() {
 
     midiHandler_.shutdown();
     clearAllSpilloverChains();
+    clearIndependentGraphCrossfades();
     clearAllNativeSpillovers();
     audioGraph_->shutdown();
 
@@ -1998,6 +2005,13 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         buffer.clear(ch, 0, processSamples);
     }
 
+    if (graphCrossfadeInputBuffer_.getNumChannels() >= processChannels
+        && graphCrossfadeInputBuffer_.getNumSamples() >= processSamples) {
+        for (int ch = 0; ch < processChannels; ++ch) {
+            graphCrossfadeInputBuffer_.copyFrom(ch, 0, buffer, ch, 0, processSamples);
+        }
+    }
+
     // Pull pending MIDI events captured by MidiHandler thread.
     drainMidiEvents(midiBuffer, processSamples);
 
@@ -2021,6 +2035,14 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
+    if (graphCrossfadeInputBuffer_.getNumChannels() >= processChannels
+        && graphCrossfadeInputBuffer_.getNumSamples() >= processSamples) {
+        juce::AudioBuffer<float> dryInputBuffer(
+            graphCrossfadeInputBuffer_.getArrayOfWritePointers(),
+            processChannels,
+            processSamples);
+        processIndependentGraphCrossfades(buffer, dryInputBuffer, processSamples);
+    }
     processSpilloverChains(buffer, processSamples);
     processNativeSpillovers(buffer, processSamples);
 
@@ -2307,6 +2329,12 @@ void Map2AudioEngine::setBufferSize(int size) {
                                 false, false, true);
         spilloverBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                  false, false, true);
+        graphCrossfadeInputBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                           false, false, true);
+        graphCrossfadeOldBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                         false, false, true);
+        graphCrossfadeNewBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                         false, false, true);
 
         // Re-prepare all processors with new buffer size
         prepareAllProcessors(sampleRate_, size, 2);
@@ -2484,6 +2512,7 @@ std::vector<InstanceId> Map2AudioEngine::getChainOrder() const {
 
 void Map2AudioEngine::clearChain() {
     clearAllSpilloverChains();
+    clearIndependentGraphCrossfades();
     audioGraph_->clearChain();
 }
 
@@ -2547,6 +2576,11 @@ std::vector<Map2AudioEngine::SpilloverChainState> Map2AudioEngine::getSpilloverC
         result.push_back(std::move(state));
     }
     return result;
+}
+
+int Map2AudioEngine::getIndependentGraphCrossfadeCount() const {
+    std::lock_guard<std::mutex> lock(graphCrossfadeMutex_);
+    return static_cast<int>(independentGraphCrossfades_.size());
 }
 
 void Map2AudioEngine::cleanupExpiredSpilloverChains() {
@@ -2641,6 +2675,196 @@ void Map2AudioEngine::processSpilloverChains(juce::AudioBuffer<float>& buffer, i
             chain->expired.store(true, std::memory_order_relaxed);
         }
     }
+}
+
+void Map2AudioEngine::cleanupExpiredIndependentGraphCrossfades() {
+    std::vector<std::shared_ptr<IndependentGraphCrossfade>> expiredCrossfades;
+    {
+        std::lock_guard<std::mutex> lock(graphCrossfadeMutex_);
+        auto it = std::remove_if(
+            independentGraphCrossfades_.begin(),
+            independentGraphCrossfades_.end(),
+            [&expiredCrossfades](const std::shared_ptr<IndependentGraphCrossfade>& crossfade) {
+                if (!crossfade) {
+                    return true;
+                }
+                const bool expired = crossfade->expired.load(std::memory_order_relaxed)
+                    || crossfade->remainingSamples.load(std::memory_order_relaxed) <= 0;
+                if (expired) {
+                    expiredCrossfades.push_back(crossfade);
+                }
+                return expired;
+            });
+        independentGraphCrossfades_.erase(it, independentGraphCrossfades_.end());
+    }
+
+    for (const auto& crossfade : expiredCrossfades) {
+        for (const auto instanceId : crossfade->instanceIds) {
+            pluginHost_.unloadPlugin(instanceId);
+        }
+    }
+}
+
+void Map2AudioEngine::clearIndependentGraphCrossfades() {
+    std::vector<std::shared_ptr<IndependentGraphCrossfade>> crossfades;
+    {
+        std::lock_guard<std::mutex> lock(graphCrossfadeMutex_);
+        crossfades.swap(independentGraphCrossfades_);
+    }
+
+    for (const auto& crossfade : crossfades) {
+        if (!crossfade) {
+            continue;
+        }
+        crossfade->expired.store(true, std::memory_order_relaxed);
+        for (const auto instanceId : crossfade->instanceIds) {
+            pluginHost_.unloadPlugin(instanceId);
+        }
+    }
+}
+
+void Map2AudioEngine::processIndependentGraphCrossfades(
+    juce::AudioBuffer<float>& buffer,
+    const juce::AudioBuffer<float>& dryInputBuffer,
+    int numSamples) {
+    std::vector<std::shared_ptr<IndependentGraphCrossfade>> crossfades;
+    {
+        std::lock_guard<std::mutex> lock(graphCrossfadeMutex_);
+        crossfades = independentGraphCrossfades_;
+    }
+
+    if (crossfades.empty()) {
+        return;
+    }
+
+    const int numChannels = buffer.getNumChannels();
+    if (graphCrossfadeOldBuffer_.getNumChannels() < numChannels
+        || graphCrossfadeOldBuffer_.getNumSamples() < numSamples
+        || graphCrossfadeNewBuffer_.getNumChannels() < numChannels
+        || graphCrossfadeNewBuffer_.getNumSamples() < numSamples) {
+        return;
+    }
+
+    juce::MidiBuffer crossfadeMidi;
+    for (const auto& crossfade : crossfades) {
+        if (!crossfade) {
+            continue;
+        }
+        if (crossfade->expired.load(std::memory_order_relaxed)
+            || crossfade->remainingSamples.load(std::memory_order_relaxed) <= 0
+            || crossfade->totalSamples <= 0) {
+            crossfade->expired.store(true, std::memory_order_relaxed);
+            continue;
+        }
+
+        juce::AudioBuffer<float> oldBuffer(
+            graphCrossfadeOldBuffer_.getArrayOfWritePointers(),
+            numChannels,
+            numSamples);
+        juce::AudioBuffer<float> newBuffer(
+            graphCrossfadeNewBuffer_.getArrayOfWritePointers(),
+            numChannels,
+            numSamples);
+        oldBuffer.clear();
+        newBuffer.clear();
+        crossfadeMidi.clear();
+
+        for (int ch = 0; ch < numChannels; ++ch) {
+            oldBuffer.copyFrom(ch, 0, dryInputBuffer, ch, 0, numSamples);
+            newBuffer.copyFrom(ch, 0, buffer, ch, 0, numSamples);
+        }
+
+        for (const auto instanceId : crossfade->instanceIds) {
+            pluginHost_.process(instanceId, oldBuffer, crossfadeMidi);
+        }
+
+        const auto processedStart = crossfade->processedSamples.load(std::memory_order_relaxed);
+        for (int sample = 0; sample < numSamples; ++sample) {
+            const auto processed = static_cast<double>(processedStart + sample);
+            const auto progress = juce::jlimit(0.0, 1.0, processed / static_cast<double>(crossfade->totalSamples));
+            const auto oldGain = std::cos(progress * juce::MathConstants<double>::halfPi);
+            const auto newGain = std::sin(progress * juce::MathConstants<double>::halfPi);
+            for (int ch = 0; ch < numChannels; ++ch) {
+                buffer.setSample(
+                    ch,
+                    sample,
+                    static_cast<float>(
+                        (oldBuffer.getSample(ch, sample) * oldGain)
+                        + (newBuffer.getSample(ch, sample) * newGain)));
+            }
+        }
+
+        const auto remaining =
+            crossfade->remainingSamples.fetch_sub(numSamples, std::memory_order_relaxed) - numSamples;
+        crossfade->processedSamples.fetch_add(numSamples, std::memory_order_relaxed);
+        if (remaining <= 0) {
+            crossfade->expired.store(true, std::memory_order_relaxed);
+        }
+    }
+
+    cleanupExpiredIndependentGraphCrossfades();
+}
+
+bool Map2AudioEngine::replaceChainWithIndependentGraphCrossfade(
+    const std::vector<InstanceId>& order,
+    int maxCrossfadeMs) {
+    cleanupExpiredIndependentGraphCrossfades();
+
+    auto crossfade = buildIndependentGraphCrossfadeFromCurrentOrder(maxCrossfadeMs);
+    const bool replaced = audioGraph_->replaceChain(order);
+    if (!replaced) {
+        if (crossfade) {
+            for (const auto instanceId : crossfade->instanceIds) {
+                pluginHost_.unloadPlugin(instanceId);
+            }
+        }
+        return false;
+    }
+
+    if (crossfade) {
+        std::lock_guard<std::mutex> lock(graphCrossfadeMutex_);
+        independentGraphCrossfades_.push_back(std::move(crossfade));
+    }
+
+    return true;
+}
+
+std::shared_ptr<Map2AudioEngine::IndependentGraphCrossfade>
+Map2AudioEngine::buildIndependentGraphCrossfadeFromCurrentOrder(int maxCrossfadeMs) {
+    const auto currentOrder = audioGraph_->getChainOrder();
+    if (currentOrder.empty()) {
+        return {};
+    }
+
+    const auto clampedCrossfadeMs = std::clamp(maxCrossfadeMs, 1, 500);
+    const auto totalSamples = static_cast<int64_t>(std::ceil((clampedCrossfadeMs * 0.001) * sampleRate_));
+    if (totalSamples <= 0) {
+        return {};
+    }
+
+    auto crossfade = std::make_shared<IndependentGraphCrossfade>();
+    crossfade->id = nextIndependentGraphCrossfadeId_++;
+    crossfade->totalSamples = totalSamples;
+    crossfade->remainingSamples.store(totalSamples, std::memory_order_relaxed);
+    crossfade->processedSamples.store(0, std::memory_order_relaxed);
+    crossfade->expired.store(false, std::memory_order_relaxed);
+
+    for (const auto instanceId : currentOrder) {
+        const auto cloneId = clonePluginInstanceForSpillover(instanceId);
+        if (!cloneId.has_value()) {
+            for (const auto loadedId : crossfade->instanceIds) {
+                pluginHost_.unloadPlugin(loadedId);
+            }
+            return {};
+        }
+        crossfade->instanceIds.push_back(*cloneId);
+    }
+
+    if (crossfade->instanceIds.empty()) {
+        return {};
+    }
+
+    return crossfade;
 }
 
 void Map2AudioEngine::cleanupExpiredNativeSpillovers() {
@@ -3111,8 +3335,8 @@ std::string Map2AudioEngine::saveGraphDocument(const std::string& seedGraphDocum
 
 bool Map2AudioEngine::loadGraphDocument(
     const std::string& graphDocumentJson,
-    bool /*useIndependentCrossfade*/,
-    int /*maxCrossfadeMs*/) {
+    bool useIndependentCrossfade,
+    int maxCrossfadeMs) {
     const auto parsed = juce::JSON::parse(graphDocumentJson);
     if (!parsed.isObject()) {
         return false;
@@ -3243,7 +3467,10 @@ bool Map2AudioEngine::loadGraphDocument(
         nextOrder.push_back(instanceId);
     }
 
-    if (!replaceChain(nextOrder)) {
+    const bool replaced = useIndependentCrossfade
+        ? replaceChainWithIndependentGraphCrossfade(nextOrder, maxCrossfadeMs)
+        : replaceChain(nextOrder);
+    if (!replaced) {
         for (const auto loadedId : newlyLoaded) {
             unloadPlugin(loadedId);
         }

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (State Authority graph-document engine bindings documented)
+> **Last Updated**: April 5, 2026 (State Authority graph-document crossfade activation documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1681,6 +1681,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_juce_engine_service_instance_resolution.py -k 'graph_document or duplicate or nam_status_instance'`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py tests/test_juce_engine_service_instance_resolution.py`; `cmake --build juce-engine/build --target map2_audio_engine -j4`; `python3 - <<'PY' ... engine.save_graph_document(...); engine.load_graph_document(...) ... PY`
 - **Lesson**: When a schema-facing identifier is stricter than the runtime loader identifier, export both intentionally. Do not force the engine to choose between emitting a valid document and emitting a reloadable one.
 
+**78. Graph-Document Activation Needs Callback-Level Independent Crossfade Plumbing, Not Just Load/Save Bindings (HIGH - Apr 5, 2026)**
+- **Files**: `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/PythonBindings.cpp`, `app/services/state_authority_activation_service.py`, `tests/test_juce_engine_graph_document.py`, `tests/test_state_authority_activation_service.py`
+- **Problem**: State Authority activation could still cut hard between graphs even after the engine learned to serialize and reload graph documents directly.
+- **Root Cause**: The graph-document bridge only handled document transport. The callback path still lacked a preserved dry-input buffer plus dual-render transition path for the outgoing and incoming graph orders, and activation still defaulted toward the legacy snapshot apply bridge.
+- **Fix**: Capture callback input before graph processing, render old and new graph orders in parallel during a bounded equal-power transition, expose crossfade state through the pybind engine bridge, and have activation prefer `load_graph_document(..., use_independent_crossfade=True, max_crossfade_ms=500)` before falling back to the legacy apply path.
+- **Verification**: `pytest -q tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_activation_service.py tests/test_juce_engine_graph_document.py tests/test_state_authority_activation_service.py`; `cmake --build juce-engine/build --target map2_audio_engine -j4`; `git diff --check`
+- **Lesson**: A document-authoritative runtime still needs explicit transition handling in the audio callback. Load/save support alone is not enough to make activation seamless.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1951,6 +1959,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Graph-Document Crossfade Activation
+- **Section**: Gotchas & Learned Fixes (#78), Update Log
+- **Change**: Documented the final `T773` slice: activation now prefers the JUCE graph-document load path with independent crossfade runtime support, and the engine exposes crossfade state for regression coverage.
+- **Reason**: `T773` was not complete until the State Authority activation path could hand graph documents to the engine without a hard chain cutover or immediate fallback to legacy snapshot wiring.
+- **Impact**: `T774` can build activation-state orchestration on top of the graph-document runtime path instead of reopening a parallel legacy-engine transition path.
 
 ### [2026-04-05] - State Authority Graph-Document Engine Bindings
 - **Section**: Gotchas & Learned Fixes (#77), Update Log

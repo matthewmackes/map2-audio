@@ -2981,6 +2981,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             }
             return result;
         }, "Get active spillover chain diagnostics")
+        .def("get_independent_graph_crossfade_count", &Map2AudioEngine::getIndependentGraphCrossfadeCount,
+             "Get the number of active independent graph crossfade transitions")
 
         // ========================================
         // Sidechain Routing (NEW)

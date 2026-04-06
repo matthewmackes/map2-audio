@@ -149,6 +149,56 @@ class StateAuthorityActivationService:
             except Exception as exc:
                 logger.debug("Snapshot spillover arm skipped for %s: %s", uri, exc)
 
+    async def apply_graph_document_to_engine(
+        self,
+        *,
+        snapshot: Snapshot,
+        normalized: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        engine = self.get_audio_engine()
+        if not engine.is_available or not engine.is_running:
+            return None
+        if not hasattr(engine, "load_graph_document"):
+            return None
+
+        document = snapshot.document if isinstance(snapshot.document, dict) else None
+        if not isinstance(document, dict):
+            document = self.owner.state_authority_documents.build_validated_document(snapshot, normalized)
+
+        try:
+            applied = await engine.load_graph_document(
+                copy.deepcopy(document),
+                use_independent_crossfade=True,
+                max_crossfade_ms=500,
+            )
+        except Exception as exc:
+            logger.debug("Graph-document engine activation skipped for %s: %s", snapshot.id, exc)
+            return None
+
+        if not applied:
+            return None
+
+        graph = document.get("graph") if isinstance(document.get("graph"), dict) else {}
+        chains = graph.get("chains") if isinstance(graph.get("chains"), list) else []
+        plugin_count = 0
+        bypass_count = 0
+        for chain in chains:
+            if not isinstance(chain, dict):
+                continue
+            for plugin in chain.get("plugins", []):
+                if not isinstance(plugin, dict):
+                    continue
+                plugin_count += 1
+                if bool(plugin.get("bypass", False)):
+                    bypass_count += 1
+
+        return {
+            "applied": True,
+            "plugin_count": plugin_count,
+            "bypass_count": bypass_count,
+            "used_independent_crossfade": True,
+        }
+
     @staticmethod
     def ordered_detail_channels(detail: dict[str, Any]) -> list[dict[str, Any]]:
         channels = [channel for channel in detail.get("channels", []) if isinstance(channel, dict)]
@@ -545,6 +595,7 @@ class StateAuthorityActivationService:
         params_applied = 0
         bypass_applied = 0
         topology_reused = False
+        graph_document_apply_result: dict[str, Any] | None = None
         audio_device_binding_result: dict[str, Any] | None = None
         monitoring_output_result: dict[str, Any] | None = None
         output_safety_result: dict[str, Any] | None = None
@@ -631,9 +682,17 @@ class StateAuthorityActivationService:
             refreshed_detail = channel_health["snapshot_payload"]
 
             legacy_payload = self.owner.to_legacy_snapshot_data(refreshed_detail)
-            params_applied, bypass_applied = await self.runtime_service_module.apply_snapshot_to_engine(
-                copy.deepcopy(legacy_payload)
+            graph_document_apply_result = await self.apply_graph_document_to_engine(
+                snapshot=snapshot,
+                normalized=normalized,
             )
+            if graph_document_apply_result is not None:
+                params_applied = int(graph_document_apply_result.get("plugin_count") or 0)
+                bypass_applied = int(graph_document_apply_result.get("bypass_count") or 0)
+            else:
+                params_applied, bypass_applied = await self.runtime_service_module.apply_snapshot_to_engine(
+                    copy.deepcopy(legacy_payload)
+                )
             activation_topology_metrics = self._build_activation_topology_metrics(
                 activation_topology_metrics["before"],
                 await self.get_audio_engine().get_topology_mutation_stats(),
@@ -799,6 +858,7 @@ class StateAuthorityActivationService:
                 "loop_insertions": loop_insertion_sync_result or {},
                 "channel_state": channel_state_sync_result or {},
                 "morph_apply": morph_apply_result or {},
+                "graph_document_apply": graph_document_apply_result or {},
                 "snapshot_midi_map": midi_map_sync_result or {},
                 "expression_mappings": expression_mapping_sync_result or {},
                 "automation_lanes": automation_lane_sync_result or {},
