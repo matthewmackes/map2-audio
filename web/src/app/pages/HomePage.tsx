@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from '@carbon/icons-react'
-import { ClickableTile, Tag } from '@carbon/react'
+import { ClickableTile, ProgressBar, Tag } from '@carbon/react'
 import {
+  MAP2_PLATFORM_NAME,
   MAP2_PLATFORM_VERSION,
+  Map2BrandMark,
 } from '../components/branding/map2Branding'
 import { MapClusterFabricIcon } from '../components/icons/map/MapAppIcons'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -20,7 +22,10 @@ import {
 } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
+import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import './HomePage.css'
+
+const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 
 // ── Node status for Platforms card ──────────────────────────────────────────
 
@@ -102,6 +107,7 @@ export function HomePage() {
     state: string | null
     nodeIds: string[]
   } | null>(null)
+  const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
@@ -127,6 +133,46 @@ export function HomePage() {
     { workflow: 'clone' as const, state: 'confirmed_clone', count: remediationCounts?.clone?.confirmed_clone ?? 0, label: 'Confirmed Clone' },
     { workflow: 'clone' as const, state: 'suspected_clone', count: remediationCounts?.clone?.suspected_clone ?? 0, label: 'Suspected Clone' },
   ].filter((pill) => pill.count > 0 && (pill.workflow !== 'sync' || syncWorkflowAvailable))
+
+  useEffect(() => {
+    if (!showBootSplash) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      completeHomeDesktopBoot()
+      startTransition(() => {
+        setShowBootSplash(false)
+      })
+    }, HOME_BOOT_SPLASH_DURATION_MS)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [showBootSplash])
+
+  if (showBootSplash) {
+    return (
+      <section className="hp2-boot" aria-label="MAP2 boot splash">
+        <div className="hp2-boot__center">
+          <div className="hp2-boot__mark-wrap" aria-hidden="true">
+            <Map2BrandMark className="hp2-boot__mark" />
+          </div>
+          <p className="hp2-boot__eyebrow">MAP2</p>
+          <h1 className="hp2-boot__title">{MAP2_PLATFORM_NAME}</h1>
+          <p className="hp2-boot__subtitle">Preparing desktop shell and restoring platform context.</p>
+        </div>
+        <div className="hp2-boot__progress">
+          <ProgressBar
+            label="Boot progress"
+            helperText="Starting desktop experience"
+            hideLabel
+            value={null}
+          />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <div className="hp2-root">

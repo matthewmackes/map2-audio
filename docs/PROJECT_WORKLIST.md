@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 08:39 EDT - T777-subA completed with canonical graph-template CRUD on the State Authority path.
+Last updated: 2026-04-06 09:28 EDT - T779 completed with first-visit Windows 10 boot splash session gating on the home route.
 
 ## Performance Brain
 
@@ -16934,7 +16934,7 @@ Key design decisions (summary):
 - No keyboard shortcuts, no tablet/mobile, Carbon built-in accessibility only
 
 ID: T779
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build the Windows 10 boot splash screen
 Description:
 - Goal / acceptance criteria: Implement a 4-second boot splash screen that displays on first visit only (no desktop state in localStorage). Shows the MAP2 brand mark centered with a smooth spinning animation, "Mackes Audio Platform" text below, and a Carbon indeterminate progress bar at the bottom. Background color matches the active Carbon theme's `$background` token. Auto-transitions to the desktop after 4 seconds. Purely cosmetic — no real data fetching. Also triggered by "Log Out" (Power menu) and after backend restart completes.
@@ -16943,8 +16943,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: Boot splash component, localStorage first-visit detection, 4-second auto-transition, theme-aware background, spinning logo animation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 09:28 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/HomePage.tsx` so the home route now starts on a dedicated Windows 10-style boot splash when no desktop session state exists, using the MAP2 brand mark, title copy, and a Carbon indeterminate progress bar before revealing the existing launcher surface.
+  - Added `web/src/app/pages/homeDesktopSession.ts` as the first canonical desktop-session storage helper so first-visit gating is restart-safe and future logout/restart/session-restore tasks can extend one stable localStorage contract instead of inventing parallel keys.
+  - Added boot splash styling in `web/src/app/pages/HomePage.css` and expanded `web/src/app/pages/HomePage.test.tsx` with first-visit and repeat-visit regression coverage while preserving the prior landing/Platforms remediation assertions.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ## Backend Audit Follow-Up
 

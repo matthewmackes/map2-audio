@@ -1,8 +1,9 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
+import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 
 const originalFetch = global.fetch
 const mockSpecialSettingsState = {
@@ -147,12 +148,20 @@ function renderHome(initialEntries: string[] = ['/']) {
   )
 }
 
+function finishBootSplash() {
+  act(() => {
+    jest.advanceTimersByTime(4000)
+  })
+}
+
 describe('HomePage landing', () => {
   beforeEach(() => {
+    jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserverMock }).ResizeObserver = ResizeObserverMock
     ;(globalThis as { fetch?: typeof fetch }).fetch = jest.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => defaultFetchResponse(input, init),
     ) as typeof fetch
+    window.localStorage.clear()
     mockSpecialSettingsState.settings = {
       enabled: true,
       hiddenPlugins: [],
@@ -164,11 +173,39 @@ describe('HomePage landing', () => {
   })
 
   afterEach(() => {
+    cleanup()
+    jest.clearAllTimers()
+    jest.useRealTimers()
     ;(globalThis as { fetch?: typeof fetch }).fetch = originalFetch
+  })
+
+  it('shows the boot splash on first visit, then persists desktop session state', async () => {
+    renderHome()
+
+    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Platforms' })).toBeNull()
+
+    finishBootSplash()
+
+    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
+  })
+
+  it('skips the boot splash when desktop session state already exists', async () => {
+    window.localStorage.setItem(
+      HOME_DESKTOP_SESSION_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootCompletedAt: '2026-04-06T13:00:00.000Z' }),
+    )
+
+    renderHome()
+
+    expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
   })
 
   it('renders the current workspace tiles and online node summary', async () => {
     renderHome()
+    finishBootSplash()
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
     expect(screen.queryByText('Promoted launchers')).toBeNull()
@@ -185,6 +222,7 @@ describe('HomePage landing', () => {
 
   it('opens Platforms from the landing tile using the canonical route', async () => {
     renderHome()
+    finishBootSplash()
 
     const platformsCard = await screen.findByRole('heading', { name: 'Platforms' })
     fireEvent.click(platformsCard.closest('.hp2-launchers__tile') as HTMLElement)
@@ -200,6 +238,7 @@ describe('HomePage landing', () => {
     ]
 
     renderHome()
+    finishBootSplash()
 
     const landingTile = await screen.findByText('MIDI Hub')
     expect(landingTile.closest('.hp2-launchers__tile--small')).toBeTruthy()
@@ -223,6 +262,7 @@ describe('HomePage landing', () => {
     ]
 
     renderHome()
+    finishBootSplash()
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'MIDI Hub' })).toBeTruthy()
@@ -263,6 +303,7 @@ describe('HomePage landing', () => {
     )
 
     renderHome()
+    finishBootSplash()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Claimable: 1' }))
 
@@ -320,6 +361,7 @@ describe('HomePage landing', () => {
     )
 
     renderHome()
+    finishBootSplash()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Outdated: 1' }))
 
@@ -372,6 +414,7 @@ describe('HomePage landing', () => {
     )
 
     renderHome()
+    finishBootSplash()
 
     expect((await screen.findAllByText('Sync unavailable')).length).toBeGreaterThanOrEqual(2)
     expect(screen.queryByRole('button', { name: 'Outdated: 2' })).toBeNull()

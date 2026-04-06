@@ -1,5 +1,84 @@
 /* ── Landing Page v2 — Carbon minimal flat ─────────────────────────────────── */
 
+.hp2-boot {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: min(100vh, 100dvh);
+  padding: 4rem clamp(1.5rem, 4vw, 3.5rem) 2rem;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, transparent) 0%, transparent 48%),
+    var(--cds-background, var(--bg));
+  color: var(--cds-text-primary);
+}
+
+.hp2-boot__center {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.hp2-boot__mark-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(5.5rem, 12vw, 8rem);
+  height: clamp(5.5rem, 12vw, 8rem);
+  padding: 0.85rem;
+  border-radius: 1.4rem;
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 22px 48px color-mix(in srgb, black 24%, transparent);
+}
+
+.hp2-boot__mark {
+  width: 100%;
+  height: 100%;
+  animation: hp2-boot-spin 3.8s linear infinite;
+  transform-origin: center;
+}
+
+.hp2-boot__eyebrow {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.hp2-boot__title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.hp2-boot__subtitle {
+  width: min(100%, 32rem);
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.hp2-boot__progress {
+  width: min(100%, 28rem);
+  justify-self: center;
+}
+
+@keyframes hp2-boot-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hp2-root {
   --hp2-shell-width: 1040px;
   display: flex;
@@ -176,6 +255,10 @@
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 671px) {
+  .hp2-boot {
+    padding-top: 2.75rem;
+  }
+
   .hp2-root {
     padding: 0 0 0.5rem;
   }
