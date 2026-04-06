@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://map2.audio/schemas/snapshot-graph-v1.schema.json",
+  "title": "MAP2 Snapshot Graph v2026.04",
+  "type": "object",
+  "required": ["version", "meta", "graph"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "2026.04"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "program_number": { "type": "integer" },
+        "type": {
+          "type": "string",
+          "enum": ["snapshot", "template"]
+        }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "additionalProperties": true,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "uri", "name", "parameters", "state"],
+            "additionalProperties": true,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "uri": {
+                "type": "string",
+                "pattern": "^(map2:(fx|io|sys|ctrl):[a-z0-9-]+|urn:[A-Za-z0-9:_-]+)$"
+              },
+              "name": { "type": "string", "minLength": 1 },
+              "bypass": { "type": "boolean" },
+              "parameters": { "type": "object", "additionalProperties": true },
+              "state": { "type": "object", "additionalProperties": true }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "additionalProperties": true,
+            "properties": {
+              "from": { "type": "string", "minLength": 1 },
+              "to": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "effects_loops": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hash", "name", "path", "size_bytes", "type"],
+        "additionalProperties": true,
+        "properties": {
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "name": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "type": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

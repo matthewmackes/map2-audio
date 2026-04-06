@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain practice-coach adjunct boundary documented)
+> **Last Updated**: April 5, 2026 (State Authority schema and canonical URI foundation documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1601,6 +1601,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_brain_routes.py`; `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_routes.py`; `npm --prefix web run build`; `git diff --check`
 - **Lesson**: Adjunct recovery work should reuse the real legacy runtime until the State Authority redesign replaces it. Do not clone rehearsal state into the Brain just to make the route feel self-contained.
 
+**68. State Authority Foundations Must Canonicalize Legacy Snapshot Plugin URIs Before Storage Rewrite Work Builds On Them (HIGH - Apr 5, 2026)**
+- **Files**: `schemas/snapshot-graph-v1.schema.json`, `app/services/state_authority_graph.py`, `tests/test_state_authority_graph.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The State Authority redesign assumes one monolithic graph schema and one canonical plugin URI form, but the current snapshot/runtime ecosystem still contains mixed `map2://...`, `urn:map2:...`, and already-canonical forms. Starting the persistence rewrite without a shared normalizer would bake migration drift into every downstream phase.
+- **Root Cause**: The repo had many snapshot and runtime codepaths referencing legacy plugin URIs and file-backed asset paths, but no central schema artifact or helper module that could canonicalize those identifiers into the locked `map2:{type}:{name}` and `sha256:` forms.
+- **Fix**: Add the monolithic `schemas/snapshot-graph-v1.schema.json` contract plus `app/services/state_authority_graph.py` so schema loading, legacy URI canonicalization, asset hashing, asset-reference extraction, and graph-document normalization live in one reusable module with focused regression coverage.
+- **Verification**: `pytest -q tests/test_state_authority_graph.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py tests/test_state_authority_graph.py`; `git diff --check`
+- **Lesson**: Before replacing the snapshot store, lock the canonical graph contract and normalization rules in code. Otherwise every migration and activation path invents its own “temporary” URI and asset policy.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1871,6 +1879,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - State Authority Schema And Canonical URI Foundation
+- **Section**: Gotchas & Learned Fixes (#68), Update Log
+- **Change**: Documented the first concrete State Authority slice: the monolithic graph schema file plus shared canonical URI and content-addressed asset normalization helpers.
+- **Reason**: T771-subA needed a real foundation before the storage rewrite starts, and the locked redesign depends on converging legacy snapshot/plugin identifiers into one schema-backed normalization path.
+- **Impact**: Future State Authority phases should import and extend `app/services/state_authority_graph.py` and `schemas/snapshot-graph-v1.schema.json` rather than adding ad hoc URI or asset normalization logic to each service.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `schemas/snapshot-graph-v1.schema.json`, `app/services/state_authority_graph.py`, `tests/test_state_authority_graph.py`
 
 ### [2026-04-05] - Brain Practice-Coach Adjunct Boundary
 - **Section**: Gotchas & Learned Fixes (#67), Update Log

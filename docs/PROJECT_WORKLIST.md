@@ -614,7 +614,7 @@ Last updated: 2026-04-05 20:30 EDT - Codex
 ## MAP2 State Authority
 
 ID: T770
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Deliver the `MAP2 State Authority` snapshot-authority redesign
 Description:
 - Goal / acceptance criteria: Replace the current snapshot-service authority model with the locked `MAP2 State Authority` program from `/home/mm/.claude/plans/keen-growing-tome.md`, covering graph-document storage, service decomposition, activation/runtime orchestration, morph, reconciliation, templates, and qualification. The redesign must be tracked only in this canonical worklist and stay coherent with downstream Brain/snapshot follow-up work.
@@ -636,10 +636,10 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-05 14:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-05 21:03 EDT - Codex
 
 ID: T771
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Land graph-document schema, JSONB persistence, URI canonicalization, and asset-registry foundations
 Description:
 - Goal / acceptance criteria: Introduce the monolithic `schemas/snapshot-graph-v1.schema.json` contract, enforce per-write validation with reject-plus-auto-repair guidance, move snapshot storage to the minimal `snapshot(id, document)` plus revision/asset/activation tables, canonicalize stored plugin URIs to `map2:{type}:{name}`, and make graph documents reference content-addressed assets by hash.
@@ -647,9 +647,29 @@ Description:
 - Dependencies: T770
 - Estimated effort: High
 - Required outputs: Schema file, storage/bootstrap changes, graph-doc CRUD persistence path, URI normalization rules, content-addressed asset plumbing, and focused verification for Phase 1.
-Subtasks: None
+Subtasks:
+  - ID: T771-subA
+    Status: [✓] Done
+    Title: Land the monolithic graph-schema file plus URI and asset normalization helpers
+    Description:
+    - Goal / acceptance criteria: Add the locked monolithic schema file under `schemas/`, establish canonical `map2:{type}:{name}` URI normalization helpers for known legacy snapshot/plugin forms, and add content-addressed asset hashing helpers that can normalize file-backed loader state references into `sha256:` graph-document references.
+    - Why it matters: The State Authority storage rewrite needs a concrete schema artifact and deterministic normalization primitives before it can replace the current relational snapshot rows without proliferating one-off migration logic.
+    - Dependencies: T770
+    - Estimated effort: Medium
+    - Required outputs: Schema file, reusable normalization module, focused tests, and worklist evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-05 21:03 EDT - Codex
+    - Completion notes:
+      - Added `schemas/snapshot-graph-v1.schema.json` as the first monolithic State Authority graph contract, covering the locked top-level `version` / `meta` / `graph` shape plus canonical URI and `sha256:` asset reference patterns.
+      - Added `app/services/state_authority_graph.py` with reusable schema-loading, legacy-to-canonical URI normalization, asset hashing, asset-reference extraction, and graph-document normalization helpers so later persistence and activation work can share one normalization path.
+      - Added `tests/test_state_authority_graph.py` to lock the new schema artifact, canonical URI mappings, content-addressed asset registration, and graph-document normalization behavior against regressions.
+    - Validation:
+      - `pytest -q tests/test_state_authority_graph.py` -> PASS (`5 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_graph.py tests/test_state_authority_graph.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-05 21:03 EDT - Codex
 
 ID: T772
 Status: [ ] Todo
