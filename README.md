@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**981** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1460** total commits | **3** stars | **0** forks | **0** open issues
+**981** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1463** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`963c82ea`](https://github.com/matthewmackes/map2-audio/commit/963c82ea923f5e4b45aff9ca596b4915e65de7ff) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
+| [`d12ae1df`](https://github.com/matthewmackes/map2-audio/commit/d12ae1dfdc86960038bb2abbfb8eeff288419166) | Add State Authority graph morph persistence | Map2 Audio | 2026-04-06 |
+| [`2b394b23`](https://github.com/matthewmackes/map2-audio/commit/2b394b2371d6c5c7a18b9de821f0109ff9476be6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`4633a85f`](https://github.com/matthewmackes/map2-audio/commit/4633a85f0573b3bde4e27274942500664d37e4fb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 | [`76aa5f94`](https://github.com/matthewmackes/map2-audio/commit/76aa5f94bb0c97623d8aa282531023b9b2680baa) | Add activation hooks and preload planning | Map2 Audio | 2026-04-06 |
 | [`c1e7c524`](https://github.com/matthewmackes/map2-audio/commit/c1e7c5240590f953cfbce09fdcabba0498878696) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`3f98d5da`](https://github.com/matthewmackes/map2-audio/commit/3f98d5da59541c80a185062905231bc8c90bebcb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 | [`4d8fa806`](https://github.com/matthewmackes/map2-audio/commit/4d8fa8063fc34ffbf0a9cea23a14e29e8bc23110) | Add structured snapshot validation reporting | Map2 Audio | 2026-04-06 |
-| [`defe5b2d`](https://github.com/matthewmackes/map2-audio/commit/defe5b2de4a519e883beaaf4aef953f0ad9e3ec8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`8ffc20d8`](https://github.com/matthewmackes/map2-audio/commit/8ffc20d84b5541dfe53372096645b3920ebc2f27) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`d74ad08d`](https://github.com/matthewmackes/map2-audio/commit/d74ad08d3371fe0a16e1399d55a414082bd2e16f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
