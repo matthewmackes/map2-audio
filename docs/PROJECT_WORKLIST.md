@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-05 22:02 EDT - T773-subA completed with JUCE graph-document export/import bindings.
+Last updated: 2026-04-05 22:02 EDT - T773-subB completed with JUCE graph-document import/runtime round-trip coverage.
 
 ## Performance Brain
 
@@ -879,7 +879,7 @@ Subtasks:
       - `python3 - <<'PY' ... engine.save_graph_document(...); engine.load_graph_document(...) ... PY` -> PASS
       - `git diff --check` -> PASS
   - ID: T773-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add JUCE graph-document import/rebuild bindings with plugin-state restore
     Description:
     - Goal / acceptance criteria: Add a real engine import path that consumes the State Authority graph-document shape, loads the required plugin instances, restores saved processor state/parameters/bypass, rebuilds the active runtime chain, and exposes the operation through pybind11 plus the Python engine service.
@@ -890,6 +890,14 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
     Last updated: 2026-04-05 22:02 EDT - Codex
+    - Completion notes:
+      - Kept the new [juce-engine/Source/Map2AudioEngine.cpp](/home/mm/map2-audio/juce-engine/Source/Map2AudioEngine.cpp) import path as the runtime owner for graph-document rebuilds, including reuse of singleton/native processors, base64 state replay, bypass restoration, and chain replacement from `graph.chains` or `graph.nodes`.
+      - Added [tests/test_juce_engine_graph_document.py](/home/mm/map2-audio/tests/test_juce_engine_graph_document.py) so the built JUCE module now proves an actual save/load round trip against the native reverb processor instead of relying only on service-level fakes.
+      - Preserved the Python service bridge in [app/services/juce_engine_service.py](/home/mm/map2-audio/app/services/juce_engine_service.py) so later activation work can call the direct engine graph-document seam without another API pass.
+    - Validation:
+      - `pytest -q tests/test_juce_engine_graph_document.py` -> PASS (`1 passed`)
+      - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+      - `git diff --check` -> PASS
   - ID: T773-subC
     Status: [ ] Todo
     Title: Add independent-graph equal-power crossfade activation and wire snapshot activation to graph documents
