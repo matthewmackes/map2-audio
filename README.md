@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**983** Python | **1123** TypeScript | **136** C++/H | **132** Docs | **1510** total commits | **3** stars | **0** forks | **0** open issues
+**983** Python | **1123** TypeScript | **136** C++/H | **132** Docs | **1512** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6fb974be`](https://github.com/matthewmackes/map2-audio/commit/6fb974be0f277a0c23f7d77fe078efd7ddadaf15) | Add app window shell | Map2 Audio | 2026-04-06 |
+| [`bb941a63`](https://github.com/matthewmackes/map2-audio/commit/bb941a632e192c5d2c072f9af0f9ac22e9367da7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`008e3c4a`](https://github.com/matthewmackes/map2-audio/commit/008e3c4af5ced41f4c0c7b7ac6e6be49ea1fa41b) | Add desktop watermarks | Map2 Audio | 2026-04-06 |
 | [`e1af4c34`](https://github.com/matthewmackes/map2-audio/commit/e1af4c343f866bef05ca43a1aee214b1c727f43b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`e084647d`](https://github.com/matthewmackes/map2-audio/commit/e084647dd3026954397e66270f40f4852695bf4b) | Add files via upload | Matthew Mackes | 2026-04-06 |
 | [`f610b56b`](https://github.com/matthewmackes/map2-audio/commit/f610b56b567e893310bc5f67340f14dfbe6f8f22) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`b5d88cb6`](https://github.com/matthewmackes/map2-audio/commit/b5d88cb6911c251992b127b5202ed37f26e50471) | Add desktop context menus | Map2 Audio | 2026-04-06 |
 | [`cf85fc49`](https://github.com/matthewmackes/map2-audio/commit/cf85fc490282a81f6266ead9dec37312d5609e20) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`0e174bfa`](https://github.com/matthewmackes/map2-audio/commit/0e174bfa74b08a7d8c91fdcc6960b9dad6aa2a6e) | Build desktop icon grid | Map2 Audio | 2026-04-06 |
-| [`26d8dd55`](https://github.com/matthewmackes/map2-audio/commit/26d8dd55f3d6c19e4abc841017f4990cdeedda80) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
