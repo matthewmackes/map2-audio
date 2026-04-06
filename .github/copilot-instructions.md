@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (State Authority morph engine cutover documented)
+> **Last Updated**: April 7, 2026 (State Authority local reconciliation core documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - State Authority Local Reconciliation Core
+- **Section**: Update Log
+- **Change**: Documented the first `T776` slice: a dedicated reconciliation service now compares live snapshot authority payloads against the running JUCE engine, enforces the 1% drift tolerance, classifies topology and missing-asset drift, and can apply targeted parameter or bypass corrections.
+- **Reason**: The layered reconciliation epic needed one tested comparison and correction engine before heartbeat self-heal or cluster reporting could build on top of it.
+- **Impact**: Future `T776` work should reuse this reconciliation service for local heartbeat checks, drift metrics, and cluster aggregation instead of reimplementing drift logic in routes or exporters.
 
 ### [2026-04-07] - State Authority Morph Runtime Cutover
 - **Section**: Update Log

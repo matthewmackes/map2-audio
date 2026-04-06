@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 00:33 EDT - T775 completed with engine-backed morph cutover for activation and live routing.
+Last updated: 2026-04-07 07:44 EDT - T776-subA completed with local drift detection and correction planning.
 
 ## Performance Brain
 
@@ -1044,7 +1044,7 @@ Assigned to: Codex
 Last updated: 2026-04-07 00:33 EDT - Codex
 
 ID: T776
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Implement layered reconciliation, drift correction, and cluster authority reporting
 Description:
 - Goal / acceptance criteria: Add the two-layer reconciliation design with per-node local self-heal and management-node cross-node coordination every five seconds, 1% drift tolerance, targeted parameter correction, topology-triggered reactivation, missing-plugin asset redeploy paths, runtime-only drift logging, and Prometheus-style drift metrics/reporting.
@@ -1052,9 +1052,42 @@ Description:
 - Dependencies: T772, T773, T774
 - Estimated effort: High
 - Required outputs: Reconciliation services/jobs, drift event/reporting surface, cluster correction flows, metrics, and focused validation for parameter drift, topology drift, and node-loss scenarios.
-Subtasks: None
+Subtasks:
+  - ID: T776-subA
+    Status: [✓] Done
+    Title: Add local State Authority drift detection and correction planning
+    Description:
+    - Goal / acceptance criteria: Introduce a dedicated reconciliation service that compares the live snapshot authority payload against the running JUCE engine, enforces the 1% parameter drift tolerance, detects bypass/topology/missing-asset drift, and returns explicit targeted-correction versus reactivation/redeploy guidance.
+    - Why it matters: The runtime heartbeat cannot safely self-heal or report drift until there is one tested reconciliation engine instead of ad hoc comparison logic.
+    - Dependencies: T773, T775
+    - Estimated effort: Medium
+    - Required outputs: New reconciliation service, focused unit tests for tolerance/correction/topology drift, and canonical worklist updates.
+    Assigned to: Codex
+    Last updated: 2026-04-07 07:44 EDT - Codex
+  - ID: T776-subB
+    Status: [ ] Todo
+    Title: Wire five-second local self-heal and runtime reconciliation metrics into live-state updates
+    Description:
+    - Goal / acceptance criteria: Run local reconciliation from the existing runtime heartbeat at a five-second cadence, apply targeted corrections when safe, and persist reconciliation results into runtime metrics and local runtime APIs.
+    - Why it matters: The design requires continuous per-node self-heal, not just an on-demand diagnostic helper.
+    - Dependencies: T776-subA
+    - Estimated effort: Medium
+    - Required outputs: Heartbeat/runtime-state integration, local reporting surfaces, and focused verification for healthy versus drifted live snapshots.
+    Assigned to: Codex
+    Last updated: 2026-04-07 07:44 EDT - Codex
+  - ID: T776-subC
+    Status: [ ] Todo
+    Title: Add management-node cluster reconciliation reporting and Prometheus-style drift metrics
+    Description:
+    - Goal / acceptance criteria: Aggregate per-node reconciliation results through the existing cluster runtime surface, expose a cluster report endpoint, and publish Prometheus-style drift gauges and counters for local and cluster authority state.
+    - Why it matters: T776 is incomplete until management nodes can see and scrape authority drift across the cluster rather than only on one node at a time.
+    - Dependencies: T776-subA, T776-subB
+    - Estimated effort: Medium
+    - Required outputs: Cluster report aggregation, metrics export updates, route coverage, and worklist/memory updates.
+    Assigned to: Codex
+    Last updated: 2026-04-07 07:44 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-07 07:44 EDT - Codex
 
 ID: T777
 Status: [ ] Todo
