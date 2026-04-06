@@ -87,7 +87,7 @@ function LocationProbe() {
   return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
-describe('AppShell desktop window chrome', () => {
+describe('AppShell desktop taskbar shell', () => {
   beforeEach(() => {
     mockUpdateSettings.mockReset()
     mockSpecialSettings.pinnedRoutes = []
@@ -118,7 +118,7 @@ describe('AppShell desktop window chrome', () => {
     }
   })
 
-  it('keeps the landing route free of window chrome', () => {
+  it('renders the bottom taskbar shell on the landing route without a titlebar', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -126,14 +126,13 @@ describe('AppShell desktop window chrome', () => {
       ['/'],
     )
 
-    expect(screen.queryByLabelText('MAP2 window frame')).toBeNull()
-    expect(screen.queryByLabelText('Primary navigation shell')).toBeNull()
-    expect(screen.queryByLabelText('Open Start menu')).toBeNull()
+    expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
+    expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
     expect(container.querySelector('.window-titlebar')).toBeNull()
-    expect(container.querySelector('.window-taskbar')).toBeNull()
+    expect(container.querySelector('.window-taskbar')).toBeTruthy()
   })
 
-  it('renders the desktop title bar and bottom taskbar on non-landing routes', () => {
+  it('renders the taskbar shell on non-landing routes without the legacy titlebar', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -141,14 +140,12 @@ describe('AppShell desktop window chrome', () => {
       ['/intelfx'],
     )
 
-    expect(screen.getByLabelText('MAP2 window frame')).toBeTruthy()
     expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
     expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
-    expect(screen.getByLabelText('Close window and return home')).toBeTruthy()
     expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
     expect(screen.getByText('IntelFX Rack')).toBeTruthy()
     expect(screen.getByText('intelfx')).toBeTruthy()
-    expect(container.querySelector('.window-titlebar__brand-mark')).toBeTruthy()
+    expect(container.querySelector('.window-titlebar')).toBeNull()
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
@@ -167,19 +164,6 @@ describe('AppShell desktop window chrome', () => {
     fireEvent.click(screen.getByLabelText('Quick launch MIDI Hub'))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/midi-hub')
-  })
-
-  it('routes back to landing when the title-bar close button is pressed', () => {
-    renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByLabelText('Close window and return home'))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
   })
 
   it('shows pinned routes only inside the Start menu and sorts them visually', () => {

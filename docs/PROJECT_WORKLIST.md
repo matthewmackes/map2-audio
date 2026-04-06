@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 09:28 EDT - T779 completed with first-visit Windows 10 boot splash session gating on the home route.
+Last updated: 2026-04-06 09:36 EDT - T780-subA completed with always-on bottom taskbar shell and titlebar removal.
 
 ## Performance Brain
 
@@ -17367,7 +17367,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-06
 
 ID: T780
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Build the Windows 10-style taskbar shell
 Description:
 - Goal / acceptance criteria: Replace the current AppShell with a Windows 10-style taskbar fixed at the bottom of the screen. Layout left-to-right: Start button (MAP2 logo + "Start" text, merging the old titlebar brand mark) | Audio Artifacts permanent icon (not removable, like File Explorer in Windows 10) | Running app indicators area | System tray (right side). Taskbar uses `$background` token with a top border for separation. Height follows Carbon best practices. The existing AppShell titlebar is removed — brand mark moves into the Start button. Remove the existing top sticky titlebar entirely.
@@ -17377,7 +17377,7 @@ Description:
 - Required outputs: Taskbar component, Start button with logo + text, permanent Audio Artifacts icon, running app indicator slots, system tray container. Replaces AppShell titlebar.
 Subtasks:
   - ID: T780-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the taskbar layout container and Start button
     Description:
     - Goal / acceptance criteria: Create the fixed-bottom taskbar with proper Carbon token styling ($background + top border). Implement the Start button with MAP2 logo + "Start" text that toggles the Start Menu open/closed. Remove the existing AppShell sticky titlebar.
@@ -17385,8 +17385,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Taskbar container component, Start button component, removal of old titlebar.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 09:36 EDT - Codex
+    - Completion notes:
+      - Removed the legacy sticky `AppShell` titlebar and promoted the bottom taskbar into the always-on shell for both landing and non-landing routes, keeping the existing Start button wiring intact while matching the taskbar-first desktop direction.
+      - Updated `web/src/app/layout/AppShell.css` so the taskbar now sits flush to the bottom edge and derives its surface from the Carbon background token with a separating top border instead of the older floating titlebar/window treatment.
+      - Extended `web/src/app/layout/AppShell.test.tsx` to prove the landing route now renders the bottom taskbar shell, non-landing routes no longer expose the old close/titlebar chrome, and the existing Start-menu and quick-launch behaviors still work.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T780-subB
     Status: [ ] Todo
     Title: Build the running app indicators with focused/running states
@@ -17409,8 +17417,8 @@ Subtasks:
     Subtasks: None
     Assigned to: Unassigned
     Last updated: 2026-04-05
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 09:33 EDT - Codex
 
 ID: T781
 Status: [ ] Todo

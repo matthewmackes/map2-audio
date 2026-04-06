@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronRight, Close } from '@carbon/icons-react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { ChevronRight } from '@carbon/icons-react'
 import { Layer, Tag } from '@carbon/react'
 
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
@@ -44,10 +44,6 @@ interface TopNavItem {
 
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 
-function HeroHomeIcon() {
-  return <Map2BrandMark className="window-titlebar__brand-mark" />
-}
-
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
 }
@@ -86,7 +82,6 @@ function toTopNavItem(item: PinnedMenuItem): TopNavItem {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
-  const navigate = useNavigate()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
@@ -174,7 +169,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAudioGridWorkspaceRoute = location.pathname === '/juce-grid' || location.pathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
-  const showDesktopWindowChrome = location.pathname !== '/'
+  const showTaskbarShell = true
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   const closeShellMenus = () => {
@@ -207,12 +202,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [location.pathname])
 
   useEffect(() => {
-    if (!showDesktopWindowChrome) {
-      closeShellMenus()
-    }
-  }, [showDesktopWindowChrome])
-
-  useEffect(() => {
     if (!pinnedRouteSet.has('/mpx1')) {
       setMpx1MenuOpen(false)
     }
@@ -226,11 +215,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     setNavOpen(nextOpen)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
-  }
-
-  const handleCloseWindow = () => {
-    closeShellMenus()
-    navigate('/')
   }
 
   const handleMpx1Rescan = async () => {
@@ -392,7 +376,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showDesktopWindowChrome ? ' app-shell--windowed' : ' app-shell--landing'}`}>
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
       {showMobileConnectionBanner && (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
@@ -400,27 +384,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {showDesktopWindowChrome ? (
-        <div className="window-titlebar" aria-label="MAP2 window frame">
-          <div className="window-titlebar__brand" aria-hidden="true">
-            <HeroHomeIcon />
-          </div>
-          <button
-            type="button"
-            className="window-titlebar__close"
-            onClick={handleCloseWindow}
-            aria-label="Close window and return home"
-          >
-            <Close size={16} aria-hidden />
-          </button>
-        </div>
-      ) : null}
-
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         <PageTransition>{children}</PageTransition>
       </main>
 
-      {showDesktopWindowChrome ? (
+      {showTaskbarShell ? (
         <div
           className="window-taskbar"
           aria-label="Primary navigation shell"

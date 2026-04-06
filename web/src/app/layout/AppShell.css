@@ -1,86 +1,29 @@
 .app-shell--windowed {
-  --window-titlebar-height: 2.5rem;
   --window-taskbar-height: 2.1rem;
   --window-taskbar-control-height: 1.7rem;
   --window-taskbar-latency-height: calc(var(--window-taskbar-height) - 0.1rem);
-  --window-shell-gap: 0.75rem;
+  --window-shell-gap: 0;
   --window-shell-border: var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28));
-  --window-shell-surface: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 97%, var(--cds-background, var(--bg)));
-  --window-shell-surface-strong: color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 96%, var(--cds-background, var(--bg)));
+  --window-shell-surface: var(--cds-background, var(--bg));
+  --window-shell-surface-strong: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, var(--bg)));
   --window-shell-titlebar: var(--cds-link-primary, #0f62fe);
   --window-shell-titlebar-border: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 72%, black 14%);
   --window-shell-titlebar-contrast: var(--cds-text-on-color, #ffffff);
 }
 
 .app-shell--windowed .app-content:not(.app-content--full) {
-  padding-bottom: calc(var(--space-9) + var(--window-taskbar-height) + var(--window-shell-gap) + 1.5rem);
+  padding-bottom: calc(var(--space-9) + var(--window-taskbar-height) + 1.5rem);
 }
 
 .app-shell--windowed .app-content.app-content--full {
-  padding-bottom: calc(var(--window-taskbar-height) + var(--window-shell-gap) + 1.5rem);
-}
-
-.window-titlebar {
-  position: sticky;
-  top: 0;
-  z-index: 36;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: var(--window-titlebar-height);
-  padding-inline: 0.25rem 0;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--window-shell-titlebar) 92%, white 6%) 0%,
-    color-mix(in srgb, var(--window-shell-titlebar) 100%, black 4%) 100%
-  );
-  border-bottom: 1px solid var(--window-shell-titlebar-border);
-  color: var(--window-shell-titlebar-contrast);
-}
-
-.window-titlebar__brand {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: var(--window-titlebar-height);
-  pointer-events: none;
-}
-
-.window-titlebar__brand-mark {
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.window-titlebar__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: var(--window-titlebar-height);
-  border: 0;
-  border-left: 1px solid color-mix(in srgb, white 24%, transparent);
-  background: transparent;
-  color: var(--window-shell-titlebar-contrast);
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.window-titlebar__close:hover {
-  background: #da1e28;
-  color: #ffffff;
-}
-
-.window-titlebar__close:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: -2px;
+  padding-bottom: calc(var(--window-taskbar-height) + 1.5rem);
 }
 
 .window-taskbar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--window-shell-gap);
+  bottom: 0;
   z-index: 40;
   display: flex;
   align-items: center;
@@ -89,8 +32,8 @@
   min-height: var(--window-taskbar-height);
   padding: 0 0.5rem;
   border-top: 1px solid var(--window-shell-border);
-  border-bottom: 1px solid var(--window-shell-border);
-  background: color-mix(in srgb, var(--window-shell-surface) 96%, transparent);
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--window-shell-surface) 96%, black 4%);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
     0 12px 24px color-mix(in srgb, black 18%, transparent);
