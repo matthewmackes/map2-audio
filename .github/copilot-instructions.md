@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority cluster reconciliation documented)
+> **Last Updated**: April 6, 2026 (State Authority template CRUD documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Template CRUD
+- **Section**: Update Log
+- **Change**: Documented the first `T777` slice: templates now reuse the canonical snapshot/document persistence path, are written as `meta.type = template`, have dedicated CRUD/import/export routes, and are filtered out of default snapshot listings.
+- **Reason**: The template/composition epic needed a first-class persistence surface before live-link merging or community portability could build on top of it safely.
+- **Impact**: Future template work should extend these document-typed template flows instead of adding a parallel table or bespoke non-document template storage.
 
 ### [2026-04-06] - State Authority Cluster Reconciliation Reporting
 - **Section**: Update Log

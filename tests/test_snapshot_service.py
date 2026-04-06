@@ -416,6 +416,64 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     asyncio.run(_run())
 
 
+def test_snapshot_service_template_crud_and_portability(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            snapshot = await service.create_snapshot(
+                name="Only Snapshot",
+                detail_payload={"chains": [], "channels": [], "routing": {}, "midi_map": []},
+            )
+            template = await service.create_template(
+                name="Amp Stack Template",
+                description="Reusable graph template",
+                tags=["template", "guitar"],
+                detail_payload={
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Template Chain",
+                            "plugins": [{"uri": "urn:test:amp", "parameters": {"gain": 0.5}}],
+                        }
+                    ],
+                    "channels": [
+                        {
+                            "channel_key": "a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "routing": {"mode": "parallel_blend", "active_channel_key": "a", "blend_positions": {"a": 100.0}},
+                    "midi_map": [],
+                },
+            )
+            listed_snapshots = await service.list_snapshots()
+            listed_templates = await service.list_templates()
+            exported = await service.export_template(template["id"])
+            imported = await service.import_template(exported)
+            refetched_imported = await service.get_template(imported["id"])
+            return snapshot, template, listed_snapshots, listed_templates, exported, refetched_imported
+
+    snapshot, template, listed_snapshots, listed_templates, exported, refetched_imported = asyncio.run(_run())
+
+    assert [item["id"] for item in listed_snapshots] == [snapshot["id"]]
+    assert [item["id"] for item in listed_templates] == [template["id"]]
+    assert template["document_type"] == "template"
+    assert exported["template"]["document_type"] == "template"
+    assert refetched_imported["document_type"] == "template"
+    assert refetched_imported["chains"][0]["plugins"][0]["uri"] == "urn:test:amp"
+
+
 def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

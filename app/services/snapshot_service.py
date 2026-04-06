@@ -448,6 +448,7 @@ class SnapshotService:
         *,
         include_shared_only: bool = False,
         tags: Optional[Iterable[str]] = None,
+        document_type: str = "snapshot",
     ) -> list[dict[str, Any]]:
         stmt = (
             select(Snapshot)
@@ -482,13 +483,28 @@ class SnapshotService:
         except Exception as exc:
             logger.debug("Snapshot list runtime-state lookup skipped: %s", exc)
 
+        normalized_document_type = str(document_type or "snapshot").strip().lower()
+        filtered_snapshots = [
+            snapshot
+            for snapshot in snapshots
+            if normalized_document_type == "all"
+            or (
+                normalized_document_type == "template"
+                and self._snapshot_document_type(snapshot) == "template"
+            )
+            or (
+                normalized_document_type != "template"
+                and self._snapshot_document_type(snapshot) != "template"
+            )
+        ]
+
         summaries = [
             self._serialize_snapshot_summary(
                 snapshot,
                 live_snapshot_id=live_snapshot_id,
                 live_activated_at=live_activated_at,
             )
-            for snapshot in snapshots
+            for snapshot in filtered_snapshots
         ]
         tag_set = {str(tag).strip().lower() for tag in (tags or []) if str(tag).strip()}
         if not tag_set:
@@ -498,6 +514,18 @@ class SnapshotService:
             for summary in summaries
             if tag_set.issubset({tag.lower() for tag in summary.get("tags", [])})
         ]
+
+    async def list_templates(
+        self,
+        *,
+        include_shared_only: bool = False,
+        tags: Optional[Iterable[str]] = None,
+    ) -> list[dict[str, Any]]:
+        return await self.list_snapshots(
+            include_shared_only=include_shared_only,
+            tags=tags,
+            document_type="template",
+        )
 
     @staticmethod
     def _extract_preload_state(runtime_metrics: Any) -> dict[str, Any]:
@@ -1773,6 +1801,12 @@ class SnapshotService:
             return None
         return await self._serialize_snapshot_detail(snapshot)
 
+    async def get_template(self, template_id: int) -> Optional[dict[str, Any]]:
+        snapshot = await self._get_snapshot_model(template_id)
+        if snapshot is None or self._snapshot_document_type(snapshot) != "template":
+            return None
+        return await self._serialize_snapshot_detail(snapshot)
+
     async def get_control_plane_snapshot_id(self) -> Optional[int]:
         from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
@@ -1844,6 +1878,7 @@ class SnapshotService:
         is_locked: bool = False,
         apply_default_system_blocks: bool = True,
         capture_current_authority_extensions: bool = True,
+        document_type: str = "snapshot",
     ) -> dict[str, Any]:
         normalized_name = validate_snapshot_name(name)
         await self._validate_program_number(program_number)
@@ -1892,7 +1927,7 @@ class SnapshotService:
         normalized = await self._enrich_normalized_payload(normalized)
         await self._replace_snapshot_state(snapshot, normalized)
         snapshot.tags = self._derive_snapshot_tags_from_normalized(normalized)
-        await self._persist_snapshot_document(snapshot, normalized)
+        await self._persist_snapshot_document(snapshot, normalized, document_type=document_type)
         await self.session.flush()
 
         detail = await self.get_snapshot(snapshot.id)
@@ -1920,6 +1955,7 @@ class SnapshotService:
         detail_payload: Any = UNSET,
         create_revision: bool = False,
         capture_current_authority_extensions: bool = True,
+        document_type: str = "snapshot",
     ) -> Optional[dict[str, Any]]:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
@@ -1987,7 +2023,7 @@ class SnapshotService:
             snapshot.tags = self._derive_snapshot_tags_from_snapshot(snapshot)
             normalized = await self._snapshot_to_normalized(snapshot)
 
-        await self._persist_snapshot_document(snapshot, normalized)
+        await self._persist_snapshot_document(snapshot, normalized, document_type=document_type)
 
         await self.session.flush()
         if create_revision and revision_source is not None:
@@ -2049,6 +2085,45 @@ class SnapshotService:
             except Exception as exc:
                 logger.debug("Snapshot tempo runtime update skipped for %s: %s", snapshot.id, exc)
         return detail
+
+    async def create_template(
+        self,
+        *,
+        name: str,
+        description: str = "",
+        tags: Optional[list[str]] = None,
+        input_device: Optional[str] = None,
+        output_device: Optional[str] = None,
+        controls_payload: Optional[dict[str, Any]] = None,
+        detail_payload: Optional[dict[str, Any]] = None,
+        is_favorite: bool = False,
+        is_locked: bool = False,
+    ) -> dict[str, Any]:
+        return await self.create_snapshot(
+            name=name,
+            description=description,
+            tags=tags,
+            input_device=input_device,
+            output_device=output_device,
+            controls_payload=controls_payload,
+            detail_payload=detail_payload,
+            is_favorite=is_favorite,
+            is_locked=is_locked,
+            capture_current_authority_extensions=False,
+            document_type="template",
+        )
+
+    async def update_template(
+        self,
+        template_id: int,
+        **kwargs: Any,
+    ) -> Optional[dict[str, Any]]:
+        snapshot = await self._get_snapshot_model(template_id)
+        if snapshot is None or self._snapshot_document_type(snapshot) != "template":
+            return None
+        kwargs["document_type"] = "template"
+        kwargs.setdefault("capture_current_authority_extensions", False)
+        return await self.update_snapshot(template_id, **kwargs)
 
     async def delete_snapshot(self, snapshot_id: int) -> bool:
         snapshot = await self._get_snapshot_model(snapshot_id)
@@ -2578,6 +2653,17 @@ class SnapshotService:
             "asset_manifest": self._build_asset_manifest(detail),
         }
 
+    async def export_template(self, template_id: int) -> Optional[dict[str, Any]]:
+        detail = await self.get_template(template_id)
+        if detail is None:
+            return None
+        return {
+            "version": SNAPSHOT_BUNDLE_FORMAT_VERSION,
+            "exported_at": _utcnow().isoformat(),
+            "template": detail,
+            "asset_manifest": self._build_asset_manifest(detail),
+        }
+
     async def export_snapshot_bundle(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         payload = await self.export_snapshot(snapshot_id)
         if payload is None:
@@ -2629,6 +2715,25 @@ class SnapshotService:
             capture_current_authority_extensions=False,
         )
         return imported
+
+    async def import_template(self, payload: dict[str, Any] | bytes | bytearray) -> dict[str, Any]:
+        if isinstance(payload, (bytes, bytearray)):
+            detail_payload = await self._extract_snapshot_bundle_payload(bytes(payload))
+        elif "template" in payload and isinstance(payload["template"], dict):
+            detail_payload = payload["template"]
+        else:
+            detail_payload = payload
+
+        name = str(detail_payload.get("name") or "Imported Template")
+        return await self.create_template(
+            name=name,
+            description=str(detail_payload.get("description") or ""),
+            tags=list(detail_payload.get("tags") or []),
+            input_device=detail_payload.get("input_device"),
+            output_device=detail_payload.get("output_device"),
+            detail_payload=detail_payload,
+            is_locked=bool(detail_payload.get("is_locked", False)),
+        )
 
     async def get_snapshot_by_program(self, program_number: int) -> Optional[dict[str, Any]]:
         result = await self.session.execute(select(Snapshot).where(Snapshot.program_number == program_number))
@@ -2891,8 +2996,25 @@ class SnapshotService:
         result = await self.session.execute(select(Snapshot.display_order).order_by(Snapshot.display_order.desc()).limit(1))
         return int(result.scalar_one_or_none() or 0)
 
-    async def _persist_snapshot_document(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
-        await self.state_authority_documents.persist_snapshot_document(snapshot, normalized)
+    @staticmethod
+    def _snapshot_document_type(snapshot: Snapshot) -> str:
+        document = snapshot.document if isinstance(snapshot.document, dict) else {}
+        meta = document.get("meta") if isinstance(document.get("meta"), dict) else {}
+        document_type = str(meta.get("type") or "snapshot").strip().lower()
+        return "template" if document_type == "template" else "snapshot"
+
+    async def _persist_snapshot_document(
+        self,
+        snapshot: Snapshot,
+        normalized: dict[str, Any],
+        *,
+        document_type: str = "snapshot",
+    ) -> None:
+        await self.state_authority_documents.persist_snapshot_document(
+            snapshot,
+            normalized,
+            document_type=document_type,
+        )
 
     async def _replace_snapshot_state(self, snapshot: Snapshot, normalized: dict[str, Any]) -> None:
         snapshot.extensions_payload = copy.deepcopy(normalized.get("extensions") or {})
@@ -3958,6 +4080,7 @@ class SnapshotService:
             "active_channel_index": channel_key_to_index.get(routing["active_channel_key"], 0),
             "channel_count": len(detail_channels),
             "chain_count": len(chains_payload),
+            "document_type": self._snapshot_document_type(snapshot_row) if snapshot_row is not None else "snapshot",
             "community_uuid": snapshot_row.community_uuid if snapshot_row is not None else None,
             "community_shared": bool(snapshot_row.community_shared) if snapshot_row is not None else False,
             "community_author": snapshot_row.community_author if snapshot_row is not None else "Anonymous",
@@ -4036,6 +4159,7 @@ class SnapshotService:
             "channels": channel_summaries,
             "channel_count": len(channel_summaries),
             "chain_count": len(snapshot.chains),
+            "document_type": self._snapshot_document_type(snapshot),
             "community_uuid": snapshot.community_uuid,
             "community_shared": bool(snapshot.community_shared),
             "community_author": snapshot.community_author,

@@ -624,6 +624,49 @@ def test_runtime_reconciliation_routes_delegate_to_runtime_state_service(tmp_pat
     assert cluster["correction_total"] == 2
 
 
+def test_template_routes_delegate_to_snapshot_service(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _FakeSnapshotService:
+        def __init__(self, session=None):
+            pass
+
+        async def create_template(self, **kwargs):
+            return {"id": 91, "name": kwargs["name"], "document_type": "template", "chains": [], "channels": []}
+
+        async def list_templates(self, **kwargs):
+            return [{"id": 91, "name": "Clean Template", "document_type": "template"}]
+
+        async def get_template(self, template_id):
+            if template_id != 91:
+                return None
+            return {"id": 91, "name": "Clean Template", "document_type": "template", "chains": [], "channels": []}
+
+        async def update_template(self, template_id, **kwargs):
+            if template_id != 91:
+                return None
+            return {"id": 91, "name": kwargs.get("name") or "Updated Template", "document_type": "template"}
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+
+    async def _run():
+        created = await routes.create_template(
+            routes.SnapshotCreateRequest(name="Clean Template", snapshot_data={"chains": [], "channels": [], "routing": {}, "midi_map": []})
+        )
+        listed = await routes.list_templates()
+        fetched = await routes.get_template(91)
+        updated = await routes.update_template(91, routes.SnapshotUpdateRequest(name="Updated Template"))
+        return created, listed, fetched, updated
+
+    created, listed, fetched, updated = asyncio.run(_run())
+
+    assert created["template_id"] == 91
+    assert listed["count"] == 1
+    assert listed["templates"][0]["document_type"] == "template"
+    assert fetched["id"] == 91
+    assert updated["template"]["name"] == "Updated Template"
+
+
 def test_revision_routes_call_state_authority_revision_service_directly(monkeypatch):
     revision_calls: list[tuple[str, int, int | None]] = []
 

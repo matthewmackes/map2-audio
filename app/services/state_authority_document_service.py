@@ -51,6 +51,8 @@ class StateAuthorityDocumentService:
         self,
         snapshot: Snapshot,
         normalized: dict[str, Any],
+        *,
+        document_type: str = "snapshot",
     ) -> dict[str, Any]:
         routing = normalized.get("routing") if isinstance(normalized.get("routing"), dict) else {}
         document = {
@@ -60,7 +62,7 @@ class StateAuthorityDocumentService:
                 "description": snapshot.description or "",
                 "tags": list(snapshot.tags or []),
                 "program_number": snapshot.program_number,
-                "type": "snapshot",
+                "type": str(document_type or "snapshot"),
                 "is_favorite": bool(snapshot.is_favorite),
                 "is_locked": bool(snapshot.is_locked),
                 "display_order": int(snapshot.display_order or 0),
@@ -123,15 +125,21 @@ class StateAuthorityDocumentService:
         self,
         snapshot: Snapshot,
         normalized: dict[str, Any],
+        *,
+        document_type: str = "snapshot",
     ) -> dict[str, Any]:
-        return normalize_and_validate_graph_document(self.build_document(snapshot, normalized))
+        return normalize_and_validate_graph_document(
+            self.build_document(snapshot, normalized, document_type=document_type)
+        )
 
     async def persist_snapshot_document(
         self,
         snapshot: Snapshot,
         normalized: dict[str, Any],
+        *,
+        document_type: str = "snapshot",
     ) -> None:
-        snapshot.document = self.build_validated_document(snapshot, normalized)
+        snapshot.document = self.build_validated_document(snapshot, normalized, document_type=document_type)
         await self.sync_asset_registry(snapshot.document)
 
     async def sync_asset_registry(self, document: dict[str, Any]) -> None:

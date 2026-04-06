@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 08:27 EDT - T776 completed with cluster reconciliation reporting and Prometheus drift metrics.
+Last updated: 2026-04-06 08:39 EDT - T777-subA completed with canonical graph-template CRUD on the State Authority path.
 
 ## Performance Brain
 
@@ -1111,7 +1111,7 @@ Last updated: 2026-04-06 08:27 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T777
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Deliver live-linked template composition, portability, and community-aware graph workflows
 Description:
 - Goal / acceptance criteria: Implement flat templates with base-plus-overlay resolution, override-always-wins merging, live-link cascade updates, template CRUD/services, template update event publishing, and the portability/community paths needed to import, export, bundle, share, and browse graph documents and templates without reintroducing side data models.
@@ -1119,9 +1119,50 @@ Description:
 - Dependencies: T771, T772
 - Estimated effort: High
 - Required outputs: Template/community/portability services, live-link resolution logic, bundle/import-export support, affected-snapshot update flow, and focused verification for override preservation and cascade semantics.
-Subtasks: None
+Subtasks:
+  - ID: T777-subA
+    Status: [✓] Done
+    Title: Add graph-template CRUD on the canonical State Authority document path
+    Description:
+    - Goal / acceptance criteria: Add first-class template create/list/get/update/import/export flows that reuse snapshot persistence and graph documents, mark template documents as `meta.type = template`, and keep template rows out of ordinary snapshot listings.
+    - Why it matters: The template epic needs one canonical persistence path before live-link cascades and community portability can build on it safely.
+    - Dependencies: T771, T772
+    - Estimated effort: Medium
+    - Required outputs: Service methods, route surface, focused regression coverage, and worklist/memory updates.
+    Assigned to: Codex
+    Last updated: 2026-04-06 08:34 EDT - Codex
+  - ID: T777-subB
+    Status: [ ] Todo
+    Title: Implement base-plus-overlay resolution and live-link cascade semantics
+    Description:
+    - Goal / acceptance criteria: Add override-always-wins template resolution, persist live-link metadata, and propagate template updates into affected linked documents without trampling local overrides.
+    - Why it matters: Templates are incomplete until they can act as a reusable authority base rather than a one-time copy source.
+    - Dependencies: T777-subA
+    - Estimated effort: High
+    - Required outputs: Resolution/merge logic, live-link update flow, and focused verification for preserved overrides.
+    Assigned to: Codex
+    Last updated: 2026-04-06 08:34 EDT - Codex
+  - ID: T777-subC
+    Status: [ ] Todo
+    Title: Extend portability and community workflows to graph templates and bundles
+    Description:
+    - Goal / acceptance criteria: Add template-aware bundle import/export/share/browse flows so templates and graph documents travel through the same portability path as snapshots.
+    - Why it matters: The portability/community promise is incomplete until reusable graph templates can be exchanged and browsed without reintroducing a side model.
+    - Dependencies: T777-subA
+    - Estimated effort: Medium
+    - Required outputs: Template bundle/community endpoints, manifest support, and focused validation.
+    Assigned to: Codex
+    Last updated: 2026-04-06 08:39 EDT - Codex
+    - Completion notes:
+      - Added first-class template create/list/get/update/import/export flows by reusing the existing snapshot persistence stack while writing `meta.type = template` into the canonical State Authority document and filtering template rows out of ordinary snapshot listings.
+      - Added focused service and route coverage proving template records remain template-typed through CRUD and portability flows without leaking back into the default snapshot list surface.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k template_crud_and_portability` -> PASS
+      - `pytest -q tests/test_snapshot_routes.py -k template_routes_delegate_to_snapshot_service` -> PASS
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-06 08:39 EDT - Codex
 
 ID: T778
 Status: [ ] Todo

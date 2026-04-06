@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import httpx
+import json
 import logging
 from typing import Any, Optional
 
@@ -394,6 +395,106 @@ async def get_live_snapshot() -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error getting live snapshot: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/templates")
+async def list_templates(tags: Optional[str] = Query(default=None)) -> dict[str, Any]:
+    try:
+        tags_value = _normalize_optional_query_string(tags)
+        tag_list = [item.strip() for item in str(tags_value or "").split(",") if item.strip()]
+        async with get_session() as session:
+            service = SnapshotService(session)
+            templates = await service.list_templates(tags=tag_list)
+            return {
+                "templates": templates,
+                "count": len(templates),
+            }
+    except Exception as exc:
+        logger.error("Error listing templates: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/templates")
+async def create_template(request: SnapshotCreateRequest) -> dict[str, Any]:
+    try:
+        detail_payload = _detail_payload_from_request(request)
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.create_template(
+                name=request.name,
+                description=request.description,
+                tags=request.tags,
+                input_device=request.input_device,
+                output_device=request.output_device,
+                controls_payload=request.controls.model_dump(exclude_none=True) if request.controls is not None else None,
+                detail_payload=detail_payload if detail_payload is not UNSET else {},
+                is_favorite=False,
+                is_locked=request.is_locked,
+            )
+            return {
+                "status": "success",
+                "template_id": template["id"],
+                "template": template,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error creating template: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/templates/{template_id}")
+async def get_template(template_id: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.get_template(template_id)
+            if template is None:
+                _raise_not_found("Template")
+            return template
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting template %s: %s", template_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.patch("/api/templates/{template_id}")
+async def update_template(template_id: int, request: SnapshotUpdateRequest) -> dict[str, Any]:
+    try:
+        detail_payload = _detail_payload_from_request(request)
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.update_template(
+                template_id,
+                name=request.name,
+                description=request.description,
+                tags=request.tags,
+                program_number=request.program_number,
+                tempo_bpm=request.tempo_bpm,
+                derived_from_snapshot_id=request.derived_from_snapshot_id,
+                output_level_reference_dbfs=request.output_level_reference_dbfs,
+                output_level_warning_threshold_db=request.output_level_warning_threshold_db,
+                input_device=request.input_device,
+                output_device=request.output_device,
+                controls_payload=request.controls.model_dump(exclude_none=True) if request.controls is not None else UNSET,
+                is_favorite=request.is_favorite,
+                is_locked=request.is_locked,
+                display_order=request.display_order,
+                detail_payload=detail_payload,
+                create_revision=request.create_revision,
+            )
+            if template is None:
+                _raise_not_found("Template")
+            return {
+                "status": "success",
+                "template": template,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error updating template %s: %s", template_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -1212,6 +1313,47 @@ async def import_snapshot(request: Request) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error importing snapshot: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/templates/{template_id}/export")
+async def export_template(template_id: int) -> Response:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            payload = await service.export_template(template_id)
+            if payload is None:
+                _raise_not_found("Template")
+            filename = f'{payload["template"]["name"]}.map2template'
+            return Response(
+                content=json.dumps(payload).encode("utf-8"),
+                media_type="application/vnd.map2.template+json",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}"',
+                },
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error exporting template %s: %s", template_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/templates/import")
+async def import_template(request: Request) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.import_template(await request.json())
+            return {
+                "status": "success",
+                "template_id": template["id"],
+                "template": template,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error importing template: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
