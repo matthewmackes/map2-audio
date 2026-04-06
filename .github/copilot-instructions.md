@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 5, 2026 (Brain session-media adjunct boundary documented)
+> **Last Updated**: April 5, 2026 (Brain practice-coach adjunct boundary documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1593,6 +1593,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `git diff --check`
 - **Lesson**: Reuse the existing media runtime, but keep the product boundary hard. Session media belongs in the Brain workspace as an adjunct surface, not as a silent expansion of the core transport model.
 
+**67. Brain Practice Coaching Must Reuse Drum Practice State And Pack Catalog As A Separate Adjunct, Not A Parallel Brain Runtime (HIGH - Apr 5, 2026)**
+- **Files**: `app/services/performance_brain_service.py`, `tests/test_brain_routes.py`, `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/map2/api.ts`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: The next follow-up after session media was reintroducing practice packs and coaching flows. The failure mode was creating a second rehearsal model inside the Brain route, which would immediately drift from the real Drum Machine practice runtime and blur the Brain V1 boundary again.
+- **Root Cause**: The repo already had working rehearsal state and pack catalogs under the Drum Machine APIs, but the Brain route had no dedicated place to expose them. Without an explicit adjunct section and persisted section id, the path of least resistance would have been to bolt on duplicate Brain-owned practice state or scatter coaching controls into unrelated core sections.
+- **Fix**: Add a dedicated `Practice Coach` section to `PerformanceBrainPage`, extend the persisted Brain section contract with `practice_coach`, and drive style, count-in, quantization, variation, auto-fill, and active-pack selection through `drumsApi.getState()`, `drumsApi.updateState()`, `drumsApi.getFactoryPacks()`, and `drumsApi.getGeneratedPacks()` instead of inventing a parallel Brain-only rehearsal backend.
+- **Verification**: `pytest -q tests/test_brain_routes.py`; `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_routes.py`; `npm --prefix web run build`; `git diff --check`
+- **Lesson**: Adjunct recovery work should reuse the real legacy runtime until the State Authority redesign replaces it. Do not clone rehearsal state into the Brain just to make the route feel self-contained.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1863,6 +1871,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-05] - Brain Practice-Coach Adjunct Boundary
+- **Section**: Gotchas & Learned Fixes (#67), Update Log
+- **Change**: Documented that practice packs and coaching controls in the Brain workspace must stay a dedicated adjunct driven by the existing Drum Machine rehearsal runtime and pack catalog, with `practice_coach` added as a persisted routed section.
+- **Reason**: T769 reintroduced practice/coaching workflows, and the architectural rule is the same as session media: recover the workflow without letting it expand the core Brain transport/sequence identity or fork a duplicate rehearsal backend.
+- **Impact**: Future adjunct work should extend the dedicated practice-coach surface and shared Drum Machine runtime instead of scattering coaching controls across core Brain sections or creating Brain-owned copies of practice state.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`, `app/services/performance_brain_service.py`, `tests/test_brain_routes.py`, `web/src/app/pages/PerformanceBrainPage.tsx`, `web/src/app/pages/PerformanceBrainPage.test.tsx`, `web/src/map2/api.ts`
 
 ### [2026-04-05] - Brain Session-Media Adjunct Boundary
 - **Section**: Gotchas & Learned Fixes (#66), Update Log

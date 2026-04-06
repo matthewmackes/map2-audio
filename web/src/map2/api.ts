@@ -1714,7 +1714,7 @@ export interface BrainState {
   set_name: string
   active_slot: number
   active_layer_id: string
-  active_section: 'overview' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'session_media' | 'diagnostics'
+  active_section: 'overview' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'session_media' | 'practice_coach' | 'diagnostics'
   transport: BrainTransportState
   slots: BrainSlot[]
   layers: BrainLayer[]

@@ -21,6 +21,10 @@ const mockImportFromSynthForge = jest.fn()
 const mockGetBackingTracks = jest.fn()
 const mockGetBackingTrackTransport = jest.fn()
 const mockSetBackingTrackTransport = jest.fn()
+const mockGetDrumState = jest.fn()
+const mockGetFactoryPacks = jest.fn()
+const mockGetGeneratedPacks = jest.fn()
+const mockUpdateDrumState = jest.fn()
 
 jest.mock('@/app/components/PageHeader', () => ({
   PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
@@ -58,8 +62,12 @@ jest.mock('@/map2/api', () => ({
     updateSlot: jest.fn(async () => ({})),
   },
   drumsApi: {
+    getState: (...args: any[]) => mockGetDrumState(...args),
+    updateState: (...args: any[]) => mockUpdateDrumState(...args),
     getBackingTracks: (...args: any[]) => mockGetBackingTracks(...args),
     getBackingTrackTransport: (...args: any[]) => mockGetBackingTrackTransport(...args),
+    getFactoryPacks: (...args: any[]) => mockGetFactoryPacks(...args),
+    getGeneratedPacks: (...args: any[]) => mockGetGeneratedPacks(...args),
     setBackingTrackTransport: (...args: any[]) => mockSetBackingTrackTransport(...args),
   },
 }))
@@ -183,6 +191,53 @@ function makeBackingTrackTransport(overrides: Record<string, any> = {}) {
   }
 }
 
+function makeDrumPracticeState(overrides: Record<string, any> = {}) {
+  return {
+    ui_mode: 'practice',
+    bpm: 124,
+    volume: 80,
+    pattern: 3,
+    variation: 1,
+    transport: false,
+    swing: 10,
+    active_pack: 'factory-rock-pack',
+    practice_style_id: 'rock_8',
+    practice_variation: 4,
+    practice_change_quantization: 2,
+    practice_count_in_bars: 1,
+    practice_auto_fill: false,
+    midi_output_enabled: false,
+    midi_clock_output_enabled: false,
+    midi_output_channel: 9,
+    program_change_enabled: false,
+    track_swing: Array.from({ length: 16 }, () => 0),
+    pad_sound_sources: Array.from({ length: 16 }, () => 'sample'),
+    pad_synth_params: Array.from({ length: 16 }, () => ({ tone: 0 })),
+    pad_filters: Array.from({ length: 16 }, () => ({ type: 'lowpass', cutoff_hz: 12000, resonance: 0.1, env_amount: 0, env_decay_ms: 100 })),
+    pad_cv_gate_configs: Array.from({ length: 16 }, () => ({
+      enabled: false,
+      output_pair: 0,
+      gate_length_ms: 10,
+      note_min: 0,
+      note_max: 127,
+      pitch_min_volts: 0,
+      pitch_max_volts: 5,
+    })),
+    ...overrides,
+  }
+}
+
+function makePracticePacks() {
+  return {
+    factory: [
+      { pack_id: 'factory-rock-pack', name: 'Factory Rock Pack', description: 'Straight rehearsal pack with counted intros.', source: 'factory', filename: 'factory-rock.json' },
+    ],
+    generated: [
+      { pack_id: 'user-funk-pack', name: 'User Funk Pack', description: 'Syncopated coaching pack with tighter fills.', source: 'generated', filename: 'user-funk.json' },
+    ],
+  }
+}
+
 function makeState(activeSection = 'overview') {
   return {
     instance_id: 'workspace-default',
@@ -275,6 +330,10 @@ function primeApi({
   mockGetBackingTracks.mockResolvedValue(makeBackingTracks())
   mockGetBackingTrackTransport.mockResolvedValue(makeBackingTrackTransport())
   mockSetBackingTrackTransport.mockResolvedValue(makeBackingTrackTransport())
+  mockGetDrumState.mockResolvedValue(makeDrumPracticeState())
+  mockGetFactoryPacks.mockResolvedValue(makePracticePacks().factory)
+  mockGetGeneratedPacks.mockResolvedValue(makePracticePacks().generated)
+  mockUpdateDrumState.mockResolvedValue(makeDrumPracticeState())
 }
 
 function LocationProbe() {
@@ -438,6 +497,28 @@ describe('PerformanceBrainPage', () => {
       position_seconds: 0,
       is_playing: false,
     }))
+  })
+
+  it('renders practice coaching as an adjunct and routes rehearsal mutations through drum state', async () => {
+    mockUpdateDrumState
+      .mockResolvedValueOnce(makeDrumPracticeState({ practice_style_id: 'jazz_swing' }))
+      .mockResolvedValueOnce(makeDrumPracticeState({ practice_count_in_bars: 3 }))
+      .mockResolvedValueOnce(makeDrumPracticeState({ active_pack: 'user-funk-pack' }))
+
+    renderPage('/brain?section=practice_coach')
+
+    await waitFor(() => expect(screen.getByText('Practice and coaching adjunct')).toBeInTheDocument())
+    expect(screen.getByText(/Practice packs and coaching cues stay outside the core Performance Brain transport/)).toBeInTheDocument()
+    expect(screen.getAllByText('Factory Rock Pack').length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jazz Swing' }))
+    await waitFor(() => expect(mockUpdateDrumState).toHaveBeenCalledWith({ practice_style_id: 'jazz_swing' }))
+
+    fireEvent.change(screen.getByLabelText('Practice count-in bars'), { target: { value: '3' } })
+    await waitFor(() => expect(mockUpdateDrumState).toHaveBeenCalledWith({ practice_count_in_bars: 3 }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load User Funk Pack' }))
+    await waitFor(() => expect(mockUpdateDrumState).toHaveBeenCalledWith({ active_pack: 'user-funk-pack' }))
   })
 
   it('auto-runs a scoped drum handoff import and clears the handoff flag from the route', async () => {

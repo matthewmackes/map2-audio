@@ -37,6 +37,8 @@ _SECTION_IDS = (
     "routing",
     "inputs",
     "library",
+    "session_media",
+    "practice_coach",
     "diagnostics",
 )
 BRAIN_RUNTIME_TOPIC = "brain:runtime"
@@ -358,6 +360,7 @@ class BrainStateModel(BaseModel):
         "inputs",
         "library",
         "session_media",
+        "practice_coach",
         "diagnostics",
     ] = "overview"
     transport: BrainTransportStateModel = Field(default_factory=BrainTransportStateModel)
@@ -398,6 +401,7 @@ class BrainStateUpdateModel(BaseModel):
         "inputs",
         "library",
         "session_media",
+        "practice_coach",
         "diagnostics",
     ] | None = None
 

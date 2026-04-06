@@ -376,6 +376,18 @@ def test_brain_routes_accept_session_media_active_section(tmp_path):
     assert response.json()["active_section"] == "session_media"
 
 
+def test_brain_routes_accept_practice_coach_active_section(tmp_path):
+    client, _, _ = make_client(tmp_path)
+
+    response = client.post(
+        "/api/engine/brain/state",
+        json={"active_section": "practice_coach"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["active_section"] == "practice_coach"
+
+
 def test_brain_routes_expose_scoped_controller_qualification(tmp_path):
     client, _, authority_sync = make_client(tmp_path)
 

@@ -588,7 +588,7 @@ Last updated: 2026-04-05 19:53 EDT - Codex
   - Licensing review: touched frontend/worklist/instructions artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T769
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add practice-pack and style-coaching workflows as a separate Brain adjunct
 Description:
 - Goal / acceptance criteria: Reintroduce practice packs and coaching flows as a separate Brain adjunct after the core product is stable, with boundaries that keep rehearsal content distinct from the core brain workflow.
@@ -598,7 +598,18 @@ Description:
 - Required outputs: Adjunct design/implementation tasks, workflow integration, and validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-05 09:38 EDT - Codex
+Last updated: 2026-04-05 20:30 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/PerformanceBrainPage.tsx` with a dedicated `Practice Coach` rail section that keeps style coaching and practice-pack flows visible in the Brain workspace while preserving an explicit adjunct boundary away from the core Brain transport, slot graph, and sequence identity.
+  - Reused the existing Drum Machine rehearsal runtime through `drumsApi.getState()`, `drumsApi.updateState()`, `drumsApi.getFactoryPacks()`, and `drumsApi.getGeneratedPacks()` so style selection, count-in bars, quantization, variation, auto-fill, and active-pack assignment all run through the established practice contract instead of a duplicate Brain-only model.
+  - Extended the Brain state contract so routed section persistence accepts `practice_coach`, then covered the adjunct with UI and route regressions to prove the new section survives persisted Brain state and drives the existing practice runtime correctly.
+- Validation:
+  - `pytest -q tests/test_brain_routes.py` -> PASS (`9 passed`)
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PerformanceBrainPage.test.tsx` -> PASS (`9 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_routes.py` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check` -> PASS
+  - Licensing review: touched backend/frontend/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app tests web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ## MAP2 State Authority
 

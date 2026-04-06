@@ -17,7 +17,7 @@ import {
   type BrainTransportState,
   type PluginRuntimeScopeOptions,
 } from '@/map2/api'
-import type { DrumBackingTrackSummary, DrumBackingTrackTransportState } from '@/map2/types'
+import type { DrumBackingTrackSummary, DrumBackingTrackTransportState, DrumPack } from '@/map2/types'
 import { parseBrainImportSource } from './brainHandoff'
 import './PerformanceBrainPage.css'
 
@@ -30,7 +30,19 @@ const SECTION_DEFS = [
   { id: 'inputs', label: 'Inputs', eyebrow: 'Zones and triggers' },
   { id: 'library', label: 'Library', eyebrow: 'Assets and import' },
   { id: 'session_media', label: 'Session Media', eyebrow: 'Backing tracks adjunct' },
+  { id: 'practice_coach', label: 'Practice Coach', eyebrow: 'Packs and coaching adjunct' },
   { id: 'diagnostics', label: 'Diagnostics', eyebrow: 'Latency and health' },
+] as const
+
+const PRACTICE_STYLES = [
+  { id: 'rock_8', label: 'Rock 8', feel: 'Straight', signature: '4/4' },
+  { id: 'rock_16', label: 'Rock 16', feel: 'Driving', signature: '4/4' },
+  { id: 'shuffle_blues', label: 'Shuffle Blues', feel: 'Shuffle', signature: '12/8' },
+  { id: 'funk_16', label: 'Funk 16', feel: 'Syncopated', signature: '4/4' },
+  { id: 'metal_doublekick', label: 'Metal DK', feel: 'Aggressive', signature: '4/4' },
+  { id: 'pop_4onfloor', label: 'Pop 4', feel: 'Four on Floor', signature: '4/4' },
+  { id: 'jazz_swing', label: 'Jazz Swing', feel: 'Swing', signature: '4/4' },
+  { id: 'reggae_1drop', label: 'Reggae 1', feel: 'One Drop', signature: '4/4' },
 ] as const
 
 type SectionId = (typeof SECTION_DEFS)[number]['id']
@@ -103,6 +115,17 @@ function selectedBackingTrack(
   tracks: DrumBackingTrackSummary[],
   transport: DrumBackingTrackTransportState) {
   return tracks.find((track) => track.track_id === transport.track_id)
+}
+
+function selectedPracticeStyle(styleId: string | null | undefined) {
+  return PRACTICE_STYLES.find((style) => style.id === styleId)
+}
+
+function selectedPracticePack(
+  packs: DrumPack[],
+  activePackId: string | null | undefined,
+) {
+  return packs.find((pack) => pack.pack_id === activePackId)
 }
 
 function OverviewCards({
@@ -228,6 +251,21 @@ export function PerformanceBrainPage() {
     refetchInterval: (query) => (query.state.data?.is_playing ? 500 : 2_000),
     staleTime: 250,
   })
+  const drumPracticeStateQuery = useQuery({
+    queryKey: ['brain', 'practice-coach', 'drum-state'],
+    queryFn: () => drumsApi.getState(),
+    staleTime: 2_000,
+  })
+  const factoryPracticePacksQuery = useQuery({
+    queryKey: ['brain', 'practice-coach', 'packs', 'factory'],
+    queryFn: () => drumsApi.getFactoryPacks(),
+    staleTime: 60_000,
+  })
+  const generatedPracticePacksQuery = useQuery({
+    queryKey: ['brain', 'practice-coach', 'packs', 'generated'],
+    queryFn: () => drumsApi.getGeneratedPacks(),
+    staleTime: 60_000,
+  })
 
   const [setNameDraft, setSetNameDraft] = useState('')
 
@@ -273,6 +311,12 @@ export function PerformanceBrainPage() {
     mutationFn: (patch: Parameters<typeof drumsApi.setBackingTrackTransport>[0]) => drumsApi.setBackingTrackTransport(patch),
     onSuccess: (transportState) => {
       queryClient.setQueryData(['brain', 'session-media', 'backing-tracks', 'transport'], transportState)
+    },
+  })
+  const drumPracticeStateMutation = useMutation({
+    mutationFn: (patch: Parameters<typeof drumsApi.updateState>[0]) => drumsApi.updateState(patch),
+    onSuccess: (nextState) => {
+      queryClient.setQueryData(['brain', 'practice-coach', 'drum-state'], nextState)
     },
   })
 
@@ -342,6 +386,11 @@ export function PerformanceBrainPage() {
   const diagnostics = diagnosticsQuery.data
   const backingTracks = backingTracksQuery.data ?? []
   const backingTrackTransport = backingTrackTransportQuery.data
+  const drumPracticeState = drumPracticeStateQuery.data
+  const practicePacks = [
+    ...(factoryPracticePacksQuery.data ?? []),
+    ...(generatedPracticePacksQuery.data ?? []),
+  ]
 
   if (
     stateQuery.isLoading
@@ -350,6 +399,9 @@ export function PerformanceBrainPage() {
     || diagnosticsQuery.isLoading
     || backingTracksQuery.isLoading
     || backingTrackTransportQuery.isLoading
+    || drumPracticeStateQuery.isLoading
+    || factoryPracticePacksQuery.isLoading
+    || generatedPracticePacksQuery.isLoading
   ) {
     return (
       <section className="brain-page brain-page--loading">
@@ -358,7 +410,19 @@ export function PerformanceBrainPage() {
     )
   }
 
-  if (!state || !transport || !slots || !layers || !sequence || !mixer || !inputs || !library || !diagnostics || !backingTrackTransport) {
+  if (
+    !state
+    || !transport
+    || !slots
+    || !layers
+    || !sequence
+    || !mixer
+    || !inputs
+    || !library
+    || !diagnostics
+    || !backingTrackTransport
+    || !drumPracticeState
+  ) {
     return (
       <section className="brain-page">
         <InlineNotification
@@ -378,6 +442,8 @@ export function PerformanceBrainPage() {
   const qualification = diagnostics.controller_qualification
   const controllerAlerts = uniqueItems([...diagnostics.warnings, ...qualification.issues])
   const activeBackingTrack = selectedBackingTrack(backingTracks, backingTrackTransport)
+  const activePracticeStyle = selectedPracticeStyle(drumPracticeState.practice_style_id)
+  const activePracticePack = selectedPracticePack(practicePacks, drumPracticeState.active_pack)
 
   const handleSectionChange = (sectionId: SectionId) => {
     if (searchParams.get('section') !== sectionId) {
@@ -871,6 +937,105 @@ export function PerformanceBrainPage() {
                         onClick={() => backingTrackTransportMutation.mutate({ track_id: track.track_id, position_seconds: 0, is_playing: false })}
                       >
                         {track.track_id === backingTrackTransport.track_id ? `Loaded ${track.name}` : `Load ${track.name}`}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </Tile>
+            </div>
+          ) : null}
+
+          {activeSection === 'practice_coach' ? (
+            <div className="brain-page__section-grid">
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Practice and coaching adjunct</span>
+                <strong>{activePracticeStyle?.label ?? 'Select a coaching style'}</strong>
+                <p className="brain-page__panel-copy">
+                  Practice packs and coaching cues stay outside the core Performance Brain transport,
+                  slot graph, and sequence identity. This adjunct reuses the Drum Machine rehearsal runtime
+                  without collapsing Brain V1 back into a multi-identity monolith.
+                </p>
+                <ul className="brain-page__flat-list">
+                  <li><strong>Active style</strong> · {activePracticeStyle?.label ?? 'Unassigned'} · {activePracticeStyle?.feel ?? 'Choose a feel'} · {activePracticeStyle?.signature ?? 'No signature'}</li>
+                  <li><strong>Active pack</strong> · {activePracticePack?.name ?? 'No pack assigned'}</li>
+                  <li><strong>Mode source</strong> · Drum practice runtime · count-in {drumPracticeState.practice_count_in_bars} bars</li>
+                </ul>
+              </Tile>
+
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Style coaching</span>
+                <div className="brain-page__button-row">
+                  {PRACTICE_STYLES.map((style) => (
+                    <Button
+                      key={style.id}
+                      size="sm"
+                      kind={style.id === drumPracticeState.practice_style_id ? 'primary' : 'secondary'}
+                      onClick={() => drumPracticeStateMutation.mutate({ practice_style_id: style.id })}
+                    >
+                      {style.label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="brain-page__metric-row">
+                  <span>Count-in bars</span>
+                  <input
+                    className="brain-page__number-input"
+                    aria-label="Practice count-in bars"
+                    type="number"
+                    min={0}
+                    max={4}
+                    value={drumPracticeState.practice_count_in_bars}
+                    onChange={(event) => drumPracticeStateMutation.mutate({ practice_count_in_bars: Number(event.target.value) })}
+                  />
+                </div>
+                <div className="brain-page__metric-row">
+                  <span>Change quantization</span>
+                  <input
+                    className="brain-page__number-input"
+                    aria-label="Practice change quantization"
+                    type="number"
+                    min={1}
+                    max={8}
+                    value={drumPracticeState.practice_change_quantization}
+                    onChange={(event) => drumPracticeStateMutation.mutate({ practice_change_quantization: Number(event.target.value) })}
+                  />
+                </div>
+                <div className="brain-page__metric-row">
+                  <span>Variation</span>
+                  <input
+                    className="brain-page__number-input"
+                    aria-label="Practice variation"
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={drumPracticeState.practice_variation}
+                    onChange={(event) => drumPracticeStateMutation.mutate({ practice_variation: Number(event.target.value) })}
+                  />
+                </div>
+                <div className="brain-page__button-row">
+                  <Button
+                    size="sm"
+                    kind={drumPracticeState.practice_auto_fill ? 'primary' : 'secondary'}
+                    onClick={() => drumPracticeStateMutation.mutate({ practice_auto_fill: !drumPracticeState.practice_auto_fill })}
+                  >
+                    Auto Fill {drumPracticeState.practice_auto_fill ? 'On' : 'Off'}
+                  </Button>
+                </div>
+              </Tile>
+
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Practice-pack catalog</span>
+                <ul className="brain-page__flat-list">
+                  {practicePacks.map((pack) => (
+                    <li key={pack.pack_id}>
+                      <strong>{pack.name}</strong> · {pack.source} · {pack.description}
+                      {' '}
+                      <Button
+                        size="sm"
+                        kind={pack.pack_id === drumPracticeState.active_pack ? 'ghost' : 'secondary'}
+                        onClick={() => drumPracticeStateMutation.mutate({ active_pack: pack.pack_id })}
+                      >
+                        {pack.pack_id === drumPracticeState.active_pack ? `Loaded ${pack.name}` : `Load ${pack.name}`}
                       </Button>
                     </li>
                   ))}
