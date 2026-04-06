@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**979** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1447** total commits | **3** stars | **0** forks | **0** open issues
+**980** Python | **1118** TypeScript | **136** C++/H | **131** Docs | **1450** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0fb77dfc`](https://github.com/matthewmackes/map2-audio/commit/0fb77dfc0546f27743ec094da6f91330f17cae40) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
+| [`c943ecce`](https://github.com/matthewmackes/map2-audio/commit/c943ecce39eddfeb5617f7068ec8b75768456f0c) | Add graph-document crossfade activation | Map2 Audio | 2026-04-05 |
+| [`0af13a1e`](https://github.com/matthewmackes/map2-audio/commit/0af13a1eb80ea9691447047252a76b25c78766a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`7ae9636d`](https://github.com/matthewmackes/map2-audio/commit/7ae9636ddee65239552cbca489620d9d47139dba) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`f2d403c3`](https://github.com/matthewmackes/map2-audio/commit/f2d403c34797097135f298e06ab9d2e99f92cec8) | Test JUCE graph-document import | Map2 Audio | 2026-04-05 |
 | [`9177ae3e`](https://github.com/matthewmackes/map2-audio/commit/9177ae3e85e63641adbae4491800349fd0717df6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`e5a459ae`](https://github.com/matthewmackes/map2-audio/commit/e5a459ae70b5a7065568402045bb227ab32583b6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
 | [`46294d8d`](https://github.com/matthewmackes/map2-audio/commit/46294d8dac51fab0842f30b6898b4768770563b0) | Add JUCE graph-document bindings | Map2 Audio | 2026-04-05 |
-| [`fb1c5442`](https://github.com/matthewmackes/map2-audio/commit/fb1c54428d65ea40e3b3b7dbb2b41d20258bd7a3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`a8282840`](https://github.com/matthewmackes/map2-audio/commit/a82828400e9ef0a4fff43c605a3a2593a7a95a7b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-05 |
-| [`3e2e6198`](https://github.com/matthewmackes/map2-audio/commit/3e2e61982b88e14a476bbcb1e045307c580ecfbe) | Persist categorized revision summaries | Map2 Audio | 2026-04-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
