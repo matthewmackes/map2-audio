@@ -560,6 +560,70 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
     asyncio.run(_run())
 
 
+def test_runtime_reconciliation_routes_delegate_to_runtime_state_service(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _FakeRuntimeStateService:
+        def __init__(self, session=None):
+            self.local_node_id = "node-a"
+
+        async def get_runtime_reconciliation_report(self):
+            return {
+                "node_id": "node-a",
+                "generated_at": "2026-04-06T12:15:00+00:00",
+                "state": "live",
+                "snapshot_id": 44,
+                "snapshot_revision": "rev-44",
+                "snapshot_name": "Chorus",
+                "reconciliation": {
+                    "status": "healthy",
+                    "correction_count": 0,
+                },
+            }
+
+        async def get_cluster_reconciliation_report(self):
+            return {
+                "local_node_id": "node-a",
+                "generated_at": "2026-04-06T12:15:00+00:00",
+                "count": 2,
+                "healthy_nodes": 1,
+                "drifted_nodes": 1,
+                "self_healed_nodes": 1,
+                "reactivation_required_nodes": 0,
+                "asset_redeploy_required_nodes": 0,
+                "correction_total": 2,
+                "nodes": [
+                    {
+                        "node_id": "node-a",
+                        "state": "live",
+                        "snapshot_id": 44,
+                        "reconciliation": {"status": "healthy", "correction_count": 0},
+                    },
+                    {
+                        "node_id": "node-b",
+                        "state": "live",
+                        "snapshot_id": 44,
+                        "reconciliation": {"status": "self_healed", "correction_count": 2},
+                    },
+                ],
+            }
+
+    monkeypatch.setattr(runtime_state_service_module, "SnapshotRuntimeStateService", _FakeRuntimeStateService)
+
+    async def _run():
+        local = await routes.get_runtime_reconciliation()
+        cluster = await routes.get_cluster_runtime_reconciliation()
+        return local, cluster
+
+    local, cluster = asyncio.run(_run())
+
+    assert local["node_id"] == "node-a"
+    assert local["reconciliation"]["status"] == "healthy"
+    assert cluster["count"] == 2
+    assert cluster["drifted_nodes"] == 1
+    assert cluster["correction_total"] == 2
+
+
 def test_revision_routes_call_state_authority_revision_service_directly(monkeypatch):
     revision_calls: list[tuple[str, int, int | None]] = []
 

@@ -11,6 +11,7 @@ try:
     from app.services.performance_metrics import get_metrics_collector
     from app.services.request_latency_metrics import get_request_latency_collector
     from app.services.jack_audio import get_jack_client
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
     router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 
@@ -123,6 +124,79 @@ try:
         except Exception:
             return ""
 
+    def _append_state_authority_reconciliation_metrics(lines: list[str], report: dict, *, include_summary: bool) -> None:
+        if not isinstance(report, dict):
+            return
+        nodes = [node for node in report.get("nodes", []) if isinstance(node, dict)]
+        lines.extend(
+            [
+                "# HELP map2_state_authority_reconciliation_nodes_total Total nodes included in the State Authority reconciliation report",
+                "# TYPE map2_state_authority_reconciliation_nodes_total gauge",
+                f"map2_state_authority_reconciliation_nodes_total {int(report.get('count', len(nodes)) or 0)}",
+                "# HELP map2_state_authority_reconciliation_corrections_total Total targeted State Authority corrections recorded across the report scope",
+                "# TYPE map2_state_authority_reconciliation_corrections_total gauge",
+                f"map2_state_authority_reconciliation_corrections_total {int(report.get('correction_total', 0) or 0)}",
+            ]
+        )
+        if include_summary:
+            lines.extend(
+                [
+                    "# HELP map2_state_authority_reconciliation_nodes_healthy Healthy nodes in the State Authority reconciliation report",
+                    "# TYPE map2_state_authority_reconciliation_nodes_healthy gauge",
+                    f"map2_state_authority_reconciliation_nodes_healthy {int(report.get('healthy_nodes', 0) or 0)}",
+                    "# HELP map2_state_authority_reconciliation_nodes_drifted Drifted nodes in the State Authority reconciliation report",
+                    "# TYPE map2_state_authority_reconciliation_nodes_drifted gauge",
+                    f"map2_state_authority_reconciliation_nodes_drifted {int(report.get('drifted_nodes', 0) or 0)}",
+                    "# HELP map2_state_authority_reconciliation_nodes_self_healed Self-healed nodes in the State Authority reconciliation report",
+                    "# TYPE map2_state_authority_reconciliation_nodes_self_healed gauge",
+                    f"map2_state_authority_reconciliation_nodes_self_healed {int(report.get('self_healed_nodes', 0) or 0)}",
+                    "# HELP map2_state_authority_reconciliation_nodes_reactivation_required Nodes that require snapshot reactivation",
+                    "# TYPE map2_state_authority_reconciliation_nodes_reactivation_required gauge",
+                    f"map2_state_authority_reconciliation_nodes_reactivation_required {int(report.get('reactivation_required_nodes', 0) or 0)}",
+                    "# HELP map2_state_authority_reconciliation_nodes_asset_redeploy_required Nodes that require asset redeploy",
+                    "# TYPE map2_state_authority_reconciliation_nodes_asset_redeploy_required gauge",
+                    f"map2_state_authority_reconciliation_nodes_asset_redeploy_required {int(report.get('asset_redeploy_required_nodes', 0) or 0)}",
+                ]
+            )
+
+        lines.extend(
+            [
+                "# HELP map2_state_authority_reconciliation_node_status Node-level State Authority reconciliation status",
+                "# TYPE map2_state_authority_reconciliation_node_status gauge",
+                "# HELP map2_state_authority_reconciliation_node_parameter_drift Parameter drift count by node",
+                "# TYPE map2_state_authority_reconciliation_node_parameter_drift gauge",
+                "# HELP map2_state_authority_reconciliation_node_bypass_drift Bypass drift count by node",
+                "# TYPE map2_state_authority_reconciliation_node_bypass_drift gauge",
+                "# HELP map2_state_authority_reconciliation_node_missing_assets Missing asset count by node",
+                "# TYPE map2_state_authority_reconciliation_node_missing_assets gauge",
+                "# HELP map2_state_authority_reconciliation_node_corrections Targeted correction count by node",
+                "# TYPE map2_state_authority_reconciliation_node_corrections gauge",
+                "# HELP map2_state_authority_reconciliation_node_topology_drift Whether topology drift is present for a node",
+                "# TYPE map2_state_authority_reconciliation_node_topology_drift gauge",
+                "# HELP map2_state_authority_reconciliation_node_reactivation_required Whether a node requires snapshot reactivation",
+                "# TYPE map2_state_authority_reconciliation_node_reactivation_required gauge",
+                "# HELP map2_state_authority_reconciliation_node_asset_redeploy_required Whether a node requires asset redeploy",
+                "# TYPE map2_state_authority_reconciliation_node_asset_redeploy_required gauge",
+            ]
+        )
+
+        for node in nodes:
+            reconciliation = node.get("reconciliation") if isinstance(node.get("reconciliation"), dict) else {}
+            node_id = str(node.get("node_id") or "unknown").replace('"', '\\"')
+            status = str(reconciliation.get("status") or "not_run").replace('"', '\\"')
+            lines.extend(
+                [
+                    f'map2_state_authority_reconciliation_node_status{{node_id="{node_id}",status="{status}"}} 1',
+                    f'map2_state_authority_reconciliation_node_parameter_drift{{node_id="{node_id}"}} {int(reconciliation.get("parameter_drift_count", 0) or 0)}',
+                    f'map2_state_authority_reconciliation_node_bypass_drift{{node_id="{node_id}"}} {int(reconciliation.get("bypass_drift_count", 0) or 0)}',
+                    f'map2_state_authority_reconciliation_node_missing_assets{{node_id="{node_id}"}} {int(reconciliation.get("missing_asset_count", 0) or 0)}',
+                    f'map2_state_authority_reconciliation_node_corrections{{node_id="{node_id}"}} {int(reconciliation.get("correction_count", 0) or 0)}',
+                    f'map2_state_authority_reconciliation_node_topology_drift{{node_id="{node_id}"}} {1 if reconciliation.get("topology_drift") else 0}',
+                    f'map2_state_authority_reconciliation_node_reactivation_required{{node_id="{node_id}"}} {1 if reconciliation.get("reactivation_required") else 0}',
+                    f'map2_state_authority_reconciliation_node_asset_redeploy_required{{node_id="{node_id}"}} {1 if reconciliation.get("asset_redeploy_required") else 0}',
+                ]
+            )
+
     @router.get("/current")
     async def get_current_metrics():
         """Get current system metrics.
@@ -190,6 +264,24 @@ try:
         """
         collector = await get_metrics_collector()
         payloads = [collector.export_prometheus().strip()]
+        service = SnapshotRuntimeStateService()
+        reconciliation_report = (
+            await service.get_cluster_reconciliation_report()
+            if get_deployment_config().hosts_monitoring_stack()
+            else {
+                "count": 1,
+                "correction_total": 0,
+                "nodes": [await service.get_runtime_reconciliation_report()],
+            }
+        )
+        reconciliation_lines: list[str] = []
+        _append_state_authority_reconciliation_metrics(
+            reconciliation_lines,
+            reconciliation_report,
+            include_summary=bool(get_deployment_config().hosts_monitoring_stack()),
+        )
+        if reconciliation_lines:
+            payloads.append("\n".join(reconciliation_lines))
         cluster_metrics = _build_cluster_prometheus_metrics().strip()
         if cluster_metrics:
             payloads.append(cluster_metrics)

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 08:22 EDT - T776-subB completed with five-second local reconciliation and self-heal metrics in runtime live-state.
+Last updated: 2026-04-06 08:27 EDT - T776 completed with cluster reconciliation reporting and Prometheus drift metrics.
 
 ## Performance Brain
 
@@ -1044,7 +1044,7 @@ Assigned to: Codex
 Last updated: 2026-04-07 00:33 EDT - Codex
 
 ID: T776
-Status: [>] In Progress
+Status: [✓] Done
 Title: Implement layered reconciliation, drift correction, and cluster authority reporting
 Description:
 - Goal / acceptance criteria: Add the two-layer reconciliation design with per-node local self-heal and management-node cross-node coordination every five seconds, 1% drift tolerance, targeted parameter correction, topology-triggered reactivation, missing-plugin asset redeploy paths, runtime-only drift logging, and Prometheus-style drift metrics/reporting.
@@ -1083,7 +1083,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py tests/test_snapshot_runtime_state_progress.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T776-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add management-node cluster reconciliation reporting and Prometheus-style drift metrics
     Description:
     - Goal / acceptance criteria: Aggregate per-node reconciliation results through the existing cluster runtime surface, expose a cluster report endpoint, and publish Prometheus-style drift gauges and counters for local and cluster authority state.
@@ -1092,9 +1092,23 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Cluster report aggregation, metrics export updates, route coverage, and worklist/memory updates.
     Assigned to: Codex
-    Last updated: 2026-04-07 07:44 EDT - Codex
+    Last updated: 2026-04-06 08:27 EDT - Codex
+    - Completion notes:
+      - Added local and cluster runtime reconciliation APIs backed by `SnapshotRuntimeStateService`, with cluster summaries derived from the persisted per-node `runtime_metrics["state_authority_reconciliation"]` report instead of recomputing drift in the route layer.
+      - Extended `/api/metrics/prometheus` with State Authority reconciliation gauges for node counts, corrections, drift status, topology drift, reactivation requirements, and asset redeploy requirements, then locked the route/export surfaces with focused tests.
+    - Validation:
+      - `pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_snapshot_routes.py tests/test_observability_policy.py` -> PASS
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py app/routes/unified_snapshots.py app/routes/metrics.py tests/test_snapshot_runtime_state_progress.py tests/test_snapshot_routes.py tests/test_observability_policy.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 07:44 EDT - Codex
+Last updated: 2026-04-06 08:27 EDT - Codex
+- Completion notes:
+  - `T776` now has both layers required by the State Authority design: local five-second self-heal inside the runtime heartbeat and management-node cluster reporting/Prometheus export based on durable reconciliation state.
+  - Runtime drift no longer disappears inside engine-only state; it is classified, corrected when safe, surfaced through runtime APIs, and scrapeable through the existing observability stack.
+- Validation:
+  - `pytest -q tests/test_state_authority_reconciliation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_snapshot_routes.py tests/test_observability_policy.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_reconciliation_service.py app/services/snapshot_runtime_state_service.py app/routes/unified_snapshots.py app/routes/metrics.py tests/test_state_authority_reconciliation_service.py tests/test_snapshot_runtime_state_progress.py tests/test_snapshot_routes.py tests/test_observability_policy.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T777
 Status: [ ] Todo

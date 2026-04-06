@@ -432,6 +432,41 @@ async def get_cluster_runtime_live_state() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.get("/api/runtime/reconciliation")
+async def get_runtime_reconciliation(node_id: Optional[str] = Query(None)) -> dict[str, Any]:
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+    try:
+        normalized_node_id = _normalize_optional_query_string(node_id)
+        proxied = await _proxy_runtime_read(normalized_node_id or "", "/api/runtime/reconciliation")
+        if proxied is not None:
+            return proxied
+
+        async with get_session() as session:
+            service = SnapshotRuntimeStateService(session)
+            return await service.get_runtime_reconciliation_report()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting runtime reconciliation report: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/cluster/runtime/reconciliation")
+async def get_cluster_runtime_reconciliation() -> dict[str, Any]:
+    from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+    try:
+        async with get_session() as session:
+            service = SnapshotRuntimeStateService(session)
+            return await service.get_cluster_reconciliation_report()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error getting cluster runtime reconciliation report: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/api/runtime/activation-events")
 async def get_runtime_activation_events(
     limit: int = Query(100, ge=1, le=100),

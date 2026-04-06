@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority heartbeat reconciliation documented)
+> **Last Updated**: April 6, 2026 (State Authority cluster reconciliation documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Cluster Reconciliation Reporting
+- **Section**: Update Log
+- **Change**: Documented the final `T776` slice: `SnapshotRuntimeStateService` now derives local and cluster reconciliation reports from persisted runtime metrics, `unified_snapshots` exposes dedicated runtime reconciliation endpoints, and `/api/metrics/prometheus` exports node-level and cluster-level State Authority drift gauges.
+- **Reason**: The layered reconciliation epic was incomplete until management nodes could consume durable per-node drift state and the observability stack could scrape it without duplicating reconciliation logic.
+- **Impact**: Future authority and failover work should consume the runtime reconciliation APIs or Prometheus gauges, not inspect engine state directly from route handlers or dashboards.
 
 ### [2026-04-06] - State Authority Heartbeat Reconciliation
 - **Section**: Update Log

@@ -266,3 +266,78 @@ def test_refresh_live_snapshot_health_reruns_reconciliation_after_interval(tmp_p
     assert reconciliation["status"] == "self_healed"
     assert reconciliation["correction_count"] == 2
     assert live_state["runtime_metrics"]["last_state_authority_correction_at"] == "2026-04-06T12:05:00+00:00"
+
+
+def test_cluster_reconciliation_report_summarizes_node_statuses(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _fake_cluster_live_state(self):
+        return {
+            "local_node_id": "node-a",
+            "generated_at": "2026-04-06T12:10:00+00:00",
+            "count": 3,
+            "nodes": [
+                {
+                    "node_id": "node-a",
+                    "state": "live",
+                    "snapshot_id": 1,
+                    "snapshot_revision": "rev-a",
+                    "snapshot_name": "Verse",
+                    "display_state": "live",
+                    "display_label": "Live",
+                    "runtime_metrics": {
+                        "state_authority_reconciliation": {
+                            "checked_at": "2026-04-06T12:10:00+00:00",
+                            "status": "healthy",
+                            "correction_count": 0,
+                        }
+                    },
+                },
+                {
+                    "node_id": "node-b",
+                    "state": "live",
+                    "snapshot_id": 1,
+                    "snapshot_revision": "rev-a",
+                    "snapshot_name": "Verse",
+                    "display_state": "live",
+                    "display_label": "Live",
+                    "runtime_metrics": {
+                        "state_authority_reconciliation": {
+                            "checked_at": "2026-04-06T12:10:00+00:00",
+                            "status": "self_healed",
+                            "correction_count": 2,
+                            "parameter_drift_count": 2,
+                        }
+                    },
+                },
+                {
+                    "node_id": "node-c",
+                    "state": "live",
+                    "snapshot_id": 1,
+                    "snapshot_revision": "rev-a",
+                    "snapshot_name": "Verse",
+                    "display_state": "live",
+                    "display_label": "Live",
+                    "runtime_metrics": {
+                        "state_authority_reconciliation": {
+                            "checked_at": "2026-04-06T12:10:00+00:00",
+                            "status": "reactivation_required",
+                            "correction_count": 0,
+                            "reactivation_required": True,
+                            "topology_drift": True,
+                        }
+                    },
+                },
+            ],
+        }
+
+    monkeypatch.setattr(SnapshotRuntimeStateService, "get_cluster_live_state", _fake_cluster_live_state)
+
+    report = asyncio.run(SnapshotRuntimeStateService().get_cluster_reconciliation_report())
+
+    assert report["count"] == 3
+    assert report["healthy_nodes"] == 1
+    assert report["drifted_nodes"] == 2
+    assert report["self_healed_nodes"] == 1
+    assert report["reactivation_required_nodes"] == 1
+    assert report["correction_total"] == 2

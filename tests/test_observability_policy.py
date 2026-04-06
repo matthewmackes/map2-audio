@@ -94,3 +94,69 @@ def test_cluster_metrics_manager_exports_collected_metrics():
     assert "map2_cluster_nodes_total 1" in exposition
     assert 'map2_cluster_node_up{hostname="audio-01", node_id="node-a", role="AUDIO-NODE"} 1' in exposition
     assert "map2_cluster_health_score 97.0" in exposition
+
+
+def test_prometheus_route_exports_state_authority_reconciliation_metrics(monkeypatch):
+    app = FastAPI()
+    app.include_router(metrics_routes.router)
+
+    async def _fake_get_metrics_collector():
+        return _FakeCollector()
+
+    class _FakeDeploymentConfig:
+        def hosts_monitoring_stack(self) -> bool:
+            return True
+
+    class _FakeRuntimeStateService:
+        async def get_cluster_reconciliation_report(self):
+            return {
+                "count": 2,
+                "healthy_nodes": 1,
+                "drifted_nodes": 1,
+                "self_healed_nodes": 1,
+                "reactivation_required_nodes": 0,
+                "asset_redeploy_required_nodes": 1,
+                "correction_total": 2,
+                "nodes": [
+                    {
+                        "node_id": "node-a",
+                        "reconciliation": {
+                            "status": "healthy",
+                            "parameter_drift_count": 0,
+                            "bypass_drift_count": 0,
+                            "missing_asset_count": 0,
+                            "correction_count": 0,
+                            "topology_drift": False,
+                            "reactivation_required": False,
+                            "asset_redeploy_required": False,
+                        },
+                    },
+                    {
+                        "node_id": "node-b",
+                        "reconciliation": {
+                            "status": "self_healed",
+                            "parameter_drift_count": 2,
+                            "bypass_drift_count": 1,
+                            "missing_asset_count": 1,
+                            "correction_count": 2,
+                            "topology_drift": False,
+                            "reactivation_required": False,
+                            "asset_redeploy_required": True,
+                        },
+                    },
+                ],
+            }
+
+    monkeypatch.setattr(metrics_routes, "get_metrics_collector", _fake_get_metrics_collector)
+    monkeypatch.setattr(metrics_routes, "get_deployment_config", lambda: _FakeDeploymentConfig())
+    monkeypatch.setattr(metrics_routes, "SnapshotRuntimeStateService", _FakeRuntimeStateService)
+    monkeypatch.setattr(metrics_routes, "_build_cluster_prometheus_metrics", lambda: "")
+
+    client = TestClient(app)
+    response = client.get("/api/metrics/prometheus")
+
+    assert response.status_code == 200
+    assert "map2_state_authority_reconciliation_nodes_total 2" in response.text
+    assert "map2_state_authority_reconciliation_nodes_drifted 1" in response.text
+    assert 'map2_state_authority_reconciliation_node_status{node_id="node-b",status="self_healed"} 1' in response.text
+    assert 'map2_state_authority_reconciliation_node_missing_assets{node_id="node-b"} 1' in response.text

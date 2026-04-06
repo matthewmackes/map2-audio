@@ -28,7 +28,10 @@ from app.database import (
     SnapshotNodeLiveState,
     get_session,
 )
-from app.services.state_authority_reconciliation_service import StateAuthorityReconciliationService
+from app.services.state_authority_reconciliation_service import (
+    RECONCILIATION_TOLERANCE,
+    StateAuthorityReconciliationService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +273,64 @@ class SnapshotRuntimeStateService:
             "failure_reason": row.failure_reason,
             "activation_latency_ms": row.activation_latency_ms,
             "runtime_metrics": copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {},
+        }
+
+    @staticmethod
+    def _empty_reconciliation_report(status: str = "not_run") -> dict[str, Any]:
+        return {
+            "checked_at": None,
+            "tolerance": RECONCILIATION_TOLERANCE,
+            "status": status,
+            "desired_plugin_count": 0,
+            "observed_plugin_count": 0,
+            "topology_drift": False,
+            "parameter_drift_count": 0,
+            "bypass_drift_count": 0,
+            "missing_asset_count": 0,
+            "correction_count": 0,
+            "reactivation_required": False,
+            "asset_redeploy_required": False,
+            "applied_corrections": False,
+            "drift_items": [],
+        }
+
+    @classmethod
+    def _extract_reconciliation_report(cls, live_state: dict[str, Any]) -> dict[str, Any]:
+        runtime_metrics = live_state.get("runtime_metrics") if isinstance(live_state.get("runtime_metrics"), dict) else {}
+        report = (
+            copy.deepcopy(runtime_metrics.get("state_authority_reconciliation"))
+            if isinstance(runtime_metrics.get("state_authority_reconciliation"), dict)
+            else cls._empty_reconciliation_report(
+                "no_live_snapshot" if str(live_state.get("state") or "").lower() != "live" else "not_run"
+            )
+        )
+        report.setdefault("checked_at", None)
+        report.setdefault("tolerance", RECONCILIATION_TOLERANCE)
+        report.setdefault("status", "not_run")
+        report.setdefault("desired_plugin_count", 0)
+        report.setdefault("observed_plugin_count", 0)
+        report.setdefault("topology_drift", False)
+        report.setdefault("parameter_drift_count", 0)
+        report.setdefault("bypass_drift_count", 0)
+        report.setdefault("missing_asset_count", 0)
+        report.setdefault("correction_count", 0)
+        report.setdefault("reactivation_required", False)
+        report.setdefault("asset_redeploy_required", False)
+        report.setdefault("applied_corrections", False)
+        report.setdefault("drift_items", [])
+        return report
+
+    @classmethod
+    def _serialize_reconciliation_node(cls, live_state: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "node_id": live_state.get("node_id"),
+            "state": live_state.get("state"),
+            "snapshot_id": live_state.get("snapshot_id"),
+            "snapshot_revision": live_state.get("snapshot_revision"),
+            "snapshot_name": live_state.get("snapshot_name"),
+            "display_state": live_state.get("display_state"),
+            "display_label": live_state.get("display_label"),
+            "reconciliation": cls._extract_reconciliation_report(live_state),
         }
 
     def _merge_activation_progress(
@@ -1080,6 +1141,65 @@ class SnapshotRuntimeStateService:
             "local_node_id": self.local_node_id,
             "generated_at": generated_at.isoformat(),
             "count": len(nodes),
+            "nodes": nodes,
+        }
+
+    async def get_runtime_reconciliation_report(self) -> dict[str, Any]:
+        generated_at = _utcnow()
+        live_state = await self.get_live_state()
+        node = self._serialize_reconciliation_node(live_state)
+        return {
+            "node_id": self.local_node_id,
+            "generated_at": generated_at.isoformat(),
+            **node,
+        }
+
+    async def get_cluster_reconciliation_report(self) -> dict[str, Any]:
+        generated_at = _utcnow()
+        cluster_live_state = await self.get_cluster_live_state()
+        nodes = [
+            self._serialize_reconciliation_node(node)
+            for node in cluster_live_state.get("nodes", [])
+            if isinstance(node, dict)
+        ]
+        healthy_nodes = 0
+        drifted_nodes = 0
+        self_healed_nodes = 0
+        reactivation_required_nodes = 0
+        asset_redeploy_required_nodes = 0
+        not_run_nodes = 0
+        correction_total = 0
+
+        for node in nodes:
+            reconciliation = node["reconciliation"]
+            status = str(reconciliation.get("status") or "not_run")
+            correction_total += int(reconciliation.get("correction_count") or 0)
+            if status == "healthy":
+                healthy_nodes += 1
+            elif status == "self_healed":
+                self_healed_nodes += 1
+                drifted_nodes += 1
+            elif status == "not_run":
+                not_run_nodes += 1
+            elif status not in {"no_live_snapshot", "engine_unavailable"}:
+                drifted_nodes += 1
+
+            if bool(reconciliation.get("reactivation_required")):
+                reactivation_required_nodes += 1
+            if bool(reconciliation.get("asset_redeploy_required")):
+                asset_redeploy_required_nodes += 1
+
+        return {
+            "local_node_id": self.local_node_id,
+            "generated_at": generated_at.isoformat(),
+            "count": len(nodes),
+            "healthy_nodes": healthy_nodes,
+            "drifted_nodes": drifted_nodes,
+            "self_healed_nodes": self_healed_nodes,
+            "not_run_nodes": not_run_nodes,
+            "reactivation_required_nodes": reactivation_required_nodes,
+            "asset_redeploy_required_nodes": asset_redeploy_required_nodes,
+            "correction_total": correction_total,
             "nodes": nodes,
         }
 
