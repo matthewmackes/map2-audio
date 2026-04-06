@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (State Authority local reconciliation core documented)
+> **Last Updated**: April 6, 2026 (State Authority heartbeat reconciliation documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1983,6 +1983,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-06] - State Authority Heartbeat Reconciliation
+- **Section**: Update Log
+- **Change**: Documented the second `T776` slice: `SnapshotRuntimeStateService.refresh_live_snapshot_health()` now reuses the dedicated reconciliation service, runs State Authority reconciliation every five seconds for live rows, forces a first reconciliation after activation, and persists reconciliation plus last-correction timestamps in `runtime_metrics`.
+- **Reason**: The layered reconciliation design required the existing runtime heartbeat to become the durable self-heal loop instead of leaving reconciliation as an on-demand helper only.
+- **Impact**: Future cluster reporting and metrics work should read the persisted `runtime_metrics["state_authority_reconciliation"]` block and the companion timestamps instead of recomputing local drift inside routes or exporters.
 
 ### [2026-04-07] - State Authority Local Reconciliation Core
 - **Section**: Update Log

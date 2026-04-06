@@ -28,6 +28,7 @@ from app.database import (
     SnapshotNodeLiveState,
     get_session,
 )
+from app.services.state_authority_reconciliation_service import StateAuthorityReconciliationService
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ ACTIVATION_EVENTS_TOPIC = "snapshot_activation_events"
 WARNING_AFTER_SECONDS = 10.0
 OFFLINE_AFTER_SECONDS = 15.0
 HEARTBEAT_INTERVAL_SECONDS = 1.0
+RECONCILIATION_INTERVAL_SECONDS = 5.0
 ACTIVATION_EVENT_LIMIT_PER_NODE = 100
 POST_ACTIVATION_VERIFY_DELAY_SECONDS = 2.5
 ACTIVATION_PROGRESS_TIMEOUT_SECONDS = 10.0
@@ -328,6 +330,27 @@ class SnapshotRuntimeStateService:
         next_metrics["activation_progress"] = next_progress
         return next_metrics
 
+    @staticmethod
+    def _should_run_reconciliation(
+        runtime_metrics: Optional[dict[str, Any]],
+        *,
+        source: str,
+        emitted_at: datetime,
+    ) -> bool:
+        if source == "post_activation":
+            return True
+        if not isinstance(runtime_metrics, dict):
+            return True
+        reconciliation = (
+            runtime_metrics.get("state_authority_reconciliation")
+            if isinstance(runtime_metrics.get("state_authority_reconciliation"), dict)
+            else {}
+        )
+        checked_at = _parse_iso_datetime(reconciliation.get("checked_at"))
+        if checked_at is None:
+            return True
+        return (emitted_at - checked_at).total_seconds() >= RECONCILIATION_INTERVAL_SECONDS
+
     async def _broadcast_runtime_state(self, payload: dict[str, Any], *, emitted_at: datetime) -> None:
         try:
             from app.services.websocket_manager import ws_manager
@@ -583,9 +606,7 @@ class SnapshotRuntimeStateService:
                     return None
 
                 health = await self._evaluate_snapshot_payload_channel_health(session, row.live_snapshot_payload)
-                row.seq = int(row.seq or 0) + 1
-                row.live_snapshot_payload = health["snapshot_payload"]
-                row.runtime_metrics = {
+                next_runtime_metrics = {
                     **(copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {}),
                     "channel_activity": {
                         "active_count": health["active_count"],
@@ -595,6 +616,30 @@ class SnapshotRuntimeStateService:
                     "last_channel_health_check_at": emitted_at.isoformat(),
                     "last_channel_health_source": source,
                 }
+                if self._should_run_reconciliation(
+                    next_runtime_metrics,
+                    source=source,
+                    emitted_at=emitted_at,
+                ):
+                    report = await StateAuthorityReconciliationService().reconcile_live_snapshot_payload(
+                        health["snapshot_payload"],
+                        apply_corrections=True,
+                    )
+                    if isinstance(report, dict):
+                        reconciliation_metrics = copy.deepcopy(report)
+                        reconciliation_metrics["source"] = source
+                        next_runtime_metrics["state_authority_reconciliation"] = reconciliation_metrics
+                        next_runtime_metrics["last_state_authority_reconciliation_at"] = (
+                            str(reconciliation_metrics.get("checked_at") or emitted_at.isoformat())
+                        )
+                        next_runtime_metrics["last_state_authority_reconciliation_source"] = source
+                        if int(reconciliation_metrics.get("correction_count") or 0) > 0:
+                            next_runtime_metrics["last_state_authority_correction_at"] = (
+                                str(reconciliation_metrics.get("checked_at") or emitted_at.isoformat())
+                            )
+                row.seq = int(row.seq or 0) + 1
+                row.live_snapshot_payload = health["snapshot_payload"]
+                row.runtime_metrics = next_runtime_metrics
                 if source == "post_activation":
                     row.runtime_metrics["post_activation_checked_at"] = emitted_at.isoformat()
                 row.last_runtime_event_at = emitted_at

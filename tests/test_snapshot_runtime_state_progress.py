@@ -1,7 +1,9 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 from app import database as database_module
 from app.database import Snapshot
+from app.services import snapshot_runtime_state_service as runtime_state_module
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
 
@@ -112,3 +114,155 @@ def test_runtime_state_service_marks_current_phase_failed(tmp_path):
     assert progress["completed_phases"] == []
     assert events[0]["outcome"] == "failed"
     assert events[0]["runtime_metrics"]["activation_progress"]["current_phase"] == "APPLYING"
+
+
+def test_refresh_live_snapshot_health_records_reconciliation_metrics(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    reports: list[dict] = []
+
+    class _FakeReconciliationService:
+        async def reconcile_live_snapshot_payload(self, live_snapshot_payload, **kwargs):
+            reports.append({"payload": live_snapshot_payload, **kwargs})
+            return {
+                "checked_at": "2026-04-06T12:00:00+00:00",
+                "status": "healthy",
+                "correction_count": 0,
+                "reactivation_required": False,
+            }
+
+    monkeypatch.setattr(
+        runtime_state_module,
+        "StateAuthorityReconciliationService",
+        lambda: _FakeReconciliationService(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=13, name="Chorus"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=13,
+            snapshot_name="Chorus",
+            snapshot_revision="rev-13",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 13, "name": "Chorus", "chains": [], "live_state": {"paths": []}},
+            runtime_metrics={},
+        )
+        return await service.refresh_live_snapshot_health(source="post_activation", emit=False)
+
+    live_state = asyncio.run(_run())
+
+    assert len(reports) == 1
+    assert reports[0]["apply_corrections"] is True
+    reconciliation = live_state["runtime_metrics"]["state_authority_reconciliation"]
+    assert reconciliation["status"] == "healthy"
+    assert reconciliation["source"] == "post_activation"
+    assert live_state["runtime_metrics"]["last_state_authority_reconciliation_source"] == "post_activation"
+
+
+def test_refresh_live_snapshot_health_skips_reconciliation_within_interval(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    call_count = 0
+
+    class _FakeReconciliationService:
+        async def reconcile_live_snapshot_payload(self, live_snapshot_payload, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return {"checked_at": datetime.now(timezone.utc).isoformat(), "status": "healthy", "correction_count": 0}
+
+    monkeypatch.setattr(
+        runtime_state_module,
+        "StateAuthorityReconciliationService",
+        lambda: _FakeReconciliationService(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=14, name="Verse"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=14,
+            snapshot_name="Verse",
+            snapshot_revision="rev-14",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 14, "name": "Verse", "chains": [], "live_state": {"paths": []}},
+            runtime_metrics={
+                "state_authority_reconciliation": {
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
+                    "status": "healthy",
+                }
+            },
+        )
+        return await service.refresh_live_snapshot_health(source="continuous_watch", emit=False)
+
+    live_state = asyncio.run(_run())
+
+    assert call_count == 0
+    assert live_state["runtime_metrics"]["state_authority_reconciliation"]["status"] == "healthy"
+
+
+def test_refresh_live_snapshot_health_reruns_reconciliation_after_interval(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    call_count = 0
+
+    class _FakeReconciliationService:
+        async def reconcile_live_snapshot_payload(self, live_snapshot_payload, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return {
+                "checked_at": "2026-04-06T12:05:00+00:00",
+                "status": "self_healed",
+                "correction_count": 2,
+                "reactivation_required": False,
+            }
+
+    monkeypatch.setattr(
+        runtime_state_module,
+        "StateAuthorityReconciliationService",
+        lambda: _FakeReconciliationService(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=15, name="Bridge"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=15,
+            snapshot_name="Bridge",
+            snapshot_revision="rev-15",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 15, "name": "Bridge", "chains": [], "live_state": {"paths": []}},
+            runtime_metrics={
+                "state_authority_reconciliation": {
+                    "checked_at": (datetime.now(timezone.utc) - timedelta(seconds=6)).isoformat(),
+                    "status": "healthy",
+                }
+            },
+        )
+        return await service.refresh_live_snapshot_health(source="continuous_watch", emit=False)
+
+    live_state = asyncio.run(_run())
+
+    assert call_count == 1
+    reconciliation = live_state["runtime_metrics"]["state_authority_reconciliation"]
+    assert reconciliation["status"] == "self_healed"
+    assert reconciliation["correction_count"] == 2
+    assert live_state["runtime_metrics"]["last_state_authority_correction_at"] == "2026-04-06T12:05:00+00:00"

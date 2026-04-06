@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 07:44 EDT - T776-subA completed with local drift detection and correction planning.
+Last updated: 2026-04-06 08:22 EDT - T776-subB completed with five-second local reconciliation and self-heal metrics in runtime live-state.
 
 ## Performance Brain
 
@@ -1065,7 +1065,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 07:44 EDT - Codex
   - ID: T776-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Wire five-second local self-heal and runtime reconciliation metrics into live-state updates
     Description:
     - Goal / acceptance criteria: Run local reconciliation from the existing runtime heartbeat at a five-second cadence, apply targeted corrections when safe, and persist reconciliation results into runtime metrics and local runtime APIs.
@@ -1074,7 +1074,14 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Heartbeat/runtime-state integration, local reporting surfaces, and focused verification for healthy versus drifted live snapshots.
     Assigned to: Codex
-    Last updated: 2026-04-07 07:44 EDT - Codex
+    Last updated: 2026-04-06 08:22 EDT - Codex
+    - Completion notes:
+      - Reused the dedicated reconciliation service inside `SnapshotRuntimeStateService.refresh_live_snapshot_health()` so the existing 1 Hz heartbeat now runs State Authority reconciliation every five seconds for live snapshots, always forces a first pass after activation, and persists the last reconciliation/correction timestamps in runtime metrics.
+      - Added focused runtime-state coverage proving reconciliation metrics are recorded on live rows, skipped inside the five-second window, and rerun with persisted correction counts once the cadence window expires.
+    - Validation:
+      - `pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_reconciliation_service.py` -> PASS
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_state_service.py tests/test_snapshot_runtime_state_progress.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T776-subC
     Status: [ ] Todo
     Title: Add management-node cluster reconciliation reporting and Prometheus-style drift metrics
