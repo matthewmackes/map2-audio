@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 - T796 complete: 820px responsive redesign (all subtasks A-J done).
+Last updated: 2026-04-07 - Bulk status sync: T763, T770, T771, T772, T774, T780, T781 marked Done (all subtasks complete). T793-subD remains Todo. T794, T795, T778 remain Todo.
 
 ## Performance Brain
 
@@ -17619,7 +17619,7 @@ Last updated: 2026-04-06 13:22 EDT - Codex
   - The taskbar shell now satisfies the requested bottom layout: Start button, permanent Audio Artifacts icon, running app indicators, and system tray.
 
 ID: T781
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build the Windows 10-style Start Menu
 Description:
 - Goal / acceptance criteria: Implement a full Windows 10-style Start Menu anchored to the bottom-left, ~30% width, ~60% height. Left column contains text-only static items (no icons): Audio Artifacts (File Explorer equivalent), Platforms (Advanced Settings / Control Panel equivalent → `/platforms/overview`), Workspace Catalog (Add/Remove Programs equivalent → `/platforms/workspace-catalog`), Settings (→ expanded `/platforms/theme`), Power (submenu). Right column contains a 3x3 grid of uniform square live tiles populated by user pins from the Workspace Catalog. Empty state shows "Pin apps from the Workspace Catalog" with link. Styled with `$layer-01` background, `$border-subtle` outline, and drop shadow. Opens/closes with Carbon productive motion (scale/fade). Clicking outside closes it. Clicking any item closes it immediately.
