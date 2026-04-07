@@ -17421,7 +17421,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
   - ID: T793-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix PipeWire runtime assumptions and result reporting
     Description:
     - Goal / acceptance criteria: Remove hardcoded user/home assumptions, report command success truthfully, improve uptime semantics, and avoid avoidable quadratic stream scans.
@@ -17429,10 +17429,18 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: PipeWire-service fixes and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 08:08 EDT - Codex
+    - Completion notes:
+      - Replaced the hardcoded PipeWire CLI environment defaults with a dynamic `_pipewire_env()` builder that derives `HOME` and `XDG_RUNTIME_DIR` from the current process/user instead of assuming `/home/mm` and `/run/user/1000`.
+      - Added `_run_cmd_result()` and wired `set_quantum()`, `set_rate()`, `set_volume()`, and `set_mute()` to return success truthfully based on subprocess exit status instead of always reporting `True` after failed `wpctl`/`pw-metadata` calls.
+      - Corrected daemon uptime semantics by tracking the observed running window instead of service lifetime, and removed avoidable quadratic scans in `get_streams()` by precomputing active link directions and client pid maps from the shared `pw-dump`.
+    - Validation:
+      - `pytest -q tests/test_pipewire_service.py` -> PASS (`4 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/pipewire_service.py tests/test_pipewire_service.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 08:01 EDT - Codex
+Last updated: 2026-04-07 08:08 EDT - Codex
 
 ID: T794
 Status: [ ] Todo

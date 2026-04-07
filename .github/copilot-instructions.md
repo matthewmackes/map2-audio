@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (Push discovery/runtime split documented)
+> **Last Updated**: April 7, 2026 (PipeWire runtime assumptions documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -994,6 +994,13 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Keep discovered device data in manager-owned runtime discovery state, expose it via the state/health snapshot and `GET /api/push-surface/discovery`, and leave `/api/push-surface/config` for explicit operator choices only.
 - **Verification**: `pytest -q tests/push_surface/test_manager.py tests/push_surface/test_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/manager.py app/routes/push_surface.py tests/push_surface/test_manager.py tests/push_surface/test_routes.py`
 - **Lesson**: Hardware discovery is telemetry, not configuration. Persist only explicit operator choices; publish scan results through a separate runtime contract.
+
+**84. PipeWire Service Must Report Real Command Outcomes And User Session Context**
+- **Problem**: The PipeWire backend could claim success after failed `wpctl`/`pw-metadata` calls and also assumed a fixed `HOME`/`XDG_RUNTIME_DIR`, which breaks on any host or user that does not match the authoring machine.
+- **Root Cause**: The service used import-time hardcoded environment defaults and stdout-only subprocess helpers, so mutator methods had no exit-status contract and the daemon uptime metric was really just service lifetime.
+- **Fix**: Build the PipeWire CLI environment dynamically from the current process/user, add a subprocess helper that returns stdout/stderr/exit code, reset observed daemon uptime when `wpctl status` disappears, and precompute link/client maps so stream discovery does not rescan the full dump for every node.
+- **Verification**: `pytest -q tests/test_pipewire_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/pipewire_service.py tests/test_pipewire_service.py`
+- **Lesson**: System-audio wrappers need explicit process-context and exit-status semantics. Do not hardcode per-user session paths or treat a subprocess spawn as success unless the command actually exited cleanly.
 
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
@@ -1997,6 +2004,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - PipeWire Runtime Assumption Hardening
+- **Section**: Gotchas & Learned Fixes (#84), Update Log
+- **Change**: Documented the `T793-subE` slice: the PipeWire service now derives its CLI session env from the active user, reports mutator command success truthfully, tracks observed daemon uptime correctly, and avoids repeated full-dump scans while building stream direction/pid data.
+- **Reason**: The architecture audit flagged these as medium-severity runtime-truthfulness issues that could mislead operators and break on non-authoring hosts.
+- **Impact**: Future PipeWire work should reuse `_run_cmd_result()` and `_pipewire_env()` for control/reporting paths and should preserve the single-pass dump indexing pattern in stream discovery.
 
 ### [2026-04-07] - Push Surface Discovery Runtime Split
 - **Section**: Gotchas & Learned Fixes (#83), Update Log

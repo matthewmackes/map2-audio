@@ -21,16 +21,18 @@ import shutil
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Environment for PipeWire CLI tools (must reach user session daemon)
-_PW_ENV = {
-    "XDG_RUNTIME_DIR": os.environ.get("XDG_RUNTIME_DIR", "/run/user/1000"),
-    "PATH": "/usr/bin:/usr/local/bin:/bin",
-    "HOME": os.environ.get("HOME", "/home/mm"),
-}
+def _pipewire_env() -> Dict[str, str]:
+    """Build a PipeWire CLI environment without hardcoded user assumptions."""
+    env = dict(os.environ)
+    env["PATH"] = env.get("PATH") or "/usr/bin:/usr/local/bin:/bin"
+    env["HOME"] = env.get("HOME") or str(Path.home())
+    env["XDG_RUNTIME_DIR"] = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    return env
 
 # Tool availability flags (checked once at import)
 HAS_PW_DUMP = shutil.which("pw-dump") is not None
@@ -147,6 +149,7 @@ class PipeWireService:
 
     def __init__(self):
         self._start_time = time.monotonic()
+        self._daemon_running_since: Optional[float] = None
         self._last_xrun_count = 0
         self._broadcast_task: Optional[asyncio.Task] = None
         self._cached_snapshot: Optional[PipeWireMetrics] = None
@@ -157,35 +160,41 @@ class PipeWireService:
     # Subprocess helpers
     # ---------------------------------------------------------------
 
-    async def _run_cmd(self, cmd: List[str], timeout: float = 5.0) -> str:
-        """Run a subprocess command and return stdout."""
+    async def _run_cmd_result(self, cmd: List[str], timeout: float = 5.0) -> tuple[str, str, int]:
+        """Run a subprocess command and return stdout, stderr, and return code."""
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                env=_PW_ENV,
+                env=_pipewire_env(),
             )
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(), timeout=timeout
             )
+            stdout_text = stdout.decode()
+            stderr_text = stderr.decode().strip()
             if proc.returncode != 0:
-                stderr_msg = stderr.decode().strip()
                 # Use warning for critical commands, debug for informational
                 if cmd[0] in ['wpctl', 'pw-dump', 'pw-metadata']:
-                    logger.warning(f"Command {cmd[0]} returned {proc.returncode}: {stderr_msg}")
+                    logger.warning(f"Command {cmd[0]} returned {proc.returncode}: {stderr_text}")
                 else:
-                    logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr_msg}")
-            return stdout.decode()
+                    logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr_text}")
+            return stdout_text, stderr_text, int(proc.returncode)
         except asyncio.TimeoutError:
             logger.warning(f"Command {cmd[0]} timed out after {timeout}s")
-            return ""
+            return "", f"timed out after {timeout}s", 124
         except FileNotFoundError:
             logger.debug(f"Command not found: {cmd[0]}")
-            return ""
+            return "", "command not found", 127
         except Exception as e:
             logger.debug(f"Command {cmd[0]} error: {e}")
-            return ""
+            return "", str(e), 1
+
+    async def _run_cmd(self, cmd: List[str], timeout: float = 5.0) -> str:
+        """Run a subprocess command and return stdout."""
+        stdout, _stderr, _returncode = await self._run_cmd_result(cmd, timeout)
+        return stdout
 
     async def _run_cmd_json(self, cmd: List[str], timeout: float = 5.0) -> Any:
         """Run a subprocess command and parse JSON output."""
@@ -211,6 +220,7 @@ class PipeWireService:
 
         output = await self._run_cmd(["wpctl", "status"])
         if not output:
+            self._daemon_running_since = None
             return info
 
         # First line: PipeWire 'pipewire-0' [1.4.9, mm@MAP2-TESTBED, cookie:3716221001]
@@ -220,12 +230,17 @@ class PipeWireService:
             first_line,
         )
         if m:
+            now = time.monotonic()
             info.running = True
             info.name = m.group(1)
             info.version = m.group(2)
             info.hostname = m.group(4)
             info.cookie = m.group(5)
-            info.uptime_seconds = time.monotonic() - self._start_time
+            if self._daemon_running_since is None:
+                self._daemon_running_since = now
+            info.uptime_seconds = now - self._daemon_running_since
+        else:
+            self._daemon_running_since = None
 
         return info
 
@@ -504,16 +519,32 @@ class PipeWireService:
             for entry in status.get(section, []):
                 sink_source_ids.add(entry["id"])
 
-        # Find node IDs that participate in active links
         linked_node_ids = set()
+        link_output_nodes = set()
+        link_input_nodes = set()
         for obj in dump:
             if obj.get("type") != "PipeWire:Interface:Link":
                 continue
             info = obj.get("info", {})
             props = info.get("props", {})
             if info.get("state") in ("active", "paused"):
-                linked_node_ids.add(props.get("link.output.node", 0))
-                linked_node_ids.add(props.get("link.input.node", 0))
+                output_node = props.get("link.output.node", 0)
+                input_node = props.get("link.input.node", 0)
+                linked_node_ids.add(output_node)
+                linked_node_ids.add(input_node)
+                link_output_nodes.add(output_node)
+                link_input_nodes.add(input_node)
+
+        client_pid_by_client_id: Dict[int, int] = {}
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Client":
+                continue
+            client_id = obj.get("id")
+            if not isinstance(client_id, int):
+                continue
+            client_pid = obj.get("info", {}).get("props", {}).get("application.process.id", 0)
+            if isinstance(client_pid, (int, float)):
+                client_pid_by_client_id[client_id] = int(client_pid)
 
         # Find audio client nodes that are linked but not sinks/sources
         for obj in dump:
@@ -536,26 +567,13 @@ class PipeWireService:
             if state in ("running", "idle") and nid in linked_node_ids:
                 nick = props.get("node.nick", props.get("node.description", node_name))
                 client_pid = 0
-                # Try to find client PID
                 client_id = props.get("client.id")
-                if client_id:
-                    for cobj in dump:
-                        if cobj.get("type") == "PipeWire:Interface:Client" and cobj.get("id") == client_id:
-                            cpid = cobj.get("info", {}).get("props", {}).get("application.process.id", 0)
-                            if cpid:
-                                client_pid = int(cpid)
-                            break
+                if isinstance(client_id, int):
+                    client_pid = client_pid_by_client_id.get(client_id, 0)
 
                 direction = ""
-                # Determine direction from links
-                is_output = any(
-                    o.get("info", {}).get("props", {}).get("link.output.node") == nid
-                    for o in dump if o.get("type") == "PipeWire:Interface:Link"
-                )
-                is_input = any(
-                    o.get("info", {}).get("props", {}).get("link.input.node") == nid
-                    for o in dump if o.get("type") == "PipeWire:Interface:Link"
-                )
+                is_output = nid in link_output_nodes
+                is_input = nid in link_input_nodes
                 if is_output and is_input:
                     direction = "duplex"
                 elif is_output:
@@ -680,10 +698,13 @@ class PipeWireService:
             logger.error(f"Invalid quantum {quantum}: must be 0 or 16-8192")
             return False
 
-        output = await self._run_cmd([
+        _stdout, _stderr, returncode = await self._run_cmd_result([
             "pw-metadata", "-n", "settings", "0",
             "clock.force-quantum", str(quantum),
         ])
+        if returncode != 0:
+            logger.error("Failed to set PipeWire quantum to %s", quantum)
+            return False
         logger.info(f"Set PipeWire quantum to {quantum}")
         return True
 
@@ -703,10 +724,13 @@ class PipeWireService:
             logger.error(f"Invalid rate {rate}: must be one of {valid_rates}")
             return False
 
-        output = await self._run_cmd([
+        _stdout, _stderr, returncode = await self._run_cmd_result([
             "pw-metadata", "-n", "settings", "0",
             "clock.force-rate", str(rate),
         ])
+        if returncode != 0:
+            logger.error("Failed to set PipeWire sample rate to %s", rate)
+            return False
         logger.info(f"Set PipeWire sample rate to {rate}")
         return True
 
@@ -729,13 +753,17 @@ class PipeWireService:
     async def set_volume(self, node_id: int, volume: float) -> bool:
         """Set volume for a node (0.0 to 1.5)."""
         volume = max(0.0, min(1.5, volume))
-        await self._run_cmd(["wpctl", "set-volume", str(node_id), f"{volume:.2f}"])
-        return True
+        _stdout, _stderr, returncode = await self._run_cmd_result(
+            ["wpctl", "set-volume", str(node_id), f"{volume:.2f}"]
+        )
+        return returncode == 0
 
     async def set_mute(self, node_id: int, mute: bool) -> bool:
         """Set mute state for a node."""
-        await self._run_cmd(["wpctl", "set-mute", str(node_id), "1" if mute else "0"])
-        return True
+        _stdout, _stderr, returncode = await self._run_cmd_result(
+            ["wpctl", "set-mute", str(node_id), "1" if mute else "0"]
+        )
+        return returncode == 0
 
     # ---------------------------------------------------------------
     # XRun detection (from pw-dump driver stats)
