@@ -5,7 +5,6 @@ import { ProgressBar, Tag, Tile } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
   MAP2_PLATFORM_VERSION,
-  Map2BrandMark,
 } from '../components/branding/map2Branding'
 import {
   MapArtifactsLibraryIcon,
@@ -22,6 +21,7 @@ import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { getLauncherCatalogItem, normalizeLandingTiles, type LandingTilePlacement } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
+import map2Logo from '../../assets/MAP2-LOGO.png'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
@@ -306,10 +306,9 @@ export function HomePage() {
     return (
       <section className="hp2-boot" aria-label="MAP2 boot splash">
         <div className="hp2-boot__center">
-          <div className="hp2-boot__mark-wrap" aria-hidden="true">
-            <Map2BrandMark className="hp2-boot__mark" />
+          <div className="hp2-boot__mark-wrap">
+            <img src={map2Logo} alt="MAP2 logo" className="hp2-boot__mark" />
           </div>
-          <p className="hp2-boot__eyebrow">MAP2 Workplace Shell</p>
           <h1 className="hp2-boot__title">{MAP2_PLATFORM_NAME}</h1>
           <p className="hp2-boot__subtitle">Initializing the Carbon-governed pre-Warp desktop session and restoring platform context.</p>
         </div>
@@ -346,11 +345,10 @@ export function HomePage() {
         <div className="hp2-desktop__status">
           <header className="hp2-shellbar" aria-label="Workplace shell header">
             <div className="hp2-shellbar__brand">
-              <span className="hp2-shellbar__mark-wrap" aria-hidden="true">
-                <Map2BrandMark className="hp2-shellbar__mark" />
+              <span className="hp2-shellbar__mark-wrap">
+                <img src={map2Logo} alt="MAP2 logo" className="hp2-shellbar__mark" />
               </span>
               <div className="hp2-shellbar__copy">
-                <strong>MAP2 Workplace Shell</strong>
                 <span>Pre-Warp OS/2 profile under Carbon token governance</span>
               </div>
             </div>

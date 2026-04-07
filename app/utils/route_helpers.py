@@ -5,11 +5,14 @@ Provides common decorators and response helpers without living under
 `app/routes`, which keeps the route-registration policy unambiguous.
 """
 
-from functools import wraps
-from fastapi import HTTPException, status
-from typing import Callable, Any, Optional, Dict
+from __future__ import annotations
+
+import inspect
 import logging
-import asyncio
+from functools import wraps
+from typing import Any, Callable, Optional
+
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,7 @@ def api_route(
                 result = await func(*args, **kwargs)
 
                 if log_success:
-                    logger.info(f"✅ {func_name} completed successfully")
+                    logger.info("%s completed successfully", func_name)
 
                 return result
 
@@ -48,8 +51,10 @@ def api_route(
             except Exception as e:
                 if log_errors:
                     logger.error(
-                        f"❌ {func_name} failed: {str(e)}",
-                        exc_info=True
+                        "%s failed: %s",
+                        func_name,
+                        str(e),
+                        exc_info=True,
                     )
 
                 if catch_exceptions:
@@ -67,7 +72,7 @@ def api_route(
                 result = func(*args, **kwargs)
 
                 if log_success:
-                    logger.info(f"✅ {func_name} completed successfully")
+                    logger.info("%s completed successfully", func_name)
 
                 return result
 
@@ -77,8 +82,10 @@ def api_route(
             except Exception as e:
                 if log_errors:
                     logger.error(
-                        f"❌ {func_name} failed: {str(e)}",
-                        exc_info=True
+                        "%s failed: %s",
+                        func_name,
+                        str(e),
+                        exc_info=True,
                     )
 
                 if catch_exceptions:
@@ -88,7 +95,7 @@ def api_route(
                     )
                 raise
 
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper
 
@@ -150,7 +157,7 @@ def require_service(service_name: str, error_message: Optional[str] = None):
 
             return func(*args, **kwargs)
 
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper
 
@@ -161,29 +168,29 @@ class StandardResponses:
     """Standard API response formats."""
 
     @staticmethod
-    def success(data: Any = None, message: str = "Operation successful") -> Dict:
+    def success(data: Any = None, message: str = "Operation successful") -> dict[str, Any]:
         response = {
             "success": True,
-            "message": message
+            "message": message,
         }
         if data is not None:
             response["data"] = data
         return response
 
     @staticmethod
-    def error(message: str, code: Optional[str] = None) -> Dict:
+    def error(message: str, code: Optional[str] = None) -> dict[str, Any]:
         response = {
             "success": False,
-            "error": message
+            "error": message,
         }
         if code:
             response["code"] = code
         return response
 
     @staticmethod
-    def not_found(resource: str, identifier: Any) -> Dict:
+    def not_found(resource: str, identifier: Any) -> dict[str, Any]:
         return {
             "success": False,
             "error": f"{resource} not found",
-            "identifier": identifier
+            "identifier": identifier,
         }

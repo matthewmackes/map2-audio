@@ -15,97 +15,14 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
         class="hp2-boot__center"
       >
         <div
-          aria-hidden="true"
           class="hp2-boot__mark-wrap"
         >
-          <svg
-            aria-hidden="true"
+          <img
+            alt="MAP2 logo"
             class="hp2-boot__mark"
-            focusable="false"
-            viewBox="0 0 192 192"
-          >
-            <rect
-              fill="#4589FF"
-              height="168"
-              rx="34"
-              width="168"
-              x="12"
-              y="12"
-            />
-            <rect
-              fill="none"
-              height="162"
-              rx="31"
-              stroke="#A6C8FF"
-              stroke-opacity="0.45"
-              stroke-width="2"
-              width="162"
-              x="15"
-              y="15"
-            />
-            <rect
-              fill="#13171B"
-              height="136"
-              rx="24"
-              width="136"
-              x="28"
-              y="28"
-            />
-            <rect
-              fill="#4589FF"
-              height="136"
-              rx="13"
-              width="26"
-              x="83"
-              y="28"
-            />
-            <rect
-              fill="#4589FF"
-              height="26"
-              rx="13"
-              width="136"
-              x="28"
-              y="83"
-            />
-            <rect
-              fill="#1A1E23"
-              height="43"
-              rx="8"
-              width="43"
-              x="34"
-              y="34"
-            />
-            <rect
-              fill="#1A1E23"
-              height="43"
-              rx="8"
-              width="43"
-              x="115"
-              y="34"
-            />
-            <rect
-              fill="#1A1E23"
-              height="43"
-              rx="8"
-              width="43"
-              x="34"
-              y="115"
-            />
-            <rect
-              fill="#1A1E23"
-              height="43"
-              rx="8"
-              width="43"
-              x="115"
-              y="115"
-            />
-          </svg>
+            src="MAP2-LOGO.png"
+          />
         </div>
-        <p
-          class="hp2-boot__eyebrow"
-        >
-          MAP2 Workplace Shell
-        </p>
         <h1
           class="hp2-boot__title"
         >
@@ -574,98 +491,17 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               class="hp2-shellbar__brand"
             >
               <span
-                aria-hidden="true"
                 class="hp2-shellbar__mark-wrap"
               >
-                <svg
-                  aria-hidden="true"
+                <img
+                  alt="MAP2 logo"
                   class="hp2-shellbar__mark"
-                  focusable="false"
-                  viewBox="0 0 192 192"
-                >
-                  <rect
-                    fill="#4589FF"
-                    height="168"
-                    rx="34"
-                    width="168"
-                    x="12"
-                    y="12"
-                  />
-                  <rect
-                    fill="none"
-                    height="162"
-                    rx="31"
-                    stroke="#A6C8FF"
-                    stroke-opacity="0.45"
-                    stroke-width="2"
-                    width="162"
-                    x="15"
-                    y="15"
-                  />
-                  <rect
-                    fill="#13171B"
-                    height="136"
-                    rx="24"
-                    width="136"
-                    x="28"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="136"
-                    rx="13"
-                    width="26"
-                    x="83"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="26"
-                    rx="13"
-                    width="136"
-                    x="28"
-                    y="83"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="115"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="115"
-                  />
-                </svg>
+                  src="MAP2-LOGO.png"
+                />
               </span>
               <div
                 class="hp2-shellbar__copy"
               >
-                <strong>
-                  MAP2 Workplace Shell
-                </strong>
                 <span>
                   Pre-Warp OS/2 profile under Carbon token governance
                 </span>
@@ -2009,98 +1845,17 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               class="hp2-shellbar__brand"
             >
               <span
-                aria-hidden="true"
                 class="hp2-shellbar__mark-wrap"
               >
-                <svg
-                  aria-hidden="true"
+                <img
+                  alt="MAP2 logo"
                   class="hp2-shellbar__mark"
-                  focusable="false"
-                  viewBox="0 0 192 192"
-                >
-                  <rect
-                    fill="#4589FF"
-                    height="168"
-                    rx="34"
-                    width="168"
-                    x="12"
-                    y="12"
-                  />
-                  <rect
-                    fill="none"
-                    height="162"
-                    rx="31"
-                    stroke="#A6C8FF"
-                    stroke-opacity="0.45"
-                    stroke-width="2"
-                    width="162"
-                    x="15"
-                    y="15"
-                  />
-                  <rect
-                    fill="#13171B"
-                    height="136"
-                    rx="24"
-                    width="136"
-                    x="28"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="136"
-                    rx="13"
-                    width="26"
-                    x="83"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="26"
-                    rx="13"
-                    width="136"
-                    x="28"
-                    y="83"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="115"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="115"
-                  />
-                </svg>
+                  src="MAP2-LOGO.png"
+                />
               </span>
               <div
                 class="hp2-shellbar__copy"
               >
-                <strong>
-                  MAP2 Workplace Shell
-                </strong>
                 <span>
                   Pre-Warp OS/2 profile under Carbon token governance
                 </span>
@@ -3718,11 +3473,15 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
             <div
               class="start-menu-panel__header-copy"
             >
-              <p
-                class="start-menu-panel__eyebrow"
+              <div
+                class="start-menu-panel__brand-wrap"
               >
-                MAP2 Workplace Shell
-              </p>
+                <img
+                  alt="MAP2 logo"
+                  class="start-menu-panel__brand"
+                  src="MAP2-LOGO.png"
+                />
+              </div>
               <strong>
                 Workplace Organizer
               </strong>

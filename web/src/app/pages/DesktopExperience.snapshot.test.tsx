@@ -19,6 +19,7 @@ const mockSpecialSettings = {
 }
 
 jest.mock('../../assets/NEW-map2-landing-bg.png', () => 'NEW-map2-landing-bg.png')
+jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
 
 jest.mock('../hooks/useSpecialSettings', () => ({
   useSpecialSettings: () => ({

@@ -19,6 +19,8 @@ const mockSpecialSettings = {
   landingTiles: [] as Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
 }
 
+jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
+
 jest.mock('../hooks/useSpecialSettings', () => ({
   useSpecialSettings: () => ({
     settings: mockSpecialSettings,
@@ -311,6 +313,8 @@ describe('AppShell desktop taskbar shell', () => {
     expect(container.querySelectorAll('.start-menu-card').length).toBe(0)
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
 
     for (const label of ['Artifacts', 'System Setup', 'Program Catalog', 'Display Settings', 'Power']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()

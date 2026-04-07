@@ -542,6 +542,23 @@
   gap: 0.15rem;
 }
 
+.start-menu-panel__brand-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, clamp(8.5rem, 16vw, 10.5rem));
+  min-height: 2rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--window-shell-border);
+  background: var(--cds-layer-01, #ffffff);
+}
+
+.start-menu-panel__brand {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .start-menu-panel__header-copy strong {
   font-size: 0.96rem;
   font-weight: 600;

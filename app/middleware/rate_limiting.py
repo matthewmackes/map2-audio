@@ -194,7 +194,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         if not allowed:
             # Rate limit exceeded
             logger.warning(
-                f"⚠️  Rate limit exceeded for {client_id} on {request.url.path}",
+                f"Rate limit exceeded for {client_id} on {request.url.path}",
                 extra={
                     "client_id": client_id,
                     "path": request.url.path,
@@ -209,8 +209,11 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
                 from app.utils.health_metrics import get_health_metrics
                 metrics = get_health_metrics()
                 metrics.record_rate_limit_violation(request.url.path)
-            except Exception:
-                pass  # Don't fail if metrics unavailable
+            except Exception as exc:
+                logger.debug(
+                    f"Health metrics unavailable while recording rate-limit violation for {request.url.path}",
+                    exc_info=exc,
+                )
 
             # Return 429 Too Many Requests
             return Response(

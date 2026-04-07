@@ -23,6 +23,7 @@ const mockSpecialSettingsState = {
 }
 
 jest.mock('../../assets/NEW-map2-landing-bg.png', () => 'NEW-map2-landing-bg.png')
+jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
 
 class ResizeObserverMock {
   observe() {}
@@ -186,11 +187,15 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
     expect(screen.queryByTestId('home-desktop')).toBeNull()
 
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 

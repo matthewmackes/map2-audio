@@ -533,8 +533,8 @@ async def lifespan(app):
                     if engine is not None:
                         # AVB service still needs the low-level engine object.
                         get_avb_service().set_engine(engine)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("PipeWire recovery engine wiring skipped", exc_info=exc)
                 await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)
             except Exception as e:
                 logger.warning(f"PipeWire recovery watchdog not started: {e}")
@@ -625,7 +625,7 @@ async def lifespan(app):
 
         running = sum(1 for v in results.values() if v)
         total = len(results)
-        logger.info(f"✅ Startup complete: {running}/{total} services running")
+        logger.info("Startup complete: %s/%s services running", running, total)
         _install_runtime_shutdown_signal_handlers()
 
         yield  # Server runs here
@@ -687,8 +687,8 @@ async def lifespan(app):
             from app.services.midi_service import midi_service
 
             midi_service.detach_midi_hub()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("MIDI service detach skipped during shutdown", exc_info=exc)
         
         # Stop LCD system
         await safe_stop_service(logger, "Database Event Producer", database_producer.stop)
@@ -710,7 +710,7 @@ async def lifespan(app):
         await safe_stop_service(logger, "Metrics daemon", stop_metrics_daemon)
         await safe_stop_service(logger, "Orchestrator services", orchestrator.stop_all)
         await safe_stop_service(logger, "Database checkpoint", checkpoint_database)
-        logger.info("✅ Shutdown complete")
+        logger.info("Shutdown complete")
     except Exception as e:
         import traceback
         logger.critical(f"FATAL: Application lifespan error: {type(e).__name__}: {e}")

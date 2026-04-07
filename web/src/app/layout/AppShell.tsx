@@ -39,6 +39,7 @@ import {
 } from '../pages/homeDesktopSession'
 import { prefetchAppRoute } from '../routePrefetch'
 import { buildPlatformWorkspacePath } from '../platform/routes'
+import map2Logo from '../../assets/MAP2-LOGO.png'
 import './AppShell.css'
 
 interface TopNavItem {
@@ -766,7 +767,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Desktop menu">
                   <div className="start-menu-panel__header">
                     <div className="start-menu-panel__header-copy">
-                      <p className="start-menu-panel__eyebrow">MAP2 Workplace Shell</p>
+                      <div className="start-menu-panel__brand-wrap">
+                        <img src={map2Logo} alt="MAP2 logo" className="start-menu-panel__brand" />
+                      </div>
                       <strong>{isDesktopRoute ? 'Desktop Organizer' : 'Workplace Organizer'}</strong>
                       <span>{isDesktopRoute ? 'System objects, routed programs, and operator utilities.' : `Current object: ${shellWorkspaceLabel}.`}</span>
                     </div>

@@ -17574,7 +17574,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/rate_limiting.py app/middleware/traffic_capture.py tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T795-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Standardize backend hygiene patterns called out by the audit
     Description:
     - Goal / acceptance criteria: Reduce silent `except Exception: pass` usage where practical, normalize `from __future__ import annotations` policy, and clean up low-value log formatting issues such as emoji-driven logger output.
@@ -17582,10 +17582,15 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Small repo-wide hygiene updates with targeted validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:01 EDT - Codex
+    Completion notes: Normalized the shared backend helper layer by converting `app/utils/logging_utils.py` and `app/utils/route_helpers.py` to plain-text status/error logging, adding `from __future__ import annotations`, and switching their coroutine detection to `inspect.iscoroutinefunction`. Reduced low-value silent exception handling in the touched startup and middleware paths by replacing `except Exception: pass` blocks with explicit `contextlib.suppress(...)` for optional traffic capture or debug-level lifecycle notes in `app/main.py` and `app/middleware/rate_limiting.py`. Also removed the remaining glyph-heavy rate-limit and startup/shutdown messages in the touched paths and added focused helper regressions to keep the backend log contract plain and deterministic.
+    - Validation:
+      - `pytest -q tests/test_logging_utils.py tests/test_route_helpers.py tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py` -> PASS (`20 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/logging_utils.py app/utils/route_helpers.py app/middleware/rate_limiting.py app/middleware/traffic_capture.py app/main.py tests/test_logging_utils.py tests/test_route_helpers.py tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 18:49 EDT - Codex
+Last updated: 2026-04-07 19:01 EDT - Codex
 
 ID: T780
 Status: [✓] Done

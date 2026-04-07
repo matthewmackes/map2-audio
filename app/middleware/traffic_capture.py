@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import time
 import uuid
@@ -165,11 +166,9 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
             and request_size > 0
             and (observatory_recording or request_size <= _REQUEST_BODY_CAPTURE_LIMIT_BYTES)
         ):
-            try:
+            with contextlib.suppress(Exception):
                 raw_body = await request.body()
                 req_body_snippet = _snippet(raw_body)
-            except Exception:
-                pass
 
         try:
             response = await call_next(request)
@@ -224,7 +223,7 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
         res_body_snippet: str | None = None
         capture_response_body = observatory_recording or response.status_code >= 400
         if capture_response_body:
-            try:
+            with contextlib.suppress(Exception):
                 body_chunks: list[bytes] = []
                 async for chunk in response.body_iterator:  # type: ignore[attr-defined]
                     body_chunks.append(chunk if isinstance(chunk, bytes) else chunk.encode())
@@ -240,8 +239,6 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     headers=dict(response.headers),
                     media_type=response.media_type,
                 )
-            except Exception:
-                pass
 
         dependency_snapshot = (
             _dependency_snapshot()
