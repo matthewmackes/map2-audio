@@ -19,12 +19,13 @@ from app.routes.scoped_plugin_utils import (
     set_scoped_actual_parameter,
 )
 from app.services.juce_engine_service import get_audio_engine
+from app.services.plugin_uris import (
+    COMPRESSOR_PLUGIN_URI,
+    LIMITER_PLUGIN_URI,
+    NOISE_GATE_PLUGIN_URI as GATE_PLUGIN_URI,
+)
 
 router = APIRouter(prefix="/api/engine/dynamics", tags=["dynamics"])
-
-COMPRESSOR_PLUGIN_URI = "map2://juce/dynamics/compressor"
-LIMITER_PLUGIN_URI = "map2://juce/dynamics/limiter"
-GATE_PLUGIN_URI = "map2://juce/dynamics/gate"
 
 DEFAULT_DYNAMICS_METERING = {
     "input_level": -100.0,

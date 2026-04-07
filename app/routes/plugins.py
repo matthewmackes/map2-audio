@@ -19,6 +19,7 @@ from app.response_models import PluginLoadResponse, PluginUnloadResponse
 from app.exceptions import PluginNotFoundException, PluginLoadException
 from app.services.plugin_resource_manager import get_resource_manager, ResourceLimits
 from app.services.plugin_key_parameter_registry import attach_plugin_key_parameter_metadata
+from app.services.plugin_uris import build_lexicon_mpx1_plugin_descriptor
 
 logger = logging.getLogger(__name__)
 
@@ -227,8 +228,6 @@ def _get_juce_processors() -> List[Dict[str, Any]]:
     return _juce_processors_cache
 
 
-# Hardware plugin constants
-_LEXICON_MPX1_URI = "hardware://lexicon-mpx1-spdif"
 _ENABLE_ENGINE_PLUGIN_OPS = os.getenv("MAP2_ENABLE_ENGINE_PLUGIN_OPS", "false").lower() in {
     "1",
     "true",
@@ -248,28 +247,7 @@ _ENGINE_OP_RETRY_BASE_DELAY = max(0.01, float(os.getenv("MAP2_ENGINE_OP_RETRY_BA
 
 def _get_hardware_plugins() -> List[Dict[str, Any]]:
     """Return hardware effect plugins (Lexicon MPX-1 via S/PDIF)."""
-    return [
-        attach_plugin_key_parameter_metadata({
-            "uri": _LEXICON_MPX1_URI,
-            "name": "Lexicon MPX-1",
-            "author": "Lexicon / Harman",
-            "category": "lexicon",
-            "class_label": "Hardware Effect",
-            "version": "1.0",
-            "license": "Proprietary",
-            "has_ui": False,
-            "in_ports": 2,
-            "out_ports": 2,
-            "format": "Hardware",
-            "format_name": "Hardware S/PDIF",
-            "brand": "Lexicon",
-            "is_hardware": True,
-            "has_midi_input": True,
-            "has_midi_output": True,
-            "parameters": [],
-            "priority": 1,
-        })
-    ]
+    return [attach_plugin_key_parameter_metadata(build_lexicon_mpx1_plugin_descriptor())]
 
 try:
     from fastapi import APIRouter, HTTPException, Query, Response, Body
@@ -1086,7 +1064,7 @@ try:
                     "native_inventory": _native_inventory_snapshot(warm_plugins),
                 }
 
-            fallback_plugins = _get_hardware_plugins() + _get_juce_processors()
+            fallback_plugins = _get_juce_processors()
             if fallback_plugins:
                 return {
                     "plugins": fallback_plugins,
@@ -1116,23 +1094,22 @@ try:
                 global _juce_processors_cache
                 _juce_processors_cache = []
             juce_processors = _get_juce_processors()
-            hardware_plugins = _get_hardware_plugins()
-            logger.info(f"Including {len(juce_processors)} JUCE native processors, {len(hardware_plugins)} hardware plugins")
+            logger.info("Including %s JUCE native processors in generic plugin discovery", len(juce_processors))
 
             loader = service_manager.get_plugin_loader()
             if not loader:
-                # If loader not available, return JUCE + hardware processors only
-                fallback_plugins = hardware_plugins + juce_processors
+                # If loader not available, return JUCE processors only.
+                fallback_plugins = juce_processors
                 if fallback_plugins:
                     with _plugin_cache_lock:
                         _discovered_plugins = list(fallback_plugins)
                         _cache_timestamp = time.time()
-                    logger.warning("Plugin loader not available, returning JUCE + hardware processors only")
+                    logger.warning("Plugin loader not available, returning JUCE processors only")
                     return {
                         "plugins": fallback_plugins,
                         "count": len(fallback_plugins),
                         "cached": False,
-                        "warning": "LV2 loader not available, showing JUCE + hardware processors only",
+                        "warning": "LV2 loader not available, showing JUCE processors only",
                         "native_inventory": _native_inventory_snapshot(fallback_plugins),
                     }
                 # If we have cached data, return it anyway
@@ -1165,8 +1142,8 @@ try:
                 logger.debug(f"Raw plugins from loader: {[(p.uri if hasattr(p, 'uri') else str(p)) for p in plugins]}")
                 lv2_plugins = [_transform_plugin(p) for p in plugins]
 
-                # Combine: Hardware plugins (top), JUCE processors, then LV2 plugins
-                combined_plugins = hardware_plugins + juce_processors + lv2_plugins
+                # Generic discovery surfaces expose JUCE native and LV2 plugins only.
+                combined_plugins = juce_processors + lv2_plugins
                 with _plugin_cache_lock:
                     _discovered_plugins = combined_plugins
                     _cache_timestamp = time.time()

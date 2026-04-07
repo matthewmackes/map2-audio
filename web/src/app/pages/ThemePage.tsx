@@ -9,7 +9,7 @@ import {
   TileGroup,
   Toggle,
 } from '@carbon/react'
-import { type CSSProperties, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { type ChangeEvent, type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { pluginsApi } from '@/map2/api'
@@ -49,6 +49,11 @@ import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppea
 import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
 import { usePluginAppearances } from '../hooks/usePluginAppearances'
 import type { PageTransitionPreset } from '../stores/effectsSettingsStore'
+import {
+  readDesktopWallpaperState,
+  writeDesktopWallpaperState,
+  type DesktopWallpaperState,
+} from './desktopWallpaper'
 import './ThemePage.css'
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
@@ -353,6 +358,9 @@ export function ThemePage() {
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
   const [pluginAppearanceDrafts, setPluginAppearanceDrafts] = useState<Record<string, Partial<PluginAppearanceOverride>>>({})
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [desktopWallpaper, setDesktopWallpaper] = useState<DesktopWallpaperState>(() => readDesktopWallpaperState())
+  const [wallpaperUploadError, setWallpaperUploadError] = useState<string | null>(null)
+  const wallpaperUploadInputRef = useRef<HTMLInputElement | null>(null)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
     getCategoryColorOverrideSnapshot,
@@ -519,6 +527,44 @@ export function ThemePage() {
         uri: selectedPluginUri,
       },
     }))
+  }
+
+  const applyDesktopWallpaper = (nextState: DesktopWallpaperState) => {
+    setDesktopWallpaper(writeDesktopWallpaperState(nextState))
+    setWallpaperUploadError(null)
+  }
+
+  const handleWallpaperUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setWallpaperUploadError('Choose an image file for the desktop wallpaper.')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : ''
+      if (!result) {
+        setWallpaperUploadError('Failed to load the selected wallpaper image.')
+        return
+      }
+
+      applyDesktopWallpaper({
+        version: 1,
+        mode: 'uploaded-image',
+        imageDataUrl: result,
+      })
+    }
+    reader.onerror = () => {
+      setWallpaperUploadError('Failed to load the selected wallpaper image.')
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
   }
 
   const handleSavePluginAppearance = async () => {
@@ -1381,6 +1427,109 @@ export function ThemePage() {
             )}
           </fieldset>
         </div>
+
+        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <legend>Desktop personalization</legend>
+          <div className="theme-page__dialog-head">
+            <div>
+              <h2 className="theme-page__section-title">Desktop personalization</h2>
+              <p className="theme-page__section-copy">
+                Control the desktop wallpaper and jump directly back to the desktop or display settings workflow from the same page.
+              </p>
+            </div>
+            <div className="theme-page__section-tags">
+              <Tag type="cool-gray" size="sm">
+                {desktopWallpaper.mode === 'default-image'
+                  ? 'Default wallpaper'
+                  : desktopWallpaper.mode === 'solid-theme'
+                    ? 'Theme solid color'
+                    : 'Uploaded wallpaper'}
+              </Tag>
+              <Tag type="blue" size="sm">{carbonThemeLabel(theme.carbonTheme ?? 'g10')}</Tag>
+            </div>
+          </div>
+
+          <div className="theme-page__settings-stack">
+            <div className="theme-page__settings-row theme-page__settings-row--stacked">
+              <div className="theme-page__motion-head">
+                <PaintBrush size={20} aria-hidden />
+                <div>
+                  <strong>Wallpaper source</strong>
+                  <p>Choose the default landing image, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
+                </div>
+              </div>
+              <div className="theme-page__option-list" role="radiogroup" aria-label="Desktop wallpaper source">
+                {([
+                  ['default-image', 'Landing image', 'Use the default MAP2 desktop background image.'],
+                  ['solid-theme', 'Theme solid color', 'Use the active Carbon theme background color as the desktop wallpaper.'],
+                  ['uploaded-image', 'Uploaded image', 'Use a custom image stored locally in this browser.'],
+                ] as const).map(([id, label, description]) => {
+                  const active = desktopWallpaper.mode === id
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
+                      onClick={() => {
+                        if (id === 'uploaded-image') {
+                          wallpaperUploadInputRef.current?.click()
+                          return
+                        }
+                        applyDesktopWallpaper({ version: 1, mode: id })
+                      }}
+                    >
+                      <span className="theme-page__option-copy">
+                        <strong>{label}</strong>
+                        <span>{description}</span>
+                      </span>
+                      <span className="theme-page__option-status">
+                        {active ? 'Selected' : 'Available'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <input
+                ref={wallpaperUploadInputRef}
+                type="file"
+                accept="image/*"
+                aria-label="Upload desktop wallpaper"
+                style={{ display: 'none' }}
+                onChange={handleWallpaperUpload}
+              />
+              {desktopWallpaper.mode === 'uploaded-image' && desktopWallpaper.imageDataUrl ? (
+                <p className="theme-page__group-note">Custom wallpaper loaded from local browser storage.</p>
+              ) : null}
+              {wallpaperUploadError ? (
+                <InlineNotification
+                  lowContrast
+                  hideCloseButton
+                  kind="error"
+                  title="Wallpaper upload failed."
+                  subtitle={wallpaperUploadError}
+                />
+              ) : null}
+            </div>
+
+            <div className="theme-page__settings-row">
+              <div className="theme-page__motion-head">
+                <Settings size={20} aria-hidden />
+                <div>
+                  <strong>Display entry points</strong>
+                  <p>Use the desktop wallpaper context menu or return to the desktop now to validate the current personalization settings live.</p>
+                </div>
+              </div>
+              <div className="theme-page__motion-actions">
+                <Button kind="tertiary" onClick={() => navigate('/')}>
+                  Open desktop
+                </Button>
+              </div>
+            </div>
+          </div>
+        </fieldset>
 
         <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
           <legend>Behavior and accessibility</legend>

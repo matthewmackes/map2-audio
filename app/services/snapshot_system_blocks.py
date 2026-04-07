@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import get_config
-
-NOISE_GATE_PLUGIN_URI = "map2://juce/dynamics/gate"
+from app.services.plugin_uris import NOISE_GATE_PLUGIN_URI
 NOISE_GATE_SYSTEM_ROLE = "noise_gate"
 NOISE_GATE_THRESHOLD_CONFIG_KEY = "snapshots.global_noise_gate_threshold_db"
 NOISE_GATE_RELEASE_CONFIG_KEY = "snapshots.global_noise_gate_release_ms"

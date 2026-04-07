@@ -26,9 +26,9 @@ export function ViewportPolicyGate({ children }: { children: ReactNode }) {
       <div className="viewport-policy-screen__panel">
         <Map2BrandMark className="viewport-policy-screen__panel-mark" />
         <p className="viewport-policy-screen__eyebrow">Unsupported Viewport</p>
-        <h1 className="viewport-policy-screen__title">MAP2 requires a minimum display area of 1920x1080.</h1>
+        <h1 className="viewport-policy-screen__title">MAP2 requires a minimum display area of 820&times;1180.</h1>
         <p className="viewport-policy-screen__copy">
-          This platform is desktop-only. Mobile, tablet, iPad, split-screen, and reduced-size browser windows are not supported.
+          This platform requires a tablet-portrait or larger display. Small mobile screens and heavily reduced browser windows are not supported.
         </p>
         <div className="viewport-policy-screen__metrics" aria-label="Viewport requirement details">
           <div className="viewport-policy-screen__metric">
@@ -41,7 +41,7 @@ export function ViewportPolicyGate({ children }: { children: ReactNode }) {
           </div>
         </div>
         <p className="viewport-policy-screen__hint">
-          Maximize the browser window or move to a larger display, then reload the page.
+          Resize the browser window or rotate your device to portrait orientation, then reload.
         </p>
       </div>
     </div>

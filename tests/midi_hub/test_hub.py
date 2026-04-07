@@ -1,4 +1,5 @@
 import time
+import threading
 
 from app.services.midi_hub.hub import MidiHub, RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S
 from app.services.midi_hub.ports import VirtualMidiPort
@@ -54,3 +55,29 @@ def test_hub_stats_and_unregister():
 def test_hub_enforces_rt_safe_poll_interval_floor():
     hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.0005)
     assert hub._poll_interval_s == RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S
+
+
+def test_hub_sets_running_before_worker_threads_begin(monkeypatch):
+    hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.001, hotplug_interval_s=0.25)
+    observations: list[tuple[str, bool]] = []
+    entered = threading.Event()
+
+    def _run_loop():
+        observations.append(("io", hub.running))
+        entered.set()
+        hub._stop_evt.wait(timeout=0.2)
+
+    def _run_hotplug_loop():
+        observations.append(("hotplug", hub.running))
+        entered.set()
+        hub._stop_evt.wait(timeout=0.2)
+
+    monkeypatch.setattr(hub, "_run_loop", _run_loop)
+    monkeypatch.setattr(hub, "_run_hotplug_loop", _run_hotplug_loop)
+
+    hub.start()
+    entered.wait(timeout=0.5)
+    hub.stop()
+
+    assert observations
+    assert all(flag is True for _, flag in observations)

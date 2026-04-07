@@ -24,7 +24,15 @@ class RingBufferStats:
 
 
 class MidiRingBuffer(Generic[T]):
-    """Bounded ring buffer with O(1) push/pop semantics."""
+    """Bounded ring buffer with O(1) push/pop semantics.
+
+    Concurrency contract:
+    - safe for a single producer thread and a single consumer thread under the
+      CPython GIL-backed mutation model used by the MIDI hub
+    - not a general multi-producer or multi-consumer synchronization primitive
+    - overwrite mode always drops the oldest queued item to preserve the newest
+      incoming event in real-time pipelines
+    """
 
     def __init__(self, capacity: int, *, overwrite_on_full: bool = False):
         if capacity <= 0:
@@ -72,11 +80,14 @@ class MidiRingBuffer(Generic[T]):
             if not self._overwrite_on_full:
                 self._dropped_writes += 1
                 return False
-            # Overwrite oldest entry.
+            # Drop the oldest queued entry, then write the new value into the
+            # newly freed tail slot so overwrite mode preserves the freshest
+            # event instead of the stale head item.
             self._overwritten_writes += 1
+            self._buf[self._head] = None
+            self._head = (self._head + 1) % self._capacity
             self._buf[self._tail] = value
             self._tail = (self._tail + 1) % self._capacity
-            self._head = self._tail
             return True
 
         self._buf[self._tail] = value

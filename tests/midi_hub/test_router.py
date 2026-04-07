@@ -94,3 +94,37 @@ def test_router_persistence_round_trip(tmp_path):
     loaded = router_reloaded.get_route(route_id)
     assert loaded is not None
     assert loaded["destination_ports"] == ["d1", "d2"]
+
+
+def test_router_delayed_dispatch_uses_bounded_worker_instead_of_thread_per_message(tmp_path, monkeypatch):
+    hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.001)
+    src = VirtualMidiPort(port_id="src", name="Source")
+    dst = VirtualMidiPort(port_id="dst", name="Dest")
+    hub.register_port(src)
+    hub.register_port(dst)
+
+    def _forbid_timer(*args, **kwargs):
+        raise AssertionError("threading.Timer should not be used for delayed routing")
+
+    monkeypatch.setattr("app.services.midi_hub.router.threading.Timer", _forbid_timer)
+
+    router = MidiRouter(hub=hub, persist_path=Path(tmp_path / "routes.json"))
+    router.start()
+    hub.start()
+    try:
+        router.add_route(
+            {
+                "source_port": "src",
+                "destination_ports": ["dst"],
+                "filter": {"message_types": ["note_on"]},
+                "transform_chain": [{"type": "message_delay", "delay_ms": 20}],
+            }
+        )
+        assert src.inject(b"\x90\x3C\x64", source_port="src")
+
+        captured = []
+        assert _wait_until(lambda: bool((captured.extend(dst.read_transmitted(max_messages=32)) or captured)), timeout_s=1.0)
+        assert captured[0].data == b"\x90\x3C\x64"
+    finally:
+        hub.stop()
+        router.stop()

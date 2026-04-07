@@ -674,6 +674,12 @@
   }
 }
 
+@media (max-width: 960px) {
+  .platform-shell__cp-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 720px) {
   .platform-shell-page {
     --platform-menu-scale: 1.08;

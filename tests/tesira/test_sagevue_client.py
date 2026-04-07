@@ -128,3 +128,15 @@ def test_sagevue_client_from_config(monkeypatch):
     assert client.enabled is True
     assert client.base_url == "https://sagevue.example.local"
     assert client.has_token is True
+
+
+def test_sagevue_settings_repr_redacts_api_token():
+    settings = SageVueSettings(
+        enabled=True,
+        base_url="https://sagevue.example.local",
+        api_token="secret-token",
+        verify_ssl=True,
+        timeout_s=5.0,
+    )
+
+    assert "secret-token" not in repr(settings)

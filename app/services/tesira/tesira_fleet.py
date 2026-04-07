@@ -38,7 +38,7 @@ class TesiraDeviceConfig:
     ssh_enabled: bool = True
     ssh_port: int = 22
     ssh_username: str = "default"
-    ssh_password: str = "default"
+    ssh_password: str = field(default="default", repr=False)
 
 
 class TesiraFleet:
@@ -61,6 +61,8 @@ class TesiraFleet:
         self._offline_retry_failures: Dict[str, int] = {}
         self._offline_next_retry_at: Dict[str, float] = {}
         self._reverse_preset_sync = True
+        self._meter_broadcast_tasks: set[asyncio.Task] = set()
+        self.MAX_PENDING_METER_BROADCASTS = 64
 
     # Seconds between reconnect attempts for offline devices
     OFFLINE_RETRY_INTERVAL = 30
@@ -121,6 +123,23 @@ class TesiraFleet:
                     )
                 except (asyncio.CancelledError, Exception):
                     pass
+
+        for task in list(self._meter_broadcast_tasks):
+            if task.done():
+                self._meter_broadcast_tasks.discard(task)
+                continue
+            task.cancel()
+            try:
+                await asyncio.wait_for(task, timeout=self.TASK_CANCEL_TIMEOUT_SECONDS)
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "TesiraFleet meter broadcast task %s did not stop within %.1fs",
+                    task.get_name(),
+                    self.TASK_CANCEL_TIMEOUT_SECONDS,
+                )
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._meter_broadcast_tasks.clear()
 
         for device in list(self._devices.values()):
             try:
@@ -308,11 +327,28 @@ class TesiraFleet:
         except Exception:
             # Meter history should never block live websocket updates.
             pass
-        # Schedule WS broadcast (non-blocking; called from asyncio task)
-        asyncio.create_task(
-            self._broadcast('tesira:meters', payload),
-            name='tesira_meter_broadcast',
+        # Keep meter push fanout bounded so a slow websocket path does not
+        # accumulate unbounded background tasks under sustained metering load.
+        self._schedule_meter_broadcast(payload)
+
+    def _schedule_meter_broadcast(self, payload: Dict[str, Any]) -> None:
+        self._meter_broadcast_tasks = {
+            task for task in self._meter_broadcast_tasks if not task.done()
+        }
+        if len(self._meter_broadcast_tasks) >= int(self.MAX_PENDING_METER_BROADCASTS):
+            logger.debug(
+                "TesiraFleet dropping meter broadcast for %s/%s because %d broadcasts are already pending",
+                payload.get("device_id"),
+                payload.get("instance_tag"),
+                len(self._meter_broadcast_tasks),
+            )
+            return
+        task = asyncio.create_task(
+            self._broadcast("tesira:meters", payload),
+            name="tesira_meter_broadcast",
         )
+        self._meter_broadcast_tasks.add(task)
+        task.add_done_callback(self._meter_broadcast_tasks.discard)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Internal: Offline device retry loop

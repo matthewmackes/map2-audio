@@ -61,6 +61,7 @@ class TTPSSHClient:
         self._connected = False
         self._stopping = False
         self._read_task: Optional[asyncio.Task] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
         self._lock = asyncio.Lock()
 
         self._response_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -82,6 +83,12 @@ class TTPSSHClient:
     async def disconnect(self) -> None:
         self._stopping = True
         self._connected = False
+        if self._reconnect_task and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
+            try:
+                await self._reconnect_task
+            except (asyncio.CancelledError, Exception):
+                pass
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
             try:
@@ -101,6 +108,7 @@ class TTPSSHClient:
                 pass
         self._proc = None
         self._conn = None
+        self._reconnect_task = None
         logger.info("TTPSSHClient[%s:%d] disconnected", self.host, self.port)
 
     async def _do_connect(self) -> None:
@@ -165,6 +173,16 @@ class TTPSSHClient:
                 return
             except Exception as exc:
                 logger.warning("SSH reconnect attempt %d failed: %s", attempt, exc)
+
+    def _ensure_reconnect_task(self) -> None:
+        if self._stopping:
+            return
+        if self._reconnect_task and not self._reconnect_task.done():
+            return
+        self._reconnect_task = asyncio.create_task(
+            self._reconnect_loop(),
+            name=f"ttp_ssh_reconnect_{self.host}",
+        )
 
     async def send(self, instance_tag: str, service: str, attribute: str, *args: Any) -> TTPResponse:
         parts = [instance_tag, service]
@@ -234,7 +252,7 @@ class TTPSSHClient:
             if not self._stopping:
                 self._connected = False
                 logger.info("TTPSSHClient[%s:%d] disconnected; scheduling reconnect", self.host, self.port)
-                asyncio.create_task(self._reconnect_loop(), name=f"ttp_ssh_reconnect_{self.host}")
+                self._ensure_reconnect_task()
 
     @staticmethod
     def _parse_response(raw: str) -> TTPResponse:

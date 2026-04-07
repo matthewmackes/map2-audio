@@ -76,6 +76,7 @@ class TTPClient:
         self._connected = False
         self._stopping = False
         self._read_task: Optional[asyncio.Task] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
         self._response_queue: asyncio.Queue[str] = asyncio.Queue()
         self._telnet_pending = bytearray()
         self._line_buffer = bytearray()
@@ -105,6 +106,12 @@ class TTPClient:
         """Cleanly close the TCP connection."""
         self._stopping = True
         self._connected = False
+        if self._reconnect_task and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
+            try:
+                await self._reconnect_task
+            except (asyncio.CancelledError, Exception):
+                pass
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
             try:
@@ -119,6 +126,7 @@ class TTPClient:
                 pass
         self._reader = None
         self._writer = None
+        self._reconnect_task = None
         self._telnet_pending.clear()
         self._line_buffer.clear()
         while not self._response_queue.empty():
@@ -199,6 +207,16 @@ class TTPClient:
                 return
             except Exception as exc:
                 logger.warning("TTPClient reconnect attempt %d failed: %s", attempt, exc)
+
+    def _ensure_reconnect_task(self) -> None:
+        if self._stopping:
+            return
+        if self._reconnect_task and not self._reconnect_task.done():
+            return
+        self._reconnect_task = asyncio.create_task(
+            self._reconnect_loop(),
+            name=f"ttp_reconnect_{self.host}",
+        )
 
     # ──────────────────────────────────────────────────────────────────────────
     # Command send / receive
@@ -446,7 +464,7 @@ class TTPClient:
             if not self._stopping:
                 self._connected = False
                 logger.info("TTPClient[%s:%d] disconnected; scheduling reconnect", self.host, self.port)
-                asyncio.create_task(self._reconnect_loop(), name=f"ttp_reconnect_{self.host}")
+                self._ensure_reconnect_task()
 
 
 # ──────────────────────────────────────────────────────────────────────────────

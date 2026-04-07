@@ -96,6 +96,7 @@ class MidiHub:
             if self._running:
                 return
             self._stop_evt.clear()
+            self._running = True
 
             if self._auto_discover_alsa:
                 self._seed_alsa_ports()
@@ -109,8 +110,6 @@ class MidiHub:
 
             self._hotplug_thread = threading.Thread(target=self._run_hotplug_loop, name="midi_hub_hotplug", daemon=True)
             self._hotplug_thread.start()
-
-            self._running = True
             self._attach_cluster_router_if_enabled()
             self._start_cluster_broadcast_if_enabled()
 

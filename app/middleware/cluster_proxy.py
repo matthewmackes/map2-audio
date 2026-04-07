@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+import uuid
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import httpx
@@ -127,6 +128,11 @@ class ClusterProxyMiddleware:
         client = await self._get_client(node)
         headers = dict(request.headers)
         headers["X-MAP2-Proxy-Origin"] = self.local_node_id
+        headers["X-Request-ID"] = (
+            getattr(request.state, "request_id", None)
+            or request.headers.get("x-request-id")
+            or str(uuid.uuid4())
+        )
 
         started = time.perf_counter()
         try:
@@ -160,6 +166,11 @@ class ClusterProxyMiddleware:
 
         headers = dict(request.headers)
         headers["X-MAP2-Proxy-Origin"] = self.local_node_id
+        headers["X-Request-ID"] = (
+            getattr(request.state, "request_id", None)
+            or request.headers.get("x-request-id")
+            or str(uuid.uuid4())
+        )
 
         started = time.perf_counter()
         try:
@@ -229,6 +240,12 @@ class ClusterProxyMiddleware:
         client = _NodeClient(node.node_id, base_url, self.timeout_s, self.max_conn)
         self.clients[node.node_id] = client
         return client
+
+    async def aclose(self) -> None:
+        clients = list(self.clients.values())
+        self.clients.clear()
+        if clients:
+            await asyncio.gather(*(client.aclose() for client in clients), return_exceptions=True)
 
     def _record_metric(self, node_id: str, success: bool, latency_ms: float):
         metrics = self.metrics.setdefault(node_id, {"count": 0, "errors": 0, "p50_ms": latency_ms})

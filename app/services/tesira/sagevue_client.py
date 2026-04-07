@@ -8,7 +8,7 @@ trigger Tesira layout deployment jobs without launching Tesira Software UI.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class SageVueSettings:
     enabled: bool
     base_url: str
-    api_token: str
+    api_token: str = field(repr=False)
     verify_ssl: bool
     timeout_s: float
 

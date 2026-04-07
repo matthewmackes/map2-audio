@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 
+from app.utils.time import utc_now
+
 
 # ==================== Standard Response Wrapper ====================
 
@@ -26,7 +28,7 @@ class APIResponse(BaseModel):
     message: str
     data: Optional[Dict[str, Any]] = None
     errors: Optional[List[str]] = None
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=utc_now)
 
 
 # ==================== Plugin Responses ====================
@@ -302,7 +304,7 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=utc_now)
     path: Optional[str] = None
     request_id: Optional[str] = None
 
@@ -364,13 +366,13 @@ class HostMachineInfo(BaseModel):
 class DiskHealthData(BaseModel):
     """Disk health data."""
     disks: List[DiskInfo]
-    last_updated: datetime = Field(default_factory=datetime.now)
+    last_updated: datetime = Field(default_factory=utc_now)
 
 
 class SystemHealthOverview(BaseModel):
     """System health overview."""
     overall_health: str  # "excellent", "good", "warning", "critical"
-    last_updated: datetime = Field(default_factory=datetime.now)
+    last_updated: datetime = Field(default_factory=utc_now)
     temperature: Optional[Dict[str, Any]] = None
     power: Optional[Dict[str, Any]] = None
     fans: Optional[List[Dict[str, Any]]] = None

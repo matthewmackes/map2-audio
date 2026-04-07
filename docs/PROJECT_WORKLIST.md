@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-06 12:42 EDT - T783 completed with Perform fullscreen escape handling.
+Last updated: 2026-04-06 - T796 complete: 820px responsive redesign (all subtasks A-J done).
 
 ## Performance Brain
 
@@ -16957,7 +16957,7 @@ Last updated: 2026-04-06 09:28 EDT - Codex
 ## Backend Audit Follow-Up
 
 ID: T789
-Status: [ ] Todo
+Status: [✓] Done
 Title: Close the audit's critical correctness and security faults
 Description:
 - Goal / acceptance criteria: Land the backend fixes the audit marked as critical before the affected cluster, auth-proxy, and MIDI-buffer features are treated as trustworthy: correct Raft election majority behavior, add durable Raft term/vote/log persistence, fix the Raft log-apply off-by-one, fix the MIDI ring-buffer overwrite bug, and correct middleware ordering so cluster proxying cannot bypass authentication.
@@ -16967,7 +16967,7 @@ Description:
 - Required outputs: Code fixes, focused backend regressions, and updated operator/developer notes where behavior changes.
 Subtasks:
   - ID: T789-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix Raft self-vote majority calculation and stale-term response handling
     Description:
     - Goal / acceptance criteria: Correct leader-election majority math so local self-votes count properly, and ensure vote/append response terms can force stale leaders or candidates to step down.
@@ -16975,10 +16975,15 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: `raft_consensus.py` fixes and focused election-term regression coverage.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:02 EDT - Codex
+    - Completion notes:
+      - Corrected `app/services/cluster/raft_consensus.py` so candidate self-votes count toward majority, leader commit majority uses the full cluster size including the local node, and higher-term vote/append responses immediately demote stale candidates or leaders.
+      - Hardened `app/routes/raft_api.py` vote/append handlers to reject stale terms, step down on same-term leader heartbeats, and permit idempotent re-votes for the same candidate without violating term checks.
+    - Validation:
+      - `pytest tests/test_raft_consensus.py` -> PASS
   - ID: T789-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add durable Raft state persistence for term, vote, and log
     Description:
     - Goal / acceptance criteria: Persist Raft-required stable state before RPC acknowledgement so crash/restart behavior preserves election safety and committed-log continuity.
@@ -16986,10 +16991,16 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Durable storage wiring, restart-safe recovery path, and focused crash/restart tests.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:16 EDT - Codex
+    - Completion notes:
+      - Added durable Raft stable-state persistence in `app/services/cluster/raft_consensus.py` for `current_term`, `voted_for`, and the full log, with atomic temp-file replacement and restart-time reload from the per-node state file path (`MAP2_RAFT_STATE_DIR` override supported).
+      - Routed vote-term, granted-vote, election self-vote, log append, and follower conflict-truncation paths through the stable-state writer so term/vote/log mutations hit disk before the node proceeds as if the change succeeded.
+      - Extended `tests/test_raft_consensus.py` with crash/restart round-trip coverage proving persisted vote/log state survives re-instantiation and is durable before vote/append RPC handlers return.
+    - Validation:
+      - `pytest tests/test_raft_consensus.py` -> PASS
   - ID: T789-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix the Raft committed-log application off-by-one
     Description:
     - Goal / acceptance criteria: Ensure the first committed log entry is applied exactly once and `last_applied` advances only after a successful apply.
@@ -16997,10 +17008,14 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Apply-loop fix and focused regression coverage.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:02 EDT - Codex
+    - Completion notes:
+      - Switched Raft apply-loop advancement to apply-then-advance semantics in `app/services/cluster/raft_consensus.py`, starting from `-1` indexes so entry `0` is applied exactly once and failed applies no longer falsely advance `last_applied`.
+    - Validation:
+      - `pytest tests/test_raft_consensus.py` -> PASS
   - ID: T789-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix the MIDI ring-buffer overwrite semantics
     Description:
     - Goal / acceptance criteria: Correct overwrite mode so a full buffer discards the oldest entry, not the newest one that was just written, and document/enforce the concurrency contract used by the buffer implementation.
@@ -17008,10 +17023,15 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: `ring_buffer.py` fix, concurrency notes, and focused regression tests.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:02 EDT - Codex
+    - Completion notes:
+      - Clarified the MIDI ring-buffer concurrency contract in `app/services/midi_hub/ring_buffer.py` and made overwrite mode explicitly evict the oldest queued item before writing the newest event into the freed slot.
+      - Added wraparound regression coverage in `tests/midi_hub/test_ring_buffer.py` so overwrite mode proves it preserves the freshest FIFO window across head/tail rollover.
+    - Validation:
+      - `pytest tests/midi_hub/test_ring_buffer.py` -> PASS
   - ID: T789-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix middleware order so ClusterProxy cannot bypass API auth
     Description:
     - Goal / acceptance criteria: Reorder middleware registration so authentication gates cluster-proxied requests, and align request-id propagation so proxy, logging, and traffic-capture layers share one stable request id.
@@ -17019,13 +17039,25 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: `main.py` middleware-stack fix and route/middleware regressions covering auth and request-id behavior.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:02 EDT - Codex
+    - Completion notes:
+      - Reordered middleware registration in `app/main.py` so `APIAuthMiddleware` is now outermost, forcing auth checks to run before `ClusterProxyMiddleware` can proxy targeted `/api/*` traffic.
+      - Unified request-id propagation by making `RequestLoggingMiddleware` reuse an existing request id when present and by forwarding that id through `ClusterProxyMiddleware` to downstream nodes.
+      - Added middleware regressions in `tests/test_backend_audit_middleware.py` and preserved the existing proxy/auth coverage in `tests/test_cluster_proxy_middleware.py` and `tests/test_api_auth_middleware.py`.
+    - Validation:
+      - `pytest tests/test_backend_audit_middleware.py tests/test_cluster_proxy_middleware.py tests/test_api_auth_middleware.py` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 14:16 EDT - Codex
+- Completion notes:
+  - Closed all five critical audit findings in this epic, including the remaining durable Raft term/vote/log persistence slice for crash/restart safety.
+  - The critical backend correctness/security bundle is now fully covered by focused Raft, middleware, and MIDI hub regression tests.
+- Validation:
+  - `pytest tests/test_raft_consensus.py tests/test_backend_audit_middleware.py tests/test_cluster_proxy_middleware.py tests/midi_hub/test_ring_buffer.py tests/test_api_auth_middleware.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T790
-Status: [ ] Todo
+Status: [✓] Done
 Title: Harden backend concurrency, scheduling, and realtime broadcast safety
 Description:
 - Goal / acceptance criteria: Resolve the audit's cross-service concurrency and resource-lifecycle faults across the MIDI hub/router, realtime parameter bridge, websocket manager, event bus, heartbeat monitor, proxy clients, and related singleton factories so the backend no longer relies on unsafe mutation races, unbounded timers/tasks, or per-call loop/client creation in hot paths.
@@ -17035,7 +17067,7 @@ Description:
 - Required outputs: Concurrency-safe service changes, lifecycle cleanup hooks, focused regressions, and any required runtime instrumentation updates.
 Subtasks:
   - ID: T790-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Replace MIDI router timer threads with a bounded scheduler and fix hub startup race
     Description:
     - Goal / acceptance criteria: Remove per-message `threading.Timer` leaks, provide a bounded delayed-routing scheduler, and set hub running state before worker threads begin scanning or polling.
@@ -17043,10 +17075,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: `midi_hub/router.py` and `midi_hub/hub.py` fixes plus focused lifecycle tests.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:16 EDT - Codex
+    - Completion notes:
+      - Replaced per-message `threading.Timer` dispatch in `app/services/midi_hub/router.py` with one bounded delayed-dispatch worker thread backed by a condition-protected heap queue, eliminating unbounded timer-thread churn in the routing hot path.
+      - Moved `MidiHub` running-state activation earlier in `app/services/midi_hub/hub.py` so I/O and hotplug worker threads always observe the hub as running when they begin scanning or polling.
+      - Added focused lifecycle regressions in `tests/midi_hub/test_router.py`, `tests/midi_hub/test_hub.py`, and kept the broader routing regression surface green in `tests/test_midi_cluster_hub_router.py`.
+    - Validation:
+      - `pytest tests/midi_hub/test_hub.py tests/midi_hub/test_router.py tests/test_midi_cluster_hub_router.py` -> PASS
   - ID: T790-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Make realtime parameter broadcasting and websocket disconnect paths concurrency-safe
     Description:
     - Goal / acceptance criteria: Broadcast parameter updates without one slow subscriber serializing the hot path, validate binary frame bounds, use bounded latency sampling, and make websocket disconnect/mutation paths lock-safe.
@@ -17054,10 +17092,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: `realtime_parameter_bridge.py` and `websocket_manager.py` fixes with focused realtime/websocket regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:24 EDT - Codex
+    - Completion notes:
+      - Updated `app/services/realtime_parameter_bridge.py` to validate binary frame bounds before unpacking, use bounded latency sampling, protect client/subscription mutation with a lock, and fan out subscriber updates in parallel with per-send timeouts so one slow client no longer serializes the hot path.
+      - Updated `app/services/websocket_manager.py` to use lock-safe snapshots for active connections, subscriptions, history, and disconnect cleanup so broadcast/send/disconnect paths stop racing shared mutation.
+      - Added focused regressions in `tests/test_realtime_parameter_bridge_identity.py` and `tests/test_websocket_manager.py` covering parallel fan-out, malformed binary payload handling, and concurrent disconnect cleanup.
+    - Validation:
+      - `pytest tests/test_realtime_parameter_bridge_identity.py tests/test_websocket_manager.py` -> PASS
   - ID: T790-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Make event-bus, singleton-factory, and graceful-degradation state mutation thread-safe
     Description:
     - Goal / acceptance criteria: Add consistent locking or single-threaded mutation guarantees for event subscribers/history, singleton factories, and degradation feature registration/recovery loops so concurrent subscribe/unsubscribe/init paths stop racing.
@@ -17065,10 +17109,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Event bus and shared-factory fixes, bounded history storage, and focused concurrency regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:31 EDT - Codex
+    - Completion notes:
+      - Hardened shared mutation in `app/services/event_bus.py` with subscriber/history snapshots plus a singleton construction lock, so publish/unsubscribe/init paths stop racing on the in-process event bus.
+      - Added subscriber snapshot locking in `app/services/cluster/distributed_event_bus.py` so distributed event publish and subscribe paths stop iterating mutable subscriber lists directly.
+      - Added locking around feature registration/read paths and singleton creation in `app/services/graceful_degradation.py` so concurrent registration and status/metrics reads operate on stable state.
+      - Added focused concurrency regressions in `tests/test_backend_audit_shared_state.py` and kept the existing graceful-degradation and checkpoint coverage green.
+    - Validation:
+      - `pytest tests/test_backend_audit_shared_state.py tests/test_graceful_degradation.py tests/test_checkpoint_0_1.py` -> PASS
   - ID: T790-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Rework heartbeat and proxy client lifecycles to reuse and close network clients cleanly
     Description:
     - Goal / acceptance criteria: Reuse shared `httpx.AsyncClient` instances where appropriate, skip self-monitoring, trim removed-node health state, emit first-online events, and close long-lived proxy/heartbeat clients on shutdown.
@@ -17076,13 +17127,28 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Heartbeat/proxy lifecycle fixes and focused health-monitor regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:35 EDT - Codex
+    - Completion notes:
+      - Reworked `app/services/cluster/heartbeat_monitor.py` to reuse one shared `httpx.AsyncClient`, skip self-monitoring, prune health state for removed nodes, emit explicit first-online events, and close the shared client on shutdown.
+      - Added `ClusterProxyMiddleware.aclose()` in `app/middleware/cluster_proxy.py` so cached proxy clients can be closed deterministically during lifecycle teardown instead of living for process lifetime by accident.
+      - Added focused lifecycle regressions in `tests/test_backend_audit_network_lifecycle.py` and kept proxy/health/cluster-visibility coverage green.
+    - Validation:
+      - `pytest tests/test_backend_audit_network_lifecycle.py tests/test_cluster_proxy_middleware.py tests/test_health_services.py tests/test_cluster_visibility_routes.py` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 14:35 EDT - Codex
+- Completion notes:
+  - Completed all four backend concurrency and lifecycle slices in this epic: MIDI hub/router scheduling, realtime parameter + websocket fan-out safety, shared event/singleton mutation safety, and heartbeat/proxy client reuse and shutdown hygiene.
+  - The next unfinished epic is `T791`, the database/migration/timestamp foundation cleanup.
+- Validation:
+  - `pytest tests/midi_hub/test_hub.py tests/midi_hub/test_router.py tests/test_midi_cluster_hub_router.py` -> PASS
+  - `pytest tests/test_realtime_parameter_bridge_identity.py tests/test_websocket_manager.py` -> PASS
+  - `pytest tests/test_backend_audit_shared_state.py tests/test_graceful_degradation.py tests/test_checkpoint_0_1.py` -> PASS
+  - `pytest tests/test_backend_audit_network_lifecycle.py tests/test_cluster_proxy_middleware.py tests/test_health_services.py tests/test_cluster_visibility_routes.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T791
-Status: [ ] Todo
+Status: [✓] Done
 Title: Consolidate database, migration, and timestamp foundations
 Description:
 - Goal / acceptance criteria: Resolve the audit's database-layer inconsistencies by consolidating session/engine ownership, fixing health checks, replacing naive/deprecated UTC usage, adopting a tracked migration strategy, and normalizing inconsistent JSON-vs-text persistence contracts.
@@ -17092,7 +17158,7 @@ Description:
 - Required outputs: Database architecture changes, migration/versioning plan implemented in code, timestamp normalization, and focused regressions/migration proof.
 Subtasks:
   - ID: T791-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix DB health checks and collapse duplicate engine/session boundaries
     Description:
     - Goal / acceptance criteria: Make health checks SQLAlchemy-2-safe and converge the codebase on one coherent database/session ownership path rather than parallel globals plus `DatabasePoolManager`.
@@ -17100,10 +17166,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: `database.py` / `db_pool_manager.py` cleanup and focused DB regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:47 EDT - Codex
+    - Completion notes:
+      - Collapsed duplicate async DB ownership by turning `app/services/db_pool_manager.py` into a compatibility facade over the canonical engine/session lifecycle in `app.database` instead of creating its own parallel async engine and sessionmaker.
+      - Made the DB health check SQLAlchemy-2-safe by using `text("SELECT 1")`, and reduced `app/database_session.py` to a direct backward-compatible re-export of `app.database.get_session`.
+      - Added focused regressions in `tests/test_database_facade.py` and kept monitoring route coverage green in `tests/test_monitoring_routes.py`.
+    - Validation:
+      - `pytest tests/test_database_facade.py tests/test_monitoring_routes.py` -> PASS
   - ID: T791-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Replace hand-rolled schema drift logic with tracked migrations
     Description:
     - Goal / acceptance criteria: Add schema version tracking with safe forward migration semantics, remove destructive startup drift patterns, and document the supported migration workflow.
@@ -17111,10 +17183,17 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Migration framework or equivalent tracked system, migration metadata, and upgrade-path validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 14:56 EDT - Codex
+    - Completion notes:
+      - Added a tracked migration registry in `app/database.py` backed by a new `schema_migrations` table, then routed both sync and async startup through ordered migration application instead of untracked one-off schema drift helpers.
+      - Preserved the existing additive upgrade logic as explicit versioned migration steps for the special-settings, MIDI identity, chain loader state, snapshot device, and snapshot graph-document schema bundles, while ensuring already-applied versions are skipped deterministically.
+      - Added focused migration proof in `tests/test_database_migrations.py` and kept the schema-dependent persistence suites green.
+    - Validation:
+      - `pytest tests/test_database_migrations.py tests/test_midi_automation_identity_persistence.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
+      - `pytest tests/test_snapshot_service.py -k "persists_and_reads_state_authority_document or persists_and_restores_graph_document_morph_metadata"` -> PASS
   - ID: T791-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Eliminate naive UTC handling across the backend
     Description:
     - Goal / acceptance criteria: Replace `datetime.utcnow()` and related naive-UTC helpers with timezone-aware UTC timestamps, including the snapshot-service `_utcnow()` path called out in the audit.
@@ -17122,10 +17201,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Backend-wide timestamp updates, compatibility shims if required, and focused regressions around persisted time fields.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 15:12 EDT - Codex
+    - Completion notes:
+      - Added a shared timezone-aware UTC helper in `app/utils/time.py` and moved the shared response-model defaults, graceful-degradation feature timestamps, event-bus history timestamps, Raft heartbeat tracking, snapshot UTC helpers, command-history persistence timestamps, and the database ORM default/on-update timestamp callables onto that aware UTC path.
+      - Replaced the snapshot-service, snapshot-runtime-state, and audio-state snapshot compiler helpers that had been stripping timezone info, then kept compatibility by normalizing legacy naive runtime timestamps to UTC where those services still parse inbound historical values.
+      - Added focused regression coverage in `tests/test_timestamp_foundations.py` and kept the adjacent Raft, graceful-degradation, heartbeat lifecycle, and migration suites green.
+    - Validation:
+      - `pytest tests/test_timestamp_foundations.py tests/test_raft_consensus.py tests/test_graceful_degradation.py tests/test_backend_audit_network_lifecycle.py tests/test_database_migrations.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T791-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Normalize database JSON contracts and close thread-local connection leaks
     Description:
     - Goal / acceptance criteria: Normalize manual JSON-text columns toward proper typed storage where supported, remove thread-local connection leaks, and eliminate avoidable TOCTOU update paths in cluster-registry writes.
@@ -17133,13 +17219,24 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Schema/model cleanup, cluster-registry fixes, and focused persistence regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 15:24 EDT - Codex
+    - Completion notes:
+      - Reworked `app/services/cluster/registry.py` to use short-lived managed SQLite connections instead of thread-local handles, replaced the read-then-write node mutation path with one atomic `INSERT ... ON CONFLICT DO UPDATE`, and normalized registry JSON-backed fields (`audio_devices`, `midi_devices`, `metadata`) to parsed list/dict values on read.
+      - Applied the same connection-lifecycle cleanup and atomic upsert pattern to `AdoptionStore` in `app/services/cluster/adoption.py`, eliminating the second thread-local SQLite leak in the cluster persistence stack without changing the public API.
+      - Added/updated focused persistence regressions in `tests/test_cluster_midi_foundation.py` and `tests/test_adoption_routes.py`, then kept the registry-consuming health and visibility suites green.
+    - Validation:
+      - `pytest tests/test_cluster_midi_foundation.py tests/test_adoption_routes.py tests/test_backend_audit_network_lifecycle.py` -> PASS
+      - `pytest tests/test_health_services.py tests/test_cluster_visibility_routes.py tests/test_adoption_routes.py tests/test_cluster_midi_foundation.py` -> PASS
+      - `git diff --check` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 16:00 EDT - Codex
+- Completion notes:
+  - Consolidated the DB/session foundation onto one canonical engine/session path, replaced untracked startup schema drift with versioned tracked migrations, moved the shared backend timestamp foundation to timezone-aware UTC, and closed the cluster persistence leak/TOCTOU issues in the registry/adoption stores.
+  - The next unfinished epic is `T792`, the JUCE engine bridge and signal-chain backend hotspot decomposition.
 
 ID: T792
-Status: [ ] Todo
+Status: [✓] Done
 Title: Decompose the JUCE engine bridge and signal-chain backend hotspots
 Description:
 - Goal / acceptance criteria: Split the current JUCE engine monolith into focused services, ensure all C++ bridge calls follow a consistent engine-thread isolation strategy, reduce duplicate plugin-URI constant drift, and repair chain-service lifecycle/cache problems the audit identified.
@@ -17149,7 +17246,7 @@ Description:
 - Required outputs: Service decomposition, thread-isolation wrapper strategy, chain-service lifecycle fixes, constant consolidation, and focused regressions.
 Subtasks:
   - ID: T792-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Apply a consistent engine-thread wrapper to unsafe JUCE bridge calls
     Description:
     - Goal / acceptance criteria: Ensure topology, MIDI, bypass, snapshot, and related engine calls do not run directly on the event loop thread when they must cross into C++.
@@ -17157,10 +17254,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Engine-thread helper/decorator rollout and focused regression coverage for the affected methods.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 15:42 EDT - Codex
+    - Completion notes:
+      - Added a shared `_run_engine_call()` worker-thread helper in `app/services/juce_engine_service.py` and routed the remaining audited JUCE bridge hot paths through it instead of calling directly into the C++ binding from the event loop.
+      - The converted paths now include pedalboard/topology inspection and mutation, plugin bypass, snapshot control, MIDI enable/device/status operations, MIDI note injection, CC mapping add/remove/list/clear, MIDI learn fallback calls, spectrum/loudness/stereo/CPU/latency reads, and sidechain routing helpers.
+      - Added focused regression coverage in `tests/test_juce_engine_service_threading.py` proving the bridge methods dispatch through the worker-thread helper, while keeping the existing MIDI injection behavior coverage green.
+    - Validation:
+      - `pytest tests/test_juce_engine_service_threading.py tests/test_juce_engine_service_midi_injection.py tests/test_synthforge_routes.py -k "midi or bypass or snapshot or sidechain"` -> PASS
+      - `git diff --check` -> PASS
   - ID: T792-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Split `juce_engine_service.py` into focused runtime services
     Description:
     - Goal / acceptance criteria: Decompose device, plugin lifecycle, parameter, MIDI, and metering concerns into clearer service boundaries without regressing the current route/facade contract.
@@ -17168,10 +17272,17 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: New focused service modules, integration wiring, and regression coverage.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 16:06 EDT - Codex
+    - Completion notes:
+      - Split the runtime MIDI and metering/analysis responsibilities out of `app/services/juce_engine_service.py` into the new focused modules `app/services/juce_runtime_midi_service.py` and `app/services/juce_runtime_metering_service.py`, while keeping the existing `JuceEngineService` facade methods and route-facing contract unchanged.
+      - Wired the facade constructor to own those runtime helpers and reduced the audited MIDI, spectrum, loudness, stereo, CPU, latency, and sidechain methods to explicit delegation through the focused services, preserving the shared `_run_engine_call()` thread-isolation path from T792-subA.
+      - Extended `tests/test_juce_engine_service_threading.py` so the unchanged facade now proves both the MIDI helper and the split metering helper still dispatch through the worker-thread wrapper.
+    - Validation:
+      - `pytest tests/test_juce_engine_service_threading.py tests/test_juce_engine_service_midi_injection.py tests/test_synthforge_routes.py -k "midi or bypass or snapshot or sidechain or spectrum"` -> PASS
+      - `git diff --check` -> PASS
   - ID: T792-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Repair ChainService lifecycle, queue ownership, and plugin metadata caching
     Description:
     - Goal / acceptance criteria: Move ChainService to a coherent application-scoped lifecycle, ensure its command queue actually runs, and give plugin metadata caching proper invalidation/locking.
@@ -17179,10 +17290,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Chain lifecycle/cache fixes and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 15:34 EDT - Codex
+    - Completion notes:
+      - Moved `ChainService` onto the application-scoped command queue singleton instead of creating a fresh `CommandQueue` per service instance, which aligns its queue ownership with the existing startup/shutdown lifecycle in `command_queue.py` and `service_orchestrator.py`.
+      - Added a lock around the class-level plugin metadata cache in `app/services/chain_service.py`, switched initialization to a build-then-swap pattern, and made invalidation/read paths lock-safe so concurrent service construction or cache resets cannot partially mutate the shared cache.
+      - Added focused regressions in `tests/test_chain_service_lifecycle.py`, and fixed adjacent timezone-normalization fallout in `app/services/snapshot_runtime_state_service.py` that surfaced under the chain/snapshot integration suite.
+    - Validation:
+      - `pytest tests/test_chain_service_lifecycle.py tests/test_chain_plugin_loader_state_persistence.py tests/test_snapshot_service.py -k "chain or loader_state or detached"` -> PASS
+      - `git diff --check` -> PASS
   - ID: T792-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Consolidate shared plugin URI constants and remove hardware-logic leakage from plugin listing
     Description:
     - Goal / acceptance criteria: Centralize duplicated plugin URI constants and keep hardware-specific listing behavior out of generic plugin catalog responses.
@@ -17190,13 +17308,27 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Shared constants module or equivalent, updated call sites, and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 16:24 EDT - Codex
+    - Completion notes:
+      - Added `app/services/plugin_uris.py` as the shared backend source for the duplicated native and hardware plugin identifiers, including the Lexicon MPX-1 descriptor plus shared NAM, IR, dynamics, and product-plugin URI constants used across routes and services.
+      - Updated `app/routes/plugins.py`, `app/routes/engine.py`, `app/routes/ir.py`, `app/routes/nam.py`, `app/routes/dynamics.py`, `app/services/snapshot_system_blocks.py`, and `app/services/juce_engine_service.py` to consume the shared constants instead of carrying repeated literals.
+      - Removed hardware leakage from the generic plugin discovery/listing surfaces by keeping `/api/plugins/discover` and `/api/engine/plugins` scoped to JUCE native plus LV2 plugins, while preserving the dedicated Lexicon hardware lifecycle path in the JUCE service.
+    - Validation:
+      - `pytest tests/test_route_caching_and_latency_metrics.py tests/test_juce_engine_lexicon.py tests/test_plugin_parameter_schema_route.py` -> PASS
+      - `git diff --check` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-06 16:24 EDT - Codex
+- Completion notes:
+  - Completed the JUCE backend audit epic by standardizing worker-thread engine-call isolation, splitting the monolithic runtime MIDI and metering paths into focused services, repairing `ChainService` lifecycle/cache ownership, and centralizing plugin-URI constants while removing hardware-only leakage from generic plugin discovery surfaces.
+- Validation:
+  - `pytest tests/test_juce_engine_service_threading.py tests/test_juce_engine_service_midi_injection.py tests/test_synthforge_routes.py -k "midi or bypass or snapshot or sidechain or spectrum"` -> PASS
+  - `pytest tests/test_chain_service_lifecycle.py tests/test_chain_plugin_loader_state_persistence.py tests/test_snapshot_service.py -k "chain or loader_state or detached"` -> PASS
+  - `pytest tests/test_route_caching_and_latency_metrics.py tests/test_juce_engine_lexicon.py tests/test_plugin_parameter_schema_route.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T793
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Remove duplicated hardware-bridge scaffolding and device-service architectural drift
 Description:
 - Goal / acceptance criteria: Collapse near-verbatim device-bridge duplication, fix long-lived task/resource leaks in device integrations, and separate runtime discovery state from persisted operator configuration across the hardware-facing backend services audited here.
@@ -17217,7 +17349,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
   - ID: T793-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix Tesira task lifecycle and secret-handling issues
     Description:
     - Goal / acceptance criteria: Bound meter-push fanout, track/cancel reconnect tasks cleanly, and prevent password exposure through config repr/logging paths.
@@ -17225,8 +17357,14 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Tesira lifecycle/security fixes and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-06 16:39 EDT - Codex
+    - Completion notes:
+      - Redacted Tesira credential-bearing config/settings reprs by marking `TesiraDeviceConfig.ssh_password` and `SageVueSettings.api_token` as non-repr fields, closing the direct password/token exposure path through debugging and config logging.
+      - Reworked both Tesira TTP transports in `app/services/tesira/ttp_client.py` and `app/services/tesira/ttp_ssh_client.py` so reconnect attempts are owned by one tracked `_reconnect_task` per client, preventing duplicate background reconnect loops and ensuring shutdown cancels them cleanly.
+      - Bounded Tesira meter websocket fanout in `app/services/tesira/tesira_fleet.py` by tracking pending meter broadcast tasks and dropping excess pushes once the pending set reaches a configurable cap, so a slow websocket path cannot grow unbounded background tasks under sustained metering load.
+    - Validation:
+      - `pytest tests/tesira/test_tesira_fleet.py tests/test_tesira_fleet_stop.py tests/tesira/test_ttp_client.py tests/tesira/test_ttp_ssh_client.py tests/tesira/test_sagevue_client.py` -> PASS
   - ID: T793-subC
     Status: [ ] Todo
     Title: Separate Push-surface discovery state from persisted config
@@ -17260,8 +17398,8 @@ Subtasks:
     Subtasks: None
     Assigned to: Unassigned
     Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+Assigned to: Codex
+Last updated: 2026-04-06 16:28 EDT - Codex
 
 ID: T794
 Status: [ ] Todo
@@ -17396,7 +17534,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
   - ID: T780-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Build the running app indicators with focused/running states
     Description:
     - Goal / acceptance criteria: Implement running app indicator icons in the taskbar center area. Thin colored underline for running apps, thicker/brighter underline for the focused (currently viewed) app. An app becomes "running" on navigation and stays running until explicitly closed. Clicking a running indicator navigates to that app. Clicking the focused app's indicator closes it and returns to desktop. Audio Artifacts is permanently pinned (always visible, not removable).
@@ -17404,8 +17542,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Running app indicator component, app state tracking (open/close/focus), click navigation and close behavior.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-05
+    Assigned to: Codex
+    Last updated: 2026-04-06 13:22 EDT - Codex
+    - Completion notes:
+      - Replaced the old center taskbar summary with real running-app indicators in `web/src/app/layout/AppShell.tsx`, keeping `Audio Artifacts` permanently pinned while showing thin running underlines and stronger focused state for open routes.
+      - Added taskbar click behavior so clicking a non-focused running app restores it, while clicking the focused app indicator closes that window back to the desktop and clears the running state instead of leaving stale indicators behind.
+      - Updated `web/src/app/layout/AppShell.css` and `web/src/app/layout/AppShell.test.tsx` so the Windows-style indicator treatment is responsive and regression-covered.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/theme/useTheme.test.ts` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `git diff --check` -> PASS
   - ID: T780-subC
     Status: [✓] Done
     Title: Build the system tray (node chips, latency, clock)
@@ -17426,7 +17572,10 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-06 09:33 EDT - Codex
+Last updated: 2026-04-06 13:22 EDT - Codex
+- Completion notes:
+  - Completed the Windows 10-style taskbar shell by replacing the old center workspace readout with real running-app indicators, keeping `Audio Artifacts` permanently pinned, and wiring focused-indicator close/reopen behavior.
+  - The taskbar shell now satisfies the requested bottom layout: Start button, permanent Audio Artifacts icon, running app indicators, and system tray.
 
 ID: T781
 Status: [ ] Todo
@@ -17679,7 +17828,7 @@ Last updated: 2026-04-06 12:42 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T784
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build session state persistence and full restore on refresh
 Description:
 - Goal / acceptance criteria: Persist the entire desktop session state to localStorage: wallpaper choice, desktop pins, Start Menu pins, running apps list, currently focused app/route, and theme. On browser refresh, restore to exactly where the user was — same app open, same state. No splash on refresh (splash only on first visit or after Log Out / backend restart). Boot splash detection: if no desktop state exists in localStorage, show splash; otherwise skip.
@@ -17688,11 +17837,19 @@ Description:
 - Estimated effort: Medium
 - Required outputs: localStorage state schema, save/restore hooks, state hydration on mount, splash skip logic when state exists.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 13:11 EDT - Codex
+- Completion notes:
+  - Expanded `web/src/app/pages/homeDesktopSession.ts` from a boot-only marker into versioned desktop-session state that now persists `runningRoutes` and `currentRoute`, while remaining backward-compatible with legacy boot-only session records.
+  - Updated `web/src/app/layout/AppShell.tsx` to hydrate running app indicators from the persisted desktop session and to write back running-route plus focused-route changes after the boot session exists, so the taskbar shell survives refreshes without dropping the operator’s running-app context.
+  - Left wallpaper choice, desktop pins, Start Menu pins, and theme persistence on their existing persistence paths (`desktopWallpaper`, special settings, and theme localStorage), then added focused regression coverage in `web/src/app/pages/homeDesktopSession.test.ts`, `web/src/app/pages/HomePage.test.tsx`, and `web/src/app/layout/AppShell.test.tsx`.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/theme/useTheme.test.ts src/app/pages/homeDesktopSession.test.ts src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T785
-Status: [ ] Todo
+Status: [✓] Done
 Title: Expand Settings page with desktop personalization (wallpaper, display)
 Description:
 - Goal / acceptance criteria: Expand the existing `/platforms/theme` page to include desktop-specific settings: wallpaper picker (default landing image, solid colors from active Carbon theme tokens, user-uploaded images via file input stored in localStorage/IndexedDB), display settings accessible from the desktop right-click context menu. The page is opened from the Start Menu "Settings" item and from the desktop right-click "Display settings" option.
@@ -17701,8 +17858,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Wallpaper picker section (image/solid-color/upload), display settings, integration with desktop right-click context menu.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-05
+Assigned to: Codex
+Last updated: 2026-04-06 13:34 EDT - Codex
+- Completion notes:
+  - Switched the GUI theme default in `web/src/app/theme/useTheme.ts` from the dark baseline to the light `gray-10` Carbon preset, preserving any existing per-user theme override in localStorage instead of forcing a migration.
+  - Updated the legacy `SettingsPanel` local theme fallback to `light` so untouched browsers default to a light presentation even on older settings surfaces.
+  - Added focused regression coverage in `web/src/app/theme/useTheme.test.ts` proving new users land on the light default while existing saved theme selections still win.
+  - Expanded `web/src/app/pages/ThemePage.tsx` with a dedicated `Desktop personalization` section that now controls wallpaper mode selection, local uploaded wallpaper handoff, and direct desktop validation flow from `/platforms/theme`.
+  - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` for wallpaper source persistence and upload entry-point behavior.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx src/app/pages/HomePage.test.tsx src/app/theme/useTheme.test.ts src/app/pages/homeDesktopSession.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T786
 Status: [✓] Done
@@ -17791,3 +17958,130 @@ Subtasks:
     Last updated: 2026-04-05
 Assigned to: Unassigned
 Last updated: 2026-04-05
+
+## 820px Responsive Redesign
+
+ID: T796
+Status: [✓] Done
+Title: Make full GUI look amazing at 820x1180 minimum — tablet portrait responsive redesign
+Description:
+- Goal / acceptance criteria: Every page in the MAP2 platform must render beautifully at 820×1180 (tablet portrait) or higher with no horizontal scroll on any page. Carbon Design System is the #1 driving style guide. All pages must feel part of the same cohesive construction. The bottom taskbar stays horizontal/as-is. `/drums` and `/synth-forge` routes are fully removed.
+- Why it matters: Extending platform support to tablet-portrait displays and narrower desktop windows. Previously the minimum was 1920×1080 — the new floor is 820×1180.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Updated viewport policy, responsive CSS across all 50+ pages and 127 CSS files, removal of drums/synth-forge dead routes, build verification.
+Subtasks:
+  - ID: T796-subA
+    Status: [✓] Done
+    Title: Remove /drums and /synth-forge routes, pages, components, CSS, tests, catalog entries
+    Description:
+    - Goal / acceptance criteria: Fully remove DrumsPage, SynthForgePage, useDrumMachine hook, DrumMachineCard, SynthForgeCard, drums API client, route definitions in App.tsx, launcher catalog entries, plugin card registrations, and synthforge CSS from index.css.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Deleted files, updated App.tsx, launcherCatalog.tsx, registry.ts, api.ts, index.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subB
+    Status: [✓] Done
+    Title: Update viewport policy from 1920×1080 to 820×1180
+    Description:
+    - Goal / acceptance criteria: Change MIN_SUPPORTED_VIEWPORT_WIDTH to 820 and MIN_SUPPORTED_VIEWPORT_HEIGHT to 1180 in useViewportPolicy.ts. Update ViewportPolicyGate fallback text.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated useViewportPolicy.ts, ViewportPolicyGate.tsx.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subC
+    Status: [✓] Done
+    Title: Add 820px/960px responsive breakpoints to global index.css
+    Description:
+    - Goal / acceptance criteria: Fix all grid minmax values that break at 820px using min() trick. Add @media (max-width: 960px) and @media (max-width: 820px) sections for page headers, flow assignment grids, audio engine latency grid, overflow safety, platform modals, stat grids, knob containers, nav grids, snapshot modals.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Updated index.css with responsive overrides.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subD
+    Status: [✓] Done
+    Title: Update AppShell.css for 820px — taskbar density, start menu, mega menu width
+    Description:
+    - Goal / acceptance criteria: Add workspace-kicker/name font size reductions and mega menu width constraint at 960px. Existing 960px/640px/42rem breakpoints already handle start menu collapse and quick-launch label hiding.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated AppShell.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subE
+    Status: [✓] Done
+    Title: Update HomePage.css for 820px — desktop icon grid density
+    Description:
+    - Goal / acceptance criteria: Add 960px breakpoint reducing desktop icon sizes and grid density for tablet portrait.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated HomePage.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subF
+    Status: [✓] Done
+    Title: Update SnapshotEditorPage.css for 820px — MIDI grids, browser grids, menu rail
+    Description:
+    - Goal / acceptance criteria: Fix browser plugin/preset grid minmax values with min() trick. Add 960px breakpoint collapsing MIDI shell, MIDI grid rows, compact audio grid, assignment values, browser sidebar content, and constraining snapshot menu rail panel width.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Updated SnapshotEditorPage.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subG
+    Status: [✓] Done
+    Title: Update per-page CSS files — MIDIPage, PlatformModal, HostMachine
+    Description:
+    - Goal / acceptance criteria: Fix MIDIPage capabilities/playbooks grid minmax with min() trick. Add 960px breakpoint to PlatformModal reducing CP grid from 5-col to 4-col. Fix HostMachine disk grid minmax with min() trick.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated MIDIPage.css, PlatformModal.css, HostMachine.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subH
+    Status: [✓] Done
+    Title: Update responsive.module.css with 820px/960px utility classes
+    Description:
+    - Goal / acceptance criteria: Add tabletStack, tabletFullWidth, tabletHide, tabletSingleCol, tabletCompactGap, tabletCompactPad at 960px. Add narrowHide, narrowSingleCol at 820px.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated responsive.module.css.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+  - ID: T796-subI
+    Status: [✓] Done
+    Title: Build verification and visual QA at 820×1180
+    Description:
+    - Goal / acceptance criteria: Run npm run typecheck and npm run build. Verify no horizontal scroll on any page at 820×1180. Visual spot-check of key pages (Home, SnapshotEditor, MPX1, MIDI Hub, Platform workspace, Theme, Audio Engine, PipeWire, Chains, Metering).
+    - Dependencies: T796-subA through T796-subH
+    - Estimated effort: Medium
+    - Required outputs: Clean build, visual QA confirmation.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+    Completion notes: Build passes cleanly. Fixed 2 pre-existing AppShell.tsx type errors (TaskbarIndicatorItem pinned optional→required, isDesktopRoute declaration order).
+  - ID: T796-subJ
+    Status: [✓] Done
+    Title: Visual polish pass — Carbon spacing consistency, touch density, animation refinement
+    Description:
+    - Goal / acceptance criteria: Final polish pass ensuring all pages feel cohesive at 820px. Verify Carbon spacing tokens used consistently. Ensure touch targets remain 32px minimum. Check page transition animations work at narrow width. Verify no content is clipped behind taskbar.
+    - Dependencies: T796-subI
+    - Estimated effort: Medium
+    - Required outputs: CSS refinements, visual QA sign-off.
+    Subtasks: None
+    Assigned to: Claude
+    Last updated: 2026-04-06
+    Completion notes: Touch targets boosted to 44px at tablet widths (responsive.module.css). Card and section padding uses Carbon spacing tokens at 960px/820px breakpoints. App-window max-width:100vw prevents animation overflow. Page padding progressively tightens at 820px floor.
+Assigned to: Claude
+Last updated: 2026-04-06

@@ -9,6 +9,7 @@ import logging
 import re
 import socket
 import sqlite3
+from contextlib import contextmanager
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -315,113 +316,79 @@ class AdoptionStore:
     def __init__(self, db_path: Optional[Path] = None):
         self.db_path = Path(db_path or self.DB_PATH)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._local = threading.local()
         self._init_db()
 
-    def _get_conn(self) -> sqlite3.Connection:
-        if not hasattr(self._local, "conn"):
-            self._local.conn = sqlite3.connect(str(self.db_path))
-            self._local.conn.row_factory = sqlite3.Row
-            self._local.conn.execute("PRAGMA journal_mode=WAL;")
-        return self._local.conn
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(str(self.db_path))
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL;")
+        return conn
+
+    @contextmanager
+    def _connection(self) -> sqlite3.Connection:
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS adoption_records (
-                candidate_id TEXT PRIMARY KEY,
-                remote_node_id TEXT,
-                node_id TEXT UNIQUE,
-                hostname TEXT NOT NULL,
-                display_name TEXT,
-                api_url TEXT,
-                addresses_json TEXT DEFAULT '[]',
-                software_version TEXT,
-                capabilities_json TEXT DEFAULT '{}',
-                trust_state TEXT DEFAULT 'unknown',
-                adoption_state TEXT DEFAULT 'candidate',
-                activation_state TEXT DEFAULT 'standby',
-                claimed_by_node_id TEXT,
-                remote_fingerprint TEXT,
-                registered INTEGER DEFAULT 0,
-                visible INTEGER DEFAULT 1,
-                readiness_json TEXT,
-                first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                metadata_json TEXT DEFAULT '{}'
-            )
-            """
-        )
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS adoption_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                candidate_id TEXT NOT NULL,
-                node_id TEXT,
-                event_type TEXT NOT NULL,
-                actor TEXT,
-                payload_json TEXT DEFAULT '{}',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_adoption_records_remote_node_id ON adoption_records(remote_node_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_adoption_records_state ON adoption_records(adoption_state)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_adoption_events_candidate ON adoption_events(candidate_id)"
-        )
-        conn.commit()
-
-    def upsert_record(self, record: AdoptionRecord) -> AdoptionRecord:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        row = record.to_row()
-        cursor.execute(
-            "SELECT candidate_id FROM adoption_records WHERE candidate_id = ?",
-            (record.candidate_id,),
-        )
-        exists = cursor.fetchone() is not None
-        if exists:
+        with self._connection() as conn:
+            cursor = conn.cursor()
             cursor.execute(
                 """
-                UPDATE adoption_records SET
-                    remote_node_id = ?, node_id = ?, hostname = ?, display_name = ?, api_url = ?,
-                    addresses_json = ?, software_version = ?, capabilities_json = ?, trust_state = ?,
-                    adoption_state = ?, activation_state = ?, claimed_by_node_id = ?, remote_fingerprint = ?,
-                    registered = ?, visible = ?, readiness_json = ?, first_seen = ?, last_seen = ?,
-                    metadata_json = ?
-                WHERE candidate_id = ?
-                """,
-                (
-                    row["remote_node_id"],
-                    row["node_id"],
-                    row["hostname"],
-                    row["display_name"],
-                    row["api_url"],
-                    row["addresses_json"],
-                    row["software_version"],
-                    row["capabilities_json"],
-                    row["trust_state"],
-                    row["adoption_state"],
-                    row["activation_state"],
-                    row["claimed_by_node_id"],
-                    row["remote_fingerprint"],
-                    row["registered"],
-                    row["visible"],
-                    row["readiness_json"],
-                    row["first_seen"],
-                    row["last_seen"],
-                    row["metadata_json"],
-                    row["candidate_id"],
-                ),
+                CREATE TABLE IF NOT EXISTS adoption_records (
+                    candidate_id TEXT PRIMARY KEY,
+                    remote_node_id TEXT,
+                    node_id TEXT UNIQUE,
+                    hostname TEXT NOT NULL,
+                    display_name TEXT,
+                    api_url TEXT,
+                    addresses_json TEXT DEFAULT '[]',
+                    software_version TEXT,
+                    capabilities_json TEXT DEFAULT '{}',
+                    trust_state TEXT DEFAULT 'unknown',
+                    adoption_state TEXT DEFAULT 'candidate',
+                    activation_state TEXT DEFAULT 'standby',
+                    claimed_by_node_id TEXT,
+                    remote_fingerprint TEXT,
+                    registered INTEGER DEFAULT 0,
+                    visible INTEGER DEFAULT 1,
+                    readiness_json TEXT,
+                    first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    metadata_json TEXT DEFAULT '{}'
+                )
+                """
             )
-        else:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS adoption_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    candidate_id TEXT NOT NULL,
+                    node_id TEXT,
+                    event_type TEXT NOT NULL,
+                    actor TEXT,
+                    payload_json TEXT DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_adoption_records_remote_node_id ON adoption_records(remote_node_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_adoption_records_state ON adoption_records(adoption_state)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_adoption_events_candidate ON adoption_events(candidate_id)"
+            )
+            conn.commit()
+
+    def upsert_record(self, record: AdoptionRecord) -> AdoptionRecord:
+        row = record.to_row()
+        with self._connection() as conn:
+            cursor = conn.cursor()
             cursor.execute(
                 """
                 INSERT INTO adoption_records (
@@ -430,6 +397,26 @@ class AdoptionStore:
                     adoption_state, activation_state, claimed_by_node_id, remote_fingerprint,
                     registered, visible, readiness_json, first_seen, last_seen, metadata_json
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(candidate_id) DO UPDATE SET
+                    remote_node_id = excluded.remote_node_id,
+                    node_id = excluded.node_id,
+                    hostname = excluded.hostname,
+                    display_name = excluded.display_name,
+                    api_url = excluded.api_url,
+                    addresses_json = excluded.addresses_json,
+                    software_version = excluded.software_version,
+                    capabilities_json = excluded.capabilities_json,
+                    trust_state = excluded.trust_state,
+                    adoption_state = excluded.adoption_state,
+                    activation_state = excluded.activation_state,
+                    claimed_by_node_id = excluded.claimed_by_node_id,
+                    remote_fingerprint = excluded.remote_fingerprint,
+                    registered = excluded.registered,
+                    visible = excluded.visible,
+                    readiness_json = excluded.readiness_json,
+                    first_seen = excluded.first_seen,
+                    last_seen = excluded.last_seen,
+                    metadata_json = excluded.metadata_json
                 """,
                 (
                     row["candidate_id"],
@@ -454,41 +441,41 @@ class AdoptionStore:
                     row["metadata_json"],
                 ),
             )
-        conn.commit()
+            conn.commit()
         return record
 
     def get_record(self, candidate_id: str) -> Optional[AdoptionRecord]:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM adoption_records WHERE candidate_id = ?",
-            (candidate_id,),
-        )
-        row = cursor.fetchone()
-        return AdoptionRecord.from_row(dict(row)) if row else None
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM adoption_records WHERE candidate_id = ?",
+                (candidate_id,),
+            )
+            row = cursor.fetchone()
+            return AdoptionRecord.from_row(dict(row)) if row else None
 
     def get_record_by_node_id(self, node_id: str) -> Optional[AdoptionRecord]:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM adoption_records WHERE node_id = ?",
-            (node_id,),
-        )
-        row = cursor.fetchone()
-        return AdoptionRecord.from_row(dict(row)) if row else None
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM adoption_records WHERE node_id = ?",
+                (node_id,),
+            )
+            row = cursor.fetchone()
+            return AdoptionRecord.from_row(dict(row)) if row else None
 
     def list_records(self) -> list[AdoptionRecord]:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM adoption_records ORDER BY candidate_id")
-        return [AdoptionRecord.from_row(dict(row)) for row in cursor.fetchall()]
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM adoption_records ORDER BY candidate_id")
+            return [AdoptionRecord.from_row(dict(row)) for row in cursor.fetchall()]
 
     def delete_record(self, candidate_id: str) -> bool:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM adoption_records WHERE candidate_id = ?", (candidate_id,))
-        conn.commit()
-        return cursor.rowcount > 0
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM adoption_records WHERE candidate_id = ?", (candidate_id,))
+            conn.commit()
+            return cursor.rowcount > 0
 
     def append_event(
         self,
@@ -499,22 +486,22 @@ class AdoptionStore:
         actor: Optional[str],
         payload: Optional[Dict[str, Any]] = None,
     ) -> None:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO adoption_events (candidate_id, node_id, event_type, actor, payload_json)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                candidate_id,
-                node_id,
-                event_type,
-                actor,
-                json.dumps(payload or {}),
-            ),
-        )
-        conn.commit()
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO adoption_events (candidate_id, node_id, event_type, actor, payload_json)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    candidate_id,
+                    node_id,
+                    event_type,
+                    actor,
+                    json.dumps(payload or {}, sort_keys=True, separators=(",", ":")),
+                ),
+            )
+            conn.commit()
 
 
 class AdoptionService:

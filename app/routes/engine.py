@@ -241,7 +241,10 @@ async def list_plugins():
     juce_processors = _get_juce_processors()
     
     # Get LV2 plugins
-    lv2_plugins = await service.list_plugins()
+    lv2_plugins = [
+        plugin for plugin in await service.list_plugins()
+        if not plugin.get("is_hardware")
+    ]
     
     # Combine both - JUCE processors first as they are preferred
     plugins = juce_processors + lv2_plugins
@@ -261,7 +264,10 @@ async def get_plugin_info(uri: str):
     if not service.is_running:
         await service.initialize()
     
-    plugins = await service.list_plugins()
+    plugins = [
+        plugin for plugin in await service.list_plugins()
+        if not plugin.get("is_hardware")
+    ]
     
     for plugin in plugins:
         if plugin.get("uri") == uri:
@@ -608,4 +614,3 @@ async def get_plugin_vu_levels():
     """Get per-plugin VU levels"""
     service = get_engine_service()
     return await service.get_plugin_vu_levels()
-

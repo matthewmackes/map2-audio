@@ -25,13 +25,11 @@ try:
     from app.paths import StoragePaths
     from app.database import Chain, ChainPlugin, get_db, get_db_session, NAMModel
     from app.services.juce_engine_service import get_audio_engine
+    from app.services.plugin_uris import NAM_CONFIG_PLUGIN_URIS, NAM_PLUGIN_URI
     from app.services.upload_service import AssetType, get_upload_service
     from sqlalchemy import or_
 
     router = APIRouter(prefix="/api/nam", tags=["nam"])
-    NAM_PLUGIN_URI = "map2://juce/nam"
-    NAM_CONFIG_PLUGIN_URIS = (NAM_PLUGIN_URI, "urn:map2:nam-player")
-
     # ==================== Pydantic Models ====================
 
     class NAMModelInfo(BaseModel):

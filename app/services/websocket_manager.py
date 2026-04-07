@@ -11,6 +11,7 @@ import logging
 import gzip
 import base64
 from collections import deque
+import threading
 from typing import Dict, Set, Any, Optional, List, Deque
 from fastapi import WebSocket
 from datetime import datetime
@@ -48,8 +49,8 @@ class WebSocketManager:
         self.event_history: Dict[str, Deque[Dict[str, Any]]] = {}
         self.history_limit = 10  # Keep last 10 events per topic
 
-        # Lock for thread-safe operations
-        self._lock = asyncio.Lock()
+        # Lock for thread-safe operations across async sends and sync disconnects.
+        self._lock = threading.RLock()
         
         # Fix #8: Compression settings
         self.enable_compression = enable_compression
@@ -133,7 +134,7 @@ class WebSocketManager:
         """
         await websocket.accept()
         
-        async with self._lock:
+        with self._lock:
             self.active_connections[client_id] = websocket
             metadata = metadata or {}
             self.connection_info[client_id] = {
@@ -172,20 +173,18 @@ class WebSocketManager:
             error=error,
         )
 
-        # Remove from active connections
-        if client_id in self.active_connections:
-            del self.active_connections[client_id]
-        
-        # Remove from all topic subscriptions
-        for topic in list(self.subscriptions.keys()):
-            if client_id in self.subscriptions[topic]:
-                self.subscriptions[topic].discard(client_id)
-                if not self.subscriptions[topic]:
-                    del self.subscriptions[topic]
-        
-        # Remove metadata
-        if client_id in self.connection_info:
-            del self.connection_info[client_id]
+        with self._lock:
+            if client_id in self.active_connections:
+                del self.active_connections[client_id]
+
+            for topic in list(self.subscriptions.keys()):
+                if client_id in self.subscriptions[topic]:
+                    self.subscriptions[topic].discard(client_id)
+                    if not self.subscriptions[topic]:
+                        del self.subscriptions[topic]
+
+            if client_id in self.connection_info:
+                del self.connection_info[client_id]
         
         logger.info(f"WebSocket client disconnected: {client_id}")
         
@@ -197,7 +196,7 @@ class WebSocketManager:
             client_id: Client to subscribe
             topic: Topic name (e.g., "meters", "automation", "chain_updates")
         """
-        async with self._lock:
+        with self._lock:
             if topic not in self.subscriptions:
                 self.subscriptions[topic] = set()
             
@@ -224,7 +223,7 @@ class WebSocketManager:
             client_id: Client to unsubscribe
             topic: Topic name
         """
-        async with self._lock:
+        with self._lock:
             if topic in self.subscriptions:
                 self.subscriptions[topic].discard(client_id)
                 if not self.subscriptions[topic]:
@@ -251,9 +250,11 @@ class WebSocketManager:
             message: JSON string or plain text
             client_id: Target client
         """
-        if client_id in self.active_connections:
+        with self._lock:
+            websocket = self.active_connections.get(client_id)
+        if websocket is not None:
             try:
-                await self.active_connections[client_id].send_text(message)
+                await websocket.send_text(message)
             except Exception as e:
                 logger.error(f"Error sending message to {client_id}: {e}")
                 self.disconnect(client_id)
@@ -267,24 +268,25 @@ class WebSocketManager:
             topic: If specified, only send to subscribers of this topic
         """
         # Determine target clients from a snapshot to avoid mutation during send.
-        if topic:
-            target_clients = set(self.subscriptions.get(topic, set()))
-        else:
-            target_clients = set(self.active_connections.keys())
+        with self._lock:
+            if topic:
+                target_clients = set(self.subscriptions.get(topic, set()))
+            else:
+                target_clients = set(self.active_connections.keys())
 
-        send_client_ids: List[str] = []
-        send_tasks = []
-        for client_id in target_clients:
-            websocket = self.active_connections.get(client_id)
-            if websocket is None:
-                continue
-            send_client_ids.append(client_id)
-            send_tasks.append(
-                asyncio.wait_for(
-                    websocket.send_text(message),
-                    timeout=self.send_timeout_seconds,
+            send_client_ids: List[str] = []
+            send_tasks = []
+            for client_id in target_clients:
+                websocket = self.active_connections.get(client_id)
+                if websocket is None:
+                    continue
+                send_client_ids.append(client_id)
+                send_tasks.append(
+                    asyncio.wait_for(
+                        websocket.send_text(message),
+                        timeout=self.send_timeout_seconds,
+                    )
                 )
-            )
 
         if not send_tasks:
             return
@@ -337,11 +339,12 @@ class WebSocketManager:
         """
         # Store in event history if topic is specified
         if topic:
-            history = self.event_history.get(topic)
-            if history is None:
-                history = deque(maxlen=self.history_limit)
-                self.event_history[topic] = history
-            history.append(data)
+            with self._lock:
+                history = self.event_history.get(topic)
+                if history is None:
+                    history = deque(maxlen=self.history_limit)
+                    self.event_history[topic] = history
+                history.append(data)
 
         message = json.dumps(data)
         
@@ -370,11 +373,13 @@ class WebSocketManager:
         Returns:
             List of client IDs
         """
-        return list(self.subscriptions.get(topic, set()))
+        with self._lock:
+            return list(self.subscriptions.get(topic, set()))
         
     def get_connection_count(self) -> int:
         """Get number of active connections"""
-        return len(self.active_connections)
+        with self._lock:
+            return len(self.active_connections)
         
     def get_event_history(self, topic: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -387,16 +392,20 @@ class WebSocketManager:
             Dictionary with event history
         """
         if topic:
+            with self._lock:
+                events = list(self.event_history.get(topic, []))
             return {
                 "topic": topic,
-                "events": list(self.event_history.get(topic, []))
+                "events": events
             }
         else:
-            return {
-                "all_topics": {
-                    topic: list(events)
-                    for topic, events in self.event_history.items()
+            with self._lock:
+                all_topics = {
+                    topic_name: list(events)
+                    for topic_name, events in self.event_history.items()
                 }
+            return {
+                "all_topics": all_topics
             }
 
     def get_stats(self) -> Dict[str, Any]:
@@ -406,14 +415,17 @@ class WebSocketManager:
         Returns:
             Dictionary with connection and subscription stats
         """
-        return {
-            "active_connections": len(self.active_connections),
-            "topics": list(self.subscriptions.keys()),
-            "subscriptions_per_topic": {
+        with self._lock:
+            active_connections = len(self.active_connections)
+            topics = list(self.subscriptions.keys())
+            subscriptions_per_topic = {
                 topic: len(clients)
                 for topic, clients in self.subscriptions.items()
-            },
-            # Fix #8: Include compression stats
+            }
+        return {
+            "active_connections": active_connections,
+            "topics": topics,
+            "subscriptions_per_topic": subscriptions_per_topic,
             "compression_enabled": self.enable_compression,
             "bytes_saved_by_compression": self.bytes_saved,
             "send_timeout_seconds": self.send_timeout_seconds,

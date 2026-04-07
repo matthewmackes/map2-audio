@@ -16,6 +16,7 @@ import inspect
 import logging
 import json
 import sqlite3
+import threading
 from typing import Dict, List, Optional, Callable
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta, timezone
@@ -152,6 +153,7 @@ class DistributedEventBus:
         self.logger = logging.getLogger(__name__)
         self.event_queue: queue.Queue = queue.Queue()
         self._subscribers: Dict[EventType, List[Callable]] = {}
+        self._subscribers_lock = threading.RLock()
         self._init_db()
 
     def _init_db(self):
@@ -261,7 +263,8 @@ class DistributedEventBus:
     async def _call_subscribers(self, event: ClusterEvent):
         """Call all subscribers for event type"""
         try:
-            subscribers = self._subscribers.get(event.event_type, [])
+            with self._subscribers_lock:
+                subscribers = list(self._subscribers.get(event.event_type, []))
 
             for callback in subscribers:
                 try:
@@ -289,10 +292,11 @@ class DistributedEventBus:
             True if successful
         """
         try:
-            if event_type not in self._subscribers:
-                self._subscribers[event_type] = []
+            with self._subscribers_lock:
+                if event_type not in self._subscribers:
+                    self._subscribers[event_type] = []
 
-            self._subscribers[event_type].append(callback)
+                self._subscribers[event_type].append(callback)
             self.logger.debug(f"Subscribed to {event_type.value}")
             return True
 

@@ -32,6 +32,7 @@ from app.services.state_authority_reconciliation_service import (
     RECONCILIATION_TOLERANCE,
     StateAuthorityReconciliationService,
 )
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -74,16 +75,16 @@ def _as_iso(value: Optional[datetime]) -> Optional[str]:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return utc_now()
 
 
 def _parse_iso_datetime(value: Any) -> Optional[datetime]:
     if isinstance(value, datetime):
-        return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
+        return value.astimezone(timezone.utc) if value.tzinfo else value.replace(tzinfo=timezone.utc)
     if isinstance(value, str) and value.strip():
         try:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return parsed.astimezone(timezone.utc).replace(tzinfo=None) if parsed.tzinfo else parsed
+            return parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
         except Exception:
             return None
     return None
@@ -211,7 +212,7 @@ class SnapshotRuntimeStateService:
             if isinstance(row.live_snapshot_payload, dict)
             else None
         )
-        emitted_at = row.last_runtime_event_at
+        emitted_at = _parse_iso_datetime(row.last_runtime_event_at)
         age_seconds = None
         if isinstance(emitted_at, datetime):
             age_seconds = max(0.0, (now - emitted_at).total_seconds())
@@ -859,12 +860,13 @@ class SnapshotRuntimeStateService:
             )
             event_row = result.scalar_one_or_none()
             if event_row is not None:
+                requested_at = _parse_iso_datetime(event_row.requested_at) or emitted_at
                 event_row.outcome = "success"
                 event_row.confirmed_live_at = emitted_at
                 event_row.failure_reason = None
                 event_row.activation_latency_ms = max(
                     0.0,
-                    (emitted_at - (event_row.requested_at or emitted_at)).total_seconds() * 1000.0,
+                    (emitted_at - requested_at).total_seconds() * 1000.0,
                 )
                 event_row.runtime_metrics = copy.deepcopy(runtime_metrics or {})
                 activation_payload = self._serialize_activation_event(event_row)
@@ -932,12 +934,13 @@ class SnapshotRuntimeStateService:
             )
             event_row = result.scalar_one_or_none()
             if event_row is not None:
+                requested_at = _parse_iso_datetime(event_row.requested_at) or emitted_at
                 event_row.outcome = "failed"
                 event_row.failure_reason = failure_reason
                 event_row.confirmed_live_at = None
                 event_row.activation_latency_ms = max(
                     0.0,
-                    (emitted_at - (event_row.requested_at or emitted_at)).total_seconds() * 1000.0,
+                    (emitted_at - requested_at).total_seconds() * 1000.0,
                 )
                 event_row.runtime_metrics = copy.deepcopy(runtime_metrics or {})
                 activation_payload = self._serialize_activation_event(event_row)

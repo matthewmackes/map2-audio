@@ -21,17 +21,23 @@ try:
     from app.database import Chain, ChainPlugin, get_db_session
     from app.services.ir_processor import IRProcessor
     from app.services.juce_engine_service import get_audio_engine
+    from app.services.plugin_uris import (
+        CABINET_IR_CONFIG_PLUGIN_URIS,
+        CABINET_IR_PLUGIN_URI,
+        REVERB_IR_CONFIG_PLUGIN_URIS,
+        REVERB_IR_PLUGIN_URI,
+    )
     from app.services.upload_service import AssetType, get_upload_service
 
     logger = logging.getLogger(__name__)
     router = APIRouter(prefix="/api/ir", tags=["ir"])
     IR_PLUGIN_URIS = {
-        "cabinet": "map2://juce/convolution/cabinet",
-        "reverb": "map2://juce/convolution/reverb",
+        "cabinet": CABINET_IR_PLUGIN_URI,
+        "reverb": REVERB_IR_PLUGIN_URI,
     }
     IR_CONFIG_PLUGIN_URIS = {
-        "cabinet": (IR_PLUGIN_URIS["cabinet"], "urn:map2:ir-cabinet"),
-        "reverb": (IR_PLUGIN_URIS["reverb"], "urn:map2:ir-reverb"),
+        "cabinet": CABINET_IR_CONFIG_PLUGIN_URIS,
+        "reverb": REVERB_IR_CONFIG_PLUGIN_URIS,
     }
 
     # Legacy global IR service remains available for non-instance routes.

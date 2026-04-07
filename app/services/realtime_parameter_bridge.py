@@ -7,12 +7,13 @@ bypassing the normal REST API and event history mechanisms.
 """
 
 import asyncio
+from collections import defaultdict, deque
 import logging
 import time
 import struct
+import threading
 from typing import Dict, Set, Optional, Callable, Any, List, Tuple
 from dataclasses import dataclass, field
-from collections import defaultdict
 from enum import IntEnum
 from fastapi import WebSocket
 import json
@@ -69,11 +70,16 @@ class ParameterUpdate:
     @classmethod
     def from_binary(cls, data: bytes) -> 'ParameterUpdate':
         """Decode from binary format."""
+        if len(data) < 9:
+            raise ValueError("binary frame too short")
         msg_type = data[0]
         if msg_type != BinaryMessageType.PARAM_UPDATE:
             raise ValueError(f"Invalid message type: {msg_type}")
 
         uri_len = struct.unpack('>H', data[1:3])[0]
+        expected_len = 3 + uri_len + 6
+        if len(data) < expected_len:
+            raise ValueError("binary frame truncated")
         uri = data[3:3+uri_len].decode('utf-8')
         param_idx, value = struct.unpack('>Hf', data[3+uri_len:3+uri_len+6])
 
@@ -133,6 +139,7 @@ class RealTimeParameterBridge:
 
         # Subscriptions: keyed by instance_id, plugin_position, or URI fallback
         self._subscriptions: Dict[Tuple[Any, ...], Set[str]] = defaultdict(set)
+        self._state_lock = threading.RLock()
 
         # Callback to audio engine for parameter changes
         self._engine_callback: Optional[
@@ -162,8 +169,9 @@ class RealTimeParameterBridge:
         self._running = False
 
         # Latency tracking
-        self._latency_samples: List[float] = []
+        self._latency_samples: deque[float] = deque()
         self._max_latency_samples = 1000
+        self._send_timeout_seconds = 0.05
 
     @staticmethod
     def _normalize_positive_int(value: Any) -> Optional[int]:
@@ -248,7 +256,8 @@ class RealTimeParameterBridge:
             websocket=websocket,
             use_binary=use_binary
         )
-        self._clients[client_id] = client
+        with self._state_lock:
+            self._clients[client_id] = client
 
         # Send welcome with protocol info
         welcome = {
@@ -264,16 +273,16 @@ class RealTimeParameterBridge:
 
     def disconnect_client(self, client_id: str):
         """Remove a client and clean up subscriptions."""
-        if client_id not in self._clients:
-            return
+        with self._state_lock:
+            if client_id not in self._clients:
+                return
 
-        # Remove from all subscriptions
-        for param_key in list(self._subscriptions.keys()):
-            self._subscriptions[param_key].discard(client_id)
-            if not self._subscriptions[param_key]:
-                del self._subscriptions[param_key]
+            for param_key in list(self._subscriptions.keys()):
+                self._subscriptions[param_key].discard(client_id)
+                if not self._subscriptions[param_key]:
+                    del self._subscriptions[param_key]
 
-        del self._clients[client_id]
+            del self._clients[client_id]
         logger.info(f"RT client disconnected: {client_id}")
 
     async def handle_message(self, client_id: str, data: bytes | str):
@@ -282,10 +291,10 @@ class RealTimeParameterBridge:
 
         Supports both binary and JSON protocols.
         """
-        if client_id not in self._clients:
+        with self._state_lock:
+            client = self._clients.get(client_id)
+        if client is None:
             return
-
-        client = self._clients[client_id]
         client.last_activity = time.time()
 
         try:
@@ -311,11 +320,17 @@ class RealTimeParameterBridge:
 
         elif msg_type == BinaryMessageType.PARAM_BATCH:
             # Batch format: [type:1][count:2][updates...]
+            if len(data) < 3:
+                raise ValueError("batch frame too short")
             count = struct.unpack('>H', data[1:3])[0]
             offset = 3
             for _ in range(count):
+                if len(data) < offset + 2:
+                    raise ValueError("batch frame truncated before uri length")
                 uri_len = struct.unpack('>H', data[offset:offset+2])[0]
                 update_end = offset + 2 + uri_len + 6
+                if len(data) < update_end:
+                    raise ValueError("batch frame truncated in update payload")
                 update_data = bytes([BinaryMessageType.PARAM_UPDATE]) + data[offset:update_end]
                 update = ParameterUpdate.from_binary(update_data)
                 await self._process_update(update, client.client_id)
@@ -327,13 +342,21 @@ class RealTimeParameterBridge:
 
         elif msg_type == BinaryMessageType.SUBSCRIBE:
             # Subscribe format: [type:1][uri_len:2][uri:N][param_idx:2]
+            if len(data) < 5:
+                raise ValueError("subscribe frame too short")
             uri_len = struct.unpack('>H', data[1:3])[0]
+            if len(data) < 5 + uri_len:
+                raise ValueError("subscribe frame truncated")
             uri = data[3:3+uri_len].decode('utf-8')
             param_idx = struct.unpack('>H', data[3+uri_len:5+uri_len])[0]
             await self._subscribe_param(client.client_id, uri, param_idx)
 
         elif msg_type == BinaryMessageType.UNSUBSCRIBE:
+            if len(data) < 5:
+                raise ValueError("unsubscribe frame too short")
             uri_len = struct.unpack('>H', data[1:3])[0]
+            if len(data) < 5 + uri_len:
+                raise ValueError("unsubscribe frame truncated")
             uri = data[3:3+uri_len].decode('utf-8')
             param_idx = struct.unpack('>H', data[3+uri_len:5+uri_len])[0]
             await self._unsubscribe_param(client.client_id, uri, param_idx)
@@ -444,10 +467,11 @@ class RealTimeParameterBridge:
             instance_id=instance_id,
             plugin_position=plugin_position,
         )
-        self._subscriptions[key].add(client_id)
-
-        if client_id in self._clients:
-            self._clients[client_id].subscribed_params.add(key)
+        with self._state_lock:
+            self._subscriptions[key].add(client_id)
+            client = self._clients.get(client_id)
+            if client is not None:
+                client.subscribed_params.add(key)
 
         # Send current value if cached
         if key in self._param_cache:
@@ -475,10 +499,13 @@ class RealTimeParameterBridge:
             instance_id=instance_id,
             plugin_position=plugin_position,
         )
-        self._subscriptions[key].discard(client_id)
-
-        if client_id in self._clients:
-            self._clients[client_id].subscribed_params.discard(key)
+        with self._state_lock:
+            self._subscriptions[key].discard(client_id)
+            if not self._subscriptions[key]:
+                self._subscriptions.pop(key, None)
+            client = self._clients.get(client_id)
+            if client is not None:
+                client.subscribed_params.discard(key)
 
     async def _process_update(self, update: ParameterUpdate, source_client: Optional[str] = None):
         """
@@ -513,43 +540,57 @@ class RealTimeParameterBridge:
                 pass
 
         # Broadcast to subscribers (except source)
-        subscribers = self._subscriptions.get(key, set())
-        for client_id in subscribers:
-            if client_id != source_client:
-                await self._send_to_client(client_id, update)
+        await self._broadcast_update(key, update, exclude_client=source_client)
 
         # Track latency
         latency_us = (time.perf_counter() - start_time) * 1_000_000
         self._latency_samples.append(latency_us)
-        if len(self._latency_samples) > self._max_latency_samples:
-            self._latency_samples.pop(0)
+        while len(self._latency_samples) > self._max_latency_samples:
+            self._latency_samples.popleft()
         self._stats['avg_latency_us'] = sum(self._latency_samples) / len(self._latency_samples)
 
     async def _send_to_client(self, client_id: str, update: ParameterUpdate):
         """Send update to a specific client."""
-        if client_id not in self._clients:
+        with self._state_lock:
+            client = self._clients.get(client_id)
+        if client is None:
             return
-
-        client = self._clients[client_id]
         self._stats['updates_broadcast'] += 1
 
         try:
             if client.use_binary:
                 if client.use_binary and update.instance_id is None and update.plugin_position is None:
-                    await client.websocket.send_bytes(update.to_binary())
+                    await asyncio.wait_for(client.websocket.send_bytes(update.to_binary()), timeout=self._send_timeout_seconds)
                 else:
-                    await client.websocket.send_text(json.dumps({
+                    await asyncio.wait_for(client.websocket.send_text(json.dumps({
                         'type': 'param_update',
                         **update.to_json()
-                    }))
+                    })), timeout=self._send_timeout_seconds)
             else:
-                await client.websocket.send_text(json.dumps({
+                await asyncio.wait_for(client.websocket.send_text(json.dumps({
                     'type': 'param_update',
                     **update.to_json()
-                }))
+                })), timeout=self._send_timeout_seconds)
         except Exception as e:
             logger.warning(f"Failed to send to client {client_id}: {e}")
             self.disconnect_client(client_id)
+
+    async def _broadcast_update(
+        self,
+        key: Tuple[Any, ...],
+        update: ParameterUpdate,
+        *,
+        exclude_client: Optional[str] = None,
+    ) -> None:
+        with self._state_lock:
+            subscribers = list(self._subscriptions.get(key, set()))
+        tasks = [
+            self._send_to_client(client_id, update)
+            for client_id in subscribers
+            if client_id != exclude_client
+        ]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _process_loop(self):
         """
@@ -644,9 +685,7 @@ class RealTimeParameterBridge:
         self._param_cache[key] = value
 
         # Broadcast to all subscribers
-        subscribers = self._subscriptions.get(key, set())
-        for client_id in subscribers:
-            await self._send_to_client(client_id, update)
+        await self._broadcast_update(key, update)
 
     async def update_from_midi(
         self,

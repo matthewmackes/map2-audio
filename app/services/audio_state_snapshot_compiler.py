@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from app.models.audio_state import (
@@ -18,10 +18,11 @@ from app.models.audio_state import (
     AuthoritativeAudioState,
     CompiledSnapshotIntent,
 )
+from app.utils.time import utc_now
 
 
 def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    return utc_now().isoformat()
 
 
 def _normalize_extensions(extensions: dict[str, Any] | None) -> dict[str, Any]:

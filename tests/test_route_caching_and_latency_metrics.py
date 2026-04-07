@@ -58,6 +58,7 @@ def test_health_version_and_config_set_cache_headers():
 
 
 def test_plugins_list_sets_cache_header():
+    plugins_routes.ensure_plugin_route_ready = lambda _route: None
     response = Response()
     payload = asyncio.run(plugins_routes.list_plugins(response))
 
@@ -66,6 +67,7 @@ def test_plugins_list_sets_cache_header():
 
 
 def test_chains_list_supports_etag_304(monkeypatch):
+    monkeypatch.setattr(chains_routes, "ensure_chain_route_ready", lambda _route: None)
     monkeypatch.setattr(chains_routes, "ChainService", lambda session: _FakeChainService())
     monkeypatch.setattr("app.database.get_session", lambda: _fake_session_ctx())
 
@@ -388,6 +390,7 @@ def test_metrics_latency_includes_route_group_percentiles(monkeypatch):
 
 
 def test_plugins_discover_uses_singleflight_under_concurrency(monkeypatch):
+    monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
     class _SlowLoader:
         def __init__(self) -> None:
             self.calls = 0
@@ -433,3 +436,72 @@ def test_plugins_discover_uses_singleflight_under_concurrency(monkeypatch):
 
     assert loader.calls == 1
     assert all(payload["count"] == 1 for payload in payloads)
+
+
+def test_plugins_discover_excludes_hardware_from_generic_catalog(monkeypatch):
+    monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
+    class _Loader:
+        def discover_plugins(self, force_refresh: bool = False):
+            return [
+                SimpleNamespace(
+                    uri="urn:test:plugin",
+                    name="Test Plugin",
+                    author="MAP2",
+                    category="Utility",
+                    class_label="Utility",
+                    version="1.0",
+                    license="AGPL-3.0-only",
+                    has_ui=False,
+                    in_port_count=2,
+                    out_port_count=2,
+                    parameters=[],
+                )
+            ]
+
+    monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
+    monkeypatch.setattr(plugins_routes, "_cache_timestamp", 0)
+    monkeypatch.setattr(plugins_routes, "_juce_processors_cache", [])
+    monkeypatch.setattr(plugins_routes, "_plugin_discovery_lock", None)
+    monkeypatch.setattr(
+        plugins_routes,
+        "_get_juce_processors",
+        lambda: [{"uri": "map2://juce/delay", "name": "Delay", "format": "JUCE"}],
+    )
+    monkeypatch.setattr(
+        plugins_routes,
+        "_get_hardware_plugins",
+        lambda: [{"uri": "hardware://lexicon-mpx1-spdif", "name": "Lexicon MPX-1", "is_hardware": True}],
+    )
+    monkeypatch.setattr(plugins_routes.service_manager, "get_plugin_loader", lambda: _Loader())
+
+    payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
+
+    assert [plugin["uri"] for plugin in payload["plugins"]] == [
+        "map2://juce/delay",
+        "urn:test:plugin",
+    ]
+
+
+def test_plugins_discover_loader_unavailable_fallback_excludes_hardware(monkeypatch):
+    monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
+    monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
+    monkeypatch.setattr(plugins_routes, "_cache_timestamp", 0)
+    monkeypatch.setattr(plugins_routes, "_juce_processors_cache", [])
+    monkeypatch.setattr(plugins_routes, "_plugin_discovery_lock", None)
+    monkeypatch.setattr(
+        plugins_routes,
+        "_get_juce_processors",
+        lambda: [{"uri": "map2://juce/delay", "name": "Delay", "format": "JUCE"}],
+    )
+    monkeypatch.setattr(
+        plugins_routes,
+        "_get_hardware_plugins",
+        lambda: [{"uri": "hardware://lexicon-mpx1-spdif", "name": "Lexicon MPX-1", "is_hardware": True}],
+    )
+    monkeypatch.setattr(plugins_routes.service_manager, "get_plugin_loader", lambda: None)
+
+    payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
+
+    assert payload["count"] == 1
+    assert [plugin["uri"] for plugin in payload["plugins"]] == ["map2://juce/delay"]
+    assert "hardware" not in payload["warning"].lower()

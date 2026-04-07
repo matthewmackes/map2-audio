@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
 import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
+import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 import { ThemePage } from './ThemePage'
 
 const mockUpdateSpecialSettings = jest.fn()
@@ -177,8 +178,28 @@ describe('ThemePage', () => {
     expect(screen.getByRole('heading', { name: 'Preview target' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Token studio' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Appearance assets' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Desktop personalization' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Behavior and accessibility' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /open launcher organizer/i })).toBeNull()
+  })
+
+  it('persists desktop wallpaper mode selections from the personalization section', () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('radio', { name: /theme solid color/i }))
+
+    expect(window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)).toContain('"mode":"solid-theme"')
+  })
+
+  it('opens the hidden wallpaper upload input from the personalization section', () => {
+    renderThemePage()
+
+    const uploadInput = screen.getByLabelText('Upload desktop wallpaper')
+    const clickSpy = jest.spyOn(uploadInput, 'click')
+
+    fireEvent.click(screen.getByRole('radio', { name: /uploaded image/i }))
+
+    expect(clickSpy).toHaveBeenCalled()
   })
 
   it('exposes a classic preview target radio group for the desktop preview', () => {

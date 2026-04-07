@@ -4,7 +4,7 @@ import type { CarbonThemeId, Theme } from './types';
 
 const THEME_STORAGE_KEY = 'theme';
 const CUSTOM_THEMES_STORAGE_KEY = 'custom-themes';
-const DEFAULT_THEME_ID = 'default';
+const DEFAULT_THEME_ID = 'gray-10';
 const CARBON_THEME_EVENT = 'map2:theme-change';
 const CARBON_THEME_CLASSES = ['cds--white', 'cds--g10', 'cds--g90', 'cds--g100'] as const;
 

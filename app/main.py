@@ -754,11 +754,9 @@ def create_app():
             allow_methods=["*"],
             allow_headers=["*"],
         )
-        app.add_middleware(APIAuthMiddleware)
-
-        # Capture request durations for route-group percentile observability.
-        from app.middleware.request_logging import RequestLoggingMiddleware
-        app.add_middleware(RequestLoggingMiddleware, enabled=False)
+        # Cluster API proxy middleware (transparent node targeting)
+        from app.middleware.cluster_proxy import ClusterProxyMiddleware
+        app.add_middleware(ClusterProxyMiddleware)
 
         # API Observatory traffic capture (bounded ring buffer + WS events).
         from app.middleware.traffic_capture import TrafficCaptureMiddleware
@@ -767,9 +765,12 @@ def create_app():
             enabled=os.getenv("MAP2_TRAFFIC_CAPTURE", "true").lower() in {"1", "true", "yes", "on"},
         )
 
-        # Cluster API proxy middleware (transparent node targeting)
-        from app.middleware.cluster_proxy import ClusterProxyMiddleware
-        app.add_middleware(ClusterProxyMiddleware)
+        # Capture request durations for route-group percentile observability.
+        from app.middleware.request_logging import RequestLoggingMiddleware
+        app.add_middleware(RequestLoggingMiddleware, enabled=False)
+
+        # Auth must be outermost so proxied requests cannot bypass role checks.
+        app.add_middleware(APIAuthMiddleware)
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)

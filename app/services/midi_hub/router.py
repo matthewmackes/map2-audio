@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import heapq
 import json
 import threading
 import time
@@ -135,6 +136,11 @@ class MidiRouter:
         self._match_mode: RouteMatchMode = "all_match"
         self._running = False
         self._lock = threading.RLock()
+        self._delay_cv = threading.Condition(self._lock)
+        self._delay_queue: List[Tuple[float, int, Dict[str, Any]]] = []
+        self._delay_sequence = 0
+        self._delay_thread: Optional[threading.Thread] = None
+        self._max_pending_delayed_events = 4096
         self._subscriber_id = "midi_hub_router"
         self._local_node_id = _resolve_local_node_id()
         self._load_routes()
@@ -148,14 +154,23 @@ class MidiRouter:
             if self._running:
                 return
             self._running = True
+            self._delay_thread = threading.Thread(target=self._run_delayed_dispatch_loop, name="midi_router_delay", daemon=True)
+            self._delay_thread.start()
         self._hub.subscribe(self._subscriber_id, self._on_message)
 
     def stop(self) -> None:
+        delay_thread: Optional[threading.Thread] = None
         with self._lock:
             if not self._running:
                 return
             self._running = False
+            self._delay_queue.clear()
+            self._delay_cv.notify_all()
+            delay_thread = self._delay_thread
+            self._delay_thread = None
         self._hub.unsubscribe(self._subscriber_id)
+        if delay_thread is not None:
+            delay_thread.join(timeout=1.0)
 
     def set_match_mode(self, mode: RouteMatchMode) -> RouteMatchMode:
         with self._lock:
@@ -423,20 +438,68 @@ class MidiRouter:
             )
             return
 
-        timer = threading.Timer(
-            float(delay_ms) / 1000.0,
-            self._send_and_track,
-            kwargs={
-                "source_port": source_port,
-                "destination_port": destination_port,
-                "data": bytes(event_data),
-                "route_id": route_id,
-                "delay_ms": int(delay_ms),
-                "metadata": dict(metadata),
-            },
+        self._schedule_delayed_event(
+            source_port=source_port,
+            destination_port=destination_port,
+            event_data=event_data,
+            route_id=route_id,
+            delay_ms=delay_ms,
+            metadata=metadata,
         )
-        timer.daemon = True
-        timer.start()
+
+    def _schedule_delayed_event(
+        self,
+        *,
+        source_port: str,
+        destination_port: str,
+        event_data: bytes,
+        route_id: str,
+        delay_ms: int,
+        metadata: Dict[str, Any],
+    ) -> None:
+        with self._delay_cv:
+            if not self._running:
+                return
+            if len(self._delay_queue) >= self._max_pending_delayed_events:
+                heapq.heappop(self._delay_queue)
+            self._delay_sequence += 1
+            heapq.heappush(
+                self._delay_queue,
+                (
+                    time.monotonic() + (float(delay_ms) / 1000.0),
+                    self._delay_sequence,
+                    {
+                        "source_port": source_port,
+                        "destination_port": destination_port,
+                        "data": bytes(event_data),
+                        "route_id": route_id,
+                        "delay_ms": int(delay_ms),
+                        "metadata": dict(metadata),
+                    },
+                ),
+            )
+            self._delay_cv.notify()
+
+    def _run_delayed_dispatch_loop(self) -> None:
+        while True:
+            payload: Optional[Dict[str, Any]] = None
+            with self._delay_cv:
+                while self._running and not self._delay_queue:
+                    self._delay_cv.wait(timeout=0.25)
+                if not self._running and not self._delay_queue:
+                    return
+                if not self._delay_queue:
+                    continue
+                run_at, _, next_payload = self._delay_queue[0]
+                wait_s = run_at - time.monotonic()
+                if wait_s > 0:
+                    self._delay_cv.wait(timeout=wait_s)
+                    continue
+                _, _, payload = heapq.heappop(self._delay_queue)
+
+            if payload is None:
+                continue
+            self._send_and_track(**payload)
 
     def _send_and_track(
         self,

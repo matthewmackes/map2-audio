@@ -12,17 +12,26 @@ Implements:
 """
 
 import asyncio
+import json
 import logging
-from enum import Enum
+import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
 import random
 import time
+from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
+
+
+def _coerce_utc(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=utc_now().tzinfo)
 
 
 class RaftRole(Enum):
@@ -55,7 +64,7 @@ class RaftNodeInfo:
     """Information about a Raft node."""
     node_id: str
     url: str
-    last_heartbeat: datetime = field(default_factory=datetime.utcnow)
+    last_heartbeat: datetime = field(default_factory=utc_now)
     next_index: int = 0
     match_index: int = 0
 
@@ -132,7 +141,7 @@ class RaftConsensus:
     - State machine application
     """
 
-    def __init__(self, node_id: str, cluster_nodes: Dict[str, str]):
+    def __init__(self, node_id: str, cluster_nodes: Dict[str, str], *, state_path: Optional[Path] = None):
         """
         Initialize Raft consensus.
         
@@ -142,24 +151,25 @@ class RaftConsensus:
         """
         self.node_id = node_id
         self.cluster_nodes = {n: u for n, u in cluster_nodes.items() if n != node_id}
+        self._state_path = Path(state_path) if state_path is not None else self._default_state_path(node_id)
         
         # Persistent state
         self.current_term = 0
         self.voted_for: Optional[str] = None
         self.log: List[LogEntry] = []
-        
+
         # Volatile state
-        self.commit_index = 0
-        self.last_applied = 0
+        self.commit_index = -1
+        self.last_applied = -1
         self.role = RaftRole.FOLLOWER
         self.state_machine = RaftStateMachine()
-        
+
         # Leader state
         self.next_index: Dict[str, int] = {n: len(self.log) for n in self.cluster_nodes}
-        self.match_index: Dict[str, int] = {n: 0 for n in self.cluster_nodes}
+        self.match_index: Dict[str, int] = {n: -1 for n in self.cluster_nodes}
         
         # Timing
-        self.last_heartbeat = datetime.utcnow()
+        self.last_heartbeat = utc_now()
         self.election_timeout = self._random_timeout(150, 300)  # ms
         self.heartbeat_interval = 50  # ms
         
@@ -168,6 +178,96 @@ class RaftConsensus:
         self._tasks: List[asyncio.Task] = []
         
         self.logger = logging.getLogger("RaftConsensus")
+        self._load_persistent_state()
+
+    @staticmethod
+    def _default_state_path(node_id: str) -> Path:
+        configured = os.getenv("MAP2_RAFT_STATE_DIR", "").strip()
+        root = Path(configured).expanduser() if configured else Path.home() / ".map2" / "cluster" / "raft"
+        return root / f"{node_id}.json"
+
+    def _serialize_log_entry(self, entry: LogEntry) -> Dict[str, Any]:
+        return {
+            "term": int(entry.term),
+            "command": str(entry.command),
+            "data": dict(entry.data),
+            "timestamp": float(entry.timestamp),
+            "index": int(entry.index),
+        }
+
+    def _persist_stable_state(self) -> None:
+        payload = {
+            "current_term": int(self.current_term),
+            "voted_for": self.voted_for,
+            "log": [self._serialize_log_entry(entry) for entry in self.log],
+        }
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self._state_path.with_suffix(".tmp")
+        temp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        temp_path.replace(self._state_path)
+
+    def _load_persistent_state(self) -> None:
+        if not self._state_path.exists():
+            return
+        try:
+            payload = json.loads(self._state_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            self.logger.warning("Failed to load Raft stable state from %s: %s", self._state_path, exc)
+            return
+
+        self.current_term = int(payload.get("current_term", 0) or 0)
+        raw_voted_for = payload.get("voted_for")
+        self.voted_for = str(raw_voted_for) if raw_voted_for is not None else None
+        self.log = []
+        for index, raw_entry in enumerate(payload.get("log", [])):
+            if not isinstance(raw_entry, dict):
+                continue
+            self.log.append(
+                LogEntry(
+                    term=int(raw_entry.get("term", 0) or 0),
+                    command=str(raw_entry.get("command", "")),
+                    data=dict(raw_entry.get("data", {}) or {}),
+                    timestamp=float(raw_entry.get("timestamp", time.time()) or time.time()),
+                    index=int(raw_entry.get("index", index) or index),
+                )
+            )
+
+    def _cluster_size(self) -> int:
+        return len(self.cluster_nodes) + 1
+
+    def _majority_count(self) -> int:
+        return (self._cluster_size() // 2) + 1
+
+    def _last_log_index(self) -> int:
+        return len(self.log) - 1
+
+    def _last_log_term(self) -> int:
+        return self.log[-1].term if self.log else 0
+
+    def _become_follower(self, term: int, *, voted_for: Optional[str] = None) -> None:
+        if term > self.current_term:
+            self.current_term = term
+        self.role = RaftRole.FOLLOWER
+        self.voted_for = voted_for
+        self.last_heartbeat = utc_now()
+        self._persist_stable_state()
+
+    def set_current_term(self, term: int) -> None:
+        self.current_term = int(term)
+        self.voted_for = None
+        self._persist_stable_state()
+
+    def record_vote(self, candidate_id: Optional[str]) -> None:
+        self.voted_for = candidate_id
+        self._persist_stable_state()
+
+    def replace_log(self, entries: List[LogEntry]) -> None:
+        self.log = entries
+        self._persist_stable_state()
+
+    def append_log_entry(self, entry: LogEntry) -> None:
+        self.log.append(entry)
+        self._persist_stable_state()
 
     def _random_timeout(self, min_ms: int, max_ms: int) -> float:
         """Get random election timeout in seconds."""
@@ -230,7 +330,7 @@ class RaftConsensus:
                 await asyncio.sleep(timeout)
                 
                 # Check if we've received a heartbeat
-                time_since_heartbeat = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+                time_since_heartbeat = (utc_now() - _coerce_utc(self.last_heartbeat)).total_seconds()
                 
                 if self.role == RaftRole.LEADER:
                     # Leader doesn't time out
@@ -264,7 +364,8 @@ class RaftConsensus:
         self.role = RaftRole.CANDIDATE
         self.current_term += 1
         self.voted_for = self.node_id
-        self.last_heartbeat = datetime.utcnow()
+        self._persist_stable_state()
+        self.last_heartbeat = utc_now()
         self.election_timeout = self._random_timeout(150, 300)
         
         # Request votes from all other nodes
@@ -274,23 +375,24 @@ class RaftConsensus:
             vote_tasks.append(task)
         
         votes_received = await asyncio.gather(*vote_tasks, return_exceptions=True)
-        votes = sum(1 for v in votes_received if v is True)
-        
+        votes = 1 + sum(1 for v in votes_received if v is True)
+
         # Check if we won the election
-        majority = len(self.cluster_nodes) // 2 + 1
-        if votes >= majority:
-            self.logger.info(f"Won election with {votes}/{len(self.cluster_nodes)} votes (term={self.current_term})")
+        majority = self._majority_count()
+        if self.role == RaftRole.CANDIDATE and votes >= majority:
+            self.logger.info(f"Won election with {votes}/{self._cluster_size()} votes (term={self.current_term})")
             self.role = RaftRole.LEADER
-            
+
             # Initialize leader state
             self.next_index = {n: len(self.log) for n in self.cluster_nodes}
-            self.match_index = {n: 0 for n in self.cluster_nodes}
+            self.match_index = {n: -1 for n in self.cluster_nodes}
             
             # Send initial heartbeat
             await self._send_heartbeats()
         else:
-            self.logger.warning(f"Lost election with {votes}/{len(self.cluster_nodes)} votes (term={self.current_term})")
-            self.role = RaftRole.FOLLOWER
+            self.logger.warning(f"Lost election with {votes}/{self._cluster_size()} votes (term={self.current_term})")
+            if self.role == RaftRole.CANDIDATE:
+                self.role = RaftRole.FOLLOWER
 
     async def _request_vote(self, node_id: str, node_url: str) -> bool:
         """Request vote from a node."""
@@ -298,14 +400,18 @@ class RaftConsensus:
             payload = {
                 "term": self.current_term,
                 "candidate_id": self.node_id,
-                "last_log_index": len(self.log) - 1,
-                "last_log_term": self.log[-1].term if self.log else 0,
+                "last_log_index": self._last_log_index(),
+                "last_log_term": self._last_log_term(),
             }
             
             async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
                 resp = await client.post(f"{node_url}/api/raft/vote", json=payload)
                 if resp.status_code == 200:
                     data = resp.json()
+                    response_term = int(data.get("term", self.current_term))
+                    if response_term > self.current_term:
+                        self._become_follower(response_term)
+                        return False
                     return data.get("vote_granted", False)
         except Exception as e:
             self.logger.debug(f"Failed to request vote from {node_id}: {e}")
@@ -348,6 +454,10 @@ class RaftConsensus:
                 resp = await client.post(f"{node_url}/api/raft/append-entries", json=payload)
                 if resp.status_code == 200:
                     data = resp.json()
+                    response_term = int(data.get("term", self.current_term))
+                    if response_term > self.current_term:
+                        self._become_follower(response_term)
+                        return
                     if data.get("success"):
                         self.match_index[node_id] = prev_index + len(entries)
                         self.next_index[node_id] = self.match_index[node_id] + 1
@@ -362,11 +472,11 @@ class RaftConsensus:
         """Update commit index based on replication progress."""
         if self.role != RaftRole.LEADER:
             return
-        
+
         # Find highest index replicated to majority
-        match_indices = sorted(self.match_index.values(), reverse=True)
-        majority_index = match_indices[len(self.cluster_nodes) // 2]
-        
+        match_indices = sorted([self._last_log_index(), *self.match_index.values()], reverse=True)
+        majority_index = match_indices[self._majority_count() - 1]
+
         if majority_index > self.commit_index and majority_index < len(self.log):
             if self.log[majority_index].term == self.current_term:
                 self.commit_index = majority_index
@@ -377,20 +487,27 @@ class RaftConsensus:
         while self.is_running:
             try:
                 while self.last_applied < self.commit_index:
-                    self.last_applied += 1
-                    if self.last_applied < len(self.log):
-                        entry = self.log[self.last_applied]
-                        
-                        # Apply to in-memory state machine
-                        await asyncio.to_thread(self.state_machine.apply_entry, entry)
-                        
-                        # For special settings, also apply to database (async)
-                        if entry.command == "update_special_settings":
-                            try:
-                                await self._apply_special_settings_to_db(entry)
-                            except Exception as e:
-                                logger.error(f"Failed to apply special settings to DB: {e}")
-                
+                    next_index = self.last_applied + 1
+                    if next_index >= len(self.log):
+                        break
+
+                    entry = self.log[next_index]
+
+                    # Advance only after a successful apply so committed entries are
+                    # neither skipped nor marked applied early.
+                    applied = await asyncio.to_thread(self.state_machine.apply_entry, entry)
+                    if not applied:
+                        break
+
+                    if entry.command == "update_special_settings":
+                        try:
+                            await self._apply_special_settings_to_db(entry)
+                        except Exception as e:
+                            logger.error(f"Failed to apply special settings to DB: {e}")
+                            break
+
+                    self.last_applied = next_index
+
                 await asyncio.sleep(0.01)
             
             except Exception as e:
@@ -409,7 +526,7 @@ class RaftConsensus:
         # Add to log
         entry = LogEntry(term=self.current_term, command=command, data=data)
         entry.index = len(self.log)
-        self.log.append(entry)
+        self.append_log_entry(entry)
         
         self.logger.info(f"Appended log entry: {command} (index={entry.index})")
         

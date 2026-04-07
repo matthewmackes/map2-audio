@@ -18,6 +18,8 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 import asyncio
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -135,7 +137,7 @@ class PersistentCommandHistory:
                 affected_chain_ids=affected_chain_ids or [],
                 affected_plugin_uris=affected_plugin_uris or [],
                 is_undone=False,
-                executed_at=datetime.utcnow(),
+                executed_at=utc_now(),
             )
             session.add(command)
             await session.flush()
@@ -193,7 +195,7 @@ class PersistentCommandHistory:
 
             # Mark as undone
             command.is_undone = True
-            command.undone_at = datetime.utcnow()
+            command.undone_at = utc_now()
 
             state_before = json.loads(command.state_before)
             logger.info(f"Undo: {command.description}")

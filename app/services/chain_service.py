@@ -20,9 +20,10 @@ import time
 from collections import Counter, defaultdict, deque
 from types import SimpleNamespace
 from typing import List, Dict, Any, Optional, ClassVar
+import threading
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from .command_queue import CommandQueue, CommandType
+from .command_queue import CommandType, get_command_queue
 from .default_effects_manifest import load_default_effects_manifest
 from app.services.plugin_loader_unified import get_plugin_loader
 from app.services.snapshot_system_blocks import (
@@ -112,17 +113,20 @@ class ChainService:
     _plugin_meta_cache: ClassVar[Dict[str, Dict[str, Any]]] = {}
     _cache_initialized: ClassVar[bool] = False
     _cache_init_time: ClassVar[float] = 0
+    _cache_lock: ClassVar[threading.RLock] = threading.RLock()
 
     def __init__(self, session: Optional[AsyncSession] = None):
         """Initialize chain service with optional database session."""
         self.session = session
-        self.command_queue = CommandQueue(max_size=100)
+        self.command_queue = get_command_queue()
         # In-memory cache for fast reads
         self._chain_cache: Dict[int, Dict[str, Any]] = {}
 
         # Initialize class-level plugin cache if not already done
         if not ChainService._cache_initialized:
-            self._initialize_plugin_cache()
+            with ChainService._cache_lock:
+                if not ChainService._cache_initialized:
+                    self._initialize_plugin_cache()
 
     @classmethod
     def _initialize_plugin_cache(cls) -> None:
@@ -140,11 +144,11 @@ class ChainService:
             return
 
         try:
-            # Use the loader's internal plugin dict for direct access
+            next_cache: Dict[str, Dict[str, Any]] = {}
             if hasattr(loader, 'plugins') and isinstance(loader.plugins, dict):
                 for uri, plugin_data in loader.plugins.items():
                     if isinstance(plugin_data, dict):
-                        cls._plugin_meta_cache[uri] = {
+                        next_cache[uri] = {
                             "name": plugin_data.get("name", uri.split("/")[-1]),
                             "author": plugin_data.get("author", ""),
                             "category": plugin_data.get("category", ""),
@@ -152,8 +156,7 @@ class ChainService:
                             "out_port_count": plugin_data.get("audio_outputs", 2),
                         }
                     else:
-                        # Object-style plugin
-                        cls._plugin_meta_cache[uri] = {
+                        next_cache[uri] = {
                             "name": getattr(plugin_data, "name", uri.split("/")[-1]),
                             "author": getattr(plugin_data, "author", ""),
                             "category": getattr(plugin_data, "category", ""),
@@ -161,11 +164,10 @@ class ChainService:
                             "out_port_count": getattr(plugin_data, "out_port_count", 2),
                         }
 
-            # Add NAM plugin to cache
             try:
                 from app.services.nam_processor import NAM_AVAILABLE
                 if NAM_AVAILABLE:
-                    cls._plugin_meta_cache["urn:map2:nam-player"] = {
+                    next_cache["urn:map2:nam-player"] = {
                         "name": "Neural Amp Modeler",
                         "author": "Shapeoko",
                         "category": "Amplifier",
@@ -177,12 +179,10 @@ class ChainService:
             except Exception as e:
                 logger.debug(f"Failed to add NAM to cache: {e}")
 
-            # Add IR plugins to cache
             try:
                 from app.services.ir_processor import IRProcessor
                 if IRProcessor:
-                    # Cabinet IR
-                    cls._plugin_meta_cache["urn:map2:ir-cabinet"] = {
+                    next_cache["urn:map2:ir-cabinet"] = {
                         "name": "Cabinet IR",
                         "author": "MAP2 Audio",
                         "category": "Amplifier",
@@ -191,8 +191,7 @@ class ChainService:
                         "is_ir_plugin": True,
                         "ir_type": "cabinet"
                     }
-                    # Reverb IR
-                    cls._plugin_meta_cache["urn:map2:ir-reverb"] = {
+                    next_cache["urn:map2:ir-reverb"] = {
                         "name": "Reverb IR",
                         "author": "MAP2 Audio",
                         "category": "Reverb",
@@ -205,8 +204,10 @@ class ChainService:
             except Exception as e:
                 logger.debug(f"Failed to add IR plugins to cache: {e}")
 
-            cls._cache_initialized = True
-            cls._cache_init_time = time.time() - start_time
+            with cls._cache_lock:
+                cls._plugin_meta_cache = next_cache
+                cls._cache_initialized = True
+                cls._cache_init_time = time.time() - start_time
 
             logger.info(
                 f"Plugin metadata cache initialized with {len(cls._plugin_meta_cache)} "
@@ -219,8 +220,9 @@ class ChainService:
     @classmethod
     def invalidate_cache(cls) -> None:
         """Invalidate the plugin metadata cache."""
-        cls._plugin_meta_cache.clear()
-        cls._cache_initialized = False
+        with cls._cache_lock:
+            cls._plugin_meta_cache = {}
+            cls._cache_initialized = False
         logger.info("Plugin metadata cache invalidated")
 
     def _get_plugin_metadata(self, plugin_uri: str) -> Dict[str, Any]:
@@ -236,8 +238,9 @@ class ChainService:
             Plugin metadata dict
         """
         # Fast path: cache hit
-        if plugin_uri in self._plugin_meta_cache:
-            return self._plugin_meta_cache[plugin_uri]
+        with self._cache_lock:
+            if plugin_uri in self._plugin_meta_cache:
+                return dict(self._plugin_meta_cache[plugin_uri])
 
         # Slow path: try direct lookup from loader
         loader = get_plugin_loader()
@@ -256,7 +259,8 @@ class ChainService:
                         "in_port_count": plugin.get("audio_inputs", 2),
                         "out_port_count": plugin.get("audio_outputs", 2),
                     }
-                    self._plugin_meta_cache[plugin_uri] = meta
+                    with self._cache_lock:
+                        self._plugin_meta_cache[plugin_uri] = dict(meta)
                     return meta
 
             # Fallback: check loader's plugins dict directly
@@ -270,7 +274,8 @@ class ChainService:
                         "in_port_count": plugin_data.get("audio_inputs", 2),
                         "out_port_count": plugin_data.get("audio_outputs", 2),
                     }
-                    self._plugin_meta_cache[plugin_uri] = meta
+                    with self._cache_lock:
+                        self._plugin_meta_cache[plugin_uri] = dict(meta)
                     return meta
 
         except Exception as e:

@@ -1,4 +1,3 @@
-import json
 import subprocess
 
 from app.config import CONFIG_SCHEMA
@@ -120,4 +119,28 @@ def test_cluster_registry_persists_midi_fields(tmp_path):
     assert node is not None
     assert node["midi_input_count"] == 2
     assert node["midi_output_count"] == 1
-    assert json.loads(node["midi_devices"]) == ["Lexicon MPX1", "USB Controller"]
+    assert node["midi_devices"] == ["Lexicon MPX1", "USB Controller"]
+
+
+def test_cluster_registry_upsert_returns_normalized_json_fields(tmp_path):
+    registry = ClusterRegistry(db_path=tmp_path / "cluster.db")
+
+    assert registry.add_or_update_node(
+        node_id="node-a",
+        hostname="host-a",
+        audio_devices=["hw:Loopback"],
+        metadata={"api_port": 9000, "zone": "stage-left"},
+    )
+    assert registry.add_or_update_node(
+        node_id="node-a",
+        hostname="host-a-2",
+        audio_devices=["hw:Loopback", "hw:USB"],
+        metadata={"api_port": 9100, "zone": "stage-right"},
+    )
+
+    node = registry.get_node("node-a")
+
+    assert node is not None
+    assert node["hostname"] == "host-a-2"
+    assert node["audio_devices"] == ["hw:Loopback", "hw:USB"]
+    assert node["metadata"] == {"api_port": 9100, "zone": "stage-right"}

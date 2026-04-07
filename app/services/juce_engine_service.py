@@ -21,6 +21,12 @@ from app.services.juce_parameter_schema import (
     normalized_to_actual,
     native_fixed_processor_slug,
 )
+from app.services.juce_runtime_metering_service import JuceRuntimeMeteringService
+from app.services.juce_runtime_midi_service import JuceRuntimeMidiService
+from app.services.plugin_uris import (
+    LEXICON_MPX1_URI,
+    build_lexicon_mpx1_plugin_descriptor,
+)
 from app.utils.singleton import Singleton
 from app.utils.dependencies import DependencyChecker
 from app.utils.logging_utils import get_logger
@@ -120,12 +126,6 @@ class AudioEngineConfig:
     config_file: str = ""
 
 
-# Lexicon MPX-1 Hardware Plugin Constants
-LEXICON_MPX1_URI = "hardware://lexicon-mpx1-spdif"
-LEXICON_MPX1_NAME = "Lexicon MPX-1"
-LEXICON_MPX1_CATEGORY = "lexicon"
-
-
 class JuceEngineService(Singleton):
     """JUCE Audio Engine Service - MAP2 audio processing engine"""
 
@@ -134,11 +134,22 @@ class JuceEngineService(Singleton):
         self.config = config or AudioEngineConfig()
         self._engine = None
         self._initialized = False
+        self._midi_runtime = JuceRuntimeMidiService(self)
+        self._metering_runtime = JuceRuntimeMeteringService(self)
 
     @property
     def engine(self):
         """Legacy compatibility accessor for the low-level C++ engine object."""
         return self._engine
+
+    async def _run_engine_call(self, method_name: str, *args, default=None):
+        """Run a low-level JUCE engine call off the event loop thread."""
+        if not self._engine:
+            return default
+        handler = getattr(self._engine, method_name, None)
+        if not callable(handler):
+            return default
+        return await asyncio.to_thread(handler, *args)
 
     async def initialize(self) -> bool:
         """Initialize engine with full configuration"""
@@ -299,26 +310,7 @@ class JuceEngineService(Singleton):
         plugins = await asyncio.to_thread(self._engine.list_plugins)
         # Inject Lexicon MPX-1 as a discoverable hardware plugin (deduplicated).
         if not any((p or {}).get("uri") == LEXICON_MPX1_URI for p in plugins):
-            plugins.append({
-                "uri": LEXICON_MPX1_URI,
-                "name": LEXICON_MPX1_NAME,
-                "author": "Lexicon / Harman",
-                "brand": "Lexicon",
-                "category": LEXICON_MPX1_CATEGORY,
-                "license": "",
-                "version": "1.0",
-                "format": "Hardware",
-                "format_name": "Hardware S/PDIF",
-                "file_path": "",
-                "audio_inputs": 2,
-                "audio_outputs": 2,
-                "has_midi_input": True,
-                "has_midi_output": True,
-                "latency_samples": 0,
-                "parameters": [],
-                "ports": [],
-                "is_hardware": True,
-            })
+            plugins.append(build_lexicon_mpx1_plugin_descriptor())
         return plugins
 
     async def load_plugin(self, uri: str) -> int:
@@ -416,7 +408,10 @@ class JuceEngineService(Singleton):
         """Get current pedalboard configuration"""
         if not self._engine:
             return {"name": "none", "plugins": [], "items": []}
-        return self._engine.get_current_pedalboard()
+        return await self._run_engine_call(
+            "get_current_pedalboard",
+            default={"name": "none", "plugins": [], "items": []},
+        )
 
     async def get_loaded_plugins(self) -> List[Dict[str, Any]]:
         """List every loaded plugin instance, including detached residents."""
@@ -509,13 +504,13 @@ class JuceEngineService(Singleton):
         """Get current plugin chain order"""
         if not self._engine:
             return []
-        return self._engine.get_chain_order()
+        return await self._run_engine_call("get_chain_order", default=[])
     
     async def reorder_chain(self, order: List[int]) -> bool:
         """Reorder plugin chain"""
         if not self._engine:
             return False
-        return self._engine.reorder_chain(order)
+        return bool(await self._run_engine_call("reorder_chain", list(order), default=False))
     
     # Parameter Control
 
@@ -955,7 +950,7 @@ class JuceEngineService(Singleton):
         """Set plugin bypass state"""
         if not self._engine:
             return False
-        return self._engine.set_bypass(instance_id, bypass)
+        return bool(await self._run_engine_call("set_bypass", instance_id, bypass, default=False))
     
     # Snapshot Management
     
@@ -963,91 +958,53 @@ class JuceEngineService(Singleton):
         """Get current snapshot ID (0-5)"""
         if not self._engine:
             return 0
-        return self._engine.get_current_snapshot()
+        return int(await self._run_engine_call("get_current_snapshot", default=0) or 0)
     
     async def load_snapshot(self, snapshot_id: int) -> bool:
         """Load a snapshot (0-5)"""
         if not self._engine or snapshot_id < 0 or snapshot_id > 5:
             return False
-        return self._engine.load_snapshot(snapshot_id)
+        return bool(await self._run_engine_call("load_snapshot", snapshot_id, default=False))
     
     async def list_snapshots(self) -> List[Dict[str, Any]]:
         """List all available snapshots"""
         if not self._engine:
             return []
-        return self._engine.list_snapshots()
+        return await self._run_engine_call("list_snapshots", default=[])
     
     # MIDI Support
 
     async def enable_midi(self, enable: bool) -> bool:
         """Enable or disable MIDI"""
-        if not self._engine:
-            return False
-        return self._engine.enable_midi(enable)
+        return await self._midi_runtime.enable_midi(enable)
 
     async def get_midi_devices(self) -> List[str]:
         """List available MIDI devices"""
-        if not self._engine:
-            return []
-        return self._engine.get_midi_devices()
+        return await self._midi_runtime.get_midi_devices()
 
     async def get_midi_input_devices(self) -> List[Dict[str, Any]]:
         """List MIDI input devices"""
-        if not self._engine:
-            return []
-        try:
-            return self._engine.get_midi_input_devices()
-        except AttributeError:
-            # Fallback if method doesn't exist
-            devices = self._engine.get_midi_devices()
-            return [{"index": i, "name": d, "type": "input"} for i, d in enumerate(devices)]
+        return await self._midi_runtime.get_midi_input_devices()
 
     async def get_midi_output_devices(self) -> List[Dict[str, Any]]:
         """List MIDI output devices"""
-        if not self._engine:
-            return []
-        try:
-            return self._engine.get_midi_output_devices()
-        except AttributeError:
-            return []
+        return await self._midi_runtime.get_midi_output_devices()
 
     async def open_midi_input(self, device_index: int) -> bool:
         """Open a MIDI input device"""
-        if not self._engine:
-            return False
-        try:
-            return self._engine.open_midi_input(device_index)
-        except AttributeError:
-            logger.warning("JUCE engine does not support open_midi_input")
-            return False
+        return await self._midi_runtime.open_midi_input(device_index)
 
     async def close_midi_input(self) -> bool:
         """Close the current MIDI input device"""
-        if not self._engine:
-            return False
-        try:
-            return self._engine.close_midi_input()
-        except AttributeError:
-            return False
+        return await self._midi_runtime.close_midi_input()
 
     async def open_midi_output(self, device_index: int) -> bool:
         """Open a MIDI output device"""
-        if not self._engine:
-            return False
-        try:
-            return self._engine.open_midi_output(device_index)
-        except AttributeError:
-            logger.warning("JUCE engine does not support open_midi_output")
-            return False
+        return await self._midi_runtime.open_midi_output(device_index)
 
     async def close_midi_output(self) -> bool:
         """Close the current MIDI output device"""
-        if not self._engine:
-            return False
-        try:
-            return self._engine.close_midi_output()
-        except AttributeError:
-            return False
+        return await self._midi_runtime.close_midi_output()
 
     async def get_midi_status(self) -> Dict[str, Any]:
         """Get comprehensive MIDI status"""
@@ -1060,35 +1017,15 @@ class JuceEngineService(Singleton):
                 "mappings_count": 0,
                 "learning": False,
             }
-        try:
-            return self._engine.get_midi_status()
-        except AttributeError:
-            return {
-                "enabled": self._engine.is_midi_enabled() if hasattr(self._engine, 'is_midi_enabled') else False,
-                "running": self._initialized,
-                "input_device": None,
-                "output_device": None,
-                "mappings_count": 0,
-                "learning": False,
-            }
+        return await self._midi_runtime.get_midi_status()
 
     async def inject_midi_note_on(self, channel: int, note: int, velocity: int) -> bool:
         """Inject Note On into internal JUCE MIDI input path."""
-        if not self._engine:
-            return False
-        handler = getattr(self._engine, "midi_inject_note_on", None)
-        if not callable(handler):
-            return False
-        return bool(handler(channel, note, velocity))
+        return await self._midi_runtime.inject_midi_note_on(channel, note, velocity)
 
     async def inject_midi_note_off(self, channel: int, note: int, velocity: int = 0) -> bool:
         """Inject Note Off into internal JUCE MIDI input path."""
-        if not self._engine:
-            return False
-        handler = getattr(self._engine, "midi_inject_note_off", None)
-        if not callable(handler):
-            return False
-        return bool(handler(channel, note, velocity))
+        return await self._midi_runtime.inject_midi_note_off(channel, note, velocity)
 
     # MIDI CC Mappings (JUCE)
 
@@ -1098,7 +1035,16 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.add_cc_mapping(channel, cc_number, plugin_uri, param_index)
+            return bool(
+                await self._run_engine_call(
+                    "add_cc_mapping",
+                    channel,
+                    cc_number,
+                    plugin_uri,
+                    param_index,
+                    default=False,
+                )
+            )
         except AttributeError:
             logger.warning("JUCE engine does not support add_cc_mapping")
             return False
@@ -1172,7 +1118,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.remove_cc_mapping(channel, cc_number)
+            return bool(await self._run_engine_call("remove_cc_mapping", channel, cc_number, default=False))
         except AttributeError:
             logger.warning("JUCE engine does not support remove_cc_mapping")
             return False
@@ -1182,7 +1128,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return []
         try:
-            return self._engine.get_cc_mappings()
+            return await self._run_engine_call("get_cc_mappings", default=[])
         except AttributeError:
             handler = getattr(self._engine, "midi_get_all_cc_mappings", None)
             if callable(handler):
@@ -1194,7 +1140,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.clear_cc_mappings()
+            return bool(await self._run_engine_call("clear_cc_mappings", default=False))
         except AttributeError:
             handler = getattr(self._engine, "midi_clear_cc_mappings", None)
             if callable(handler):
@@ -1414,7 +1360,7 @@ class JuceEngineService(Singleton):
             )
             return True
         try:
-            return self._engine.start_midi_learn(plugin_uri, param_index)
+            return bool(await self._run_engine_call("start_midi_learn", plugin_uri, param_index, default=False))
         except AttributeError:
             logger.warning("JUCE engine does not support start_midi_learn")
             return False
@@ -1428,7 +1374,7 @@ class JuceEngineService(Singleton):
             await asyncio.to_thread(handler)
             return True
         try:
-            return self._engine.stop_midi_learn()
+            return bool(await self._run_engine_call("stop_midi_learn", default=False))
         except AttributeError:
             return False
 
@@ -1440,7 +1386,7 @@ class JuceEngineService(Singleton):
         if callable(handler):
             return bool(await asyncio.to_thread(handler))
         try:
-            return self._engine.is_midi_learning()
+            return bool(await self._run_engine_call("is_midi_learning", default=False))
         except AttributeError:
             return False
 
@@ -1455,7 +1401,10 @@ class JuceEngineService(Singleton):
             target = dict(await asyncio.to_thread(target_handler)) if active else {}
             return {"active": active, "target": target}
         try:
-            return self._engine.get_midi_learn_status()
+            return await self._run_engine_call(
+                "get_midi_learn_status",
+                default={"active": False, "target_plugin": None, "target_param": None},
+            )
         except AttributeError:
             return {"active": False, "target_plugin": None, "target_param": None}
     
@@ -1556,27 +1505,15 @@ class JuceEngineService(Singleton):
 
     async def get_spectrum(self) -> Dict[str, Any]:
         """Get FFT spectrum data"""
-        if not self._engine:
-            return {
-                "magnitudes": [],
-                "frequencies": [],
-                "peak_frequency": 0.0,
-                "peak_magnitude": -100.0,
-                "spectral_centroid": 0.0
-            }
-        return self._engine.get_spectrum()
+        return await self._metering_runtime.get_spectrum()
 
     async def get_spectrum_magnitudes(self) -> List[float]:
         """Get spectrum magnitude array"""
-        if not self._engine:
-            return []
-        return self._engine.get_spectrum_magnitudes()
+        return await self._metering_runtime.get_spectrum_magnitudes()
 
     async def get_spectrum_frequencies(self) -> List[float]:
         """Get spectrum frequency array"""
-        if not self._engine:
-            return []
-        return self._engine.get_spectrum_frequencies()
+        return await self._metering_runtime.get_spectrum_frequencies()
 
     # ========================================
     # LUFS Loudness Metering (NEW)
@@ -1584,22 +1521,11 @@ class JuceEngineService(Singleton):
 
     async def get_lufs_levels(self) -> Dict[str, float]:
         """Get LUFS loudness levels"""
-        if not self._engine:
-            return {
-                "momentary": -100.0,
-                "short_term": -100.0,
-                "integrated": -100.0,
-                "range": 0.0,
-                "true_peak": -100.0,
-                "true_peak_left": -100.0,
-                "true_peak_right": -100.0
-            }
-        return self._engine.get_lufs_levels()
+        return await self._metering_runtime.get_lufs_levels()
 
     async def reset_integrated_loudness(self) -> None:
         """Reset integrated loudness measurement"""
-        if self._engine:
-            self._engine.reset_integrated_loudness()
+        await self._metering_runtime.reset_integrated_loudness()
 
     # ========================================
     # Phase Correlation (NEW)
@@ -1607,35 +1533,19 @@ class JuceEngineService(Singleton):
 
     async def get_phase_correlation(self) -> float:
         """Get stereo phase correlation (-1 to +1)"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_phase_correlation()
+        return await self._metering_runtime.get_phase_correlation()
 
     async def get_stereo_balance(self) -> float:
         """Get stereo balance (-1=left, 0=center, +1=right)"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_stereo_balance()
+        return await self._metering_runtime.get_stereo_balance()
 
     async def get_stereo_width(self) -> float:
         """Get stereo width (0=mono, 1=full stereo)"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_stereo_width()
+        return await self._metering_runtime.get_stereo_width()
 
     async def get_stereo_info(self) -> Dict[str, float]:
         """Get combined stereo analysis info"""
-        if not self._engine:
-            return {
-                "phase_correlation": 0.0,
-                "balance": 0.0,
-                "width": 0.0
-            }
-        return {
-            "phase_correlation": self._engine.get_phase_correlation(),
-            "balance": self._engine.get_stereo_balance(),
-            "width": self._engine.get_stereo_width()
-        }
+        return await self._metering_runtime.get_stereo_info()
 
     # ========================================
     # CPU Monitoring (NEW)
@@ -1643,37 +1553,19 @@ class JuceEngineService(Singleton):
 
     async def get_cpu_metrics(self) -> Dict[str, Any]:
         """Get detailed CPU metrics"""
-        if not self._engine:
-            return {
-                "total_cpu_percent": 0.0,
-                "audio_callback_percent": 0.0,
-                "peak_cpu_percent": 0.0,
-                "average_cpu_percent": 0.0,
-                "xrun_count": 0,
-                "budget_ms": 0.0,
-                "current_callback_ms": 0.0,
-                "headroom_percent": 100.0,
-                "per_plugin_percent": {}
-            }
-        return self._engine.get_cpu_metrics()
+        return await self._metering_runtime.get_cpu_metrics()
 
     async def get_total_cpu(self) -> float:
         """Get total CPU usage percentage"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_total_cpu()
+        return await self._metering_runtime.get_total_cpu()
 
     async def get_plugin_cpu(self, instance_id: int) -> float:
         """Get CPU usage for a specific plugin"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_plugin_cpu(instance_id)
+        return await self._metering_runtime.get_plugin_cpu(instance_id)
 
     async def get_xrun_count(self) -> int:
         """Get number of audio dropouts (xruns)"""
-        if not self._engine:
-            return 0
-        return self._engine.get_xrun_count()
+        return await self._metering_runtime.get_xrun_count()
 
     async def get_audio_io_stats(self) -> Dict[str, Any]:
         """Get runtime audio I/O diagnostics (xrun/jitter/budget metrics)."""
@@ -1738,21 +1630,15 @@ class JuceEngineService(Singleton):
 
     async def get_total_latency_samples(self) -> int:
         """Get total chain latency in samples"""
-        if not self._engine:
-            return 0
-        return self._engine.get_total_latency_samples()
+        return await self._metering_runtime.get_total_latency_samples()
 
     async def get_total_latency_ms(self) -> float:
         """Get total chain latency in milliseconds"""
-        if not self._engine:
-            return 0.0
-        return self._engine.get_total_latency_ms()
+        return await self._metering_runtime.get_total_latency_ms()
 
     async def get_latency_breakdown(self) -> List[Dict[str, Any]]:
         """Get per-plugin latency breakdown"""
-        if not self._engine:
-            return []
-        return self._engine.get_latency_breakdown()
+        return await self._metering_runtime.get_latency_breakdown()
 
     # ========================================
     # Sidechain Routing (NEW)
@@ -1760,21 +1646,15 @@ class JuceEngineService(Singleton):
 
     async def connect_sidechain(self, source: int, dest: int, dest_bus: int = 1) -> bool:
         """Connect sidechain from source to dest plugin"""
-        if not self._engine:
-            return False
-        return self._engine.connect_sidechain(source, dest, dest_bus)
+        return await self._metering_runtime.connect_sidechain(source, dest, dest_bus)
 
     async def disconnect_sidechain(self, dest: int, dest_bus: int = 1) -> bool:
         """Disconnect sidechain from dest plugin"""
-        if not self._engine:
-            return False
-        return self._engine.disconnect_sidechain(dest, dest_bus)
+        return await self._metering_runtime.disconnect_sidechain(dest, dest_bus)
 
     async def get_sidechain_connections(self) -> List[Dict[str, Any]]:
         """Get all sidechain connections"""
-        if not self._engine:
-            return []
-        return self._engine.get_sidechain_connections()
+        return await self._metering_runtime.get_sidechain_connections()
 
     # ========================================
     # Convolution / IR Processing (NEW)

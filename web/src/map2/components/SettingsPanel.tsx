@@ -176,7 +176,7 @@ export default function SettingsPanel() {
   // Theme state
   const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
     const stored = localStorage.getItem('map2-theme');
-    return (stored as 'dark' | 'light' | 'system') || 'dark';
+    return (stored as 'dark' | 'light' | 'system') || 'light';
   });
 
   // Service states

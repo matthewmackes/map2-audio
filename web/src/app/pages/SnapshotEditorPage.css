@@ -5111,13 +5111,13 @@
 .juce-grid-page__browser-native-grid,
 .juce-grid-page__browser-plugin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 0.75rem;
 }
 
 .juce-grid-page__preset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 0.75rem;
 }
 
@@ -8481,4 +8481,42 @@
 .app-shell--audio-grid .juce-grid-page__flow-card-service-bar,
 .app-shell--audio-grid .juce-grid-page__flow-card-assign {
   background: #f5f9ff !important;
+}
+
+/* ── 960px Narrow Viewport ─────────────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .juce-grid-page__selected-midi-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__selected-midi-grid-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .juce-grid-page__midi-control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__compact-audio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .juce-grid-page__assignment-values {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .juce-grid-page__browser-sidebar-content {
+    grid-template-columns: 1fr;
+  }
+
+  .snapshot-menu-rail__panel-shell {
+    inline-size: min(18rem, calc(100vw - 4rem));
+  }
+
+  .juce-grid-page__section-frame,
+  .juce-grid-page__section-frame--workspace,
+  .juce-grid-page__section-frame--header {
+    inline-size: 100%;
+  }
 }

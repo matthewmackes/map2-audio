@@ -7,12 +7,12 @@ Handles RPC calls for:
 - State queries
 """
 
-from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 
-from app.services.cluster.raft_consensus import get_raft_consensus, LogEntry
+from app.services.cluster.raft_consensus import LogEntry, RaftRole, get_raft_consensus
+from app.utils.time import utc_now
 
 router = APIRouter(prefix="/api/raft", tags=["raft"])
 
@@ -56,28 +56,30 @@ async def request_vote(request: VoteRequest):
     """
     try:
         raft = get_raft_consensus()
-        
-        # If request term is greater, update our term
+
+        if request.term < raft.current_term:
+            return VoteResponse(term=raft.current_term, vote_granted=False)
+
         if request.term > raft.current_term:
-            raft.current_term = request.term
-            raft.voted_for = None
-            from app.services.cluster.raft_consensus import RaftRole
+            raft.set_current_term(request.term)
             raft.role = RaftRole.FOLLOWER
-        
+
         # Grant vote if:
-        # 1. Term matches and we haven't voted yet
+        # 1. Term matches and we haven't voted yet (or already voted for candidate)
         # 2. Candidate's log is at least as complete as ours
         vote_granted = False
-        if request.term == raft.current_term and raft.voted_for is None:
-            our_log_complete = (
+        can_vote = raft.voted_for in (None, request.candidate_id)
+        if request.term == raft.current_term and can_vote:
+            candidate_log_complete = (
                 request.last_log_term > (raft.log[-1].term if raft.log else 0) or
                 (request.last_log_term == (raft.log[-1].term if raft.log else 0) and 
                  request.last_log_index >= len(raft.log) - 1)
             )
-            
-            if our_log_complete:
+
+            if candidate_log_complete:
                 vote_granted = True
-                raft.voted_for = request.candidate_id
+                raft.record_vote(request.candidate_id)
+                raft.last_heartbeat = utc_now()
         
         return VoteResponse(term=raft.current_term, vote_granted=vote_granted)
     
@@ -94,16 +96,17 @@ async def append_entries(request: AppendEntriesRequest):
     """
     try:
         raft = get_raft_consensus()
-        
-        # If request term is greater, update our term
+
+        if request.term < raft.current_term:
+            return AppendEntriesResponse(term=raft.current_term, success=False)
+
         if request.term > raft.current_term:
-            raft.current_term = request.term
-            raft.voted_for = None
-            raft.role = raft.RaftRole.FOLLOWER
-        
-        # Reset election timeout since we heard from leader
+            raft.set_current_term(request.term)
+        if raft.role != RaftRole.FOLLOWER:
+            raft.role = RaftRole.FOLLOWER
+
         if request.term == raft.current_term:
-            raft.last_heartbeat = datetime.utcnow()
+            raft.last_heartbeat = utc_now()
         
         success = False
         
@@ -121,18 +124,17 @@ async def append_entries(request: AppendEntriesRequest):
                 if index < len(raft.log):
                     # Delete conflicting entries
                     if raft.log[index].term != entry_data["term"]:
-                        raft.log = raft.log[:index]
+                        raft.replace_log(raft.log[:index])
                 
                 if index >= len(raft.log):
                     # Add new entry
-                    from app.services.cluster.raft_consensus import LogEntry
                     entry = LogEntry(
                         term=entry_data["term"],
                         command=entry_data["command"],
                         data=entry_data["data"],
                         index=index
                     )
-                    raft.log.append(entry)
+                    raft.append_log_entry(entry)
             
             # Update commit index
             old_commit = raft.commit_index

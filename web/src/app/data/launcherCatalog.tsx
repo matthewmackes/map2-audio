@@ -1,7 +1,5 @@
 import type { ComponentType } from 'react'
-import { Music, SettingsAdjust, Waveform } from '@carbon/icons-react'
-
-import { FxDrums } from '../components/icons/effectIcons'
+import { Music, SettingsAdjust } from '@carbon/icons-react'
 import {
   advancedMenuItems,
   allRouteNavigationItems,
@@ -117,38 +115,6 @@ const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = [
     navEligible: false,
   },
   {
-    route: '/drums',
-    label: 'Drum Machine',
-    heroTitle: 'Drum Machine',
-    shortLabel: 'Drums',
-    icon: ({ size = 20 }: { size?: number }) => <FxDrums width={size} height={size} />,
-    description: 'Program patterns, kits, mixer state, and performance-ready sequencing from the dedicated drum-machine workspace.',
-    category: 'Platform',
-    color: 'var(--cds-support-info)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'Audio Grid',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-  {
-    route: '/synth-forge',
-    label: 'SynthForge',
-    heroTitle: 'SynthForge',
-    shortLabel: 'SynthForge',
-    icon: Waveform,
-    description: 'Open the flagship sampler and synthesis workstation for SoundFonts, patch design, performance control, and live play.',
-    category: 'Platform',
-    color: 'var(--cds-link-primary)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'Audio Grid',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-  {
     route: '/platforms/workspace-catalog',
     label: 'Workspace Catalog',
     heroTitle: 'Workspace Catalog',
@@ -172,7 +138,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     featureBullets: [
       'Unifies drum triggering, keyboard layering, sequencing, routing, and diagnostics inside one professional operator surface.',
       'Replaces the split drum-machine and sampler mental model with a workflow-first brain organized by performance, layers, routing, inputs, library, and diagnostics.',
-      'Keeps legacy `/drums` and `/synth-forge` alive during migration while giving operators a new first-class destination immediately.',
+      'Gives operators a new first-class destination immediately.',
     ],
     technicalSpecs: [
       { label: 'Primary workflow', value: 'Unified trigger, keyboard, sequence, routing, and diagnostics brain' },
@@ -180,35 +146,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Launch path', value: '/brain' },
       { label: 'Recall model', value: 'Snapshot-first authority' },
     ],
-    availabilityNote: 'Available as the new routed replacement surface; legacy drum and sampler workspaces remain available during the shadow migration phase.',
-  },
-  '/drums': {
-    featureBullets: [
-      'Puts kits, patterns, transport, mixer, and MIDI editing inside one dedicated drum-performance route.',
-      'Keeps the drum-machine surface first-class even when operators are not working through the Audio Grid plugin modal.',
-      'Supports direct launch from the catalog for songwriting, rehearsal, and rhythm-programming workflows.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Pattern sequencing, kit editing, transport, and drum-performance control' },
-      { label: 'Workspace mode', value: 'Standalone Drum Machine route' },
-      { label: 'Launch path', value: '/drums' },
-      { label: 'Home placement', value: 'Eligible' },
-    ],
-    availabilityNote: 'Available as a dedicated routed workspace; live depth follows the current drum-engine state and loaded kits on the active host.',
-  },
-  '/synth-forge': {
-    featureBullets: [
-      'Delivers the full five-tab SynthForge workstation for SoundFont loading, patching, play control, and engine inspection.',
-      'Promotes the flagship sampler and synthesis surface into the catalog without requiring entry through the Audio Grid plugin modal.',
-      'Keeps direct launch available for instrument design, auditioning, and live performance workflows.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'SoundFont loading, patch design, play control, and engine tuning' },
-      { label: 'Workspace mode', value: 'Standalone SynthForge workstation route' },
-      { label: 'Launch path', value: '/synth-forge' },
-      { label: 'Home placement', value: 'Eligible' },
-    ],
-    availabilityNote: 'Available as a routed instrument workspace; exact backend depth reflects the current sampler engine state and loaded content.',
+    availabilityNote: 'Available as the unified routed replacement surface.',
   },
   '/platforms/overview': {
     storefrontCollections: ['featured', 'platform-essentials'],

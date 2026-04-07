@@ -442,20 +442,6 @@ registerPluginCard('map2://juce/brain', {
   loader: () => import('./Custom/JUCE/PerformanceBrainCard'),
 })
 
-// JUCE Drums - Sophisticated Drum Machine
-registerPluginCard('map2://juce/drums', {
-  loader: () => import('./Custom/JUCE/DrumMachineCard'),
-})
-
-// JUCE Instrument - SynthForge multitimbral sampler/module
-const synthForgeCardConfig: PluginCardConfig = {
-  loader: () => import('./Custom/JUCE/SynthForgeCard'),
-}
-
-registerPluginCard('map2://juce/synthforge', synthForgeCardConfig)
-registerPluginCard('map2://juce/synthforge/', synthForgeCardConfig)
-registerPluginCard('map2://juce/instrument/synthforge', synthForgeCardConfig)
-registerPluginPattern(/map2:\/\/juce\/.*synthforge/i, synthForgeCardConfig)
 
 // ==================== Dragonfly Reverbs ====================
 // Best-in-class algorithmic reverbs

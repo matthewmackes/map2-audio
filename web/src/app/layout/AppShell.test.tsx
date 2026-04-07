@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
+import { HOME_DESKTOP_SESSION_STORAGE_KEY } from '../pages/homeDesktopSession'
 
 const mockUpdateSettings = jest.fn()
 const mockRestartBackend = jest.fn()
@@ -126,6 +127,7 @@ describe('AppShell desktop taskbar shell', () => {
     mockReloadHomeDesktopShell.mockReset()
     mockReturnHomeDesktopToBoot.mockReset()
     mockSpecialSettings.pinnedRoutes = []
+    window.localStorage.clear()
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -185,11 +187,11 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
     expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
     expect(screen.getByText('IntelFX Rack')).toBeTruthy()
-    expect(screen.getByText('intelfx')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar')).toBeNull()
     expect(container.querySelector('.app-window')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
     expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--clock')?.contains(screen.getByTestId('taskbar-clock'))).toBe(true)
@@ -231,8 +233,8 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
   })
 
-  it('uses the first non-active pinned route as the quick-launch slot', () => {
-    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/midi-hub', '/juce-grid']
+  it('tracks running apps in the taskbar and reopens them from indicators', () => {
+    mockSpecialSettings.pinnedRoutes = ['/intelfx']
 
     renderInRouter(
       <AppShell>
@@ -241,9 +243,57 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Quick launch MIDI Hub'))
+    expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/midi-hub')
+    fireEvent.click(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
+    expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/intelfx')
+    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
+  })
+
+  it('closes the focused app when its taskbar indicator is clicked', async () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' }))
+
+    await act(async () => {
+      jest.advanceTimersByTime(200)
+    })
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Taskbar open IntelFX Rack' })).not.toBeInTheDocument())
+  })
+
+  it('restores previously running apps from desktop session storage', () => {
+    window.localStorage.setItem(
+      HOME_DESKTOP_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        bootCompletedAt: '2026-04-06T17:00:00.000Z',
+        runningRoutes: ['/intelfx'],
+        currentRoute: '/artifacts',
+      }),
+    )
+
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/artifacts'],
+    )
+
+    expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
   })
 
   it('shows pinned routes only inside the Start menu and sorts them visually', () => {

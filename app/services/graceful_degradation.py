@@ -13,11 +13,14 @@ Implements feature availability management with:
 import asyncio
 import logging
 import time
+import threading
 from typing import Dict, List, Optional, Any, Callable, Coroutine
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +60,7 @@ class Feature:
     health_check: Optional[Callable] = None
     
     # Metadata
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
     last_check_at: Optional[datetime] = None
     last_error: Optional[str] = None
     consecutive_failures: int = 0
@@ -86,7 +89,7 @@ class FeatureMetrics:
     degradation_events: int = 0
     recovery_events: int = 0
     uptime_seconds: float = 0.0
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
     
     @property
     def success_rate(self) -> float:
@@ -121,8 +124,13 @@ class DegradationStrategy:
         """Determine if recovery should be attempted."""
         if not last_failure_time:
             return True
-        
-        elapsed = (datetime.now() - last_failure_time).total_seconds()
+
+        normalized_last_failure = (
+            last_failure_time.astimezone(timezone.utc)
+            if last_failure_time.tzinfo
+            else last_failure_time.astimezone().astimezone(timezone.utc)
+        )
+        elapsed = (utc_now() - normalized_last_failure).total_seconds()
         return elapsed >= self.recovery_timeout_seconds
 
 
@@ -144,6 +152,7 @@ class FeatureAvailabilityManager:
         self.features: Dict[str, Feature] = {}
         self.strategy = degradation_strategy or DegradationStrategy()
         self._lock = asyncio.Lock()
+        self._state_lock = threading.RLock()
         self._health_check_task: Optional[asyncio.Task] = None
         
         self._request_counts: Dict[str, int] = {}
@@ -154,12 +163,13 @@ class FeatureAvailabilityManager:
     
     def register_feature(self, feature: Feature) -> None:
         """Register a system feature."""
-        self.features[feature.name] = feature
-        self._request_counts[feature.name] = 0
-        self._success_counts[feature.name] = 0
-        self._failure_counts[feature.name] = 0
-        self._degradation_events[feature.name] = 0
-        self._recovery_events[feature.name] = 0
+        with self._state_lock:
+            self.features[feature.name] = feature
+            self._request_counts[feature.name] = 0
+            self._success_counts[feature.name] = 0
+            self._failure_counts[feature.name] = 0
+            self._degradation_events[feature.name] = 0
+            self._recovery_events[feature.name] = 0
         
         logger.info(f"Registered feature: {feature.name} (level: {feature.level.name})")
     
@@ -178,11 +188,13 @@ class FeatureAvailabilityManager:
         Returns:
             Result or fallback result
         """
-        feature = self.features.get(feature_name)
+        with self._state_lock:
+            feature = self.features.get(feature_name)
         if not feature:
             raise ValueError(f"Unknown feature: {feature_name}")
-        
-        self._request_counts[feature_name] += 1
+
+        with self._state_lock:
+            self._request_counts[feature_name] += 1
         
         try:
             # Check dependencies
@@ -351,22 +363,27 @@ class FeatureAvailabilityManager:
                 await self._mark_failure(feature.name, str(e))
             
             finally:
-                feature.last_check_at = datetime.now()
+                feature.last_check_at = utc_now()
     
     def get_feature_status(self, feature_name: str) -> Optional[FeatureStatus]:
         """Get current status of feature."""
-        feature = self.features.get(feature_name)
+        with self._state_lock:
+            feature = self.features.get(feature_name)
         return feature.status if feature else None
     
     def get_feature_is_available(self, feature_name: str) -> bool:
         """Check if feature is available."""
-        feature = self.features.get(feature_name)
+        with self._state_lock:
+            feature = self.features.get(feature_name)
         return feature.is_operational if feature else False
     
     def get_system_health(self) -> Dict[str, Any]:
         """Get overall system health."""
+        with self._state_lock:
+            features = list(self.features.values())
+
         core_features = [
-            f for f in self.features.values() if f.is_core
+            f for f in features if f.is_core
         ]
         
         core_available = sum(
@@ -374,7 +391,7 @@ class FeatureAvailabilityManager:
         )
         
         all_operational = sum(
-            1 for f in self.features.values() if f.is_operational
+            1 for f in features if f.is_operational
         )
         
         return {
@@ -384,11 +401,11 @@ class FeatureAvailabilityManager:
             "total_operational": all_operational,
             "system_healthy": core_available == len(core_features),
             "degraded_features": sum(
-                1 for f in self.features.values() 
+                1 for f in features
                 if f.status == FeatureStatus.DEGRADED
             ),
             "unavailable_features": sum(
-                1 for f in self.features.values()
+                1 for f in features
                 if f.status == FeatureStatus.UNAVAILABLE
             )
         }
@@ -397,9 +414,17 @@ class FeatureAvailabilityManager:
         """Get metrics for all features."""
         metrics = {}
         
-        for name, feature in self.features.items():
-            total = self._request_counts[name]
-            successful = self._success_counts[name]
+        with self._state_lock:
+            features = list(self.features.items())
+            request_counts = dict(self._request_counts)
+            success_counts = dict(self._success_counts)
+            failure_counts = dict(self._failure_counts)
+            degradation_events = dict(self._degradation_events)
+            recovery_events = dict(self._recovery_events)
+
+        for name, feature in features:
+            total = request_counts[name]
+            successful = success_counts[name]
             
             metrics[name] = FeatureMetrics(
                 name=name,
@@ -407,14 +432,14 @@ class FeatureAvailabilityManager:
                 status=feature.status,
                 total_requests=total,
                 successful_requests=successful,
-                failed_requests=self._failure_counts[name],
-                degradation_events=self._degradation_events[name],
-                recovery_events=self._recovery_events[name],
+                failed_requests=failure_counts[name],
+                degradation_events=degradation_events[name],
+                recovery_events=recovery_events[name],
                 availability_percentage=(
                     (successful / total * 100) if total > 0 else 0.0
                 ),
                 uptime_seconds=(
-                    (datetime.now() - feature.created_at).total_seconds()
+                    (utc_now() - feature.created_at).total_seconds()
                 )
             )
         
@@ -428,11 +453,14 @@ class FeatureAvailabilityManager:
 
 # Global feature manager instance
 _feature_manager: Optional[FeatureAvailabilityManager] = None
+_feature_manager_lock = threading.Lock()
 
 
 def get_feature_manager() -> FeatureAvailabilityManager:
     """Get global feature manager (singleton)."""
     global _feature_manager
     if _feature_manager is None:
-        _feature_manager = FeatureAvailabilityManager()
+        with _feature_manager_lock:
+            if _feature_manager is None:
+                _feature_manager = FeatureAvailabilityManager()
     return _feature_manager

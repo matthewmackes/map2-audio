@@ -17,7 +17,9 @@ import httpx
 from urllib.parse import urlparse
 
 from app.services.cluster.registry import get_cluster_registry
+from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.event_bus import get_event_bus, EventType
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,8 @@ class HeartbeatMonitor:
         self.node_health: Dict[str, NodeHealthStatus] = {}
         self.is_running = False
         self._monitor_task: Optional[asyncio.Task] = None
+        self._client: Optional[httpx.AsyncClient] = None
+        self._local_node_id = get_enhanced_node_identity().get_node_id()
         
         # Configuration
         self.poll_interval_seconds = 1.0
@@ -64,6 +68,8 @@ class HeartbeatMonitor:
         
         logger.info("Starting heartbeat monitor")
         self.is_running = True
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=self.timeout_seconds)
         self._monitor_task = asyncio.create_task(self._monitor_loop())
     
     async def stop(self):
@@ -80,27 +86,16 @@ class HeartbeatMonitor:
                 await self._monitor_task
             except asyncio.CancelledError:
                 pass
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
     
     async def _monitor_loop(self):
         """Main monitoring loop."""
         while self.is_running:
             try:
                 start_time = time.time()
-                
-                # Get all nodes from registry
-                nodes = self.registry.get_all_nodes()
-                
-                # Check all nodes in parallel
-                tasks = []
-                for node in nodes:
-                    node_id, node_url = self._resolve_registry_node_endpoint(node)
-                    if not node_id or not node_url:
-                        continue
-                    task = self._check_node(node_id, node_url)
-                    tasks.append(task)
-                
-                if tasks:
-                    await asyncio.gather(*tasks, return_exceptions=True)
+                await self._run_monitor_iteration()
                 
                 # Sleep for remaining time to maintain 1-second interval
                 elapsed = time.time() - start_time
@@ -114,6 +109,30 @@ class HeartbeatMonitor:
             except Exception as e:
                 logger.error(f"Error in heartbeat monitor loop: {e}", exc_info=True)
                 await asyncio.sleep(1)
+
+    async def _run_monitor_iteration(self) -> None:
+        nodes = self.registry.get_all_nodes()
+
+        tasks = []
+        for node in nodes:
+            node_id, node_url = self._resolve_registry_node_endpoint(node)
+            if not node_id or not node_url:
+                continue
+            if node_id == self._local_node_id:
+                continue
+            tasks.append(self._check_node(node_id, node_url))
+
+        current_node_ids = {
+            self._resolve_registry_node_endpoint(node)[0]
+            for node in nodes
+        }
+        self._prune_removed_nodes(current_node_ids)
+
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _monitor_loop_iteration_for_test(self) -> None:
+        await self._run_monitor_iteration()
 
     @staticmethod
     def _resolve_registry_node_endpoint(node) -> tuple[Optional[str], Optional[str]]:
@@ -160,10 +179,11 @@ class HeartbeatMonitor:
         
         try:
             # Send heartbeat request
-            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-                response = await client.get(f"{node_url}/api/health")
-                response.raise_for_status()
-                health_data = response.json()
+            if self._client is None:
+                self._client = httpx.AsyncClient(timeout=self.timeout_seconds)
+            response = await self._client.get(f"{node_url}/api/health")
+            response.raise_for_status()
+            health_data = response.json()
             
             response_time_ms = (time.time() - start_time) * 1000
             
@@ -180,7 +200,7 @@ class HeartbeatMonitor:
     
     async def _mark_node_online(self, node_id: str, response_time_ms: float, metadata: Dict):
         """Mark node as online and reset failure count."""
-        now = datetime.utcnow()
+        now = utc_now()
         
         # Get or create health status
         if node_id not in self.node_health:
@@ -191,6 +211,14 @@ class HeartbeatMonitor:
                 response_time_ms=response_time_ms,
                 metadata=metadata
             )
+            await self.event_bus.publish(EventType.NODE_ONLINE, {
+                'node_id': node_id,
+                'timestamp': now.isoformat(),
+                'response_time_ms': response_time_ms,
+                'metadata': metadata,
+                'first_seen': True,
+            })
+            self.registry.update_node_status(node_id, 'online')
         else:
             status = self.node_health[node_id]
             was_offline = not status.is_online
@@ -217,7 +245,7 @@ class HeartbeatMonitor:
     
     async def _mark_node_failure(self, node_id: str, error: str):
         """Mark node failure and trigger offline event if threshold reached."""
-        now = datetime.utcnow()
+        now = utc_now()
         
         # Get or create health status
         if node_id not in self.node_health:
@@ -269,6 +297,12 @@ class HeartbeatMonitor:
             node_id for node_id, status in self.node_health.items()
             if not status.is_online
         }
+
+    def _prune_removed_nodes(self, current_node_ids: Set[Optional[str]]) -> None:
+        normalized = {node_id for node_id in current_node_ids if node_id}
+        for node_id in list(self.node_health.keys()):
+            if node_id not in normalized:
+                del self.node_health[node_id]
 
 
 # Singleton instance

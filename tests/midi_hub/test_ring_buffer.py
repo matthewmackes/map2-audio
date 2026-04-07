@@ -31,3 +31,14 @@ def test_ring_buffer_overwrite_on_full():
     assert rb.drain() == [20, 30]
     stats = rb.stats()
     assert stats.overwritten_writes == 1
+
+
+def test_ring_buffer_overwrite_mode_replaces_oldest_entry_across_wraparound():
+    rb = MidiRingBuffer[int](3, overwrite_on_full=True)
+    assert rb.extend([1, 2, 3]) == 3
+    assert rb.pop() == 1
+    assert rb.push(4)
+    assert rb.push(5)
+
+    assert list(rb.iter_snapshot()) == [3, 4, 5]
+    assert rb.drain() == [3, 4, 5]

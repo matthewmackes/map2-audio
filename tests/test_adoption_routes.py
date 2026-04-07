@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import adoption
-from app.services.cluster.adoption import AdoptionService, AdoptionStore, set_adoption_service
+from app.services.cluster.adoption import AdoptionRecord, AdoptionService, AdoptionStore, set_adoption_service
 from app.services.cluster.node_visibility import VisibleRemoteNode
 from app.services.cluster.registry import ClusterRegistry
 from app.utils.platform_version import get_platform_version
@@ -726,7 +726,7 @@ def test_clone_preview_and_apply_for_adopted_node(tmp_path, monkeypatch):
 
     registry_row = registry.get_node("peer-unmanaged")
     assert registry_row is not None
-    metadata = json.loads(registry_row["metadata"])
+    metadata = registry_row["metadata"]
     assert metadata["profile_clone"]["source_node_id"] == "source-node"
     assert metadata["profile_clone"]["applied_group_ids"] == ["role_profile", "runtime_profile", "clock_sync", "avb_defaults"]
     assert registry_row["role"] == "AUDIO-NODE"
@@ -736,3 +736,65 @@ def test_clone_preview_and_apply_for_adopted_node(tmp_path, monkeypatch):
         url.endswith("/api/cluster/config/runtime") and payload and payload.get("key") == "avb.interface"
         for _, url, payload in request_log
     )
+
+
+def test_adoption_store_upsert_replaces_record_without_pre_read(tmp_path):
+    db_path = tmp_path / "cluster.db"
+    store = AdoptionStore(db_path=db_path)
+    first_seen = datetime.now(timezone.utc)
+    last_seen = datetime.now(timezone.utc)
+
+    first = AdoptionRecord(
+        candidate_id="cand_peer-unmanaged",
+        remote_node_id="peer-unmanaged",
+        node_id=None,
+        hostname="rack-a",
+        display_name=None,
+        api_url=None,
+        addresses=["10.0.0.10"],
+        software_version=None,
+        capabilities={"avb": True},
+        trust_state="unknown",
+        adoption_state="candidate",
+        activation_state="standby",
+        claimed_by_node_id=None,
+        remote_fingerprint=None,
+        registered=False,
+        visible=True,
+        readiness=None,
+        first_seen=first_seen,
+        last_seen=last_seen,
+    )
+    second = AdoptionRecord(
+        candidate_id="cand_peer-unmanaged",
+        remote_node_id="peer-unmanaged",
+        node_id=None,
+        hostname="rack-b",
+        display_name=None,
+        api_url=None,
+        addresses=["10.0.0.20"],
+        software_version=None,
+        capabilities={"avb": True, "midi_inputs": 2},
+        trust_state="unknown",
+        adoption_state="candidate",
+        activation_state="standby",
+        claimed_by_node_id=None,
+        remote_fingerprint=None,
+        registered=False,
+        visible=True,
+        readiness=None,
+        first_seen=first_seen,
+        last_seen=last_seen,
+        metadata={"display_name": "Stage Right"},
+    )
+
+    store.upsert_record(first)
+    store.upsert_record(second)
+
+    record = store.get_record("cand_peer-unmanaged")
+
+    assert record is not None
+    assert record.hostname == "rack-b"
+    assert record.addresses == ["10.0.0.20"]
+    assert record.capabilities["midi_inputs"] == 2
+    assert record.metadata["display_name"] == "Stage Right"

@@ -138,3 +138,35 @@ def test_offline_retry_backoff_grows_and_resets(monkeypatch):
     now["value"] = 190.0
     fleet._clear_offline_retry_backoff("tesira_offline")
     assert fleet._offline_retry_due_in("tesira_offline", now=190.0) == pytest.approx(0.0)
+
+
+def test_device_config_repr_redacts_ssh_password():
+    cfg = TesiraDeviceConfig(host="192.168.1.10", ssh_password="very-secret")
+
+    assert "very-secret" not in repr(cfg)
+
+
+def test_meter_broadcast_fanout_is_bounded(monkeypatch):
+    fleet = TesiraFleet()
+    fleet.MAX_PENDING_METER_BROADCASTS = 1
+    calls = []
+    pending_holder: dict[str, asyncio.Future] = {}
+
+    async def _broadcast(topic, payload):
+        calls.append((topic, payload))
+        await pending_holder["future"]
+
+    monkeypatch.setattr(fleet, "_broadcast", _broadcast)
+
+    async def _run():
+        pending_holder["future"] = asyncio.get_running_loop().create_future()
+        fleet._schedule_meter_broadcast({"device_id": "tesira_1", "instance_tag": "meterA"})
+        await asyncio.sleep(0)
+        fleet._schedule_meter_broadcast({"device_id": "tesira_1", "instance_tag": "meterB"})
+        await asyncio.sleep(0)
+        assert len(calls) == 1
+        pending_holder["future"].cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await next(iter(fleet._meter_broadcast_tasks))
+
+    asyncio.run(_run())

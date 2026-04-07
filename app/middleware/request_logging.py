@@ -44,8 +44,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         self.latency_collector = get_request_latency_collector()
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Generate unique request ID
-        request_id = str(uuid.uuid4())
+        # Reuse the canonical request id when an outer layer already assigned
+        # one so auth, logging, traffic capture, and proxy forwarding stay
+        # aligned on a single correlation id.
+        request_id = (
+            getattr(request.state, "request_id", None)
+            or request.headers.get("x-request-id")
+            or str(uuid.uuid4())
+        )
         request.state.request_id = request_id
         
         # Start timer

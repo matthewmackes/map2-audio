@@ -1,12 +1,10 @@
-"""
-Database Connection Pool Manager
+"""Compatibility facade for canonical database session ownership.
 
-Provides efficient database connection management:
-- Connection pooling with configurable size
-- Exponential backoff retry logic
-- Health check pings
-- Connection lifecycle management
-- Dead letter queue for failed operations
+Historically this module created a second async engine/sessionmaker in parallel
+with `app.database`. That split caused health checks, session ownership, and
+shutdown to diverge. The facade now delegates to `app.database` so existing
+call sites keep working while the repo converges on one authoritative database
+owner.
 """
 
 import asyncio
@@ -17,10 +15,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import random
 
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import QueuePool
+from sqlalchemy import text
 
-from app.database import RetryingAsyncSession
+import app.database as database_module
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
 from app.exceptions import DatabaseConnectionException, DatabaseException
@@ -61,15 +58,14 @@ class ConnectionStats:
 
 
 class DatabasePoolManager(Singleton):
-    """Manages database connection pool with retry logic."""
+    """Compatibility manager backed by `app.database`."""
     
     def __init__(self):
         super().__init__()
-        self._engine: Optional[AsyncEngine] = None
-        self._session_maker: Optional[async_sessionmaker] = None
         self._config: Optional[ConnectionPoolConfig] = None
         self._stats = ConnectionStats()
         self._initialized = False
+        self._database_url: Optional[str] = None
     
     def initialize(
         self,
@@ -82,33 +78,16 @@ class DatabasePoolManager(Singleton):
             return
         
         self._config = config or ConnectionPoolConfig()
+        self._database_url = database_url
         
         try:
-            # Create engine with connection pool
-            # Note: AsyncEngine uses NullPool by default for async engines
-            # Don't specify poolclass for async engines
-            self._engine = create_async_engine(
-                database_url,
-                pool_size=self._config.pool_size,
-                max_overflow=self._config.max_overflow,
-                pool_timeout=self._config.pool_timeout,
-                pool_recycle=self._config.pool_recycle,
-                pool_pre_ping=self._config.pool_pre_ping,
-                echo=self._config.echo,
-            )
-            
-            # Create session maker
-            self._session_maker = async_sessionmaker(
-                self._engine,
-                expire_on_commit=True,
-                class_=RetryingAsyncSession,
-            )
-            
+            database_module.init_async_db(database_url)
             self._initialized = True
             logger.info(
-                f"✅ Database connection pool initialized: "
-                f"size={self._config.pool_size}, "
-                f"max_overflow={self._config.max_overflow}"
+                "Database facade initialized against canonical async engine: "
+                "size=%s, max_overflow=%s",
+                self._config.pool_size,
+                self._config.max_overflow,
             )
             
         except Exception as e:
@@ -135,21 +114,14 @@ class DatabasePoolManager(Singleton):
         while True:
             yielded = False
             try:
-                # Acquire a session (retryable if acquisition itself fails).
-                async with self._session_maker() as session:
+                async with database_module.get_session() as session:
                     self._stats.total_checkouts += 1
                     yielded = True
-
-                    try:
-                        yield session
-                        await session.commit()
-                        self._stats.total_checkins += 1
-                        elapsed_ms = (time.perf_counter() - start_time) * 1000
-                        self._update_checkout_time(elapsed_ms)
-                        return
-                    except Exception:
-                        await session.rollback()
-                        raise
+                    yield session
+                    self._stats.total_checkins += 1
+                    elapsed_ms = (time.perf_counter() - start_time) * 1000
+                    self._update_checkout_time(elapsed_ms)
+                    return
 
             except Exception as e:
                 self._stats.total_errors += 1
@@ -212,7 +184,7 @@ class DatabasePoolManager(Singleton):
         
         try:
             async with self.session() as session:
-                await session.execute("SELECT 1")
+                await session.execute(text("SELECT 1"))
             return True
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
@@ -220,31 +192,29 @@ class DatabasePoolManager(Singleton):
 
     async def ensure_tables_created(self) -> None:
         """Create tables using shared Base metadata (idempotent)."""
-        if not self._initialized or not self._engine:
+        if not self._initialized:
             logger.warning("Database pool not initialized; cannot create tables")
             return
 
         try:
-            from app.database import Base
-            async with self._engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
+            await database_module._ensure_tables_created()
             logger.info("Database tables ensured")
         except Exception as e:
             logger.error(f"Failed to create database tables: {e}")
     
     def get_stats(self) -> dict:
         """Get connection pool statistics."""
-        if not self._initialized or not self._engine:
+        if not self._initialized:
             return {"initialized": False}
-        
-        pool = self._engine.pool
+
+        pool = getattr(database_module._async_engine, "pool", None)
         
         return {
             "initialized": True,
             "pool_size": self._config.pool_size,
             "max_overflow": self._config.max_overflow,
-            "checked_out": pool.checkedout() if hasattr(pool, 'checkedout') else 0,
-            "overflow": pool.overflow() if hasattr(pool, 'overflow') else 0,
+            "checked_out": pool.checkedout() if pool is not None and hasattr(pool, 'checkedout') else 0,
+            "overflow": pool.overflow() if pool is not None and hasattr(pool, 'overflow') else 0,
             "total_checkouts": self._stats.total_checkouts,
             "total_checkins": self._stats.total_checkins,
             "total_errors": self._stats.total_errors,
@@ -266,9 +236,9 @@ class DatabasePoolManager(Singleton):
     
     async def close(self):
         """Close database connection pool."""
-        if self._engine:
-            await self._engine.dispose()
-            logger.info("Database connection pool closed")
+        if self._initialized:
+            await database_module.dispose_async_db()
+            logger.info("Database connection facade closed")
             self._initialized = False
 
 

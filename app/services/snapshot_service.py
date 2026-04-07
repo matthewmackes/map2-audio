@@ -16,7 +16,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Optional
 from uuid import uuid4
@@ -78,6 +78,7 @@ from app.services.state_authority_revision_service import (
 )
 from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 from app.services.upload_service import AssetType, get_upload_service
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +209,7 @@ def _normalize_monitoring_output_index(value: Any) -> Optional[int]:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return utc_now()
 
 
 def _safe_int_metric(value: Any) -> int:

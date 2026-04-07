@@ -14,11 +14,13 @@ Schema designed for Fedora + SQLite, with upgrade path to PostgreSQL.
 import json
 import logging
 import sqlite3
+from contextlib import contextmanager
 from typing import Dict, List, Optional, Tuple
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-import threading
+
+from app.utils.time import utc_now
 
 from app.services.cluster.mdns_discovery_enhanced import MDNSNode
 
@@ -49,82 +51,109 @@ class ClusterRegistry:
         self.db_path = db_path or self.DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
-        self._local = threading.local()
         self._init_db()
 
-    def _get_conn(self) -> sqlite3.Connection:
-        """Get thread-local database connection"""
-        if not hasattr(self._local, "conn"):
-            self._local.conn = sqlite3.connect(str(self.db_path))
-            self._local.conn.row_factory = sqlite3.Row
-            # Enable WAL mode for replication
-            self._local.conn.execute("PRAGMA journal_mode=WAL;")
-        return self._local.conn
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(str(self.db_path))
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL;")
+        return conn
+
+    @contextmanager
+    def _connection(self) -> sqlite3.Connection:
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _json_dumps(value) -> str:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+    @staticmethod
+    def _json_loads(value, *, fallback):
+        if isinstance(value, type(fallback)):
+            return value
+        if not value:
+            return fallback
+        try:
+            parsed = json.loads(value)
+        except Exception:
+            return fallback
+        return parsed if isinstance(parsed, type(fallback)) else fallback
+
+    def _normalize_node_row(self, row: sqlite3.Row | Dict) -> Dict:
+        payload = dict(row)
+        payload["audio_devices"] = self._json_loads(payload.get("audio_devices"), fallback=[])
+        payload["midi_devices"] = self._json_loads(payload.get("midi_devices"), fallback=[])
+        payload["metadata"] = self._json_loads(payload.get("metadata"), fallback={})
+        return payload
 
     def _init_db(self) -> None:
         """Initialize database schema"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            # Main nodes table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS cluster_nodes (
-                    id TEXT PRIMARY KEY,
-                    hostname TEXT NOT NULL,
-                    ip_address TEXT,
-                    mac_address TEXT,
-                    role TEXT DEFAULT 'AUDIO-NODE',
-                    deployment_mode TEXT DEFAULT 'AUDIO-NODE',
-                    cpu_cores INTEGER DEFAULT 0,
-                    total_memory_gb INTEGER DEFAULT 0,
-                    audio_devices TEXT,
-                    midi_input_count INTEGER DEFAULT 0,
-                    midi_output_count INTEGER DEFAULT 0,
-                    midi_devices TEXT DEFAULT '[]',
-                    storage_gb INTEGER DEFAULT 0,
-                    status TEXT DEFAULT 'offline',
-                    health_score REAL DEFAULT 50.0,
-                    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    version TEXT DEFAULT '0.0.0',
-                    metadata JSON DEFAULT '{}'
-                );
-                """
-            )
+                # Main nodes table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS cluster_nodes (
+                        id TEXT PRIMARY KEY,
+                        hostname TEXT NOT NULL,
+                        ip_address TEXT,
+                        mac_address TEXT,
+                        role TEXT DEFAULT 'AUDIO-NODE',
+                        deployment_mode TEXT DEFAULT 'AUDIO-NODE',
+                        cpu_cores INTEGER DEFAULT 0,
+                        total_memory_gb INTEGER DEFAULT 0,
+                        audio_devices TEXT,
+                        midi_input_count INTEGER DEFAULT 0,
+                        midi_output_count INTEGER DEFAULT 0,
+                        midi_devices TEXT DEFAULT '[]',
+                        storage_gb INTEGER DEFAULT 0,
+                        status TEXT DEFAULT 'offline',
+                        health_score REAL DEFAULT 50.0,
+                        last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        version TEXT DEFAULT '0.0.0',
+                        metadata JSON DEFAULT '{}'
+                    );
+                    """
+                )
 
-            # Metrics history table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS node_metrics_history (
-                    node_id TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    cpu_percent REAL,
-                    memory_percent REAL,
-                    dsp_load_percent REAL,
-                    xrun_count INTEGER,
-                    latency_ms REAL,
-                    PRIMARY KEY (node_id, timestamp),
-                    FOREIGN KEY (node_id) REFERENCES cluster_nodes(id)
-                    ON DELETE CASCADE
-                );
-                """
-            )
+                # Metrics history table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS node_metrics_history (
+                        node_id TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        cpu_percent REAL,
+                        memory_percent REAL,
+                        dsp_load_percent REAL,
+                        xrun_count INTEGER,
+                        latency_ms REAL,
+                        PRIMARY KEY (node_id, timestamp),
+                        FOREIGN KEY (node_id) REFERENCES cluster_nodes(id)
+                        ON DELETE CASCADE
+                    );
+                    """
+                )
 
-            # Create indexes for better query performance
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_nodes_status ON cluster_nodes(status);"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_nodes_role ON cluster_nodes(role);"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_time ON node_metrics_history(timestamp);"
-            )
+                # Create indexes for better query performance
+                cursor.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_nodes_status ON cluster_nodes(status);"
+                )
+                cursor.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_nodes_role ON cluster_nodes(role);"
+                )
+                cursor.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_metrics_time ON node_metrics_history(timestamp);"
+                )
 
-            self._ensure_cluster_nodes_columns(cursor)
-            conn.commit()
+                self._ensure_cluster_nodes_columns(cursor)
+                conn.commit()
             self.logger.info("Cluster registry database initialized")
 
         except Exception as e:
@@ -187,55 +216,9 @@ class ClusterRegistry:
             True if successful
         """
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            audio_devices_json = json.dumps(audio_devices or [])
-            midi_devices_json = json.dumps(midi_devices or [])
-            metadata_json = json.dumps(metadata or {})
-
-            # Check if node exists
-            cursor.execute("SELECT id FROM cluster_nodes WHERE id = ?", (node_id,))
-            exists = cursor.fetchone() is not None
-
-            if exists:
-                # Update existing node
-                cursor.execute(
-                    """
-                    UPDATE cluster_nodes SET
-                        hostname = ?, ip_address = ?, mac_address = ?,
-                        role = ?, deployment_mode = ?,
-                        cpu_cores = ?, total_memory_gb = ?,
-                        audio_devices = ?, midi_input_count = ?, midi_output_count = ?, midi_devices = ?, storage_gb = ?,
-                        status = ?, health_score = ?,
-                        last_seen = CURRENT_TIMESTAMP,
-                        last_updated = CURRENT_TIMESTAMP,
-                        version = ?, metadata = ?
-                    WHERE id = ?
-                    """,
-                    (
-                        hostname,
-                        ip_address,
-                        mac_address,
-                        role,
-                        deployment_mode,
-                        cpu_cores,
-                        total_memory_gb,
-                        audio_devices_json,
-                        int(midi_input_count),
-                        int(midi_output_count),
-                        midi_devices_json,
-                        storage_gb,
-                        status,
-                        health_score,
-                        version,
-                        metadata_json,
-                        node_id,
-                    ),
-                )
-                self.logger.debug(f"Updated node in registry: {node_id}")
-            else:
-                # Insert new node
                 cursor.execute(
                     """
                     INSERT INTO cluster_nodes (
@@ -246,6 +229,25 @@ class ClusterRegistry:
                         status, health_score,
                         version, metadata
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        hostname = excluded.hostname,
+                        ip_address = excluded.ip_address,
+                        mac_address = excluded.mac_address,
+                        role = excluded.role,
+                        deployment_mode = excluded.deployment_mode,
+                        cpu_cores = excluded.cpu_cores,
+                        total_memory_gb = excluded.total_memory_gb,
+                        audio_devices = excluded.audio_devices,
+                        midi_input_count = excluded.midi_input_count,
+                        midi_output_count = excluded.midi_output_count,
+                        midi_devices = excluded.midi_devices,
+                        storage_gb = excluded.storage_gb,
+                        status = excluded.status,
+                        health_score = excluded.health_score,
+                        last_seen = CURRENT_TIMESTAMP,
+                        last_updated = CURRENT_TIMESTAMP,
+                        version = excluded.version,
+                        metadata = excluded.metadata
                     """,
                     (
                         node_id,
@@ -256,20 +258,18 @@ class ClusterRegistry:
                         deployment_mode,
                         cpu_cores,
                         total_memory_gb,
-                        audio_devices_json,
+                        self._json_dumps(audio_devices or []),
                         int(midi_input_count),
                         int(midi_output_count),
-                        midi_devices_json,
+                        self._json_dumps(midi_devices or []),
                         storage_gb,
                         status,
                         health_score,
                         version,
-                        metadata_json,
+                        self._json_dumps(metadata or {}),
                     ),
                 )
-                self.logger.info(f"Added node to registry: {node_id}")
-
-            conn.commit()
+                conn.commit()
             return True
 
         except Exception as e:
@@ -279,20 +279,20 @@ class ClusterRegistry:
     def update_node_status(self, node_id: str, status: str) -> bool:
         """Update node status"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                """
-                UPDATE cluster_nodes SET
-                    status = ?, last_updated = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """,
-                (status, node_id),
-            )
+                cursor.execute(
+                    """
+                    UPDATE cluster_nodes SET
+                        status = ?, last_updated = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (status, node_id),
+                )
 
-            conn.commit()
-            return cursor.rowcount > 0
+                conn.commit()
+                return cursor.rowcount > 0
 
         except Exception as e:
             self.logger.error(f"Failed to update node status: {e}")
@@ -301,23 +301,23 @@ class ClusterRegistry:
     def update_node_health(self, node_id: str, health_score: float) -> bool:
         """Update node health score"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            # Clamp to 0-100
-            health_score = max(0.0, min(100.0, health_score))
+                # Clamp to 0-100
+                health_score = max(0.0, min(100.0, health_score))
 
-            cursor.execute(
-                """
-                UPDATE cluster_nodes SET
-                    health_score = ?, last_updated = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """,
-                (health_score, node_id),
-            )
+                cursor.execute(
+                    """
+                    UPDATE cluster_nodes SET
+                        health_score = ?, last_updated = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (health_score, node_id),
+                )
 
-            conn.commit()
-            return cursor.rowcount > 0
+                conn.commit()
+                return cursor.rowcount > 0
 
         except Exception as e:
             self.logger.error(f"Failed to update node health: {e}")
@@ -326,15 +326,15 @@ class ClusterRegistry:
     def get_node(self, node_id: str) -> Optional[Dict]:
         """Get node by ID"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute("SELECT * FROM cluster_nodes WHERE id = ?", (node_id,))
-            row = cursor.fetchone()
+                cursor.execute("SELECT * FROM cluster_nodes WHERE id = ?", (node_id,))
+                row = cursor.fetchone()
 
-            if row:
-                return dict(row)
-            return None
+                if row:
+                    return self._normalize_node_row(row)
+                return None
 
         except Exception as e:
             self.logger.error(f"Failed to get node: {e}")
@@ -343,13 +343,13 @@ class ClusterRegistry:
     def get_all_nodes(self) -> List[Dict]:
         """Get all nodes"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute("SELECT * FROM cluster_nodes ORDER BY id")
-            rows = cursor.fetchall()
+                cursor.execute("SELECT * FROM cluster_nodes ORDER BY id")
+                rows = cursor.fetchall()
 
-            return [dict(row) for row in rows]
+                return [self._normalize_node_row(row) for row in rows]
 
         except Exception as e:
             self.logger.error(f"Failed to get all nodes: {e}")
@@ -358,15 +358,15 @@ class ClusterRegistry:
     def get_nodes_by_role(self, role: str) -> List[Dict]:
         """Get nodes by role"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT * FROM cluster_nodes WHERE role = ? ORDER BY id", (role,)
-            )
-            rows = cursor.fetchall()
+                cursor.execute(
+                    "SELECT * FROM cluster_nodes WHERE role = ? ORDER BY id", (role,)
+                )
+                rows = cursor.fetchall()
 
-            return [dict(row) for row in rows]
+                return [self._normalize_node_row(row) for row in rows]
 
         except Exception as e:
             self.logger.error(f"Failed to get nodes by role: {e}")
@@ -375,15 +375,15 @@ class ClusterRegistry:
     def get_nodes_by_status(self, status: str) -> List[Dict]:
         """Get nodes by status"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT * FROM cluster_nodes WHERE status = ? ORDER BY id", (status,)
-            )
-            rows = cursor.fetchall()
+                cursor.execute(
+                    "SELECT * FROM cluster_nodes WHERE status = ? ORDER BY id", (status,)
+                )
+                rows = cursor.fetchall()
 
-            return [dict(row) for row in rows]
+                return [self._normalize_node_row(row) for row in rows]
 
         except Exception as e:
             self.logger.error(f"Failed to get nodes by status: {e}")
@@ -392,16 +392,16 @@ class ClusterRegistry:
     def remove_node(self, node_id: str) -> bool:
         """Remove node from registry (cascades to metrics)"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute("DELETE FROM cluster_nodes WHERE id = ?", (node_id,))
+                cursor.execute("DELETE FROM cluster_nodes WHERE id = ?", (node_id,))
 
-            conn.commit()
-            rows_deleted = cursor.rowcount
-            if rows_deleted > 0:
-                self.logger.info(f"Removed node from registry: {node_id}")
-            return rows_deleted > 0
+                conn.commit()
+                rows_deleted = cursor.rowcount
+                if rows_deleted > 0:
+                    self.logger.info(f"Removed node from registry: {node_id}")
+                return rows_deleted > 0
 
         except Exception as e:
             self.logger.error(f"Failed to remove node: {e}")
@@ -425,7 +425,7 @@ class ClusterRegistry:
                     if online_nodes
                     else 0.0
                 ),
-                "last_updated": datetime.utcnow().isoformat(),
+                "last_updated": utc_now().isoformat(),
             }
 
         except Exception as e:
@@ -443,28 +443,28 @@ class ClusterRegistry:
     ) -> bool:
         """Add metrics record for node"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                """
-                INSERT INTO node_metrics_history (
-                    node_id, cpu_percent, memory_percent,
-                    dsp_load_percent, xrun_count, latency_ms
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    node_id,
-                    cpu_percent,
-                    memory_percent,
-                    dsp_load_percent,
-                    xrun_count,
-                    latency_ms,
-                ),
-            )
+                cursor.execute(
+                    """
+                    INSERT INTO node_metrics_history (
+                        node_id, cpu_percent, memory_percent,
+                        dsp_load_percent, xrun_count, latency_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        node_id,
+                        cpu_percent,
+                        memory_percent,
+                        dsp_load_percent,
+                        xrun_count,
+                        latency_ms,
+                    ),
+                )
 
-            conn.commit()
-            return True
+                conn.commit()
+                return True
 
         except Exception as e:
             self.logger.error(f"Failed to add metrics: {e}")
@@ -473,18 +473,18 @@ class ClusterRegistry:
     def cleanup_old_metrics(self, days: int = 30) -> int:
         """Remove metrics older than specified days"""
         try:
-            conn = self._get_conn()
-            cursor = conn.cursor()
+            with self._connection() as conn:
+                cursor = conn.cursor()
 
-            cutoff = datetime.utcnow() - timedelta(days=days)
+                cutoff = utc_now() - timedelta(days=days)
 
-            cursor.execute(
-                "DELETE FROM node_metrics_history WHERE timestamp < ?",
-                (cutoff.isoformat(),),
-            )
+                cursor.execute(
+                    "DELETE FROM node_metrics_history WHERE timestamp < ?",
+                    (cutoff.isoformat(),),
+                )
 
-            conn.commit()
-            return cursor.rowcount
+                conn.commit()
+                return cursor.rowcount
 
         except Exception as e:
             self.logger.error(f"Failed to cleanup metrics: {e}")

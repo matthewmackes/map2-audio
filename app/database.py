@@ -16,6 +16,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Awaitable, Callable, Sequence
 
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text, inspect as sqlalchemy_inspect
 from sqlalchemy.engine import Engine
@@ -23,7 +24,13 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
+
+
+def _utcnow() -> datetime:
+    return utc_now()
 
 Base = declarative_base()
 
@@ -247,7 +254,7 @@ def _set_sqlite_pragmas(dbapi_connection, connection_record):
 
 def init_db(database_url: str = None) -> None:
     """Initialize database engine and session factory with power-failure resilience."""
-    global _engine, _SessionLocal
+    global _engine, _SessionLocal, _sync_migrations_applied
     database_url = database_url or get_default_database_url(async_mode=False)
     _engine = create_engine(
         database_url,
@@ -261,11 +268,8 @@ def init_db(database_url: str = None) -> None:
         class_=RetryingSession,
     )
     Base.metadata.create_all(bind=_engine)
-    _ensure_special_settings_schema_sync()
-    _ensure_midi_automation_identity_schema_sync()
-    _ensure_chain_plugin_loader_state_schema_sync()
-    _ensure_snapshot_device_schema_sync()
-    _ensure_snapshot_graph_document_schema_sync()
+    _sync_migrations_applied = False
+    apply_pending_schema_migrations_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -309,6 +313,76 @@ _async_engine = None
 _async_session_maker = None
 _tables_created = False  # Track if tables have been created
 _pragmas_set = False  # Track if PRAGMAs have been applied
+_sync_migrations_applied = False
+
+
+MigrationSync = Callable[[], None]
+MigrationAsync = Callable[[object], Awaitable[None]]
+
+
+def _ensure_schema_migrations_table_sync() -> None:
+    if _engine is None:
+        return
+    with _engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS schema_migrations ("
+                "version INTEGER PRIMARY KEY, "
+                "name VARCHAR(255) NOT NULL, "
+                "applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                ")"
+            )
+        )
+
+
+async def _ensure_schema_migrations_table_async(conn) -> None:
+    await conn.execute(
+        text(
+            "CREATE TABLE IF NOT EXISTS schema_migrations ("
+            "version INTEGER PRIMARY KEY, "
+            "name VARCHAR(255) NOT NULL, "
+            "applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            ")"
+        )
+    )
+
+
+def _applied_migration_versions_sync() -> set[int]:
+    if _engine is None:
+        return set()
+    _ensure_schema_migrations_table_sync()
+    with _engine.begin() as conn:
+        result = conn.execute(text("SELECT version FROM schema_migrations"))
+        return {int(row[0]) for row in result.fetchall()}
+
+
+async def _applied_migration_versions_async(conn) -> set[int]:
+    await _ensure_schema_migrations_table_async(conn)
+    result = await conn.execute(text("SELECT version FROM schema_migrations"))
+    return {int(row[0]) for row in result.fetchall()}
+
+
+def _record_migration_sync(version: int, name: str) -> None:
+    if _engine is None:
+        return
+    with _engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT OR IGNORE INTO schema_migrations (version, name) "
+                "VALUES (:version, :name)"
+            ),
+            {"version": int(version), "name": str(name)},
+        )
+
+
+async def _record_migration_async(conn, version: int, name: str) -> None:
+    await conn.execute(
+        text(
+            "INSERT OR IGNORE INTO schema_migrations (version, name) "
+            "VALUES (:version, :name)"
+        ),
+        {"version": int(version), "name": str(name)},
+    )
 
 
 def init_async_db(database_url: str = None) -> None:
@@ -784,6 +858,40 @@ async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
     )
 
 
+SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
+    (1, "special_settings_additive_sync", _ensure_special_settings_schema_sync, _ensure_special_settings_schema_async),
+    (2, "midi_automation_identity_additive_sync", _ensure_midi_automation_identity_schema_sync, _ensure_midi_automation_identity_schema_async),
+    (3, "chain_plugin_loader_state_additive_sync", _ensure_chain_plugin_loader_state_schema_sync, _ensure_chain_plugin_loader_state_schema_async),
+    (4, "snapshot_device_additive_sync", _ensure_snapshot_device_schema_sync, _ensure_snapshot_device_schema_async),
+    (5, "snapshot_graph_document_additive_sync", _ensure_snapshot_graph_document_schema_sync, _ensure_snapshot_graph_document_schema_async),
+)
+
+
+def apply_pending_schema_migrations_sync() -> None:
+    global _sync_migrations_applied
+    if _sync_migrations_applied or _engine is None:
+        return
+
+    applied = _applied_migration_versions_sync()
+    for version, name, sync_migration, _async_migration in SCHEMA_MIGRATIONS:
+        if version in applied:
+            continue
+        sync_migration()
+        _record_migration_sync(version, name)
+        logger.info("Applied schema migration %s (%s)", version, name)
+    _sync_migrations_applied = True
+
+
+async def apply_pending_schema_migrations_async(conn) -> None:
+    applied = await _applied_migration_versions_async(conn)
+    for version, name, _sync_migration, async_migration in SCHEMA_MIGRATIONS:
+        if version in applied:
+            continue
+        await async_migration(conn)
+        await _record_migration_async(conn, version, name)
+        logger.info("Applied async schema migration %s (%s)", version, name)
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -801,11 +909,7 @@ async def _ensure_tables_created() -> None:
                 _pragmas_set = True
                 logger.info("Async database PRAGMAs applied (WAL mode enabled)")
             await conn.run_sync(Base.metadata.create_all)
-            await _ensure_special_settings_schema_async(conn)
-            await _ensure_midi_automation_identity_schema_async(conn)
-            await _ensure_chain_plugin_loader_state_schema_async(conn)
-            await _ensure_snapshot_device_schema_async(conn)
-            await _ensure_snapshot_graph_document_schema_async(conn)
+            await apply_pending_schema_migrations_async(conn)
         _tables_created = True
 
 
@@ -846,7 +950,7 @@ async def checkpoint_database() -> None:
 
 async def dispose_async_db(reset_state: bool = True) -> None:
     """Dispose the async engine and optionally clear cached schema/session state."""
-    global _async_engine, _async_session_maker, _tables_created, _pragmas_set
+    global _async_engine, _async_session_maker, _tables_created, _pragmas_set, _sync_migrations_applied
 
     if _async_engine is not None:
         await _async_engine.dispose()
@@ -856,6 +960,7 @@ async def dispose_async_db(reset_state: bool = True) -> None:
     if reset_state:
         _tables_created = False
         _pragmas_set = False
+        _sync_migrations_applied = False
 
 
 class Plugin(Base):
@@ -869,8 +974,8 @@ class Plugin(Base):
     author = Column(String(255))
     version = Column(String(20))
     parameters = Column(Text, default="{}")  # JSON-serialized params
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
     
     # Latency information
     reported_latency_samples = Column(Integer, default=0)
@@ -905,8 +1010,8 @@ class Chain(Base):
     name = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
     config = Column(Text, default="{}")  # JSON chain config
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     chain_plugins = relationship("ChainPlugin", back_populates="chain", cascade="all, delete-orphan")
@@ -926,8 +1031,8 @@ class Preset(Base):
     category = Column(String(100), default="User")  # Enhanced: Category
     description = Column(Text, default="")  # Enhanced: Description
     is_favorite = Column(Boolean, default=False)  # Enhanced: Favorites
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     chain = relationship("Chain", back_populates="presets")
 
@@ -951,8 +1056,8 @@ class PluginPreset(Base):
     is_favorite = Column(Boolean, default=False)  # Mark as favorite
     is_default = Column(Boolean, default=False)  # Set as default for this plugin
     usage_count = Column(Integer, default=0)  # Track usage frequency
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Composite unique constraint (plugin_uri + name)
     __table_args__ = (
@@ -1008,8 +1113,8 @@ class CommunityPreset(Base):
     is_hidden = Column(Boolean, default=False)  # Hidden from public but not deleted
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     ratings = relationship("PresetRating", back_populates="preset", cascade="all, delete-orphan")
@@ -1028,8 +1133,8 @@ class PresetRating(Base):
     user_fingerprint = Column(String(64), nullable=False)  # Anonymous device fingerprint (SHA-256)
     rating = Column(Integer, nullable=False)  # 1-5 stars
     review_text = Column(Text, nullable=True)  # Optional review comment
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationship
     preset = relationship("CommunityPreset", back_populates="ratings")
@@ -1066,7 +1171,7 @@ class PresetImportHistory(Base):
     parameters_imported = Column(Integer, default=0)  # Number of parameters successfully imported
 
     # Timestamps
-    import_timestamp = Column(DateTime, default=datetime.utcnow)
+    import_timestamp = Column(DateTime, default=_utcnow)
 
 
 class ChainPlugin(Base):
@@ -1084,7 +1189,7 @@ class ChainPlugin(Base):
     nam_output_gain = Column(Float, default=0.0)
     nam_normalize = Column(Boolean, default=True)
     ir_mix = Column(Float, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     # Relationships
     chain = relationship("Chain", back_populates="chain_plugins")
@@ -1119,8 +1224,8 @@ class EffectsLoop(Base):
     compensation_samples = Column(Integer, default=0)
     calibration_status = Column(String(32), default="uncalibrated")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     insertions = relationship("EffectsLoopInsertion", back_populates="loop", cascade="all, delete-orphan")
     calibrations = relationship("EffectsLoopCalibration", back_populates="loop", cascade="all, delete-orphan")
@@ -1149,8 +1254,8 @@ class EffectsLoopInsertion(Base):
     crossfade_ms = Column(Integer, default=12)
     band_split_hz = Column(JSON, default=list)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     chain = relationship("Chain", back_populates="loop_insertions")
     loop = relationship("EffectsLoop", back_populates="insertions")
@@ -1173,7 +1278,7 @@ class EffectsLoopCalibration(Base):
     compensation_samples = Column(Integer, default=0)
     notes = Column(JSON, default=dict)
     measured_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     loop = relationship("EffectsLoop", back_populates="calibrations")
 
@@ -1218,8 +1323,8 @@ class Snapshot(Base):
     community_rating_sum = Column(Float, default=0.0)
     community_rating_count = Column(Integer, default=0)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     channels = relationship(
         "SnapshotChannel",
@@ -1272,8 +1377,8 @@ class SnapshotChain(Base):
     snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     order_index = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot", back_populates="chains")
     plugins = relationship(
@@ -1309,8 +1414,8 @@ class SnapshotChannel(Base):
     solo = Column(Boolean, default=False)
     dry_wet_mix = Column(Float, default=100.0)
     order_index = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot", back_populates="channels")
     chain = relationship("SnapshotChain", foreign_keys=[chain_id])
@@ -1334,8 +1439,8 @@ class SnapshotChainPlugin(Base):
     parameters = Column(JSON, default=dict)
     loader_state = Column(JSON, default=dict)
     is_placeholder = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     chain = relationship("SnapshotChain", back_populates="plugins")
 
@@ -1361,8 +1466,8 @@ class SnapshotLoopInsertion(Base):
     return_gain_db = Column(Float, default=0.0)
     crossfade_ms = Column(Integer, default=12)
     band_split_hz = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     chain = relationship("SnapshotChain", back_populates="loop_insertions")
 
@@ -1385,8 +1490,8 @@ class SnapshotRouting(Base):
     morph_source_channel_key = Column(String(64), nullable=True)
     morph_target_channel_key = Column(String(64), nullable=True)
     series_order = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot", back_populates="routing")
 
@@ -1398,8 +1503,8 @@ class SnapshotMidiMap(Base):
     id = Column(Integer, primary_key=True)
     snapshot_id = Column(Integer, ForeignKey("snapshots.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
     entries = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot", back_populates="midi_map")
 
@@ -1415,11 +1520,11 @@ class SnapshotDeployment(Base):
     deployment_status = Column(String(20), default="deploying")
     assignment_strategy = Column(String(20), default="manual")
     redundancy_enabled = Column(Boolean, default=False)
-    deployed_at = Column(DateTime, default=datetime.utcnow)
+    deployed_at = Column(DateTime, default=_utcnow)
     last_failover_time = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot", back_populates="deployments")
     history = relationship(
@@ -1446,7 +1551,7 @@ class SnapshotDeploymentHistory(Base):
     to_node_id = Column(String(128), nullable=False)
     action = Column(String(32), nullable=False)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     deployment = relationship("SnapshotDeployment", back_populates="history")
     snapshot = relationship("Snapshot")
@@ -1469,7 +1574,7 @@ class SnapshotRevision(Base):
     summary_metadata = Column(JSON, default=dict, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
     document = Column(JSON, default=dict, nullable=False)
-    saved_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    saved_at = Column(DateTime, default=_utcnow, nullable=False)
 
     snapshot = relationship("Snapshot", back_populates="revisions")
 
@@ -1489,8 +1594,8 @@ class StateAuthorityAsset(Base):
     file_name = Column(String(512), nullable=False)
     size_bytes = Column(Integer, nullable=False, default=0)
     asset_type = Column(String(128), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 
     __table_args__ = (
         Index("idx_state_authority_assets_asset_hash", "asset_hash", unique=True),
@@ -1515,8 +1620,8 @@ class SnapshotNodeLiveState(Base):
     last_requested_at = Column(DateTime, nullable=True)
     last_runtime_event_at = Column(DateTime, nullable=True)
     last_transition_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot")
 
@@ -1536,14 +1641,14 @@ class SnapshotActivationEvent(Base):
     snapshot_name = Column(String(255), nullable=True)
     snapshot_revision = Column(String(64), nullable=True, index=True)
     triggered_by = Column(String(32), nullable=True)
-    requested_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    requested_at = Column(DateTime, nullable=False, default=_utcnow)
     confirmed_live_at = Column(DateTime, nullable=True)
     outcome = Column(String(32), nullable=False, default="requested")
     failure_reason = Column(Text, nullable=True)
     activation_latency_ms = Column(Float, nullable=True)
     runtime_metrics = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     snapshot = relationship("Snapshot")
 
@@ -1573,8 +1678,8 @@ class TesiraLoopTemplate(Base):
     validation_status = Column(String(32), default="unknown")
     validation_error = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_loop_templates_device", "tesira_device_id"),
@@ -1590,7 +1695,7 @@ class MIDIMappingGroup(Base):
     description = Column(Text)
     color = Column(String(7))  # Hex color for UI (e.g., '#ff5733')
     display_order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     # Relationships
     mappings = relationship("MIDIMapping", back_populates="group")
@@ -1628,8 +1733,8 @@ class MIDIMapping(Base):
     group_id = Column(Integer, ForeignKey("midi_mapping_groups.id", ondelete="SET NULL"), nullable=True)
     is_learned = Column(Boolean, default=False)
     is_enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     chain = relationship("Chain", foreign_keys=[chain_id])
@@ -1658,7 +1763,7 @@ class MIDICommand(Base):
     # Metadata
     name = Column(String(255))
     is_enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     # Relationships
     target_chain = relationship("Chain", foreign_keys=[target_chain_id])
@@ -1682,7 +1787,7 @@ class MIDIRoutingRule(Base):
     # Metadata
     name = Column(String(255))
     is_enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     # Relationships
     chain = relationship("Chain", foreign_keys=[chain_id])
@@ -1698,8 +1803,8 @@ class MIDIDeviceConfig(Base):
     is_enabled = Column(Boolean, default=True)
     auto_connect = Column(Boolean, default=True)
     channel_filter = Column(Integer)  # None = all channels
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class MIDIPreset(Base):
@@ -1717,8 +1822,8 @@ class MIDIPreset(Base):
     device_configs_snapshot = Column(JSON, default=list)
 
     is_default = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class ChainMIDIConfig(Base):
@@ -1731,7 +1836,7 @@ class ChainMIDIConfig(Base):
     bank_msb = Column(Integer, default=0)  # Bank Select MSB (CC#0) for >128 chains
     bank_lsb = Column(Integer, default=0)  # Bank Select LSB (CC#32)
     send_pc_on_activate = Column(Boolean, default=True)  # Send PC back to sync controller
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     # Relationships
     chain = relationship("Chain", foreign_keys=[chain_id])
@@ -1754,8 +1859,8 @@ class ExpressionAssignment(Base):
     custom_curve = Column(JSON, default=list)
     active = Column(Boolean, nullable=False, default=True)
     source = Column(String(64), nullable=False, default="user")  # user | performance_mode
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_expression_assignments_source_active", "source", "active"),
@@ -1770,8 +1875,8 @@ class SystemConfig(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String(255), unique=True, nullable=False)
     value = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class PluginPerformanceLog(Base):
@@ -1795,7 +1900,7 @@ class PluginPerformanceLog(Base):
     deadline_us = Column(Float, nullable=False)
 
     # Timestamp
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = Column(DateTime, default=_utcnow, nullable=False)
 
     # Relationships
     chain = relationship("Chain", foreign_keys=[chain_id])
@@ -1844,8 +1949,8 @@ class ImpulseResponse(Base):
     rating = Column(Integer, nullable=True)  # 1-5 stars
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationship
     category_obj = relationship("IRCategory", back_populates="impulse_responses")
@@ -1890,8 +1995,8 @@ class NAMModel(Base):
     source_tone3000_name = Column(String(255), nullable=True)  # TONE3000 model name
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 # =============================================================================
@@ -1909,9 +2014,9 @@ class TesiraBlockDeclaration(Base):
     channel_count = Column(Integer, nullable=False, default=1)
     parameter_map = Column(JSON, default=dict)
     is_probed = Column(Boolean, default=True)
-    last_probed_at = Column(DateTime, default=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_probed_at = Column(DateTime, default=_utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_block_decl_device_tag_unique", "device_id", "instance_tag", unique=True),
@@ -1928,8 +2033,8 @@ class TesiraSceneSnapshot(Base):
     device_id = Column(String(128), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     block_states = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_scene_device_created", "device_id", "created_at"),
@@ -1953,8 +2058,8 @@ class TesiraLayoutArtifact(Base):
     feature_flags = Column(JSON, default=list)
     notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_layout_artifact_unique", "layout_id", "version", unique=True),
@@ -1980,8 +2085,8 @@ class TesiraDesignWorkspace(Base):
     compiled_graph_hash = Column(String(128), nullable=True)
     compile_diagnostics = Column(JSON, default=dict)
     last_compiled_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_design_device_created", "device_id", "created_at"),
@@ -2008,8 +2113,8 @@ class TesiraDeploymentJob(Base):
     error_detail = Column(Text, nullable=True)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_deploy_device_created", "device_id", "created_at"),
@@ -2028,7 +2133,7 @@ class TesiraDeploymentEvent(Base):
     status = Column(String(32), nullable=False)
     message = Column(Text, nullable=False)
     payload = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     __table_args__ = (
         Index("idx_tesira_deploy_event_job_seq_unique", "job_id", "sequence", unique=True),
@@ -2046,7 +2151,7 @@ class TesiraInterlockRule(Base):
     map2_preset_id = Column(Integer, nullable=False, index=True)
     tesira_device_id = Column(String(64), nullable=False)
     tesira_preset_index = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class IRCategory(Base):
@@ -2095,7 +2200,7 @@ class CommandHistory(Base):
 
     # Status tracking
     is_undone = Column(Boolean, default=False)  # True if command has been undone
-    executed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    executed_at = Column(DateTime, default=_utcnow, nullable=False)
     undone_at = Column(DateTime, nullable=True)
 
     # Index for efficient queries
@@ -2128,7 +2233,7 @@ class SessionBackup(Base):
     file_size_bytes = Column(Integer)  # Estimated size for cleanup
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
 
     # Composite unique constraint
     __table_args__ = (
@@ -2171,8 +2276,8 @@ class FlowSnapshot(Base):
     is_favorite = Column(Boolean, default=False)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 # =============================================================================
@@ -2223,8 +2328,8 @@ class AutomationLane(Base):
     loop_end = Column(Float, default=4.0)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class MIDILearnState(Base):
@@ -2240,7 +2345,7 @@ class MIDILearnState(Base):
     target_param_name = Column(String(255))
 
     # Learn settings
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=_utcnow)
     timeout_seconds = Column(Float, default=30.0)
 
     # Completion state
@@ -2265,8 +2370,8 @@ class FlowAssignment(Base):
     assignment_type = Column(String(20), default="primary")  # primary | standby
     assignment_strategy = Column(String(20), default="manual")  # manual | pinned
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("idx_flow_assignments_node_id", "assigned_node_id"),
@@ -2283,7 +2388,7 @@ class FlowDeployment(Base):
     primary_node_id = Column(String(128), nullable=False)
     standby_node_ids = Column(JSON, default=list)
     deployment_status = Column(String(20), default="deploying")  # deploying | active | failed
-    deployment_timestamp = Column(DateTime, default=datetime.utcnow)
+    deployment_timestamp = Column(DateTime, default=_utcnow)
     last_failover_time = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
 
@@ -2303,7 +2408,7 @@ class NodeCapability(Base):
     memory_gb = Column(Integer, default=0)
     has_gpu = Column(Boolean, default=False)
     gpu_name = Column(String(255), nullable=True)
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class SpecialSettings(Base):
@@ -2334,7 +2439,7 @@ class SpecialSettings(Base):
     
     # Cluster replication metadata
     version = Column(Integer, default=1)  # Incremented on each update
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = Column(DateTime, default=_utcnow, onupdate=_utcnow)
     updated_by_node = Column(String(128), nullable=True)  # Node ID that made the change
     raft_log_index = Column(Integer, nullable=True)  # Audit trail: Raft log entry index
     
@@ -2353,7 +2458,7 @@ class FlowDeploymentHistory(Base):
     from_node_id = Column(String(128), nullable=True)
     to_node_id = Column(String(128), nullable=False)
     action = Column(String(20), nullable=False)  # deployed | moved | failed_over
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=_utcnow)
     notes = Column(Text, nullable=True)
 
     __table_args__ = (
@@ -2393,8 +2498,8 @@ class SrpAdmissionLog(Base):
     request_metadata = Column(JSON, default=dict)
 
     # Timing
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    completed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
+    completed_at = Column(DateTime, default=_utcnow, nullable=False)
 
     # Release tracking for reservation lifecycle
     released = Column(Boolean, default=False, nullable=False)
@@ -2441,7 +2546,7 @@ async def set_system_config(session: AsyncSession, key: str, value: str) -> None
     config = result.scalar_one_or_none()
     if config:
         config.value = value
-        config.updated_at = datetime.utcnow()
+        config.updated_at = _utcnow()
     else:
         session.add(SystemConfig(key=key, value=value))
     await session.flush()

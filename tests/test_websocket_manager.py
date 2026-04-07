@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import time
 
 from app.services.websocket_manager import WebSocketManager
@@ -92,3 +93,23 @@ def test_broadcast_disconnects_slow_clients_without_blocking_fast_clients():
     assert "slow" not in manager.active_connections
     assert fast_ws.sent_messages == ["payload"]
     assert manager.get_stats()["slow_client_disconnects"] == 1
+
+
+def test_disconnect_cleans_subscriptions_consistently_under_concurrent_broadcast():
+    manager = WebSocketManager(send_timeout_seconds=0.05)
+    websocket = _FakeWebSocket(delay_seconds=0.01)
+    manager.active_connections["client"] = websocket
+    manager.subscriptions["meters"] = {"client"}
+    manager.connection_info["client"] = {"subscriptions": {"meters"}, "path": "/ws"}
+
+    def _disconnect():
+        time.sleep(0.001)
+        manager.disconnect("client")
+
+    thread = threading.Thread(target=_disconnect)
+    thread.start()
+    asyncio.run(manager.broadcast("payload", topic="meters"))
+    thread.join(timeout=0.5)
+
+    assert "client" not in manager.active_connections
+    assert manager.subscriptions == {}

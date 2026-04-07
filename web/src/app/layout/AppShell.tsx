@@ -30,7 +30,12 @@ import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
 import { systemApi } from '../../map2/clients/platform'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
-import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDesktopSession'
+import {
+  readHomeDesktopSession,
+  reloadHomeDesktopShell,
+  returnHomeDesktopToBoot,
+  updateHomeDesktopSession,
+} from '../pages/homeDesktopSession'
 import { prefetchAppRoute } from '../routePrefetch'
 import { buildPlatformWorkspacePath } from '../platform/routes'
 import './AppShell.css'
@@ -48,8 +53,10 @@ interface TopNavItem {
 
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 type RestartProgressStage = 'idle' | 'stopping' | 'restarting' | 'reconnecting' | 'ready' | 'error'
+type TaskbarIndicatorItem = TopNavItem & { route: string; pinned: boolean; active: boolean; running: boolean }
 
 const APP_WINDOW_CLOSE_DURATION_MS = 180
+const PERMANENT_TASKBAR_ROUTE = '/artifacts'
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
@@ -87,6 +94,15 @@ function toTopNavItem(item: PinnedMenuItem): TopNavItem {
   }
 }
 
+function findTaskbarItem(route: string): TopNavItem | null {
+  const candidate = [...allRouteNavigationItems, ...allPinnableNavigationItems]
+    .filter((item, index, items) => items.findIndex((other) => other.to === item.to) === index)
+    .filter((item) => isRouteMatch(route, item.to))
+    .sort((left, right) => right.to.length - left.to.length)[0]
+
+  return candidate ? toTopNavItem(candidate) : null
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -108,7 +124,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const restartCompletionRequestedRef = useRef(false)
   const closeWindowTimerRef = useRef<number | null>(null)
   const [closingAppRoute, setClosingAppRoute] = useState<string | null>(null)
-  const [runningRoutes, setRunningRoutes] = useState<string[]>([])
+  const [runningRoutes, setRunningRoutes] = useState<string[]>(() => (
+    readHomeDesktopSession()?.runningRoutes.filter((route) => route !== '/') ?? []
+  ))
 
   const {
     state: mpx1State,
@@ -162,13 +180,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     { key: 'settings', label: 'Settings', to: buildPlatformWorkspacePath('theme') },
     { key: 'power', label: 'Power', to: null },
   ], [])
-  const shellQuickLaunchItem = useMemo(
-    () => pinnedTopNavItems.find((item) => item.kind === 'link' && !isRouteMatch(location.pathname, item.to))
-      ?? pinnedTopNavItems.find((item) => item.kind === 'link')
-      ?? null,
-    [location.pathname, pinnedTopNavItems],
-  )
-
   const hardwareSubmenuItems = useMemo(
     () => hardwareInterfaceMenuItems.filter((hardwareItem) => hardwareItem.showInHardwareSubmenu !== false),
     [],
@@ -182,8 +193,38 @@ export function AppShell({ children }: { children: ReactNode }) {
     return candidates[0] ?? null
   }, [location.pathname])
   const shellWorkspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
-  const shellWorkspaceHint = formatShellRouteHint(location.pathname)
   const shellAccentColor = currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)'
+  const isDesktopRoute = location.pathname === '/'
+  const taskbarIndicators = useMemo<TaskbarIndicatorItem[]>(() => {
+    const routes = new Set<string>([PERMANENT_TASKBAR_ROUTE, ...runningRoutes.filter((route) => route !== '/')])
+    if (!isDesktopRoute) {
+      routes.add(location.pathname)
+    }
+
+    return Array.from(routes)
+      .map((route) => {
+        const item = findTaskbarItem(route)
+        if (!item || item.kind !== 'link') {
+          return null
+        }
+
+        return {
+          ...item,
+          route,
+          pinned: route === PERMANENT_TASKBAR_ROUTE,
+          active: isRouteMatch(location.pathname, route),
+          running: runningRoutes.includes(route) || isRouteMatch(location.pathname, route),
+        }
+      })
+      .filter((item): item is TaskbarIndicatorItem => Boolean(item))
+      .sort((left, right) => {
+        if (left.route === PERMANENT_TASKBAR_ROUTE) return -1
+        if (right.route === PERMANENT_TASKBAR_ROUTE) return 1
+        if (left.active && !right.active) return -1
+        if (!left.active && right.active) return 1
+        return left.label.localeCompare(right.label)
+      })
+  }, [isDesktopRoute, location.pathname, runningRoutes])
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
   const isPlatformWorkspaceRoute = location.pathname.startsWith('/platforms')
@@ -196,7 +237,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute || showPerformFullscreen
-  const isDesktopRoute = location.pathname === '/'
   const showTaskbarShell = !showPerformFullscreen
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
@@ -252,9 +292,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [showPerformFullscreen])
 
   useEffect(() => {
-    if (!isDesktopRoute) {
-      setRunningRoutes((current) => (current.includes(location.pathname) ? current : [...current, location.pathname]))
-    }
+    setRunningRoutes((current) => {
+      const sanitized = current.filter((route) => route !== '/')
+      if (isDesktopRoute || location.pathname === '/' || sanitized.includes(location.pathname)) {
+        return sanitized
+      }
+
+      return [...sanitized, location.pathname]
+    })
 
     if (closingAppRoute && closingAppRoute !== location.pathname) {
       setClosingAppRoute(null)
@@ -266,6 +311,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.clearTimeout(closeWindowTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    updateHomeDesktopSession({
+      runningRoutes: runningRoutes.filter((route) => route !== '/'),
+      currentRoute: location.pathname,
+    })
+  }, [location.pathname, runningRoutes])
 
   useEffect(() => {
     if (!pinnedRouteSet.has('/mpx1')) {
@@ -315,9 +367,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       return
     }
 
+    const routeToClose = location.pathname
     closeShellMenus()
-    setClosingAppRoute(location.pathname)
-    setRunningRoutes((current) => current.filter((route) => route !== location.pathname))
+    setClosingAppRoute(routeToClose)
+    setRunningRoutes((current) => current.filter((route) => route !== routeToClose))
 
     if (closeWindowTimerRef.current !== null) {
       window.clearTimeout(closeWindowTimerRef.current)
@@ -325,8 +378,30 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     closeWindowTimerRef.current = window.setTimeout(() => {
       closeWindowTimerRef.current = null
+      setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== routeToClose))
       navigate('/')
     }, APP_WINDOW_CLOSE_DURATION_MS)
+  }
+
+  const handleTaskbarIndicatorClick = (route: string) => {
+    closeShellMenus()
+
+    if (isRouteMatch(location.pathname, route) && route !== '/') {
+      setClosingAppRoute(route)
+      setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== route))
+      if (closeWindowTimerRef.current !== null) {
+        window.clearTimeout(closeWindowTimerRef.current)
+      }
+
+      closeWindowTimerRef.current = window.setTimeout(() => {
+        closeWindowTimerRef.current = null
+        setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== route))
+        navigate('/')
+      }, APP_WINDOW_CLOSE_DURATION_MS)
+      return
+    }
+
+    navigate(route)
   }
 
   const handleConfirmRestartBackend = async () => {
@@ -729,25 +804,34 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            {shellQuickLaunchItem ? (
-              <NavLink
-                to={shellQuickLaunchItem.to}
-                className={({ isActive }) => `window-taskbar__quick-launch${isActive ? ' is-active' : ''}`}
-                title={`Quick launch ${shellQuickLaunchItem.label}`}
-                aria-label={`Quick launch ${shellQuickLaunchItem.label}`}
-                onMouseEnter={() => prefetchAppRoute(shellQuickLaunchItem.to)}
-                onFocus={() => prefetchAppRoute(shellQuickLaunchItem.to)}
-              >
-                <shellQuickLaunchItem.icon size={14} aria-hidden />
-                <span>{shellQuickLaunchItem.shortLabel ?? shellQuickLaunchItem.label}</span>
-              </NavLink>
-            ) : null}
-          </div>
+            <div className="window-taskbar__indicators" aria-label="Running applications">
+              {taskbarIndicators.map((item) => {
+                const Icon = item.icon
+                const label = item.pinned
+                  ? `${item.label} pinned taskbar app`
+                  : item.active
+                    ? `Taskbar close ${item.label}`
+                    : `Taskbar open ${item.label}`
 
-          <div className="window-taskbar__workspace" title={`${shellWorkspaceLabel} • ${shellWorkspaceHint}`}>
-            <span className="window-taskbar__workspace-kicker">Live</span>
-            <span className="window-taskbar__workspace-name">{shellWorkspaceLabel}</span>
-            <span className="window-taskbar__workspace-path">{shellWorkspaceHint}</span>
+                return (
+                  <button
+                    key={item.route}
+                    type="button"
+                    className={`window-taskbar__indicator${item.running ? ' is-running' : ''}${item.active ? ' is-active' : ''}${item.pinned ? ' is-pinned' : ''}`}
+                    aria-label={label}
+                    title={item.active ? `${item.label} • click to close` : item.label}
+                    onClick={() => handleTaskbarIndicatorClick(item.route)}
+                    onMouseEnter={() => prefetchAppRoute(item.route)}
+                    onFocus={() => prefetchAppRoute(item.route)}
+                  >
+                    <span className="window-taskbar__indicator-icon" aria-hidden="true">
+                      <Icon size={16} />
+                    </span>
+                    <span className="window-taskbar__indicator-text">{item.shortLabel ?? item.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <div className="window-taskbar__right">
