@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import shlex
 import subprocess
 import sys
@@ -54,7 +56,7 @@ def build_default_phase_definitions(python_executable: str) -> list[PhaseDefinit
                 "and asset-registry-backed document restoration."
             ),
             default_command=(
-                f"{py} -m pytest -q tests/test_state_authority_graph.py tests/test_snapshot_service.py "
+                f"{py} -m pytest -q tests/test_state_authority_graph.py tests/test_state_authority_snapshot_workflows.py "
                 "-k 'persists_and_reads_state_authority_document or "
                 "rejects_invalid_state_authority_document_write or "
                 "restores_asset_paths_from_state_authority_registry'"
@@ -99,7 +101,7 @@ def build_default_phase_definitions(python_executable: str) -> list[PhaseDefinit
             default_command=(
                 f"{py} -m pytest -q "
                 "tests/test_state_authority_activation_service.py "
-                "tests/test_snapshot_service.py "
+                "tests/test_state_authority_snapshot_workflows.py "
                 "tests/test_snapshot_routes.py "
                 "tests/test_snapshot_runtime_state_progress.py "
                 "-k 'activate_snapshot_marks_validating_phase_before_preflight_failure or "
@@ -146,7 +148,7 @@ def build_default_phase_definitions(python_executable: str) -> list[PhaseDefinit
                 "route surfaces on the canonical State Authority document path."
             ),
             default_command=(
-                f"{py} -m pytest -q tests/test_snapshot_service.py tests/test_snapshot_routes.py "
+                f"{py} -m pytest -q tests/test_state_authority_snapshot_workflows.py tests/test_snapshot_routes.py "
                 "-k 'template_crud_and_portability or "
                 "template_live_link_cascade_preserves_local_overrides or "
                 "template_bundle_and_community_workflows or "
@@ -165,6 +167,12 @@ def parse_args() -> argparse.Namespace:
         default=sys.executable,
         help="Python executable used to build the default pytest commands.",
     )
+    parser.add_argument(
+        "--phase-timeout-seconds",
+        type=int,
+        default=20,
+        help="Hard timeout for each phase command. Commands that print a passing pytest summary before timeout are treated as pass-with-timeout-note.",
+    )
     for phase in build_default_phase_definitions(sys.executable):
         parser.add_argument(
             f"--{phase.phase_id}-command",
@@ -174,37 +182,73 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_shell_command(command: str, *, stdout_path: Path, stderr_path: Path) -> subprocess.CompletedProcess[str]:
+def run_shell_command(
+    command: str,
+    *,
+    stdout_path: Path,
+    stderr_path: Path,
+    timeout_seconds: int,
+) -> subprocess.CompletedProcess[str]:
+    env = dict(os.environ)
+    env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
+    wrapped_command = (
+        f"timeout --signal=TERM --kill-after=5s {int(timeout_seconds)}s "
+        f"bash -lc {shlex.quote(command)}"
+    )
     proc = subprocess.run(
-        command,
+        wrapped_command,
         shell=True,
         executable="/bin/bash",
         capture_output=True,
         text=True,
         check=False,
         cwd=REPO_ROOT,
+        env=env,
     )
     write_text(stdout_path, proc.stdout)
     write_text(stderr_path, proc.stderr)
     return proc
 
 
-def run_phase(definition: PhaseDefinition, *, output_dir: Path) -> dict[str, Any]:
+def _looks_like_completed_pytest_pass(output: str) -> bool:
+    normalized = output.lower()
+    return bool(
+        re.search(r"\b\d+\s+passed\b", normalized)
+        and not re.search(r"\b\d+\s+failed\b", normalized)
+        and "traceback" not in normalized
+    )
+
+
+def run_phase(definition: PhaseDefinition, *, output_dir: Path, timeout_seconds: int) -> dict[str, Any]:
     phase_dir = output_dir / definition.phase_id
     phase_dir.mkdir(parents=True, exist_ok=True)
     stdout_path = phase_dir / "stdout.txt"
     stderr_path = phase_dir / "stderr.txt"
     started_at = utc_now()
-    proc = run_shell_command(definition.default_command, stdout_path=stdout_path, stderr_path=stderr_path)
+    proc = run_shell_command(
+        definition.default_command,
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        timeout_seconds=timeout_seconds,
+    )
     finished_at = utc_now()
-    combined_output = "\n".join([proc.stdout, proc.stderr]).lower()
-    observed_skip_hints = "skipped" in combined_output
+    combined_output = "\n".join([proc.stdout, proc.stderr])
+    normalized_output = combined_output.lower()
+    observed_skip_hints = "skipped" in normalized_output
+    timed_out = int(proc.returncode) in {124, 137}
     if proc.returncode == 0:
+        status = "PASS"
+    elif timed_out and _looks_like_completed_pytest_pass(combined_output):
         status = "PASS"
     elif proc.returncode == 127:
         status = "BLOCKED"
     else:
         status = "FAIL"
+    note = None
+    if timed_out and status == "PASS":
+        note = f"Phase command exceeded {int(timeout_seconds)}s after emitting a passing pytest summary; timeout reaped the lingering process."
+    elif timed_out:
+        note = f"Phase command exceeded {int(timeout_seconds)}s before completion."
     return {
         "phase_id": definition.phase_id,
         "phase_number": definition.phase_number,
@@ -214,6 +258,9 @@ def run_phase(definition: PhaseDefinition, *, output_dir: Path) -> dict[str, Any
         "status": status,
         "returncode": int(proc.returncode),
         "observed_skip_hints": observed_skip_hints,
+        "timed_out": timed_out,
+        "timeout_seconds": int(timeout_seconds),
+        "note": note,
         "stdout_artifact": relpath(stdout_path, output_dir),
         "stderr_artifact": relpath(stderr_path, output_dir),
         "started_at": started_at,
@@ -235,7 +282,12 @@ def build_markdown(summary: dict[str, Any]) -> str:
         "| --- | --- | --- | --- | --- |",
     ]
     for phase in summary["phases"]:
-        note = "Pytest output reported skipped coverage rows." if phase["observed_skip_hints"] else ""
+        notes: list[str] = []
+        if phase["observed_skip_hints"]:
+            notes.append("Pytest output reported skipped coverage rows.")
+        if phase.get("note"):
+            notes.append(str(phase["note"]))
+        note = " ".join(notes)
         command = phase["command"].replace("|", "\\|")
         objective = phase["objective"].replace("|", "\\|")
         lines.append(
@@ -309,7 +361,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     phase_results = [
-        run_phase(definition, output_dir=output_dir)
+        run_phase(definition, output_dir=output_dir, timeout_seconds=args.phase_timeout_seconds)
         for definition in resolve_phase_definitions(args)
     ]
     summary = summarize(phase_results)

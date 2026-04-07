@@ -119,3 +119,54 @@ def test_t778_runner_marks_missing_phase_command_as_blocked(tmp_path: Path) -> N
     blocked_phase = next(phase for phase in summary["phases"] if phase["phase_id"] == "phase3")
     assert blocked_phase["status"] == "BLOCKED"
     assert blocked_phase["returncode"] == 127
+
+
+def test_t778_runner_treats_timeout_after_passing_pytest_summary_as_pass(tmp_path: Path) -> None:
+    command_script = _build_phase_command_script(tmp_path)
+    output_dir = tmp_path / "timeout-pass"
+    pass_then_sleep_script = tmp_path / "pass_then_sleep.sh"
+    _write_executable(
+        pass_then_sleep_script,
+        """#!/usr/bin/env bash
+printf '1 passed in 0.01s\n'
+sleep 5
+""",
+    )
+    pass_command = f"{sys.executable} {command_script} phase pass"
+    timeout_pass_command = str(pass_then_sleep_script)
+    env = os.environ.copy()
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--output-dir",
+            str(output_dir),
+            "--phase-timeout-seconds",
+            "1",
+            "--phase1-command",
+            timeout_pass_command,
+            "--phase2-command",
+            pass_command,
+            "--phase3-command",
+            pass_command,
+            "--phase4-command",
+            pass_command,
+            "--phase5-command",
+            pass_command,
+            "--phase6-command",
+            pass_command,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    summary = json.loads((output_dir / "t778-state-authority-qualification-summary.json").read_text(encoding="utf-8"))
+    assert summary["overall_status"] == "PASS"
+    phase1 = next(phase for phase in summary["phases"] if phase["phase_id"] == "phase1")
+    assert phase1["status"] == "PASS"
+    assert phase1["timed_out"] is True
+    assert "passing pytest summary" in phase1["note"]

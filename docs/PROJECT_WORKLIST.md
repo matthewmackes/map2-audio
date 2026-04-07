@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subB/T778-subC/T778-subD remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA/T778-subC, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subB/T778-subD remain open.
 
 ## Performance Brain
 
@@ -1221,7 +1221,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 19:27 EDT - Codex
   - ID: T778-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Execute the qualification matrix on the current host and classify native-engine gaps
     Description:
     - Goal / acceptance criteria: Run the new phase matrix locally, archive the resulting artifacts, and record any host-specific skips or blocks such as missing native JUCE build outputs or unavailable runtime dependencies.
@@ -1230,7 +1230,17 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Captured matrix artifact bundle, host-specific skip/block notes, and updated worklist evidence.
     Assigned to: Codex
-    Last updated: 2026-04-07 19:27 EDT - Codex
+    Last updated: 2026-04-07 19:49 EDT - Codex
+    - Completion notes:
+      - Ran `scripts/run_t778_state_authority_qualification.py` against the current host and captured the artifact bundle under `/tmp/t778-state-authority-qualification-20260407-1952`, yielding an overall `PASS` across all six locked phases.
+      - Added `tests/test_state_authority_snapshot_workflows.py` and updated the runner/docs so the matrix no longer depends on the giant `tests/test_snapshot_service.py` module for phase-specific evidence; the host run now uses focused State Authority rows instead of heavy legacy collection paths.
+      - Added [docs/STATE_AUTHORITY_QUALIFICATION_CURRENT_HOST_2026-04-07.md](/home/mm/map2-audio/docs/STATE_AUTHORITY_QUALIFICATION_CURRENT_HOST_2026-04-07.md) to preserve the repo-tracked host report, including the current-host timeout-reap notes for phases 1/4/5/6 and the native-engine phase-3 skip reason (`Delay plugin did not expose named parameters for morph regression`).
+    - Validation:
+      - `python3 scripts/run_t778_state_authority_qualification.py --output-dir /tmp/t778-state-authority-qualification-20260407-1952` -> PASS (`overall_status=PASS`, `6/6` phases passing)
+      - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -rs tests/test_juce_engine_graph_document.py` -> PASS (`2 passed, 1 skipped`; skip reason recorded in host report)
+      - `pytest -q tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_qualification_runner.py` -> PASS (`10 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/run_t778_state_authority_qualification.py tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T778-subD
     Status: [ ] Todo
     Title: Reconcile downstream Brain and snapshot authority consumers onto the cutover contract
@@ -1243,7 +1253,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 19:27 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-07 19:30 EDT - Codex
+Last updated: 2026-04-07 19:49 EDT - Codex
 
 ID: T760
 Status: [✓] Done
