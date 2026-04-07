@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**996** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1518** total commits | **3** stars | **0** forks | **0** open issues
+**996** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1520** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7ba691ff`](https://github.com/matthewmackes/map2-audio/commit/7ba691ff4923aa9b625a0fcd199754610f325f69) | feat: cascade state authority template live links | Map2 Audio | 2026-04-06 |
+| [`2b3f694f`](https://github.com/matthewmackes/map2-audio/commit/2b3f694f195027e3985e2cdda1f72d18283a033d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`88d4b817`](https://github.com/matthewmackes/map2-audio/commit/88d4b817db98f42973806233354642f2a3aaecac) | test: complete desktop experience coverage | Map2 Audio | 2026-04-06 |
 | [`e44f500f`](https://github.com/matthewmackes/map2-audio/commit/e44f500fed9dbd637a34fed635118cea53fc3f2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`848da7bd`](https://github.com/matthewmackes/map2-audio/commit/848da7bdca6e6bdf029c25fea2a1ebadcb51993b) | 820px responsive redesign + backend hardening | Map2 Audio | 2026-04-06 |
 | [`ef2efa3c`](https://github.com/matthewmackes/map2-audio/commit/ef2efa3cb17d2be717198e60967ed83d736fbf71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 | [`c1f01a15`](https://github.com/matthewmackes/map2-audio/commit/c1f01a159e11696b77959cae951cc7ca4805cb45) | Handle perform fullscreen shell | Map2 Audio | 2026-04-06 |
 | [`1ed266bf`](https://github.com/matthewmackes/map2-audio/commit/1ed266bf77da00b81bce8f536666048651dcb14c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
-| [`6fb974be`](https://github.com/matthewmackes/map2-audio/commit/6fb974be0f277a0c23f7d77fe078efd7ddadaf15) | Add app window shell | Map2 Audio | 2026-04-06 |
-| [`bb941a63`](https://github.com/matthewmackes/map2-audio/commit/bb941a632e192c5d2c072f9af0f9ac22e9367da7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
