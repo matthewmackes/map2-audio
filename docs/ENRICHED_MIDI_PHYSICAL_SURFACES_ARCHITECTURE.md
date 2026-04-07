@@ -14,6 +14,11 @@ This note captures the first architecture posture for the `Enriched_MIDI_Physica
   - alternate setting `0`: bulk `0x01` OUT and `0x81` IN
   - alternate setting `1`: bulk `0x01` OUT, `0x81` IN, `0x08` OUT, and `0x84` IN
 - The Linux-facing rich path should therefore prefer the richer alternate-setting `1` pair `0x08` OUT and `0x84` IN when a userspace bulk transport is available and safe to claim.
+- Current host constraints block safe promotion of that rich path today:
+  - usbfs node `/dev/bus/usb/002/029` is owned by `root:root` with mode `0664`, so the active `uid=1000 (mm)` session does not have direct read/write access
+  - interface `0` remains bound to `snd-usb-caiaq`, so any rich claim path must explicitly detach and later reattach that kernel driver
+  - the current runtime environment does not have `hid` / `pyusb` installed, so MAP2 can only report the preferred bulk path rather than actively claim it
+- Resulting posture: keep Maschine MK1 on ALSA MIDI plus descriptor-only vendor-transport candidate reporting until the host has both userspace USB dependencies and a safe udev or privileged detach workflow.
 
 ## Shared architecture posture
 
@@ -101,6 +106,7 @@ Current behavior:
 - if `hidapi` is not viable, the daemon probes a `pyusb-bulk` candidate
 - `pyusb-bulk` is conservative by default and does not detach kernel drivers unless explicitly enabled
 - the Linux sysfs probe now parses the raw USB descriptor blob and exposes the preferred alternate setting and bulk endpoint pair even when `pyusb` is not installed
+- the Linux probe now also surfaces usbfs ownership/access posture so the operator can see when a rich claim path is blocked by `root:root` device-node permissions instead of endpoint discovery
 - bulk-endpoint selection prefers the richest alternate setting and the highest-address bulk IN/OUT pair, which matches the connected MK1’s `0x08` OUT and `0x84` IN topology on this host
 - when `pyusb-bulk` is used, the transport now records the chosen alternate setting and selected bulk endpoints in runtime status
 
@@ -114,7 +120,7 @@ Operational posture:
 - Safe default on Linux is to probe and report candidate posture without forcing kernel detach
 - The daemon now publishes selected transport and transport candidates through the Maschine status model
 - The unified physical-surface shell and Maschine page both expose this transport posture
-- The dedicated Maschine page now exposes transport policy controls plus endpoint-level candidate details so the operator can see the real MK1 USB posture before forcing a richer claim path
+- The dedicated Maschine page now exposes transport policy controls plus endpoint-level candidate details so the operator can see the real MK1 USB posture, kernel binding, and usbfs access constraints before forcing a richer claim path
 
 ## Device-family posture
 
@@ -238,6 +244,7 @@ Sources:
 
 - Extract a shared rich-surface runtime from the existing Push stack.
 - Validate actual MK1 vendor-bulk payload semantics on hardware so the preferred `0x08` OUT / `0x84` IN path can be promoted from endpoint-aware candidate logic to production LCD/LED transport.
+- Install `pyusb` or an equivalent userspace USB stack plus a safe udev or privileged detach policy on the Linux host, then rerun claim validation against `snd-usb-caiaq`.
 - Add a controller-profile branch for Launch Control and MIDI Commander.
 - Add an MCU runtime branch for Mackie MCU Pro.
 - Keep Ground Control Pro on the SysEx-specialized branch, but inside the same unified surface shell.

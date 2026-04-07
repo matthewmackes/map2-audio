@@ -162,11 +162,21 @@ def test_pyusb_probe_reports_host_preferred_pair_without_pyusb(monkeypatch):
             "vendor_id": f"{vendor_id:04x}",
             "product_id": f"{product_id:04x}",
             "interfaces": [{"name": "2-3.4.2:1.0"}],
+            "preferred_interface_driver": "snd-usb-caiaq",
             "preferred_bulk_pair": {
                 "interface_number": 0,
                 "alternate_setting": 1,
                 "write_endpoint_address_hex": "0x08",
                 "read_endpoint_address_hex": "0x84",
+            },
+            "device_node": {
+                "path": "/dev/bus/usb/002/029",
+                "exists": True,
+                "mode_octal": "0o664",
+                "owner_name": "root",
+                "group_name": "root",
+                "current_uid": 1000,
+                "current_user_can_access": False,
             },
         },
     )
@@ -174,8 +184,78 @@ def test_pyusb_probe_reports_host_preferred_pair_without_pyusb(monkeypatch):
     payload = PyUsbBulkMaschineTransport(vendor_id=0x17CC, product_id=0x0808).probe()
 
     assert payload["device_visible"] is True
+    assert payload["access_blocked"] is True
+    assert payload["device_node"]["path"] == "/dev/bus/usb/002/029"
     assert payload["preferred_endpoint_pair"]["write_endpoint_address_hex"] == "0x08"
+    assert "snd-usb-caiaq" in str(payload["note"])
+    assert "0o664" in str(payload["note"])
+    assert "descriptor-only fallback" in str(payload["note"])
     assert "0x84" in str(payload["note"])
+
+
+def test_pyusb_probe_reports_access_block_reason_when_device_node_is_unavailable(monkeypatch):
+    monkeypatch.setattr(maschine_transport_module, "usb_core", object())
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "usb_util",
+        SimpleNamespace(
+            endpoint_type=lambda value: value,
+            endpoint_direction=lambda value: value,
+            ENDPOINT_TYPE_BULK=2,
+            ENDPOINT_IN=0x80,
+            ENDPOINT_OUT=0x00,
+        ),
+    )
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "probe_sysfs_usb_device",
+        lambda vendor_id, product_id: {
+            "vendor_id": f"{vendor_id:04x}",
+            "product_id": f"{product_id:04x}",
+            "interfaces": [{"name": "2-3.4.2:1.0"}],
+            "preferred_interface_driver": "snd-usb-caiaq",
+            "preferred_bulk_pair": {
+                "interface_number": 0,
+                "alternate_setting": 1,
+                "write_endpoint_address_hex": "0x08",
+                "read_endpoint_address_hex": "0x84",
+            },
+            "device_node": {
+                "path": "/dev/bus/usb/002/029",
+                "exists": True,
+                "mode_octal": "0o664",
+                "owner_name": "root",
+                "group_name": "root",
+                "current_uid": 1000,
+                "current_user_can_access": False,
+            },
+        },
+    )
+
+    transport = PyUsbBulkMaschineTransport(vendor_id=0x17CC, product_id=0x0808, allow_kernel_detach=True)
+    monkeypatch.setattr(transport, "_find_device", lambda: object())
+    monkeypatch.setattr(
+        transport,
+        "_resolve_bulk_endpoints",
+        lambda device: {
+            "interface_number": 0,
+            "alternate_setting": 1,
+            "kernel_driver_active": False,
+            "read_endpoint_address": 0x84,
+            "read_endpoint_address_hex": "0x84",
+            "write_endpoint_address": 0x08,
+            "write_endpoint_address_hex": "0x08",
+        },
+    )
+
+    payload = transport.probe()
+    connected, connect_info = transport.connect()
+
+    assert payload["connectable"] is False
+    assert payload["access_blocked"] is True
+    assert "lacks direct read/write access" in str(payload["note"])
+    assert connected is False
+    assert connect_info["error"] == "device node access denied"
 
 
 def test_pyusb_probe_does_not_leak_endpoint_objects(monkeypatch):
@@ -190,6 +270,20 @@ def test_pyusb_probe_does_not_leak_endpoint_objects(monkeypatch):
             ENDPOINT_IN=0x80,
             ENDPOINT_OUT=0x00,
         ),
+    )
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "probe_sysfs_usb_device",
+        lambda vendor_id, product_id: {
+            "vendor_id": f"{vendor_id:04x}",
+            "product_id": f"{product_id:04x}",
+            "interfaces": [{"name": "2-3.4.2:1.0"}],
+            "device_node": {
+                "path": "/dev/bus/usb/002/029",
+                "exists": True,
+                "current_user_can_access": True,
+            },
+        },
     )
 
     transport = PyUsbBulkMaschineTransport(vendor_id=0x17CC, product_id=0x0808)

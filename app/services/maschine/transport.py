@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import contextlib
+import grp
+import os
+import pwd
+import stat
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -49,6 +53,49 @@ def _format_endpoint_address(value: int | None) -> str | None:
     if value is None:
         return None
     return f"0x{int(value) & 0xFF:02x}"
+
+
+def _probe_usb_device_node(busnum: str | None, devnum: str | None) -> dict[str, Any] | None:
+    if busnum is None or devnum is None:
+        return None
+    try:
+        device_path = Path("/dev/bus/usb") / f"{int(busnum):03d}" / f"{int(devnum):03d}"
+    except Exception:
+        return None
+    payload: dict[str, Any] = {
+        "path": str(device_path),
+        "exists": device_path.exists(),
+    }
+    if not device_path.exists():
+        return payload
+    try:
+        stats = device_path.stat()
+    except Exception:
+        return payload
+    owner_name = None
+    group_name = None
+    with contextlib.suppress(KeyError):
+        owner_name = pwd.getpwuid(stats.st_uid).pw_name
+    with contextlib.suppress(KeyError):
+        group_name = grp.getgrgid(stats.st_gid).gr_name
+    readable = os.access(device_path, os.R_OK)
+    writable = os.access(device_path, os.W_OK)
+    payload.update(
+        {
+            "mode_octal": f"0o{stat.S_IMODE(stats.st_mode):03o}",
+            "owner_uid": stats.st_uid,
+            "owner_name": owner_name,
+            "group_gid": stats.st_gid,
+            "group_name": group_name,
+            "current_uid": os.getuid(),
+            "current_gid": os.getgid(),
+            "current_groups": list(os.getgroups()),
+            "readable": readable,
+            "writable": writable,
+            "current_user_can_access": readable and writable,
+        }
+    )
+    return payload
 
 
 def _read_endpoint_details(endpoint_dir: Path) -> dict[str, Any]:
@@ -216,18 +263,38 @@ def probe_sysfs_usb_device(vendor_id: int, product_id: int) -> dict[str, Any]:
                     "preferred_bulk_pair": _select_preferred_bulk_pair(alternate_settings),
                 }
             )
+        busnum = _read_text(entry / "busnum")
+        devnum = _read_text(entry / "devnum")
+        preferred_bulk_pair = _select_preferred_bulk_pair(descriptor_interfaces)
+        preferred_interface = None
+        if isinstance(preferred_bulk_pair, dict):
+            preferred_interface = next(
+                (
+                    interface
+                    for interface in interfaces
+                    if isinstance(interface.get("preferred_bulk_pair"), dict)
+                    and int(interface["preferred_bulk_pair"].get("interface_number") or -1)
+                    == int(preferred_bulk_pair.get("interface_number") or -1)
+                    and int(interface["preferred_bulk_pair"].get("alternate_setting") or -1)
+                    == int(preferred_bulk_pair.get("alternate_setting") or -1)
+                ),
+                None,
+            )
         return {
             "vendor_id": expected_vendor,
             "product_id": expected_product,
             "manufacturer": _read_text(entry / "manufacturer"),
             "product": _read_text(entry / "product"),
             "serial_number": _read_text(entry / "serial"),
-            "busnum": _read_text(entry / "busnum"),
-            "devnum": _read_text(entry / "devnum"),
+            "busnum": busnum,
+            "devnum": devnum,
             "speed": _read_text(entry / "speed"),
             "sysfs_path": str(entry),
             "interfaces": interfaces,
-            "preferred_bulk_pair": _select_preferred_bulk_pair(descriptor_interfaces),
+            "device_node": _probe_usb_device_node(busnum, devnum),
+            "preferred_bulk_pair": preferred_bulk_pair,
+            "preferred_interface_name": preferred_interface.get("name") if isinstance(preferred_interface, dict) else None,
+            "preferred_interface_driver": preferred_interface.get("driver") if isinstance(preferred_interface, dict) else None,
         }
     return {
         "vendor_id": expected_vendor,
@@ -381,15 +448,38 @@ class PyUsbBulkMaschineTransport:
     def probe(self) -> dict[str, Any]:
         sysfs_probe = probe_sysfs_usb_device(self.vendor_id, self.product_id)
         preferred_bulk_pair = sysfs_probe.get("preferred_bulk_pair")
+        device_node = sysfs_probe.get("device_node")
+        preferred_interface_driver = sysfs_probe.get("preferred_interface_driver")
+        host_constraints: list[str] = []
+        if isinstance(preferred_interface_driver, str) and preferred_interface_driver:
+            host_constraints.append(f"Preferred vendor interface is bound to {preferred_interface_driver}.")
+        usb_access_blocked = bool(
+            isinstance(device_node, dict)
+            and device_node.get("exists")
+            and not device_node.get("current_user_can_access")
+        )
+        if isinstance(device_node, dict):
+            owner_name = str(device_node.get("owner_name") or device_node.get("owner_uid") or "unknown")
+            group_name = str(device_node.get("group_name") or device_node.get("group_gid") or "unknown")
+            if usb_access_blocked:
+                host_constraints.append(
+                    "USB device node "
+                    f"{device_node.get('path')} is {owner_name}:{group_name} "
+                    f"{device_node.get('mode_octal') or 'unknown'}; current uid "
+                    f"{device_node.get('current_uid')} lacks direct read/write access."
+                )
         payload = {
             "transport_id": self.transport_id,
             "module_available": usb_core is not None and usb_util is not None,
             "device_visible": bool(sysfs_probe.get("interfaces")),
             "connectable": False,
             "allow_kernel_detach": self.allow_kernel_detach,
+            "access_blocked": usb_access_blocked,
             "sysfs_probe": sysfs_probe,
             "note": "pyusb bulk transport can target vendor endpoints when hidraw is unavailable.",
         }
+        if isinstance(device_node, dict):
+            payload["device_node"] = dict(device_node)
         if isinstance(preferred_bulk_pair, dict):
             payload["preferred_endpoint_pair"] = dict(preferred_bulk_pair)
             payload.update(
@@ -400,12 +490,16 @@ class PyUsbBulkMaschineTransport:
                     "read_endpoint_address_hex": preferred_bulk_pair.get("read_endpoint_address_hex"),
                 }
             )
+        if host_constraints:
+            payload["host_constraints"] = list(host_constraints)
         if usb_core is None or usb_util is None:
             if isinstance(preferred_bulk_pair, dict):
                 payload["note"] = (
                     f"Host exposes preferred bulk alt {int(preferred_bulk_pair.get('alternate_setting') or 0)} "
                     f"OUT {preferred_bulk_pair.get('write_endpoint_address_hex') or 'n/a'} "
-                    f"IN {preferred_bulk_pair.get('read_endpoint_address_hex') or 'n/a'}, but pyusb is not installed."
+                    f"IN {preferred_bulk_pair.get('read_endpoint_address_hex') or 'n/a'}, but pyusb is not installed. "
+                    f"{' '.join(host_constraints)} "
+                    "Keep the runtime on ALSA MIDI / descriptor-only fallback until pyusb plus a safe udev or privileged detach flow is available."
                 )
             payload["error"] = "pyusb unavailable"
             return payload
@@ -419,19 +513,27 @@ class PyUsbBulkMaschineTransport:
             return payload
         payload.update(self._sanitize_runtime_info(endpoint_info))
         kernel_active = bool(endpoint_info.get("kernel_driver_active"))
-        payload["connectable"] = not kernel_active or self.allow_kernel_detach
+        payload["connectable"] = (not kernel_active or self.allow_kernel_detach) and not usb_access_blocked
         payload["note"] = (
             f"Preferred bulk alt {int(endpoint_info.get('alternate_setting') or 0)} "
             f"OUT {endpoint_info.get('write_endpoint_address_hex') or 'n/a'} "
             f"IN {endpoint_info.get('read_endpoint_address_hex') or 'n/a'}."
         )
         if kernel_active and not self.allow_kernel_detach:
-            payload["note"] = "Vendor bulk interface is kernel-bound; enable kernel detach explicitly to claim it."
+            payload["note"] = (
+                f"Vendor bulk interface is kernel-bound by {preferred_interface_driver or 'the active kernel driver'}; "
+                "enable kernel detach explicitly to claim it."
+            )
+        if usb_access_blocked:
+            payload["note"] = f"{payload['note']} {' '.join(host_constraints)}"
         return payload
 
     def connect(self) -> tuple[bool, dict[str, Any]]:
         info = self.probe()
         if usb_core is None or usb_util is None:
+            return False, info
+        if bool(info.get("access_blocked")):
+            info["error"] = "device node access denied"
             return False, info
         device = self._find_device()
         if device is None:

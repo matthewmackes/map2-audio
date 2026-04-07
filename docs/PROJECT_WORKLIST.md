@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE and T778 remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778 remains open.
 
 ## Performance Brain
 
@@ -18207,7 +18207,7 @@ Last updated: 2026-04-06
 ## Enriched MIDI Physical Surfaces
 
 ID: T797
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Build the `Enriched_MIDI_Physical_Surfaces` unified stack for advanced physical controller support
 Description:
 - Goal / acceptance criteria: Create one canonical MAP2 stack named `Enriched_MIDI_Physical_Surfaces` that unifies physical-controller discovery, capability reporting, specialized transport layers, and a routed GUI for Native Instruments Maschine MK1, Ableton Push devices, Voodoo Lab Ground Control Pro, MeloAudio MIDI Commander, Novation Launch Control units, and Mackie MCU Pro. The first delivered slice must add the canonical worklist epic, land a shared backend registry/summary route, add a unified routed GUI with overview plus per-device subpages, and explicitly model which devices use raw MIDI only versus richer transport layers such as HID, SysEx, LEDs, LCDs, scribble strips, motorized faders, or vendor protocols.
@@ -18275,7 +18275,7 @@ Subtasks:
     Last updated: 2026-04-07 12:31 EDT - Codex
     Completion notes: Captured the evidence-backed firmware and architecture note in `docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md`, including official updater posture for Maschine MK1, Ableton Push, Ground Control Pro, Novation Launch Control, and Mackie MCU Pro plus the community DFU/custom-firmware path for MeloAudio MIDI Commander. The requested surface families now have a documented safe operational posture that clearly separates official updaters from community tooling and host constraints; any deeper runtime or hardware-in-the-loop follow-up stays tracked by T797-subC and T797-subE.
   - ID: T797-subE
-    Status: [ ] Todo
+    Status: [✗] Blocked
     Title: Hardware-validate Maschine MK1 vendor bulk payload semantics and safe claim flow on Linux
     Description:
     - Goal / acceptance criteria: Confirm on a connected Linux host which MK1 vendor bulk endpoints and alternate setting carry LCD/LED traffic, verify safe claim/detach behavior against `snd-usb-caiaq`, and either promote the preferred `0x08` OUT / `0x84` IN path to production runtime handling or capture an evidence-backed block with exact host constraints and fallback behavior.
@@ -18285,9 +18285,22 @@ Subtasks:
     - Required outputs: Hardware traces or reproducible probe evidence, confirmed endpoint/alternate-setting mapping, validated detach/claim policy, runtime code or blocked-note outcome, and follow-up tests/docs.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-07 17:15 EDT - Codex
+    Last updated: 2026-04-07 19:20 EDT - Codex
+    - Blocked notes:
+      - Revalidated on the live Linux host that Maschine MK1 `17cc:0808` exposes the richer alternate-setting `1` vendor bulk pair `0x08` OUT / `0x84` IN, but interface `0` remains bound to `snd-usb-caiaq`, so any rich userspace claim path still has to detach and later reattach that kernel driver explicitly.
+      - The current session is `uid=1000 (mm)` and the usbfs node `/dev/bus/usb/002/029` is owned by `root:root` with mode `0664`, leaving the device readable but not writable for this user; the active runtime also lacks both `hid` and `pyusb`, so MAP2 cannot honestly promote a tested LCD/LED bulk-claim path on this host today.
+      - Updated `app/services/maschine/transport.py` plus `tests/test_maschine_transport.py` so the runtime now publishes those kernel-binding and usbfs-access blockers directly in the transport probe, and documented the exact fallback posture in `docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md`: stay on ALSA MIDI plus descriptor-only vendor-transport candidate reporting until pyusb/hid dependencies and a safe udev or privileged detach workflow exist.
+    - Validation:
+      - `python3 - <<'PY' ... probe_sysfs_usb_device(0x17CC, 0x0808) ... PY` -> PASS (preferred bulk alt `1`, `0x08` OUT / `0x84` IN, driver `snd-usb-caiaq`, device node `/dev/bus/usb/002/029` mode `0o664`, current user access `False`)
+      - `lsusb -d 17cc:0808 -v | sed -n '1,120p'` -> PASS (descriptor confirms alternate-setting `1` bulk endpoints `0x08` OUT / `0x84` IN)
+      - `CI=1 pytest -q tests/test_maschine_transport.py tests/test_maschine_routes.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_midi_physical_surfaces_routes.py` -> PASS (`12 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/transport.py tests/test_maschine_transport.py tests/test_maschine_routes.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 18:42 EDT - Codex
+Last updated: 2026-04-07 19:20 EDT - Codex
+- Blocked notes:
+  - The unified enriched-surface stack is functionally complete for discovery, capability modeling, transport policy, and shared UI, but the remaining production proof for Maschine MK1 rich LCD/LED traffic is blocked by current-host USB claim constraints rather than missing endpoint evidence.
+  - Exact blocker on this host: `snd-usb-caiaq` owns interface `0`, `/dev/bus/usb/002/029` is `root:root 0664` for `uid=1000`, and `hid` / `pyusb` are absent, so MAP2 must stay on ALSA MIDI plus descriptor-only rich-transport reporting until the host exposes a safe detach/claim path.
 
 ## Workspace Catalog Cleanup
 
