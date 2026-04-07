@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**998** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1532** total commits | **3** stars | **0** forks | **0** open issues
+**1010** Python | **1124** TypeScript | **136** C++/H | **133** Docs | **1534** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Enriched MIDI Physical Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md) | 2026-04-07 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-07 |
+| [Workspace Catalog Storefront Reference](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md) | 2026-04-07 |
 | [BACKEND AUDIT](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT.md) | 2026-04-06 |
 | [Observability Role Policy](https://github.com/matthewmackes/map2-audio/blob/master/docs/OBSERVABILITY_ROLE_POLICY.md) | 2026-04-04 |
 | [Web Server Port Configuration](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_PORTS.md) | 2026-04-04 |
-| [Workspace Catalog Storefront Reference](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md) | 2026-04-04 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-02 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`830b67ae`](https://github.com/matthewmackes/map2-audio/commit/830b67aece10f1f7a8ee154351dfbc193ba25a4c) | Land backend hardening, physical surfaces, and OS/2 shell... | Map2 Audio | 2026-04-07 |
+| [`522494ad`](https://github.com/matthewmackes/map2-audio/commit/522494adfc85c2213047bbeb340bd85c16f43dc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`3c85de71`](https://github.com/matthewmackes/map2-audio/commit/3c85de71f80658f764cb1e53f15c03d5cb805853) | Worklist sync + desktop state unit tests | Map2 Audio | 2026-04-07 |
 | [`a0f5d8ff`](https://github.com/matthewmackes/map2-audio/commit/a0f5d8ff0aee14db52db83e3d2daebb4ce262d06) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`e43d20f7`](https://github.com/matthewmackes/map2-audio/commit/e43d20f7bbb986fab367422afd374e6720463822) | Harden PipeWire runtime reporting | Map2 Audio | 2026-04-07 |
 | [`178d1bae`](https://github.com/matthewmackes/map2-audio/commit/178d1baed0017b521460c42b9195587352723d29) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`02e5a21c`](https://github.com/matthewmackes/map2-audio/commit/02e5a21ccbbe4904c0b5d51b594022da51f751e1) | Separate Push discovery from persisted config | Map2 Audio | 2026-04-07 |
 | [`3e6e59c8`](https://github.com/matthewmackes/map2-audio/commit/3e6e59c876c0f77b8d1e93c066a25ec88f4f5769) | Merge GitLab sync history | Map2 Audio | 2026-04-07 |
-| [`e91fe22c`](https://github.com/matthewmackes/map2-audio/commit/e91fe22cfafa99756fbfe55d9a74858922337e2e) | Refactor shared SysEx device bridges | Map2 Audio | 2026-04-07 |
-| [`d86458b8`](https://github.com/matthewmackes/map2-audio/commit/d86458b808f49f263c9e0afc36a448730ef3aa2d) | Refactor shared SysEx device bridges | Map2 Audio | 2026-04-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
