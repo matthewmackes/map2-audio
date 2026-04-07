@@ -1111,7 +1111,7 @@ Last updated: 2026-04-06 08:27 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T777
-Status: [>] In Progress
+Status: [✓] Done
 Title: Deliver live-linked template composition, portability, and community-aware graph workflows
 Description:
 - Goal / acceptance criteria: Implement flat templates with base-plus-overlay resolution, override-always-wins merging, live-link cascade updates, template CRUD/services, template update event publishing, and the portability/community paths needed to import, export, bundle, share, and browse graph documents and templates without reintroducing side data models.
@@ -1150,7 +1150,7 @@ Subtasks:
       - `pytest -q tests/test_snapshot_service.py -k 'template' tests/test_snapshot_routes.py -k 'template'` -> PASS (`3 passed`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
   - ID: T777-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Extend portability and community workflows to graph templates and bundles
     Description:
     - Goal / acceptance criteria: Add template-aware bundle import/export/share/browse flows so templates and graph documents travel through the same portability path as snapshots.
@@ -1159,17 +1159,26 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Template bundle/community endpoints, manifest support, and focused validation.
     Assigned to: Codex
-    Last updated: 2026-04-06 08:39 EDT - Codex
+    Last updated: 2026-04-06 22:11 EDT - Codex
     - Completion notes:
-      - Added first-class template create/list/get/update/import/export flows by reusing the existing snapshot persistence stack while writing `meta.type = template` into the canonical State Authority document and filtering template rows out of ordinary snapshot listings.
-      - Added focused service and route coverage proving template records remain template-typed through CRUD and portability flows without leaking back into the default snapshot list surface.
+      - Extended `app/services/snapshot_service.py` with template bundle export plus zip-aware import, and added template community share/browse/rate/download flows so graph templates now travel through the same portability/community path as snapshot documents instead of a template-only side model.
+      - Updated `app/routes/unified_snapshots.py` so `/api/templates/{id}/export` now serves a `.map2template` bundle, `/api/templates/import` accepts JSON or bundle uploads, and new template community endpoints expose share, browse, rate, and download behavior with route ordering that preserves the static `/api/templates/community` surface.
+      - Added focused regression coverage in `tests/test_snapshot_service.py` and `tests/test_snapshot_routes.py` proving bundled template assets round-trip through import/export and that community template browsing, rating, and download flows work end to end.
     - Validation:
-      - `pytest -q tests/test_snapshot_service.py -k template_crud_and_portability` -> PASS
-      - `pytest -q tests/test_snapshot_routes.py -k template_routes_delegate_to_snapshot_service` -> PASS
-      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/state_authority_document_service.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
+      - `pytest -q tests/test_snapshot_service.py -k 'template_bundle_and_community_workflows or template_crud_and_portability or template_live_link_cascade_preserves_local_overrides'` -> PASS
+      - `pytest -q tests/test_snapshot_routes.py -k 'template_routes_delegate_to_snapshot_service or template_export_import_bundle_and_community_routes'` -> PASS
+      - `pytest -q tests/test_snapshot_service.py -k 'template' tests/test_snapshot_routes.py -k 'template'` -> PASS (`5 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
       - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-06 08:39 EDT - Codex
+Last updated: 2026-04-06 22:11 EDT - Codex
+- Completion notes:
+  - `T777` now covers the full locked template workflow: canonical template CRUD, live-link base-plus-overlay resolution with cascade updates, and portability/community paths for bundled import/export/share/browse/download of graph templates on the same State Authority document model.
+  - Templates no longer stop at authoring-time reuse; they can now be packaged with assets, imported back through the same bundle path, and exposed through the community browsing workflow without splitting persistence into a second template-specific store.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py -k 'template' tests/test_snapshot_routes.py -k 'template'` -> PASS (`5 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T778
 Status: [ ] Todo

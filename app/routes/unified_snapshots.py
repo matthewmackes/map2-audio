@@ -444,6 +444,70 @@ async def create_template(request: SnapshotCreateRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.get("/api/templates/community")
+async def browse_community_templates(
+    query: Optional[str] = Query(default=None),
+    tags: Optional[str] = Query(default=None),
+    author: Optional[str] = Query(default=None),
+) -> dict[str, Any]:
+    try:
+        query_value = query if isinstance(query, str) else None
+        tags_value = tags if isinstance(tags, str) else None
+        author_value = author if isinstance(author, str) else None
+        tag_list = [item.strip() for item in (tags_value or "").split(",") if item.strip()]
+        async with get_session() as session:
+            service = SnapshotService(session)
+            templates = await service.browse_community_templates(query=query_value, tags=tag_list, author=author_value)
+            return {
+                "templates": templates,
+                "count": len(templates),
+            }
+    except Exception as exc:
+        logger.error("Error browsing community templates: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/templates/community/{community_uuid}/rate")
+async def rate_community_template(community_uuid: str, request: CommunityRateRequest) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.rate_community_template(community_uuid, request.rating)
+            if template is None:
+                _raise_not_found("Community template")
+            return {
+                "status": "success",
+                "template": template,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error rating community template %s: %s", community_uuid, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/templates/community/{community_uuid}/download")
+async def download_community_template(community_uuid: str) -> Response:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            payload = await service.record_community_template_download(community_uuid)
+            if payload is None:
+                _raise_not_found("Community template")
+            return Response(
+                content=payload["content"],
+                media_type="application/vnd.map2.template+zip",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{payload["filename"]}"',
+                },
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error downloading community template %s: %s", community_uuid, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/api/templates/{template_id}")
 async def get_template(template_id: int) -> dict[str, Any]:
     try:
@@ -1321,15 +1385,14 @@ async def export_template(template_id: int) -> Response:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            payload = await service.export_template(template_id)
+            payload = await service.export_template_bundle(template_id)
             if payload is None:
                 _raise_not_found("Template")
-            filename = f'{payload["template"]["name"]}.map2template'
             return Response(
-                content=json.dumps(payload).encode("utf-8"),
-                media_type="application/vnd.map2.template+json",
+                content=payload["content"],
+                media_type="application/vnd.map2.template+zip",
                 headers={
-                    "Content-Disposition": f'attachment; filename="{filename}"',
+                    "Content-Disposition": f'attachment; filename="{payload["filename"]}"',
                 },
             )
     except HTTPException:
@@ -1344,7 +1407,17 @@ async def import_template(request: Request) -> dict[str, Any]:
     try:
         async with get_session() as session:
             service = SnapshotService(session)
-            template = await service.import_template(await request.json())
+            content_type = str(request.headers.get("content-type") or "").lower()
+            if "multipart/form-data" in content_type:
+                form = await request.form()
+                upload = form.get("file")
+                if upload is None or not hasattr(upload, "read"):
+                    raise HTTPException(status_code=400, detail="Template import requires a file upload")
+                template = await service.import_template(await upload.read())
+            elif content_type in {"application/zip", "application/octet-stream", "application/vnd.map2.template+zip"}:
+                template = await service.import_template(await request.body())
+            else:
+                template = await service.import_template(await request.json())
             return {
                 "status": "success",
                 "template_id": template["id"],
@@ -1354,6 +1427,25 @@ async def import_template(request: Request) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error importing template: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/templates/{template_id}/share")
+async def share_template(template_id: int, request: CommunityShareRequest) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = SnapshotService(session)
+            template = await service.share_template(template_id, author_name=request.author_name)
+            if template is None:
+                _raise_not_found("Template")
+            return {
+                "status": "success",
+                "template": template,
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error sharing template %s: %s", template_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

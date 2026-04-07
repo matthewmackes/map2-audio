@@ -625,6 +625,120 @@ def test_snapshot_service_template_live_link_cascade_preserves_local_overrides(t
     assert linked_after_update["snapshot_revision"] != linked["snapshot_revision"]
 
 
+def test_snapshot_service_template_bundle_and_community_workflows(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    export_dir = tmp_path / "template-bundle-source"
+    export_dir.mkdir(parents=True, exist_ok=True)
+    nam_source = export_dir / "TemplateTone.nam"
+    nam_source.write_bytes(b"template-nam")
+
+    library_root = tmp_path / "template-bundle-library"
+    storage_paths = {
+        upload_service_module.AssetType.NAM: library_root / "nam",
+        upload_service_module.AssetType.CABINET_IR: library_root / "ir" / "cabinets",
+        upload_service_module.AssetType.REVERB_IR: library_root / "ir" / "reverbs",
+        upload_service_module.AssetType.VST3: library_root / "vst3",
+    }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(
+        upload_service_module.UnifiedUploadService,
+        "get_storage_path",
+        lambda self, asset_type: storage_paths[asset_type],
+    )
+    monkeypatch.setattr(upload_service_module, "_upload_service", None)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            template = await service.create_template(
+                name="CommunityTemplate",
+                description="Reusable template",
+                tags=["template", "shared"],
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "name": "NAM",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {
+                                        "selected_model": "TemplateTone",
+                                        "selected_asset_name": "TemplateTone",
+                                        "selected_asset_path": str(nam_source),
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            shared = await service.share_template(template["id"], author_name="Codex")
+            assert shared is not None
+            assert shared["community_shared"] is True
+
+            community = await service.browse_community_templates(query="community", author="codex")
+            assert [item["id"] for item in community] == [template["id"]]
+
+            rated = await service.rate_community_template(shared["community_uuid"], 5)
+            assert rated is not None
+            assert rated["community_rating_count"] == 1
+
+            bundle = await service.export_template_bundle(template["id"])
+            assert bundle is not None
+            assert bundle["filename"] == "CommunityTemplate.map2template"
+
+            with zipfile.ZipFile(io.BytesIO(bundle["content"]), "r") as archive:
+                payload = json.loads(archive.read("snapshot.json").decode("utf-8"))
+                assert payload["template"]["name"] == "CommunityTemplate"
+                bundled_assets = [asset for asset in payload["asset_manifest"] if asset.get("bundle_path")]
+                assert len(bundled_assets) == 1
+
+            downloaded = await service.record_community_template_download(shared["community_uuid"])
+            assert downloaded is not None
+            assert downloaded["filename"] == "CommunityTemplate.map2template"
+            assert downloaded["community_uuid"] == shared["community_uuid"]
+
+            imported = await service.import_template(downloaded["content"])
+            assert imported["name"] == "CommunityTemplate"
+            imported_plugin = next(
+                plugin
+                for plugin in imported["chains"][0]["plugins"]
+                if plugin["uri"] == "map2://juce/nam"
+            )
+            assert imported_plugin["loader_state"]["selected_asset_path"].startswith(
+                str(storage_paths[upload_service_module.AssetType.NAM])
+            )
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

@@ -2676,35 +2676,27 @@ class SnapshotService:
             "asset_manifest": self._build_asset_manifest(detail),
         }
 
+    async def export_template_bundle(self, template_id: int) -> Optional[dict[str, Any]]:
+        payload = await self.export_template(template_id)
+        if payload is None:
+            return None
+        template_name = str(payload.get("template", {}).get("name") or f"template-{template_id}").strip() or f"template-{template_id}"
+        return self._build_document_bundle(
+            payload,
+            name=template_name,
+            extension=".map2template",
+        )
+
     async def export_snapshot_bundle(self, snapshot_id: int) -> Optional[dict[str, Any]]:
         payload = await self.export_snapshot(snapshot_id)
         if payload is None:
             return None
-
-        bundle_payload = copy.deepcopy(payload)
-        asset_manifest = self._build_bundle_asset_manifest(bundle_payload.get("asset_manifest", []))
-        bundle_payload["asset_manifest"] = asset_manifest
-
-        archive_buffer = io.BytesIO()
-        with zipfile.ZipFile(archive_buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            archive.writestr(
-                SNAPSHOT_BUNDLE_MANIFEST_FILENAME,
-                json.dumps(bundle_payload, indent=2).encode("utf-8"),
-            )
-            for asset in asset_manifest:
-                bundle_path = str(asset.get("bundle_path") or "").strip()
-                asset_path = str(asset.get("asset_path") or "").strip()
-                if not bundle_path or not asset_path or not os.path.isfile(asset_path):
-                    continue
-                archive.write(asset_path, bundle_path)
-
-        snapshot_name = str(bundle_payload.get("snapshot", {}).get("name") or f"snapshot-{snapshot_id}").strip() or f"snapshot-{snapshot_id}"
-        return {
-            "filename": f"{snapshot_name}.map2snapshot",
-            "content": archive_buffer.getvalue(),
-            "snapshot": bundle_payload.get("snapshot"),
-            "asset_manifest": asset_manifest,
-        }
+        snapshot_name = str(payload.get("snapshot", {}).get("name") or f"snapshot-{snapshot_id}").strip() or f"snapshot-{snapshot_id}"
+        return self._build_document_bundle(
+            payload,
+            name=snapshot_name,
+            extension=".map2snapshot",
+        )
 
     async def import_snapshot(self, payload: dict[str, Any] | bytes | bytearray) -> dict[str, Any]:
         if isinstance(payload, (bytes, bytearray)):
@@ -3170,6 +3162,8 @@ class SnapshotService:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
             return None
+        if self._snapshot_document_type(snapshot) == "template":
+            return None
         snapshot.community_shared = True
         snapshot.community_author = author_name.strip() or "Anonymous"
         if not snapshot.community_uuid:
@@ -3177,6 +3171,18 @@ class SnapshotService:
         snapshot.updated_at = _utcnow()
         await self.session.flush()
         return await self._reload_snapshot_summary(snapshot.id)
+
+    async def share_template(self, template_id: int, *, author_name: str = "Anonymous") -> Optional[dict[str, Any]]:
+        template = await self._get_snapshot_model(template_id)
+        if template is None or self._snapshot_document_type(template) != "template":
+            return None
+        template.community_shared = True
+        template.community_author = author_name.strip() or "Anonymous"
+        if not template.community_uuid:
+            template.community_uuid = uuid4().hex
+        template.updated_at = _utcnow()
+        await self.session.flush()
+        return await self._reload_snapshot_summary(template.id)
 
     async def browse_community_snapshots(
         self,
@@ -3211,10 +3217,43 @@ class SnapshotService:
             results.append(summary)
         return results
 
+    async def browse_community_templates(
+        self,
+        *,
+        query: Optional[str] = None,
+        tags: Optional[Iterable[str]] = None,
+        author: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
+        templates = await self.list_templates(include_shared_only=True)
+        query = (query or "").strip().lower()
+        tag_set = {tag.strip().lower() for tag in (tags or []) if tag and tag.strip()}
+        author = (author or "").strip().lower()
+
+        results: list[dict[str, Any]] = []
+        for template in templates:
+            haystack = " ".join(
+                [
+                    str(template.get("name", "")),
+                    str(template.get("description", "")),
+                    " ".join(template.get("tags", [])),
+                    str(template.get("community_author", "")),
+                ]
+            ).lower()
+            if query and query not in haystack:
+                continue
+            if author and author not in str(template.get("community_author", "")).lower():
+                continue
+            if tag_set:
+                template_tags = {tag.lower() for tag in template.get("tags", [])}
+                if not tag_set.issubset(template_tags):
+                    continue
+            results.append(template)
+        return results
+
     async def rate_community_snapshot(self, community_uuid: str, rating: int) -> Optional[dict[str, Any]]:
         result = await self.session.execute(select(Snapshot).where(Snapshot.community_uuid == community_uuid))
         snapshot = result.scalar_one_or_none()
-        if snapshot is None:
+        if snapshot is None or self._snapshot_document_type(snapshot) == "template":
             return None
         rating = max(1, min(5, int(rating)))
         snapshot.community_rating_sum = float(snapshot.community_rating_sum or 0.0) + rating
@@ -3223,10 +3262,22 @@ class SnapshotService:
         await self.session.flush()
         return await self._reload_snapshot_summary(snapshot.id)
 
+    async def rate_community_template(self, community_uuid: str, rating: int) -> Optional[dict[str, Any]]:
+        result = await self.session.execute(select(Snapshot).where(Snapshot.community_uuid == community_uuid))
+        template = result.scalar_one_or_none()
+        if template is None or self._snapshot_document_type(template) != "template":
+            return None
+        rating = max(1, min(5, int(rating)))
+        template.community_rating_sum = float(template.community_rating_sum or 0.0) + rating
+        template.community_rating_count = int(template.community_rating_count or 0) + 1
+        template.updated_at = _utcnow()
+        await self.session.flush()
+        return await self._reload_snapshot_summary(template.id)
+
     async def record_community_download(self, community_uuid: str) -> Optional[dict[str, Any]]:
         result = await self.session.execute(select(Snapshot).where(Snapshot.community_uuid == community_uuid))
         snapshot = result.scalar_one_or_none()
-        if snapshot is None:
+        if snapshot is None or self._snapshot_document_type(snapshot) == "template":
             return None
         snapshot_id = snapshot.id
         snapshot.community_download_count = int(snapshot.community_download_count or 0) + 1
@@ -3234,6 +3285,22 @@ class SnapshotService:
         await self.session.flush()
         self.session.expire_all()
         export_payload = await self.export_snapshot(snapshot_id)
+        if export_payload is None:
+            return None
+        export_payload["community_uuid"] = community_uuid
+        return export_payload
+
+    async def record_community_template_download(self, community_uuid: str) -> Optional[dict[str, Any]]:
+        result = await self.session.execute(select(Snapshot).where(Snapshot.community_uuid == community_uuid))
+        template = result.scalar_one_or_none()
+        if template is None or self._snapshot_document_type(template) != "template":
+            return None
+        template_id = template.id
+        template.community_download_count = int(template.community_download_count or 0) + 1
+        template.updated_at = _utcnow()
+        await self.session.flush()
+        self.session.expire_all()
+        export_payload = await self.export_template_bundle(template_id)
         if export_payload is None:
             return None
         export_payload["community_uuid"] = community_uuid
@@ -4689,6 +4756,44 @@ class SnapshotService:
 
         return bundle_manifest
 
+    def _build_document_bundle(
+        self,
+        payload: dict[str, Any],
+        *,
+        name: str,
+        extension: str,
+    ) -> dict[str, Any]:
+        bundle_payload = copy.deepcopy(payload)
+        asset_manifest = self._build_bundle_asset_manifest(bundle_payload.get("asset_manifest", []))
+        bundle_payload["asset_manifest"] = asset_manifest
+
+        archive_buffer = io.BytesIO()
+        with zipfile.ZipFile(archive_buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                SNAPSHOT_BUNDLE_MANIFEST_FILENAME,
+                json.dumps(bundle_payload, indent=2).encode("utf-8"),
+            )
+            for asset in asset_manifest:
+                bundle_path = str(asset.get("bundle_path") or "").strip()
+                asset_path = str(asset.get("asset_path") or "").strip()
+                if not bundle_path or not asset_path or not os.path.isfile(asset_path):
+                    continue
+                archive.write(asset_path, bundle_path)
+
+        response_payload = {
+            "filename": f"{name}{extension}",
+            "content": archive_buffer.getvalue(),
+            "asset_manifest": asset_manifest,
+        }
+        response_payload.update(
+            {
+                key: bundle_payload.get(key)
+                for key in ("snapshot", "template")
+                if key in bundle_payload
+            }
+        )
+        return response_payload
+
     def _build_bundle_asset_path(
         self,
         asset: dict[str, Any],
@@ -4762,6 +4867,8 @@ class SnapshotService:
 
             if "snapshot" in export_payload and isinstance(export_payload["snapshot"], dict):
                 detail_payload = copy.deepcopy(export_payload["snapshot"])
+            elif "template" in export_payload and isinstance(export_payload["template"], dict):
+                detail_payload = copy.deepcopy(export_payload["template"])
             elif isinstance(export_payload, dict):
                 detail_payload = copy.deepcopy(export_payload)
             else:

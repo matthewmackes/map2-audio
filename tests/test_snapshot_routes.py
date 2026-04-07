@@ -667,6 +667,138 @@ def test_template_routes_delegate_to_snapshot_service(tmp_path, monkeypatch):
     assert updated["template"]["name"] == "Updated Template"
 
 
+def test_template_export_import_bundle_and_community_routes(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    source_assets = tmp_path / "template-route-bundle-source"
+    source_assets.mkdir(parents=True, exist_ok=True)
+    nam_source = source_assets / "RouteTemplateTone.nam"
+    nam_source.write_bytes(b"route-template-nam")
+
+    storage_root = tmp_path / "template-route-bundle-library"
+    storage_paths = {
+        upload_service_module.AssetType.NAM: storage_root / "nam",
+        upload_service_module.AssetType.CABINET_IR: storage_root / "ir" / "cabinets",
+        upload_service_module.AssetType.REVERB_IR: storage_root / "ir" / "reverbs",
+        upload_service_module.AssetType.VST3: storage_root / "vst3",
+    }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(
+        upload_service_module.UnifiedUploadService,
+        "get_storage_path",
+        lambda self, asset_type: storage_paths[asset_type],
+    )
+    monkeypatch.setattr(upload_service_module, "_upload_service", None)
+
+    async def _create_template():
+        created = await routes.create_template(
+            routes.SnapshotCreateRequest(
+                name="RouteTemplateBundle",
+                snapshot_data={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "map2://juce/nam",
+                                    "name": "NAM",
+                                    "position": 0,
+                                    "loader_state": {
+                                        "selected_model": "RouteTemplateTone",
+                                        "selected_asset_name": "RouteTemplateTone",
+                                        "selected_asset_path": str(nam_source),
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+        )
+        return created["template_id"]
+
+    template_id = asyncio.run(_create_template())
+
+    app = FastAPI()
+    app.include_router(routes.router)
+    client = TestClient(app)
+
+    share_response = client.post(
+        f"/api/templates/{template_id}/share",
+        json={"author_name": "Codex"},
+    )
+    assert share_response.status_code == 200
+    community_uuid = share_response.json()["template"]["community_uuid"]
+
+    community_response = client.get("/api/templates/community", params={"query": "route", "author": "codex"})
+    assert community_response.status_code == 200
+    assert community_response.json()["count"] == 1
+
+    rate_response = client.post(
+        f"/api/templates/community/{community_uuid}/rate",
+        json={"rating": 4},
+    )
+    assert rate_response.status_code == 200
+    assert rate_response.json()["template"]["community_rating_count"] == 1
+
+    export_response = client.get(f"/api/templates/{template_id}/export")
+    assert export_response.status_code == 200
+    assert export_response.headers["content-type"] == "application/vnd.map2.template+zip"
+    assert 'filename="RouteTemplateBundle.map2template"' in export_response.headers["content-disposition"]
+
+    with zipfile.ZipFile(io.BytesIO(export_response.content), "r") as archive:
+        assert "snapshot.json" in archive.namelist()
+        payload = json.loads(archive.read("snapshot.json").decode("utf-8"))
+        assert payload["template"]["name"] == "RouteTemplateBundle"
+
+    download_response = client.post(f"/api/templates/community/{community_uuid}/download")
+    assert download_response.status_code == 200
+    assert download_response.headers["content-type"] == "application/vnd.map2.template+zip"
+    assert 'filename="RouteTemplateBundle.map2template"' in download_response.headers["content-disposition"]
+
+    import_response = client.post(
+        "/api/templates/import",
+        files={
+            "file": (
+                "RouteTemplateBundle.map2template",
+                export_response.content,
+                "application/vnd.map2.template+zip",
+            )
+        },
+    )
+    assert import_response.status_code == 200
+    imported_template = import_response.json()["template"]
+    imported_plugin = next(
+        plugin
+        for plugin in imported_template["chains"][0]["plugins"]
+        if plugin["uri"] == "map2://juce/nam"
+    )
+    assert imported_plugin["loader_state"]["selected_asset_path"].startswith(
+        str(storage_paths[upload_service_module.AssetType.NAM])
+    )
+
+
 def test_revision_routes_call_state_authority_revision_service_directly(monkeypatch):
     revision_calls: list[tuple[str, int, int | None]] = []
 
