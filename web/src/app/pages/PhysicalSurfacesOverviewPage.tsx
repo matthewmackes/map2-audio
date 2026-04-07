@@ -21,6 +21,7 @@ function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
       planned: 0,
       usbDevices: 0,
       soundCards: 0,
+      midiHubDevices: 0,
     }
   }
   const online = summary.units.filter((unit) => unit.status === 'online').length
@@ -32,6 +33,7 @@ function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
     planned,
     usbDevices: summary.host_observations.usb_devices.length,
     soundCards: summary.host_observations.sound_cards.length,
+    midiHubDevices: summary.host_observations.midi_hub_devices.length,
   }
 }
 
@@ -57,6 +59,9 @@ function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
             {capability}
           </Tag>
         ))}
+        {unit.matched_midi_devices.length ? (
+          <Tag type="green">{unit.matched_midi_devices.length} MIDI Hub match{unit.matched_midi_devices.length === 1 ? '' : 'es'}</Tag>
+        ) : null}
         <Tag type="blue">{unit.view_state.page_layout_mode}</Tag>
         <Tag type="green">{unit.surface_lab.access}</Tag>
       </div>
@@ -126,6 +131,11 @@ export function PhysicalSurfacesOverviewPage() {
           <p className="physical-surfaces-page__eyebrow">Sound Cards</p>
           <h2>{metrics.soundCards}</h2>
           <p className="physical-surfaces-page__body-copy">ALSA sound-card or MIDI-capable kernel paths seen through sysfs and procfs.</p>
+        </Tile>
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">MIDI Hub Devices</p>
+          <h2>{metrics.midiHubDevices}</h2>
+          <p className="physical-surfaces-page__body-copy">Profile-matched local devices currently visible through the shared MIDI Hub inventory.</p>
         </Tile>
       </div>
 

@@ -19,11 +19,21 @@ from app.services.enriched_surface_runtime import (
 )
 from app.services.enriched_surface_session import get_enriched_surface_session_service
 from app.services.ground_control_pro import get_ground_control_pro_service
+from app.services.midi_device_profiles import device_profile_service
+from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.maschine_service import get_maschine_service
 from app.services.push_surface import get_push_surface_manager
 
 
 STACK_NAME = "Enriched_MIDI_Physical_Surfaces"
+
+_SURFACE_PROFILE_IDS: dict[str, set[str]] = {
+    "maschine-mk1": {"maschine_mk1"},
+    "ground-control-pro": {"ground_control_pro"},
+    "meloaudio-midi-commander": {"meloaudio_midi_commander"},
+    "novation-launch-control": {"novation_launch_control"},
+    "mackie-mcu-pro": {"mackie_mcu_pro"},
+}
 
 _SURFACE_CATALOG: list[dict[str, Any]] = [
     {
@@ -108,7 +118,7 @@ _SURFACE_CATALOG: list[dict[str, Any]] = [
         "display_name": "MeloAudio MIDI Commander",
         "family": "meloaudio",
         "device_type": "midi_controller",
-        "specialized_route": None,
+        "specialized_route": "/midi",
         "detection": {
             "vid_pid": [],
             "name_patterns": ["midi commander", "meloaudio", "tsmidi", "ts midi"],
@@ -324,6 +334,34 @@ def _matches_surface(
     return matched_usb, matched_cards
 
 
+def _match_midi_hub_devices(unit_id: str, devices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    profile_ids = _SURFACE_PROFILE_IDS.get(unit_id, set())
+    if not profile_ids:
+        return []
+    matches: list[dict[str, Any]] = []
+    for device in devices:
+        profile_id = str(device.get("profile_id") or "").strip()
+        if profile_id in profile_ids:
+            matches.append(deepcopy(device))
+    return matches
+
+
+def _resolve_profile_payload(
+    profiles: list[dict[str, Any]],
+    matched_midi_devices: list[dict[str, Any]],
+) -> dict[str, Any]:
+    matched_profile_ids = {
+        str(device.get("profile_id") or "").strip()
+        for device in matched_midi_devices
+        if str(device.get("profile_id") or "").strip()
+    }
+    for profile in profiles:
+        profile_id = str(profile.get("profile_id") or "").strip()
+        if profile_id in matched_profile_ids:
+            return deepcopy(profile)
+    return {}
+
+
 def _has_python_module(module_name: str) -> bool:
     return importlib.util.find_spec(module_name) is not None
 
@@ -338,7 +376,19 @@ class EnrichedMidiPhysicalSurfacesService:
         maschine_hid_history = get_maschine_service().get_hid_history(limit=50)
         push_health = await self._get_push_health()
         push_snapshot = await self._get_push_snapshot()
-        ground_control_ports = await self._get_ground_control_ports()
+        ground_control_state = await self._get_ground_control_state()
+        midi_hub_inventory = await self._get_midi_hub_inventory()
+        midi_hub_devices = [
+            deepcopy(device)
+            for device in midi_hub_inventory.get("devices", [])
+            if isinstance(device, dict)
+        ]
+        midi_hub_profiles = [
+            deepcopy(profile)
+            for profile in midi_hub_inventory.get("profiles", [])
+            if isinstance(profile, dict)
+        ]
+        meloaudio_profile_state = self._get_meloaudio_profile_state()
         session_service = get_enriched_surface_session_service()
 
         units: list[dict[str, Any]] = []
@@ -349,22 +399,32 @@ class EnrichedMidiPhysicalSurfacesService:
                 usb_devices=usb_devices,
                 sound_cards=sound_cards,
             )
+            matched_midi_devices = _match_midi_hub_devices(str(unit["unit_id"]), midi_hub_devices)
             unit["matched_usb_devices"] = matched_usb
             unit["matched_sound_cards"] = matched_cards
-            unit["host_detected"] = bool(matched_usb or matched_cards)
+            unit["matched_midi_devices"] = matched_midi_devices
+            unit["host_detected"] = bool(matched_usb or matched_cards or matched_midi_devices)
+            if str(unit["unit_id"]) == "ground-control-pro" and not unit["host_detected"]:
+                unit["host_detected"] = bool(
+                    (ground_control_state.get("inputs") or []) or (ground_control_state.get("outputs") or [])
+                )
             unit["status"] = self._resolve_unit_status(
                 unit_id=str(unit["unit_id"]),
                 host_detected=bool(unit["host_detected"]),
                 maschine_status=maschine_status,
                 push_health=push_health,
-                ground_control_ports=ground_control_ports,
+                ground_control_state=ground_control_state,
+                matched_midi_devices=matched_midi_devices,
+                meloaudio_profile_state=meloaudio_profile_state,
             )
             unit["status_reason"] = self._resolve_status_reason(
                 unit_id=str(unit["unit_id"]),
                 host_detected=bool(unit["host_detected"]),
                 maschine_status=maschine_status,
                 push_health=push_health,
-                ground_control_ports=ground_control_ports,
+                ground_control_state=ground_control_state,
+                matched_midi_devices=matched_midi_devices,
+                meloaudio_profile_state=meloaudio_profile_state,
             )
             unit["service_state"] = self._build_service_state(
                 unit_id=str(unit["unit_id"]),
@@ -372,13 +432,18 @@ class EnrichedMidiPhysicalSurfacesService:
                 maschine_hid_history=maschine_hid_history,
                 push_health=push_health,
                 push_snapshot=push_snapshot,
-                ground_control_ports=ground_control_ports,
+                ground_control_state=ground_control_state,
+                matched_midi_devices=matched_midi_devices,
+                midi_hub_profiles=midi_hub_profiles,
+                meloaudio_profile_state=meloaudio_profile_state,
             )
             unit["transport_layers"] = self._resolve_transport_layers(
                 unit,
                 maschine_status=maschine_status,
                 push_health=push_health,
-                ground_control_ports=ground_control_ports,
+                ground_control_state=ground_control_state,
+                matched_midi_devices=matched_midi_devices,
+                meloaudio_profile_state=meloaudio_profile_state,
             )
             unit["firmware_posture"] = self._resolve_firmware_posture(str(unit["unit_id"]))
             unit["view_state"] = build_unit_view_state(
@@ -420,6 +485,7 @@ class EnrichedMidiPhysicalSurfacesService:
             "host_observations": {
                 "usb_devices": usb_devices,
                 "sound_cards": sound_cards,
+                "midi_hub_devices": midi_hub_devices,
                 "python_modules": {
                     "hid": _has_python_module("hid"),
                     "rtmidi": _has_python_module("rtmidi"),
@@ -455,11 +521,53 @@ class EnrichedMidiPhysicalSurfacesService:
         except Exception as exc:
             return {"error": str(exc)}
 
-    async def _get_ground_control_ports(self) -> dict[str, Any]:
+    async def _get_ground_control_state(self) -> dict[str, Any]:
         try:
-            return await get_ground_control_pro_service().get_ports()
+            service = get_ground_control_pro_service()
+            ports = await service.get_ports()
+            active_jobs = [
+                job
+                for job in service.jobs.values()
+                if getattr(job, "status", None) == "running"
+            ]
+            return {
+                **ports,
+                "session_count": len(service.sessions),
+                "artifact_count": len(service.artifacts),
+                "job_count": len(service.jobs),
+                "active_job_count": len(active_jobs),
+            }
         except Exception as exc:
             return {"error": str(exc)}
+
+    async def _get_midi_hub_inventory(self) -> dict[str, Any]:
+        try:
+            return await get_midi_device_registry().inspect_local_ports()
+        except Exception as exc:
+            return {"count": 0, "devices": [], "profiles": [], "error": str(exc)}
+
+    @staticmethod
+    def _get_meloaudio_profile_state() -> dict[str, Any]:
+        try:
+            profile = device_profile_service.get_profile("meloaudio_commander")
+            active_profile = device_profile_service.get_active_profile()
+            active_profile_id = str(active_profile.get("profile_id") or "").strip() if isinstance(active_profile, dict) else ""
+            return {
+                "profile": deepcopy(profile) if isinstance(profile, dict) else {},
+                "active_profile": deepcopy(active_profile) if isinstance(active_profile, dict) else {},
+                "active_profile_id": active_profile_id or None,
+                "current_bank": int(device_profile_service.get_current_bank("meloaudio_commander")),
+                "expression_calibrations": deepcopy(device_profile_service.get_all_expression_calibrations()),
+            }
+        except Exception as exc:
+            return {
+                "profile": {},
+                "active_profile": {},
+                "active_profile_id": None,
+                "current_bank": 0,
+                "expression_calibrations": {},
+                "error": str(exc),
+            }
 
     @staticmethod
     def _resolve_unit_status(
@@ -468,7 +576,9 @@ class EnrichedMidiPhysicalSurfacesService:
         host_detected: bool,
         maschine_status: dict[str, Any],
         push_health: dict[str, Any],
-        ground_control_ports: dict[str, Any],
+        ground_control_state: dict[str, Any],
+        matched_midi_devices: list[dict[str, Any]],
+        meloaudio_profile_state: dict[str, Any],
     ) -> str:
         if unit_id == "maschine-mk1":
             if maschine_status.get("connected"):
@@ -482,11 +592,21 @@ class EnrichedMidiPhysicalSurfacesService:
                 return "detected"
             return "planned"
         if unit_id == "ground-control-pro":
-            inputs = (ground_control_ports.get("inputs") or []) if isinstance(ground_control_ports, dict) else []
-            outputs = (ground_control_ports.get("outputs") or []) if isinstance(ground_control_ports, dict) else []
+            if int(ground_control_state.get("session_count") or 0) > 0:
+                return "online"
+            inputs = (ground_control_state.get("inputs") or []) if isinstance(ground_control_state, dict) else []
+            outputs = (ground_control_state.get("outputs") or []) if isinstance(ground_control_state, dict) else []
             if inputs or outputs:
                 return "detected"
             return "planned"
+        if unit_id == "meloaudio-midi-commander":
+            if str(meloaudio_profile_state.get("active_profile_id") or "") == "meloaudio_commander":
+                return "online"
+            return "detected" if matched_midi_devices or host_detected else "planned"
+        if unit_id == "novation-launch-control":
+            return "detected" if matched_midi_devices or host_detected else "planned"
+        if unit_id == "mackie-mcu-pro":
+            return "detected" if matched_midi_devices or host_detected else "planned"
         return "detected" if host_detected else "planned"
 
     @staticmethod
@@ -496,7 +616,9 @@ class EnrichedMidiPhysicalSurfacesService:
         host_detected: bool,
         maschine_status: dict[str, Any],
         push_health: dict[str, Any],
-        ground_control_ports: dict[str, Any],
+        ground_control_state: dict[str, Any],
+        matched_midi_devices: list[dict[str, Any]],
+        meloaudio_profile_state: dict[str, Any],
     ) -> str:
         if unit_id == "maschine-mk1":
             if maschine_status.get("connected"):
@@ -524,9 +646,32 @@ class EnrichedMidiPhysicalSurfacesService:
                 return "Push-class USB names are visible, but the shared Push manager has not claimed an active device."
             return "No Push-class device is currently active."
         if unit_id == "ground-control-pro":
-            if isinstance(ground_control_ports, dict) and ground_control_ports.get("error"):
-                return f"Ground Control port probe failed: {ground_control_ports['error']}"
+            if isinstance(ground_control_state, dict) and ground_control_state.get("error"):
+                return f"Ground Control port probe failed: {ground_control_state['error']}"
+            session_count = int(ground_control_state.get("session_count") or 0)
+            if session_count > 0:
+                return f"Ground Control Pro has {session_count} active SysEx session(s) inside the shared stack."
+            inputs = len(ground_control_state.get("inputs") or [])
+            outputs = len(ground_control_state.get("outputs") or [])
+            if inputs or outputs:
+                return f"Ground Control Pro exposes {inputs} input(s) and {outputs} output(s) for the shared SysEx branch."
             return "Ground Control Pro remains a transport-selected SysEx device path."
+        if unit_id == "meloaudio-midi-commander":
+            if str(meloaudio_profile_state.get("active_profile_id") or "") == "meloaudio_commander":
+                calibration_count = len(meloaudio_profile_state.get("expression_calibrations") or {})
+                return (
+                    "MeloAudio MIDI Commander is the active MIDI profile "
+                    f"with bank {int(meloaudio_profile_state.get('current_bank') or 0) + 1} and "
+                    f"{calibration_count} calibrated expression path(s)."
+                )
+            if matched_midi_devices:
+                return f"MIDI Hub matched {len(matched_midi_devices)} MeloAudio MIDI Commander device(s) on this host."
+        if unit_id == "novation-launch-control":
+            if matched_midi_devices:
+                return f"MIDI Hub matched {len(matched_midi_devices)} Launch Control-family device(s) for the shared template branch."
+        if unit_id == "mackie-mcu-pro":
+            if matched_midi_devices:
+                return f"MIDI Hub matched {len(matched_midi_devices)} Mackie MCU Pro device(s) for the shared MCU branch."
         if host_detected:
             return "Host-side detection matched this surface family."
         return "No matching hardware is currently visible on this host."
@@ -539,7 +684,10 @@ class EnrichedMidiPhysicalSurfacesService:
         maschine_hid_history: list[dict[str, Any]],
         push_health: dict[str, Any],
         push_snapshot: dict[str, Any],
-        ground_control_ports: dict[str, Any],
+        ground_control_state: dict[str, Any],
+        matched_midi_devices: list[dict[str, Any]],
+        midi_hub_profiles: list[dict[str, Any]],
+        meloaudio_profile_state: dict[str, Any],
     ) -> dict[str, Any]:
         if unit_id == "maschine-mk1":
             return {
@@ -569,7 +717,25 @@ class EnrichedMidiPhysicalSurfacesService:
                 "last_diagnostics_export": push_health.get("last_diagnostics_export"),
             }
         if unit_id == "ground-control-pro":
-            return deepcopy(ground_control_ports)
+            return deepcopy(ground_control_state)
+        if unit_id == "meloaudio-midi-commander":
+            return {
+                "profile": deepcopy(meloaudio_profile_state.get("profile") or {}),
+                "active_profile": deepcopy(meloaudio_profile_state.get("active_profile") or {}),
+                "active_profile_id": meloaudio_profile_state.get("active_profile_id"),
+                "current_bank": int(meloaudio_profile_state.get("current_bank") or 0),
+                "calibration_count": len(meloaudio_profile_state.get("expression_calibrations") or {}),
+                "detected_device_count": len(matched_midi_devices),
+                "detected_devices": deepcopy(matched_midi_devices),
+            }
+        if unit_id in {"novation-launch-control", "mackie-mcu-pro"}:
+            profile = _resolve_profile_payload(midi_hub_profiles, matched_midi_devices)
+            return {
+                "profile": profile,
+                "display_capabilities": deepcopy(profile.get("metadata", {}).get("display_capabilities") or {}),
+                "detected_device_count": len(matched_midi_devices),
+                "detected_devices": deepcopy(matched_midi_devices),
+            }
         return {}
 
     @staticmethod
@@ -578,7 +744,9 @@ class EnrichedMidiPhysicalSurfacesService:
         *,
         maschine_status: dict[str, Any],
         push_health: dict[str, Any],
-        ground_control_ports: dict[str, Any],
+        ground_control_state: dict[str, Any],
+        matched_midi_devices: list[dict[str, Any]],
+        meloaudio_profile_state: dict[str, Any],
     ) -> list[dict[str, Any]]:
         layers = deepcopy(unit.get("transport_layers") or [])
         unit_id = str(unit.get("unit_id") or "")
@@ -623,14 +791,76 @@ class EnrichedMidiPhysicalSurfacesService:
             return layers
 
         if unit_id == "ground-control-pro":
-            ports_available = bool((ground_control_ports.get("inputs") or []) or (ground_control_ports.get("outputs") or []))
+            ports_available = bool((ground_control_state.get("inputs") or []) or (ground_control_state.get("outputs") or []))
+            session_count = int(ground_control_state.get("session_count") or 0)
             for layer in layers:
-                layer["status"] = "detected" if ports_available else "planned"
-                layer["detail"] = (
-                    "MIDI transport ports are available for SysEx backup/push."
-                    if ports_available
-                    else "Ground Control transport requires explicit MIDI port selection."
-                )
+                if layer["layer_id"] == "sysex-import-export":
+                    layer["status"] = "online" if session_count > 0 else ("detected" if ports_available else "planned")
+                    layer["detail"] = (
+                        f"{session_count} active session(s) are loaded through the shared SysEx workflow."
+                        if session_count > 0
+                        else (
+                            "MIDI transport ports are available for SysEx backup/push."
+                            if ports_available
+                            else "Ground Control transport requires explicit MIDI port selection."
+                        )
+                    )
+                else:
+                    connected_inputs = len(
+                        [port for port in ground_control_state.get("inputs") or [] if isinstance(port, dict) and port.get("connected")]
+                    )
+                    connected_outputs = len(
+                        [port for port in ground_control_state.get("outputs") or [] if isinstance(port, dict) and port.get("connected")]
+                    )
+                    layer["status"] = "detected" if ports_available else "planned"
+                    layer["detail"] = (
+                        f"Connected transport ports: {connected_inputs} input(s), {connected_outputs} output(s)."
+                        if ports_available
+                        else "Ground Control transport requires explicit MIDI port selection."
+                    )
+            return layers
+
+        if unit_id == "meloaudio-midi-commander":
+            active_profile_id = str(meloaudio_profile_state.get("active_profile_id") or "")
+            calibration_count = len(meloaudio_profile_state.get("expression_calibrations") or {})
+            for layer in layers:
+                if active_profile_id == "meloaudio_commander":
+                    layer["status"] = "online"
+                    layer["detail"] = (
+                        "MeloAudio is the active MIDI v2 profile "
+                        f"with bank {int(meloaudio_profile_state.get('current_bank') or 0) + 1} and "
+                        f"{calibration_count} calibrated expression path(s)."
+                    )
+                elif matched_midi_devices:
+                    layer["status"] = "detected"
+                    layer["detail"] = "MIDI Hub matched MeloAudio MIDI Commander hardware; the shared profile branch is available."
+                else:
+                    layer["status"] = "planned"
+                    layer["detail"] = "Waiting for a matched MIDI Commander device or an active profile selection."
+            return layers
+
+        if unit_id == "novation-launch-control":
+            for layer in layers:
+                if not matched_midi_devices:
+                    continue
+                if layer["layer_id"] == "midi-profile":
+                    layer["status"] = "detected"
+                    layer["detail"] = "MIDI Hub matched Launch Control-family hardware for the shared template/profile branch."
+                else:
+                    layer["status"] = "attention"
+                    layer["detail"] = "Hardware is visible; dedicated LED/template runtime handling still needs the richer shared feedback path."
+            return layers
+
+        if unit_id == "mackie-mcu-pro":
+            for layer in layers:
+                if not matched_midi_devices:
+                    continue
+                if layer["layer_id"] == "mcu-protocol":
+                    layer["status"] = "detected"
+                    layer["detail"] = "MIDI Hub matched Mackie MCU Pro hardware for the shared MCU protocol branch."
+                else:
+                    layer["status"] = "attention"
+                    layer["detail"] = "Hardware is visible, but motor-fader and scribble-strip feedback still need the dedicated MCU runtime branch."
             return layers
 
         if unit.get("host_detected"):

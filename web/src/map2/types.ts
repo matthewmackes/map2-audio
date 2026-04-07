@@ -345,6 +345,9 @@ export interface EnrichedPhysicalSurfaceTransportLayer {
 
 export interface EnrichedPhysicalSurfaceMatch {
   sys_name?: string | null;
+  device_id?: string | null;
+  profile_id?: string | null;
+  profile_name?: string | null;
   vendor_id?: string | null;
   product_id?: string | null;
   manufacturer?: string | null;
@@ -357,6 +360,14 @@ export interface EnrichedPhysicalSurfaceMatch {
   alsa_id?: string | null;
   device_path?: string | null;
   has_midi?: boolean;
+  connected?: boolean;
+  responding?: boolean;
+  health?: string | null;
+  latency_ms?: number | null;
+  node_id?: string | null;
+  remote?: boolean;
+  manual_assignment?: string | null;
+  port_names?: string[];
   midi_nodes?: Array<{
     node: string;
     name: string;
@@ -429,6 +440,7 @@ export interface EnrichedPhysicalSurfaceUnit {
   transport_layers: EnrichedPhysicalSurfaceTransportLayer[];
   matched_usb_devices: EnrichedPhysicalSurfaceMatch[];
   matched_sound_cards: EnrichedPhysicalSurfaceMatch[];
+  matched_midi_devices: EnrichedPhysicalSurfaceMatch[];
   service_state: Record<string, unknown>;
   firmware_posture: {
     status: string;
@@ -458,6 +470,7 @@ export interface EnrichedPhysicalSurfacesSummary {
   host_observations: {
     usb_devices: EnrichedPhysicalSurfaceMatch[];
     sound_cards: EnrichedPhysicalSurfaceMatch[];
+    midi_hub_devices: EnrichedPhysicalSurfaceMatch[];
     python_modules: Record<string, boolean>;
     maschinen_mk1_host_note?: string;
   };

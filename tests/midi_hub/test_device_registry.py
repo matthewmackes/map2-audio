@@ -221,6 +221,37 @@ def test_registry_builtin_maschine_profile_matches_name_and_vid_pid(tmp_path):
     asyncio.run(_run())
 
 
+def test_registry_builtin_surface_profiles_match_without_side_effect_refresh(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+        hub.register_port(VirtualMidiPort(port_id="p1", name="Ground Control Pro"))
+        hub.register_port(VirtualMidiPort(port_id="p2", name="Novation Launch Control XL"))
+        hub.register_port(VirtualMidiPort(port_id="p3", name="Mackie MCU Pro"))
+
+        inspected = await registry.inspect_local_ports()
+
+        assert inspected["count"] == 3
+        by_profile = {device["profile_id"]: device for device in inspected["devices"]}
+        assert by_profile["ground_control_pro"]["profile_name"] == "Voodoo Lab Ground Control Pro"
+        assert by_profile["novation_launch_control"]["profile_name"] == "Novation Launch Control Family"
+        assert by_profile["mackie_mcu_pro"]["profile_name"] == "Mackie MCU Pro"
+
+        launch_profile = registry.get_profile("novation_launch_control")
+        assert launch_profile is not None
+        assert launch_profile["metadata"]["template_strategy"] == "components-managed-custom-modes"
+        assert launch_profile["metadata"]["display_capabilities"]["supports_led_feedback"] is True
+
+        mackie_profile = registry.get_profile("mackie_mcu_pro")
+        assert mackie_profile is not None
+        assert mackie_profile["metadata"]["display_capabilities"]["motor_faders"] == 9
+        assert registry.get_display_capabilities("mackie_mcu_pro")["transport"] == "mcu_scribble_strip"
+
+    asyncio.run(_run())
+
+
 def test_registry_merge_remote_devices_and_global_snapshot(tmp_path):
     _init_temp_db(tmp_path)
 

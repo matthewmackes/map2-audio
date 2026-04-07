@@ -24,6 +24,15 @@ const mockEnrichedPhysicalSurfacesApi = {
       host_observations: {
         usb_devices: [{ vendor_id: '17cc', product_id: '0808', product: 'Maschine Controller' }],
         sound_cards: [{ card_index: 3, alsa_id: 'MaschineControl', product: 'Maschine Controller', has_midi: true }],
+        midi_hub_devices: [
+          {
+            device_id: 'maschine_mk1:map2_maschine_mk1',
+            profile_id: 'maschine_mk1',
+            profile_name: 'Maschine MK1',
+            port_names: ['MAP2:Maschine-MK1'],
+            connected: true,
+          },
+        ],
         python_modules: { hid: false, rtmidi: true },
         maschinen_mk1_host_note: 'Maschine is visible through snd-usb-caiaq and ALSA MIDI on this host.',
       },
@@ -57,6 +66,15 @@ const mockEnrichedPhysicalSurfacesApi = {
           ],
           matched_usb_devices: [{ vendor_id: '17cc', product_id: '0808', product: 'Maschine Controller' }],
           matched_sound_cards: [{ card_index: 3, alsa_id: 'MaschineControl', product: 'Maschine Controller', has_midi: true }],
+          matched_midi_devices: [
+            {
+              device_id: 'maschine_mk1:map2_maschine_mk1',
+              profile_id: 'maschine_mk1',
+              profile_name: 'Maschine MK1',
+              port_names: ['MAP2:Maschine-MK1'],
+              connected: true,
+            },
+          ],
           service_state: {
             daemon_connected: false,
             websocket_connected: false,
@@ -134,6 +152,7 @@ const mockEnrichedPhysicalSurfacesApi = {
           ],
           matched_usb_devices: [],
           matched_sound_cards: [],
+          matched_midi_devices: [],
           service_state: {},
           firmware_posture: {
             status: 'official-midi-file-updater',
@@ -254,8 +273,9 @@ describe('PhysicalSurfacesShell', () => {
     renderShell('/physical-surfaces')
 
     expect(await screen.findByText('Enriched_MIDI_Physical_Surfaces')).toBeTruthy()
-    expect(screen.getByText('Native Instruments Maschine MK1')).toBeTruthy()
-    expect(screen.getByText('Mackie MCU Pro')).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Native Instruments Maschine MK1' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Mackie MCU Pro' })).toBeTruthy()
+    expect(await screen.findByText('MIDI Hub Devices')).toBeTruthy()
     expect(await screen.findByText('Synth-first surface rules')).toBeTruthy()
     expect(await screen.findByText(/snd-usb-caiaq/i)).toBeTruthy()
   })
@@ -269,6 +289,8 @@ describe('PhysicalSurfacesShell', () => {
     expect(screen.getByText('official-ni-downloads-plus-legacy-midi-templates')).toBeTruthy()
     expect(screen.getByText('Per-family page model')).toBeTruthy()
     expect(screen.getByText('Advanced tooling')).toBeTruthy()
+    expect(screen.getByText('Matched MIDI Hub devices')).toBeTruthy()
+    expect(screen.getByText('Maschine MK1 • MAP2:Maschine-MK1')).toBeTruthy()
   })
 
   it('sends a view override when the operator selects a fixed view', async () => {

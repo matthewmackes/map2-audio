@@ -129,7 +129,37 @@ class MidiDeviceRegistry:
                 match_patterns=["midi commander", "meloaudio"],
                 default_channel=1,
                 supports_sysex=False,
-                metadata={"vendor": "MeloAudio", "device_type": "controller"},
+                metadata={
+                    "vendor": "MeloAudio",
+                    "device_type": "controller",
+                    "role": "profile_controller",
+                    "shared_stack_unit_id": "meloaudio-midi-commander",
+                    "switch_count": 10,
+                    "expression_inputs": 2,
+                    "display_capabilities": {
+                        "transport": "none",
+                        "supports_per_switch_labels": False,
+                        "reason": "MIDI Commander is a profile-driven foot controller without per-switch text displays.",
+                    },
+                },
+            ),
+            "ground_control_pro": MidiDeviceProfile(
+                profile_id="ground_control_pro",
+                name="Voodoo Lab Ground Control Pro",
+                match_patterns=["ground control pro", "ground control", "voodoo lab"],
+                default_channel=1,
+                supports_sysex=True,
+                metadata={
+                    "vendor": "Voodoo Lab",
+                    "device_type": "sysex_surface",
+                    "role": "sysex_surface",
+                    "shared_stack_unit_id": "ground-control-pro",
+                    "display_capabilities": {
+                        "transport": "none",
+                        "supports_per_switch_labels": False,
+                        "reason": "Ground Control Pro belongs on the SysEx-specialized branch rather than a live label renderer path.",
+                    },
+                },
             ),
             "morningstar_mc6": MidiDeviceProfile(
                 profile_id="morningstar_mc6",
@@ -220,6 +250,48 @@ class MidiDeviceRegistry:
                             "value_mode": "index",
                         }
                     ],
+                },
+            ),
+            "novation_launch_control": MidiDeviceProfile(
+                profile_id="novation_launch_control",
+                name="Novation Launch Control Family",
+                match_patterns=["launch control", "launchcontrol", "launch control xl"],
+                default_channel=1,
+                supports_sysex=True,
+                metadata={
+                    "vendor": "Novation",
+                    "device_type": "controller",
+                    "role": "template_controller",
+                    "shared_stack_unit_id": "novation-launch-control",
+                    "template_strategy": "components-managed-custom-modes",
+                    "led_feedback": True,
+                    "display_capabilities": {
+                        "transport": "launch_control_led_feedback",
+                        "supports_per_switch_labels": False,
+                        "supports_led_feedback": True,
+                    },
+                },
+            ),
+            "mackie_mcu_pro": MidiDeviceProfile(
+                profile_id="mackie_mcu_pro",
+                name="Mackie MCU Pro",
+                match_patterns=["mackie mcu", "mcu pro", "mackie control", "mackie control universal"],
+                default_channel=1,
+                supports_sysex=True,
+                metadata={
+                    "vendor": "Mackie",
+                    "device_type": "control_surface",
+                    "role": "mcu_surface",
+                    "shared_stack_unit_id": "mackie-mcu-pro",
+                    "motor_faders": 9,
+                    "scribble_strips": 8,
+                    "meter_bridge": True,
+                    "display_capabilities": {
+                        "transport": "mcu_scribble_strip",
+                        "supports_led_feedback": True,
+                        "supports_channel_labels": True,
+                        "motor_faders": 9,
+                    },
                 },
             ),
             "usb_din_adapter": MidiDeviceProfile(
@@ -609,9 +681,7 @@ class MidiDeviceRegistry:
                 return self._state_payload(state)
         return None
 
-    async def refresh(self) -> Dict[str, Any]:
-        await self._load_manual_assignments()
-
+    def _build_local_inventory(self) -> Dict[str, Any]:
         descriptors = {d["name"]: d for d in discover_alsa_port_descriptors()}
         ports = self._hub.list_ports()
         grouped: Dict[str, Dict[str, Any]] = {}
@@ -686,6 +756,30 @@ class MidiDeviceRegistry:
                 remote=False,
             )
             next_devices[device_id] = state
+
+        return {
+            "count": len(next_devices),
+            "devices": [d.to_dict() for d in next_devices.values()],
+            "device_states": next_devices,
+            "timestamp": now,
+        }
+
+    async def inspect_local_ports(self) -> Dict[str, Any]:
+        await self._load_manual_assignments()
+        inventory = self._build_local_inventory()
+        return {
+            "count": inventory["count"],
+            "devices": inventory["devices"],
+            "profiles": self.list_profiles(),
+            "assignments": dict(self._manual_assignments),
+            "timestamp": inventory["timestamp"],
+        }
+
+    async def refresh(self) -> Dict[str, Any]:
+        await self._load_manual_assignments()
+        inventory = self._build_local_inventory()
+        next_devices = inventory["device_states"]
+        now = inventory["timestamp"]
 
         previous = set(self._devices.keys())
         current = set(next_devices.keys())

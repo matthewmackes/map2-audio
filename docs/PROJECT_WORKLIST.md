@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T797-subA/T797-subB/T797-subD, and T798-T808. T795, T797-subC/T797-subE, and T778 remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T795, T797-subE, and T778 remain open.
 
 ## Performance Brain
 
@@ -18224,7 +18224,7 @@ Subtasks:
     Last updated: 2026-04-07 17:15 EDT - Codex
     Completion notes: Landed the shared runtime/session abstraction in `app/services/enriched_surface_runtime.py` and `app/services/enriched_surface_session.py`, then wired the unified stack so both Maschine MK1 and Ableton Push resolve their fixed-zone views, recent-target state, and operator overrides through the same contract rather than route-local heuristics. Added a host-aware Maschine transport controller in `app/services/maschine/transport.py`, moved the daemon off its hardcoded `hidapi` assumption toward selectable `auto` / `hidapi` / `pyusb-bulk` transport selection, surfaced selected transport plus transport candidates through Maschine status and the unified shell, and validated the shared transport/session/runtime/UI contract with focused backend/frontend tests. This slice also added dedicated `GET/PUT /api/maschine/transport-config` policy routes, a Maschine transport-policy panel in the GUI, focused route coverage, and descriptor-aware Linux probing that extracts the connected MK1's richer alternate-setting bulk pair (`0x08` OUT / `0x84` IN) from sysfs/USB descriptors. Remaining MK1 production hardening and hardware proof now live under T797-subE rather than this abstraction task.
   - ID: T797-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add first-class enriched support for Ground Control Pro, MIDI Commander, Launch Control, and Mackie MCU Pro families
     Description:
     - Goal / acceptance criteria: Integrate the existing Ground Control Pro SysEx tooling and the MeloAudio controller profile into the shared stack, then add Launch Control and Mackie MCU Pro family profiles/capability modeling so all requested device families appear in one coherent system instead of split route islands.
@@ -18234,7 +18234,14 @@ Subtasks:
     - Required outputs: Shared registry coverage, capability metadata, specialized transport hooks where available, and validation notes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-07 11:48 EDT - Codex
+    Last updated: 2026-04-07 18:42 EDT - Codex
+    Completion notes: Added first-class shared-stack coverage for the remaining requested families by teaching the MIDI Hub device registry about Ground Control Pro, MeloAudio MIDI Commander, Novation Launch Control, and Mackie MCU Pro built-in profiles plus a side-effect-free local inventory probe. Wired the unified enriched-surface service/runtime so Ground Control Pro session/artifact/job state, the existing MeloAudio profile service, and MIDI Hub profile matches now drive family status, current-view selection, surface-lab snapshots, and operator-facing host observations. Updated the overview/unit pages and summary contract to surface matched MIDI Hub devices, the existing `/midi` route for MIDI Commander, and richer shared-stack diagnostics instead of leaving those families as mostly static placeholders.
+    - Validation:
+      - `pytest -q tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_midi_physical_surfaces_routes.py tests/test_enriched_surface_runtime.py tests/midi_hub/test_device_registry.py` -> PASS (`22 passed`)
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PhysicalSurfacesShell.test.tsx` -> PASS (`3 passed`)
+      - `npm --prefix web run typecheck` -> PASS
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/enriched_midi_physical_surfaces.py app/services/enriched_surface_runtime.py app/services/midi_hub/device_registry.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_midi_physical_surfaces_routes.py tests/test_enriched_surface_runtime.py tests/midi_hub/test_device_registry.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T797-subD
     Status: [✓] Done
     Title: Investigate firmware/update paths and document safe operational posture per surface family
@@ -18261,7 +18268,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 17:15 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-07 18:19 EDT - Codex
+Last updated: 2026-04-07 18:42 EDT - Codex
 
 ## Workspace Catalog Cleanup
 

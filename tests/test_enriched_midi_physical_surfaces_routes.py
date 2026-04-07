@@ -30,6 +30,7 @@ class _FakeService:
             "host_observations": {
                 "usb_devices": [],
                 "sound_cards": [],
+                "midi_hub_devices": [],
                 "python_modules": {"hid": False, "rtmidi": True},
             },
             "units": [
@@ -43,6 +44,7 @@ class _FakeService:
                     "integration_notes": [],
                     "matched_usb_devices": [],
                     "matched_sound_cards": [],
+                    "matched_midi_devices": [],
                     "service_state": {
                         "daemon_connected": False,
                         "websocket_connected": False,

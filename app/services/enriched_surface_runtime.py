@@ -495,15 +495,23 @@ def _resolve_current_view(
         return "synth-grid", "default-family-layout"
 
     if unit_id == "ground-control-pro":
+        if int(service_state.get("session_count") or 0) > 0:
+            return "surface-lab", "ground-control-pro-session"
         return "snapshots", "external-midi-program-control"
 
     if unit_id == "meloaudio-midi-commander":
+        if str(service_state.get("active_profile_id") or "") == "meloaudio_commander":
+            return "synth-macros", "midi-profile-service"
         return "synth-macros", "default-family-layout"
 
     if unit_id == "novation-launch-control":
+        if int(service_state.get("detected_device_count") or 0) > 0:
+            return "templates", "midi-hub-profile-detected"
         return "synth-macros", "default-family-layout"
 
     if unit_id == "mackie-mcu-pro":
+        if int(service_state.get("detected_device_count") or 0) > 0:
+            return "current-view-mix", "midi-hub-profile-detected"
         return "current-view-mix", "current-view-policy"
 
     return "surface-lab", "default-family-layout"
@@ -617,5 +625,37 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "output_count": len(service_state.get("outputs") or []),
             "connected_input_count": len([port for port in service_state.get("inputs") or [] if isinstance(port, dict) and port.get("connected")]),
             "connected_output_count": len([port for port in service_state.get("outputs") or [] if isinstance(port, dict) and port.get("connected")]),
+            "session_count": int(service_state.get("session_count") or 0),
+            "artifact_count": int(service_state.get("artifact_count") or 0),
+            "job_count": int(service_state.get("job_count") or 0),
+            "active_job_count": int(service_state.get("active_job_count") or 0),
+        }
+    if unit_id == "meloaudio-midi-commander":
+        profile = service_state.get("profile") if isinstance(service_state.get("profile"), dict) else {}
+        return {
+            "active_profile_id": service_state.get("active_profile_id"),
+            "current_bank": int(service_state.get("current_bank") or 0),
+            "calibration_count": int(service_state.get("calibration_count") or 0),
+            "detected_device_count": int(service_state.get("detected_device_count") or 0),
+            "footswitch_count": len(profile.get("footswitches") or []),
+            "expression_pedal_count": len(profile.get("expression_pedals") or []),
+            "supports_firmware_update": bool(profile.get("supports_firmware_update")),
+        }
+    if unit_id == "novation-launch-control":
+        display_capabilities = service_state.get("display_capabilities") if isinstance(service_state.get("display_capabilities"), dict) else {}
+        profile = service_state.get("profile") if isinstance(service_state.get("profile"), dict) else {}
+        return {
+            "detected_device_count": int(service_state.get("detected_device_count") or 0),
+            "profile_id": profile.get("profile_id"),
+            "led_feedback": bool(display_capabilities.get("supports_led_feedback")),
+            "template_strategy": profile.get("metadata", {}).get("template_strategy") if isinstance(profile.get("metadata"), dict) else None,
+        }
+    if unit_id == "mackie-mcu-pro":
+        display_capabilities = service_state.get("display_capabilities") if isinstance(service_state.get("display_capabilities"), dict) else {}
+        return {
+            "detected_device_count": int(service_state.get("detected_device_count") or 0),
+            "motor_faders": int(display_capabilities.get("motor_faders") or 0),
+            "scribble_strip_transport": display_capabilities.get("transport"),
+            "supports_channel_labels": bool(display_capabilities.get("supports_channel_labels")),
         }
     return {}

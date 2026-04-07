@@ -17,9 +17,11 @@ function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | '
 
 function matchLabel(match: EnrichedPhysicalSurfaceMatch) {
   const parts = [
+    match.profile_name,
     match.product,
     match.manufacturer,
     match.alsa_id,
+    match.port_names?.join(', '),
     match.vendor_id && match.product_id ? `${match.vendor_id}:${match.product_id}` : null,
   ].filter(Boolean)
   return parts.join(' • ') || 'Unnamed match'
@@ -105,6 +107,11 @@ export function PhysicalSurfaceUnitPage() {
             Source: {unit.view_state.current_view_source}
             {unit.view_state.is_override_active ? ' • operator override active' : ''}
           </p>
+        </Tile>
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">MIDI Hub Matches</p>
+          <h2>{unit.matched_midi_devices.length}</h2>
+          <p className="physical-surfaces-page__body-copy">Profile-matched local devices currently associated with this family in the shared MIDI Hub inventory.</p>
         </Tile>
       </div>
 
@@ -318,6 +325,20 @@ export function PhysicalSurfaceUnitPage() {
             {unit.matched_sound_cards.length ? unit.matched_sound_cards.map((match, index) => (
               <li key={`${unit.unit_id}-snd-${index}`}>{matchLabel(match)}</li>
             )) : <li>No matching sound-card or procfs MIDI path was visible during the summary probe.</li>}
+          </ul>
+        </Tile>
+
+        <Tile className="physical-surfaces-page__card">
+          <div className="physical-surfaces-page__card-head">
+            <div>
+              <p className="physical-surfaces-page__eyebrow">Matched MIDI Hub devices</p>
+              <h2>Shared MIDI inventory</h2>
+            </div>
+          </div>
+          <ul className="physical-surfaces-page__match-list">
+            {unit.matched_midi_devices.length ? unit.matched_midi_devices.map((match, index) => (
+              <li key={`${unit.unit_id}-hub-${index}`}>{matchLabel(match)}</li>
+            )) : <li>No profile-matched MIDI Hub devices were visible during the shared inventory probe.</li>}
           </ul>
         </Tile>
       </div>
