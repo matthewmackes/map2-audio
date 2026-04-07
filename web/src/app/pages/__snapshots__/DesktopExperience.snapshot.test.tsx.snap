@@ -1,0 +1,2112 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Desktop experience visual snapshots matches the boot splash shell 1`] = `
+<div
+  class="app-shell app-shell--windowed app-shell--landing"
+>
+  <main
+    class="app-content app-content--full"
+  >
+    <section
+      aria-label="MAP2 boot splash"
+      class="hp2-boot"
+    >
+      <div
+        class="hp2-boot__center"
+      >
+        <div
+          aria-hidden="true"
+          class="hp2-boot__mark-wrap"
+        >
+          <svg
+            aria-hidden="true"
+            class="hp2-boot__mark"
+            focusable="false"
+            viewBox="0 0 192 192"
+          >
+            <rect
+              fill="#4589FF"
+              height="168"
+              rx="34"
+              width="168"
+              x="12"
+              y="12"
+            />
+            <rect
+              fill="none"
+              height="162"
+              rx="31"
+              stroke="#A6C8FF"
+              stroke-opacity="0.45"
+              stroke-width="2"
+              width="162"
+              x="15"
+              y="15"
+            />
+            <rect
+              fill="#13171B"
+              height="136"
+              rx="24"
+              width="136"
+              x="28"
+              y="28"
+            />
+            <rect
+              fill="#4589FF"
+              height="136"
+              rx="13"
+              width="26"
+              x="83"
+              y="28"
+            />
+            <rect
+              fill="#4589FF"
+              height="26"
+              rx="13"
+              width="136"
+              x="28"
+              y="83"
+            />
+            <rect
+              fill="#1A1E23"
+              height="43"
+              rx="8"
+              width="43"
+              x="34"
+              y="34"
+            />
+            <rect
+              fill="#1A1E23"
+              height="43"
+              rx="8"
+              width="43"
+              x="115"
+              y="34"
+            />
+            <rect
+              fill="#1A1E23"
+              height="43"
+              rx="8"
+              width="43"
+              x="34"
+              y="115"
+            />
+            <rect
+              fill="#1A1E23"
+              height="43"
+              rx="8"
+              width="43"
+              x="115"
+              y="115"
+            />
+          </svg>
+        </div>
+        <p
+          class="hp2-boot__eyebrow"
+        >
+          MAP2
+        </p>
+        <h1
+          class="hp2-boot__title"
+        >
+          Mackes Audio Platform
+        </h1>
+        <p
+          class="hp2-boot__subtitle"
+        >
+          Preparing desktop shell and restoring platform context.
+        </p>
+      </div>
+      <div
+        class="hp2-boot__progress"
+      >
+        <div
+          class="cds--progress-bar cds--progress-bar--big cds--progress-bar--default cds--progress-bar--indeterminate"
+        >
+          <div
+            class="cds--progress-bar__label cds--visually-hidden"
+            id="progress-bar-_r_0_"
+          >
+            <span
+              class="cds--progress-bar__label-text"
+            >
+              Boot progress
+            </span>
+          </div>
+          <div
+            aria-busy="true"
+            aria-describedby="progress-bar-helper-text-_r_2_"
+            aria-invalid="false"
+            aria-labelledby="progress-bar-_r_0_"
+            class="cds--progress-bar__track"
+            role="progressbar"
+          >
+            <div
+              class="cds--progress-bar__bar"
+              style="transform: scaleX(NaN);"
+            />
+          </div>
+          <div
+            class="cds--progress-bar__helper-text"
+            id="progress-bar-helper-text-_r_2_"
+          >
+            Starting desktop experience
+            <div
+              aria-live="polite"
+              class="cds--visually-hidden"
+              id="progress-bar-helper-_r_1_"
+            >
+              Loading
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div
+    aria-label="Primary navigation shell"
+    class="window-taskbar"
+    data-running-route-count="0"
+    style="--window-shell-accent: var(--cds-support-warning);"
+  >
+    <div
+      class="window-taskbar__left"
+    >
+      <div
+        class="window-taskbar__start-root"
+      >
+        <button
+          aria-controls="start-menu-panel"
+          aria-expanded="false"
+          aria-haspopup="menu"
+          aria-label="Open Start menu"
+          class="window-taskbar__start-btn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__start-mark"
+          >
+            <svg
+              aria-hidden="true"
+              class="window-taskbar__start-mark-icon"
+              focusable="false"
+              viewBox="0 0 192 192"
+            >
+              <rect
+                fill="#4589FF"
+                height="168"
+                rx="34"
+                width="168"
+                x="12"
+                y="12"
+              />
+              <rect
+                fill="none"
+                height="162"
+                rx="31"
+                stroke="#A6C8FF"
+                stroke-opacity="0.45"
+                stroke-width="2"
+                width="162"
+                x="15"
+                y="15"
+              />
+              <rect
+                fill="#13171B"
+                height="136"
+                rx="24"
+                width="136"
+                x="28"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="136"
+                rx="13"
+                width="26"
+                x="83"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="26"
+                rx="13"
+                width="136"
+                x="28"
+                y="83"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="115"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="115"
+              />
+            </svg>
+          </span>
+          <span>
+            Start
+          </span>
+        </button>
+      </div>
+      <div
+        aria-label="Running applications"
+        class="window-taskbar__indicators"
+      >
+        <button
+          aria-label="Audio Artifacts pinned taskbar app"
+          class="window-taskbar__indicator is-pinned"
+          title="Audio Artifacts"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__indicator-icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              focusable="false"
+              height="16"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+              />
+              <path
+                d="M13 20H19V22H13z"
+              />
+              <path
+                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+              />
+            </svg>
+          </span>
+          <span
+            class="window-taskbar__indicator-text"
+          >
+            Artifacts
+          </span>
+        </button>
+      </div>
+    </div>
+    <div
+      class="window-taskbar__right"
+    >
+      <div
+        class="window-taskbar__status window-taskbar__status--nodes"
+      >
+        <div
+          data-testid="node-nav-bar"
+        />
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--latency"
+      >
+        <div
+          data-testid="shell-latency-pressure-readout"
+        >
+          09
+        </div>
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--clock"
+      >
+        <div
+          data-testid="taskbar-clock"
+        >
+          9:41 AM
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    aria-hidden="true"
+    class="cds--layer-one cds--modal"
+    role="presentation"
+  >
+    <div
+      aria-label="Power"
+      aria-modal="true"
+      class="cds--modal-container cds--modal-container--sm"
+      role="dialog"
+    >
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+      <div
+        class="cds--modal-container-body"
+      >
+        <div
+          class="cds--modal-header"
+        >
+          <h2
+            class="cds--modal-header__label cds--type-delta"
+          >
+            Power
+          </h2>
+          <h2
+            class="cds--modal-header__heading cds--type-beta"
+          >
+            Restart backend
+          </h2>
+          <div
+            class="cds--modal-close-button"
+          >
+            <span
+              class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip"
+            >
+              <div
+                class="cds--tooltip-trigger__wrapper"
+              >
+                <button
+                  aria-label="Close"
+                  aria-labelledby="tooltip-_r_5_"
+                  class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="cds--modal-close__icon"
+                    fill="currentColor"
+                    focusable="false"
+                    height="20"
+                    preserveAspectRatio="xMidYMid meet"
+                    viewBox="0 0 32 32"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <span
+                aria-hidden="true"
+                class="cds--popover"
+                id="tooltip-_r_5_"
+                role="tooltip"
+              >
+                <span
+                  class="cds--popover-content cds--tooltip-content"
+                >
+                  Close
+                </span>
+                <span
+                  class="cds--popover-caret"
+                />
+              </span>
+            </span>
+          </div>
+        </div>
+        <div
+          class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+        >
+          Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
+        </div>
+        <div
+          aria-busy="false"
+          class="cds--modal-footer cds--btn-set"
+        >
+          <button
+            class="cds--btn cds--btn--secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="cds--btn cds--btn--primary"
+            type="button"
+          >
+            Confirm restart
+          </button>
+        </div>
+      </div>
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Desktop experience visual snapshots matches the desktop shell after boot completes 1`] = `
+<div
+  class="app-shell app-shell--windowed app-shell--landing"
+>
+  <main
+    class="app-content app-content--full"
+  >
+    <div
+      class="hp2-root"
+    >
+      <section
+        class="hp2-desktop hp2-desktop--default-image"
+        data-testid="home-desktop"
+        data-wallpaper-mode="default-image"
+      >
+        <img
+          alt=""
+          aria-hidden="true"
+          class="hp2-desktop__wallpaper"
+          data-testid="home-desktop-wallpaper-image"
+          src="NEW-map2-landing-bg.png"
+        />
+        <div
+          aria-hidden="true"
+          class="hp2-desktop__scrim"
+        />
+        <div
+          class="hp2-desktop__status"
+        >
+          <div
+            aria-label="Desktop icons"
+            class="hp2-desktop__icons"
+            role="list"
+          >
+            <button
+              aria-label="Open Audio Artifacts"
+              class="hp2-desktop__icon"
+              role="listitem"
+              title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="hp2-desktop__icon-glyph"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="40"
+                  viewBox="0 0 32 32"
+                  width="40"
+                >
+                  <path
+                    d="M7 11h18v13H7z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M10 8h12l2 3H8z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M14 15h4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M12 19h8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+              </span>
+              <span
+                class="hp2-desktop__icon-label"
+              >
+                Audio Artifacts
+              </span>
+            </button>
+          </div>
+          <div
+            aria-label="Open Platforms overview"
+            class="hp2-desktop__platform-card"
+            role="button"
+            tabindex="0"
+          >
+            <div
+              class="hp2-desktop__platform-meta"
+            >
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                height="20"
+                viewBox="0 0 32 32"
+                width="20"
+              >
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="4"
+                  y="12"
+                />
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="20"
+                  y="5"
+                />
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="20"
+                  y="19"
+                />
+                <path
+                  d="M12 16h5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 16v-7"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 16v7"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 9h3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 23h3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+              <strong>
+                Platforms
+              </strong>
+            </div>
+            <p>
+              1 node online
+            </p>
+          </div>
+          <footer
+            class="hp2-footer"
+          >
+            0000000000000001
+             · 
+            MAP2-TESTBED
+             · 
+            AVB: operational
+             · 
+            AVDECC: 1 entity
+             · 
+            Nodes: 1 active
+          </footer>
+        </div>
+        <div
+          aria-label="Desktop watermarks"
+          class="hp2-desktop__watermarks"
+        >
+          <button
+            class="hp2-desktop__watermark"
+            data-testid="home-desktop-empty-watermark"
+            type="button"
+          >
+            <span
+              class="hp2-desktop__watermark-eyebrow"
+            >
+              Desktop hint
+            </span>
+            <strong>
+              Visit Workspace Catalog
+            </strong>
+            <span>
+              Pin apps to the desktop to replace this empty-state hint.
+            </span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div
+    aria-label="Primary navigation shell"
+    class="window-taskbar"
+    data-running-route-count="0"
+    style="--window-shell-accent: var(--cds-support-warning);"
+  >
+    <div
+      class="window-taskbar__left"
+    >
+      <div
+        class="window-taskbar__start-root"
+      >
+        <button
+          aria-controls="start-menu-panel"
+          aria-expanded="false"
+          aria-haspopup="menu"
+          aria-label="Open Start menu"
+          class="window-taskbar__start-btn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__start-mark"
+          >
+            <svg
+              aria-hidden="true"
+              class="window-taskbar__start-mark-icon"
+              focusable="false"
+              viewBox="0 0 192 192"
+            >
+              <rect
+                fill="#4589FF"
+                height="168"
+                rx="34"
+                width="168"
+                x="12"
+                y="12"
+              />
+              <rect
+                fill="none"
+                height="162"
+                rx="31"
+                stroke="#A6C8FF"
+                stroke-opacity="0.45"
+                stroke-width="2"
+                width="162"
+                x="15"
+                y="15"
+              />
+              <rect
+                fill="#13171B"
+                height="136"
+                rx="24"
+                width="136"
+                x="28"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="136"
+                rx="13"
+                width="26"
+                x="83"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="26"
+                rx="13"
+                width="136"
+                x="28"
+                y="83"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="115"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="115"
+              />
+            </svg>
+          </span>
+          <span>
+            Start
+          </span>
+        </button>
+      </div>
+      <div
+        aria-label="Running applications"
+        class="window-taskbar__indicators"
+      >
+        <button
+          aria-label="Audio Artifacts pinned taskbar app"
+          class="window-taskbar__indicator is-pinned"
+          title="Audio Artifacts"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__indicator-icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              focusable="false"
+              height="16"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+              />
+              <path
+                d="M13 20H19V22H13z"
+              />
+              <path
+                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+              />
+            </svg>
+          </span>
+          <span
+            class="window-taskbar__indicator-text"
+          >
+            Artifacts
+          </span>
+        </button>
+      </div>
+    </div>
+    <div
+      class="window-taskbar__right"
+    >
+      <div
+        class="window-taskbar__status window-taskbar__status--nodes"
+      >
+        <div
+          data-testid="node-nav-bar"
+        />
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--latency"
+      >
+        <div
+          data-testid="shell-latency-pressure-readout"
+        >
+          09
+        </div>
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--clock"
+      >
+        <div
+          data-testid="taskbar-clock"
+        >
+          9:41 AM
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    aria-hidden="true"
+    class="cds--layer-one cds--modal"
+    role="presentation"
+  >
+    <div
+      aria-label="Power"
+      aria-modal="true"
+      class="cds--modal-container cds--modal-container--sm"
+      role="dialog"
+    >
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+      <div
+        class="cds--modal-container-body"
+      >
+        <div
+          class="cds--modal-header"
+        >
+          <h2
+            class="cds--modal-header__label cds--type-delta"
+          >
+            Power
+          </h2>
+          <h2
+            class="cds--modal-header__heading cds--type-beta"
+          >
+            Restart backend
+          </h2>
+          <div
+            class="cds--modal-close-button"
+          >
+            <span
+              class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip"
+            >
+              <div
+                class="cds--tooltip-trigger__wrapper"
+              >
+                <button
+                  aria-label="Close"
+                  aria-labelledby="tooltip-_r_f_"
+                  class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="cds--modal-close__icon"
+                    fill="currentColor"
+                    focusable="false"
+                    height="20"
+                    preserveAspectRatio="xMidYMid meet"
+                    viewBox="0 0 32 32"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <span
+                aria-hidden="true"
+                class="cds--popover"
+                id="tooltip-_r_f_"
+                role="tooltip"
+              >
+                <span
+                  class="cds--popover-content cds--tooltip-content"
+                >
+                  Close
+                </span>
+                <span
+                  class="cds--popover-caret"
+                />
+              </span>
+            </span>
+          </div>
+        </div>
+        <div
+          class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+        >
+          Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
+        </div>
+        <div
+          aria-busy="false"
+          class="cds--modal-footer cds--btn-set"
+        >
+          <button
+            class="cds--btn cds--btn--secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="cds--btn cds--btn--primary"
+            type="button"
+          >
+            Confirm restart
+          </button>
+        </div>
+      </div>
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Desktop experience visual snapshots matches the desktop wallpaper context menu 1`] = `
+<div
+  class="app-shell app-shell--windowed app-shell--landing"
+>
+  <main
+    class="app-content app-content--full"
+  >
+    <div
+      class="hp2-root"
+    >
+      <section
+        class="hp2-desktop hp2-desktop--default-image"
+        data-testid="home-desktop"
+        data-wallpaper-mode="default-image"
+      >
+        <img
+          alt=""
+          aria-hidden="true"
+          class="hp2-desktop__wallpaper"
+          data-testid="home-desktop-wallpaper-image"
+          src="NEW-map2-landing-bg.png"
+        />
+        <div
+          aria-hidden="true"
+          class="hp2-desktop__scrim"
+        />
+        <div
+          class="hp2-desktop__status"
+        >
+          <div
+            aria-label="Desktop icons"
+            class="hp2-desktop__icons"
+            role="list"
+          >
+            <button
+              aria-label="Open Audio Artifacts"
+              class="hp2-desktop__icon"
+              role="listitem"
+              title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="hp2-desktop__icon-glyph"
+              >
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  height="40"
+                  viewBox="0 0 32 32"
+                  width="40"
+                >
+                  <path
+                    d="M7 11h18v13H7z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M10 8h12l2 3H8z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M14 15h4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M12 19h8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <path
+                    d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+              </span>
+              <span
+                class="hp2-desktop__icon-label"
+              >
+                Audio Artifacts
+              </span>
+            </button>
+          </div>
+          <div
+            aria-label="Open Platforms overview"
+            class="hp2-desktop__platform-card"
+            role="button"
+            tabindex="0"
+          >
+            <div
+              class="hp2-desktop__platform-meta"
+            >
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                height="20"
+                viewBox="0 0 32 32"
+                width="20"
+              >
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="4"
+                  y="12"
+                />
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="20"
+                  y="5"
+                />
+                <rect
+                  fill="none"
+                  height="8"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                  width="8"
+                  x="20"
+                  y="19"
+                />
+                <path
+                  d="M12 16h5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 16v-7"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 16v7"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 9h3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+                <path
+                  d="M17 23h3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+              <strong>
+                Platforms
+              </strong>
+            </div>
+            <p>
+              1 node online
+            </p>
+          </div>
+          <footer
+            class="hp2-footer"
+          >
+            0000000000000001
+             · 
+            MAP2-TESTBED
+             · 
+            AVB: operational
+             · 
+            AVDECC: 1 entity
+             · 
+            Nodes: 1 active
+          </footer>
+        </div>
+        <div
+          aria-label="Desktop watermarks"
+          class="hp2-desktop__watermarks"
+        >
+          <button
+            class="hp2-desktop__watermark"
+            data-testid="home-desktop-empty-watermark"
+            type="button"
+          >
+            <span
+              class="hp2-desktop__watermark-eyebrow"
+            >
+              Desktop hint
+            </span>
+            <strong>
+              Visit Workspace Catalog
+            </strong>
+            <span>
+              Pin apps to the desktop to replace this empty-state hint.
+            </span>
+          </button>
+        </div>
+        <div
+          aria-label="Desktop context menu"
+          class="hp2-desktop__context-menu"
+          role="menu"
+          style="left: 80px; top: 120px;"
+        >
+          <button
+            class="hp2-desktop__context-item"
+            type="button"
+          >
+            Refresh
+          </button>
+          <button
+            class="hp2-desktop__context-item"
+            type="button"
+          >
+            Display settings
+          </button>
+          <button
+            class="hp2-desktop__context-item"
+            type="button"
+          >
+            About
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div
+    aria-label="Primary navigation shell"
+    class="window-taskbar"
+    data-running-route-count="0"
+    style="--window-shell-accent: var(--cds-support-warning);"
+  >
+    <div
+      class="window-taskbar__left"
+    >
+      <div
+        class="window-taskbar__start-root"
+      >
+        <button
+          aria-controls="start-menu-panel"
+          aria-expanded="false"
+          aria-haspopup="menu"
+          aria-label="Open Start menu"
+          class="window-taskbar__start-btn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__start-mark"
+          >
+            <svg
+              aria-hidden="true"
+              class="window-taskbar__start-mark-icon"
+              focusable="false"
+              viewBox="0 0 192 192"
+            >
+              <rect
+                fill="#4589FF"
+                height="168"
+                rx="34"
+                width="168"
+                x="12"
+                y="12"
+              />
+              <rect
+                fill="none"
+                height="162"
+                rx="31"
+                stroke="#A6C8FF"
+                stroke-opacity="0.45"
+                stroke-width="2"
+                width="162"
+                x="15"
+                y="15"
+              />
+              <rect
+                fill="#13171B"
+                height="136"
+                rx="24"
+                width="136"
+                x="28"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="136"
+                rx="13"
+                width="26"
+                x="83"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="26"
+                rx="13"
+                width="136"
+                x="28"
+                y="83"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="115"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="115"
+              />
+            </svg>
+          </span>
+          <span>
+            Start
+          </span>
+        </button>
+      </div>
+      <div
+        aria-label="Running applications"
+        class="window-taskbar__indicators"
+      >
+        <button
+          aria-label="Audio Artifacts pinned taskbar app"
+          class="window-taskbar__indicator is-pinned"
+          title="Audio Artifacts"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__indicator-icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              focusable="false"
+              height="16"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+              />
+              <path
+                d="M13 20H19V22H13z"
+              />
+              <path
+                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+              />
+            </svg>
+          </span>
+          <span
+            class="window-taskbar__indicator-text"
+          >
+            Artifacts
+          </span>
+        </button>
+      </div>
+    </div>
+    <div
+      class="window-taskbar__right"
+    >
+      <div
+        class="window-taskbar__status window-taskbar__status--nodes"
+      >
+        <div
+          data-testid="node-nav-bar"
+        />
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--latency"
+      >
+        <div
+          data-testid="shell-latency-pressure-readout"
+        >
+          09
+        </div>
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--clock"
+      >
+        <div
+          data-testid="taskbar-clock"
+        >
+          9:41 AM
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    aria-hidden="true"
+    class="cds--layer-one cds--modal"
+    role="presentation"
+  >
+    <div
+      aria-label="Power"
+      aria-modal="true"
+      class="cds--modal-container cds--modal-container--sm"
+      role="dialog"
+    >
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+      <div
+        class="cds--modal-container-body"
+      >
+        <div
+          class="cds--modal-header"
+        >
+          <h2
+            class="cds--modal-header__label cds--type-delta"
+          >
+            Power
+          </h2>
+          <h2
+            class="cds--modal-header__heading cds--type-beta"
+          >
+            Restart backend
+          </h2>
+          <div
+            class="cds--modal-close-button"
+          >
+            <span
+              class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip"
+            >
+              <div
+                class="cds--tooltip-trigger__wrapper"
+              >
+                <button
+                  aria-label="Close"
+                  aria-labelledby="tooltip-_r_m_"
+                  class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="cds--modal-close__icon"
+                    fill="currentColor"
+                    focusable="false"
+                    height="20"
+                    preserveAspectRatio="xMidYMid meet"
+                    viewBox="0 0 32 32"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <span
+                aria-hidden="true"
+                class="cds--popover"
+                id="tooltip-_r_m_"
+                role="tooltip"
+              >
+                <span
+                  class="cds--popover-content cds--tooltip-content"
+                >
+                  Close
+                </span>
+                <span
+                  class="cds--popover-caret"
+                />
+              </span>
+            </span>
+          </div>
+        </div>
+        <div
+          class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+        >
+          Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
+        </div>
+        <div
+          aria-busy="false"
+          class="cds--modal-footer cds--btn-set"
+        >
+          <button
+            class="cds--btn cds--btn--secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="cds--btn cds--btn--primary"
+            type="button"
+          >
+            Confirm restart
+          </button>
+        </div>
+      </div>
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Desktop experience visual snapshots matches the taskbar and Start Menu shell 1`] = `
+<div
+  class="app-shell app-shell--themed-workspace app-shell--windowed"
+>
+  <main
+    class="app-content app-content--full"
+  >
+    <section
+      aria-label="Artifacts window"
+      class="app-window is-open"
+    >
+      <div
+        class="app-window__controls"
+      >
+        <button
+          aria-label="Close Artifacts"
+          class="app-window__close"
+          type="button"
+        >
+          X
+        </button>
+      </div>
+      <div
+        class="app-window__body"
+      >
+        <div
+          data-testid="artifacts-page"
+        >
+          Audio Artifacts Workspace
+        </div>
+      </div>
+    </section>
+  </main>
+  <div
+    aria-label="Primary navigation shell"
+    class="window-taskbar"
+    data-running-route-count="1"
+    style="--window-shell-accent: #be95ff;"
+  >
+    <div
+      class="window-taskbar__left"
+    >
+      <div
+        class="window-taskbar__start-root"
+      >
+        <button
+          aria-controls="start-menu-panel"
+          aria-expanded="true"
+          aria-haspopup="menu"
+          aria-label="Close Start menu"
+          class="window-taskbar__start-btn is-active"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__start-mark"
+          >
+            <svg
+              aria-hidden="true"
+              class="window-taskbar__start-mark-icon"
+              focusable="false"
+              viewBox="0 0 192 192"
+            >
+              <rect
+                fill="#4589FF"
+                height="168"
+                rx="34"
+                width="168"
+                x="12"
+                y="12"
+              />
+              <rect
+                fill="none"
+                height="162"
+                rx="31"
+                stroke="#A6C8FF"
+                stroke-opacity="0.45"
+                stroke-width="2"
+                width="162"
+                x="15"
+                y="15"
+              />
+              <rect
+                fill="#13171B"
+                height="136"
+                rx="24"
+                width="136"
+                x="28"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="136"
+                rx="13"
+                width="26"
+                x="83"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="26"
+                rx="13"
+                width="136"
+                x="28"
+                y="83"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="115"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="115"
+              />
+            </svg>
+          </span>
+          <span>
+            Start
+          </span>
+        </button>
+        <div
+          aria-label="Pinned navigation"
+          class="cds--layer-two start-menu-panel"
+          id="start-menu-panel"
+          role="menu"
+        >
+          <div
+            class="start-menu-panel__shell"
+          >
+            <div
+              aria-label="Start Menu shortcuts"
+              class="start-menu-panel__static-column"
+              role="group"
+            >
+              <button
+                class="start-menu-panel__static-item"
+                type="button"
+              >
+                Audio Artifacts
+              </button>
+              <button
+                class="start-menu-panel__static-item"
+                type="button"
+              >
+                Platforms
+              </button>
+              <button
+                class="start-menu-panel__static-item"
+                type="button"
+              >
+                Workspace Catalog
+              </button>
+              <button
+                class="start-menu-panel__static-item"
+                type="button"
+              >
+                Settings
+              </button>
+              <div
+                class="start-menu-panel__static-item-root"
+              >
+                <button
+                  aria-controls="start-menu-power-menu"
+                  aria-expanded="false"
+                  aria-haspopup="menu"
+                  class="start-menu-panel__static-item"
+                  type="button"
+                >
+                  Power
+                </button>
+              </div>
+            </div>
+            <div
+              class="start-menu-panel__tiles-column"
+            >
+              <div
+                class="start-menu-panel__grid"
+              >
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/intelfx"
+                  style="--item-color: #e53935;"
+                  title="Control the Rocktron Intellifex from MAP2, including signal flow editing, preset library, MIDI mapping, scenes, and real-time parameter control. • beta"
+                >
+                  <span
+                    class="start-menu-card__icon start-menu-card__icon--tile"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      width="18"
+                    >
+                      <rect
+                        fill="none"
+                        height="20"
+                        rx="4"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                        width="22"
+                        x="5"
+                        y="6"
+                      />
+                      <path
+                        d="M9 11h14"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M9 16h14"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M9 21h14"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <circle
+                        cx="11"
+                        cy="11"
+                        fill="currentColor"
+                        r="1.2"
+                      />
+                      <circle
+                        cx="21"
+                        cy="16"
+                        fill="currentColor"
+                        r="1.2"
+                      />
+                      <circle
+                        cx="15"
+                        cy="21"
+                        fill="currentColor"
+                        r="1.2"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-card__label start-menu-card__label--tile"
+                  >
+                    IntelFX Rack
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/midi-hub"
+                  style="--item-color: var(--cds-support-success);"
+                  title="Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration. • beta"
+                >
+                  <span
+                    class="start-menu-card__icon start-menu-card__icon--tile"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      focusable="false"
+                      height="18"
+                      preserveAspectRatio="xMidYMid meet"
+                      viewBox="0 0 32 32"
+                      width="18"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-card__label start-menu-card__label--tile"
+                  >
+                    MIDI Hub
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        aria-label="Running applications"
+        class="window-taskbar__indicators"
+      >
+        <button
+          aria-label="Audio Artifacts pinned taskbar app"
+          class="window-taskbar__indicator is-running is-active is-pinned"
+          title="Audio Artifacts • click to close"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="window-taskbar__indicator-icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              focusable="false"
+              height="16"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+              />
+              <path
+                d="M13 20H19V22H13z"
+              />
+              <path
+                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+              />
+            </svg>
+          </span>
+          <span
+            class="window-taskbar__indicator-text"
+          >
+            Artifacts
+          </span>
+        </button>
+      </div>
+    </div>
+    <div
+      class="window-taskbar__right"
+    >
+      <div
+        class="window-taskbar__status window-taskbar__status--nodes"
+      >
+        <div
+          data-testid="node-nav-bar"
+        />
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--latency"
+      >
+        <div
+          data-testid="shell-latency-pressure-readout"
+        >
+          09
+        </div>
+      </div>
+      <div
+        class="window-taskbar__status window-taskbar__status--clock"
+      >
+        <div
+          data-testid="taskbar-clock"
+        >
+          9:41 AM
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    aria-hidden="true"
+    class="cds--layer-one cds--modal"
+    role="presentation"
+  >
+    <div
+      aria-label="Power"
+      aria-modal="true"
+      class="cds--modal-container cds--modal-container--sm"
+      role="dialog"
+    >
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+      <div
+        class="cds--modal-container-body"
+      >
+        <div
+          class="cds--modal-header"
+        >
+          <h2
+            class="cds--modal-header__label cds--type-delta"
+          >
+            Power
+          </h2>
+          <h2
+            class="cds--modal-header__heading cds--type-beta"
+          >
+            Restart backend
+          </h2>
+          <div
+            class="cds--modal-close-button"
+          >
+            <span
+              class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip"
+            >
+              <div
+                class="cds--tooltip-trigger__wrapper"
+              >
+                <button
+                  aria-label="Close"
+                  aria-labelledby="tooltip-_r_t_"
+                  class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="cds--modal-close__icon"
+                    fill="currentColor"
+                    focusable="false"
+                    height="20"
+                    preserveAspectRatio="xMidYMid meet"
+                    viewBox="0 0 32 32"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <span
+                aria-hidden="true"
+                class="cds--popover"
+                id="tooltip-_r_t_"
+                role="tooltip"
+              >
+                <span
+                  class="cds--popover-content cds--tooltip-content"
+                >
+                  Close
+                </span>
+                <span
+                  class="cds--popover-caret"
+                />
+              </span>
+            </span>
+          </div>
+        </div>
+        <div
+          class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+        >
+          Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
+        </div>
+        <div
+          aria-busy="false"
+          class="cds--modal-footer cds--btn-set"
+        >
+          <button
+            class="cds--btn cds--btn--secondary"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="cds--btn cds--btn--primary"
+            type="button"
+          >
+            Confirm restart
+          </button>
+        </div>
+      </div>
+      <button
+        class="cds--visually-hidden"
+        type="button"
+      >
+        Focus sentinel
+      </button>
+    </div>
+  </div>
+</div>
+`;
