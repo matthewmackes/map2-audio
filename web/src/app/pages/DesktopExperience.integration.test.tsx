@@ -244,6 +244,7 @@ describe('Desktop experience integration', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
     expect(screen.getByTestId('artifacts-page')).toBeInTheDocument()
+    expect(screen.getByText('Program object')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close Artifacts' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
 
@@ -261,31 +262,31 @@ describe('Desktop experience integration', () => {
   it('opens the Start Menu, navigates through it, and closes after routing', async () => {
     renderDesktopExperience(['/artifacts'])
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
-    expect(screen.getByRole('button', { name: 'Workspace Catalog' })).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    expect(screen.getByRole('button', { name: 'Program Catalog' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Workspace Catalog' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Program Catalog' }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
     expect(screen.getByTestId('workspace-catalog-page')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Workspace Catalog' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Program Catalog' })).toBeNull()
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {
     renderDesktopExperience(['/artifacts'])
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh Page' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))

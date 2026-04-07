@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Callable, Any, Optional, TypeVar, Coroutine
 from dataclasses import dataclass
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,8 @@ class CircuitBreaker:
     """
     
     def __init__(self, name: str, failure_threshold: int = 5,
-                 success_threshold: Optional[int] = None, timeout_seconds: int = 30):
+                 success_threshold: Optional[int] = None, timeout_seconds: int = 30,
+                 failure_window_seconds: Optional[int] = None):
         """
         Initialize circuit breaker.
         
@@ -78,12 +80,16 @@ class CircuitBreaker:
             failure_threshold: Failures before opening circuit
             success_threshold: Successes before closing from half-open
             timeout_seconds: Time before attempting recovery
+            failure_window_seconds: Rolling window used to count failures
         """
         self.name = name
         self.state = CircuitState.CLOSED
         self.failure_threshold = failure_threshold
         self.success_threshold = success_threshold if success_threshold is not None else 2
         self.timeout_seconds = timeout_seconds
+        self.failure_window_seconds = (
+            failure_window_seconds if failure_window_seconds is not None else max(timeout_seconds, 1)
+        )
         self._uses_default_success_threshold = success_threshold is None
         
         # Counters
@@ -94,6 +100,8 @@ class CircuitBreaker:
         # Timing
         self.last_failure_time: Optional[datetime] = None
         self.opened_at: Optional[datetime] = None
+        self._failure_history: deque[datetime] = deque()
+        self._half_open_probe_in_flight = False
         
         # Thread safety
         self._lock = asyncio.Lock()
@@ -119,18 +127,27 @@ class CircuitBreaker:
             Exception: Any exception raised by func
         """
         async with self._lock:
+            self.metrics.total_calls += 1
             # Check if we should attempt recovery
             if self.state == CircuitState.OPEN:
                 if self._should_attempt_reset():
                     logger.info(f"[{self.name}] Circuit transitioning to HALF_OPEN, testing recovery")
                     self.state = CircuitState.HALF_OPEN
                     self.success_count = 0
+                    self._half_open_probe_in_flight = True
                 else:
                     # Still in timeout period, reject request
                     self.metrics.rejected_calls += 1
                     raise CircuitBreakerException(
                         f"Circuit breaker OPEN for {self.name} (opened {self._time_since_open()}s ago)"
                     )
+            elif self.state == CircuitState.HALF_OPEN:
+                if self._half_open_probe_in_flight:
+                    self.metrics.rejected_calls += 1
+                    raise CircuitBreakerException(
+                        f"Circuit breaker HALF_OPEN for {self.name} (recovery probe already in flight)"
+                    )
+                self._half_open_probe_in_flight = True
         
         try:
             # Call the function
@@ -149,11 +166,11 @@ class CircuitBreaker:
     async def _on_success(self) -> None:
         """Handle successful call."""
         self.metrics.successful_calls += 1
-        self.failure_count = 0
         self.consecutive_successes += 1
         
         if self.state == CircuitState.HALF_OPEN:
             self.success_count += 1
+            self._half_open_probe_in_flight = False
 
             close_on_first_success = (
                 self._uses_default_success_threshold
@@ -163,26 +180,32 @@ class CircuitBreaker:
             if close_on_first_success or self.success_count >= self.success_threshold:
                 # Recovery successful, close circuit
                 self._change_state(CircuitState.CLOSED)
+                self.failure_count = 0
+                self._failure_history.clear()
                 logger.info(
                     f"[{self.name}] Circuit CLOSED - recovery successful "
                     f"({self.success_count} consecutive successes)"
                 )
         
         elif self.state == CircuitState.CLOSED:
-            # Normal operation, reset consecutive successes
-            pass
+            self._prune_failure_history(datetime.now())
+            self.failure_count = len(self._failure_history)
     
     async def _on_failure(self) -> None:
         """Handle failed call."""
         self.metrics.failed_calls += 1
-        self.failure_count += 1
         self.consecutive_successes = 0
-        self.last_failure_time = datetime.now()
+        now = datetime.now()
+        self.last_failure_time = now
+        self._prune_failure_history(now)
+        self._failure_history.append(now)
+        self.failure_count = len(self._failure_history)
         
         if self.state == CircuitState.HALF_OPEN:
             # Recovery test failed, reopen circuit
+            self._half_open_probe_in_flight = False
             self._change_state(CircuitState.OPEN)
-            self.opened_at = datetime.now()
+            self.opened_at = now
             logger.warning(
                 f"[{self.name}] Circuit OPEN - recovery test failed, "
                 f"reopening circuit"
@@ -192,11 +215,17 @@ class CircuitBreaker:
             # Check if failure threshold exceeded
             if self.failure_count >= self.failure_threshold:
                 self._change_state(CircuitState.OPEN)
-                self.opened_at = datetime.now()
+                self.opened_at = now
                 logger.warning(
                     f"[{self.name}] Circuit OPEN - failure threshold exceeded "
                     f"({self.failure_count} failures)"
                 )
+
+    def _prune_failure_history(self, now: datetime) -> None:
+        """Drop failures that are outside the rolling failure window."""
+        cutoff = now - timedelta(seconds=self.failure_window_seconds)
+        while self._failure_history and self._failure_history[0] < cutoff:
+            self._failure_history.popleft()
     
     def _should_attempt_reset(self) -> bool:
         """Check if enough time has passed to attempt recovery."""
@@ -237,6 +266,8 @@ class CircuitBreaker:
         self.consecutive_successes = 0
         self.last_failure_time = None
         self.opened_at = None
+        self._failure_history.clear()
+        self._half_open_probe_in_flight = False
         logger.info(f"[{self.name}] Circuit manually reset to CLOSED")
     
     def __repr__(self) -> str:

@@ -10,6 +10,29 @@ import {
 } from '@carbon/react'
 import type { MaschineDaemonStatus } from '../../../map2/types'
 
+function preferredBulkPair(status: MaschineDaemonStatus | null): string {
+  const selectedTransport = status?.transport?.selected_transport
+  const selectedWrite = typeof selectedTransport?.write_endpoint_address_hex === 'string'
+    ? selectedTransport.write_endpoint_address_hex
+    : null
+  const selectedRead = typeof selectedTransport?.read_endpoint_address_hex === 'string'
+    ? selectedTransport.read_endpoint_address_hex
+    : null
+  if (selectedWrite && selectedRead) {
+    return `${selectedWrite} -> ${selectedRead}`
+  }
+  const bulkCandidate = Array.isArray(status?.transport_candidates)
+    ? status.transport_candidates.find((candidate) => candidate.transport_id === 'pyusb-bulk')
+    : null
+  const candidateWrite = typeof bulkCandidate?.write_endpoint_address_hex === 'string'
+    ? bulkCandidate.write_endpoint_address_hex
+    : null
+  const candidateRead = typeof bulkCandidate?.read_endpoint_address_hex === 'string'
+    ? bulkCandidate.read_endpoint_address_hex
+    : null
+  return candidateWrite && candidateRead ? `${candidateWrite} -> ${candidateRead}` : 'n/a'
+}
+
 export function MaschineFirmwarePanel({
   status,
   onRefresh,
@@ -20,6 +43,10 @@ export function MaschineFirmwarePanel({
   const rows = [
     ['MK1 Firmware Version', String(status?.firmware_info?.version ?? 'n/a')],
     ['USB VID:PID', `${String(status?.hid_device?.vendor_id ?? 'n/a')}:${String(status?.hid_device?.product_id ?? 'n/a')}`],
+    ['Selected Transport', String(status?.transport?.transport_id ?? 'none')],
+    ['Transport Preference', String(status?.transport?.preference ?? status?.capabilities?.transport_preference ?? 'n/a')],
+    ['Transport Candidates', String(Array.isArray(status?.transport_candidates) ? status?.transport_candidates.length : 0)],
+    ['Preferred Bulk Pair', preferredBulkPair(status)],
     ['NHL Protocol Version', String(status?.capabilities?.protocol_version ?? 'n/a')],
     ['Daemon Version', String(status?.daemon_version ?? 'n/a')],
     ['Virtual Port Name', String(status?.virtual_port_name ?? 'n/a')],

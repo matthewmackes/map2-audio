@@ -44,6 +44,7 @@ class ConfigOption:
     sensitive: bool = False  # Don't log sensitive values
     restart_required: bool = False  # Requires restart to apply
     locked: bool = False  # Locked settings cannot be changed at runtime (systemd service only)
+    element_type: Optional[type] = None  # Required element type for list-valued settings
 
 
 class ConfigSection(Enum):
@@ -211,6 +212,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[48000],
         description="Allowed sample-rate set for profile-driven PipeWire mapping",
         value_type=list,
+        element_type=int,
     ),
     "audio_state.authority_backend": ConfigOption(
         key="audio_state.authority_backend",
@@ -226,6 +228,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=["http://127.0.0.1:2379"],
         description="Ordered etcd endpoint list for the authoritative audio state control plane",
         value_type=list,
+        element_type=str,
         env_var="MAP2_AUDIO_STATE_ETCD_ENDPOINTS",
         restart_required=True,
     ),
@@ -592,6 +595,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[0x27, 0x3F],
         description="I2C addresses for LCD displays",
         value_type=list,
+        element_type=int,
     ),
     "lcd.simulation": ConfigOption(
         key="lcd.simulation",
@@ -631,6 +635,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=["*"],
         description="Allowed CORS origins",
         value_type=list,
+        element_type=str,
     ),
 
     # Database settings
@@ -702,6 +707,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[],
         description="Additional LV2 plugin paths to scan",
         value_type=list,
+        element_type=str,
     ),
 
     # WebSocket settings
@@ -808,12 +814,14 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=["~/NAM", "~/NAM/models", "~/nam", "~/.local/share/NAM", "/usr/share/map2/nam", "~/Documents/NAM", "~/Downloads/NAM"],
         description="Additional NAM discovery paths",
         value_type=list,
+        element_type=str,
     ),
     "storage.extra_ir_paths": ConfigOption(
         key="storage.extra_ir_paths",
         default=["~/Impulses", "~/IRs", "/usr/share/map2/ir", "/usr/share/impulses"],
         description="Additional IR discovery paths",
         value_type=list,
+        element_type=str,
     ),
 
     # AVB/TSN Network Audio Transport settings
@@ -902,6 +910,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[],
         description="Ordered interface candidates for AVB stream failover",
         value_type=list,
+        element_type=str,
         env_var="MAP2_AVB_FAILOVER_INTERFACES",
     ),
     "avb.srp.enabled": ConfigOption(
@@ -1007,6 +1016,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[],
         description="Operator/AI notes for S/PDIF routing and lock behavior",
         value_type=list,
+        element_type=str,
     ),
     "clock_sync.selected_profile": ConfigOption(
         key="clock_sync.selected_profile",
@@ -1062,6 +1072,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[48000],
         description="Resolved allowed sample-rate list from selected profile",
         value_type=list,
+        element_type=int,
     ),
     "clock_sync.require_hard_lock": ConfigOption(
         key="clock_sync.require_hard_lock",
@@ -1080,6 +1091,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=[],
         description="Operator/AI remarks explaining current synchronization strategy",
         value_type=list,
+        element_type=str,
     ),
 
     # ── Tesira Forte AVB ─────────────────────────────────────────────────────
@@ -1099,6 +1111,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
             "Each entry: {host, port=23, name='', enabled=true, metering_tags=[]}"
         ),
         value_type=list,
+        element_type=dict,
         env_var="MAP2_TESIRA_DEVICES",
     ),
     "tesira.metering_interval_ms": ConfigOption(
@@ -1349,6 +1362,18 @@ class ConfigManager:
                 logger.warning(f"Config type mismatch: {key} expected {option.value_type}, got {type(value)}")
                 return False
 
+        if option.value_type is list and value is not None and option.element_type is not None:
+            for index, item in enumerate(value):
+                if not isinstance(item, option.element_type):
+                    logger.warning(
+                        "Config list element type mismatch: %s[%s] expected %s, got %s",
+                        key,
+                        index,
+                        option.element_type,
+                        type(item),
+                    )
+                    return False
+
         # Range check
         if option.min_value is not None and value < option.min_value:
             logger.warning(f"Config value below minimum: {key}={value} (min={option.min_value})")
@@ -1543,6 +1568,8 @@ class ConfigManager:
                 "max": option.max_value,
                 "choices": option.choices,
                 "restart_required": option.restart_required,
+                "locked": option.locked,
+                "element_type": option.element_type.__name__ if option.element_type else None,
             }
         return schema
 
@@ -1556,6 +1583,8 @@ class ConfigManager:
                 "description": option.description,
                 "type": option.value_type.__name__,
                 "current": self.get(key),
+                "locked": option.locked,
+                "element_type": option.element_type.__name__ if option.element_type else None,
             }
         return None
 

@@ -169,13 +169,13 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
-    expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
+    expect(screen.getByLabelText('Open desktop menu')).toBeTruthy()
     expect(container.querySelector('.window-titlebar')).toBeNull()
     expect(container.querySelector('.window-taskbar')).toBeTruthy()
     expect(container.querySelector('.app-window')).toBeNull()
   })
 
-  it('renders the taskbar shell on non-landing routes without the legacy titlebar', () => {
+  it('renders non-landing routes inside OS/2-style window chrome', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -184,11 +184,13 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
-    expect(screen.getByLabelText('Open Start menu')).toBeTruthy()
+    expect(screen.getByLabelText('Open desktop menu')).toBeTruthy()
     expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
-    expect(screen.getByText('IntelFX Rack')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
-    expect(container.querySelector('.window-titlebar')).toBeNull()
+    expect(container.querySelector('.window-titlebar')).toBeTruthy()
+    expect(container.querySelector('.window-titlebar__eyebrow')).toHaveTextContent('Program object')
+    expect(container.querySelector('.window-titlebar__title')).toHaveTextContent('IntelFX Rack')
+    expect(container.querySelector('.window-titlebar__meta')).toHaveTextContent('intelfx')
     expect(container.querySelector('.app-window')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
@@ -296,8 +298,8 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
   })
 
-  it('shows pinned routes only inside the Start menu and sorts them visually', () => {
-    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/juce-grid', '/midi-hub', '/perform', '/audio-artifacts', '/platform']
+  it('shows fixed Start Menu tiles first and appends user-managed pins after them', () => {
+    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/perform', '/audio-artifacts', '/platform']
 
     const { container } = renderInRouter(
       <AppShell>
@@ -308,15 +310,24 @@ describe('AppShell desktop taskbar shell', () => {
 
     expect(container.querySelectorAll('.start-menu-card').length).toBe(0)
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
 
-    for (const label of ['Audio Artifacts', 'Platforms', 'Workspace Catalog', 'Settings', 'Power']) {
+    for (const label of ['Artifacts', 'System Setup', 'Program Catalog', 'Display Settings', 'Power']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
     }
 
     const labels = Array.from(container.querySelectorAll('.start-menu-card__label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Audio Grid', 'IntelFX Rack', 'MIDI Hub', 'Stage Mode'])
-    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(4)
+    expect(labels).toEqual([
+      'Brain',
+      'Audio Grid',
+      'MIDI Hub',
+      'Audio Interfaces',
+      'Audio Artifacts',
+      'IntelFX Rack',
+      'Overview',
+      'Stage Mode',
+    ])
+    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(8)
   })
 
   it('closes the Start menu when a static shortcut is used', () => {
@@ -327,14 +338,14 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Workspace Catalog' }))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Program Catalog' }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
-    expect(screen.queryByRole('button', { name: 'Audio Artifacts' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Artifacts' })).toBeNull()
   })
 
-  it('shows the Workspace Catalog CTA when no Start menu tiles are pinned', () => {
+  it('shows the fixed Start Menu tiles even when no user-managed tiles are pinned', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -342,13 +353,16 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
-    expect(screen.getByText('Pin apps from the Workspace Catalog.')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open Workspace Catalog' }))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     expect(screen.queryByText('Pin apps from the Workspace Catalog.')).toBeNull()
+    for (const label of ['Brain', 'Audio Grid', 'MIDI Hub', 'Audio Interfaces']) {
+      expect(screen.getByRole(label === 'Audio Interfaces' ? 'button' : 'link', { name: label })).toBeInTheDocument()
+    }
+
+    fireEvent.click(screen.getByRole('link', { name: 'Brain' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/brain')
+    expect(screen.getByRole('button', { name: 'Close Brain' })).toBeInTheDocument()
   })
 
   it('opens the Power submenu and runs refresh and logout actions', () => {
@@ -359,7 +373,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
 
     expect(screen.getByRole('button', { name: 'Restart Backend' })).toBeInTheDocument()
@@ -369,7 +383,7 @@ describe('AppShell desktop taskbar shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh Page' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
@@ -383,7 +397,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
 
@@ -412,7 +426,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: /MPX1 Rack/i }))
 
     expect(screen.getByTestId('mpx1-mega-menu')).toBeTruthy()
@@ -428,14 +442,13 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getAllByRole('link', { name: /Overview/i })[0])
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
   })
 
   it('shows hardware submenu entries from the Start menu card', () => {
-    mockSpecialSettings.pinnedRoutes = ['/hardware-interfaces']
     mockHardwareLocationNotes['/hotone-jogg'] = { hostname: 'rack-b' }
 
     renderInRouter(
@@ -445,7 +458,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: /Audio Interfaces/i }))
 
     expect(screen.queryByText('Edirol UA-1000')).toBeNull()

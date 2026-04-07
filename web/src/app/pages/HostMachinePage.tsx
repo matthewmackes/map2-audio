@@ -58,7 +58,7 @@ export function HostMachinePage() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div className="hm-page hm-page--loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="hm-spinner" />
           <p style={{ marginTop: 16, color: 'var(--text-secondary)', fontSize: 14 }}>
@@ -72,7 +72,7 @@ export function HostMachinePage() {
   // ── Error ─────────────────────────────────────────────────────────────────────
   if (isError || (!allNodesSelected && (!hostInfo.data || !branding.data))) {
     return (
-      <div style={{ padding: '0 24px 32px' }}>
+      <div className="hm-page hm-page--error" style={{ padding: '0 24px 32px' }}>
         <PageHeader
           title={allNodesSelected ? 'Host Machine · All Nodes' : 'Host Machine'}
           subtitle="Hardware Information & Monitoring"
@@ -90,7 +90,7 @@ export function HostMachinePage() {
   if (allNodesSelected) {
     const comparisonRows = clusterComparison.data ?? []
     return (
-      <div style={{ padding: '0 24px 32px' }}>
+      <div className="hm-page hm-page--cluster" style={{ padding: '0 24px 32px' }}>
         <div className="hm-page-toolbar">
           <PageHeader
             title="Host Machine · All Nodes"

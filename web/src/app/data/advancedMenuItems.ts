@@ -3,14 +3,14 @@ import {
   Devices as Monitor,
   Home as House,
   Music as MusicNotes,
-  Package,
   Usb,
   Waveform,
 } from '@carbon/icons-react'
 import {
   MapAudioGridIcon,
-  MapClusterFabricIcon,
   MapMatrixProcessorIcon,
+  MapOs2DrivesIcon,
+  MapOs2FileManagerIcon,
   MapRackDeviceIcon,
   MapStagePerformanceIcon,
 } from '../components/icons/map'
@@ -23,7 +23,9 @@ export type NavigationHomeSection = 'Audio Grid' | 'AVB' | 'MIDI' | 'System' | '
 export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
 export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
 export const MAX_PINNED_NAV_ITEMS = 4
-export const defaultPinnedRoutes: string[] = ['/juce-grid']
+export const FIXED_START_MENU_TILE_ROUTES = ['/brain', '/juce-grid', '/midi-hub', '/hardware-interfaces'] as const
+const FIXED_START_MENU_TILE_ROUTE_SET = new Set<string>(FIXED_START_MENU_TILE_ROUTES)
+export const defaultPinnedRoutes: string[] = []
 
 export interface ShellNavigationItem {
   to: string
@@ -131,7 +133,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/platforms/overview',
     label: 'Platforms',
     shortLabel: 'Platforms',
-    icon: MapClusterFabricIcon,
+    icon: MapOs2DrivesIcon,
     description: 'Open the routed Platforms shell for overview, audio-engine, management, AVB, cluster, network discovery, and utility workspaces from one integrated operational surface.',
     color: 'var(--cds-support-warning)',
     homeSection: 'System',
@@ -140,6 +142,20 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     maturity: 'beta',
     kind: 'link',
     showOnHome: true,
+  },
+  {
+    to: '/brain',
+    label: 'Brain',
+    shortLabel: 'Brain',
+    icon: MusicNotes,
+    description: 'Open the Performance Brain workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics.',
+    color: 'var(--cds-link-primary)',
+    homeSection: 'Audio Grid',
+    showOnHome: false,
+    includeInAdvancedMenu: false,
+    pinnable: false,
+    maturity: 'beta',
+    kind: 'link',
   },
   {
     to: '/perform',
@@ -159,7 +175,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/artifacts',
     label: 'Audio Artifacts',
     shortLabel: 'Artifacts',
-    icon: Package,
+    icon: MapOs2FileManagerIcon,
     description: 'Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.',
     color: '#be95ff',
     homeSection: 'Audio Grid',
@@ -181,6 +197,21 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     maturity: 'beta',
     kind: 'link',
     showOnHome: true,
+  },
+  {
+    to: '/physical-surfaces',
+    label: 'Physical Surfaces',
+    shortLabel: 'Surfaces',
+    icon: MusicNotes,
+    description: 'Open the Enriched_MIDI_Physical_Surfaces shell for shared controller-family discovery, capability posture, and per-device subpages.',
+    color: 'var(--cds-support-info)',
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: true,
+    pinnable: false,
+    maturity: 'beta',
+    kind: 'link',
+    showOnHome: false,
+    deviceType: 'physical-surfaces',
   },
   {
     to: '/labs/push-surface',
@@ -481,7 +512,7 @@ export function normalizePinnedRoutes(routes: string[] | null | undefined): stri
   for (const rawRoute of routes) {
     const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
     const canonicalRoute = canonicalizeNavigationRoute(route)
-    if (!canonicalRoute || !PINNABLE_ROUTE_SET.has(canonicalRoute) || seen.has(canonicalRoute)) {
+    if (!canonicalRoute || !PINNABLE_ROUTE_SET.has(canonicalRoute) || FIXED_START_MENU_TILE_ROUTE_SET.has(canonicalRoute) || seen.has(canonicalRoute)) {
       continue
     }
     seen.add(canonicalRoute)

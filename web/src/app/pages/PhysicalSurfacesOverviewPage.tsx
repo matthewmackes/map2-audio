@@ -1,0 +1,172 @@
+import { Button, Loading, Tag, Tile } from '@carbon/react'
+import { useMemo } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
+
+import { PageHeader } from '../components/PageHeader'
+import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
+import type { PhysicalSurfacesShellContextValue } from './PhysicalSurfacesShell'
+
+function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
+  if (status === 'online') return 'green'
+  if (status === 'detected') return 'blue'
+  if (status === 'attention') return 'red'
+  return 'cool-gray'
+}
+
+function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
+  if (!summary) {
+    return {
+      online: 0,
+      detected: 0,
+      planned: 0,
+      usbDevices: 0,
+      soundCards: 0,
+    }
+  }
+  const online = summary.units.filter((unit) => unit.status === 'online').length
+  const detected = summary.units.filter((unit) => unit.status === 'detected').length
+  const planned = summary.units.filter((unit) => unit.status === 'planned').length
+  return {
+    online,
+    detected,
+    planned,
+    usbDevices: summary.host_observations.usb_devices.length,
+    soundCards: summary.host_observations.sound_cards.length,
+  }
+}
+
+function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
+  const navigate = useNavigate()
+
+  return (
+    <Tile className="physical-surfaces-page__card" key={unit.unit_id}>
+      <div className="physical-surfaces-page__card-head">
+        <div>
+          <p className="physical-surfaces-page__eyebrow">{unit.family}</p>
+          <h2>{unit.display_name}</h2>
+        </div>
+        <Tag type={statusTagType(unit.status)}>{unit.status}</Tag>
+      </div>
+      <p className="physical-surfaces-page__body-copy">{unit.status_reason}</p>
+      <p className="physical-surfaces-page__body-copy">
+        Current view: <strong>{unit.view_state.current_view_label}</strong>
+      </p>
+      <div className="physical-surfaces-page__tag-row">
+        {unit.capabilities.slice(0, 4).map((capability) => (
+          <Tag key={capability} type="cool-gray">
+            {capability}
+          </Tag>
+        ))}
+        <Tag type="blue">{unit.view_state.page_layout_mode}</Tag>
+        <Tag type="green">{unit.surface_lab.access}</Tag>
+      </div>
+      <div className="physical-surfaces-page__list-block">
+        <h3>Transport layers</h3>
+        <ul className="physical-surfaces-page__list">
+          {unit.transport_layers.map((layer) => (
+            <li key={layer.layer_id}>
+              <span>{layer.label}</span>
+              <Tag type={statusTagType(layer.status)}>{layer.status}</Tag>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="physical-surfaces-page__action-row">
+        <Button kind="ghost" size="sm" onClick={() => navigate(`/physical-surfaces/${unit.unit_id}`)}>
+          Open Surface Page
+        </Button>
+        {unit.specialized_route ? (
+          <Button kind="secondary" size="sm" onClick={() => navigate(unit.specialized_route ?? `/physical-surfaces/${unit.unit_id}`)}>
+            Open Existing Route
+          </Button>
+        ) : null}
+      </div>
+    </Tile>
+  )
+}
+
+export function PhysicalSurfacesOverviewPage() {
+  const { summary, isLoading } = useOutletContext<PhysicalSurfacesShellContextValue>()
+
+  const metrics = useMemo(() => overviewMetric(summary), [summary])
+
+  if (isLoading && !summary) {
+    return (
+      <div className="physical-surfaces-page physical-surfaces-page--loading">
+        <Loading active withOverlay={false} description="Loading physical surfaces" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="physical-surfaces-page">
+      <PageHeader
+        title="Enriched_MIDI_Physical_Surfaces"
+        subtitle="Unified MAP2 workspace for advanced controller families, host detection, richer transport layers, and device-specific subpages."
+        actions={<Tag type="blue">{summary?.units.length ?? 0} units</Tag>}
+      />
+
+      <div className="physical-surfaces-page__metrics">
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">Online</p>
+          <h2>{metrics.online}</h2>
+          <p className="physical-surfaces-page__body-copy">Units currently reporting an active shared-stack runtime.</p>
+        </Tile>
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">Detected</p>
+          <h2>{metrics.detected}</h2>
+          <p className="physical-surfaces-page__body-copy">Units matched by the host probe but not yet fully active in the richer runtime.</p>
+        </Tile>
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">USB Devices</p>
+          <h2>{metrics.usbDevices}</h2>
+          <p className="physical-surfaces-page__body-copy">USB devices visible to the shared hardware probe.</p>
+        </Tile>
+        <Tile className="physical-surfaces-page__metric-card">
+          <p className="physical-surfaces-page__eyebrow">Sound Cards</p>
+          <h2>{metrics.soundCards}</h2>
+          <p className="physical-surfaces-page__body-copy">ALSA sound-card or MIDI-capable kernel paths seen through sysfs and procfs.</p>
+        </Tile>
+      </div>
+
+      {summary ? (
+        <Tile className="physical-surfaces-page__card">
+          <div className="physical-surfaces-page__card-head">
+            <div>
+              <p className="physical-surfaces-page__eyebrow">Shared operator contract</p>
+              <h2>Synth-first surface rules</h2>
+            </div>
+          </div>
+          <div className="physical-surfaces-page__tag-row">
+            <Tag type="blue">{summary.shared_operator_contract.primary_role}</Tag>
+            <Tag type="cool-gray">{summary.shared_operator_contract.multi_synth_mode}</Tag>
+            <Tag type="cool-gray">{summary.shared_operator_contract.page_layout_mode}</Tag>
+            <Tag type="cool-gray">{summary.shared_operator_contract.view_sync}</Tag>
+            <Tag type="green">{summary.shared_operator_contract.community_firmware_support}</Tag>
+          </div>
+          <ul className="physical-surfaces-page__note-list">
+            <li>{summary.shared_operator_contract.sub_menu_policy}</li>
+            <li>{summary.shared_operator_contract.target_follow_policy}</li>
+            <li>{summary.shared_operator_contract.snapshot_strategy}</li>
+            <li>{summary.shared_operator_contract.surface_lab_mode}</li>
+          </ul>
+        </Tile>
+      ) : null}
+
+      {summary?.host_observations.maschinen_mk1_host_note ? (
+        <Tile className="physical-surfaces-page__host-note">
+          <p className="physical-surfaces-page__eyebrow">Host observation</p>
+          <p className="physical-surfaces-page__body-copy">{summary.host_observations.maschinen_mk1_host_note}</p>
+        </Tile>
+      ) : null}
+
+      <div className="physical-surfaces-page__unit-grid">
+        {(summary?.units ?? []).map((unit) => (
+          <UnitCard key={unit.unit_id} unit={unit} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default PhysicalSurfacesOverviewPage

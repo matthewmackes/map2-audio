@@ -1,18 +1,19 @@
+import type { ComponentType } from 'react'
 import {
-  ChartColumn,
   DataBase,
   Devices,
   Information,
   Network_3,
   PaintBrush,
   SettingsAdjust,
-  Screen,
   Share,
   Terminal,
-  type CarbonIconType,
 } from '@carbon/icons-react'
 
+import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../components/icons/map'
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
+
+type PlatformIcon = ComponentType<any>
 
 export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
 export const PLATFORM_UTILITY_PANEL_IDS = ['host-machine', 'theme', 'about'] as const
@@ -36,7 +37,7 @@ export interface PlatformPanelNavItem {
   to: string
   label: string
   shortLabel: string
-  icon: CarbonIconType
+  icon: PlatformIcon
   description: string
   color: string
   pinnable: boolean
@@ -47,8 +48,8 @@ export interface PlatformPanelNavItem {
 
 export type PlatformPinnedNavItem = PlatformPanelNavItem & { pinnable: true }
 
-const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
-  overview: ChartColumn,
+const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
+  overview: MapOs2DrivesIcon,
   management: Devices,
   'avb-routing': Network_3,
   'network-discovery': Share,
@@ -60,7 +61,7 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
   shortLabel: string
   description: string
   color: string
-  icon: CarbonIconType
+  icon: PlatformIcon
   pinnable: boolean
 }> = {
   'audio-engine': {
@@ -84,7 +85,7 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
     shortLabel: 'Host',
     description: 'Open hardware posture, services, and interface readiness for the local MAP2 host.',
     color: 'var(--cds-support-warning)',
-    icon: Screen,
+    icon: MapOs2HomeIcon,
     pinnable: true,
   },
   'theme': {

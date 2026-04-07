@@ -56,7 +56,7 @@ describe('useSpecialSettings', () => {
           enabled: true,
           hidden_plugins: [],
           menu_location: 'hidden',
-          promoted_advanced_routes: ['/midi-hub'],
+          promoted_advanced_routes: ['/intelfx'],
           landing_tiles: [{ route: '/platforms/workspace-catalog', size: 'large' }],
           snapshot_setlist_mode: false,
           snapshot_setlist_order: [5],
@@ -69,14 +69,14 @@ describe('useSpecialSettings', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.settings?.menuLocation).toBe('hidden')
-    expect(result.current.settings?.pinnedRoutes).toEqual(['/platforms/about', '/juce-grid'])
+    expect(result.current.settings?.pinnedRoutes).toEqual(['/platforms/about'])
     expect(result.current.settings?.landingTiles).toEqual([{ route: '/platforms/overview', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(true)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([9, 12])
 
     await act(async () => {
       await result.current.updateSettings({
-        pinnedRoutes: ['/midi-hub'],
+        pinnedRoutes: ['/intelfx'],
         landingTiles: [{ route: '/platforms/workspace-catalog', size: 'large' }],
         snapshotSetlistMode: false,
         snapshotSetlistOrder: [5],
@@ -90,20 +90,16 @@ describe('useSpecialSettings', () => {
 
     const payload = JSON.parse(String(postCall?.[1]?.body))
     expect(payload.menu_location).toBe('hidden')
-    expect(payload.pinned_routes).toEqual(['/midi-hub'])
+    expect(payload.pinned_routes).toEqual(['/intelfx'])
     expect(payload.landing_tiles).toEqual([
       { route: '/platforms/overview', size: 'medium' },
-      { route: '/platforms/workspace-catalog', size: 'large' },
     ])
     expect(payload.snapshot_setlist_mode).toBe(false)
     expect(payload.snapshot_setlist_order).toEqual([5])
-    expect(payload.promoted_advanced_routes).toEqual(['/midi-hub'])
+    expect(payload.promoted_advanced_routes).toEqual(['/intelfx'])
 
-    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/midi-hub']))
-    expect(result.current.settings?.landingTiles).toEqual([
-      { route: '/platforms/overview', size: 'medium' },
-      { route: '/platforms/workspace-catalog', size: 'large' },
-    ])
+    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/intelfx']))
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/platforms/overview', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(false)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([5])
     expect(result.current.settings?.menuLocation).toBe('hidden')

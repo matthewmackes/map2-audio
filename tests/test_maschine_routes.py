@@ -9,6 +9,23 @@ from app.services.maschine_lcd_service import reset_maschine_lcd_render_service
 from app.services.maschine_service import reset_maschine_service
 
 
+class _FakeRuntimeConfigManager:
+    def __init__(self) -> None:
+        self.values: dict[str, object] = {}
+        self.saved = 0
+
+    def get(self, key: str, default=None):
+        return self.values.get(key, default)
+
+    def set(self, key: str, value, save: bool = True):
+        self.values[key] = value
+        return True
+
+    def save(self) -> bool:
+        self.saved += 1
+        return True
+
+
 def _init_temp_db(tmp_path):
     database_module._tables_created = False
     database_module._pragmas_set = False
@@ -19,6 +36,40 @@ def _build_client() -> TestClient:
     app = FastAPI()
     app.include_router(maschine_routes.router)
     return TestClient(app)
+
+
+def test_maschine_transport_config_routes(tmp_path):
+    _init_temp_db(tmp_path)
+    reset_maschine_service()
+    reset_maschine_lcd_render_service()
+    client = _build_client()
+    fake_runtime_config = _FakeRuntimeConfigManager()
+
+    monkeypatch = __import__("pytest").MonkeyPatch()
+    monkeypatch.setattr(maschine_routes, "get_runtime_config_manager", lambda: fake_runtime_config)
+
+    get_response = client.get("/api/maschine/transport-config")
+    assert get_response.status_code == 200
+    assert get_response.json()["status"] == "ok"
+    assert get_response.json()["config"]["transport_preference"] == "auto"
+    assert get_response.json()["config"]["allow_kernel_detach"] is False
+    assert get_response.json()["state"]["connected"] is False
+
+    update_response = client.put(
+        "/api/maschine/transport-config",
+        json={
+            "transport_preference": "pyusb-bulk",
+            "allow_kernel_detach": True,
+        },
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["config"]["transport_preference"] == "pyusb-bulk"
+    assert update_response.json()["config"]["allow_kernel_detach"] is True
+    assert fake_runtime_config.values["maschine.transport_preference"] == "pyusb-bulk"
+    assert fake_runtime_config.values["maschine.allow_kernel_detach"] is True
+    assert fake_runtime_config.saved == 1
+
+    monkeypatch.undo()
 
 
 def test_maschine_routes_rest_and_websocket(tmp_path):

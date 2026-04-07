@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, type CSSProperties } from 'react'
 
 import ReactFlow, {
   Background,
@@ -63,22 +63,18 @@ function cardWidth(kind: ManagementWorkspaceNodeData['kind']) {
 }
 
 function ManagementWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
+  const nodeStyle = {
+    '--management-graph-node-width': `${cardWidth(data.kind)}px`,
+    '--management-graph-node-min-height': `${data.kind === 'hub' ? 132 : 108}px`,
+    '--management-graph-node-accent': data.accentColor,
+    '--management-graph-node-tone': data.selected ? data.accentColor : toneBorder(data.tone),
+  } as CSSProperties
+
   return (
     <button
       type="button"
-      style={{
-        width: cardWidth(data.kind),
-        minHeight: data.kind === 'hub' ? 132 : 108,
-        border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
-        borderInlineStart: `6px solid ${data.accentColor}`,
-        borderRadius: 10,
-        background: data.selected ? 'var(--cds-layer-selected-01)' : 'var(--cds-layer-01)',
-        color: 'var(--cds-text-primary)',
-        padding: '0.9rem',
-        boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 10px 24px rgba(36, 161, 72, 0.08)',
-        textAlign: 'left',
-        cursor: 'pointer',
-      }}
+      className={`management-workspace__graph-node management-workspace__graph-node--${data.kind}${data.selected ? ' is-selected' : ''}`}
+      style={nodeStyle}
       onClick={() => data.onSelect({
         anchorId: data.anchorId,
         recordId: data.recordId,
@@ -86,23 +82,33 @@ function ManagementWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
       })}
       aria-label={`Jump to ${data.label}`}
     >
-      <Handle type="target" position={Position.Left} style={{ background: data.accentColor }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--cds-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="management-workspace__graph-handle management-workspace__graph-handle--target"
+        style={{ background: data.accentColor }}
+      />
+      <div className="management-workspace__graph-node-head">
+        <span className="management-workspace__graph-node-eyebrow">
           {data.eyebrow}
         </span>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: data.selected ? data.accentColor : 'var(--cds-text-secondary)' }}>
+        <span className="management-workspace__graph-node-tone">
           {toneLabel(data.tone)}
         </span>
       </div>
-      <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.25 }}>{data.label}</div>
-      <div style={{ fontSize: '0.76rem', color: 'var(--cds-text-secondary)', marginTop: '0.375rem', lineHeight: 1.35 }}>
+      <div className="management-workspace__graph-node-label">{data.label}</div>
+      <div className="management-workspace__graph-node-caption">
         {data.caption}
       </div>
-      <div style={{ fontSize: '0.76rem', color: data.accentColor, marginTop: '0.75rem', fontWeight: 600 }}>
+      <div className="management-workspace__graph-node-metric">
         {data.metric}
       </div>
-      <Handle type="source" position={Position.Right} style={{ background: data.accentColor }} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="management-workspace__graph-handle management-workspace__graph-handle--source"
+        style={{ background: data.accentColor }}
+      />
     </button>
   )
 }
@@ -122,6 +128,7 @@ function ManagementWorkspaceGraphCanvas({
 
   return (
     <ReactFlow
+      className="management-workspace__graph-flow"
       fitView
       nodes={nodes}
       edges={edges}
@@ -167,6 +174,10 @@ export function ManagementWorkspaceGraph({
 
   return (
     <div className="management-workspace__graph">
+      <div className="management-workspace__graph-toolbar" aria-hidden="true">
+        <span>Management map</span>
+        <span>Pan and zoom to inspect service posture</span>
+      </div>
       <ReactFlowProvider>
         <ManagementWorkspaceGraphCanvas nodes={graphNodes} edges={model.edges} />
       </ReactFlowProvider>

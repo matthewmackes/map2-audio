@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { MapAudioGridIcon } from '../components/icons/map'
 import {
+  FIXED_START_MENU_TILE_ROUTES,
   MAX_PINNED_NAV_ITEMS,
   advancedMenuItems,
   defaultPinnedRoutes,
@@ -93,17 +94,17 @@ describe('navigation catalog', () => {
 
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
     expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about', '/platform'])).toEqual([
-      '/juce-grid',
       '/platforms/about',
-      '/midi-hub',
       '/platforms/overview',
     ])
   })
 
-  it('pins Audio Grid by default and removes legacy Grid entries from navigation', () => {
-    expect(defaultPinnedRoutes).toEqual(['/juce-grid'])
+  it('keeps the fixed Start Menu routes out of user-managed pins and removes legacy Grid entries from navigation', () => {
+    expect(defaultPinnedRoutes).toEqual([])
+    expect(FIXED_START_MENU_TILE_ROUTES).toEqual(['/brain', '/juce-grid', '/midi-hub', '/hardware-interfaces'])
 
     const juceGrid = navigationCatalogItems.find((item) => item.to === '/juce-grid')
+    const brain = navigationCatalogItems.find((item) => item.to === '/brain')
     const legacyGrid = navigationCatalogItems.find((item) => item.to === '/grid')
     const legacyGrid3d = navigationCatalogItems.find((item) => item.to === '/grid-3d')
 
@@ -112,6 +113,10 @@ describe('navigation catalog', () => {
     expect(juceGrid?.includeInAdvancedMenu).toBe(false)
     expect(juceGrid?.label).toBe('Audio Grid')
     expect(juceGrid?.icon).toBe(MapAudioGridIcon)
+    expect(brain).toBeDefined()
+    expect(brain?.label).toBe('Brain')
+    expect(brain?.pinnable).toBe(false)
+    expect(brain?.showOnHome).toBe(false)
     expect(legacyGrid).toBeUndefined()
     expect(legacyGrid3d).toBeUndefined()
   })
@@ -134,6 +139,7 @@ describe('navigation catalog', () => {
     const advancedItems = advancedMenuItems
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
+      '/physical-surfaces',
       '/labs/push-surface',
       '/mpx1',
       '/intelfx',

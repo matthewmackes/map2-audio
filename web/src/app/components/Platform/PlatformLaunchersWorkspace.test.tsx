@@ -16,7 +16,7 @@ function buildSettings(overrides: Partial<SpecialSettings> = {}): SpecialSetting
 }
 
 function getCatalogSection() {
-  const heading = screen.getByRole('heading', { name: 'Full Catalog' })
+  const heading = screen.getByRole('heading', { name: 'Program Directory' })
   const section = heading.closest('section')
   expect(section).not.toBeNull()
   return section as HTMLElement
@@ -61,26 +61,30 @@ describe('PlatformLaunchersWorkspace', () => {
 
     render(
       <PlatformLaunchersWorkspace
-        settings={buildSettings({ pinnedRoutes: ['/artifacts'] })}
+        settings={buildSettings({ pinnedRoutes: ['/perform'] })}
         isLoading={false}
         updateSettings={updateSettings}
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Carbon storefront for MAP2 workspaces' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Program Manager object directory' })).toBeInTheDocument()
     expect(screen.queryByText('Storefront spotlight')).not.toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Workspace catalog section navigation' })).not.toBeInTheDocument()
     expect(screen.queryByRole('table', { name: 'Launcher catalog' })).not.toBeInTheDocument()
 
     const catalog = getCatalogSection()
-    fireEvent.click(within(catalog).getByRole('button', { name: 'Launch MIDI Hub' }))
+    fireEvent.click(within(catalog).getByRole('button', { name: 'Launch Audio Artifacts' }))
 
-    expect(window.open).toHaveBeenCalledWith('/midi-hub', '_blank', 'noopener,noreferrer')
+    expect(window.open).toHaveBeenCalledWith('/artifacts', '_blank', 'noopener,noreferrer')
+    expect(within(catalog).queryByRole('button', { name: 'Launch Brain' })).toBeNull()
+    expect(within(catalog).queryByRole('button', { name: 'Launch Audio Grid' })).toBeNull()
+    expect(within(catalog).queryByRole('button', { name: 'Launch MIDI Hub' })).toBeNull()
+    expect(within(catalog).queryByRole('button', { name: 'Launch Audio Interfaces' })).toBeNull()
 
-    fireEvent.click(within(catalog).getByRole('button', { name: 'Configure MIDI Hub' }))
+    fireEvent.click(within(catalog).getByRole('button', { name: 'Configure Audio Artifacts' }))
 
     const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getAllByText('Human Interface').length).toBeGreaterThan(0)
+    expect(within(dialog).getAllByText('Platform').length).toBeGreaterThan(0)
     expect(within(dialog).getByText('Availability')).toBeInTheDocument()
     expect(within(dialog).getByRole('link', { name: 'Storefront brief' })).toHaveAttribute(
       'href',
@@ -92,7 +96,7 @@ describe('PlatformLaunchersWorkspace', () => {
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       landingTiles: [
         { route: '/platforms/overview', size: 'medium' },
-        { route: '/midi-hub', size: 'medium' },
+        { route: '/artifacts', size: 'medium' },
       ],
     }))
 
@@ -104,7 +108,7 @@ describe('PlatformLaunchersWorkspace', () => {
     fireEvent.click(pinToNavButton)
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      pinnedRoutes: ['/artifacts', '/midi-hub'],
+      pinnedRoutes: ['/perform', '/artifacts'],
     }))
   })
 
@@ -114,9 +118,9 @@ describe('PlatformLaunchersWorkspace', () => {
     render(
       <PlatformLaunchersWorkspace
         settings={buildSettings({
-          pinnedRoutes: ['/artifacts', '/juce-grid', '/intelfx', '/perform'],
+          pinnedRoutes: ['/artifacts', '/intelfx', '/perform', '/platforms/about'],
           landingTiles: [
-            { route: '/midi-hub', size: 'large' },
+            { route: '/mpx1', size: 'large' },
           ],
         })}
         isLoading={false}
@@ -124,13 +128,13 @@ describe('PlatformLaunchersWorkspace', () => {
       />,
     )
 
-    fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure MIDI Hub' }))
+    fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure MPX1 Rack' }))
     fireEvent.click(screen.getByRole('button', { name: 'small' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       landingTiles: [
         { route: '/platforms/overview', size: 'medium' },
-        { route: '/midi-hub', size: 'small' },
+        { route: '/mpx1', size: 'small' },
       ],
     }))
 
@@ -147,16 +151,16 @@ describe('PlatformLaunchersWorkspace', () => {
     )
 
     const catalog = getCatalogSection()
-    expect(within(catalog).getByRole('button', { name: 'Launch MIDI Hub' })).toBeInTheDocument()
+    expect(within(catalog).getByRole('button', { name: 'Launch Audio Artifacts' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /^Audio Interface \(/ }))
 
-    expect(within(catalog).queryByRole('button', { name: 'Launch MIDI Hub' })).toBeNull()
-    expect(within(catalog).getByRole('button', { name: 'Launch Audio Interfaces' })).toBeInTheDocument()
+    expect(within(catalog).queryByRole('button', { name: 'Launch Audio Artifacts' })).toBeNull()
+    expect(within(catalog).queryByRole('button', { name: 'Launch Audio Interfaces' })).toBeNull()
     expect(within(catalog).getByRole('button', { name: 'Launch Edirol UA-1000' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /^All \(/ }))
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search workspaces' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search program objects' }), {
       target: { value: 'Hardware Not Detected' },
     })
 
@@ -179,9 +183,9 @@ describe('PlatformLaunchersWorkspace', () => {
     expect(screen.queryByRole('link', { name: 'Recently Added' })).not.toBeInTheDocument()
 
     const catalog = getCatalogSection()
-    const midiHubCard = within(catalog).getByRole('heading', { name: 'MIDI Hub' }).closest('.platform-launchers__card')
-    expect(midiHubCard).not.toBeNull()
-    expect(within(midiHubCard as HTMLElement).queryByText('Featured')).toBeNull()
+    const artifactsCard = within(catalog).getByRole('heading', { name: 'Audio Artifacts' }).closest('.platform-launchers__card')
+    expect(artifactsCard).not.toBeNull()
+    expect(within(artifactsCard as HTMLElement).queryByText('Featured')).toBeNull()
   })
 
   it('keeps Platforms locked on Home and first in landing order', async () => {
@@ -191,7 +195,7 @@ describe('PlatformLaunchersWorkspace', () => {
       <PlatformLaunchersWorkspace
         settings={buildSettings({
           landingTiles: [
-            { route: '/midi-hub', size: 'small' },
+            { route: '/artifacts', size: 'small' },
             { route: '/platforms/overview', size: 'medium' },
           ],
         })}
@@ -211,7 +215,7 @@ describe('PlatformLaunchersWorkspace', () => {
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       landingTiles: [
         { route: '/platforms/overview', size: 'small' },
-        { route: '/midi-hub', size: 'small' },
+        { route: '/artifacts', size: 'small' },
       ],
     }))
   })

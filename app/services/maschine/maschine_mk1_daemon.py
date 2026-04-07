@@ -32,6 +32,7 @@ import httpx
 import websockets
 from websockets.sync.client import ClientConnection, connect as ws_connect
 
+from app.services.maschine.transport import MaschineTransportController
 from app.services.maschine_encoder_map_service import default_maschine_encoder_map
 from app.services.maschine_lcd_service import (
     LCD_HEIGHT,
@@ -124,6 +125,24 @@ def _normalize_backend_url(url: str) -> str:
     return normalized.rstrip("/")
 
 
+def _load_runtime_transport_overrides() -> tuple[str | None, bool | None]:
+    try:
+        from app.config import get_config as get_runtime_config_manager
+
+        runtime_config = get_runtime_config_manager()
+        runtime_config.reload()
+        preference = str(runtime_config.get("maschine.transport_preference", "") or "").strip().lower()
+        if preference in {"pyusb", "usb", "bulk"}:
+            preference = "pyusb-bulk"
+        if preference not in {"auto", "hidapi", "pyusb-bulk"}:
+            preference = ""
+        allow_kernel_detach = runtime_config.get("maschine.allow_kernel_detach", None)
+        allow_value = None if allow_kernel_detach is None else bool(allow_kernel_detach)
+        return (preference or None), allow_value
+    except Exception:
+        return None, None
+
+
 def _build_ws_url(base_url: str, path: str) -> str:
     parsed = urlparse(base_url)
     scheme = "wss" if parsed.scheme == "https" else "ws"
@@ -143,11 +162,26 @@ class DaemonConfig:
     display_refresh_interval_seconds: float = 1.0 / DISPLAY_FPS
     reconnect_backoff_min_seconds: float = RECONNECT_BACKOFF_MIN_SECONDS
     reconnect_backoff_max_seconds: float = RECONNECT_BACKOFF_MAX_SECONDS
+    transport_preference: str = "auto"
+    allow_kernel_detach: bool = False
 
     @classmethod
     def from_env(cls) -> "DaemonConfig":
+        runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
+        env_transport_preference = str(os.getenv("MAP2_MASCHINE_TRANSPORT", "")).strip().lower()
+        if env_transport_preference in {"pyusb", "usb", "bulk"}:
+            env_transport_preference = "pyusb-bulk"
+        resolved_transport_preference = env_transport_preference or runtime_preference or "auto"
+        env_allow_kernel_detach = os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH")
+        resolved_allow_kernel_detach = (
+            str(env_allow_kernel_detach).strip().lower() in {"1", "true", "yes", "on"}
+            if env_allow_kernel_detach is not None
+            else bool(runtime_allow_kernel_detach)
+        )
         return cls(
             backend_url=_normalize_backend_url(os.getenv("MAP2_BACKEND_URL", DEFAULT_BACKEND_URL)),
+            transport_preference=resolved_transport_preference,
+            allow_kernel_detach=resolved_allow_kernel_detach,
         )
 
 
@@ -189,6 +223,8 @@ class SharedRuntimeState:
     reconnecting: bool = True
     hid_connected: bool = False
     hid_device: dict[str, Any] = field(default_factory=dict)
+    transport: dict[str, Any] = field(default_factory=dict)
+    transport_candidates: list[dict[str, Any]] = field(default_factory=list)
     display_context: str = "audio_grid"
     top_level_menu_index: int = 0
     stats_metric_keys: list[str] = field(default_factory=list)
@@ -621,7 +657,18 @@ class MaschineMK1Daemon:
         self._state_lock = threading.Lock()
         self._state = SharedRuntimeState()
         self._state.lcd_frames = build_reconnecting_frames()
-        self._hid = HidDeviceController(vendor_id=config.vendor_id, product_id=config.product_id)
+        self._transport = MaschineTransportController(
+            vendor_id=config.vendor_id,
+            product_id=config.product_id,
+            preference=config.transport_preference,
+            allow_kernel_detach=config.allow_kernel_detach,
+        )
+        initial_transport = self._transport.runtime_info()
+        self._state.transport = dict(initial_transport)
+        self._state.transport_candidates = [
+            dict(candidate) for candidate in initial_transport.get("candidates", []) if isinstance(candidate, dict)
+        ]
+        self._state.hid_device = self._runtime_hid_device(initial_transport)
         self._midi = VirtualMidiOutput(config.virtual_port_name)
         self._outbound_messages: "queue.Queue[dict[str, Any]]" = queue.Queue(maxsize=BACKEND_MESSAGE_QUEUE_LIMIT)
         self._hid_thread = threading.Thread(target=self._hid_read_loop, name="maschine-hid", daemon=True)
@@ -649,7 +696,7 @@ class MaschineMK1Daemon:
             return
         self._stop_event.set()
         self._render_requested.set()
-        self._hid.disconnect()
+        self._transport.disconnect()
         self._midi.close()
         for thread in (self._hid_thread, self._display_thread, self._led_thread):
             if thread.is_alive():
@@ -665,9 +712,10 @@ class MaschineMK1Daemon:
 
         try:
             while not self._stop_event.is_set():
-                if not self._hid.connected:
-                    connected, hid_info = self._hid.connect()
-                    self._set_hid_state(connected=connected, hid_device=hid_info)
+                self._refresh_transport_controller_from_runtime()
+                if not self._transport.connected:
+                    connected, transport_info = self._transport.connect()
+                    self._set_transport_state(connected=connected, transport_info=transport_info)
                     if not connected:
                         self._set_reconnecting(True)
                         time.sleep(reconnect_sleep_seconds)
@@ -679,7 +727,7 @@ class MaschineMK1Daemon:
                     reconnect_sleep_seconds = self.config.reconnect_backoff_min_seconds
                     self._request_render()
 
-                report = self._hid.read_report(timeout_ms=max(1, int(self.config.hid_poll_interval_seconds * 1000)))
+                report = self._transport.read_report(timeout_ms=max(1, int(self.config.hid_poll_interval_seconds * 1000)))
                 if report is None:
                     time.sleep(self.config.hid_poll_interval_seconds)
                     continue
@@ -732,8 +780,8 @@ class MaschineMK1Daemon:
 
         finally:
             client.close()
-            self._hid.disconnect()
-            self._set_hid_state(connected=False, hid_device=self._snapshot_hid_device())
+            self._transport.disconnect()
+            self._set_transport_state(connected=False, transport_info=self._snapshot_transport_info())
 
     def _display_loop(self) -> None:
         _best_effort_set_scheduler(None)
@@ -760,7 +808,7 @@ class MaschineMK1Daemon:
                         LOGGER.info("Maschine backend websocket connected")
                         backoff_seconds = self.config.reconnect_backoff_min_seconds
                         self._set_backend_connected(True)
-                        self._set_reconnecting(not self._snapshot_hid_connected())
+                        self._set_reconnecting(not self._snapshot_transport_connected())
                         self._send_json(websocket, {"type": "request_state", "payload": {}})
                         next_heartbeat = 0.0
                         next_poll = 0.0
@@ -821,7 +869,7 @@ class MaschineMK1Daemon:
         last_right_hash = ""
 
         while not self._stop_event.is_set():
-            if not self._hid.connected:
+            if not self._transport.connected:
                 time.sleep(self.config.display_refresh_interval_seconds)
                 continue
 
@@ -844,20 +892,35 @@ class MaschineMK1Daemon:
                 last_right_hash = right_hash
 
             if reports:
-                self._hid.write_reports(reports)
+                self._transport.write_reports(reports)
 
             time.sleep(self.config.display_refresh_interval_seconds)
 
     def _registration_payload(self, *, status: str) -> dict[str, Any]:
         hid_device = self._snapshot_hid_device()
+        transport = self._snapshot_transport_info()
         return {
             "daemon_version": "1.0.0",
             "virtual_port_name": self.config.virtual_port_name,
             "hid_device": hid_device,
+            "transport": transport,
+            "transport_candidates": [
+                dict(candidate) for candidate in transport.get("candidates", []) if isinstance(candidate, dict)
+            ],
             "firmware_info": {},
             "capabilities": {
                 "protocol_version": "open-maschine-v1",
-                "hidapi_available": hid is not None,
+                "transport_preference": self.config.transport_preference,
+                "hidapi_available": bool(any(
+                    str(candidate.get("transport_id") or "") == "hidapi" and candidate.get("module_available")
+                    for candidate in transport.get("candidates", [])
+                    if isinstance(candidate, dict)
+                )),
+                "pyusb_available": bool(any(
+                    str(candidate.get("transport_id") or "") == "pyusb-bulk" and candidate.get("module_available")
+                    for candidate in transport.get("candidates", [])
+                    if isinstance(candidate, dict)
+                )),
                 "rtmidi_available": rtmidi is not None,
                 "pads": 16,
                 "encoders": 8,
@@ -871,7 +934,7 @@ class MaschineMK1Daemon:
         }
 
     def _register_heartbeat(self, client: httpx.Client) -> None:
-        status = "connected" if self._snapshot_hid_connected() else "reconnecting"
+        status = "connected" if self._snapshot_transport_connected() else "reconnecting"
         payload = self._registration_payload(status=status)
         try:
             response = client.post("/api/maschine/register", json=payload)
@@ -1054,11 +1117,50 @@ class MaschineMK1Daemon:
             except queue.Full:
                 LOGGER.debug("Dropping outbound Maschine websocket payload after queue saturation")
 
-    def _set_hid_state(self, *, connected: bool, hid_device: dict[str, Any]) -> None:
+    def _set_transport_state(self, *, connected: bool, transport_info: dict[str, Any]) -> None:
         with self._state_lock:
             self._state.hid_connected = connected
-            self._state.hid_device = dict(hid_device)
+            self._state.transport = dict(transport_info)
+            self._state.transport_candidates = [
+                dict(candidate) for candidate in transport_info.get("candidates", []) if isinstance(candidate, dict)
+            ]
+            self._state.hid_device = self._runtime_hid_device(transport_info)
         self._request_render()
+
+    def _refresh_transport_controller_from_runtime(self) -> None:
+        runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
+        env_transport_preference = str(os.getenv("MAP2_MASCHINE_TRANSPORT", "")).strip().lower()
+        if env_transport_preference in {"pyusb", "usb", "bulk"}:
+            env_transport_preference = "pyusb-bulk"
+        desired_preference = env_transport_preference or runtime_preference or self.config.transport_preference or "auto"
+
+        env_allow_kernel_detach = os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH")
+        desired_allow_kernel_detach = (
+            str(env_allow_kernel_detach).strip().lower() in {"1", "true", "yes", "on"}
+            if env_allow_kernel_detach is not None
+            else (
+                runtime_allow_kernel_detach
+                if runtime_allow_kernel_detach is not None
+                else self.config.allow_kernel_detach
+            )
+        )
+
+        if (
+            desired_preference == self.config.transport_preference
+            and bool(desired_allow_kernel_detach) == bool(self.config.allow_kernel_detach)
+        ):
+            return
+        if self._transport.connected:
+            return
+        self.config.transport_preference = str(desired_preference)
+        self.config.allow_kernel_detach = bool(desired_allow_kernel_detach)
+        self._transport = MaschineTransportController(
+            vendor_id=self.config.vendor_id,
+            product_id=self.config.product_id,
+            preference=self.config.transport_preference,
+            allow_kernel_detach=self.config.allow_kernel_detach,
+        )
+        self._set_transport_state(connected=False, transport_info=self._transport.runtime_info())
 
     def _set_backend_connected(self, connected: bool) -> None:
         with self._state_lock:
@@ -1085,13 +1187,56 @@ class MaschineMK1Daemon:
     def _request_render(self) -> None:
         self._render_requested.set()
 
-    def _snapshot_hid_connected(self) -> bool:
+    def _snapshot_transport_connected(self) -> bool:
         with self._state_lock:
             return bool(self._state.hid_connected)
 
     def _snapshot_hid_device(self) -> dict[str, Any]:
         with self._state_lock:
             return dict(self._state.hid_device)
+
+    def _snapshot_transport_info(self) -> dict[str, Any]:
+        with self._state_lock:
+            return {
+                **dict(self._state.transport),
+                "candidates": [dict(candidate) for candidate in self._state.transport_candidates],
+            }
+
+    @staticmethod
+    def _runtime_hid_device(transport_info: dict[str, Any]) -> dict[str, Any]:
+        selected = transport_info.get("selected_transport")
+        if isinstance(selected, dict) and selected:
+            payload = {
+                "vendor_id": selected.get("vendor_id"),
+                "product_id": selected.get("product_id"),
+                "manufacturer": selected.get("manufacturer"),
+                "product": selected.get("product"),
+                "serial_number": selected.get("serial_number"),
+                "busnum": selected.get("busnum"),
+                "devnum": selected.get("devnum"),
+                "speed": selected.get("speed"),
+                "transport_id": selected.get("transport_id") or transport_info.get("transport_id"),
+            }
+            return {key: value for key, value in payload.items() if value not in {None, ""}}
+        for candidate in transport_info.get("candidates", []):
+            if not isinstance(candidate, dict):
+                continue
+            sysfs_probe = candidate.get("sysfs_probe")
+            if not isinstance(sysfs_probe, dict):
+                continue
+            payload = {
+                "vendor_id": sysfs_probe.get("vendor_id"),
+                "product_id": sysfs_probe.get("product_id"),
+                "manufacturer": sysfs_probe.get("manufacturer"),
+                "product": sysfs_probe.get("product"),
+                "serial_number": sysfs_probe.get("serial_number"),
+                "busnum": sysfs_probe.get("busnum"),
+                "devnum": sysfs_probe.get("devnum"),
+                "speed": sysfs_probe.get("speed"),
+                "transport_id": candidate.get("transport_id"),
+            }
+            return {key: value for key, value in payload.items() if value not in {None, ""}}
+        return {}
 
     def _snapshot_output_state(self) -> dict[str, Any]:
         with self._state_lock:

@@ -215,7 +215,7 @@ describe('HomePage landing', () => {
     expect(screen.getByLabelText('Open Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
-    expect(screen.getByText(/MAP2-TESTBED/)).toBeTruthy()
+    expect(screen.getAllByText(/MAP2-TESTBED/).length).toBeGreaterThan(0)
   })
 
   it('opens Audio Artifacts from the desktop icon using the canonical route', async () => {
@@ -268,7 +268,7 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders configured desktop pins from landing tiles without forcing Platforms into the icon grid', async () => {
+  it('renders only the remaining catalog-backed desktop pins from landing tiles', async () => {
     mockSpecialSettingsState.settings.landingTiles = [
       { route: '/midi-hub', size: 'small' },
       { route: '/platforms/overview', size: 'large' },
@@ -278,10 +278,10 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     const desktopIcons = await screen.findAllByRole('listitem')
-    expect(desktopIcons).toHaveLength(2)
-    expect(screen.getByLabelText('Open MIDI Hub')).toBeInTheDocument()
+    expect(desktopIcons).toHaveLength(1)
     expect(screen.getByLabelText('Open Overview')).toBeInTheDocument()
     expect(screen.queryByLabelText('Open Audio Artifacts')).toBeNull()
+    expect(screen.queryByLabelText('Open MIDI Hub')).toBeNull()
   })
 
   it('opens the wallpaper context menu and routes its actions', async () => {
@@ -298,15 +298,15 @@ describe('HomePage landing', () => {
   it('opens the icon context menu and unpins desktop icons through special settings', async () => {
     mockSpecialSettingsState.settings.landingTiles = [
       { route: '/artifacts', size: 'medium' },
-      { route: '/midi-hub', size: 'small' },
+      { route: '/perform', size: 'small' },
     ]
 
     renderHome()
     finishBootSplash()
 
-    fireEvent.contextMenu(await screen.findByLabelText('Open MIDI Hub'), { clientX: 24, clientY: 36 })
+    fireEvent.contextMenu(await screen.findByLabelText('Open Stage Mode'), { clientX: 24, clientY: 36 })
 
-    expect(screen.getByRole('menu', { name: 'Desktop icon menu for MIDI Hub' })).toBeInTheDocument()
+    expect(screen.getByRole('menu', { name: 'Desktop icon menu for Stage Mode' })).toBeInTheDocument()
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Unpin from Desktop' }))
     })

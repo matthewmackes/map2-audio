@@ -238,12 +238,12 @@ describe('Desktop experience visual snapshots', () => {
   })
 
   it('matches the taskbar and Start Menu shell', () => {
-    mockSpecialSettings.pinnedRoutes = ['/midi-hub', '/intelfx']
+    mockSpecialSettings.pinnedRoutes = ['/intelfx']
 
     const { container } = renderSnapshotHarness(['/artifacts'])
-    fireEvent.click(screen.getByLabelText('Open Start menu'))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
 
-    expect(screen.getByRole('button', { name: 'Workspace Catalog' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Program Catalog' })).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 })

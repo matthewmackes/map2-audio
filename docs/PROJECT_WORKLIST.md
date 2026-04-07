@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Bulk status sync: T763, T770, T771, T772, T774, T780, T781 marked Done (all subtasks complete). T793-subD remains Todo. T794, T795, T778 remain Todo.
+Last updated: 2026-04-07 - Completed T793-subD, T794-subA/T794-subB/T794-subC, T797-subA/T797-subB/T797-subD, and T798-T807. T794-subD, T795, T797-subC/T797-subE, T778, and T808 remain open.
 
 ## Performance Brain
 
@@ -17344,7 +17344,7 @@ Last updated: 2026-04-06 16:24 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T793
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove duplicated hardware-bridge scaffolding and device-service architectural drift
 Description:
 - Goal / acceptance criteria: Collapse near-verbatim device-bridge duplication, fix long-lived task/resource leaks in device integrations, and separate runtime discovery state from persisted operator configuration across the hardware-facing backend services audited here.
@@ -17410,7 +17410,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/manager.py app/routes/push_surface.py tests/push_surface/test_manager.py tests/push_surface/test_routes.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T793-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Make Ground Control Pro restart-safe and remove test-directory runtime dependencies
     Description:
     - Goal / acceptance criteria: Persist enough session/index state to survive restart safely and stop relying on `tests/` fixtures for production runtime defaults.
@@ -17418,8 +17418,9 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Restart-safe GCP state persistence, runtime fixture relocation, and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Claude
+    Last updated: 2026-04-07
+    Completion notes: Moved fixture .syx files from tests/fixtures/ to app/data/ground_control_pro/fixtures/. Added session index persistence (sessions.json) and artifact manifest restore on startup. Session/artifact state now survives service restart. 6 focused tests in test_ground_control_pro_restart.py.
   - ID: T793-subE
     Status: [✓] Done
     Title: Fix PipeWire runtime assumptions and result reporting
@@ -17443,7 +17444,7 @@ Assigned to: Codex
 Last updated: 2026-04-07 08:08 EDT - Codex
 
 ID: T794
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Finish cross-cutting backend control, config, and recovery hardening from the audit
 Description:
 - Goal / acceptance criteria: Address the audit's remaining medium-severity architecture concerns around automation, circuit breaking, graceful degradation, configuration validation, websocket/event decoupling, and module-level mutable state so the backend's control-plane primitives behave consistently under failure.
@@ -17453,7 +17454,7 @@ Description:
 - Required outputs: Control-plane hardening changes, focused regressions, and updated developer notes where conventions change.
 Subtasks:
   - ID: T794-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix automation engine locking, random-waveform semantics, and durable save behavior
     Description:
     - Goal / acceptance criteria: Remove blocking lock misuse from async-only paths, separate random-wave phase tracking from amplitude state, and stop destructive save flows from risking partial data loss.
@@ -17461,10 +17462,18 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Automation engine fixes and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 08:35 EDT - Codex
+    - Completion notes:
+      - Finished the automation-engine async-path hardening by keeping `_process_all_lanes()`, `save_to_database()`, and `load_from_database()` on an `asyncio.Lock` path while leaving the synchronous lane-editing API on the existing thread lock.
+      - Corrected RANDOM and SAMPLE_HOLD phase-wrap semantics so waveform cycle tracking uses an explicit previous-phase cursor rather than comparing phase progress against the last sampled amplitude value.
+      - Made the persistence helpers patchable at the module boundary by importing `get_session` and `AutomationLaneModel` at module scope, then added focused regressions for async lock usage, wrap detection, and transaction-safe save/load behavior.
+    - Validation:
+      - `pytest -q tests/test_automation_engine_fixes.py` -> PASS (`9 passed`)
+      - `pytest -q tests/test_midi_automation_identity_persistence.py tests/test_snapshot_service.py -k 'automation_lanes or automation_engine_persists_and_exports_duplicate_safe_parameter_ids or test_activate_snapshot_syncs_expression_mappings_and_automation_lanes'` -> PASS (`2 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/automation_engine.py tests/test_automation_engine_fixes.py tests/test_snapshot_service.py` -> PASS
   - ID: T794-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Correct circuit-breaker and graceful-degradation recovery behavior
     Description:
     - Goal / acceptance criteria: Enforce single HALF_OPEN probe semantics, adopt windowed failure accounting, and make degradation recovery checks/run loops actually drive recovery instead of remaining dead code.
@@ -17472,10 +17481,19 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Circuit-breaker/degradation fixes and focused failure-recovery regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 08:44 EDT - Codex
+    - Completion notes:
+      - Hardened `CircuitBreaker` so `HALF_OPEN` now permits only one active recovery probe at a time, tracks total calls, and evaluates the open threshold against a rolling failure window instead of unbounded consecutive failure history.
+      - Added failure-window pruning and explicit probe lifecycle resets on close/reopen/manual reset so stale failures and concurrent retry storms no longer distort breaker behavior.
+      - Wired `FeatureAvailabilityManager` recovery timing into real execution and health-check paths by recording `last_failure_at`, skipping premature full-handler retries while a feature is degraded, and letting background health checks promote degraded features back to `AVAILABLE` after the recovery timeout.
+      - Replaced deprecated coroutine-function detection in graceful degradation with `inspect.iscoroutinefunction` and added focused regressions for single-probe HALF_OPEN behavior, windowed failure expiry, fallback-only execution before recovery timeout, and health-check-driven recovery.
+    - Validation:
+      - `pytest -q tests/test_circuit_breaker.py tests/test_graceful_degradation.py tests/test_timestamp_foundations.py tests/test_backend_audit_shared_state.py` -> PASS (`55 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/circuit_breaker.py app/services/graceful_degradation.py tests/test_circuit_breaker.py tests/test_graceful_degradation.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T794-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Strengthen configuration validation and Tier A lock enforcement
     Description:
     - Goal / acceptance criteria: Make lock enforcement explicit and validated, and add element-type validation for list-valued config settings so invalid runtime config shapes are rejected consistently.
@@ -17483,8 +17501,15 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Config validation/lock changes and focused config regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 08:50 EDT - Codex
+    - Completion notes:
+      - Extended `ConfigOption` with explicit `element_type` metadata and applied it across the list-valued runtime settings so config validation now rejects mixed-shape payloads such as string entries inside integer rate lists or non-dict entries inside `tesira.devices`.
+      - Kept Tier A runtime lock enforcement on `ConfigManager.set(...)` and surfaced that lock state explicitly through `get_schema()` and `get_option_info()`, so API/UI callers can see which settings are immutable at runtime before they attempt an update.
+      - Added focused regression coverage for locked runtime writes, list-element validation, and schema metadata exposure.
+    - Validation:
+      - `pytest -q tests/test_config_manager_validation.py tests/test_config_api_runtime.py tests/test_config_hot_reload_cluster_sync.py` -> PASS (`7 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py tests/test_config_manager_validation.py` -> PASS
   - ID: T794-subD
     Status: [ ] Todo
     Title: Reduce module-level mutable state and websocket coupling across backend services
@@ -17496,8 +17521,8 @@ Subtasks:
     Subtasks: None
     Assigned to: Unassigned
     Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+Assigned to: Codex
+Last updated: 2026-04-07 08:31 EDT - Codex
 
 ID: T795
 Status: [ ] Todo
@@ -18147,3 +18172,326 @@ Subtasks:
     Completion notes: Touch targets boosted to 44px at tablet widths (responsive.module.css). Card and section padding uses Carbon spacing tokens at 960px/820px breakpoints. App-window max-width:100vw prevents animation overflow. Page padding progressively tightens at 820px floor.
 Assigned to: Claude
 Last updated: 2026-04-06
+
+## Enriched MIDI Physical Surfaces
+
+ID: T797
+Status: [>] In Progress
+Title: Build the `Enriched_MIDI_Physical_Surfaces` unified stack for advanced physical controller support
+Description:
+- Goal / acceptance criteria: Create one canonical MAP2 stack named `Enriched_MIDI_Physical_Surfaces` that unifies physical-controller discovery, capability reporting, specialized transport layers, and a routed GUI for Native Instruments Maschine MK1, Ableton Push devices, Voodoo Lab Ground Control Pro, MeloAudio MIDI Commander, Novation Launch Control units, and Mackie MCU Pro. The first delivered slice must add the canonical worklist epic, land a shared backend registry/summary route, add a unified routed GUI with overview plus per-device subpages, and explicitly model which devices use raw MIDI only versus richer transport layers such as HID, SysEx, LEDs, LCDs, scribble strips, motorized faders, or vendor protocols.
+- Why it matters: MAP2 already contains fragmented controller-specific work. The requested direction is to stop treating advanced physical surfaces as isolated one-offs and instead build one coherent stack that enables as many hardware capabilities as possible while sharing abstractions where the transport model overlaps.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Worklist entries, backend service/route scaffolding, unified GUI route with per-device subpages, device-family capability model, focused tests, and firmware/integration investigation notes.
+Subtasks:
+  - ID: T797-subA
+    Status: [✓] Done
+    Title: Bootstrap the shared registry and unified GUI for `Enriched_MIDI_Physical_Surfaces`
+    Description:
+    - Goal / acceptance criteria: Add the first backend/frontend slice that inventories the supported surface families, reports current device/capability posture for this host, and exposes a single routed operator workspace with overview plus individual subpages for Maschine, Push, Ground Control Pro, MIDI Commander, Launch Control, and Mackie MCU Pro.
+    - Why it matters: The new stack needs a real canonical entry point before deeper per-device transport work can converge.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Backend registry route/service, frontend route/page shell, navigation wiring, focused tests, and validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-07 12:18 EDT - Codex
+    Completion notes: Landed the shared backend summary service/route, routed frontend shell with overview plus per-device subpages, navigation entry, and focused backend/frontend tests. Local host probing confirms Maschine MK1 is exposed here as `snd-usb-caiaq` plus ALSA MIDI rather than a standard audio interface, so richer feedback support needs a dedicated non-audio transport path.
+  - ID: T797-subB
+    Status: [✓] Done
+    Title: Refactor Maschine and Push into a shared enriched-surface transport abstraction
+    Description:
+    - Goal / acceptance criteria: Extract the reusable parts of the existing Maschine MK1 and Push surface stacks into shared abstractions for discovery, raw MIDI parsing, rich feedback rendering, transport selection, and runtime health, while preserving the richer Maschine LCD/LED path wherever the host/runtime supports it.
+    - Why it matters: The current codebase duplicates surface lifecycle logic and transport-specific state instead of letting richer devices share a common stack.
+    - Dependencies: T797-subA
+    - Estimated effort: High
+    - Required outputs: Shared service interfaces/models, migrated Push/Maschine ownership, and focused tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-07 17:15 EDT - Codex
+    Completion notes: Landed the shared runtime/session abstraction in `app/services/enriched_surface_runtime.py` and `app/services/enriched_surface_session.py`, then wired the unified stack so both Maschine MK1 and Ableton Push resolve their fixed-zone views, recent-target state, and operator overrides through the same contract rather than route-local heuristics. Added a host-aware Maschine transport controller in `app/services/maschine/transport.py`, moved the daemon off its hardcoded `hidapi` assumption toward selectable `auto` / `hidapi` / `pyusb-bulk` transport selection, surfaced selected transport plus transport candidates through Maschine status and the unified shell, and validated the shared transport/session/runtime/UI contract with focused backend/frontend tests. This slice also added dedicated `GET/PUT /api/maschine/transport-config` policy routes, a Maschine transport-policy panel in the GUI, focused route coverage, and descriptor-aware Linux probing that extracts the connected MK1's richer alternate-setting bulk pair (`0x08` OUT / `0x84` IN) from sysfs/USB descriptors. Remaining MK1 production hardening and hardware proof now live under T797-subE rather than this abstraction task.
+  - ID: T797-subC
+    Status: [ ] Todo
+    Title: Add first-class enriched support for Ground Control Pro, MIDI Commander, Launch Control, and Mackie MCU Pro families
+    Description:
+    - Goal / acceptance criteria: Integrate the existing Ground Control Pro SysEx tooling and the MeloAudio controller profile into the shared stack, then add Launch Control and Mackie MCU Pro family profiles/capability modeling so all requested device families appear in one coherent system instead of split route islands.
+    - Why it matters: The new stack is only credible if it covers all requested device families, not just Push and Maschine.
+    - Dependencies: T797-subA
+    - Estimated effort: High
+    - Required outputs: Shared registry coverage, capability metadata, specialized transport hooks where available, and validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-07 11:48 EDT - Codex
+  - ID: T797-subD
+    Status: [✓] Done
+    Title: Investigate firmware/update paths and document safe operational posture per surface family
+    Description:
+    - Goal / acceptance criteria: Publish evidence-backed firmware/update guidance for each requested surface family, clearly separating officially supported updaters from community tooling, unsupported hacks, or host constraints.
+    - Why it matters: Advanced controller workflows become risky if firmware/update assumptions are wrong or undocumented.
+    - Dependencies: T797-subA
+    - Estimated effort: Medium
+    - Required outputs: Investigation notes, source links, capability flags, and follow-up tasks if hardware-in-the-loop work is required.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-07 12:31 EDT - Codex
+    Completion notes: Captured the evidence-backed firmware and architecture note in `docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md`, including official updater posture for Maschine MK1, Ableton Push, Ground Control Pro, Novation Launch Control, and Mackie MCU Pro plus the community DFU/custom-firmware path for MeloAudio MIDI Commander. The requested surface families now have a documented safe operational posture that clearly separates official updaters from community tooling and host constraints; any deeper runtime or hardware-in-the-loop follow-up stays tracked by T797-subC and T797-subE.
+  - ID: T797-subE
+    Status: [ ] Todo
+    Title: Hardware-validate Maschine MK1 vendor bulk payload semantics and safe claim flow on Linux
+    Description:
+    - Goal / acceptance criteria: Confirm on a connected Linux host which MK1 vendor bulk endpoints and alternate setting carry LCD/LED traffic, verify safe claim/detach behavior against `snd-usb-caiaq`, and either promote the preferred `0x08` OUT / `0x84` IN path to production runtime handling or capture an evidence-backed block with exact host constraints and fallback behavior.
+    - Why it matters: The transport stack now knows the likely rich endpoint pair on this host, but production-grade LCD/LED control still requires real hardware proof for payload direction, alternate-setting selection, and kernel-driver coexistence.
+    - Dependencies: T797-subB, T797-subD
+    - Estimated effort: High
+    - Required outputs: Hardware traces or reproducible probe evidence, confirmed endpoint/alternate-setting mapping, validated detach/claim policy, runtime code or blocked-note outcome, and follow-up tests/docs.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-07 17:15 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-07 18:19 EDT - Codex
+
+## Workspace Catalog Cleanup
+
+ID: T798
+Status: [✓] Done
+Title: Remove Platforms-internal launchers from the shared Workspace Catalog storefront
+Description:
+- Goal / acceptance criteria: Remove the Workspace Catalog entries that only land inside the routed `/platforms/*` shell, leaving `Platforms` as the only catalog-backed Platforms launcher while preserving the underlying routed workspaces and shell navigation. Update the storefront reference document and focused regression coverage so the catalog inventory, landing-tile normalization, and documentation all agree.
+- Why it matters: The current storefront mixes standalone MAP2 products with Platforms-internal utility workspaces, which dilutes the catalog and duplicates navigation that already exists inside the Platforms shell.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: launcher-catalog source update, storefront reference cleanup, focused frontend tests, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 12:24 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/data/launcherCatalog.tsx` so the shared Workspace Catalog now excludes the Platforms-internal utility routes (`/platforms/workspace-catalog`, `/platforms/audio-engine`, `/platforms/management`, `/platforms/avb-routing`, `/platforms/network-discovery`, `/platforms/cluster-dashboard`, `/platforms/adoption`, `/platforms/host-machine`, `/platforms/theme`, `/platforms/about`) while preserving the canonical `/platforms/overview` entry.
+  - Updated `docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md` so the storefront reference no longer advertises those removed utility workspaces as standalone catalog entries and instead notes that they remain available inside the routed Platforms shell.
+  - Refreshed focused regression coverage in `web/src/app/data/launcherCatalog.test.tsx`, `web/src/app/hooks/useSpecialSettings.test.tsx`, and `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` so the reduced catalog inventory and stale landing-tile normalization behavior are locked down.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/launcherCatalog.test.tsx src/app/hooks/useSpecialSettings.test.tsx src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx` -> PASS (`3 suites, 11 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - Licensing review: touched frontend/docs/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+ID: T799
+Status: [✓] Done
+Title: Make Brain, Audio Grid, MIDI Hub, and Audio Interfaces fixed right-side Start Menu tiles and remove them from Workspace Catalog
+Description:
+- Goal / acceptance criteria: Move `Brain`, `Audio Grid`, `MIDI Hub`, and `Audio Interfaces` out of the shared Workspace Catalog and expose them instead as fixed tiles on the right side of the desktop Start Menu. Preserve shell/taskbar labeling for those routes, keep the existing user-pinned Start Menu tile flow working for other routes, and update focused docs/tests so the catalog inventory and Start Menu behavior agree.
+- Why it matters: The user wants those flagship routes promoted into the desktop shell itself instead of leaving them as catalog-managed options.
+- Dependencies: T798
+- Estimated effort: Low
+- Required outputs: shell Start Menu tile update, route metadata support for `Brain`, catalog/source reference cleanup, focused regression coverage, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 12:45 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` and `web/src/app/data/advancedMenuItems.ts` so the desktop Start Menu always renders fixed right-side tiles for `Brain` (`/brain`), `Audio Grid` (`/juce-grid`), `MIDI Hub` (`/midi-hub`), and `Audio Interfaces` (`/hardware-interfaces`) ahead of user-managed Start Menu pins, while stale saved pins for those routes normalize away cleanly.
+  - Added explicit shell navigation metadata for `Brain` so taskbar and Start Menu labeling resolve to the routed `/brain` workspace instead of the generic workspace fallback.
+  - Updated `web/src/app/data/launcherCatalog.tsx` and `docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md` so `Brain`, `Audio Grid`, `MIDI Hub`, and `Audio Interfaces` are no longer catalog-backed storefront entries and are now documented as shell-level Start Menu tiles instead.
+  - Refreshed focused regression coverage in `web/src/app/data/advancedMenuItems.test.ts`, `web/src/app/data/launcherCatalog.test.tsx`, `web/src/app/hooks/useSpecialSettings.test.tsx`, `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/pages/HomePage.test.tsx`, and `web/src/app/pages/DesktopExperience.snapshot.test.tsx` so the new fixed-tile Start Menu behavior, reduced catalog inventory, and desktop normalization rules stay locked down.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/hooks/useSpecialSettings.test.tsx src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx src/app/layout/AppShell.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/pages/HomePage.test.tsx` -> PASS (`7 suites, 68 tests`)
+  - `npm --prefix web test -- --runInBand --updateSnapshot --runTestsByPath src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`1 suite, 4 tests, 1 snapshot updated`)
+  - Licensing review: touched shell/frontend/docs/worklist artifacts remain MAP2-owned AGPL-covered repository files; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Landing Page OS/2 Reenvision
+
+ID: T800
+Status: [✓] Done
+Title: Reenvision the home landing page as a pre-Warp OS/2 desktop under strict Carbon rules
+Description:
+- Goal / acceptance criteria: Refactor `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, and the focused landing/desktop tests so the routed `/` experience reads as a full pre-Warp OS/2 2.x desktop rather than the current Windows-like shell, while preserving the existing boot splash, desktop routing, remediation workflows, context menus, wallpaper persistence, and taskbar/app-shell integration. The new desktop should use a full desktop metaphor with icon-first navigation, flat Carbon-governed chrome, a serious workstation tone, a flat Carbon background treatment instead of the current wallpaper-led visual, and a full concept rewrite of the landing composition without adding mobile-specific work in this slice.
+- Why it matters: The user wants the MAP2 landing surface to feel like an industrial OS/2 workstation desktop, not Warp and not the current Windows-derived shell, while still staying inside the repo's Carbon-first UI constraints.
+- Dependencies: T799
+- Estimated effort: Medium
+- Required outputs: Updated home landing markup/styles, refreshed homepage + desktop regression coverage, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 11:45 EDT - Codex
+- Completion notes:
+  - Rebuilt `web/src/app/pages/HomePage.tsx` around a pre-Warp OS/2 desktop composition with a Carbon-governed workplace header, program-manager-style object window, icon-first desktop surface, flat workstation chrome, and OS/2-flavored MAP2-owned vector icon overrides for core desktop objects.
+  - Replaced the prior glassy landing treatment in `web/src/app/pages/HomePage.css` with a flatter Carbon token palette, OS/2-style window/titlebar language, raised control treatment, subdued wallpaper handling, directory-note surfaces, and a segmented workstation footer while preserving the existing boot splash, desktop routing, context menus, wallpaper persistence, remediation workflow entry, and taskbar integration.
+  - Updated `web/src/app/pages/HomePage.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/pages/DesktopExperience.snapshot.test.tsx.snap` so the new shell structure remains regression-covered and the routed desktop lifecycle plus context-menu states stay locked to the refreshed design.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --updateSnapshot --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`3 suites, 24 tests, 4 snapshots updated`)
+  - Licensing review: touched frontend/test/snapshot/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Desktop Shell OS/2 Alignment
+
+ID: T801
+Status: [✓] Done
+Title: Align the bottom shell and desktop menu chrome with the pre-Warp OS/2 landing-page direction
+Description:
+- Goal / acceptance criteria: Refine `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, and the focused shell/desktop tests so the bottom shell and menu chrome visible around the routed desktop feel consistent with the new pre-Warp OS/2 landing page rather than the current Windows-like taskbar/start-menu styling. Preserve existing routing, running-app indicators, fixed shell tiles, power actions, desktop-session behavior, and taskbar semantics while shifting the visual language toward flatter Carbon-governed OS/2-style chrome and more workstation-oriented menu labeling.
+- Why it matters: T800 aligned the landing route itself, but the surrounding shell still reads as a different product language and breaks the OS/2 desktop illusion.
+- Dependencies: T800
+- Estimated effort: Medium
+- Required outputs: Shell chrome/style adjustments, focused shell regression updates, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 13:15 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` so the bottom shell now exposes a `Desktop` launcher instead of `Start`, the menu presents itself as a desktop/workplace organizer, and the static shell actions use more OS/2-consistent wording (`Artifacts`, `System Setup`, `Program Catalog`, `Display Settings`) while preserving existing routes, power actions, fixed tiles, and running-app behavior.
+  - Reworked `web/src/app/layout/AppShell.css` from a blurred Windows-like taskbar/start-menu treatment into flatter Carbon-governed workstation chrome with a desktop-organizer header, boxed action/object columns, raised-but-subtle controls, and less theatrical shell styling to match the new landing-page desktop.
+  - Updated `web/src/app/layout/AppShell.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/pages/DesktopExperience.snapshot.test.tsx.snap` so the shell language, organizer structure, and routed desktop snapshots stay aligned with the OS/2 pass.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --updateSnapshot --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`3 suites, 24 tests, 4 snapshots updated`)
+  - Licensing review: touched shell/frontend/test/snapshot/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Routed Window Chrome OS/2 Alignment
+
+ID: T802
+Status: [✓] Done
+Title: Align routed app-window chrome with the pre-Warp OS/2 shell
+Description:
+- Goal / acceptance criteria: Refine `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, and the focused routed-shell tests/snapshots so non-desktop routes render inside flatter pre-Warp OS/2-style window chrome instead of the current frameless container with a floating `X`. Preserve route transitions, close-window behavior, Perform fullscreen handling, running-app indicators, and the existing taskbar/session model while making routed programs read like Workplace Shell windows under the same Carbon-governed rules as T800-T801.
+- Why it matters: The landing route and bottom shell now read as one OS/2 workstation, but routed programs still break the illusion because they do not present themselves as desktop windows.
+- Dependencies: T801
+- Estimated effort: Medium
+- Required outputs: Routed window markup/style adjustments, focused shell regression updates, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 13:27 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` so non-desktop routes now render inside a routed program window with a proper titlebar, per-object icon badge, object metadata, and integrated close control instead of the previous frameless container with a floating `X`.
+  - Reworked the routed-window section of `web/src/app/layout/AppShell.css` into flatter pre-Warp OS/2/Carbon chrome with a neutral titlebar, subtle raised control treatment, route-scoped accenting, and fullscreen bypass rules so `/perform` keeps its existing true-fullscreen behavior.
+  - Refreshed `web/src/app/layout/AppShell.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap` so the routed window titlebar structure, desktop-to-program transition, and updated shell visual state remain regression-covered.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --updateSnapshot --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`3 suites, 24 tests, 4 snapshots passed`)
+  - Licensing review: touched shell/frontend/test/snapshot/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Shell Recovery Surface OS/2 Alignment
+
+ID: T803
+Status: [✓] Done
+Title: Align reconnect and power-restart surfaces with the pre-Warp OS/2 shell
+Description:
+- Goal / acceptance criteria: Refine the reconnect banner, restart confirmation modal, and restart progress overlay in `web/src/app/layout/AppShell.tsx` and `web/src/app/layout/AppShell.css` so shell recovery flows use the same flatter pre-Warp OS/2/Carbon workstation language as T800-T802 instead of the current blur-heavy/pulsing notification treatment. Preserve the current reconnect semantics, restart flow behavior, accessibility labels, and focused tests while making these transient shell surfaces feel like system notices rather than generic modern overlays.
+- Why it matters: The desktop, taskbar, and routed windows now read as one workstation, but transient shell recovery surfaces still break the illusion because they use softer motion and blur-heavy styling.
+- Dependencies: T802
+- Estimated effort: Low
+- Required outputs: Recovery/power surface style adjustments, any minimal markup hooks needed for styling, focused shell regression validation, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 13:31 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` with shell-specific class hooks for the restart confirmation modal and restart progress bar so the transient power surfaces can inherit the same workstation chrome as the routed shell.
+  - Reworked the reconnect banner and restart overlay styles in `web/src/app/layout/AppShell.css` from blur/pulse-heavy modern notifications into flatter OS/2/Carbon system notices with beveled borders, squared status markers, neutral shell surfaces, and less theatrical recovery-state styling.
+  - Added shell-level styling for the Carbon restart confirmation modal so the restart flow now reads as a system power dialog instead of a default product modal while preserving all existing button labels, accessibility semantics, and restart behavior.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS (`2 suites, 20 tests`)
+  - Licensing review: touched shell/frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Program Catalog OS/2 Alignment
+
+ID: T804
+Status: [✓] Done
+Title: Align the routed Program Catalog workspace with the pre-Warp OS/2 shell
+Description:
+- Goal / acceptance criteria: Refine the routed workspace-catalog surface in `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/PlatformModal.css`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx`, and `web/src/app/components/Platform/PlatformLaunchersWorkspace.css` so the catalog launched from the desktop menu reads as a flatter pre-Warp OS/2 program directory rather than a modern storefront. Preserve the current catalog filters, launcher management controls, routing, and configure modal behavior while shifting the visible copy and chrome toward an OS/2/Carbon program-manager tone.
+- Why it matters: The landing route, taskbar shell, routed window chrome, and recovery surfaces now read as one workstation, but the Program Catalog still breaks the illusion because it presents itself as a modern storefront instead of a desktop object directory.
+- Dependencies: T803
+- Estimated effort: Medium
+- Required outputs: Catalog workspace copy/style adjustments, focused platform-catalog regression updates, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 13:56 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/components/Platform/PlatformModal.css` so the routed workspace-catalog utility now presents itself as `Program Catalog`, uses program-manager language in the workspace header, and renders that header inside flatter pre-Warp OS/2/Carbon workstation chrome instead of the previous generic Platforms section treatment.
+  - Reworked `web/src/app/components/Platform/PlatformLaunchersWorkspace.tsx` and `web/src/app/components/Platform/PlatformLaunchersWorkspace.css` from storefront-oriented copy and rounded promo surfaces into a flatter program-directory presentation with directory-status striping, squarer catalog cards, beveled records/spec surfaces, and shell-aligned program-object language while preserving the existing launch, filter, desktop-pin, and Start Menu-pin behaviors.
+  - Refreshed `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx`, and `web/src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` so the new Program Catalog naming and catalog-directory structure remain regression-covered without loosening the existing routing and launcher-management assertions.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformLaunchersWorkspace.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS (`3 suites, 17 tests`)
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Platforms Setup Rail OS/2 Alignment
+
+ID: T805
+Status: [✓] Done
+Title: Align the Platforms setup rail and host shell with the pre-Warp OS/2 direction
+Description:
+- Goal / acceptance criteria: Refine the Platforms route shell in `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/components/Platform/PlatformModal.css` so the left navigation rail and surrounding host layout read as a flatter OS/2-style System Setup/control-panel workspace rather than a generic modern Carbon side-nav shell. Preserve existing platform routing, utility grouping, layer switching, and Program Catalog behavior while shifting the visible copy and chrome toward pre-Warp control-panel language that matches the desktop shell.
+- Why it matters: The Program Catalog now fits the OS/2 desktop direction, but the broader Platforms host still breaks the illusion because its sidebar and layout read like a generic application shell instead of a workstation setup panel.
+- Dependencies: T804
+- Estimated effort: Medium
+- Required outputs: Platforms shell copy/style adjustments, focused PlatformModal regression updates, validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 14:14 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/Platform/PlatformModal.tsx` so the Platforms sidebar now identifies itself as `System setup` / `Control Panel`, which aligns the routed shell copy with the desktop’s `System Setup` object instead of the previous generic `Platforms Interface` wording.
+  - Reworked the Platforms host chrome in `web/src/app/components/Platform/PlatformModal.css` so the rail and host layout use flatter pre-Warp OS/2/Carbon control-panel surfaces, beveled item blocks, tighter utility grouping, and route-scoped workstation framing rather than the previous generic Carbon side-nav appearance.
+  - Refreshed `web/src/app/components/Platform/PlatformModal.test.tsx` so the control-panel copy remains regression-covered alongside the existing utility grouping and Program Catalog routing assertions.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx src/app/pages/PlatformWorkspaceCatalogPage.test.tsx` -> PASS (`2 suites, 12 tests`)
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Platforms Interior Surface OS/2 Alignment
+
+ID: T806
+Status: [✓] Done
+Title: Align the Platforms overview and management interior surfaces with the pre-Warp OS/2 shell
+Description:
+- Goal / acceptance criteria: Refine the interior Overview and Management workspace surfaces in `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/PlatformModal.css`, and `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` so summary tiles, table containers, detail cards, management action groups, update-progress surfaces, and management graph/table cards read as flatter pre-Warp OS/2/Carbon workstation objects instead of generic modern Carbon boxes. Preserve all existing layer routing, data-table behavior, node actions, update progress semantics, and accessibility while bringing the remaining in-panel surfaces into the same workstation language as T800-T805.
+- Why it matters: The landing route, shell, routed windows, Program Catalog, and setup rail now fit the desktop direction, but the actual layer interiors still break the illusion because their cards and data surfaces look like untouched generic application components.
+- Dependencies: T805
+- Estimated effort: Medium
+- Required outputs: Interior Platforms shell styling adjustments, any minimal markup hooks needed for modal/workspace styling, focused validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 17:17 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/components/Platform/PlatformModal.css` so the routed layer interiors now use flatter pre-Warp OS/2/Carbon workstation chrome for workspace headers, overview summary tiles, searchable data tables, detail shells, management action groups, and the management update-progress modal instead of generic Carbon card/table surfaces.
+  - Reworked `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` so the management-specific snapshot tiles, hero graph panel, services table shell, highlighted section framing, and expanded detail cards now match the same beveled workstation language as the surrounding Platforms shell while preserving all existing graph selection, node context, and row expansion behavior.
+  - Added the minimal `platform-shell__update-progress-shell` modal hook in `web/src/app/components/Platform/PlatformModal.tsx` so the update workflow can inherit the same OS/2 titlebar/footer treatment as the rest of the routed shell without changing management semantics or controls.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx src/app/pages/PlatformWorkspaceCatalogPage.test.tsx src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx` -> PASS (`3 suites, 14 tests`)
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Remaining Platforms Interior OS/2 Alignment
+
+ID: T807
+Status: [✓] Done
+Title: Align the remaining Platforms graph and standalone utility surfaces with the pre-Warp OS/2 shell
+Description:
+- Goal / acceptance criteria: Refine the remaining routed Platforms surfaces across `web/src/app/components/ManagementWorkspace/ManagementWorkspaceGraph.tsx`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, and the routed standalone utility/remediation panels so graph nodes, canvas affordances, and route-local utility shells use the same flatter pre-Warp OS/2/Carbon workstation language as T800-T806. Preserve graph interaction, node focus behavior, standalone routing, and remediation workflow semantics while eliminating the remaining obviously modern platform surfaces.
+- Why it matters: T800-T806 align the desktop shell and most interior cards, but the management graph canvas and remaining route-local utility flows still visually break the workstation illusion.
+- Dependencies: T806
+- Estimated effort: Medium
+- Required outputs: Remaining Platforms interior shell adjustments, focused validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 17:36 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/ManagementWorkspace/ManagementWorkspaceGraph.tsx` and `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` so the management graph now renders inside a flatter pre-Warp workstation canvas with OS/2-style graph controls, squared node handles, and beveled service/hub objects instead of the previous rounded modern card treatment.
+  - Reworked `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/components/Platform/PlatformModal.css` so standalone utility routes now render inside a dedicated OS/2 shell surface, with route-scoped workstation framing applied to embedded `Host Machine`, `Audio Engine`, `Theme`, `Platform Guide`, and remediation/adoption content without changing those page flows or route semantics.
+  - Added stable root classes for the loading, error, and cluster states in `web/src/app/pages/HostMachinePage.tsx` so the routed shell can style those fallback states consistently with the rest of the pre-Warp workstation presentation.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/Platform/PlatformRemediationWorkflow.test.tsx` -> PASS (`3 suites, 15 tests`)
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Standalone Utility Deep OS/2 Alignment
+
+ID: T808
+Status: [ ] Todo
+Title: Deepen the page-native OS/2 treatment inside the standalone utility routes
+Description:
+- Goal / acceptance criteria: Refine the page-native internals inside the routed standalone utility surfaces across `web/src/app/components/HostMachine/*`, `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/AboutPage.css`, and any remaining standalone utility page styles so Host Machine tables/cards, Platform Guide legal/version sections, and other route-local data surfaces use the same flatter pre-Warp OS/2/Carbon workstation language as T800-T807 rather than relying on older mixed Carbon and inline styling. Preserve all existing data, copy, legal language, and operator workflows.
+- Why it matters: T807 aligns the graph canvas and standalone shell framing, but some utility routes still carry older page-native cards and inline section styles that visually lag behind the new workstation shell.
+- Dependencies: T807
+- Estimated effort: Medium
+- Required outputs: Standalone utility page-specific styling adjustments, focused validation evidence, and licensing/worklist notes for touched MAP2-owned files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 17:36 EDT - Codex

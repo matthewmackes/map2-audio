@@ -48,6 +48,8 @@ class MaschineDaemonState:
     websocket_connected: bool = False
     virtual_port_name: str = "MAP2:Maschine-MK1"
     hid_device: dict[str, Any] = field(default_factory=dict)
+    transport: dict[str, Any] = field(default_factory=dict)
+    transport_candidates: list[dict[str, Any]] = field(default_factory=list)
     firmware_info: dict[str, Any] = field(default_factory=dict)
     capabilities: dict[str, Any] = field(default_factory=dict)
     last_seen_at: str | None = None
@@ -85,6 +87,8 @@ class MaschineDaemonState:
             "websocket_connected": self.websocket_connected,
             "virtual_port_name": self.virtual_port_name,
             "hid_device": copy.deepcopy(self.hid_device),
+            "transport": copy.deepcopy(self.transport),
+            "transport_candidates": copy.deepcopy(self.transport_candidates),
             "firmware_info": copy.deepcopy(self.firmware_info),
             "capabilities": copy.deepcopy(self.capabilities),
             "last_seen_at": self.last_seen_at,
@@ -111,6 +115,8 @@ class MaschineService:
         daemon_version: str | None = None,
         virtual_port_name: str | None = None,
         hid_device: dict[str, Any] | None = None,
+        transport: dict[str, Any] | None = None,
+        transport_candidates: list[dict[str, Any]] | None = None,
         firmware_info: dict[str, Any] | None = None,
         capabilities: dict[str, Any] | None = None,
         status: str | None = None,
@@ -124,6 +130,11 @@ class MaschineService:
                 str(virtual_port_name).strip() if virtual_port_name else self._state.virtual_port_name
             )
             self._state.hid_device = dict(hid_device or self._state.hid_device)
+            self._state.transport = dict(transport or self._state.transport)
+            if transport_candidates is not None:
+                self._state.transport_candidates = [
+                    dict(candidate) for candidate in transport_candidates if isinstance(candidate, dict)
+                ]
             self._state.firmware_info = dict(firmware_info or self._state.firmware_info)
             self._state.capabilities = dict(capabilities or self._state.capabilities)
             self._state.last_seen_at = now
@@ -325,6 +336,8 @@ class MaschineService:
                 daemon_version=payload.get("daemon_version"),
                 virtual_port_name=payload.get("virtual_port_name"),
                 hid_device=payload.get("hid_device"),
+                transport=payload.get("transport"),
+                transport_candidates=payload.get("transport_candidates"),
                 firmware_info=payload.get("firmware_info"),
                 capabilities=payload.get("capabilities"),
                 status=payload.get("status") or ("connected" if message_type == "heartbeat" else None),

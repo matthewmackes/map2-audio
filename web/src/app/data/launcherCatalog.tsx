@@ -1,5 +1,4 @@
 import type { ComponentType } from 'react'
-import { Music, SettingsAdjust } from '@carbon/icons-react'
 import {
   advancedMenuItems,
   allRouteNavigationItems,
@@ -69,85 +68,37 @@ type StorefrontOverride = Partial<Pick<
 
 const AUDIO_INTERFACE_DEVICE_TYPES = new Set(['edirol-ua1000', 'hotone-jogg', 'generic-interface'])
 const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pro', 'maschine-mk1'])
-const FEATURED_ROUTE_SET = new Set([
-  '/platforms/overview',
+const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/brain',
   '/juce-grid',
-  '/artifacts',
   '/midi-hub',
-  '/tesira',
-  '/perform',
-])
-const PLATFORM_ESSENTIALS_ROUTE_SET = new Set([
-  '/platforms/overview',
+  '/hardware-interfaces',
+  '/platforms/workspace-catalog',
   '/platforms/audio-engine',
   '/platforms/management',
   '/platforms/avb-routing',
   '/platforms/network-discovery',
   '/platforms/cluster-dashboard',
   '/platforms/adoption',
-])
-const RECENTLY_ADDED_ROUTE_SET = new Set([
-  '/brain',
-  '/platforms/workspace-catalog',
-  '/platforms/adoption',
-  '/platforms/cluster-dashboard',
-  '/platforms/network-discovery',
+  '/platforms/host-machine',
   '/platforms/theme',
   '/platforms/about',
 ])
+const FEATURED_ROUTE_SET = new Set([
+  '/platforms/overview',
+  '/artifacts',
+  '/tesira',
+  '/perform',
+])
+const PLATFORM_ESSENTIALS_ROUTE_SET = new Set([
+  '/platforms/overview',
+])
+const RECENTLY_ADDED_ROUTE_SET = new Set([
+])
 
-const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = [
-  {
-    route: '/brain',
-    label: 'Performance Brain',
-    heroTitle: 'Performance Brain',
-    shortLabel: 'Brain',
-    icon: Music,
-    description: 'Open the new unified drum, sequencer, trigger, and keyboard brain with one workflow-driven professional surface.',
-    category: 'Platform',
-    color: 'var(--cds-link-primary)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'Audio Grid',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-  {
-    route: '/platforms/workspace-catalog',
-    label: 'Workspace Catalog',
-    heroTitle: 'Workspace Catalog',
-    shortLabel: 'Catalog',
-    icon: SettingsAdjust,
-    description: 'Browse MAP2 workspaces through a Carbon storefront while keeping launcher placement and route controls one click away.',
-    category: 'Platform',
-    color: 'var(--cds-link-primary)',
-    maturity: 'beta',
-    directory: 'core',
-    homeSection: 'System',
-    kind: 'link',
-    landingEligible: true,
-    navEligible: false,
-  },
-]
+const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = []
 
 const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
-  '/brain': {
-    storefrontCollections: ['featured', 'recently-added'],
-    featureBullets: [
-      'Unifies drum triggering, keyboard layering, sequencing, routing, and diagnostics inside one professional operator surface.',
-      'Replaces the split drum-machine and sampler mental model with a workflow-first brain organized by performance, layers, routing, inputs, library, and diagnostics.',
-      'Gives operators a new first-class destination immediately.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Unified trigger, keyboard, sequence, routing, and diagnostics brain' },
-      { label: 'Workspace mode', value: 'Routed Performance Brain workspace plus compact plugin card' },
-      { label: 'Launch path', value: '/brain' },
-      { label: 'Recall model', value: 'Snapshot-first authority' },
-    ],
-    availabilityNote: 'Available as the unified routed replacement surface.',
-  },
   '/platforms/overview': {
     storefrontCollections: ['featured', 'platform-essentials'],
     featureBullets: [
@@ -168,26 +119,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
   },
-  '/juce-grid': {
-    storefrontCollections: ['featured', 'platform-essentials'],
-    featureBullets: [
-      'Build signal flow, routing, snapshots, and live control mappings from one editing surface.',
-      'Unifies recallable rig state and performance control into the MAP2 snapshot-first workflow.',
-      'Positions the JUCE engine as a polished operator tool rather than a low-level patch bay.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Routing, snapshots, and live-performance editing' },
-      { label: 'Control model', value: 'Snapshot-first Carbon editor' },
-      { label: 'Launch path', value: '/juce-grid' },
-      { label: 'Shell nav', value: 'Pinned by default' },
-    ],
-    availabilityNote: 'Available whenever the JUCE workflow is enabled on the current host profile; runtime state remains visible in-app.',
-    documentLinks: [
-      { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
-      { label: 'Audio state authority architecture', name: 'architecture/AUDIO_STATE_AUTHORITY_ETCD_BIG_BANG.md' },
-      { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
-    ],
-  },
   '/artifacts': {
     storefrontCollections: ['featured'],
     featureBullets: [
@@ -202,26 +133,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Home placement', value: 'Eligible' },
     ],
     availabilityNote: 'Available without payment or catalog checkout; inventory visibility follows the selected node and installed asset set.',
-  },
-  '/midi-hub': {
-    storefrontCollections: ['featured'],
-    featureBullets: [
-      'Centralizes routing, command workflows, scripts, presets, clocking, and diagnostics.',
-      'Frames MIDI operations as a polished control product rather than a loose collection of utilities.',
-      'Supports deeper controller orchestration while still offering one-click entry from the catalog.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Controller setup, routing, presets, and diagnostics' },
-      { label: 'Category', value: 'Human Interface' },
-      { label: 'Launch path', value: '/midi-hub' },
-      { label: 'Shell nav', value: 'Pinnable' },
-    ],
-    availabilityNote: 'Available as a routed MAP2 workspace; downstream hardware status remains visible inside the MIDI surface.',
-    documentLinks: [
-      { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
-      { label: 'External operator field study', name: 'fit-for-purpose-evidence/t102-field-study-protocol.md' },
-      { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
-    ],
   },
   '/tesira': {
     storefrontCollections: ['featured'],
@@ -242,146 +153,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'AVB capabilities and use cases', name: 'MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
-  },
-  '/platforms/workspace-catalog': {
-    storefrontCollections: ['recently-added'],
-    featureBullets: [
-      'Curates MAP2 workspaces as a customer-facing storefront without adding commerce workflows.',
-      'Preserves launch, Home placement, and shell pin controls for operational teams.',
-      'Links each workspace to documentation references and readiness notes from the same surface.',
-    ],
-    technicalSpecs: [
-      { label: 'Presentation model', value: 'Carbon digital storefront' },
-      { label: 'Management controls', value: 'Launch, configure, landing placement, nav pinning' },
-      { label: 'Launch path', value: '/platforms/workspace-catalog' },
-      { label: 'Shell nav', value: 'Utility workspace only' },
-    ],
-    availabilityNote: 'Always available as an informational storefront and launcher-management utility inside Platforms.',
-    documentLinks: [
-      { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
-      { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
-      { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
-    ],
-  },
-  '/platforms/audio-engine': {
-    storefrontCollections: ['platform-essentials'],
-    featureBullets: [
-      'Highlights runtime posture, latency visibility, and engine-state inspection in one workspace.',
-      'Makes the low-latency engine story legible to prospects without exposing implementation clutter.',
-      'Keeps audio-state visibility routed through the same Platforms shell as the broader operational story.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Runtime, latency, and engine-state inspection' },
-      { label: 'Audience', value: 'Engine operators and technical evaluators' },
-      { label: 'Launch path', value: '/platforms/audio-engine' },
-      { label: 'Shell nav', value: 'Pinnable' },
-    ],
-    availabilityNote: 'Available whenever the host exposes MAP2 engine telemetry; exact controls reflect current runtime readiness.',
-  },
-  '/platforms/management': {
-    storefrontCollections: ['platform-essentials'],
-    featureBullets: [
-      'Surfaces node operations, readiness, and lifecycle management from the same routed platform shell.',
-      'Packages operational depth into a polished management workspace instead of a disconnected admin page.',
-      'Supports customer evaluation of cluster stewardship and host control depth.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Node operations and platform management' },
-      { label: 'Launch path', value: '/platforms/management' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Home placement', value: 'Eligible' },
-    ],
-    availabilityNote: 'Available whenever MAP2 node operations are reachable; individual actions reflect current host permissions and health.',
-  },
-  '/platforms/avb-routing': {
-    storefrontCollections: ['platform-essentials'],
-    featureBullets: [
-      'Presents AVB routing, transport posture, and related controls through a unified platform lens.',
-      'Connects infrastructure evaluation to practical MAP2 operator workflows.',
-      'Complements Tesira and cluster surfaces with route-focused operational context.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'AVB routing and transport context' },
-      { label: 'Launch path', value: '/platforms/avb-routing' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Category', value: 'Platform' },
-    ],
-    availabilityNote: 'Available as a routed workspace; route depth depends on discovered AVB endpoints and live transport state.',
-  },
-  '/platforms/network-discovery': {
-    storefrontCollections: ['platform-essentials', 'recently-added'],
-    featureBullets: [
-      'Frames discovery and connectivity posture as a first-class MAP2 product capability.',
-      'Brings network visibility into the same Carbon workflow as node and audio operations.',
-      'Supports customer evaluation of cluster readiness without leaving the platform shell.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Discovery, connectivity posture, and node context' },
-      { label: 'Launch path', value: '/platforms/network-discovery' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Collection status', value: 'Recently added utility-forward workspace' },
-    ],
-    availabilityNote: 'Available when cluster telemetry is present; discovery detail follows existing MAP2-collected node-health signals.',
-  },
-  '/platforms/cluster-dashboard': {
-    storefrontCollections: ['platform-essentials', 'recently-added'],
-    featureBullets: [
-      'Turns cluster reporting, health, and posture into a commercial-grade dashboard experience.',
-      'Lets prospects evaluate how MAP2 scales from one host to many without a separate admin product.',
-      'Complements overview and management with deeper cluster-centric visibility.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Cluster posture and reporting' },
-      { label: 'Launch path', value: '/platforms/cluster-dashboard' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Category', value: 'Platform' },
-    ],
-    availabilityNote: 'Available whenever MAP2 can resolve cluster state; metrics depth scales with the current deployment topology.',
-  },
-  '/platforms/adoption': {
-    storefrontCollections: ['platform-essentials', 'recently-added'],
-    featureBullets: [
-      'Shows how unmanaged or blocked nodes are brought into the MAP2 estate through a dedicated workflow.',
-      'Demonstrates that platform onboarding is part of the product story, not a back-office script.',
-      'Pairs adoption posture with the broader Platforms navigation and remediation model.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Node onboarding and remediation' },
-      { label: 'Launch path', value: '/platforms/adoption' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Collection status', value: 'Recently added and platform-essential' },
-    ],
-    availabilityNote: 'Available when node inventory exists; exact adoption actions depend on current discovery and trust posture.',
-  },
-  '/platforms/theme': {
-    storefrontCollections: ['recently-added'],
-    featureBullets: [
-      'Exposes Carbon theme direction, typography, and appearance control from a dedicated platform workspace.',
-      'Makes product visual customization part of the customer-facing MAP2 story.',
-      'Keeps appearance changes inside the same routed shell as operational tooling.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Theme presets, typography, and appearance' },
-      { label: 'Launch path', value: '/platforms/theme' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Category', value: 'Platform' },
-    ],
-    availabilityNote: 'Available as a utility workspace without requiring any separate entitlement or external designer workflow.',
-  },
-  '/platforms/about': {
-    storefrontCollections: ['recently-added'],
-    featureBullets: [
-      'Provides platform guide context, version framing, and document-library entry points.',
-      'Helps prospects move from visual interest into supporting platform documentation.',
-      'Keeps operational help and product explanation in a single routed experience.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Guide, version context, and docs library' },
-      { label: 'Launch path', value: '/platforms/about' },
-      { label: 'Shell nav', value: 'Pinnable' },
-      { label: 'Category', value: 'Platform' },
-    ],
-    availabilityNote: 'Always available as the documentation-oriented utility workspace inside Platforms.',
   },
   '/lcd': {
     featureBullets: [
@@ -595,6 +366,9 @@ function buildLauncherCatalog(): LauncherCatalogItem[] {
 
   for (const item of platformPinnedItems) {
     const launcher = enrichLauncherCatalogItem(toLauncherCatalogItem(item, 'platforms'))
+    if (WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET.has(launcher.route)) {
+      continue
+    }
     if (!byRoute.has(launcher.route)) {
       byRoute.set(launcher.route, launcher)
     }
@@ -603,19 +377,25 @@ function buildLauncherCatalog(): LauncherCatalogItem[] {
   for (const item of allRouteNavigationItems) {
     const directory = isLabsCatalogRoute(item) ? 'labs' : 'core'
     const launcher = enrichLauncherCatalogItem(toLauncherCatalogItem(item, directory))
+    if (WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET.has(launcher.route)) {
+      continue
+    }
     if (!byRoute.has(launcher.route)) {
       byRoute.set(launcher.route, launcher)
     }
   }
 
   for (const item of HOME_ONLY_LAUNCHERS) {
+    if (WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET.has(item.route)) {
+      continue
+    }
     if (!byRoute.has(item.route)) {
       byRoute.set(item.route, enrichLauncherCatalogItem(item))
     }
   }
 
   const navOnlyItem = findPinnableNavigationItem('/hardware-interfaces')
-  if (navOnlyItem) {
+  if (navOnlyItem && !WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET.has('/hardware-interfaces')) {
     byRoute.set('/hardware-interfaces', enrichLauncherCatalogItem({
       ...toLauncherCatalogItem(navOnlyItem, 'nav-only'),
       landingEligible: false,

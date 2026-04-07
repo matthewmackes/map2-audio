@@ -8,17 +8,9 @@ This document is the customer-facing reference brief for the `/platforms/workspa
 - Route: `/platforms/overview`
 - Positioning: The supervisory MAP2 entry point for platform posture, node visibility, and cross-workspace navigation.
 
-### Audio Grid
-- Route: `/juce-grid`
-- Positioning: The flagship signal-flow, routing, and snapshot-editing surface for live audio work.
-
 ### Audio Artifacts
 - Route: `/artifacts`
 - Positioning: The unified catalog for plugins, NAM captures, IRs, SoundFonts, and native JUCE processors.
-
-### MIDI Hub
-- Route: `/midi-hub`
-- Positioning: The consolidated command, routing, preset, clock, and controller-orchestration workspace.
 
 ### Stage Mode
 - Route: `/perform`
@@ -44,53 +36,11 @@ This document is the customer-facing reference brief for the `/platforms/workspa
 - Route: `/ground-control-pro`
 - Positioning: The SysEx import, validation, backup, and transmit workspace for the Ground Control Pro.
 
-## Platform Utility Workspaces
+Fixed desktop Start Menu tiles such as `Brain`, `Audio Grid`, `MIDI Hub`, and `Audio Interfaces` remain accessible from the shell, but they are intentionally not listed here because they are no longer Workspace Catalog entries.
 
-### Workspace Catalog
-- Route: `/platforms/workspace-catalog`
-- Positioning: The Carbon storefront and launcher-management utility for presenting MAP2 workspaces to prospects while preserving operational controls.
-
-### Audio Engine
-- Route: `/platforms/audio-engine`
-- Positioning: The runtime, latency, and engine-state inspection workspace.
-
-### Management
-- Route: `/platforms/management`
-- Positioning: The node-operations and platform-management workspace.
-
-### AVB Routing
-- Route: `/platforms/avb-routing`
-- Positioning: The routed AVB transport and operational routing context inside Platforms.
-
-### Network Discovery
-- Route: `/platforms/network-discovery`
-- Positioning: The connectivity and discovery posture workspace for MAP2 nodes and networks.
-
-### Cluster Dashboard
-- Route: `/platforms/cluster-dashboard`
-- Positioning: The cluster reporting and multi-node health workspace.
-
-### Adoption
-- Route: `/platforms/adoption`
-- Positioning: The guided onboarding and remediation workflow for unmanaged or blocked nodes.
-
-### Host Machine
-- Route: `/platforms/host-machine`
-- Positioning: The local host posture workspace for services, hardware readiness, and machine context.
-
-### Theme
-- Route: `/platforms/theme`
-- Positioning: The appearance workspace for Carbon theme direction, typography, and interface polish.
-
-### Platform Guide
-- Route: `/platforms/about`
-- Positioning: The guide and document-library entry point for MAP2 platform orientation.
+Platform utility workspaces such as `Workspace Catalog`, `Audio Engine`, `Management`, `AVB Routing`, `Network Discovery`, `Cluster Dashboard`, `Adoption`, `Host Machine`, `Theme`, and `Platform Guide` remain available inside the routed Platforms shell, but they are intentionally not listed here because they are no longer standalone Workspace Catalog entries.
 
 ## Hardware And Interface Workspaces
-
-### Audio Interfaces
-- Route: `/hardware-interfaces`
-- Positioning: The catalog entry for interface-specific hardware routes and status-driven audio-interface workflows.
 
 ### Maschine MK1
 - Route: `/maschine`

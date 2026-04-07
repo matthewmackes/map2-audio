@@ -6,7 +6,7 @@ Tests for feature availability management and fallback strategies.
 
 import pytest
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from app.services.graceful_degradation import (
     Feature, FeatureLevel, FeatureStatus, FeatureAvailabilityManager,
@@ -263,6 +263,71 @@ class TestFeatureAvailabilityManager:
         
         # Should be degraded after 3 failures
         assert feature.status == FeatureStatus.DEGRADED
+
+    @pytest.mark.asyncio
+    async def test_degraded_feature_uses_fallback_until_recovery_timeout(self):
+        """Degraded features should not hammer the full handler before the recovery window."""
+        strategy = DegradationStrategy(failure_threshold=1, recovery_timeout_seconds=60)
+        manager = FeatureAvailabilityManager(strategy)
+
+        full_calls = 0
+        degraded_calls = 0
+
+        async def full_handler():
+            nonlocal full_calls
+            full_calls += 1
+            raise Exception("still down")
+
+        async def degraded_handler():
+            nonlocal degraded_calls
+            degraded_calls += 1
+            return {"result": "fallback"}
+
+        feature = Feature(
+            name="test",
+            level=FeatureLevel.STANDARD,
+            full_handler=full_handler,
+            degraded_handler=degraded_handler,
+        )
+        manager.register_feature(feature)
+
+        result = await manager.execute_feature("test")
+        assert result["status"] == "degraded"
+        assert full_calls == 1
+
+        result = await manager.execute_feature("test")
+        assert result["status"] == "degraded"
+        assert full_calls == 1
+        assert degraded_calls == 2
+
+    @pytest.mark.asyncio
+    async def test_health_checks_drive_recovery_after_timeout(self):
+        """Background checks should recover a degraded feature once its timeout expires."""
+        strategy = DegradationStrategy(failure_threshold=1, recovery_timeout_seconds=60)
+        manager = FeatureAvailabilityManager(strategy)
+
+        health_calls = 0
+
+        async def health_check():
+            nonlocal health_calls
+            health_calls += 1
+            return True
+
+        feature = Feature(
+            name="test",
+            level=FeatureLevel.STANDARD,
+            health_check=health_check,
+            status=FeatureStatus.DEGRADED,
+            last_failure_at=datetime.now(timezone.utc) - timedelta(seconds=120),
+            consecutive_failures=2,
+        )
+        manager.register_feature(feature)
+
+        await manager._perform_health_checks()
+
+        assert health_calls == 1
+        assert feature.status == FeatureStatus.AVAILABLE
+        assert feature.consecutive_failures == 0
     
     def test_get_system_health(self):
         """Test getting system health."""

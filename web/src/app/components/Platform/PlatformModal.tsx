@@ -3,19 +3,17 @@
  * with optional modal chrome retained for narrow legacy host flows that still
  * need an overlay wrapper.
  */
+import type { ComponentType } from 'react'
 import {
-  ChartColumn,
   Close,
   DataBase,
   Devices,
   Information,
   Network_3,
   PaintBrush,
-  Screen,
   SettingsAdjust,
   Share,
   Terminal,
-  type CarbonIconType,
 } from '@carbon/icons-react'
 import {
   Button,
@@ -45,6 +43,7 @@ import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, 
 import { useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
+import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
 import { WorkspacePageTemplate } from '../layout/WorkspacePageTemplate'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import {
@@ -96,9 +95,10 @@ const PlatformAdoptionPage = lazy(() => import('../../pages/PlatformAdoptionPage
 
 const PAGE_SIZES = [5, 10, 20]
 const DEFAULT_PLATFORM_LAYER: PlatformLayerId = 'overview'
+type PlatformIcon = ComponentType<any>
 
-const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
-  overview: ChartColumn,
+const LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
+  overview: MapOs2DrivesIcon,
   management: Devices,
   'avb-routing': Network_3,
   'network-discovery': Share,
@@ -107,8 +107,8 @@ const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
 
 const PLATFORM_CONTROL_PANEL_ITEMS = platformPanelItems
 
-const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: CarbonIconType }> = {
-  'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: Screen },
+const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: PlatformIcon }> = {
+  'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: MapOs2HomeIcon },
   'audio-engine': { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
   'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
@@ -299,8 +299,8 @@ function SidebarNavigation({
 
   utilityItems.push({
     key: '/platforms/workspace-catalog',
-    label: 'Workspace Catalog',
-    description: 'Launcher Organizer in one native Platforms section.',
+    label: 'Program Catalog',
+    description: 'Program-manager object directory inside Platforms.',
     to: '/platforms/workspace-catalog',
     icon: SettingsAdjust,
     active: activeId === 'workspace-catalog',
@@ -312,9 +312,9 @@ function SidebarNavigation({
     <UnifiedWorkspaceSideNav
       className="platform-shell__sidebar"
       ariaLabel="Platforms interface navigation"
-      eyebrow="Navigation"
-      title="Platforms Interface"
-      description="Move across operational workspaces first, with utility workspaces grouped below."
+      eyebrow="System setup"
+      title="Control Panel"
+      description="Open workstation setup objects first, with utility program objects grouped below."
       items={items}
       footerTitle="Utilities"
       footerItems={utilityItems}
@@ -454,7 +454,7 @@ function LayerDataTable({ layer, onRowSelect, selectedRowId }: {
 function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
   const { label, eyebrow, icon: Icon } = STANDALONE_META[panel]
   return (
-    <motion.section key={panel} className="platform-shell__workspace"
+    <motion.section key={panel} className={`platform-shell__workspace platform-shell__workspace--standalone platform-shell__workspace--${panel}`}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
     >
@@ -465,13 +465,15 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
           <h2 className="platform-shell__ws-header-title">{label}</h2>
         </div>
       </div>
-      <Suspense fallback={<div className="platform-shell__table-state"><span>Loading…</span></div>}>
-        {panel === 'host-machine' && <HostMachinePage />}
-        {panel === 'audio-engine' && <AudioEnginePage />}
-        {panel === 'theme'        && <ThemePage />}
-        {panel === 'about'        && <AboutPage />}
-        {panel === 'adoption'     && <PlatformAdoptionPage />}
-      </Suspense>
+      <div className="platform-shell__standalone-surface">
+        <Suspense fallback={<div className="platform-shell__table-state"><span>Loading…</span></div>}>
+          {panel === 'host-machine' && <HostMachinePage />}
+          {panel === 'audio-engine' && <AudioEnginePage />}
+          {panel === 'theme'        && <ThemePage />}
+          {panel === 'about'        && <AboutPage />}
+          {panel === 'adoption'     && <PlatformAdoptionPage />}
+        </Suspense>
+      </div>
     </motion.section>
   )
 }
@@ -502,7 +504,7 @@ function UpdateProgressModal({
   const progressError = launchError ?? status?.error ?? null
 
   return (
-    <ComposedModal open={open} size="lg" onClose={onClose}>
+    <ComposedModal className="platform-shell__update-progress-shell" open={open} size="lg" onClose={onClose}>
       <ModalHeader
         title="Application Update Progress"
         label="Management"
@@ -922,10 +924,10 @@ function WorkspaceCatalogWorkspace({
       <div className="platform-shell__ws-header">
         <span className="platform-shell__ws-header-icon" aria-hidden><SettingsAdjust size={20} /></span>
         <div className="platform-shell__ws-header-copy">
-          <span className="platform-shell__ws-header-eyebrow">Catalog</span>
-          <h2 className="platform-shell__ws-header-title">Workspace Catalog</h2>
+          <span className="platform-shell__ws-header-eyebrow">Program Manager</span>
+          <h2 className="platform-shell__ws-header-title">Program Catalog</h2>
           <p className="platform-shell__ws-header-summary">
-            Present MAP2 workspaces as a Carbon storefront while preserving launcher-management controls inside Platforms.
+            Browse routed MAP2 program objects, inspect their directory records, and control desktop placement from one catalog window.
           </p>
         </div>
       </div>

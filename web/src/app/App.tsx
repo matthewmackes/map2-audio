@@ -31,6 +31,9 @@ const PlatformWorkspaceCatalogPage = lazy(() =>
 )
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
+const PhysicalSurfacesShell = lazy(() => import('./pages/PhysicalSurfacesShell').then(m => ({ default: m.PhysicalSurfacesShell })))
+const PhysicalSurfacesOverviewPage = lazy(() => import('./pages/PhysicalSurfacesOverviewPage').then(m => ({ default: m.PhysicalSurfacesOverviewPage })))
+const PhysicalSurfaceUnitPage = lazy(() => import('./pages/PhysicalSurfaceUnitPage').then(m => ({ default: m.PhysicalSurfaceUnitPage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
@@ -235,6 +238,10 @@ export function App() {
                                 <Route path="/midi" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub-2" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub" element={<Navigate to="/midi-hub/connections" replace />} />
+                                <Route path="/physical-surfaces/*" element={<PhysicalSurfacesShell />}>
+                                  <Route index element={<PhysicalSurfacesOverviewPage />} />
+                                  <Route path=":surfaceId" element={<PhysicalSurfaceUnitPage />} />
+                                </Route>
                                 <Route path="/midi-hub/*" element={<MidiHubShell />}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />

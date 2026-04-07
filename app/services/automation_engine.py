@@ -25,6 +25,9 @@ from threading import Lock
 import json
 import math
 
+from app.database import AutomationLane as AutomationLaneModel
+from app.database import get_session
+
 logger = logging.getLogger(__name__)
 
 
@@ -118,6 +121,7 @@ class LFOState:
 
     # Runtime state
     current_phase: float = 0.0
+    _previous_phase: float = 0.0  # Tracks last phase for wrap detection
     last_sample_hold_value: float = 0.5
     last_random_value: float = 0.5
     smoothed_value: float = 0.5
@@ -228,8 +232,10 @@ class AutomationEngine:
         self._process_task: Optional[asyncio.Task] = None
         self._running = False
 
-        # Thread safety
+        # Thread safety (sync methods)
         self._lock = Lock()
+        # Async-safe lock for async methods (avoids blocking the event loop)
+        self._async_lock = asyncio.Lock()
         self._snapshot_lane_ids: set[str] = set()
         self._snapshot_lane_backups: Dict[str, AutomationLaneState] = {}
 
@@ -339,7 +345,7 @@ class AutomationEngine:
 
     async def _process_all_lanes(self) -> None:
         """Process all automation lanes."""
-        with self._lock:
+        async with self._async_lock:
             lanes_to_process = list(self.lanes.values())
 
         for lane in lanes_to_process:
@@ -501,14 +507,17 @@ class AutomationEngine:
             return 1 - 2 * phase
 
         elif waveform == LFOWaveform.RANDOM:
-            # Smooth random with interpolation
-            if phase < lfo.last_random_value:  # Phase wrapped, get new target
+            # Detect phase wrap (current phase < previous phase means cycle restarted)
+            if phase < lfo._previous_phase:
                 lfo.last_random_value = random.random() * 2 - 1
+            lfo._previous_phase = phase
             return lfo.last_random_value
 
         elif waveform == LFOWaveform.SAMPLE_HOLD:
-            if phase < 0.01:  # Near phase start, sample new value
+            # Detect phase wrap for new sample
+            if phase < lfo._previous_phase:
                 lfo.last_sample_hold_value = random.random() * 2 - 1
+            lfo._previous_phase = phase
             return lfo.last_sample_hold_value
 
         elif waveform == LFOWaveform.PULSE:
@@ -851,18 +860,26 @@ class AutomationEngine:
     # ==========================================================================
 
     async def save_to_database(self) -> int:
-        """Save all automation lanes to database."""
-        from app.database import get_session, AutomationLane as AutomationLaneModel
+        """Save all automation lanes to database.
+
+        Takes a snapshot of lanes under the async lock, then writes inside
+        a single transaction.  The delete runs in the same transaction as
+        the inserts so a mid-save failure rolls back cleanly instead of
+        losing all data.
+        """
         from sqlalchemy import delete
+
+        async with self._async_lock:
+            lanes_snapshot = list(self.lanes.values())
 
         count = 0
 
         async with get_session() as session:
-            # Clear existing lanes
+            # Delete and re-insert in one transaction — if inserts fail,
+            # the transaction rolls back and existing data is preserved.
             await session.execute(delete(AutomationLaneModel))
 
-            # Save all lanes
-            for lane in self.lanes.values():
+            for lane in lanes_snapshot:
                 db_lane = AutomationLaneModel(
                     parameter_id=lane.parameter_id,
                     plugin_uri=lane.plugin_uri,
@@ -898,7 +915,6 @@ class AutomationEngine:
 
     async def load_from_database(self) -> int:
         """Load automation lanes from database."""
-        from app.database import get_session, AutomationLane as AutomationLaneModel
         from sqlalchemy import select
 
         count = 0
@@ -907,7 +923,7 @@ class AutomationEngine:
             result = await session.execute(select(AutomationLaneModel))
             db_lanes = result.scalars().all()
 
-            with self._lock:
+            async with self._async_lock:
                 self.lanes.clear()
 
                 for db_lane in db_lanes:

@@ -1,7 +1,7 @@
 import './MaschinePage.css'
 
 import { InlineNotification, Tag } from '@carbon/react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnectionPanel'
@@ -10,8 +10,10 @@ import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePa
 import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTrafficPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
 import { MaschineLedPreviewPanel } from '../components/Maschine/MaschineLedPreviewPanel'
+import { MaschineTransportPanel } from '../components/Maschine/MaschineTransportPanel'
 import {
   maschineApi,
+  type MaschineTransportConfig,
   type MaschineWebSocketWelcome,
 } from '../../map2/clients/maschine'
 import { getWsBaseUrl } from '../../map2/transport'
@@ -39,6 +41,7 @@ export function MaschinePage() {
   const [liveStatus, setLiveStatus] = useState<MaschineDaemonStatus | null>(null)
   const [liveEncoderMap, setLiveEncoderMap] = useState<MaschineEncoderMap | null>(null)
   const [hidEvents, setHidEvents] = useState<MaschineHidEvent[]>([])
+  const [transportConfig, setTransportConfig] = useState<MaschineTransportConfig | null>(null)
 
   const statusQuery = useQuery({
     queryKey: ['maschine', 'status'],
@@ -56,6 +59,21 @@ export function MaschinePage() {
     queryKey: ['maschine', 'lcd-render', 'audio-grid'],
     queryFn: () => maschineApi.renderLcd('audio_grid'),
     refetchInterval: 2000,
+  })
+
+  const transportConfigQuery = useQuery({
+    queryKey: ['maschine', 'transport-config'],
+    queryFn: () => maschineApi.getTransportConfig(),
+    refetchInterval: 4000,
+  })
+
+  const updateTransportConfigMutation = useMutation({
+    mutationFn: (payload: Partial<Pick<MaschineTransportConfig, 'transport_preference' | 'allow_kernel_detach'>>) =>
+      maschineApi.updateTransportConfig(payload),
+    onSuccess: (response) => {
+      setTransportConfig(response.config)
+      void statusQuery.refetch()
+    },
   })
 
   useEffect(() => {
@@ -90,9 +108,10 @@ export function MaschinePage() {
   const status = liveStatus ?? statusQuery.data?.state ?? null
   const encoderMap = liveEncoderMap ?? encoderMapQuery.data?.encoder_map ?? null
   const lcdState = status?.lcd ?? lcdRenderQuery.data?.lcd ?? null
+  const resolvedTransportConfig = transportConfig ?? transportConfigQuery.data?.config ?? null
 
   const subtitle = useMemo(
-    () => 'Dedicated Carbon workstation for Maschine daemon state, encoder ownership, LED preview, LCD simulation, HID traffic, and firmware diagnostics.',
+    () => 'Dedicated Carbon workstation for Maschine daemon state, transport policy, encoder ownership, LED preview, LCD simulation, HID traffic, and firmware diagnostics.',
     [],
   )
 
@@ -116,6 +135,17 @@ export function MaschinePage() {
 
       <div className="maschine-page__grid">
         <MaschineConnectionPanel status={status} />
+        <MaschineTransportPanel
+          status={status}
+          config={resolvedTransportConfig}
+          isSaving={updateTransportConfigMutation.isPending}
+          onChangePreference={(value) => updateTransportConfigMutation.mutate({ transport_preference: value })}
+          onToggleKernelDetach={(value) => updateTransportConfigMutation.mutate({ allow_kernel_detach: value })}
+          onRefresh={() => {
+            void transportConfigQuery.refetch()
+            void statusQuery.refetch()
+          }}
+        />
         <MaschineEncoderMapPanel encoderMap={encoderMap} />
         <MaschineLedPreviewPanel ledState={status?.led_state ?? null} />
         <MaschineLcdSimulatorPanel left={lcdState?.left ?? null} right={lcdState?.right ?? null} />

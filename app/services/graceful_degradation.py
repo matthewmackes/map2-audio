@@ -11,6 +11,7 @@ Implements feature availability management with:
 """
 
 import asyncio
+import inspect
 import logging
 import time
 import threading
@@ -63,6 +64,7 @@ class Feature:
     created_at: datetime = field(default_factory=utc_now)
     last_check_at: Optional[datetime] = None
     last_error: Optional[str] = None
+    last_failure_at: Optional[datetime] = None
     consecutive_failures: int = 0
     
     @property
@@ -202,6 +204,17 @@ class FeatureAvailabilityManager:
                 return await self._execute_with_fallback(
                     feature, "DEGRADED", *args, **kwargs
                 )
+
+            if (
+                feature.status != FeatureStatus.AVAILABLE
+                and not self.strategy.should_attempt_recovery(feature.last_failure_at)
+            ):
+                fallback_level = (
+                    "LIMITED" if feature.status == FeatureStatus.LIMITED else "DEGRADED"
+                )
+                return await self._execute_with_fallback(
+                    feature, fallback_level, *args, **kwargs
+                )
             
             # Try full execution
             if feature.full_handler:
@@ -282,7 +295,7 @@ class FeatureAvailabilityManager:
                               *args,
                               **kwargs) -> Any:
         """Execute a handler function (sync or async)."""
-        if asyncio.iscoroutinefunction(handler):
+        if inspect.iscoroutinefunction(handler):
             return await handler(*args, **kwargs)
         else:
             return handler(*args, **kwargs)
@@ -297,6 +310,7 @@ class FeatureAvailabilityManager:
                 self._recovery_events[feature_name] += 1
                 feature.consecutive_failures = 0
                 feature.status = FeatureStatus.AVAILABLE
+                feature.last_failure_at = None
                 logger.info(f"Feature {feature_name} recovered")
     
     async def _mark_failure(self, feature_name: str, error: str) -> None:
@@ -307,6 +321,7 @@ class FeatureAvailabilityManager:
             feature = self.features[feature_name]
             feature.consecutive_failures += 1
             feature.last_error = error
+            feature.last_failure_at = utc_now()
             
             # Check if should degrade
             if self.strategy.should_degrade(feature.consecutive_failures):
@@ -349,6 +364,13 @@ class FeatureAvailabilityManager:
         """Check health of all features."""
         for feature in self.features.values():
             if not feature.health_check:
+                continue
+
+            if (
+                feature.status != FeatureStatus.AVAILABLE
+                and not self.strategy.should_attempt_recovery(feature.last_failure_at)
+            ):
+                feature.last_check_at = utc_now()
                 continue
             
             try:

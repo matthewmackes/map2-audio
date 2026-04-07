@@ -30,6 +30,7 @@ class GroundControlProService:
         self.base_dir = base_dir or (Path.home() / ".map2" / "ground_control_pro")
         self.artifacts_dir = self.base_dir / "artifacts"
         self.exports_dir = self.base_dir / "exports"
+        self.sessions_index_path = self.base_dir / "sessions.json"
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.exports_dir.mkdir(parents=True, exist_ok=True)
         self.transport = transport or GroundControlMidiTransport()
@@ -37,8 +38,81 @@ class GroundControlProService:
         self.jobs: Dict[str, GroundControlJob] = {}
         self.artifacts: Dict[str, Dict[str, Any]] = {}
         self.field_map = load_field_map()
-        self.repo_root = Path(__file__).resolve().parents[3]
-        self.fixture_dir = self.repo_root / "tests" / "fixtures" / "ground_control_pro"
+        self.fixture_dir = Path(__file__).resolve().parents[2] / "data" / "ground_control_pro" / "fixtures"
+        self._restore_artifacts()
+        self._restore_sessions()
+
+    def _restore_artifacts(self) -> None:
+        """Reload artifact manifests from disk so artifact references survive restart."""
+        for manifest_path in self.artifacts_dir.glob("*.yml"):
+            try:
+                manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+                if isinstance(manifest, dict) and "artifact_id" in manifest:
+                    artifact_file = Path(manifest.get("path", ""))
+                    if artifact_file.exists():
+                        self.artifacts[manifest["artifact_id"]] = manifest
+            except Exception:
+                continue
+
+    def _restore_sessions(self) -> None:
+        """Reload session index from disk so active sessions survive restart."""
+        if not self.sessions_index_path.exists():
+            return
+        try:
+            index = json.loads(self.sessions_index_path.read_text(encoding="utf-8"))
+            if not isinstance(index, dict):
+                return
+            for session_id, entry in index.items():
+                source_artifact_id = entry.get("source_artifact_id")
+                if not source_artifact_id or source_artifact_id not in self.artifacts:
+                    continue
+                source_path = Path(self.artifacts[source_artifact_id]["path"])
+                if not source_path.exists():
+                    continue
+                try:
+                    data = source_path.read_bytes()
+                    container = GroundControlSysexContainer.from_bytes(data)
+                    model = parse_container_to_model(container)
+                    compiled_bytes = compile_model(model, container)
+                    validation = validate_model(model, base_bytes=data, compiled_bytes=compiled_bytes)
+                    session_artifacts = []
+                    for aid in entry.get("artifact_ids", []):
+                        if aid in self.artifacts:
+                            session_artifacts.append(self.artifacts[aid])
+                    self.sessions[session_id] = {
+                        "source_name": entry.get("source_name", "restored"),
+                        "created_at": entry.get("created_at", self._timestamp()),
+                        "updated_at": entry.get("updated_at", self._timestamp()),
+                        "base_bytes": data,
+                        "model": model,
+                        "validation": validation,
+                        "source_artifact_id": source_artifact_id,
+                        "compiled_artifact_id": entry.get("compiled_artifact_id"),
+                        "backup_artifact_id": entry.get("backup_artifact_id"),
+                        "artifacts": session_artifacts,
+                    }
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    def _persist_sessions(self) -> None:
+        """Write session index to disk for restart recovery."""
+        index: Dict[str, Any] = {}
+        for session_id, session in self.sessions.items():
+            index[session_id] = {
+                "source_name": session.get("source_name"),
+                "created_at": session.get("created_at"),
+                "updated_at": session.get("updated_at"),
+                "source_artifact_id": session.get("source_artifact_id"),
+                "compiled_artifact_id": session.get("compiled_artifact_id"),
+                "backup_artifact_id": session.get("backup_artifact_id"),
+                "artifact_ids": [a.get("artifact_id") for a in session.get("artifacts", []) if isinstance(a, dict)],
+            }
+        try:
+            self.sessions_index_path.write_text(json.dumps(index, indent=2), encoding="utf-8")
+        except Exception:
+            pass
 
     @staticmethod
     def _timestamp() -> str:
@@ -188,6 +262,7 @@ class GroundControlProService:
         payload = self._session_payload(session_id)
         await self._emit("ground-control-pro:session", payload)
         await self._emit("ground-control-pro:validation", {"session_id": session_id, "validation": validation.to_dict()})
+        self._persist_sessions()
         return payload
 
     async def get_session(self, session_id: str) -> Dict[str, Any]:
@@ -215,6 +290,7 @@ class GroundControlProService:
         session["compiled_artifact_id"] = artifact["artifact_id"]
         session["artifacts"].append(artifact)
         await self._emit("ground-control-pro:validation", {"session_id": session_id, "validation": validation.to_dict()})
+        self._persist_sessions()
         return {
             "session_id": session_id,
             "artifact": artifact,
@@ -269,6 +345,7 @@ class GroundControlProService:
                 payload["session"] = session
             self._update_job(job, status="completed", progress=1.0, result=payload)
             await self._emit("ground-control-pro:backup_progress", {"job_id": job.job_id, "progress": 1.0, "status": "completed", "result": payload})
+            self._persist_sessions()
             return job.to_dict()
         except Exception as exc:
             self._update_job(job, status="failed", progress=1.0, error=str(exc))
@@ -313,6 +390,7 @@ class GroundControlProService:
             payload = {"artifact": artifact, "transport": transmit_result, "validation": validation}
             self._update_job(job, status="completed", progress=1.0, result=payload)
             await self._emit("ground-control-pro:push_progress", {"job_id": job.job_id, "progress": 1.0, "status": "completed", "result": payload})
+            self._persist_sessions()
             return job.to_dict()
         except Exception as exc:
             self._update_job(job, status="failed", progress=1.0, error=str(exc))

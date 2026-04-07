@@ -297,6 +297,8 @@ export interface MaschineDaemonStatus {
   websocket_connected: boolean;
   virtual_port_name: string;
   hid_device: Record<string, unknown>;
+  transport: MaschineTransportStatus;
+  transport_candidates: MaschineTransportCandidate[];
   firmware_info: Record<string, unknown>;
   capabilities: Record<string, unknown>;
   last_seen_at?: string | null;
@@ -309,6 +311,157 @@ export interface MaschineDaemonStatus {
   };
   led_state: MaschineLedState;
   audio_grid: MaschineAudioGridProjection;
+}
+
+export interface MaschineTransportCandidate {
+  transport_id?: string;
+  module_available?: boolean;
+  device_visible?: boolean;
+  connectable?: boolean;
+  note?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export interface MaschineTransportStatus {
+  transport_id?: string;
+  preference?: string;
+  allow_kernel_detach?: boolean;
+  connected?: boolean;
+  selected_transport?: Record<string, unknown>;
+  candidates?: MaschineTransportCandidate[];
+  [key: string]: unknown;
+}
+
+export type EnrichedPhysicalSurfaceStatus = 'online' | 'detected' | 'attention' | 'planned';
+
+export interface EnrichedPhysicalSurfaceTransportLayer {
+  layer_id: string;
+  label: string;
+  kind: string;
+  status: EnrichedPhysicalSurfaceStatus;
+  detail: string;
+}
+
+export interface EnrichedPhysicalSurfaceMatch {
+  sys_name?: string | null;
+  vendor_id?: string | null;
+  product_id?: string | null;
+  manufacturer?: string | null;
+  product?: string | null;
+  serial?: string | null;
+  busnum?: string | null;
+  devnum?: string | null;
+  speed?: string | null;
+  card_index?: number | null;
+  alsa_id?: string | null;
+  device_path?: string | null;
+  has_midi?: boolean;
+  midi_nodes?: Array<{
+    node: string;
+    name: string;
+  }>;
+}
+
+export interface EnrichedPhysicalSurfaceViewZone {
+  zone_id: string;
+  label: string;
+  role: string;
+  controls: string[];
+}
+
+export interface EnrichedPhysicalSurfaceRecentTarget {
+  target_id: string;
+  label: string;
+  kind: string;
+  source: string;
+  updated_at?: string;
+}
+
+export interface EnrichedPhysicalSurfaceViewDefinition {
+  view_id: string;
+  label: string;
+  category: string;
+  note?: string;
+  replaces_view_id?: string;
+  presentation?: Record<string, string>;
+  zones: EnrichedPhysicalSurfaceViewZone[];
+}
+
+export interface EnrichedPhysicalSurfaceViewState {
+  page_layout_mode: string;
+  view_sync: string;
+  target_follow_policy: string;
+  current_view_id: string;
+  current_view_label: string;
+  current_view_source: string;
+  recent_target?: EnrichedPhysicalSurfaceRecentTarget | null;
+  is_override_active?: boolean;
+  views: EnrichedPhysicalSurfaceViewDefinition[];
+}
+
+export interface EnrichedPhysicalSurfaceLab {
+  enabled: boolean;
+  access: string;
+  features: string[];
+  snapshot?: Record<string, unknown>;
+}
+
+export interface EnrichedPhysicalSurfaceOperatorSession {
+  current_view_id: string;
+  current_view_source: string;
+  is_override_active: boolean;
+  recent_target?: EnrichedPhysicalSurfaceRecentTarget | null;
+  updated_at?: string | null;
+}
+
+export interface EnrichedPhysicalSurfaceUnit {
+  unit_id: string;
+  display_name: string;
+  family: string;
+  device_type: string;
+  specialized_route?: string | null;
+  host_detected: boolean;
+  status: EnrichedPhysicalSurfaceStatus;
+  status_reason: string;
+  capabilities: string[];
+  integration_notes: string[];
+  transport_layers: EnrichedPhysicalSurfaceTransportLayer[];
+  matched_usb_devices: EnrichedPhysicalSurfaceMatch[];
+  matched_sound_cards: EnrichedPhysicalSurfaceMatch[];
+  service_state: Record<string, unknown>;
+  firmware_posture: {
+    status: string;
+    detail: string;
+  };
+  view_state: EnrichedPhysicalSurfaceViewState;
+  surface_lab: EnrichedPhysicalSurfaceLab;
+  operator_session?: EnrichedPhysicalSurfaceOperatorSession;
+}
+
+export interface EnrichedPhysicalSurfaceSharedOperatorContract {
+  primary_role: string;
+  sub_menu_policy: string;
+  multi_synth_mode: string;
+  page_layout_mode: string;
+  view_sync: string;
+  target_follow_policy: string;
+  snapshot_strategy: string;
+  community_firmware_support: string;
+  surface_lab_mode: string;
+}
+
+export interface EnrichedPhysicalSurfacesSummary {
+  stack_name: string;
+  summary_generated_at: string;
+  shared_operator_contract: EnrichedPhysicalSurfaceSharedOperatorContract;
+  host_observations: {
+    usb_devices: EnrichedPhysicalSurfaceMatch[];
+    sound_cards: EnrichedPhysicalSurfaceMatch[];
+    python_modules: Record<string, boolean>;
+    maschinen_mk1_host_note?: string;
+  };
+  units: EnrichedPhysicalSurfaceUnit[];
 }
 
 // ==================== Plugin Types ====================

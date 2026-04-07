@@ -15,6 +15,7 @@ import { TaskbarClock } from '../components/TaskbarClock'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
+  FIXED_START_MENU_TILE_ROUTES,
   allPinnableNavigationItems,
   allRouteNavigationItems,
   defaultPinnedRoutes,
@@ -94,13 +95,17 @@ function toTopNavItem(item: PinnedMenuItem): TopNavItem {
   }
 }
 
-function findTaskbarItem(route: string): TopNavItem | null {
+function findShellRouteItem(route: string): TopNavItem | null {
   const candidate = [...allRouteNavigationItems, ...allPinnableNavigationItems]
     .filter((item, index, items) => items.findIndex((other) => other.to === item.to) === index)
     .filter((item) => isRouteMatch(route, item.to))
     .sort((left, right) => right.to.length - left.to.length)[0]
 
   return candidate ? toTopNavItem(candidate) : null
+}
+
+function findTaskbarItem(route: string): TopNavItem | null {
+  return findShellRouteItem(route)
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -169,15 +174,36 @@ export function AppShell({ children }: { children: ReactNode }) {
     [pinnedRouteKeys],
   )
 
+  const fixedStartMenuItems = useMemo(
+    () => FIXED_START_MENU_TILE_ROUTES
+      .map((route) => findShellRouteItem(route))
+      .filter((item): item is TopNavItem => Boolean(item)),
+    [],
+  )
+
   const pinnedStartMenuItems = useMemo(
-    () => [...pinnedTopNavItems].sort((left, right) => left.label.localeCompare(right.label)),
+    () => [...pinnedTopNavItems]
+      .filter((item) => !FIXED_START_MENU_TILE_ROUTES.includes(item.to as (typeof FIXED_START_MENU_TILE_ROUTES)[number]))
+      .sort((left, right) => left.label.localeCompare(right.label)),
     [pinnedTopNavItems],
   )
+
+  const startMenuTileItems = useMemo(() => {
+    const seen = new Set<string>()
+    return [...fixedStartMenuItems, ...pinnedStartMenuItems].filter((item) => {
+      if (seen.has(item.to)) {
+        return false
+      }
+
+      seen.add(item.to)
+      return true
+    })
+  }, [fixedStartMenuItems, pinnedStartMenuItems])
   const startMenuStaticItems = useMemo(() => [
-    { key: 'artifacts', label: 'Audio Artifacts', to: '/artifacts' },
-    { key: 'platforms', label: 'Platforms', to: buildPlatformWorkspacePath('overview') },
-    { key: 'catalog', label: 'Workspace Catalog', to: '/platforms/workspace-catalog' },
-    { key: 'settings', label: 'Settings', to: buildPlatformWorkspacePath('theme') },
+    { key: 'artifacts', label: 'Artifacts', to: '/artifacts' },
+    { key: 'platforms', label: 'System Setup', to: buildPlatformWorkspacePath('overview') },
+    { key: 'catalog', label: 'Program Catalog', to: '/platforms/workspace-catalog' },
+    { key: 'settings', label: 'Display Settings', to: buildPlatformWorkspacePath('theme') },
     { key: 'power', label: 'Power', to: null },
   ], [])
   const hardwareSubmenuItems = useMemo(
@@ -192,8 +218,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     return candidates[0] ?? null
   }, [location.pathname])
+  const ShellWindowIcon = currentShellItem?.icon ?? Map2BrandMark
   const shellWorkspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
   const shellAccentColor = currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)'
+  const shellRouteHint = formatShellRouteHint(location.pathname)
   const isDesktopRoute = location.pathname === '/'
   const taskbarIndicators = useMemo<TaskbarIndicatorItem[]>(() => {
     const routes = new Set<string>([PERMANENT_TASKBAR_ROUTE, ...runningRoutes.filter((route) => route !== '/')])
@@ -668,17 +696,32 @@ export function AppShell({ children }: { children: ReactNode }) {
           <section
             className={`app-window${closingAppRoute === location.pathname ? ' is-closing' : ' is-open'}`}
             aria-label={`${shellWorkspaceLabel} window`}
+            style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
           >
             {!showPerformFullscreen ? (
-              <div className="app-window__controls">
-                <button
-                  type="button"
-                  className="app-window__close"
-                  aria-label={`Close ${shellWorkspaceLabel}`}
-                  onClick={handleCloseCurrentApp}
-                >
-                  X
-                </button>
+              <div className="window-titlebar">
+                <div className="window-titlebar__lead">
+                  <span className="window-titlebar__badge" aria-hidden="true">
+                    <ShellWindowIcon width={16} height={16} className="window-titlebar__icon" />
+                  </span>
+                  <div className="window-titlebar__copy">
+                    <span className="window-titlebar__eyebrow">Program object</span>
+                    <div className="window-titlebar__title-row">
+                      <strong className="window-titlebar__title">{shellWorkspaceLabel}</strong>
+                      <span className="window-titlebar__meta">{shellRouteHint}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="app-window__controls">
+                  <button
+                    type="button"
+                    className="app-window__close"
+                    aria-label={`Close ${shellWorkspaceLabel}`}
+                    onClick={handleCloseCurrentApp}
+                  >
+                    X
+                  </button>
+                </div>
               </div>
             ) : null}
             <div className="app-window__body">
@@ -708,7 +751,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 type="button"
                 className={`window-taskbar__start-btn${navOpen ? ' is-active' : ''}`}
                 onClick={handleMenuToggle}
-                aria-label={navOpen ? 'Close Start menu' : 'Open Start menu'}
+                aria-label={navOpen ? 'Close desktop menu' : 'Open desktop menu'}
                 aria-haspopup="menu"
                 aria-expanded={navOpen}
                 aria-controls="start-menu-panel"
@@ -716,13 +759,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="window-taskbar__start-mark" aria-hidden="true">
                   <Map2BrandMark className="window-taskbar__start-mark-icon" />
                 </span>
-                <span>Start</span>
+                <span>Desktop</span>
               </button>
 
               {navOpen && (
-                <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Pinned navigation">
+                <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Desktop menu">
+                  <div className="start-menu-panel__header">
+                    <div className="start-menu-panel__header-copy">
+                      <p className="start-menu-panel__eyebrow">MAP2 Workplace Shell</p>
+                      <strong>{isDesktopRoute ? 'Desktop Organizer' : 'Workplace Organizer'}</strong>
+                      <span>{isDesktopRoute ? 'System objects, routed programs, and operator utilities.' : `Current object: ${shellWorkspaceLabel}.`}</span>
+                    </div>
+                    <div className="start-menu-panel__header-meta" aria-hidden="true">
+                      <span>{startMenuTileItems.length} objects</span>
+                      <span>{shellRouteHint}</span>
+                    </div>
+                  </div>
                   <div className="start-menu-panel__shell">
-                    <div className="start-menu-panel__static-column" role="group" aria-label="Start Menu shortcuts">
+                    <div className="start-menu-panel__static-column" role="group" aria-label="Desktop menu shortcuts">
+                      <div className="start-menu-panel__column-header">
+                        <p className="start-menu-panel__eyebrow">System actions</p>
+                        <strong>Desktop controls</strong>
+                      </div>
                       {startMenuStaticItems.map((item) => (
                         item.key === 'power' ? (
                           <div key={item.key} className="start-menu-panel__static-item-root">
@@ -782,9 +840,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                       ))}
                     </div>
                     <div className="start-menu-panel__tiles-column">
-                      {pinnedStartMenuItems.length > 0 ? (
+                      <div className="start-menu-panel__column-header">
+                        <p className="start-menu-panel__eyebrow">Program objects</p>
+                        <strong>{startMenuTileItems.length > 0 ? 'Pinned launchers' : 'No pinned objects'}</strong>
+                      </div>
+                      {startMenuTileItems.length > 0 ? (
                         <div className="start-menu-panel__grid">
-                          {pinnedStartMenuItems.map((item) => renderStartMenuItem(item))}
+                          {startMenuTileItems.map((item) => renderStartMenuItem(item))}
                         </div>
                       ) : (
                         <div className="start-menu-panel__empty" role="note">
@@ -848,7 +910,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <ComposedModal open={restartConfirmOpen} onClose={() => setRestartConfirmOpen(false)} size="sm">
+      <ComposedModal className="shell-power-modal" open={restartConfirmOpen} onClose={() => setRestartConfirmOpen(false)} size="sm">
         <ModalHeader title="Restart backend" label="Power" closeModal={() => setRestartConfirmOpen(false)} />
         <ModalBody>
           Restart the MAP2 backend service? Audio processing will pause briefly while the shell reconnects.
@@ -882,6 +944,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : (
               <>
                 <ProgressBar
+                  className="shell-restart-overlay__progress"
                   label="Restart progress"
                   hideLabel
                   helperText={restartCurrentStep?.label}

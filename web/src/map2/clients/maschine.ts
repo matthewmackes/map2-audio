@@ -46,6 +46,19 @@ export interface MaschineWebSocketWelcome {
   hid_history: MaschineHidEvent[]
 }
 
+export interface MaschineTransportConfig {
+  transport_preference: 'auto' | 'hidapi' | 'pyusb-bulk'
+  allow_kernel_detach: boolean
+  applies_on: string
+}
+
+export interface MaschineTransportConfigResponse {
+  status: string
+  config: MaschineTransportConfig
+  state?: MaschineDaemonStatus
+  note?: string
+}
+
 export const maschineApi = {
   getStatus: () =>
     fetchJson<MaschineStatusResponse>(`${MASCHINE_API_BASE}/status`, { cache: 'no-store' }),
@@ -65,6 +78,15 @@ export const maschineApi = {
 
   getAudioGrid: () =>
     fetchJson<MaschineAudioGridResponse>(`${MASCHINE_API_BASE}/audio-grid`, { cache: 'no-store' }),
+
+  getTransportConfig: () =>
+    fetchJson<MaschineTransportConfigResponse>(`${MASCHINE_API_BASE}/transport-config`, { cache: 'no-store' }),
+
+  updateTransportConfig: (payload: Partial<Pick<MaschineTransportConfig, 'transport_preference' | 'allow_kernel_detach'>>) =>
+    fetchJson<MaschineTransportConfigResponse>(`${MASCHINE_API_BASE}/transport-config`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
 }
 
 export default maschineApi

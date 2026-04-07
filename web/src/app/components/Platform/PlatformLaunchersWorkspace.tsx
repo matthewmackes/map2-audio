@@ -46,8 +46,8 @@ type LauncherCategoryFilter = typeof CATEGORY_FILTER_OPTIONS[number]
 
 const FULL_CATALOG_SECTION_ID = 'workspace-catalog-full-catalog'
 const FULL_CATALOG_COPY = {
-  title: 'Full Catalog',
-  description: 'Every launcher that matches the current catalog filters, with launch and shell-management controls intact.',
+  title: 'Program Directory',
+  description: 'Every routed program object that matches the current directory filters, with launch and shell-management controls intact.',
 }
 
 function maturityTagType(maturity: LauncherCatalogItem['maturity']): 'green' | 'cyan' | 'purple' | 'warm-gray' | 'red' {
@@ -343,7 +343,7 @@ export function PlatformLaunchersWorkspace({
     >
       <ModalHeader
         title={configureItem.heroTitle}
-        label="Workspace configuration"
+        label="Program object setup"
         closeModal={() => setConfigureRoute(null)}
       />
       <ModalBody hasScrollingContent>
@@ -355,7 +355,7 @@ export function PlatformLaunchersWorkspace({
               </div>
               <div className="platform-launchers__configure-head">
                 <div>
-                  <p className="platform-launchers__eyebrow">Workspace</p>
+                  <p className="platform-launchers__eyebrow">Program object</p>
                   <h4>{configureItem.heroTitle}</h4>
                 </div>
                 {renderStatusTags(configureItem)}
@@ -397,7 +397,7 @@ export function PlatformLaunchersWorkspace({
             <section className="platform-launchers__configure-card">
               <div className="platform-launchers__configure-head">
                 <div>
-                  <p className="platform-launchers__eyebrow">Catalog</p>
+                  <p className="platform-launchers__eyebrow">Directory record</p>
                   <h4>Technical specs</h4>
                 </div>
               </div>
@@ -432,7 +432,7 @@ export function PlatformLaunchersWorkspace({
 
               {configureItem.landingEligible ? (
                 <>
-                  <p>Pin this workspace onto the desktop surface and control its tile scale and order.</p>
+                  <p>Pin this program object onto the desktop surface and control its tile scale and order.</p>
                   <div className="platform-launchers__configure-actions">
                     <Button
                       size="sm"
@@ -553,7 +553,7 @@ export function PlatformLaunchersWorkspace({
 
               {configureItem.navEligible ? (
                 <>
-                  <p>Pin this workspace into the ordered Start Menu tile list shared by the desktop shell.</p>
+                  <p>Pin this program object into the ordered Start Menu tile list shared by the desktop shell.</p>
                   <div className="platform-launchers__configure-actions">
                     <Button
                       size="sm"
@@ -637,17 +637,35 @@ export function PlatformLaunchersWorkspace({
         <Grid condensed fullWidth className="platform-launchers__hero-grid">
           <Column sm={4} md={8} lg={16} className="platform-launchers__hero-column">
             <div className="platform-launchers__hero-copy">
-              <p className="platform-launchers__eyebrow">MAP2 Workspace Catalog</p>
-              <h2>Carbon storefront for MAP2 workspaces</h2>
+              <p className="platform-launchers__eyebrow">MAP2 Program Catalog</p>
+              <h2>Program Manager object directory</h2>
               <p className="platform-launchers__hero-summary">
-                Browse the routed MAP2 product surface in one full catalog, then launch or configure the same workspaces
-                without leaving the page.
+                Browse routed MAP2 program objects, inspect their directory records, and launch or configure the same routed
+                surfaces without leaving this organizer.
               </p>
               <div className="platform-launchers__summary-tags">
                 <Tag type="green">Launch ready</Tag>
-                <Tag type="cyan">Configure preserved</Tag>
-                <Tag type="cool-gray">{`${launcherCatalogItems.length} catalog entries`}</Tag>
-                <Tag type="cool-gray">Full catalog only</Tag>
+                <Tag type="cyan">Directory controls live</Tag>
+                <Tag type="cool-gray">{`${launcherCatalogItems.length} object records`}</Tag>
+                <Tag type="cool-gray">Program directory only</Tag>
+              </div>
+              <div className="platform-launchers__directory-strip" role="list" aria-label="Program directory status">
+                <div className="platform-launchers__directory-strip-item" role="listitem">
+                  <span className="platform-launchers__directory-strip-label">Directory class</span>
+                  <strong>Program objects</strong>
+                </div>
+                <div className="platform-launchers__directory-strip-item" role="listitem">
+                  <span className="platform-launchers__directory-strip-label">Desktop objects</span>
+                  <strong>{landingTiles.length}</strong>
+                </div>
+                <div className="platform-launchers__directory-strip-item" role="listitem">
+                  <span className="platform-launchers__directory-strip-label">Start Menu links</span>
+                  <strong>{pinnedRoutes.length}</strong>
+                </div>
+                <div className="platform-launchers__directory-strip-item" role="listitem">
+                  <span className="platform-launchers__directory-strip-label">Visible records</span>
+                  <strong>{catalogItems.length}</strong>
+                </div>
               </div>
             </div>
           </Column>
@@ -656,13 +674,13 @@ export function PlatformLaunchersWorkspace({
             <div className="platform-launchers__toolbar">
               <div className="platform-launchers__toolbar-main">
                 <Search
-                  labelText="Search workspaces"
+                  labelText="Search program objects"
                   size="lg"
-                  placeholder="Search workspaces, specs, docs, or availability"
+                  placeholder="Search program objects, specs, docs, or availability"
                   value={searchValue}
                   onChange={handleSearchChange}
                 />
-                <div className="platform-launchers__filter-group" role="group" aria-label="Filter launchers by category">
+                <div className="platform-launchers__filter-group" role="group" aria-label="Filter program objects by category">
                   {CATEGORY_FILTER_OPTIONS.map((category) => {
                     const selected = selectedCategory === category
                     const label = category === 'all' ? 'All' : category
@@ -695,11 +713,11 @@ export function PlatformLaunchersWorkspace({
       </Tile>
 
       <section id={FULL_CATALOG_SECTION_ID} className="platform-launchers__section">
-        <Grid condensed fullWidth className="platform-launchers__section-grid" role="list" aria-label="Full workspace catalog">
+        <Grid condensed fullWidth className="platform-launchers__section-grid" role="list" aria-label="Program directory">
           <Column sm={4} md={8} lg={16} className="platform-launchers__section-column">
             <div className="platform-launchers__section-head">
               <div>
-                <p className="platform-launchers__eyebrow">Browse everything</p>
+                <p className="platform-launchers__eyebrow">Directory listing</p>
                 <h3>{FULL_CATALOG_COPY.title}</h3>
                 <p>{FULL_CATALOG_COPY.description}</p>
               </div>
@@ -712,8 +730,8 @@ export function PlatformLaunchersWorkspace({
           {catalogItems.length === 0 ? (
             <Column sm={4} md={8} lg={16} className="platform-launchers__section-column">
               <Tile className="platform-launchers__empty">
-                <strong>No workspaces match that filter.</strong>
-                <p>Clear the search or choose another category to restore the storefront catalog.</p>
+                <strong>No program objects match that filter.</strong>
+                <p>Clear the search or choose another category to restore the program directory.</p>
               </Tile>
             </Column>
           ) : (

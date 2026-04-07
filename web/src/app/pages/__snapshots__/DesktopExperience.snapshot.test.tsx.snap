@@ -104,7 +104,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
         <p
           class="hp2-boot__eyebrow"
         >
-          MAP2
+          MAP2 Workplace Shell
         </p>
         <h1
           class="hp2-boot__title"
@@ -114,7 +114,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
         <p
           class="hp2-boot__subtitle"
         >
-          Preparing desktop shell and restoring platform context.
+          Initializing the Carbon-governed pre-Warp desktop session and restoring platform context.
         </p>
       </div>
       <div
@@ -150,7 +150,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             class="cds--progress-bar__helper-text"
             id="progress-bar-helper-text-_r_2_"
           >
-            Starting desktop experience
+            Restoring workplace shell
             <div
               aria-live="polite"
               class="cds--visually-hidden"
@@ -179,7 +179,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
           aria-controls="start-menu-panel"
           aria-expanded="false"
           aria-haspopup="menu"
-          aria-label="Open Start menu"
+          aria-label="Open desktop menu"
           class="window-taskbar__start-btn"
           type="button"
         >
@@ -271,7 +271,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             </svg>
           </span>
           <span>
-            Start
+            Desktop
           </span>
         </button>
       </div>
@@ -291,22 +291,94 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
           >
             <svg
               aria-hidden="true"
-              fill="currentColor"
               focusable="false"
               height="16"
-              preserveAspectRatio="xMidYMid meet"
               viewBox="0 0 32 32"
               width="16"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+                d="M7 9h11l3 3h4v13H7z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M13 20H19V22H13z"
+                d="M7 12h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+                d="M12 14.5v8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 16h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 19h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 22h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <circle
+                cx="10"
+                cy="16.5"
+                fill="currentColor"
+                r="1"
+              />
+              <circle
+                cx="10"
+                cy="19.5"
+                fill="currentColor"
+                r="1"
+              />
+              <path
+                d="M10 17.5v1"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M10 20.5v1.5h1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
             </svg>
           </span>
@@ -350,7 +422,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
   </div>
   <div
     aria-hidden="true"
-    class="cds--layer-one cds--modal"
+    class="cds--layer-one cds--modal shell-power-modal"
     role="presentation"
   >
     <div
@@ -489,232 +561,1039 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
         />
         <div
           aria-hidden="true"
-          class="hp2-desktop__scrim"
+          class="hp2-desktop__underlay"
         />
         <div
           class="hp2-desktop__status"
         >
-          <div
-            aria-label="Desktop icons"
-            class="hp2-desktop__icons"
-            role="list"
+          <header
+            aria-label="Workplace shell header"
+            class="hp2-shellbar"
           >
-            <button
-              aria-label="Open Audio Artifacts"
-              class="hp2-desktop__icon"
-              role="listitem"
-              title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
-              type="button"
+            <div
+              class="hp2-shellbar__brand"
             >
               <span
                 aria-hidden="true"
-                class="hp2-desktop__icon-glyph"
+                class="hp2-shellbar__mark-wrap"
               >
                 <svg
                   aria-hidden="true"
+                  class="hp2-shellbar__mark"
                   focusable="false"
-                  height="40"
-                  viewBox="0 0 32 32"
-                  width="40"
+                  viewBox="0 0 192 192"
                 >
-                  <path
-                    d="M7 11h18v13H7z"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="168"
+                    rx="34"
+                    width="168"
+                    x="12"
+                    y="12"
                   />
-                  <path
-                    d="M10 8h12l2 3H8z"
+                  <rect
                     fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                    height="162"
+                    rx="31"
+                    stroke="#A6C8FF"
+                    stroke-opacity="0.45"
+                    stroke-width="2"
+                    width="162"
+                    x="15"
+                    y="15"
                   />
-                  <path
-                    d="M14 15h4"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#13171B"
+                    height="136"
+                    rx="24"
+                    width="136"
+                    x="28"
+                    y="28"
                   />
-                  <path
-                    d="M12 19h8"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="136"
+                    rx="13"
+                    width="26"
+                    x="83"
+                    y="28"
                   />
-                  <path
-                    d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="26"
+                    rx="13"
+                    width="136"
+                    x="28"
+                    y="83"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="115"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="115"
                   />
                 </svg>
               </span>
-              <span
-                class="hp2-desktop__icon-label"
+              <div
+                class="hp2-shellbar__copy"
               >
-                Audio Artifacts
-              </span>
-            </button>
-          </div>
-          <div
-            aria-label="Open Platforms overview"
-            class="hp2-desktop__platform-card"
-            role="button"
-            tabindex="0"
-          >
-            <div
-              class="hp2-desktop__platform-meta"
-            >
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                height="20"
-                viewBox="0 0 32 32"
-                width="20"
-              >
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="4"
-                  y="12"
-                />
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="20"
-                  y="5"
-                />
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="20"
-                  y="19"
-                />
-                <path
-                  d="M12 16h5"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 16v-7"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 16v7"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 9h3"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 23h3"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-              </svg>
-              <strong>
-                Platforms
-              </strong>
+                <strong>
+                  MAP2 Workplace Shell
+                </strong>
+                <span>
+                  Pre-Warp OS/2 profile under Carbon token governance
+                </span>
+              </div>
             </div>
-            <p>
-              1 node online
-            </p>
+            <div
+              aria-hidden="true"
+              class="hp2-shellbar__menus"
+            >
+              <span>
+                Desktop
+              </span>
+              <span>
+                Programs
+              </span>
+              <span>
+                System
+              </span>
+              <span>
+                Help
+              </span>
+            </div>
+          </header>
+          <div
+            class="hp2-desktop__workspace"
+          >
+            <aside
+              aria-label="Desktop object surface"
+              class="hp2-desktop__sidebar"
+            >
+              <div
+                class="hp2-desktop__sidebar-header"
+              >
+                <p
+                  class="hp2-window__eyebrow"
+                >
+                  Desktop Objects
+                </p>
+                <strong>
+                  System default only
+                </strong>
+              </div>
+              <div
+                aria-label="Desktop icons"
+                class="hp2-desktop__icons"
+                role="list"
+              >
+                <button
+                  aria-label="Open Audio Artifacts"
+                  class="hp2-desktop__icon"
+                  role="listitem"
+                  title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
+                  type="button"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="hp2-desktop__icon-glyph"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="34"
+                      viewBox="0 0 32 32"
+                      width="34"
+                    >
+                      <path
+                        d="M7 11h18v13H7z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M10 8h12l2 3H8z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M14 15h4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M12 19h8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="hp2-desktop__icon-label"
+                  >
+                    Audio Artifacts
+                  </span>
+                </button>
+              </div>
+            </aside>
+            <main
+              class="hp2-desktop__panels"
+            >
+              <div
+                class="cds--tile hp2-window hp2-window--workplace"
+              >
+                <div
+                  class="hp2-window__titlebar"
+                >
+                  <div
+                    class="hp2-window__titlegroup"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="hp2-window__title-indicator"
+                    />
+                    <strong>
+                      Program Manager
+                    </strong>
+                  </div>
+                  <span
+                    class="hp2-window__titlemeta"
+                  >
+                    MAP2-TESTBED
+                  </span>
+                </div>
+                <div
+                  class="hp2-window__body"
+                >
+                  <div
+                    class="hp2-workplace__hero"
+                  >
+                    <div
+                      class="hp2-workplace__copy"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Industrial Audio Workstation
+                      </p>
+                      <h2>
+                        MAP2 desktop session
+                      </h2>
+                      <p>
+                        The landing route now reads like a serious OS/2 control desktop: icon-first entry, flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
+                      </p>
+                    </div>
+                    <div
+                      aria-label="Platform heartbeat"
+                      class="hp2-workplace__tags"
+                    >
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_k_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="AVB: operational"
+                        >
+                          AVB: operational
+                        </span>
+                      </div>
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_l_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="AVDECC: 1 entity"
+                        >
+                          AVDECC: 1 entity
+                        </span>
+                      </div>
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_m_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="Nodes: 1 active"
+                        >
+                          Nodes: 1 active
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="hp2-workplace__section"
+                  >
+                    <div
+                      class="hp2-workplace__section-header"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Program Objects
+                      </p>
+                      <span>
+                        Operator shortcuts
+                      </span>
+                    </div>
+                    <div
+                      class="hp2-workplace__object-grid"
+                    >
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M8 8h13l3 3H11z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M8 11h16a2 2 0 0 1 2 2v3H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M8 18h16a2 2 0 0 1 2 2v4H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 14h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 21h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <circle
+                              cx="22"
+                              cy="14"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="19"
+                              cy="14"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="22"
+                              cy="21"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="19"
+                              cy="21"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            System Setup
+                          </strong>
+                          <span>
+                            Supervise nodes, remediation pressure, and platform posture.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 11h18v13H7z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 8h12l2 3H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M14 15h4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12 19h8"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Audio Artifacts
+                          </strong>
+                          <span>
+                            Browse plugins, captures, presets, and native processors.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 9h11l3 3h4v13H7z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M7 12h18"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12 14.5v8.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 16h7"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 19h7"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 22h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <circle
+                              cx="10"
+                              cy="16.5"
+                              fill="currentColor"
+                              r="1"
+                            />
+                            <circle
+                              cx="10"
+                              cy="19.5"
+                              fill="currentColor"
+                              r="1"
+                            />
+                            <path
+                              d="M10 17.5v1"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 20.5v1.5h1.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Program Catalog
+                          </strong>
+                          <span>
+                            Pin routed workspaces onto the desktop and Start Menu shell.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 15.5L16 8l9 7.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 14.5v10h12v-10"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M14 24.5v-5h4v5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M19 14.5l4-2.5V22l-4 2.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M21 11h2v3"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12.5 17.5h2"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Display Settings
+                          </strong>
+                          <span>
+                            Adjust Carbon theme tokens and wallpaper behavior for this browser.
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="hp2-workplace__inspector"
+                  >
+                    <div
+                      class="hp2-workplace__inspector-copy"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Selected Desktop Object
+                      </p>
+                      <strong>
+                        Audio Artifacts
+                      </strong>
+                      <span>
+                        Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
+                      </span>
+                    </div>
+                    <button
+                      class="hp2-object-button hp2-object-button--compact"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-object-button__icon"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          height="18"
+                          viewBox="0 0 32 32"
+                          width="18"
+                        >
+                          <path
+                            d="M7 11h18v13H7z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 8h12l2 3H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M14 15h4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M12 19h8"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                        </svg>
+                      </span>
+                      <span
+                        class="hp2-object-button__copy"
+                      >
+                        <strong>
+                          Open Object
+                        </strong>
+                        <span>
+                          /artifacts
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="hp2-desktop__panel-row"
+              >
+                <div
+                  class="cds--tile hp2-window hp2-window--status"
+                >
+                  <div
+                    class="hp2-window__titlebar"
+                  >
+                    <div
+                      class="hp2-window__titlegroup"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-window__title-indicator"
+                      />
+                      <strong>
+                        System Setup
+                      </strong>
+                    </div>
+                    <span
+                      class="hp2-window__titlemeta"
+                    >
+                      Nodes and remediation
+                    </span>
+                  </div>
+                  <div
+                    class="hp2-window__body hp2-window__body--compact"
+                  >
+                    <div
+                      aria-label="Open Platforms overview"
+                      class="hp2-desktop__platform-card"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <div
+                        class="hp2-desktop__platform-meta"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          height="20"
+                          viewBox="0 0 32 32"
+                          width="20"
+                        >
+                          <path
+                            d="M8 8h13l3 3H11z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M8 11h16a2 2 0 0 1 2 2v3H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M8 18h16a2 2 0 0 1 2 2v4H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 14h5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 21h5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <circle
+                            cx="22"
+                            cy="14"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="19"
+                            cy="14"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="22"
+                            cy="21"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="19"
+                            cy="21"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                        </svg>
+                        <strong>
+                          Platforms
+                        </strong>
+                      </div>
+                      <p>
+                        1 node online
+                      </p>
+                      <div
+                        class="hp2-desktop__platform-summary"
+                      >
+                        <span>
+                          MAP2-TESTBED
+                        </span>
+                        <span>
+                          0000000000000001
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="cds--tile hp2-window hp2-window--notes"
+                >
+                  <div
+                    class="hp2-window__titlebar"
+                  >
+                    <div
+                      class="hp2-window__titlegroup"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-window__title-indicator"
+                      />
+                      <strong>
+                        Desktop Notes
+                      </strong>
+                    </div>
+                    <span
+                      class="hp2-window__titlemeta"
+                    >
+                      Object directory and maintenance
+                    </span>
+                  </div>
+                  <div
+                    class="hp2-window__body hp2-window__body--compact"
+                  >
+                    <div
+                      class="hp2-note-panel"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Pinned Object Directory
+                      </p>
+                      <div
+                        class="hp2-note-panel__directory"
+                      >
+                        <button
+                          class="hp2-note-panel__directory-item"
+                          type="button"
+                        >
+                          <span>
+                            Audio Artifacts
+                          </span>
+                          <strong>
+                            /artifacts
+                          </strong>
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      aria-label="Desktop watermarks"
+                      class="hp2-desktop__watermarks"
+                    >
+                      <button
+                        class="hp2-desktop__watermark"
+                        data-testid="home-desktop-empty-watermark"
+                        type="button"
+                      >
+                        <span
+                          class="hp2-desktop__watermark-eyebrow"
+                        >
+                          Desktop hint
+                        </span>
+                        <strong>
+                          Visit Workspace Catalog
+                        </strong>
+                        <span>
+                          Pin apps to the desktop to replace the system default object.
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
           <footer
             class="hp2-footer"
           >
-            0000000000000001
-             · 
-            MAP2-TESTBED
-             · 
-            AVB: operational
-             · 
-            AVDECC: 1 entity
-             · 
-            Nodes: 1 active
-          </footer>
-        </div>
-        <div
-          aria-label="Desktop watermarks"
-          class="hp2-desktop__watermarks"
-        >
-          <button
-            class="hp2-desktop__watermark"
-            data-testid="home-desktop-empty-watermark"
-            type="button"
-          >
             <span
-              class="hp2-desktop__watermark-eyebrow"
+              class="hp2-footer__cell"
             >
-              Desktop hint
+              0000000000000001
             </span>
-            <strong>
-              Visit Workspace Catalog
-            </strong>
-            <span>
-              Pin apps to the desktop to replace this empty-state hint.
+            <span
+              class="hp2-footer__cell"
+            >
+              MAP2-TESTBED
             </span>
-          </button>
+            <span
+              class="hp2-footer__cell"
+            >
+              AVB: operational
+            </span>
+            <span
+              class="hp2-footer__cell"
+            >
+              AVDECC: 1 entity
+            </span>
+            <span
+              class="hp2-footer__cell"
+            >
+              Nodes: 1 active
+            </span>
+          </footer>
         </div>
       </section>
     </div>
@@ -735,7 +1614,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           aria-controls="start-menu-panel"
           aria-expanded="false"
           aria-haspopup="menu"
-          aria-label="Open Start menu"
+          aria-label="Open desktop menu"
           class="window-taskbar__start-btn"
           type="button"
         >
@@ -827,7 +1706,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             </svg>
           </span>
           <span>
-            Start
+            Desktop
           </span>
         </button>
       </div>
@@ -847,22 +1726,94 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           >
             <svg
               aria-hidden="true"
-              fill="currentColor"
               focusable="false"
               height="16"
-              preserveAspectRatio="xMidYMid meet"
               viewBox="0 0 32 32"
               width="16"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+                d="M7 9h11l3 3h4v13H7z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M13 20H19V22H13z"
+                d="M7 12h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+                d="M12 14.5v8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 16h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 19h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 22h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <circle
+                cx="10"
+                cy="16.5"
+                fill="currentColor"
+                r="1"
+              />
+              <circle
+                cx="10"
+                cy="19.5"
+                fill="currentColor"
+                r="1"
+              />
+              <path
+                d="M10 17.5v1"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M10 20.5v1.5h1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
             </svg>
           </span>
@@ -906,7 +1857,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
   </div>
   <div
     aria-hidden="true"
-    class="cds--layer-one cds--modal"
+    class="cds--layer-one cds--modal shell-power-modal"
     role="presentation"
   >
     <div
@@ -1045,232 +1996,1039 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
         />
         <div
           aria-hidden="true"
-          class="hp2-desktop__scrim"
+          class="hp2-desktop__underlay"
         />
         <div
           class="hp2-desktop__status"
         >
-          <div
-            aria-label="Desktop icons"
-            class="hp2-desktop__icons"
-            role="list"
+          <header
+            aria-label="Workplace shell header"
+            class="hp2-shellbar"
           >
-            <button
-              aria-label="Open Audio Artifacts"
-              class="hp2-desktop__icon"
-              role="listitem"
-              title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
-              type="button"
+            <div
+              class="hp2-shellbar__brand"
             >
               <span
                 aria-hidden="true"
-                class="hp2-desktop__icon-glyph"
+                class="hp2-shellbar__mark-wrap"
               >
                 <svg
                   aria-hidden="true"
+                  class="hp2-shellbar__mark"
                   focusable="false"
-                  height="40"
-                  viewBox="0 0 32 32"
-                  width="40"
+                  viewBox="0 0 192 192"
                 >
-                  <path
-                    d="M7 11h18v13H7z"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="168"
+                    rx="34"
+                    width="168"
+                    x="12"
+                    y="12"
                   />
-                  <path
-                    d="M10 8h12l2 3H8z"
+                  <rect
                     fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                    height="162"
+                    rx="31"
+                    stroke="#A6C8FF"
+                    stroke-opacity="0.45"
+                    stroke-width="2"
+                    width="162"
+                    x="15"
+                    y="15"
                   />
-                  <path
-                    d="M14 15h4"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#13171B"
+                    height="136"
+                    rx="24"
+                    width="136"
+                    x="28"
+                    y="28"
                   />
-                  <path
-                    d="M12 19h8"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="136"
+                    rx="13"
+                    width="26"
+                    x="83"
+                    y="28"
                   />
-                  <path
-                    d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.8"
-                    vector-effect="non-scaling-stroke"
+                  <rect
+                    fill="#4589FF"
+                    height="26"
+                    rx="13"
+                    width="136"
+                    x="28"
+                    y="83"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="115"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="115"
                   />
                 </svg>
               </span>
-              <span
-                class="hp2-desktop__icon-label"
+              <div
+                class="hp2-shellbar__copy"
               >
-                Audio Artifacts
-              </span>
-            </button>
-          </div>
-          <div
-            aria-label="Open Platforms overview"
-            class="hp2-desktop__platform-card"
-            role="button"
-            tabindex="0"
-          >
-            <div
-              class="hp2-desktop__platform-meta"
-            >
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                height="20"
-                viewBox="0 0 32 32"
-                width="20"
-              >
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="4"
-                  y="12"
-                />
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="20"
-                  y="5"
-                />
-                <rect
-                  fill="none"
-                  height="8"
-                  rx="2"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                  width="8"
-                  x="20"
-                  y="19"
-                />
-                <path
-                  d="M12 16h5"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 16v-7"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 16v7"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 9h3"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-                <path
-                  d="M17 23h3"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  vector-effect="non-scaling-stroke"
-                />
-              </svg>
-              <strong>
-                Platforms
-              </strong>
+                <strong>
+                  MAP2 Workplace Shell
+                </strong>
+                <span>
+                  Pre-Warp OS/2 profile under Carbon token governance
+                </span>
+              </div>
             </div>
-            <p>
-              1 node online
-            </p>
+            <div
+              aria-hidden="true"
+              class="hp2-shellbar__menus"
+            >
+              <span>
+                Desktop
+              </span>
+              <span>
+                Programs
+              </span>
+              <span>
+                System
+              </span>
+              <span>
+                Help
+              </span>
+            </div>
+          </header>
+          <div
+            class="hp2-desktop__workspace"
+          >
+            <aside
+              aria-label="Desktop object surface"
+              class="hp2-desktop__sidebar"
+            >
+              <div
+                class="hp2-desktop__sidebar-header"
+              >
+                <p
+                  class="hp2-window__eyebrow"
+                >
+                  Desktop Objects
+                </p>
+                <strong>
+                  System default only
+                </strong>
+              </div>
+              <div
+                aria-label="Desktop icons"
+                class="hp2-desktop__icons"
+                role="list"
+              >
+                <button
+                  aria-label="Open Audio Artifacts"
+                  class="hp2-desktop__icon"
+                  role="listitem"
+                  title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
+                  type="button"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="hp2-desktop__icon-glyph"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="34"
+                      viewBox="0 0 32 32"
+                      width="34"
+                    >
+                      <path
+                        d="M7 11h18v13H7z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M10 8h12l2 3H8z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M14 15h4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M12 19h8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="hp2-desktop__icon-label"
+                  >
+                    Audio Artifacts
+                  </span>
+                </button>
+              </div>
+            </aside>
+            <main
+              class="hp2-desktop__panels"
+            >
+              <div
+                class="cds--tile hp2-window hp2-window--workplace"
+              >
+                <div
+                  class="hp2-window__titlebar"
+                >
+                  <div
+                    class="hp2-window__titlegroup"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="hp2-window__title-indicator"
+                    />
+                    <strong>
+                      Program Manager
+                    </strong>
+                  </div>
+                  <span
+                    class="hp2-window__titlemeta"
+                  >
+                    MAP2-TESTBED
+                  </span>
+                </div>
+                <div
+                  class="hp2-window__body"
+                >
+                  <div
+                    class="hp2-workplace__hero"
+                  >
+                    <div
+                      class="hp2-workplace__copy"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Industrial Audio Workstation
+                      </p>
+                      <h2>
+                        MAP2 desktop session
+                      </h2>
+                      <p>
+                        The landing route now reads like a serious OS/2 control desktop: icon-first entry, flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
+                      </p>
+                    </div>
+                    <div
+                      aria-label="Platform heartbeat"
+                      class="hp2-workplace__tags"
+                    >
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_n_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="AVB: operational"
+                        >
+                          AVB: operational
+                        </span>
+                      </div>
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_o_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="AVDECC: 1 entity"
+                        >
+                          AVDECC: 1 entity
+                        </span>
+                      </div>
+                      <div
+                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+                        id="tag-id-_r_p_"
+                      >
+                        <span
+                          class="cds--tag__label"
+                          dir="auto"
+                          title="Nodes: 1 active"
+                        >
+                          Nodes: 1 active
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="hp2-workplace__section"
+                  >
+                    <div
+                      class="hp2-workplace__section-header"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Program Objects
+                      </p>
+                      <span>
+                        Operator shortcuts
+                      </span>
+                    </div>
+                    <div
+                      class="hp2-workplace__object-grid"
+                    >
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M8 8h13l3 3H11z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M8 11h16a2 2 0 0 1 2 2v3H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M8 18h16a2 2 0 0 1 2 2v4H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 14h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 21h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <circle
+                              cx="22"
+                              cy="14"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="19"
+                              cy="14"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="22"
+                              cy="21"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                            <circle
+                              cx="19"
+                              cy="21"
+                              fill="currentColor"
+                              r="1.2"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            System Setup
+                          </strong>
+                          <span>
+                            Supervise nodes, remediation pressure, and platform posture.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 11h18v13H7z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 8h12l2 3H8z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M14 15h4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12 19h8"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Audio Artifacts
+                          </strong>
+                          <span>
+                            Browse plugins, captures, presets, and native processors.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 9h11l3 3h4v13H7z"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M7 12h18"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12 14.5v8.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 16h7"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 19h7"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M15 22h5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <circle
+                              cx="10"
+                              cy="16.5"
+                              fill="currentColor"
+                              r="1"
+                            />
+                            <circle
+                              cx="10"
+                              cy="19.5"
+                              fill="currentColor"
+                              r="1"
+                            />
+                            <path
+                              d="M10 17.5v1"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 20.5v1.5h1.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Program Catalog
+                          </strong>
+                          <span>
+                            Pin routed workspaces onto the desktop and Start Menu shell.
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        class="hp2-object-button"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          class="hp2-object-button__icon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            height="22"
+                            viewBox="0 0 32 32"
+                            width="22"
+                          >
+                            <path
+                              d="M7 15.5L16 8l9 7.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M10 14.5v10h12v-10"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M14 24.5v-5h4v5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M19 14.5l4-2.5V22l-4 2.5"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M21 11h2v3"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M12.5 17.5h2"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </span>
+                        <span
+                          class="hp2-object-button__copy"
+                        >
+                          <strong>
+                            Display Settings
+                          </strong>
+                          <span>
+                            Adjust Carbon theme tokens and wallpaper behavior for this browser.
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    class="hp2-workplace__inspector"
+                  >
+                    <div
+                      class="hp2-workplace__inspector-copy"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Selected Desktop Object
+                      </p>
+                      <strong>
+                        Audio Artifacts
+                      </strong>
+                      <span>
+                        Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
+                      </span>
+                    </div>
+                    <button
+                      class="hp2-object-button hp2-object-button--compact"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-object-button__icon"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          height="18"
+                          viewBox="0 0 32 32"
+                          width="18"
+                        >
+                          <path
+                            d="M7 11h18v13H7z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 8h12l2 3H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M14 15h4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M12 19h8"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                        </svg>
+                      </span>
+                      <span
+                        class="hp2-object-button__copy"
+                      >
+                        <strong>
+                          Open Object
+                        </strong>
+                        <span>
+                          /artifacts
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="hp2-desktop__panel-row"
+              >
+                <div
+                  class="cds--tile hp2-window hp2-window--status"
+                >
+                  <div
+                    class="hp2-window__titlebar"
+                  >
+                    <div
+                      class="hp2-window__titlegroup"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-window__title-indicator"
+                      />
+                      <strong>
+                        System Setup
+                      </strong>
+                    </div>
+                    <span
+                      class="hp2-window__titlemeta"
+                    >
+                      Nodes and remediation
+                    </span>
+                  </div>
+                  <div
+                    class="hp2-window__body hp2-window__body--compact"
+                  >
+                    <div
+                      aria-label="Open Platforms overview"
+                      class="hp2-desktop__platform-card"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <div
+                        class="hp2-desktop__platform-meta"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          height="20"
+                          viewBox="0 0 32 32"
+                          width="20"
+                        >
+                          <path
+                            d="M8 8h13l3 3H11z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M8 11h16a2 2 0 0 1 2 2v3H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M8 18h16a2 2 0 0 1 2 2v4H8z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 14h5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M10 21h5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            vector-effect="non-scaling-stroke"
+                          />
+                          <circle
+                            cx="22"
+                            cy="14"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="19"
+                            cy="14"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="22"
+                            cy="21"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                          <circle
+                            cx="19"
+                            cy="21"
+                            fill="currentColor"
+                            r="1.2"
+                          />
+                        </svg>
+                        <strong>
+                          Platforms
+                        </strong>
+                      </div>
+                      <p>
+                        1 node online
+                      </p>
+                      <div
+                        class="hp2-desktop__platform-summary"
+                      >
+                        <span>
+                          MAP2-TESTBED
+                        </span>
+                        <span>
+                          0000000000000001
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="cds--tile hp2-window hp2-window--notes"
+                >
+                  <div
+                    class="hp2-window__titlebar"
+                  >
+                    <div
+                      class="hp2-window__titlegroup"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="hp2-window__title-indicator"
+                      />
+                      <strong>
+                        Desktop Notes
+                      </strong>
+                    </div>
+                    <span
+                      class="hp2-window__titlemeta"
+                    >
+                      Object directory and maintenance
+                    </span>
+                  </div>
+                  <div
+                    class="hp2-window__body hp2-window__body--compact"
+                  >
+                    <div
+                      class="hp2-note-panel"
+                    >
+                      <p
+                        class="hp2-window__eyebrow"
+                      >
+                        Pinned Object Directory
+                      </p>
+                      <div
+                        class="hp2-note-panel__directory"
+                      >
+                        <button
+                          class="hp2-note-panel__directory-item"
+                          type="button"
+                        >
+                          <span>
+                            Audio Artifacts
+                          </span>
+                          <strong>
+                            /artifacts
+                          </strong>
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      aria-label="Desktop watermarks"
+                      class="hp2-desktop__watermarks"
+                    >
+                      <button
+                        class="hp2-desktop__watermark"
+                        data-testid="home-desktop-empty-watermark"
+                        type="button"
+                      >
+                        <span
+                          class="hp2-desktop__watermark-eyebrow"
+                        >
+                          Desktop hint
+                        </span>
+                        <strong>
+                          Visit Workspace Catalog
+                        </strong>
+                        <span>
+                          Pin apps to the desktop to replace the system default object.
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
           <footer
             class="hp2-footer"
           >
-            0000000000000001
-             · 
-            MAP2-TESTBED
-             · 
-            AVB: operational
-             · 
-            AVDECC: 1 entity
-             · 
-            Nodes: 1 active
-          </footer>
-        </div>
-        <div
-          aria-label="Desktop watermarks"
-          class="hp2-desktop__watermarks"
-        >
-          <button
-            class="hp2-desktop__watermark"
-            data-testid="home-desktop-empty-watermark"
-            type="button"
-          >
             <span
-              class="hp2-desktop__watermark-eyebrow"
+              class="hp2-footer__cell"
             >
-              Desktop hint
+              0000000000000001
             </span>
-            <strong>
-              Visit Workspace Catalog
-            </strong>
-            <span>
-              Pin apps to the desktop to replace this empty-state hint.
+            <span
+              class="hp2-footer__cell"
+            >
+              MAP2-TESTBED
             </span>
-          </button>
+            <span
+              class="hp2-footer__cell"
+            >
+              AVB: operational
+            </span>
+            <span
+              class="hp2-footer__cell"
+            >
+              AVDECC: 1 entity
+            </span>
+            <span
+              class="hp2-footer__cell"
+            >
+              Nodes: 1 active
+            </span>
+          </footer>
         </div>
         <div
           aria-label="Desktop context menu"
@@ -1316,7 +3074,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
           aria-controls="start-menu-panel"
           aria-expanded="false"
           aria-haspopup="menu"
-          aria-label="Open Start menu"
+          aria-label="Open desktop menu"
           class="window-taskbar__start-btn"
           type="button"
         >
@@ -1408,7 +3166,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
             </svg>
           </span>
           <span>
-            Start
+            Desktop
           </span>
         </button>
       </div>
@@ -1428,22 +3186,94 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
           >
             <svg
               aria-hidden="true"
-              fill="currentColor"
               focusable="false"
               height="16"
-              preserveAspectRatio="xMidYMid meet"
               viewBox="0 0 32 32"
               width="16"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+                d="M7 9h11l3 3h4v13H7z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M13 20H19V22H13z"
+                d="M7 12h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+                d="M12 14.5v8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 16h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 19h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 22h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <circle
+                cx="10"
+                cy="16.5"
+                fill="currentColor"
+                r="1"
+              />
+              <circle
+                cx="10"
+                cy="19.5"
+                fill="currentColor"
+                r="1"
+              />
+              <path
+                d="M10 17.5v1"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M10 20.5v1.5h1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
             </svg>
           </span>
@@ -1487,7 +3317,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
   </div>
   <div
     aria-hidden="true"
-    class="cds--layer-one cds--modal"
+    class="cds--layer-one cds--modal shell-power-modal"
     role="presentation"
   >
     <div
@@ -1529,7 +3359,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_m_"
+                  aria-labelledby="tooltip-_r_s_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -1553,7 +3383,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_m_"
+                id="tooltip-_r_s_"
                 role="tooltip"
               >
                 <span
@@ -1612,17 +3442,147 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
     <section
       aria-label="Artifacts window"
       class="app-window is-open"
+      style="--window-shell-accent: #be95ff;"
     >
       <div
-        class="app-window__controls"
+        class="window-titlebar"
       >
-        <button
-          aria-label="Close Artifacts"
-          class="app-window__close"
-          type="button"
+        <div
+          class="window-titlebar__lead"
         >
-          X
-        </button>
+          <span
+            aria-hidden="true"
+            class="window-titlebar__badge"
+          >
+            <svg
+              aria-hidden="true"
+              class="window-titlebar__icon"
+              focusable="false"
+              height="16"
+              viewBox="0 0 32 32"
+              width="16"
+            >
+              <path
+                d="M7 9h11l3 3h4v13H7z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M7 12h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M12 14.5v8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 16h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 19h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 22h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <circle
+                cx="10"
+                cy="16.5"
+                fill="currentColor"
+                r="1"
+              />
+              <circle
+                cx="10"
+                cy="19.5"
+                fill="currentColor"
+                r="1"
+              />
+              <path
+                d="M10 17.5v1"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M10 20.5v1.5h1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          </span>
+          <div
+            class="window-titlebar__copy"
+          >
+            <span
+              class="window-titlebar__eyebrow"
+            >
+              Program object
+            </span>
+            <div
+              class="window-titlebar__title-row"
+            >
+              <strong
+                class="window-titlebar__title"
+              >
+                Artifacts
+              </strong>
+              <span
+                class="window-titlebar__meta"
+              >
+                artifacts
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="app-window__controls"
+        >
+          <button
+            aria-label="Close Artifacts"
+            class="app-window__close"
+            type="button"
+          >
+            X
+          </button>
+        </div>
       </div>
       <div
         class="app-window__body"
@@ -1651,7 +3611,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
           aria-controls="start-menu-panel"
           aria-expanded="true"
           aria-haspopup="menu"
-          aria-label="Close Start menu"
+          aria-label="Close desktop menu"
           class="window-taskbar__start-btn is-active"
           type="button"
         >
@@ -1743,46 +3703,89 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
             </svg>
           </span>
           <span>
-            Start
+            Desktop
           </span>
         </button>
         <div
-          aria-label="Pinned navigation"
+          aria-label="Desktop menu"
           class="cds--layer-two start-menu-panel"
           id="start-menu-panel"
           role="menu"
         >
           <div
+            class="start-menu-panel__header"
+          >
+            <div
+              class="start-menu-panel__header-copy"
+            >
+              <p
+                class="start-menu-panel__eyebrow"
+              >
+                MAP2 Workplace Shell
+              </p>
+              <strong>
+                Workplace Organizer
+              </strong>
+              <span>
+                Current object: Artifacts.
+              </span>
+            </div>
+            <div
+              aria-hidden="true"
+              class="start-menu-panel__header-meta"
+            >
+              <span>
+                5
+                 objects
+              </span>
+              <span>
+                artifacts
+              </span>
+            </div>
+          </div>
+          <div
             class="start-menu-panel__shell"
           >
             <div
-              aria-label="Start Menu shortcuts"
+              aria-label="Desktop menu shortcuts"
               class="start-menu-panel__static-column"
               role="group"
             >
+              <div
+                class="start-menu-panel__column-header"
+              >
+                <p
+                  class="start-menu-panel__eyebrow"
+                >
+                  System actions
+                </p>
+                <strong>
+                  Desktop controls
+                </strong>
+              </div>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Audio Artifacts
+                Artifacts
               </button>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Platforms
+                System Setup
               </button>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Workspace Catalog
+                Program Catalog
               </button>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Settings
+                Display Settings
               </button>
               <div
                 class="start-menu-panel__static-item-root"
@@ -1802,8 +3805,225 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               class="start-menu-panel__tiles-column"
             >
               <div
+                class="start-menu-panel__column-header"
+              >
+                <p
+                  class="start-menu-panel__eyebrow"
+                >
+                  Program objects
+                </p>
+                <strong>
+                  Pinned launchers
+                </strong>
+              </div>
+              <div
                 class="start-menu-panel__grid"
               >
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/brain"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Open the Performance Brain workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics. • beta"
+                >
+                  <span
+                    class="start-menu-card__icon start-menu-card__icon--tile"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      focusable="false"
+                      height="18"
+                      preserveAspectRatio="xMidYMid meet"
+                      viewBox="0 0 32 32"
+                      width="18"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-card__label start-menu-card__label--tile"
+                  >
+                    Brain
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/juce-grid"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Open Audio Grid to build signal flow, set routing, save snapshots, map MIDI, and control audio work from one editor. • beta"
+                >
+                  <span
+                    class="start-menu-card__icon start-menu-card__icon--tile"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      width="18"
+                    >
+                      <rect
+                        fill="#0f172a"
+                        height="28"
+                        rx="6"
+                        width="28"
+                        x="2"
+                        y="2"
+                      />
+                      <rect
+                        fill="#3b82f6"
+                        height="26.4"
+                        rx="5.4"
+                        width="26.4"
+                        x="2.8"
+                        y="2.8"
+                      />
+                      <rect
+                        fill="#18181b"
+                        height="8.2"
+                        rx="1.2"
+                        width="8.2"
+                        x="6.6"
+                        y="6.6"
+                      />
+                      <rect
+                        fill="#18181b"
+                        height="8.2"
+                        rx="1.2"
+                        width="8.2"
+                        x="17.2"
+                        y="6.6"
+                      />
+                      <rect
+                        fill="#18181b"
+                        height="8.2"
+                        rx="1.2"
+                        width="8.2"
+                        x="6.6"
+                        y="17.2"
+                      />
+                      <rect
+                        fill="#18181b"
+                        height="8.2"
+                        rx="1.2"
+                        width="8.2"
+                        x="17.2"
+                        y="17.2"
+                      />
+                      <path
+                        d="M2.8 9.2c0-3.53 2.87-6.4 6.4-6.4h13.6c3.53 0 6.4 2.87 6.4 6.4v1.2H2.8z"
+                        fill="#ffffff"
+                        fill-opacity="0.16"
+                      />
+                      <rect
+                        fill="none"
+                        height="26.4"
+                        rx="5.4"
+                        stroke="#bfdbfe"
+                        stroke-opacity="0.32"
+                        width="26.4"
+                        x="2.8"
+                        y="2.8"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-card__label start-menu-card__label--tile"
+                  >
+                    Audio Grid
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/midi-hub"
+                  style="--item-color: var(--cds-support-success);"
+                  title="Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration. • beta"
+                >
+                  <span
+                    class="start-menu-card__icon start-menu-card__icon--tile"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      focusable="false"
+                      height="18"
+                      preserveAspectRatio="xMidYMid meet"
+                      viewBox="0 0 32 32"
+                      width="18"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-card__label start-menu-card__label--tile"
+                  >
+                    MIDI Hub
+                  </span>
+                </a>
+                <div
+                  class="start-menu-card-root start-menu-card-root--submenu"
+                >
+                  <button
+                    aria-controls="top-hardware-menu"
+                    aria-expanded="false"
+                    aria-haspopup="menu"
+                    class="start-menu-card start-menu-card--tile start-menu-card--submenu"
+                    style="--item-color: var(--cds-support-info);"
+                    title="Open the audio-interface submenu for interface-specific control pages and connection-state views for supported hardware profiles. • beta"
+                    type="button"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="18"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="18"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M24,15V6a2,2,0,0,0-2-2H10A2,2,0,0,0,8,6v9a2,2,0,0,0-2,2V28H8V17H24V28h2V17A2,2,0,0,0,24,15ZM10,6H22v9H10Z"
+                        />
+                        <path
+                          d="M12 10H15V12H12z"
+                        />
+                        <path
+                          d="M17 10H20V12H17z"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Audio Interfaces
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      class="start-menu-card__caret start-menu-card__caret--tile"
+                      fill="currentColor"
+                      focusable="false"
+                      height="14"
+                      preserveAspectRatio="xMidYMid meet"
+                      viewBox="0 0 32 32"
+                      width="14"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M22 16 12 26 10.6 24.6 19.2 16 10.6 7.4 12 6z"
+                      />
+                    </svg>
+                  </button>
+                </div>
                 <a
                   class="start-menu-card start-menu-card--tile"
                   href="/intelfx"
@@ -1886,36 +4106,6 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                     IntelFX Rack
                   </span>
                 </a>
-                <a
-                  class="start-menu-card start-menu-card--tile"
-                  href="/midi-hub"
-                  style="--item-color: var(--cds-support-success);"
-                  title="Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration. • beta"
-                >
-                  <span
-                    class="start-menu-card__icon start-menu-card__icon--tile"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      fill="currentColor"
-                      focusable="false"
-                      height="18"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="18"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="start-menu-card__label start-menu-card__label--tile"
-                  >
-                    MIDI Hub
-                  </span>
-                </a>
               </div>
             </div>
           </div>
@@ -1937,22 +4127,94 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
           >
             <svg
               aria-hidden="true"
-              fill="currentColor"
               focusable="false"
               height="16"
-              preserveAspectRatio="xMidYMid meet"
               viewBox="0 0 32 32"
               width="16"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M26,30H6a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2H9v2H6V28H26V16H23V14h3a2,2,0,0,1,2,2V28A2,2,0,0,1,26,30Z"
+                d="M7 9h11l3 3h4v13H7z"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M13 20H19V22H13z"
+                d="M7 12h18"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
               <path
-                d="M20.59 8.59 17 12.17 17 2 15 2 15 12.17 11.41 8.59 10 10 16 16 22 10 20.59 8.59z"
+                d="M12 14.5v8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 16h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 19h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M15 22h5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <circle
+                cx="10"
+                cy="16.5"
+                fill="currentColor"
+                r="1"
+              />
+              <circle
+                cx="10"
+                cy="19.5"
+                fill="currentColor"
+                r="1"
+              />
+              <path
+                d="M10 17.5v1"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
+              />
+              <path
+                d="M10 20.5v1.5h1.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                vector-effect="non-scaling-stroke"
               />
             </svg>
           </span>
@@ -1996,7 +4258,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
   </div>
   <div
     aria-hidden="true"
-    class="cds--layer-one cds--modal"
+    class="cds--layer-one cds--modal shell-power-modal"
     role="presentation"
   >
     <div
@@ -2038,7 +4300,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_t_"
+                  aria-labelledby="tooltip-_r_13_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -2062,7 +4324,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_t_"
+                id="tooltip-_r_13_"
                 role="tooltip"
               >
                 <span

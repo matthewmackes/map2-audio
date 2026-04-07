@@ -4394,6 +4394,9 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
             }
 
     class _RuntimeEngineStub:
+        is_available = False
+        is_running = False
+
         async def set_all_midi_commands(self, commands):
             self.commands = [dict(command) for command in commands]
             return True

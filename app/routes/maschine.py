@@ -7,6 +7,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
@@ -20,6 +21,8 @@ class MaschineRegisterRequest(BaseModel):
     daemon_version: str | None = None
     virtual_port_name: str | None = None
     hid_device: dict[str, Any] = Field(default_factory=dict)
+    transport: dict[str, Any] = Field(default_factory=dict)
+    transport_candidates: list[dict[str, Any]] = Field(default_factory=list)
     firmware_info: dict[str, Any] = Field(default_factory=dict)
     capabilities: dict[str, Any] = Field(default_factory=dict)
     status: str | None = None
@@ -44,6 +47,22 @@ class MaschineAudioGridSelectRequest(BaseModel):
     block_id: str
 
 
+class MaschineTransportConfigRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    transport_preference: Literal["auto", "hidapi", "pyusb-bulk"] | None = None
+    allow_kernel_detach: bool | None = None
+
+
+def _maschine_transport_config_snapshot() -> dict[str, Any]:
+    runtime_config = get_runtime_config_manager()
+    return {
+        "transport_preference": str(runtime_config.get("maschine.transport_preference", "auto") or "auto"),
+        "allow_kernel_detach": bool(runtime_config.get("maschine.allow_kernel_detach", False)),
+        "applies_on": "next-reconnect-or-daemon-start",
+    }
+
+
 @router.post("/register")
 async def register_maschine_daemon(request: MaschineRegisterRequest) -> dict[str, Any]:
     service = get_maschine_service()
@@ -51,6 +70,8 @@ async def register_maschine_daemon(request: MaschineRegisterRequest) -> dict[str
         daemon_version=request.daemon_version,
         virtual_port_name=request.virtual_port_name,
         hid_device=request.hid_device,
+        transport=request.transport,
+        transport_candidates=request.transport_candidates,
         firmware_info=request.firmware_info,
         capabilities=request.capabilities,
         status=request.status,
@@ -67,6 +88,30 @@ async def get_maschine_status() -> dict[str, Any]:
     return {
         "status": "ok",
         "state": get_maschine_service().get_status(),
+    }
+
+
+@router.get("/transport-config")
+async def get_maschine_transport_config() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "config": _maschine_transport_config_snapshot(),
+        "state": get_maschine_service().get_status(),
+    }
+
+
+@router.put("/transport-config")
+async def update_maschine_transport_config(request: MaschineTransportConfigRequest) -> dict[str, Any]:
+    runtime_config = get_runtime_config_manager()
+    if request.transport_preference is not None:
+        runtime_config.set("maschine.transport_preference", request.transport_preference, save=False)
+    if request.allow_kernel_detach is not None:
+        runtime_config.set("maschine.allow_kernel_detach", bool(request.allow_kernel_detach), save=False)
+    runtime_config.save()
+    return {
+        "status": "ok",
+        "config": _maschine_transport_config_snapshot(),
+        "note": "Maschine daemon picks up transport policy changes on the next reconnect or next daemon start.",
     }
 
 

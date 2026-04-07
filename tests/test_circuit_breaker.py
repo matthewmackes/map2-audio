@@ -215,7 +215,7 @@ class TestCircuitBreakerMetrics:
         metrics = breaker.get_metrics()
         assert metrics.successful_calls == 2
         assert metrics.failed_calls == 1
-        assert metrics.total_calls == 0  # Not tracked in basic impl
+        assert metrics.total_calls == 3
     
     @pytest.mark.asyncio
     async def test_metrics_track_rejections(self):
@@ -325,6 +325,60 @@ class TestCircuitBreakerTimeout:
         
         assert result == "ok"
         assert breaker.state == CircuitState.HALF_OPEN
+
+    @pytest.mark.asyncio
+    async def test_half_open_allows_single_probe_at_a_time(self):
+        """Concurrent recovery probes should not all run during HALF_OPEN."""
+        breaker = CircuitBreaker("test-service", failure_threshold=1, timeout_seconds=0)
+
+        async def failing_func():
+            raise ValueError("error")
+
+        with pytest.raises(ValueError):
+            await breaker.call(failing_func)
+
+        release_probe = asyncio.Event()
+        started_probe = asyncio.Event()
+
+        async def slow_success():
+            started_probe.set()
+            await release_probe.wait()
+            return "ok"
+
+        first_probe = asyncio.create_task(breaker.call(slow_success))
+        await started_probe.wait()
+
+        with pytest.raises(CircuitBreakerException):
+            await breaker.call(slow_success)
+
+        release_probe.set()
+        assert await first_probe == "ok"
+        assert breaker.state == CircuitState.CLOSED
+
+    @pytest.mark.asyncio
+    async def test_stale_failures_do_not_trip_windowed_threshold(self):
+        """Failure counts should age out of the rolling failure window."""
+        breaker = CircuitBreaker(
+            "test-service",
+            failure_threshold=2,
+            timeout_seconds=5,
+            failure_window_seconds=1,
+        )
+
+        async def failing_func():
+            raise ValueError("error")
+
+        with pytest.raises(ValueError):
+            await breaker.call(failing_func)
+
+        assert breaker.state == CircuitState.CLOSED
+        await asyncio.sleep(1.1)
+
+        with pytest.raises(ValueError):
+            await breaker.call(failing_func)
+
+        assert breaker.failure_count == 1
+        assert breaker.state == CircuitState.CLOSED
 
 
 class TestCircuitBreakerManager:

@@ -87,6 +87,53 @@ export function MapClusterFabricIcon(props: MapIconProps) {
   )
 }
 
+// OS/2-inspired launcher glyphs stay single-color so Carbon surfaces can own the accent.
+export function MapOs2DrivesIcon(props: MapIconProps) {
+  return (
+    <MapIconBase {...props}>
+      <path d="M8 8h13l3 3H11z" {...STROKE} />
+      <path d="M8 11h16a2 2 0 0 1 2 2v3H8z" {...STROKE} />
+      <path d="M8 18h16a2 2 0 0 1 2 2v4H8z" {...STROKE} />
+      <path d="M10 14h5" {...STROKE} />
+      <path d="M10 21h5" {...STROKE} />
+      <circle cx="22" cy="14" r="1.2" fill="currentColor" />
+      <circle cx="19" cy="14" r="1.2" fill="currentColor" />
+      <circle cx="22" cy="21" r="1.2" fill="currentColor" />
+      <circle cx="19" cy="21" r="1.2" fill="currentColor" />
+    </MapIconBase>
+  )
+}
+
+export function MapOs2FileManagerIcon(props: MapIconProps) {
+  return (
+    <MapIconBase {...props}>
+      <path d="M7 9h11l3 3h4v13H7z" {...STROKE} />
+      <path d="M7 12h18" {...STROKE} />
+      <path d="M12 14.5v8.5" {...STROKE} />
+      <path d="M15 16h7" {...STROKE} />
+      <path d="M15 19h7" {...STROKE} />
+      <path d="M15 22h5" {...STROKE} />
+      <circle cx="10" cy="16.5" r="1" fill="currentColor" />
+      <circle cx="10" cy="19.5" r="1" fill="currentColor" />
+      <path d="M10 17.5v1" {...STROKE} />
+      <path d="M10 20.5v1.5h1.5" {...STROKE} />
+    </MapIconBase>
+  )
+}
+
+export function MapOs2HomeIcon(props: MapIconProps) {
+  return (
+    <MapIconBase {...props}>
+      <path d="M7 15.5L16 8l9 7.5" {...STROKE} />
+      <path d="M10 14.5v10h12v-10" {...STROKE} />
+      <path d="M14 24.5v-5h4v5" {...STROKE} />
+      <path d="M19 14.5l4-2.5V22l-4 2.5" {...STROKE} />
+      <path d="M21 11h2v3" {...STROKE} />
+      <path d="M12.5 17.5h2" {...STROKE} />
+    </MapIconBase>
+  )
+}
+
 export function MapRoutingMatrixIcon(props: MapIconProps) {
   return (
     <MapIconBase {...props}>

@@ -1,14 +1,19 @@
 import type { ComponentType, MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ProgressBar, Tag } from '@carbon/react'
+import { ProgressBar, Tag, Tile } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
   MAP2_PLATFORM_VERSION,
   Map2BrandMark,
 } from '../components/branding/map2Branding'
-import { MapClusterFabricIcon } from '../components/icons/map/MapAppIcons'
-import { MapArtifactsLibraryIcon } from '../components/icons/map'
+import {
+  MapArtifactsLibraryIcon,
+  MapOs2DrivesIcon,
+  MapOs2FileManagerIcon,
+  MapOs2HomeIcon,
+  MapStagePerformanceIcon,
+} from '../components/icons/map'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
@@ -23,8 +28,6 @@ import { readDesktopWallpaperState } from './desktopWallpaper'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
-
-// ── Node status for Platforms card ──────────────────────────────────────────
 
 function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string {
   if (!Array.isArray(nodes) || nodes.length <= 0) {
@@ -54,12 +57,63 @@ interface DesktopLauncher {
   Icon: ComponentType<{ size?: number }>
 }
 
+interface WorkplaceObject {
+  route: string
+  label: string
+  summary: string
+  Icon: ComponentType<{ size?: number }>
+}
+
 interface DesktopContextMenuState {
   kind: 'wallpaper' | 'icon'
   x: number
   y: number
   route?: string
   label?: string
+}
+
+type StatusTagTone = 'green' | 'red' | 'warm-gray' | 'cool-gray'
+
+const DESKTOP_ICON_OVERRIDES: Record<string, ComponentType<{ size?: number }>> = {
+  '/artifacts': MapArtifactsLibraryIcon,
+  '/perform': MapStagePerformanceIcon,
+  '/platforms/overview': MapOs2DrivesIcon,
+  '/platforms/theme': MapOs2HomeIcon,
+  '/platforms/workspace-catalog': MapOs2FileManagerIcon,
+}
+
+const WORKPLACE_OBJECTS: WorkplaceObject[] = [
+  {
+    route: '/platforms/overview',
+    label: 'System Setup',
+    summary: 'Supervise nodes, remediation pressure, and platform posture.',
+    Icon: MapOs2DrivesIcon,
+  },
+  {
+    route: '/artifacts',
+    label: 'Audio Artifacts',
+    summary: 'Browse plugins, captures, presets, and native processors.',
+    Icon: MapArtifactsLibraryIcon,
+  },
+  {
+    route: '/platforms/workspace-catalog',
+    label: 'Program Catalog',
+    summary: 'Pin routed workspaces onto the desktop and Start Menu shell.',
+    Icon: MapOs2FileManagerIcon,
+  },
+  {
+    route: '/platforms/theme',
+    label: 'Display Settings',
+    summary: 'Adjust Carbon theme tokens and wallpaper behavior for this browser.',
+    Icon: MapOs2HomeIcon,
+  },
+]
+
+function resolveDesktopIcon(
+  route: string,
+  fallbackIcon: ComponentType<{ size?: number }>,
+): ComponentType<{ size?: number }> {
+  return DESKTOP_ICON_OVERRIDES[route] ?? fallbackIcon
 }
 
 function resolveDesktopLaunchers(
@@ -75,18 +129,31 @@ function resolveDesktopLaunchers(
         return null
       }
 
-      const Icon = tile.route === '/artifacts' ? MapArtifactsLibraryIcon : launcher.icon
       return {
         route: tile.route,
         label: launcher.label,
         description: launcher.description,
-        Icon,
+        Icon: resolveDesktopIcon(tile.route, launcher.icon),
       }
     })
     .filter((launcher): launcher is DesktopLauncher => Boolean(launcher))
 }
 
-// ── Component ───────────────────────────────────────────────────────────────
+function statusTagTone(state: string | undefined): StatusTagTone {
+  if (state === 'ok') {
+    return 'green'
+  }
+
+  if (state === 'warn' || state === 'warning' || state === 'critical' || state === 'offline') {
+    return 'red'
+  }
+
+  if (!state || state === 'unknown') {
+    return 'cool-gray'
+  }
+
+  return 'warm-gray'
+}
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -110,10 +177,20 @@ export function HomePage() {
     () => resolveDesktopLaunchers(specialSettings?.landingTiles),
     [specialSettings?.landingTiles],
   )
-  const hasPinnedDesktopIcons = useMemo(
-    () => normalizeLandingTiles(specialSettings?.landingTiles).length > 0,
+  const configuredDesktopTileCount = useMemo(
+    () => normalizeLandingTiles(specialSettings?.landingTiles).length,
     [specialSettings?.landingTiles],
   )
+  const hasPinnedDesktopIcons = useMemo(
+    () => configuredDesktopTileCount > 0,
+    [configuredDesktopTileCount],
+  )
+  const featuredDesktopLauncher = desktopLaunchers[0] ?? null
+  const desktopStatusTags = [
+    { label: platformStatus.avb.label, tone: statusTagTone(platformStatus.avb.state) },
+    { label: platformStatus.avdecc.label, tone: statusTagTone(platformStatus.avdecc.state) },
+    { label: platformStatus.nodes.label, tone: statusTagTone(platformStatus.nodes.state) },
+  ]
   const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
@@ -232,14 +309,14 @@ export function HomePage() {
           <div className="hp2-boot__mark-wrap" aria-hidden="true">
             <Map2BrandMark className="hp2-boot__mark" />
           </div>
-          <p className="hp2-boot__eyebrow">MAP2</p>
+          <p className="hp2-boot__eyebrow">MAP2 Workplace Shell</p>
           <h1 className="hp2-boot__title">{MAP2_PLATFORM_NAME}</h1>
-          <p className="hp2-boot__subtitle">Preparing desktop shell and restoring platform context.</p>
+          <p className="hp2-boot__subtitle">Initializing the Carbon-governed pre-Warp desktop session and restoring platform context.</p>
         </div>
         <div className="hp2-boot__progress">
           <ProgressBar
             label="Boot progress"
-            helperText="Starting desktop experience"
+            helperText="Restoring workplace shell"
             hideLabel
             value={null}
           />
@@ -265,95 +342,249 @@ export function HomePage() {
             aria-hidden="true"
           />
         ) : null}
-        <div className="hp2-desktop__scrim" aria-hidden="true" />
+        <div className="hp2-desktop__underlay" aria-hidden="true" />
         <div className="hp2-desktop__status">
-          <div className="hp2-desktop__icons" role="list" aria-label="Desktop icons">
-            {desktopLaunchers.map((launcher) => (
-              <button
-                key={launcher.route}
-                type="button"
-                className="hp2-desktop__icon"
-                role="listitem"
-                aria-label={`Open ${launcher.label}`}
-                title={launcher.description}
-                onClick={() => navigate(launcher.route)}
-                onContextMenu={(event) => openIconMenu(event, launcher)}
-              >
-                <span className="hp2-desktop__icon-glyph" aria-hidden="true">
-                  <launcher.Icon size={40} />
-                </span>
-                <span className="hp2-desktop__icon-label">{launcher.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="hp2-desktop__platform-card" role="button" aria-label="Open Platforms overview" tabIndex={0} onClick={() => navigate('/platforms/overview')} onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              navigate('/platforms/overview')
-            }
-          }}>
-            <div className="hp2-desktop__platform-meta">
-              <MapClusterFabricIcon size={20} aria-hidden />
-              <strong>Platforms</strong>
+          <header className="hp2-shellbar" aria-label="Workplace shell header">
+            <div className="hp2-shellbar__brand">
+              <span className="hp2-shellbar__mark-wrap" aria-hidden="true">
+                <Map2BrandMark className="hp2-shellbar__mark" />
+              </span>
+              <div className="hp2-shellbar__copy">
+                <strong>MAP2 Workplace Shell</strong>
+                <span>Pre-Warp OS/2 profile under Carbon token governance</span>
+              </div>
             </div>
-            <p>{syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable'}</p>
-            {(remediationPills.length > 0 || !syncWorkflowAvailable) ? (
-              <div className="hp2-card__pills" aria-label="Platforms remediation pills">
-                {remediationPills.map((pill) => (
+            <div className="hp2-shellbar__menus" aria-hidden="true">
+              <span>Desktop</span>
+              <span>Programs</span>
+              <span>System</span>
+              <span>Help</span>
+            </div>
+          </header>
+          <div className="hp2-desktop__workspace">
+            <aside className="hp2-desktop__sidebar" aria-label="Desktop object surface">
+              <div className="hp2-desktop__sidebar-header">
+                <p className="hp2-window__eyebrow">Desktop Objects</p>
+                <strong>{hasPinnedDesktopIcons ? `${configuredDesktopTileCount} custom object${configuredDesktopTileCount !== 1 ? 's' : ''}` : 'System default only'}</strong>
+              </div>
+              <div className="hp2-desktop__icons" role="list" aria-label="Desktop icons">
+                {desktopLaunchers.map((launcher) => (
                   <button
-                    key={`${pill.workflow}-${pill.state}`}
+                    key={launcher.route}
                     type="button"
-                    className="hp2-card__pill"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      const nodeIds = (remediationSummary.data?.nodes ?? [])
-                        .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
-                        .map((node) => node.node_id)
-                      if (pill.workflow === 'adoption') {
-                        navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
-                        return
-                      }
-                      setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
-                    }}
+                    className="hp2-desktop__icon"
+                    role="listitem"
+                    aria-label={`Open ${launcher.label}`}
+                    title={launcher.description}
+                    onClick={() => navigate(launcher.route)}
+                    onContextMenu={(event) => openIconMenu(event, launcher)}
                   >
-                    {pill.label}: {pill.count}
+                    <span className="hp2-desktop__icon-glyph" aria-hidden="true">
+                      <launcher.Icon size={34} />
+                    </span>
+                    <span className="hp2-desktop__icon-label">{launcher.label}</span>
                   </button>
                 ))}
-                {!syncWorkflowAvailable ? (
-                  <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
-                ) : null}
               </div>
-            ) : null}
+            </aside>
+            <main className="hp2-desktop__panels">
+              <Tile className="hp2-window hp2-window--workplace">
+                <div className="hp2-window__titlebar">
+                  <div className="hp2-window__titlegroup">
+                    <span className="hp2-window__title-indicator" aria-hidden="true" />
+                    <strong>Program Manager</strong>
+                  </div>
+                  <span className="hp2-window__titlemeta">{hostname}</span>
+                </div>
+                <div className="hp2-window__body">
+                  <div className="hp2-workplace__hero">
+                    <div className="hp2-workplace__copy">
+                      <p className="hp2-window__eyebrow">Industrial Audio Workstation</p>
+                      <h2>MAP2 desktop session</h2>
+                      <p>
+                        The landing route now reads like a serious OS/2 control desktop: icon-first entry,
+                        flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
+                      </p>
+                    </div>
+                    <div className="hp2-workplace__tags" aria-label="Platform heartbeat">
+                      {desktopStatusTags.map((status) => (
+                        <Tag key={status.label} type={status.tone} size="sm">
+                          {status.label}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp2-workplace__section">
+                    <div className="hp2-workplace__section-header">
+                      <p className="hp2-window__eyebrow">Program Objects</p>
+                      <span>Operator shortcuts</span>
+                    </div>
+                    <div className="hp2-workplace__object-grid">
+                      {WORKPLACE_OBJECTS.map((item) => (
+                        <button
+                          key={item.route}
+                          type="button"
+                          className="hp2-object-button"
+                          onClick={() => navigate(item.route)}
+                        >
+                          <span className="hp2-object-button__icon" aria-hidden="true">
+                            <item.Icon size={22} />
+                          </span>
+                          <span className="hp2-object-button__copy">
+                            <strong>{item.label}</strong>
+                            <span>{item.summary}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="hp2-workplace__inspector">
+                    <div className="hp2-workplace__inspector-copy">
+                      <p className="hp2-window__eyebrow">Selected Desktop Object</p>
+                      <strong>{featuredDesktopLauncher?.label ?? 'Audio Artifacts'}</strong>
+                      <span>{featuredDesktopLauncher?.description ?? 'Browse plugins, presets, captures, and processor assets.'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="hp2-object-button hp2-object-button--compact"
+                      onClick={() => navigate(featuredDesktopLauncher?.route ?? '/artifacts')}
+                    >
+                      <span className="hp2-object-button__icon" aria-hidden="true">
+                        {featuredDesktopLauncher ? <featuredDesktopLauncher.Icon size={18} /> : <MapArtifactsLibraryIcon size={18} />}
+                      </span>
+                      <span className="hp2-object-button__copy">
+                        <strong>Open Object</strong>
+                        <span>{featuredDesktopLauncher?.route ?? '/artifacts'}</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </Tile>
+              <div className="hp2-desktop__panel-row">
+                <Tile className="hp2-window hp2-window--status">
+                  <div className="hp2-window__titlebar">
+                    <div className="hp2-window__titlegroup">
+                      <span className="hp2-window__title-indicator" aria-hidden="true" />
+                      <strong>System Setup</strong>
+                    </div>
+                    <span className="hp2-window__titlemeta">Nodes and remediation</span>
+                  </div>
+                  <div className="hp2-window__body hp2-window__body--compact">
+                    <div
+                      className="hp2-desktop__platform-card"
+                      role="button"
+                      aria-label="Open Platforms overview"
+                      tabIndex={0}
+                      onClick={() => navigate('/platforms/overview')}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          navigate('/platforms/overview')
+                        }
+                      }}
+                    >
+                      <div className="hp2-desktop__platform-meta">
+                        <MapOs2DrivesIcon size={20} aria-hidden />
+                        <strong>Platforms</strong>
+                      </div>
+                      <p>{syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable'}</p>
+                      <div className="hp2-desktop__platform-summary">
+                        <span>{hostname}</span>
+                        <span>{MAP2_PLATFORM_VERSION}</span>
+                      </div>
+                      {(remediationPills.length > 0 || !syncWorkflowAvailable) ? (
+                        <div className="hp2-card__pills" aria-label="Platforms remediation pills">
+                          {remediationPills.map((pill) => (
+                            <button
+                              key={`${pill.workflow}-${pill.state}`}
+                              type="button"
+                              className="hp2-card__pill"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                const nodeIds = (remediationSummary.data?.nodes ?? [])
+                                  .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
+                                  .map((node) => node.node_id)
+                                if (pill.workflow === 'adoption') {
+                                  navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
+                                  return
+                                }
+                                setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
+                              }}
+                            >
+                              {pill.label}: {pill.count}
+                            </button>
+                          ))}
+                          {!syncWorkflowAvailable ? (
+                            <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </Tile>
+                <Tile className="hp2-window hp2-window--notes">
+                  <div className="hp2-window__titlebar">
+                    <div className="hp2-window__titlegroup">
+                      <span className="hp2-window__title-indicator" aria-hidden="true" />
+                      <strong>Desktop Notes</strong>
+                    </div>
+                    <span className="hp2-window__titlemeta">Object directory and maintenance</span>
+                  </div>
+                  <div className="hp2-window__body hp2-window__body--compact">
+                    <div className="hp2-note-panel">
+                      <p className="hp2-window__eyebrow">Pinned Object Directory</p>
+                      <div className="hp2-note-panel__directory">
+                        {desktopLaunchers.map((launcher) => (
+                          <button
+                            key={`${launcher.route}-directory`}
+                            type="button"
+                            className="hp2-note-panel__directory-item"
+                            onClick={() => navigate(launcher.route)}
+                          >
+                            <span>{launcher.label}</span>
+                            <strong>{launcher.route}</strong>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
+                      {!hasPinnedDesktopIcons ? (
+                        <button
+                          type="button"
+                          className="hp2-desktop__watermark"
+                          data-testid="home-desktop-empty-watermark"
+                          onClick={() => navigate('/platforms/workspace-catalog')}
+                        >
+                          <span className="hp2-desktop__watermark-eyebrow">Desktop hint</span>
+                          <strong>Visit Workspace Catalog</strong>
+                          <span>Pin apps to the desktop to replace the system default object.</span>
+                        </button>
+                      ) : null}
+                      {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
+                        <button
+                          type="button"
+                          className="hp2-desktop__watermark hp2-desktop__watermark--remediation"
+                          data-testid="home-desktop-remediation-watermark"
+                          onClick={handleOpenRemediationWatermark}
+                        >
+                          <span className="hp2-desktop__watermark-eyebrow">Platform remediation</span>
+                          <strong>{totalRemediationCount > 0 ? `${totalRemediationCount} items need attention` : 'Sync unavailable'}</strong>
+                          <span>Open the remediation workflow from the desktop shell.</span>
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </Tile>
+              </div>
+            </main>
           </div>
           <footer className="hp2-footer">
-            {MAP2_PLATFORM_VERSION} · {hostname} · {platformStatus.avb.label} · {platformStatus.avdecc.label} · {platformStatus.nodes.label}
+            <span className="hp2-footer__cell">{MAP2_PLATFORM_VERSION}</span>
+            <span className="hp2-footer__cell">{hostname}</span>
+            <span className="hp2-footer__cell">{platformStatus.avb.label}</span>
+            <span className="hp2-footer__cell">{platformStatus.avdecc.label}</span>
+            <span className="hp2-footer__cell">{platformStatus.nodes.label}</span>
           </footer>
-        </div>
-        <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
-          {!hasPinnedDesktopIcons ? (
-            <button
-              type="button"
-              className="hp2-desktop__watermark"
-              data-testid="home-desktop-empty-watermark"
-              onClick={() => navigate('/platforms/workspace-catalog')}
-            >
-              <span className="hp2-desktop__watermark-eyebrow">Desktop hint</span>
-              <strong>Visit Workspace Catalog</strong>
-              <span>Pin apps to the desktop to replace this empty-state hint.</span>
-            </button>
-          ) : null}
-          {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
-            <button
-              type="button"
-              className="hp2-desktop__watermark hp2-desktop__watermark--remediation"
-              data-testid="home-desktop-remediation-watermark"
-              onClick={handleOpenRemediationWatermark}
-            >
-              <span className="hp2-desktop__watermark-eyebrow">Platform remediation</span>
-              <strong>{totalRemediationCount > 0 ? `${totalRemediationCount} items need attention` : 'Sync unavailable'}</strong>
-              <span>Open the remediation workflow.</span>
-            </button>
-          ) : null}
         </div>
         {contextMenu ? (
           <div
