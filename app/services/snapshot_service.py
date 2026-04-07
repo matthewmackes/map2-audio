@@ -111,6 +111,8 @@ SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = "snapshots.default_monitor
 SNAPSHOT_BUNDLE_MANIFEST_FILENAME = "snapshot.json"
 SNAPSHOT_BUNDLE_FORMAT_VERSION = 2
 _snapshot_preload_tasks: dict[str, asyncio.Task[None]] = {}
+_TEMPLATE_LINK_NAMESPACE = "state_authority"
+_TEMPLATE_LINK_KEY = "template_link"
 
 
 def _stable_channel_label(index: int) -> str:
@@ -1921,6 +1923,7 @@ class SnapshotService:
             detail_payload,
             capture_current_authority_extensions=capture_current_authority_extensions,
         )
+        normalized = await self._resolve_template_linked_normalized(normalized)
         normalized = self._apply_default_system_blocks_to_normalized(
             normalized,
             apply_defaults=apply_default_system_blocks,
@@ -2016,6 +2019,10 @@ class SnapshotService:
             normalized["extensions"] = await self._resolve_snapshot_persisted_extensions(
                 detail_payload if isinstance(detail_payload, dict) else None,
                 capture_current_authority_extensions=capture_current_authority_extensions,
+            )
+            normalized = await self._resolve_template_linked_normalized(
+                normalized,
+                existing_snapshot=snapshot,
             )
             normalized = await self._enrich_normalized_payload(normalized)
             await self._replace_snapshot_state(snapshot, normalized)
@@ -2124,7 +2131,11 @@ class SnapshotService:
             return None
         kwargs["document_type"] = "template"
         kwargs.setdefault("capture_current_authority_extensions", False)
-        return await self.update_snapshot(template_id, **kwargs)
+        updated = await self.update_snapshot(template_id, **kwargs)
+        if updated is None:
+            return None
+        await self._cascade_live_linked_snapshots(template_id)
+        return updated
 
     async def delete_snapshot(self, snapshot_id: int) -> bool:
         snapshot = await self._get_snapshot_model(snapshot_id)
@@ -2735,6 +2746,417 @@ class SnapshotService:
             detail_payload=detail_payload,
             is_locked=bool(detail_payload.get("is_locked", False)),
         )
+
+    async def _resolve_template_linked_normalized(
+        self,
+        normalized: dict[str, Any],
+        *,
+        existing_snapshot: Snapshot | None = None,
+    ) -> dict[str, Any]:
+        extensions = copy.deepcopy(normalized.get("extensions") or {})
+        template_link = self._extract_template_link_metadata(extensions)
+        if template_link is None and existing_snapshot is not None:
+            existing_extensions = (
+                copy.deepcopy(existing_snapshot.extensions_payload)
+                if isinstance(existing_snapshot.extensions_payload, dict)
+                else {}
+            )
+            existing_link = self._extract_template_link_metadata(existing_extensions)
+            if existing_link is not None:
+                extensions = self._set_template_link_metadata(extensions, existing_link)
+                normalized = copy.deepcopy(normalized)
+                normalized["extensions"] = extensions
+                template_link = existing_link
+        if template_link is None:
+            return normalized
+
+        template_id = _safe_int(template_link.get("template_id"))
+        if template_id is None:
+            raise ValueError("Template live-link metadata requires a valid template_id.")
+
+        template_snapshot = await self._get_snapshot_model(template_id)
+        if template_snapshot is None or self._snapshot_document_type(template_snapshot) != "template":
+            raise ValueError(f"Template {template_id} not found.")
+
+        base_normalized = await self._snapshot_to_normalized(template_snapshot)
+        base_for_overlay = self._strip_template_link_namespace(base_normalized)
+        current_for_overlay = self._strip_template_link_namespace(normalized)
+        overlay = template_link.get("overlay")
+        if not isinstance(overlay, dict):
+            overlay = self._build_template_overlay(base_for_overlay, current_for_overlay)
+
+        merged = self._merge_template_overlay(base_for_overlay, overlay)
+        merged_extensions = copy.deepcopy(merged.get("extensions") or {})
+        merged_extensions = self._set_template_link_metadata(
+            merged_extensions,
+            {
+                "template_id": int(template_id),
+                "live_link": bool(template_link.get("live_link", True)),
+                "overlay": overlay,
+            },
+        )
+        merged["extensions"] = merged_extensions
+        return merged
+
+    async def _cascade_live_linked_snapshots(self, template_id: int) -> None:
+        result = await self.session.execute(select(Snapshot.id))
+        snapshot_ids = [int(snapshot_id) for snapshot_id in result.scalars().all()]
+        for snapshot_id in snapshot_ids:
+            snapshot = await self._get_snapshot_model(snapshot_id)
+            if snapshot is None:
+                continue
+            if self._snapshot_document_type(snapshot) == "template":
+                continue
+            template_link = self._extract_template_link_metadata(snapshot.extensions_payload or {})
+            if not isinstance(template_link, dict):
+                continue
+            if not bool(template_link.get("live_link", True)):
+                continue
+            if _safe_int(template_link.get("template_id")) != int(template_id):
+                continue
+
+            linked_normalized = await self._snapshot_to_normalized(snapshot)
+            resolved = await self._resolve_template_linked_normalized(
+                linked_normalized,
+                existing_snapshot=snapshot,
+            )
+            resolved = await self._enrich_normalized_payload(resolved)
+            await self._replace_snapshot_state(snapshot, resolved)
+            snapshot.tags = self._derive_snapshot_tags_from_normalized(resolved)
+            await self._persist_snapshot_document(snapshot, resolved, document_type="snapshot")
+        await self.session.flush()
+
+    @staticmethod
+    def _template_link_path(extensions: dict[str, Any]) -> dict[str, Any] | None:
+        namespace = extensions.get(_TEMPLATE_LINK_NAMESPACE)
+        if not isinstance(namespace, dict):
+            return None
+        template_link = namespace.get(_TEMPLATE_LINK_KEY)
+        return template_link if isinstance(template_link, dict) else None
+
+    @classmethod
+    def _extract_template_link_metadata(cls, extensions: dict[str, Any]) -> dict[str, Any] | None:
+        if not isinstance(extensions, dict):
+            return None
+        template_link = cls._template_link_path(extensions)
+        if not isinstance(template_link, dict):
+            return None
+        template_id = _safe_int(template_link.get("template_id"))
+        if template_id is None:
+            return None
+        return {
+            "template_id": int(template_id),
+            "live_link": bool(template_link.get("live_link", True)),
+            "overlay": (
+                copy.deepcopy(template_link.get("overlay"))
+                if isinstance(template_link.get("overlay"), dict)
+                else None
+            ),
+        }
+
+    @staticmethod
+    def _set_template_link_metadata(extensions: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+        next_extensions = copy.deepcopy(extensions or {})
+        namespace = next_extensions.get(_TEMPLATE_LINK_NAMESPACE)
+        if not isinstance(namespace, dict):
+            namespace = {}
+        namespace[_TEMPLATE_LINK_KEY] = {
+            "template_id": int(metadata["template_id"]),
+            "live_link": bool(metadata.get("live_link", True)),
+            "overlay": copy.deepcopy(metadata.get("overlay") or {}),
+        }
+        next_extensions[_TEMPLATE_LINK_NAMESPACE] = namespace
+        return next_extensions
+
+    @classmethod
+    def _strip_template_link_namespace(cls, normalized: dict[str, Any]) -> dict[str, Any]:
+        cleaned = copy.deepcopy(normalized)
+        extensions = cleaned.get("extensions")
+        if not isinstance(extensions, dict):
+            cleaned["extensions"] = {}
+            return cleaned
+        namespace = extensions.get(_TEMPLATE_LINK_NAMESPACE)
+        if isinstance(namespace, dict):
+            namespace = dict(namespace)
+            namespace.pop(_TEMPLATE_LINK_KEY, None)
+            if namespace:
+                extensions[_TEMPLATE_LINK_NAMESPACE] = namespace
+            else:
+                extensions.pop(_TEMPLATE_LINK_NAMESPACE, None)
+        cleaned["extensions"] = extensions
+        return cleaned
+
+    def _build_template_overlay(
+        self,
+        base: dict[str, Any],
+        current: dict[str, Any],
+    ) -> dict[str, Any]:
+        overlay: dict[str, Any] = {}
+
+        channel_overlay = self._build_template_channel_overlay(
+            base.get("channels") or [],
+            current.get("channels") or [],
+        )
+        if channel_overlay:
+            overlay["channels"] = channel_overlay
+
+        chain_overlay = self._build_template_chain_overlay(
+            base.get("chains") or [],
+            current.get("chains") or [],
+        )
+        if chain_overlay:
+            overlay["chains"] = chain_overlay
+
+        routing_overlay = self._deep_diff_mapping(
+            base.get("routing") or {},
+            current.get("routing") or {},
+        )
+        if routing_overlay:
+            overlay["routing"] = routing_overlay
+
+        if self._canonicalize_json_value_for_templates(base.get("midi_map") or []) != self._canonicalize_json_value_for_templates(current.get("midi_map") or []):
+            overlay["midi_map"] = copy.deepcopy(current.get("midi_map") or [])
+
+        extensions_overlay = self._deep_diff_mapping(
+            base.get("extensions") or {},
+            current.get("extensions") or {},
+        )
+        if extensions_overlay:
+            overlay["extensions"] = extensions_overlay
+
+        return overlay
+
+    def _merge_template_overlay(
+        self,
+        base: dict[str, Any],
+        overlay: dict[str, Any],
+    ) -> dict[str, Any]:
+        merged = copy.deepcopy(base)
+        merged["channels"] = self._merge_template_channels(
+            base.get("channels") or [],
+            overlay.get("channels") or [],
+        )
+        merged["chains"] = self._merge_template_chains(
+            base.get("chains") or [],
+            overlay.get("chains") or [],
+        )
+        if "routing" in overlay:
+            merged["routing"] = self._deep_merge_mapping(
+                base.get("routing") or {},
+                overlay.get("routing") or {},
+            )
+        if "midi_map" in overlay:
+            merged["midi_map"] = copy.deepcopy(overlay.get("midi_map") or [])
+        if "extensions" in overlay:
+            merged["extensions"] = self._deep_merge_mapping(
+                base.get("extensions") or {},
+                overlay.get("extensions") or {},
+            )
+        return merged
+
+    @staticmethod
+    def _canonicalize_json_value_for_templates(value: Any) -> Any:
+        return _canonicalize_json_value(value)
+
+    def _build_template_channel_overlay(
+        self,
+        base_channels: list[dict[str, Any]],
+        current_channels: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        base_by_key = {
+            str(channel.get("channel_key")): channel
+            for channel in base_channels
+            if isinstance(channel, dict) and channel.get("channel_key") is not None
+        }
+        overlay: list[dict[str, Any]] = []
+        for channel in current_channels:
+            if not isinstance(channel, dict) or channel.get("channel_key") is None:
+                continue
+            channel_key = str(channel.get("channel_key"))
+            base_channel = base_by_key.get(channel_key)
+            if base_channel is None:
+                overlay.append(copy.deepcopy(channel))
+                continue
+            diff = self._deep_diff_mapping(base_channel, channel)
+            if diff:
+                diff["channel_key"] = channel_key
+                overlay.append(diff)
+        return overlay
+
+    def _merge_template_channels(
+        self,
+        base_channels: list[dict[str, Any]],
+        overlay_channels: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        merged_by_key = {
+            str(channel.get("channel_key")): copy.deepcopy(channel)
+            for channel in base_channels
+            if isinstance(channel, dict) and channel.get("channel_key") is not None
+        }
+        ordered_keys = [str(channel.get("channel_key")) for channel in base_channels if isinstance(channel, dict) and channel.get("channel_key") is not None]
+        for channel in overlay_channels:
+            if not isinstance(channel, dict) or channel.get("channel_key") is None:
+                continue
+            channel_key = str(channel.get("channel_key"))
+            if channel_key in merged_by_key:
+                merged_by_key[channel_key] = self._deep_merge_mapping(merged_by_key[channel_key], channel)
+            else:
+                merged_by_key[channel_key] = copy.deepcopy(channel)
+                ordered_keys.append(channel_key)
+        return [merged_by_key[key] for key in ordered_keys if key in merged_by_key]
+
+    def _build_template_chain_overlay(
+        self,
+        base_chains: list[dict[str, Any]],
+        current_chains: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        base_by_key = {
+            self._template_chain_overlay_key(chain, index): chain
+            for index, chain in enumerate(base_chains)
+            if isinstance(chain, dict)
+        }
+        overlay: list[dict[str, Any]] = []
+        for index, chain in enumerate(current_chains):
+            if not isinstance(chain, dict):
+                continue
+            chain_key = self._template_chain_overlay_key(chain, index)
+            base_chain = base_by_key.get(chain_key)
+            if base_chain is None:
+                overlay.append(copy.deepcopy(chain))
+                continue
+            chain_diff: dict[str, Any] = {
+                "source_key": str(chain.get("source_key") or ""),
+                "template_chain_name": str(chain.get("name") or ""),
+            }
+            if chain.get("name") != base_chain.get("name"):
+                chain_diff["name"] = chain.get("name")
+            plugin_overlay = self._build_template_plugin_overlay(
+                base_chain.get("plugins") or [],
+                chain.get("plugins") or [],
+            )
+            if plugin_overlay:
+                chain_diff["plugins"] = plugin_overlay
+            if self._canonicalize_json_value_for_templates(base_chain.get("loop_insertions") or []) != self._canonicalize_json_value_for_templates(chain.get("loop_insertions") or []):
+                chain_diff["loop_insertions"] = copy.deepcopy(chain.get("loop_insertions") or [])
+            if self._canonicalize_json_value_for_templates(base_chain.get("effects_loops") or []) != self._canonicalize_json_value_for_templates(chain.get("effects_loops") or []):
+                chain_diff["effects_loops"] = copy.deepcopy(chain.get("effects_loops") or [])
+            if len(chain_diff) > 1:
+                overlay.append(chain_diff)
+        return overlay
+
+    def _merge_template_chains(
+        self,
+        base_chains: list[dict[str, Any]],
+        overlay_chains: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        merged_by_key = {
+            self._template_chain_overlay_key(chain, index): copy.deepcopy(chain)
+            for index, chain in enumerate(base_chains)
+            if isinstance(chain, dict)
+        }
+        ordered_keys = [
+            self._template_chain_overlay_key(chain, index)
+            for index, chain in enumerate(base_chains)
+            if isinstance(chain, dict)
+        ]
+        for index, chain in enumerate(overlay_chains):
+            if not isinstance(chain, dict):
+                continue
+            chain_key = self._template_chain_overlay_key(chain, index)
+            if chain_key not in merged_by_key:
+                merged_by_key[chain_key] = copy.deepcopy(chain)
+                ordered_keys.append(chain_key)
+                continue
+            merged_chain = merged_by_key[chain_key]
+            if "name" in chain:
+                merged_chain["name"] = chain.get("name")
+            if "plugins" in chain:
+                merged_chain["plugins"] = self._merge_template_plugins(
+                    merged_chain.get("plugins") or [],
+                    chain.get("plugins") or [],
+                )
+            if "loop_insertions" in chain:
+                merged_chain["loop_insertions"] = copy.deepcopy(chain.get("loop_insertions") or [])
+            if "effects_loops" in chain:
+                merged_chain["effects_loops"] = copy.deepcopy(chain.get("effects_loops") or [])
+            merged_by_key[chain_key] = merged_chain
+        return [merged_by_key[key] for key in ordered_keys if key in merged_by_key]
+
+    @staticmethod
+    def _template_chain_overlay_key(chain: dict[str, Any], index: int) -> str:
+        template_name = str(chain.get("template_chain_name") or "").strip()
+        if template_name:
+            return f"name:{template_name}"
+        name = str(chain.get("name") or "").strip()
+        if name:
+            return f"name:{name}"
+        source_key = str(chain.get("source_key") or "").strip()
+        if source_key:
+            return f"source:{source_key}"
+        return f"index:{index}"
+
+    def _build_template_plugin_overlay(
+        self,
+        base_plugins: list[dict[str, Any]],
+        current_plugins: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        overlay: list[dict[str, Any]] = []
+        max_length = max(len(base_plugins), len(current_plugins))
+        for index in range(max_length):
+            current_plugin = current_plugins[index] if index < len(current_plugins) and isinstance(current_plugins[index], dict) else None
+            base_plugin = base_plugins[index] if index < len(base_plugins) and isinstance(base_plugins[index], dict) else None
+            if current_plugin is None:
+                continue
+            if base_plugin is None:
+                overlay.append(copy.deepcopy(current_plugin))
+                continue
+            diff = self._deep_diff_mapping(base_plugin, current_plugin)
+            if diff:
+                diff["position"] = int(current_plugin.get("position", index))
+                overlay.append(diff)
+        return overlay
+
+    def _merge_template_plugins(
+        self,
+        base_plugins: list[dict[str, Any]],
+        overlay_plugins: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        merged_plugins = [copy.deepcopy(plugin) for plugin in base_plugins if isinstance(plugin, dict)]
+        for index, plugin in enumerate(overlay_plugins):
+            if not isinstance(plugin, dict):
+                continue
+            position = _safe_int(plugin.get("position"))
+            if position is None:
+                position = index
+            while len(merged_plugins) <= position:
+                merged_plugins.append({})
+            if merged_plugins[position]:
+                merged_plugins[position] = self._deep_merge_mapping(merged_plugins[position], plugin)
+            else:
+                merged_plugins[position] = copy.deepcopy(plugin)
+        return merged_plugins
+
+    def _deep_diff_mapping(self, base: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+        diff: dict[str, Any] = {}
+        for key, current_value in current.items():
+            base_value = base.get(key)
+            if isinstance(current_value, dict) and isinstance(base_value, dict):
+                nested = self._deep_diff_mapping(base_value, current_value)
+                if nested:
+                    diff[key] = nested
+                continue
+            if self._canonicalize_json_value_for_templates(base_value) != self._canonicalize_json_value_for_templates(current_value):
+                diff[key] = copy.deepcopy(current_value)
+        return diff
+
+    def _deep_merge_mapping(self, base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+        merged = copy.deepcopy(base)
+        for key, value in override.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = self._deep_merge_mapping(merged[key], value)
+            else:
+                merged[key] = copy.deepcopy(value)
+        return merged
 
     async def get_snapshot_by_program(self, program_number: int) -> Optional[dict[str, Any]]:
         result = await self.session.execute(select(Snapshot).where(Snapshot.program_number == program_number))

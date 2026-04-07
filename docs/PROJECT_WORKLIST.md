@@ -1132,7 +1132,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-06 08:34 EDT - Codex
   - ID: T777-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Implement base-plus-overlay resolution and live-link cascade semantics
     Description:
     - Goal / acceptance criteria: Add override-always-wins template resolution, persist live-link metadata, and propagate template updates into affected linked documents without trampling local overrides.
@@ -1141,7 +1141,14 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Resolution/merge logic, live-link update flow, and focused verification for preserved overrides.
     Assigned to: Codex
-    Last updated: 2026-04-06 08:34 EDT - Codex
+    Last updated: 2026-04-06 18:18 EDT - Codex
+    - Completion notes:
+      - Added State Authority template live-link handling in `app/services/snapshot_service.py` by storing `extensions.state_authority.template_link` metadata plus a computed overlay payload, resolving linked snapshots as `template base + local overlay`, and preserving the link metadata on later linked-snapshot updates.
+      - Added template cascade wiring so `update_template()` now reapplies the stored overlay into every linked non-template snapshot when the source template changes, which lets untouched fields inherit template updates while local overrides remain authoritative.
+      - Added focused regression coverage in `tests/test_snapshot_service.py` proving linked snapshots keep local plugin parameter overrides after a template update while still inheriting untouched template fields such as channel labels.
+    - Validation:
+      - `pytest -q tests/test_snapshot_service.py -k 'template' tests/test_snapshot_routes.py -k 'template'` -> PASS (`3 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS
   - ID: T777-subC
     Status: [ ] Todo
     Title: Extend portability and community workflows to graph templates and bundles

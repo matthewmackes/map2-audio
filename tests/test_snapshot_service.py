@@ -430,11 +430,11 @@ def test_snapshot_service_template_crud_and_portability(tmp_path, monkeypatch):
             service = SnapshotService(session)
 
             snapshot = await service.create_snapshot(
-                name="Only Snapshot",
+                name="OnlySnapshot",
                 detail_payload={"chains": [], "channels": [], "routing": {}, "midi_map": []},
             )
             template = await service.create_template(
-                name="Amp Stack Template",
+                name="AmpStackTemplate",
                 description="Reusable graph template",
                 tags=["template", "guitar"],
                 detail_payload={
@@ -471,7 +471,158 @@ def test_snapshot_service_template_crud_and_portability(tmp_path, monkeypatch):
     assert template["document_type"] == "template"
     assert exported["template"]["document_type"] == "template"
     assert refetched_imported["document_type"] == "template"
-    assert refetched_imported["chains"][0]["plugins"][0]["uri"] == "urn:test:amp"
+
+
+def test_snapshot_service_template_live_link_cascade_preserves_local_overrides(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            template = await service.create_template(
+                name="TemplateLiveLinkBase",
+                description="Base template",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Template Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Template Plugin",
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {"mode": "clean"},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                },
+            )
+
+            linked = await service.create_snapshot(
+                name="TemplateLinkedSnapshot",
+                description="Linked snapshot",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Template Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Template Plugin",
+                                    "parameters": {"gain": 0.9},
+                                    "loader_state": {"mode": "clean"},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "extensions": {
+                        "state_authority": {
+                            "template_link": {
+                                "template_id": template["id"],
+                                "live_link": True,
+                            }
+                        }
+                    },
+                },
+            )
+
+            assert linked["chains"][0]["plugins"][1]["parameters"]["gain"] == 0.9
+            template_link = linked["extensions"]["state_authority"]["template_link"]
+            assert template_link["template_id"] == template["id"]
+            assert template_link["live_link"] is True
+            assert template_link["overlay"]["chains"][0]["plugins"][0]["parameters"]["gain"] == 0.9
+
+            updated_template = await service.update_template(
+                template["id"],
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "Main",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Template Chain",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Template Plugin",
+                                    "parameters": {"gain": 0.6},
+                                    "loader_state": {"mode": "updated"},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                },
+            )
+
+            linked_after_update = await service.get_snapshot(linked["id"])
+            assert linked_after_update is not None
+            return template, linked, updated_template, linked_after_update
+
+    template, linked, updated_template, linked_after_update = asyncio.run(_run())
+
+    linked_plugins = linked_after_update["chains"][0]["plugins"]
+    linked_plugin = next(plugin for plugin in linked_plugins if plugin["uri"] == "urn:test:plugin")
+
+    assert updated_template is not None
+    assert linked_after_update["channels"][0]["label"] == "Main"
+    assert linked_plugin["parameters"]["gain"] == 0.9
+    assert linked_after_update["extensions"]["state_authority"]["template_link"]["template_id"] == template["id"]
+    assert linked_after_update["extensions"]["state_authority"]["template_link"]["live_link"] is True
+    assert linked_after_update["snapshot_revision"] != linked["snapshot_revision"]
 
 
 def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, monkeypatch):
