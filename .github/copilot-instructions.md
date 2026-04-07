@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 6, 2026 (State Authority template CRUD documented)
+> **Last Updated**: April 7, 2026 (Shared SysEx hardware bridge documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -980,6 +980,13 @@ These files represent best practices and architectural patterns to follow:
 - **Lesson**: Bundle hash only changes when actually-used code changes
 
 ### Server Management Gotchas
+
+**82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
+- **Problem**: Extracting duplicated MPX-1 and IntelFX bridge code into a shared base can silently break existing internal call sites and tests that still pass fully qualified event types such as `mpx1:param_unverified` into the private publisher.
+- **Root Cause**: The duplicated services mixed two conventions: most call sites published bare suffixes, but some legacy internals and tests invoked `_publish_event()` with a fully prefixed topic string.
+- **Fix**: In `app/services/sysex_device_bridge.py`, normalize `_publish_event()` so it accepts either bare suffixes or already-prefixed event names, and keep device modules thin by overriding only curated library seeds, simulator hooks, protocol decode rules, and parser-specific `.syx` import paths.
+- **Verification**: `pytest -q tests/test_mpx1.py`; `pytest -q tests/test_intelfx.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/sysex_device_bridge.py app/services/mpx1_service.py app/services/intelfx_service.py`
+- **Lesson**: When deduplicating mirrored service scaffolding, preserve private-contract quirks that the public API does not expose yet. Shared bases should absorb those compatibility edges instead of forcing every old caller to migrate at once.
 
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
@@ -1983,6 +1990,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - Shared SysEx Hardware Bridge Base
+- **Section**: Gotchas & Learned Fixes (#82), Update Log
+- **Change**: Documented the `T793-subA` slice: `app/services/sysex_device_bridge.py` now owns the duplicated MPX-1 and IntelFX bridge scaffolding, while the device modules keep only protocol decode rules, curated library seeds, simulator hooks, and parser-specific import logic.
+- **Reason**: The hardware-bridge audit item was specifically about 4,000+ LOC of duplicated service scaffolding that multiplied maintenance risk and parity bugs.
+- **Impact**: Future MPX-1 or IntelFX lifecycle/state/mapping changes should land in the shared bridge first and only stay device-local when they are genuinely protocol-specific.
 
 ### [2026-04-06] - State Authority Template CRUD
 - **Section**: Update Log

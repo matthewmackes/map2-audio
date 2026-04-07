@@ -17354,7 +17354,7 @@ Description:
 - Required outputs: Shared hardware-bridge abstractions, device-service lifecycle fixes, focused regressions, and updated operator notes where runtime behavior changes.
 Subtasks:
   - ID: T793-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Extract a shared SysEx bridge base for MPX-1 and IntelFX
     Description:
     - Goal / acceptance criteria: Replace the 4,000+ LOC duplicated hardware bridge scaffolding with a shared base plus device-specific protocol layers without losing T036/T037 behavior.
@@ -17362,8 +17362,17 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Shared base abstraction, migrated device services, and parity regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 07:52 EDT - Codex
+    - Completion notes:
+      - Added `app/services/sysex_device_bridge.py` as the shared SysEx hardware-bridge base and moved the duplicated lifecycle, shadow/library/midi-map persistence, MidiHub wiring, transport, drift detection, writer lock, dump flow, websocket fanout, and preset-version/audition logic out of the device-specific services.
+      - Rebuilt `app/services/mpx1_service.py` and `app/services/intelfx_service.py` as thin protocol adapters that keep each unit's curated library seeds, hardware header parsing, simulator hooks, and parser-specific `.syx` import surface while preserving the public REST/WebSocket contract and singleton getters.
+      - Kept backward compatibility for existing internal fully qualified event publishers by letting the shared bridge accept either bare event suffixes or already-prefixed topic names, which preserved the audited MPX-1 readback/unverified flow while removing the 4,000+ LOC near-verbatim service duplication.
+    - Validation:
+      - `pytest -q tests/test_mpx1.py` -> PASS (`35 passed`)
+      - `pytest -q tests/test_intelfx.py` -> PASS (`29 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/sysex_device_bridge.py app/services/mpx1_service.py app/services/intelfx_service.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T793-subB
     Status: [✓] Done
     Title: Fix Tesira task lifecycle and secret-handling issues
@@ -17415,7 +17424,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
 Assigned to: Codex
-Last updated: 2026-04-06 16:28 EDT - Codex
+Last updated: 2026-04-07 07:52 EDT - Codex
 
 ID: T794
 Status: [ ] Todo
