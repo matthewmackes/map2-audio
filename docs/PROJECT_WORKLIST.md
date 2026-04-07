@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778 remains open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subB/T778-subC/T778-subD remain open.
 
 ## Performance Brain
 
@@ -1181,7 +1181,7 @@ Last updated: 2026-04-06 22:11 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T778
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Qualify and cut over the MAP2 State Authority with the locked phase-verification matrix
 Description:
 - Goal / acceptance criteria: Execute the verification matrix from the design doc across phases 1-6, document the fresh-start database cutover and dropped legacy tables, prove graph-doc round trips and runtime behavior end to end, and reconcile downstream open work so future Brain/snapshot tasks consume the new authority rather than rebuilding old snapshot-service assumptions.
@@ -1189,9 +1189,61 @@ Description:
 - Dependencies: T771, T772, T773, T774, T775, T776, T777
 - Estimated effort: High
 - Required outputs: Verification evidence for each phase, cutover/runbook notes, legacy-table retirement proof, and updated downstream dependency notes for remaining authority consumers.
-Subtasks: None
+Subtasks:
+  - ID: T778-subA
+    Status: [✓] Done
+    Title: Materialize the executable State Authority phase matrix runner and runbook
+    Description:
+    - Goal / acceptance criteria: Add a restart-safe qualification runner plus companion runbook that map phases 1-6 onto concrete commands/artifacts, emit machine-readable and markdown summaries, and let future execution capture State Authority proof without reconstructing the matrix by hand.
+    - Why it matters: The qualification story is currently spread across many focused tests and notes. Without a single canonical runner, T778 cannot be re-executed deterministically after restarts or handoffs.
+    - Dependencies: T771, T772, T773, T774, T775, T776, T777
+    - Estimated effort: Medium
+    - Required outputs: Qualification runner, runner regressions, phase matrix/runbook doc, and worklist validation notes.
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:30 EDT - Codex
+    - Completion notes:
+      - Added `scripts/run_t778_state_authority_qualification.py`, a restart-safe phase runner that materializes the locked six-phase State Authority matrix into concrete commands, per-phase stdout/stderr artifacts, and machine-readable plus markdown summaries.
+      - Added `tests/test_t778_state_authority_qualification_runner.py` so the new runner is covered for clean-pass and blocked-phase outcomes instead of being an unverified helper script.
+      - Added `docs/STATE_AUTHORITY_QUALIFICATION_MATRIX.md` as the canonical `T778` phase/runbook reference, including the default commands, artifact contract, exit codes, and the explicit note that native JUCE phase rows may surface as host-specific skips.
+    - Validation:
+      - `pytest -q tests/test_t778_state_authority_qualification_runner.py` -> PASS (`2 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/run_t778_state_authority_qualification.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
+      - `git diff --check` -> PASS
+  - ID: T778-subB
+    Status: [ ] Todo
+    Title: Capture the fresh-start database cutover and legacy-table retirement proof
+    Description:
+    - Goal / acceptance criteria: Document and validate the fresh-start State Authority cutover, including the required reset path, the exact legacy snapshot tables that remain compatibility-only, and the proof/automation needed before claiming the old relational authority has been retired.
+    - Why it matters: T778 explicitly requires a cutover story. Leaving database reset and legacy-table posture implicit would keep the authority transition ambiguous.
+    - Dependencies: T778-subA
+    - Estimated effort: Medium
+    - Required outputs: Cutover runbook updates, table-retirement proof or blockers, and focused validation evidence.
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:27 EDT - Codex
+  - ID: T778-subC
+    Status: [ ] Todo
+    Title: Execute the qualification matrix on the current host and classify native-engine gaps
+    Description:
+    - Goal / acceptance criteria: Run the new phase matrix locally, archive the resulting artifacts, and record any host-specific skips or blocks such as missing native JUCE build outputs or unavailable runtime dependencies.
+    - Why it matters: The matrix runner only becomes useful once it produces real evidence for the current environment instead of abstract command definitions.
+    - Dependencies: T778-subA
+    - Estimated effort: Medium
+    - Required outputs: Captured matrix artifact bundle, host-specific skip/block notes, and updated worklist evidence.
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:27 EDT - Codex
+  - ID: T778-subD
+    Status: [ ] Todo
+    Title: Reconcile downstream Brain and snapshot authority consumers onto the cutover contract
+    Description:
+    - Goal / acceptance criteria: Audit the remaining Brain/snapshot consumers that still assume the older snapshot-service authority model, update their dependency notes or implementation contracts, and leave future open work pointed at the State Authority path only.
+    - Why it matters: T778 is not complete if downstream work can still regress toward the old authority assumptions after the matrix and cutover land.
+    - Dependencies: T778-subA, T778-subB, T778-subC
+    - Estimated effort: Medium
+    - Required outputs: Updated downstream dependency notes, any required follow-on tasks, and final authority-consumer reconciliation evidence.
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:27 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-05 14:16 EDT - Codex
+Last updated: 2026-04-07 19:30 EDT - Codex
 
 ID: T760
 Status: [✓] Done
