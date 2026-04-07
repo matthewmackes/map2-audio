@@ -70,7 +70,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
             </div>
 
             {/* Capacity bar */}
-            <div style={{ marginBottom: 16 }}>
+            <div className="hm-disk-card__capacity">
               <div className="hm-disk-card__cap-row">
                 <span>Capacity</span>
                 <span>{usedPct.toFixed(1)}% of {disk.size_gb ?? disk.total_gb ?? '?'} GB used</span>
@@ -104,7 +104,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
             </div>
 
             {/* Health indicators */}
-            <table className="hm-info-table" style={{ marginTop: 12 }}>
+            <table className="hm-info-table hm-disk-card__details">
               <tbody>
                 {disk.reallocated_sectors !== undefined && (
                   <tr>
@@ -112,7 +112,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
                     <td className="hm-info-table__val">
                       {disk.reallocated_sectors}
                       {disk.reallocated_sectors > 10 && (
-                        <span style={{ color: 'var(--warning)', marginLeft: 8 }}>monitor closely</span>
+                        <span className="hm-disk-card__note hm-disk-card__note--warning">monitor closely</span>
                       )}
                     </td>
                   </tr>
@@ -123,7 +123,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
                     <td className="hm-info-table__val">
                       {disk.uncorrectable_errors}
                       {disk.uncorrectable_errors > 0 && (
-                        <span style={{ color: 'var(--danger)', marginLeft: 8 }}>critical</span>
+                        <span className="hm-disk-card__note hm-disk-card__note--danger">critical</span>
                       )}
                     </td>
                   </tr>
@@ -140,7 +140,11 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
                   <tr>
                     <td className="hm-info-table__key">Estimated lifespan</td>
                     <td className="hm-info-table__val">
-                      <span style={{ color: disk.estimated_lifespan_percent < 70 ? 'var(--warning)' : 'var(--success)' }}>
+                      <span
+                        className={`hm-disk-card__lifespan hm-disk-card__lifespan--${
+                          disk.estimated_lifespan_percent < 70 ? 'warning' : 'success'
+                        }`}
+                      >
                         {disk.estimated_lifespan_percent}%
                       </span>
                     </td>

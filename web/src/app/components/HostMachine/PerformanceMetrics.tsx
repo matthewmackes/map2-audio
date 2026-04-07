@@ -89,7 +89,7 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
       {/* Controls */}
       <div className="hm-perf__toolbar">
         <span className="hm-perf__title">Real-Time Performance Monitoring</span>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="hm-perf__toolbar-actions">
           <label className="hm-toggle-label">
             <input
               type="checkbox"
@@ -130,7 +130,7 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
       </div>
 
       {/* CPU & Memory chart */}
-      <div className="hm-section-card" style={{ marginBottom: 12 }}>
+      <div className="hm-section-card hm-perf__chart-card">
         <div className="hm-section-card__title">CPU &amp; Memory Utilization</div>
         {metrics.length === 0 ? (
           <div className="hm-chart-empty">Waiting for data{autoRefresh ? '…' : ' — enable auto-refresh'}</div>
@@ -153,7 +153,7 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
       </div>
 
       {/* Temperature & Disk chart */}
-      <div className="hm-section-card" style={{ marginBottom: 12 }}>
+      <div className="hm-section-card hm-perf__chart-card">
         <div className="hm-section-card__title">Temperature &amp; Disk Usage</div>
         {metrics.length === 0 ? (
           <div className="hm-chart-empty">Waiting for data{autoRefresh ? '…' : ' — enable auto-refresh'}</div>

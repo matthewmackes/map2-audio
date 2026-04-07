@@ -1,20 +1,376 @@
 .about-page {
   min-height: 100%;
-  background: var(--cds-background);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-background) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background) 8%) 100%
+    );
 }
 
 .about-page__surface {
   min-height: 100%;
+  display: grid;
+  gap: 1rem;
   padding: var(--cds-spacing-07);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--cds-layer-01) 88%, var(--cds-background) 12%) 0%,
-    color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background) 8%) 100%
-  );
+  color: var(--cds-text-primary);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--cds-layer-01) 88%, var(--cds-background) 12%) 0%,
+      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background) 8%) 100%
+    );
+}
+
+.about-page__panel,
+.about-page__table {
+  border-top: 1px solid color-mix(in srgb, white 72%, transparent);
+  border-left: 1px solid color-mix(in srgb, white 64%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--cds-border-strong-01) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-strong-01) 94%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-02) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer-01) 98%, transparent) 100%
+    );
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+}
+
+.about-page__panel {
+  padding: 1rem 1.125rem;
+}
+
+.about-page__disclaimer,
+.about-page__hero,
+.about-page__hardware {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.about-page__guide {
+  padding: 1rem;
+}
+
+.about-page__guide .platform-guide-library-shell {
+  margin: 0;
+}
+
+.about-page__guide .platform-guide-library {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.about-page__section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 90%, transparent);
+}
+
+.about-page__section-header--compact {
+  padding-bottom: 0.625rem;
+}
+
+.about-page__section-icon,
+.about-page__hero-icon,
+.about-page__person-icon,
+.about-page__hardware-icon {
+  color: var(--cds-link-primary);
+  flex-shrink: 0;
+}
+
+.about-page__section-heading {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.about-page__lead {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.about-page__agpl-panel {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 92%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-accent-01) 74%, var(--cds-layer-01) 26%) 0%,
+      color-mix(in srgb, var(--cds-layer-01) 96%, transparent) 100%
+    );
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 66%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+}
+
+.about-page__agpl-title {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.about-page__copy {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--cds-text-secondary);
+}
+
+.about-page__copy--tight,
+.about-page__copy--last {
+  margin-bottom: 0;
+}
+
+.about-page__subheading {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.about-page__list {
+  margin: 0;
+  padding-left: 1.375rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: var(--cds-text-secondary);
+}
+
+.about-page__list-item {
+  margin: 0;
+}
+
+.about-page__note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--cds-text-secondary);
+}
+
+.about-page__timestamp {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--cds-text-placeholder);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.about-page__hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.about-page__hero-heading {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--cds-text-primary);
+}
+
+.about-page__hero-copy {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--cds-text-secondary);
+}
+
+.about-page__table {
+  overflow: hidden;
+}
+
+.about-page__table .cds--data-table-header {
+  padding: 1rem 1.125rem 0.875rem;
+  background: transparent;
+}
+
+.about-page__table .cds--data-table-header__title,
+.about-page__table .cds--data-table-header__description {
+  max-width: 52rem;
+}
+
+.about-page__table .cds--table-toolbar {
+  padding: 0 1.125rem 0.875rem;
+  background: transparent;
+}
+
+.about-page__table .cds--table-toolbar-content {
+  gap: 0.5rem;
+}
+
+.about-page__table .cds--data-table-content,
+.about-page__table .cds--data-table,
+.about-page__table .cds--data-table thead,
+.about-page__table .cds--data-table tbody,
+.about-page__table .cds--data-table tr,
+.about-page__table .cds--data-table th,
+.about-page__table .cds--data-table td {
+  background: transparent;
+}
+
+.about-page__table .cds--data-table th {
+  color: var(--cds-text-secondary);
+}
+
+.about-page__inline-code {
+  font-family: var(--cds-code-01-font-family, monospace);
+  color: var(--cds-link-primary);
+}
+
+.about-page__count-tag {
+  margin-inline: 0;
+}
+
+.about-page__table-link {
+  color: var(--cds-link-primary);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.about-page__table-link:hover,
+.about-page__table-link:focus-visible {
+  text-decoration: underline;
+}
+
+.about-page__table-link--prominent {
+  font-weight: 600;
+}
+
+.about-page__table-link--inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.about-page__truncate {
+  display: block;
+  max-width: 22.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+}
+
+.about-page__truncate--compact {
+  max-width: 18.75rem;
+}
+
+.about-page__cell-copy {
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+}
+
+.about-page__person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.about-page__hardware-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.75rem;
+}
+
+.about-page__hardware-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 10.25rem;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 90%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-02) 95%, white 5%) 0%,
+      color-mix(in srgb, var(--cds-layer-01) 98%, transparent) 100%
+    );
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 66%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+}
+
+.about-page__hardware-card:hover,
+.about-page__hardware-card:focus-visible {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-hover-01) 92%, white 8%) 0%,
+      color-mix(in srgb, var(--cds-layer-02) 98%, transparent) 100%
+    );
+}
+
+.about-page__hardware-card:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.about-page__hardware-title {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.about-page__hardware-copy {
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
 }
 
 @media (max-width: 42rem) {
   .about-page__surface {
     padding: var(--cds-spacing-05);
+  }
+
+  .about-page__panel,
+  .about-page__guide {
+    padding: 0.875rem;
+  }
+
+  .about-page__table .cds--data-table-header,
+  .about-page__table .cds--table-toolbar {
+    padding-inline: 0.875rem;
+  }
+
+  .about-page__hero-heading {
+    font-size: 1.25rem;
+  }
+
+  .about-page__truncate,
+  .about-page__truncate--compact {
+    max-width: 15rem;
   }
 }

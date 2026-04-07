@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794-subA/T794-subB/T794-subC, T797-subA/T797-subB/T797-subD, and T798-T807. T794-subD, T795, T797-subC/T797-subE, T778, and T808 remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794-subA/T794-subB/T794-subC, T797-subA/T797-subB/T797-subD, and T798-T808. T794-subD, T795, T797-subC/T797-subE, and T778 remain open.
 
 ## Performance Brain
 
@@ -18484,7 +18484,7 @@ Last updated: 2026-04-07 17:36 EDT - Codex
 ## Standalone Utility Deep OS/2 Alignment
 
 ID: T808
-Status: [ ] Todo
+Status: [✓] Done
 Title: Deepen the page-native OS/2 treatment inside the standalone utility routes
 Description:
 - Goal / acceptance criteria: Refine the page-native internals inside the routed standalone utility surfaces across `web/src/app/components/HostMachine/*`, `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/AboutPage.css`, and any remaining standalone utility page styles so Host Machine tables/cards, Platform Guide legal/version sections, and other route-local data surfaces use the same flatter pre-Warp OS/2/Carbon workstation language as T800-T807 rather than relying on older mixed Carbon and inline styling. Preserve all existing data, copy, legal language, and operator workflows.
@@ -18494,4 +18494,13 @@ Description:
 - Required outputs: Standalone utility page-specific styling adjustments, focused validation evidence, and licensing/worklist notes for touched MAP2-owned files.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-07 17:36 EDT - Codex
+Last updated: 2026-04-07 18:12 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/AboutPage.tsx` and `web/src/app/pages/AboutPage.css` so the legal disclaimer, platform-guide hero, routed documentation library shell, version/license/resources tables, and hardware-helper cards now render as route-scoped pre-Warp OS/2 workstation panels instead of a mix of Carbon defaults and large inline style blocks, while preserving every existing copy block, AGPL language, and helper workflow.
+  - Deepened the Host Machine route treatment in `web/src/app/pages/HostMachinePage.tsx`, `web/src/app/components/HostMachine/HostMachine.css`, `web/src/app/components/HostMachine/DiskHealthCard.tsx`, and `web/src/app/components/HostMachine/PerformanceMetrics.tsx` so the loading/error/cluster/detail shells, cluster comparison grid, service/export cards, disk metrics, performance toolbar, charts, and guidance panels now share the same flatter OS/2/Carbon workstation framing as the surrounding standalone shell.
+  - Added `web/src/app/pages/HostMachinePage.test.tsx` to lock the loading, cluster-comparison, and remote detail/service-tab route states alongside the refreshed `AboutPage` coverage.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/AboutPage.test.tsx src/app/pages/HostMachinePage.test.tsx` -> PASS (`2 suites, 6 tests`)
+  - `npm --prefix web run build` -> PASS
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.

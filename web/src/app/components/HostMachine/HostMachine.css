@@ -5,13 +5,103 @@
 
 /* ── Page layout ─────────────────────────────────────────────── */
 
+.hm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 100%;
+  padding: 0 var(--cds-spacing-06, 1.5rem) var(--cds-spacing-08, 3rem);
+  color: var(--cds-text-primary, var(--text-primary));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, transparent) 8%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 84%, var(--cds-background, transparent) 16%) 100%
+    );
+}
+
+.hm-page--loading {
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.hm-page__load-card {
+  min-width: min(24rem, 100%);
+  padding: 1.5rem 1.75rem;
+  text-align: center;
+  background: var(--cds-layer-01, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 52%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 16%, transparent);
+}
+
+.hm-page__load-copy {
+  margin: 1rem 0 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.875rem;
+}
+
+.hm-page__header-icon--danger {
+  color: var(--cds-support-error, var(--danger));
+}
+
+.hm-page__header-icon--interactive {
+  color: var(--cds-link-primary, var(--interactive));
+}
+
+.hm-page__toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hm-page__notice {
+  margin-bottom: 0;
+}
+
+.hm-page__notice--top {
+  margin-top: 0.5rem;
+}
+
+.hm-page__empty-cell {
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.hm-page__empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--cds-text-helper, var(--text-tertiary));
+  font-size: 0.8125rem;
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 88%, transparent);
+}
+
+.hm-page__export-copy {
+  margin: 0 0 1.25rem;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.hm-page__status-text {
+  color: var(--cds-text-helper, var(--text-tertiary));
+  font-size: 0.75rem;
+}
+
 .hm-page-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 24px;
   flex-wrap: wrap;
+  padding: 0.9rem 1.1rem;
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 48%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 16%, transparent);
 }
 
 /* ── Spinner ─────────────────────────────────────────────────── */
@@ -44,23 +134,24 @@
   font-size: 13px;
   line-height: 1.5;
   border-inline-start: 3px solid;
-  margin-bottom: 16px;
+  background: var(--cds-layer-01, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 42%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 .hm-inline-notification--info {
-  background: color-mix(in srgb, var(--interactive) 10%, var(--surface-2));
   border-color: var(--interactive);
   color: var(--text-primary);
 }
 
 .hm-inline-notification--error {
-  background: color-mix(in srgb, var(--danger) 10%, var(--surface-2));
   border-color: var(--danger);
   color: var(--text-primary);
 }
 
 .hm-inline-notification--warning {
-  background: color-mix(in srgb, var(--warning) 10%, var(--surface-2));
   border-color: var(--warning);
   color: var(--text-primary);
 }
@@ -71,25 +162,26 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 0.5rem 0.85rem;
   font-size: 13px;
-  font-weight: 500;
-  border: 1px solid transparent;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--cds-border-strong, var(--border-strong)) 92%, transparent);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.1s, border-color 0.1s;
   line-height: 1;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 44%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 16%, transparent);
 }
 
 .hm-btn--ghost {
-  background: transparent;
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, transparent);
+  color: var(--cds-text-primary, var(--text-primary));
 }
 
 .hm-btn--ghost:hover {
-  background: var(--surface-3);
-  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--cds-layer-03, var(--surface-3)) 96%, transparent);
 }
 
 .hm-btn--ghost:disabled {
@@ -98,7 +190,7 @@
 }
 
 .hm-btn--active {
-  background: var(--surface-3);
+  background: color-mix(in srgb, var(--cds-layer-selected, var(--surface-3)) 82%, var(--cds-layer-02, var(--surface-2)) 18%);
   border-color: var(--interactive);
   color: var(--interactive);
 }
@@ -143,9 +235,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  padding: 0.8rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 40%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 /* ── KPI row ──────────────────────────────────────────────────── */
@@ -154,9 +250,11 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  margin-bottom: 24px;
+  background: color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 34%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 12%, transparent);
 }
 
 @media (max-width: 800px) {
@@ -167,8 +265,9 @@
 }
 
 .hm-kpi-card {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
   padding: 20px 20px 18px;
+  min-height: 8rem;
 }
 
 .hm-kpi-card__label {
@@ -200,13 +299,17 @@
 /* ── Tabs ─────────────────────────────────────────────────────── */
 
 .hm-tabs {
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 38%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 .hm-tabs__nav {
   display: flex;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-02, var(--surface)) 94%, transparent);
   overflow-x: auto;
 }
 
@@ -225,30 +328,43 @@
 
 .hm-tabs__tab:hover {
   color: var(--text-primary);
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 90%, transparent);
 }
 
 .hm-tabs__tab--active {
   color: var(--text-primary);
   border-bottom-color: var(--interactive);
   font-weight: 600;
+  background: color-mix(in srgb, var(--cds-layer-selected, var(--surface-2)) 84%, transparent);
 }
 
 .hm-tabs__panel {
   padding: 28px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent);
 }
 
 /* ── Section card (shared) ────────────────────────────────────── */
 
 .hm-section-card {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-2)) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   padding: 20px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 38%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 .hm-section-card--wide {
   grid-column: 1 / -1;
+}
+
+.hm-section-card--os2 {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 68%, var(--cds-layer-01, var(--surface)) 32%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent) 100%
+    );
 }
 
 .hm-section-card__header {
@@ -341,7 +457,13 @@
 
 /* ── Health badge (used in cluster table) ─────────────────────── */
 
-.hm-health-badge         { font-size: 11px; font-weight: 700; }
+.hm-health-badge {
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
 .hm-health-badge--excellent,
 .hm-health-badge--good   { color: var(--success); }
 .hm-health-badge--warning { color: var(--warning); }
@@ -378,8 +500,12 @@
 /* ── Cluster table ────────────────────────────────────────────── */
 
 .hm-cluster-table {
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
   overflow-x: auto;
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 44%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 .hm-cluster-table__head,
@@ -390,8 +516,13 @@
 }
 
 .hm-cluster-table__head {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 96%, white 4%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
 }
 
 .hm-cluster-table__hcell {
@@ -403,19 +534,32 @@
   letter-spacing: 0.06em;
 }
 
+.hm-cluster-table__hcell + .hm-cluster-table__hcell,
+.hm-cluster-table__row > .hm-cluster-table__cell + .hm-cluster-table__cell {
+  border-inline-start: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, transparent);
+}
+
 .hm-cluster-table__row {
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent);
 }
 
 .hm-cluster-table__row:last-child { border-bottom: none; }
-.hm-cluster-table__row:hover { background: var(--surface-2); }
+.hm-cluster-table__row:hover {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--cds-layer-selected, var(--surface-2)) 76%, transparent) 100%
+    );
+}
 .hm-cluster-table__row--offline { opacity: 0.5; }
 
 .hm-cluster-table__cell {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-height: 4rem;
   padding: 12px 14px;
   font-size: 13px;
   color: var(--text-primary);
@@ -504,9 +648,12 @@
 }
 
 .hm-fan-card {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: 12px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 28%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-fan-card--warn { border-color: var(--warning); }
@@ -567,6 +714,10 @@
   margin-bottom: 5px;
 }
 
+.hm-disk-card__capacity {
+  margin-bottom: 16px;
+}
+
 .hm-disk-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -574,9 +725,12 @@
 }
 
 .hm-disk-metric {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: 10px 12px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 32%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-disk-metric__label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -584,6 +738,29 @@
 .hm-disk-metric__value--ok  { color: var(--success); }
 .hm-disk-metric__value--err { color: var(--danger); }
 .hm-disk-metric__value--warn{ color: var(--warning); }
+
+.hm-disk-card__details {
+  margin-top: 12px;
+}
+
+.hm-disk-card__note,
+.hm-disk-card__lifespan {
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.hm-disk-card__note--warning,
+.hm-disk-card__lifespan--warning {
+  color: var(--warning);
+}
+
+.hm-disk-card__note--danger {
+  color: var(--danger);
+}
+
+.hm-disk-card__lifespan--success {
+  color: var(--success);
+}
 
 /* ── Specs grid ───────────────────────────────────────────────── */
 
@@ -605,10 +782,18 @@
   gap: 28px;
   align-items: center;
   padding: 28px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--border-strong);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 66%, var(--cds-layer-01, var(--surface)) 34%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  border-inline-start: 3px solid color-mix(in srgb, var(--cds-border-strong, var(--border-strong)) 96%, transparent);
   margin-bottom: 24px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 40%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
 @media (max-width: 720px) {
@@ -637,14 +822,22 @@
 }
 
 .hm-branding__image-wrap {
-  background: color-mix(in srgb, white 6%, var(--surface-3));
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, white 10%, var(--cds-layer-02, var(--surface-3))) 0%,
+      color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 96%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 120px;
   min-width: 160px;
   padding: 12px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 34%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-branding__image {
@@ -705,7 +898,8 @@
 .hm-service-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 1rem;
+  align-items: start;
 }
 
 @media (max-width: 680px) {
@@ -721,10 +915,18 @@
 }
 
 .hm-audio-banner {
-  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
-  border: 1px solid color-mix(in srgb, var(--interactive) 30%, transparent);
-  border-inline-start: 3px solid var(--interactive);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--interactive) 8%, var(--cds-layer-02, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--interactive) 32%, transparent);
+  border-inline-start: 3px solid color-mix(in srgb, var(--interactive) 96%, transparent);
   padding: 20px 24px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 34%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-audio-banner__title {
@@ -751,13 +953,21 @@
 @media (max-width: 560px) { .hm-feature-grid { grid-template-columns: 1fr; } }
 
 .hm-feature-card {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  border-inline-start: 3px solid color-mix(in srgb, var(--cds-border-strong, var(--border)) 88%, transparent);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 34%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-feature-card--success { border-inline-start-color: var(--success); }
@@ -833,9 +1043,17 @@
 }
 
 .hm-guidelines {
-  background: color-mix(in srgb, var(--interactive) 6%, var(--surface-2));
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--interactive) 6%, var(--cds-layer-02, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   padding: 20px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 30%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-guidelines__title {
@@ -856,9 +1074,12 @@
 @media (max-width: 560px) { .hm-guidelines__grid { grid-template-columns: 1fr; } }
 
 .hm-guideline-item {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: 12px 14px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 28%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-guideline-item__label {
@@ -891,6 +1112,17 @@
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 4px;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 36%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-perf__title {
@@ -899,18 +1131,28 @@
   color: var(--text-primary);
 }
 
+.hm-perf__toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .hm-perf__kpis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 28%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 @media (max-width: 700px) { .hm-perf__kpis { grid-template-columns: repeat(2, 1fr); } }
 
 .hm-perf-tile {
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-2)) 96%, transparent);
   padding: 16px 18px;
 }
 
@@ -939,6 +1181,10 @@
 .hm-perf-tile--success .hm-perf-tile__value { color: var(--success); }
 .hm-perf-tile--warning .hm-perf-tile__value { color: var(--warning); }
 .hm-perf-tile--danger  .hm-perf-tile__value { color: var(--danger); }
+
+.hm-perf__chart-card {
+  margin-bottom: 12px;
+}
 
 .hm-chart-empty {
   height: 100px;
@@ -1001,10 +1247,18 @@
 /* ── Tips ─────────────────────────────────────────────────────── */
 
 .hm-tips {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--interactive);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--interactive) 5%, var(--cds-layer-02, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
+  border-inline-start: 3px solid color-mix(in srgb, var(--interactive) 96%, transparent);
   padding: 16px 20px;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 32%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
 .hm-tips__title {

@@ -571,115 +571,104 @@ export function AboutPage() {
     },
   ]
 
+  const tablePanelClassName = 'about-page__table about-page__panel'
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <section className="about-page">
       <Layer className="about-page__surface">
         {/* ── Legal Disclaimer ────────────────────────────────────────────── */}
-        <section
-          aria-label="Legal disclaimer"
-          style={{
-            marginBottom: 32,
-            paddingBottom: 20,
-            borderBottom: '1px solid var(--cds-border-subtle)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Scales size={16} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+        <section aria-label="Legal disclaimer" className="about-page__panel about-page__disclaimer">
+          <div className="about-page__section-header about-page__section-header--compact">
+            <Scales size={16} className="about-page__section-icon" />
+            <h2 className="about-page__section-heading">
               Legal Disclaimer — Important Notice
             </h2>
           </div>
 
-          <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 13 }}>
+          <p className="about-page__lead">
             MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
           </p>
 
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 16,
-              background: 'var(--cds-layer-01)',
-              border: '1px solid var(--cds-border-subtle)',
-              borderRadius: 4,
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+          <div className="about-page__agpl-panel">
+            <h3 className="about-page__agpl-title">
               GNU Affero General Public License v3.0 (AGPL-3.0-only)
             </h3>
-            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            <p className="about-page__copy">
               MAP2-owned code in this repository is licensed under the <strong>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            <p className="about-page__copy about-page__copy--last">
               Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
             </p>
           </div>
 
-          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <p className="about-page__copy">
             Third-party components remain under their original licenses and are not relicensed by MAP2.
           </p>
 
-          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Affiliation or Endorsement</h3>
-          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <h3 className="about-page__subheading">No Affiliation or Endorsement</h3>
+          <p className="about-page__copy">
             This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are{' '}
             <strong>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
           </p>
 
-          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Trademarks and Product Names</h3>
-          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <h3 className="about-page__subheading">Trademarks and Product Names</h3>
+          <p className="about-page__copy">
             All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the{' '}
             <strong>property of their respective owners</strong>. References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only. No trademark rights are granted by this repository license, documentation, or code.
           </p>
 
-          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Warranty</h3>
-          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <h3 className="about-page__subheading">No Warranty</h3>
+          <p className="about-page__copy">
             This project and all associated materials are provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
           </p>
 
-          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Your Responsibility</h3>
-          <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <h3 className="about-page__subheading">Your Responsibility</h3>
+          <p className="about-page__copy about-page__copy--tight">
             By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
           </p>
-          <ol style={{ margin: '0 0 12px', paddingLeft: 24, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-            <li style={{ marginBottom: 4 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
-            <li style={{ marginBottom: 4 }}>Comply with all applicable third-party licenses for included dependencies.</li>
-            <li style={{ marginBottom: 4 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
+          <ol className="about-page__list">
+            <li className="about-page__list-item">Comply with AGPLv3 requirements for MAP2-owned code.</li>
+            <li className="about-page__list-item">Comply with all applicable third-party licenses for included dependencies.</li>
+            <li className="about-page__list-item">Avoid representing this project as officially affiliated with third-party brands or products.</li>
             <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
           </ol>
 
-          <p style={{ margin: '12px 0 4px', fontStyle: 'italic', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <p className="about-page__note">
             This project continues to prioritize education, transparency, and respectful attribution.
           </p>
-          <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--cds-text-placeholder)' }}>
+          <p className="about-page__timestamp">
             Last updated: 2026-02-22
           </p>
         </section>
 
         {/* Page header */}
-        <header style={{ marginBottom: 32, paddingBottom: 20, borderBottom: '1px solid var(--cds-border-subtle)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Information size={28} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--cds-text-primary)', margin: 0 }}>
+        <header className="about-page__panel about-page__hero">
+          <div className="about-page__hero-title-row">
+            <Information size={28} className="about-page__hero-icon" />
+            <h1 className="about-page__hero-heading">
               MAP2 Platform Guide
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)', margin: '8px 0 0' }}>
+          <p className="about-page__hero-copy">
             Orientation, documentation, build identity, and support context in one canonical information surface
           </p>
         </header>
 
         {/* Guide section — documentation library */}
-        <PlatformInfoGuideSection />
+        <section className="about-page__panel about-page__guide">
+          <PlatformInfoGuideSection />
+        </section>
 
         {/* ── Version Information ─────────────────────────────────────────── */}
         <DataTable rows={versionRows} headers={VERSION_HEADERS} useZebraStyles>
           {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
             <TableContainer
               {...getTableContainerProps()}
+              className={tablePanelClassName}
               title="Platform version"
               description="Build identity and license for the running MAP2 instance."
-              style={{ marginBottom: 24 }}
             >
               <Table {...getTableProps()} aria-label="Platform version table">
                 <TableHead>
@@ -704,7 +693,7 @@ export function AboutPage() {
                             {cell.info.header === 'field' ? (
                               <strong>{String(cell.value)}</strong>
                             ) : cell.info.header === 'value' && row.id === 'commit' && cell.value !== '—' ? (
-                              <code style={{ fontFamily: 'var(--cds-code-01-font-family, monospace)', color: 'var(--cds-link-primary)' }}>
+                              <code className="about-page__inline-code">
                                 {String(cell.value)}
                               </code>
                             ) : (
@@ -726,13 +715,13 @@ export function AboutPage() {
           {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
             <TableContainer
               {...getTableContainerProps()}
+              className={tablePanelClassName}
               title="Technology stack"
               description={`${techRows.length} open-source components across Core, Backend, Frontend, Audio DSP, and Utilities.`}
-              style={{ marginBottom: 24 }}
             >
               <TableToolbar {...getToolbarProps()}>
                 <TableToolbarContent>
-                  <Tag type="cool-gray" size="sm" style={{ margin: '0 8px' }}>
+                  <Tag type="cool-gray" size="sm" className="about-page__count-tag">
                     {techRows.length} dependencies
                   </Tag>
                 </TableToolbarContent>
@@ -764,7 +753,7 @@ export function AboutPage() {
                                   href={website}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontWeight: 500 }}
+                                  className="about-page__table-link"
                                 >
                                   {String(cell.value)}
                                 </a>
@@ -781,18 +770,7 @@ export function AboutPage() {
                           if (cell.info.header === 'description') {
                             return (
                               <TableCell key={cell.id}>
-                                <span
-                                  title={String(cell.value)}
-                                  style={{
-                                    display: 'block',
-                                    maxWidth: 360,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    color: 'var(--cds-text-secondary)',
-                                    fontSize: 12,
-                                  }}
-                                >
+                                <span title={String(cell.value)} className="about-page__truncate">
                                   {String(cell.value)}
                                 </span>
                               </TableCell>
@@ -821,9 +799,9 @@ export function AboutPage() {
           {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
             <TableContainer
               {...getTableContainerProps()}
+              className={tablePanelClassName}
               title="Open source licenses"
               description="Licenses used by MAP2 and its dependencies. MAP2-owned code: AGPL-3.0-only."
-              style={{ marginBottom: 24 }}
             >
               <Table {...getTableProps()} aria-label="Open source licenses table">
                 <TableHead>
@@ -852,7 +830,7 @@ export function AboutPage() {
                                   href={url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontWeight: 600 }}
+                                  className="about-page__table-link about-page__table-link--prominent"
                                 >
                                   {String(cell.value)}
                                 </a>
@@ -862,18 +840,7 @@ export function AboutPage() {
                           if (cell.info.header === 'description') {
                             return (
                               <TableCell key={cell.id}>
-                                <span
-                                  title={String(cell.value)}
-                                  style={{
-                                    display: 'block',
-                                    maxWidth: 300,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    color: 'var(--cds-text-secondary)',
-                                    fontSize: 12,
-                                  }}
-                                >
+                                <span title={String(cell.value)} className="about-page__truncate about-page__truncate--compact">
                                   {String(cell.value)}
                                 </span>
                               </TableCell>
@@ -881,7 +848,7 @@ export function AboutPage() {
                           }
                           return (
                             <TableCell key={cell.id}>
-                              <span style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                              <span className="about-page__cell-copy">
                                 {String(cell.value)}
                               </span>
                             </TableCell>
@@ -902,7 +869,7 @@ export function AboutPage() {
             <TableContainer
               {...getTableContainerProps()}
               title="Resources & links"
-              style={{ marginBottom: 24 }}
+              className={tablePanelClassName}
             >
               <Table {...getTableProps()} aria-label="Resources and links table">
                 <TableHead>
@@ -930,14 +897,7 @@ export function AboutPage() {
                                   href={String(cell.value)}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 4,
-                                    color: 'var(--cds-link-primary)',
-                                    fontSize: 12,
-                                    textDecoration: 'none',
-                                  }}
+                                  className="about-page__table-link about-page__table-link--inline"
                                 >
                                   {String(cell.value)}
                                   <Launch size={12} />
@@ -962,7 +922,7 @@ export function AboutPage() {
             <TableContainer
               {...getTableContainerProps()}
               title="Platform credits"
-              style={{ marginBottom: 24 }}
+              className={tablePanelClassName}
             >
               <Table {...getTableProps()} aria-label="Platform credits table">
                 <TableHead>
@@ -988,7 +948,7 @@ export function AboutPage() {
                               <TableCell key={cell.id}>
                                 <a
                                   href={`mailto:${String(cell.value)}`}
-                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontSize: 12 }}
+                                  className="about-page__table-link about-page__table-link--inline"
                                 >
                                   {String(cell.value)}
                                 </a>
@@ -998,8 +958,8 @@ export function AboutPage() {
                           if (cell.info.header === 'person') {
                             return (
                               <TableCell key={cell.id}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <UserFavorite size={16} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
+                                <div className="about-page__person">
+                                  <UserFavorite size={16} className="about-page__person-icon" />
                                   <strong>{String(cell.value)}</strong>
                                 </div>
                               </TableCell>
@@ -1007,7 +967,7 @@ export function AboutPage() {
                           }
                           return (
                             <TableCell key={cell.id}>
-                              <span style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                              <span className="about-page__cell-copy">
                                 {String(cell.value)}
                               </span>
                             </TableCell>
@@ -1023,117 +983,59 @@ export function AboutPage() {
         </DataTable>
 
         {/* ── Help Me Find Hardware ────────────────────────────────────────── */}
-        <div style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 16,
-              paddingBottom: 12,
-              borderBottom: '1px solid var(--cds-border-subtle)',
-            }}
-          >
-            <Headphones size={20} style={{ color: 'var(--cds-link-primary)' }} />
-            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0, color: 'var(--cds-text-primary)' }}>
+        <section className="about-page__panel about-page__hardware">
+          <div className="about-page__section-header">
+            <Headphones size={20} className="about-page__section-icon" />
+            <h2 className="about-page__section-heading">
               Help Me Find Hardware
             </h2>
           </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 12,
-            }}
-          >
-            <NavLink
-              to="/cpu-performance"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: 20,
-                background: 'var(--cds-layer)',
-                border: '1px solid var(--cds-border-subtle)',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <Chip size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+          <div className="about-page__hardware-grid">
+            <NavLink to="/cpu-performance" className="about-page__hardware-card">
+              <Chip size={28} className="about-page__hardware-icon" />
+              <div className="about-page__hardware-title">
                 CPU Performance Guide
               </div>
-              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+              <div className="about-page__hardware-copy">
                 Compare Intel generations & capacity
               </div>
             </NavLink>
 
-            <NavLink
-              to="/motu-rme"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: 20,
-                background: 'var(--cds-layer)',
-                border: '1px solid var(--cds-border-subtle)',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <Flow size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+            <NavLink to="/motu-rme" className="about-page__hardware-card">
+              <Flow size={28} className="about-page__hardware-icon" />
+              <div className="about-page__hardware-title">
                 Multi Channel ADAT Is Magic
               </div>
-              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+              <div className="about-page__hardware-copy">
                 MOTU + RME ADAT monitoring
               </div>
             </NavLink>
 
             <button
+              type="button"
               onClick={() => setShowShoppingDialog(true)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: 20,
-                background: 'var(--cds-layer)',
-                border: '1px solid var(--cds-border-subtle)',
-                cursor: 'pointer',
-              }}
+              className="about-page__hardware-card"
             >
-              <Package size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+              <Package size={28} className="about-page__hardware-icon" />
+              <div className="about-page__hardware-title">
                 Find a Pro Interface
               </div>
-              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+              <div className="about-page__hardware-copy">
                 Search eBay, Reverb & ShopGoodwill
               </div>
             </button>
 
-            <NavLink
-              to="/cpu-performance"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: 20,
-                background: 'var(--cds-layer)',
-                border: '1px solid var(--cds-border-subtle)',
-                textDecoration: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <ChartLine size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+            <NavLink to="/cpu-performance" className="about-page__hardware-card">
+              <ChartLine size={28} className="about-page__hardware-icon" />
+              <div className="about-page__hardware-title">
                 Does CPU Matter?
               </div>
-              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+              <div className="about-page__hardware-copy">
                 Performance gains by generation
               </div>
             </NavLink>
           </div>
-        </div>
+        </section>
 
         {/* Dialogs */}
         <ShoppingSearchDialog

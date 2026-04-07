@@ -58,12 +58,10 @@ export function HostMachinePage() {
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="hm-page hm-page--loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <div style={{ textAlign: 'center' }}>
+      <div className="hm-page hm-page--loading">
+        <div className="hm-page__load-card">
           <div className="hm-spinner" />
-          <p style={{ marginTop: 16, color: 'var(--text-secondary)', fontSize: 14 }}>
-            Loading host machine data…
-          </p>
+          <p className="hm-page__load-copy">Loading host machine data…</p>
         </div>
       </div>
     )
@@ -72,13 +70,13 @@ export function HostMachinePage() {
   // ── Error ─────────────────────────────────────────────────────────────────────
   if (isError || (!allNodesSelected && (!hostInfo.data || !branding.data))) {
     return (
-      <div className="hm-page hm-page--error" style={{ padding: '0 24px 32px' }}>
+      <div className="hm-page hm-page--error">
         <PageHeader
           title={allNodesSelected ? 'Host Machine · All Nodes' : 'Host Machine'}
           subtitle="Hardware Information & Monitoring"
-          icon={<MapRackDeviceIcon size={28} style={{ color: 'var(--danger)' }} />}
+          icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--danger" />}
         />
-        <div className="hm-inline-notification hm-inline-notification--error" style={{ marginTop: 24 }}>
+        <div className="hm-inline-notification hm-inline-notification--error hm-page__notice hm-page__notice--top">
           <WarningAltFilled size={16} />
           <span>{error instanceof Error ? error.message : 'Failed to load host machine information. Please try again.'}</span>
         </div>
@@ -90,12 +88,12 @@ export function HostMachinePage() {
   if (allNodesSelected) {
     const comparisonRows = clusterComparison.data ?? []
     return (
-      <div className="hm-page hm-page--cluster" style={{ padding: '0 24px 32px' }}>
+      <div className="hm-page hm-page--cluster">
         <div className="hm-page-toolbar">
           <PageHeader
             title="Host Machine · All Nodes"
             subtitle="Cluster-wide hardware comparison"
-            icon={<MapRackDeviceIcon size={28} style={{ color: 'var(--interactive)' }} />}
+            icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--interactive" />}
           />
           <button className="hm-btn hm-btn--ghost" onClick={handleManualRefresh}>
             <Renew size={16} />
@@ -103,7 +101,7 @@ export function HostMachinePage() {
           </button>
         </div>
 
-        <div className="hm-inline-notification hm-inline-notification--info" style={{ marginBottom: 24 }}>
+        <div className="hm-inline-notification hm-inline-notification--info hm-page__notice">
           <CheckmarkFilled size={16} />
           <span>Comparing hardware, disk, and health data across the cluster. Select a node for full detailed diagnostics.</span>
         </div>
@@ -144,7 +142,7 @@ export function HostMachinePage() {
                   <span className="hm-cluster-table__sub">{row.hostInfo?.kernel_version ?? 'Kernel unavailable'}</span>
                 </div>
                 <div className="hm-cluster-table__cell">
-                  {interfaces.length > 0 ? interfaces.join(', ') : <span style={{ color: 'var(--text-tertiary)' }}>None reported</span>}
+                  {interfaces.length > 0 ? interfaces.join(', ') : <span className="hm-page__empty-cell">None reported</span>}
                 </div>
                 <div className={`hm-cluster-table__cell hm-health-badge hm-health-badge--${health}`}>
                   {health.toUpperCase()}
@@ -153,7 +151,7 @@ export function HostMachinePage() {
             )
           })}
           {comparisonRows.length === 0 && (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+            <div className="hm-page__empty-state">
               No nodes available
             </div>
           )}
@@ -201,7 +199,7 @@ export function HostMachinePage() {
     : 'danger'
 
   return (
-    <div className="hm-page" style={{ padding: '0 24px 48px' }}>
+    <div className="hm-page hm-page--detail">
 
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       <div className="hm-page-toolbar">
@@ -210,7 +208,7 @@ export function HostMachinePage() {
           subtitle="Hardware Information & Real-Time Health Monitoring"
           icon={<MapRackDeviceIcon size={28} style={{ color: brandingData.brand_color }} />}
         />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="hm-page__toolbar-actions">
           <button
             className={`hm-btn hm-btn--ghost${autoRefresh ? ' hm-btn--active' : ''}`}
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -228,7 +226,7 @@ export function HostMachinePage() {
 
       {/* ── Remote notice ───────────────────────────────────────────── */}
       {remoteSelected && (
-        <div className="hm-inline-notification hm-inline-notification--info" style={{ marginBottom: 24 }}>
+        <div className="hm-inline-notification hm-inline-notification--info hm-page__notice">
           <MapRackDeviceIcon size={16} />
           <span>
             Viewing remote node <strong>{selectedNode?.hostname ?? activeNodeId}</strong>
@@ -320,7 +318,7 @@ export function HostMachinePage() {
           {tabIndex === 4 && (
             <div className="hm-service-grid">
               {/* Service Information */}
-              <div className="hm-section-card">
+              <div className="hm-section-card hm-section-card--os2">
                 <div className="hm-section-card__title">Service Information</div>
                 <table className="hm-info-table">
                   <tbody>
@@ -364,9 +362,9 @@ export function HostMachinePage() {
               </div>
 
               {/* Export */}
-              <div className="hm-section-card">
+              <div className="hm-section-card hm-section-card--os2">
                 <div className="hm-section-card__title">Export System Report</div>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+                <p className="hm-page__export-copy">
                   Download a full JSON snapshot of this system — hardware specs, disk SMART data,
                   health overview, and branding metadata. Useful for support tickets and diagnostics.
                 </p>
@@ -400,11 +398,11 @@ export function HostMachinePage() {
       {/* ── Status bar ──────────────────────────────────────────────── */}
       <div className="hm-status-bar">
         <span className={`hm-refresh-dot${autoRefresh ? ' hm-refresh-dot--live' : ''}`} />
-        <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>
+        <span className="hm-page__status-text">
           {autoRefresh ? 'Auto-refresh active · health every 2s, disk every 5s' : 'Auto-refresh paused'}
         </span>
         {healthOverviewData && (
-          <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>· Updated moments ago</span>
+          <span className="hm-page__status-text">· Updated moments ago</span>
         )}
       </div>
     </div>
