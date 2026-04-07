@@ -126,7 +126,7 @@ describe('desktopWallpaper', () => {
       expect(result).toEqual({ version: 1, mode: 'solid-theme' })
 
       const raw = window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)
-      expect(JSON.parse(raw!)).toEqual({ version: 1, mode: 'solid-theme' })
+      expect(JSON.parse(raw)).toEqual({ version: 1, mode: 'solid-theme' })
     })
 
     it('normalizes invalid uploaded-image on write', () => {

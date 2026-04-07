@@ -1,15 +1,20 @@
 .numeric-input {
+  --numeric-input-accent: var(--interactive, var(--accent, #0f62fe));
   --numeric-input-surface:
     var(
       --cds-field-02,
       color-mix(
         in srgb,
-        var(--cds-layer-02, var(--surface-overlay, #f4f4f4)) 88%,
+        var(--cds-layer-02, var(--surface-overlay, #f4f4f4)) 92%,
         var(--cds-layer-01, var(--cds-background, var(--bg, #ffffff)))
       )
     );
   --numeric-input-border:
-    var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border, #c6c6c6)));
+    color-mix(
+      in srgb,
+      var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border, #c6c6c6))) 82%,
+      var(--numeric-input-accent) 18%
+    );
   --numeric-input-text:
     var(--cds-text-primary, var(--text-primary, #161616));
   --numeric-input-text-secondary:
@@ -59,22 +64,23 @@
   border: 1px solid var(--numeric-input-border);
   border-radius: 0.7rem;
   background: var(--numeric-input-surface);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 14%, transparent);
+  box-shadow: none;
   transition:
     border-color 140ms ease,
+    background 140ms ease,
     box-shadow 140ms ease,
     transform 140ms ease;
 }
 
 .numeric-input__control:hover {
-  border-color: color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 55%, var(--numeric-input-border));
+  border-color: color-mix(in srgb, var(--numeric-input-accent) 42%, var(--numeric-input-border));
+  background: color-mix(in srgb, var(--numeric-input-surface) 94%, var(--numeric-input-accent) 6%);
 }
 
 .numeric-input__control:focus-within {
-  border-color: var(--numeric-input-accent, #0f62fe);
+  border-color: color-mix(in srgb, var(--numeric-input-accent) 72%, var(--numeric-input-border));
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 20%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 24%, transparent);
+    0 0 0 2px color-mix(in srgb, var(--numeric-input-accent) 18%, transparent);
 }
 
 .numeric-input__control.is-dragging {
@@ -102,7 +108,7 @@
   height: 100%;
   transform-origin: left center;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--numeric-input-accent, #0f62fe), color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 35%, white));
+  background: linear-gradient(90deg, var(--numeric-input-accent), color-mix(in srgb, var(--numeric-input-accent) 55%, white));
 }
 
 .numeric-input__display-overlay {
@@ -140,7 +146,7 @@
 }
 
 .numeric-input__field::selection {
-  background: color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 35%, transparent);
+  background: color-mix(in srgb, var(--numeric-input-accent) 35%, transparent);
 }
 
 .numeric-input__field:disabled {
@@ -168,7 +174,7 @@
 }
 
 .numeric-input__meta span:nth-child(2) {
-  color: color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 55%, var(--numeric-input-text-helper));
+  color: color-mix(in srgb, var(--numeric-input-accent) 55%, var(--numeric-input-text-helper));
 }
 
 .numeric-input--small .numeric-input__control {

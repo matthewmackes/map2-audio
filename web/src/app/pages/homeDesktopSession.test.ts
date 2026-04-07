@@ -95,7 +95,7 @@ describe('homeDesktopSession', () => {
   describe('writeHomeDesktopSession', () => {
     it('persists session state to localStorage', () => {
       const state = {
-        version: 2 as const,
+        version: 2,
         bootCompletedAt: '2026-04-06T13:00:00.000Z',
         runningRoutes: ['/artifacts'],
         currentRoute: '/artifacts',
@@ -103,7 +103,7 @@ describe('homeDesktopSession', () => {
       writeHomeDesktopSession(state)
 
       const raw = window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)
-      expect(JSON.parse(raw!)).toEqual(state)
+      expect(JSON.parse(raw)).toEqual(state)
     })
   })
 
