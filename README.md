@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1018** Python | **1125** TypeScript | **136** C++/H | **135** Docs | **1550** total commits | **3** stars | **0** forks | **0** open issues
+**1019** Python | **1125** TypeScript | **136** C++/H | **136** Docs | **1552** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -178,9 +178,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [MAP2 Audio Platform — Backend Architecture Audit v2](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT_V2.md) | 2026-04-07 |
 | [Enriched MIDI Physical Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md) | 2026-04-07 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-07 |
+| [State Authority Qualification Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/STATE_AUTHORITY_QUALIFICATION_CURRENT_HOST_2026-04-07.md) | 2026-04-07 |
 | [MAP2 State Authority Qualification Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/STATE_AUTHORITY_QUALIFICATION_MATRIX.md) | 2026-04-07 |
 | [Workspace Catalog Storefront Reference](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md) | 2026-04-07 |
-| [BACKEND AUDIT](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT.md) | 2026-04-06 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`94c46e97`](https://github.com/matthewmackes/map2-audio/commit/94c46e97f0f3cc1969b050f2d69fd3f5bc45d8f4) | Record current-host T778 qualification evidence | Map2 Audio | 2026-04-07 |
+| [`1c83e650`](https://github.com/matthewmackes/map2-audio/commit/1c83e6506781a7848a0afa4c3712cbed9f4abbab) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`bd906d98`](https://github.com/matthewmackes/map2-audio/commit/bd906d9898bdbf3f07ad3791b320f004cca03ddb) | Add T778 State Authority qualification matrix runner | Map2 Audio | 2026-04-07 |
 | [`715a43d5`](https://github.com/matthewmackes/map2-audio/commit/715a43d591a55551f4024de0b9c228c241e55b52) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`f78f081a`](https://github.com/matthewmackes/map2-audio/commit/f78f081a62b1545596baf094303dab914c197dfd) | Record Maschine MK1 transport block on current host | Map2 Audio | 2026-04-07 |
 | [`b600337a`](https://github.com/matthewmackes/map2-audio/commit/b600337a615f367c19afe4292289240ae3218848) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`d9a9903f`](https://github.com/matthewmackes/map2-audio/commit/d9a9903f75ab84db74635bc1d1687e548cbea26a) | Complete T795 cleanup and checkpoint current web updates | Map2 Audio | 2026-04-07 |
 | [`bbf84d42`](https://github.com/matthewmackes/map2-audio/commit/bbf84d42626e59b4aa2ad6c60f5942e72658c0b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`000ea45a`](https://github.com/matthewmackes/map2-audio/commit/000ea45abf7c5900250628b616c05440c96b0153) | Finish T795 logging hygiene pass | Map2 Audio | 2026-04-07 |
-| [`27f9cc8c`](https://github.com/matthewmackes/map2-audio/commit/27f9cc8c10ecaaa7625050561018e12f9aa121c9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
