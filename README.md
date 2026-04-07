@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1010** Python | **1125** TypeScript | **136** C++/H | **134** Docs | **1538** total commits | **3** stars | **0** forks | **0** open issues
+**1011** Python | **1125** TypeScript | **136** C++/H | **134** Docs | **1540** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a767a300`](https://github.com/matthewmackes/map2-audio/commit/a767a300aac9372fccc7152f003e9580577b1225) | Finish T797 shared surface family coverage | Map2 Audio | 2026-04-07 |
+| [`9b69fa54`](https://github.com/matthewmackes/map2-audio/commit/9b69fa54ce584f7a9223e563a0f3a5bd43d05a86) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`21a50a4b`](https://github.com/matthewmackes/map2-audio/commit/21a50a4b363642ef81986ec3e9284609f455bade) | Finish T794 backend publish decoupling | Map2 Audio | 2026-04-07 |
 | [`13851465`](https://github.com/matthewmackes/map2-audio/commit/1385146593bc3383c2167ddf7d916b7ba672753c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`83041fd3`](https://github.com/matthewmackes/map2-audio/commit/83041fd36dd137a2692d3f3e289a4a8502d099b8) | Finish T808 standalone utility OS/2 alignment | Map2 Audio | 2026-04-07 |
 | [`f9bf947f`](https://github.com/matthewmackes/map2-audio/commit/f9bf947fb68d4d89eaa8858dc985aac3f5380447) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`830b67ae`](https://github.com/matthewmackes/map2-audio/commit/830b67aece10f1f7a8ee154351dfbc193ba25a4c) | Land backend hardening, physical surfaces, and OS/2 shell... | Map2 Audio | 2026-04-07 |
 | [`522494ad`](https://github.com/matthewmackes/map2-audio/commit/522494adfc85c2213047bbeb340bd85c16f43dc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`3c85de71`](https://github.com/matthewmackes/map2-audio/commit/3c85de71f80658f764cb1e53f15c03d5cb805853) | Worklist sync + desktop state unit tests | Map2 Audio | 2026-04-07 |
-| [`a0f5d8ff`](https://github.com/matthewmackes/map2-audio/commit/a0f5d8ff0aee14db52db83e3d2daebb4ce262d06) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
