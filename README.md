@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1016** Python | **1125** TypeScript | **136** C++/H | **134** Docs | **1546** total commits | **3** stars | **0** forks | **0** open issues
+**1016** Python | **1125** TypeScript | **136** C++/H | **134** Docs | **1548** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f78f081a`](https://github.com/matthewmackes/map2-audio/commit/f78f081a62b1545596baf094303dab914c197dfd) | Record Maschine MK1 transport block on current host | Map2 Audio | 2026-04-07 |
+| [`b600337a`](https://github.com/matthewmackes/map2-audio/commit/b600337a615f367c19afe4292289240ae3218848) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`d9a9903f`](https://github.com/matthewmackes/map2-audio/commit/d9a9903f75ab84db74635bc1d1687e548cbea26a) | Complete T795 cleanup and checkpoint current web updates | Map2 Audio | 2026-04-07 |
 | [`bbf84d42`](https://github.com/matthewmackes/map2-audio/commit/bbf84d42626e59b4aa2ad6c60f5942e72658c0b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`000ea45a`](https://github.com/matthewmackes/map2-audio/commit/000ea45abf7c5900250628b616c05440c96b0153) | Finish T795 logging hygiene pass | Map2 Audio | 2026-04-07 |
 | [`27f9cc8c`](https://github.com/matthewmackes/map2-audio/commit/27f9cc8c10ecaaa7625050561018e12f9aa121c9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`c513a591`](https://github.com/matthewmackes/map2-audio/commit/c513a5914031312236ac27b9fcbb5c8bd02cd587) | Finish T795 middleware cleanup pass | Map2 Audio | 2026-04-07 |
 | [`d86790b7`](https://github.com/matthewmackes/map2-audio/commit/d86790b7dd03b73101b4a781bebae6790febc9e7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`a767a300`](https://github.com/matthewmackes/map2-audio/commit/a767a300aac9372fccc7152f003e9580577b1225) | Finish T797 shared surface family coverage | Map2 Audio | 2026-04-07 |
-| [`9b69fa54`](https://github.com/matthewmackes/map2-audio/commit/9b69fa54ce584f7a9223e563a0f3a5bd43d05a86) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
