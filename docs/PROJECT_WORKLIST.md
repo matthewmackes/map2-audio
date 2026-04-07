@@ -17537,7 +17537,7 @@ Last updated: 2026-04-07 18:25 EDT - Codex
   - The audited service/hardware paths now publish through a thinner shared abstraction and the remaining hidden-state work is reduced to the lower-priority cleanup follow-ups tracked under `T795`.
 
 ID: T795
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Clean up backend maintainability debt captured by the architecture audit
 Description:
 - Goal / acceptance criteria: Close the audit's lower-severity cleanup items that still carry long-term maintenance cost, including model/package organization, logging hygiene, import consistency, config shape readability, and similar repo-wide cleanup work that should not be forgotten after the critical fixes land.
@@ -17558,7 +17558,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
   - ID: T795-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove avoidable blocking/threading primitives from async-only utility paths
     Description:
     - Goal / acceptance criteria: Replace remaining audited async-path `threading.Lock` usage and similar blocking primitives where a non-blocking or single-threaded pattern is more appropriate.
@@ -17566,8 +17566,13 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Utility/middleware cleanup and focused regressions where needed.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 18:49 EDT - Codex
+    Completion notes: Removed request-loop `threading.Lock` usage from the backend's async middleware hot paths by refactoring `app/middleware/rate_limiting.py` and `app/middleware/traffic_capture.py` to use lock-free state updates that stay on the ASGI event loop. The rate limiter now keeps token-bucket and cleanup bookkeeping on monotonic clock values without thread mutexes, and the observatory traffic-capture cache/run-id throttling paths no longer block the event loop with middleware-local thread locks. Also tightened the observatory/rate-limit tests so middleware cache state resets deterministically and the focused regression suite runs without the prior syntax-warning noise.
+    - Validation:
+      - `pytest -q tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py tests/test_improvements.py` -> PASS (`16 passed, 1 skipped`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/rate_limiting.py app/middleware/traffic_capture.py tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T795-subC
     Status: [ ] Todo
     Title: Standardize backend hygiene patterns called out by the audit
@@ -17579,8 +17584,8 @@ Subtasks:
     Subtasks: None
     Assigned to: Unassigned
     Last updated: 2026-04-06
-Assigned to: Unassigned
-Last updated: 2026-04-06
+Assigned to: Codex
+Last updated: 2026-04-07 18:49 EDT - Codex
 
 ID: T780
 Status: [✓] Done

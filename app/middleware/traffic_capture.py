@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import threading
 import time
 import uuid
 from typing import Callable
@@ -20,11 +19,12 @@ _REQUEST_BODY_CAPTURE_LIMIT_BYTES = 4096
 _DEPENDENCY_SNAPSHOT_TTL_SECONDS = 0.25
 _DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS = 5.0
 _RUN_ID_HEADERS = ("x-map2-run-id", "x-load-run-id", "x-request-run-id")
+# These caches are only touched from async request handling on the ASGI event
+# loop, so keep them lock-free instead of introducing blocking thread locks in
+# the middleware hot path.
 _dependency_snapshot_cache: dict[str, object] | None = None
 _dependency_snapshot_cache_at = 0.0
-_dependency_snapshot_lock = threading.Lock()
 _dependency_snapshot_run_cache: dict[str, float] = {}
-_dependency_snapshot_run_lock = threading.Lock()
 
 
 def _extract_run_id(request: Request) -> str:
@@ -40,12 +40,11 @@ def _dependency_snapshot() -> dict[str, object]:
     global _dependency_snapshot_cache, _dependency_snapshot_cache_at
 
     now = time.monotonic()
-    with _dependency_snapshot_lock:
-        if (
-            _dependency_snapshot_cache is not None
-            and (now - _dependency_snapshot_cache_at) <= _DEPENDENCY_SNAPSHOT_TTL_SECONDS
-        ):
-            return dict(_dependency_snapshot_cache)
+    if (
+        _dependency_snapshot_cache is not None
+        and (now - _dependency_snapshot_cache_at) <= _DEPENDENCY_SNAPSHOT_TTL_SECONDS
+    ):
+        return dict(_dependency_snapshot_cache)
 
     try:
         from app.services.service_orchestrator import get_orchestrator
@@ -72,9 +71,8 @@ def _dependency_snapshot() -> dict[str, object]:
                 if isinstance(service, dict)
             },
         }
-        with _dependency_snapshot_lock:
-            _dependency_snapshot_cache = snapshot
-            _dependency_snapshot_cache_at = now
+        _dependency_snapshot_cache = snapshot
+        _dependency_snapshot_cache_at = now
         return dict(snapshot)
     except Exception:
         return {"orchestrator_running": False, "capture_error": True}
@@ -93,21 +91,20 @@ def _should_capture_dependency_snapshot(
 
     now = time.monotonic()
     cutoff = now - (_DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS * 2.0)
-    with _dependency_snapshot_run_lock:
-        stale_run_ids = [
-            cached_run_id
-            for cached_run_id, captured_at in _dependency_snapshot_run_cache.items()
-            if captured_at < cutoff
-        ]
-        for stale_run_id in stale_run_ids:
-            _dependency_snapshot_run_cache.pop(stale_run_id, None)
+    stale_run_ids = [
+        cached_run_id
+        for cached_run_id, captured_at in _dependency_snapshot_run_cache.items()
+        if captured_at < cutoff
+    ]
+    for stale_run_id in stale_run_ids:
+        _dependency_snapshot_run_cache.pop(stale_run_id, None)
 
-        last_captured_at = _dependency_snapshot_run_cache.get(run_id)
-        if last_captured_at is not None and (now - last_captured_at) <= _DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS:
-            return False
+    last_captured_at = _dependency_snapshot_run_cache.get(run_id)
+    if last_captured_at is not None and (now - last_captured_at) <= _DEPENDENCY_SNAPSHOT_RUN_TTL_SECONDS:
+        return False
 
-        _dependency_snapshot_run_cache[run_id] = now
-        return True
+    _dependency_snapshot_run_cache[run_id] = now
+    return True
 
 
 def _utc_now_iso() -> str:

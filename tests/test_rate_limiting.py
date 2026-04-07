@@ -104,9 +104,9 @@ def test_rate_limit_headers():
     """Test that rate limit headers are set"""
     # This would require a full FastAPI test setup
     # For now, just verify the header constants exist
-    assert "X-RateLimit-Limit" is not None
-    assert "X-RateLimit-Remaining" is not None
-    assert "Retry-After" is not None
+    assert "X-RateLimit-Limit"
+    assert "X-RateLimit-Remaining"
+    assert "Retry-After"
     
     print("✓ Rate limit headers defined")
 

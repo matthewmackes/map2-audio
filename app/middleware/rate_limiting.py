@@ -8,37 +8,35 @@ Protects API endpoints from abuse and resource exhaustion:
 - Automatic 429 responses with Retry-After header
 """
 
+from __future__ import annotations
+
 import time
-from typing import Dict, Tuple, Optional
-from collections import defaultdict
-from fastapi import Request, Response, HTTPException
+from typing import Dict, Optional, Tuple
+
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-import threading
 
 from app.utils.logging_utils import get_logger
-from app.exceptions import RateLimitException
-
 logger = get_logger(__name__)
 
-# Global rate limiting enabled state (default: True)
+# These middleware-owned values are mutated only from async request handlers on
+# the ASGI event loop, so keep them lock-free instead of blocking that loop
+# with thread primitives.
 _rate_limiting_enabled = True
-_rate_limiting_lock = threading.Lock()
 
 
 def set_rate_limiting_enabled(enabled: bool) -> None:
     """Set whether rate limiting is enabled globally."""
     global _rate_limiting_enabled
-    with _rate_limiting_lock:
-        _rate_limiting_enabled = enabled
-        state = "enabled" if enabled else "disabled"
-        logger.info(f"Rate limiting {state}")
+    _rate_limiting_enabled = enabled
+    state = "enabled" if enabled else "disabled"
+    logger.info(f"Rate limiting {state}")
 
 
 def get_rate_limiting_enabled() -> bool:
     """Get whether rate limiting is currently enabled."""
-    with _rate_limiting_lock:
-        return _rate_limiting_enabled
+    return _rate_limiting_enabled
 
 
 class TokenBucket:
@@ -55,9 +53,8 @@ class TokenBucket:
         self.capacity = capacity
         self.refill_rate = refill_rate
         self.tokens = float(capacity)
-        self.last_refill = time.time()
-        self.lock = threading.Lock()
-    
+        self.last_refill = time.monotonic()
+
     def consume(self, tokens: int = 1) -> Tuple[bool, float]:
         """
         Try to consume tokens.
@@ -65,27 +62,26 @@ class TokenBucket:
         Returns:
             (success, retry_after_seconds)
         """
-        with self.lock:
-            now = time.time()
-            
-            # Refill tokens
-            elapsed = now - self.last_refill
-            refill_amount = elapsed * self.refill_rate
-            self.tokens = min(self.capacity, self.tokens + refill_amount)
-            self.last_refill = now
-            
-            # Check if we have enough tokens
-            if self.tokens >= tokens:
-                self.tokens -= tokens
-                # Avoid tiny floating-point residue after exact consumption.
-                if abs(self.tokens) < 1e-4:
-                    self.tokens = 0.0
-                return True, 0.0
-            else:
-                # Calculate retry after
-                needed_tokens = tokens - self.tokens
-                retry_after = needed_tokens / self.refill_rate
-                return False, retry_after
+        now = time.monotonic()
+
+        # Refill tokens
+        elapsed = now - self.last_refill
+        refill_amount = elapsed * self.refill_rate
+        self.tokens = min(self.capacity, self.tokens + refill_amount)
+        self.last_refill = now
+
+        # Check if we have enough tokens
+        if self.tokens >= tokens:
+            self.tokens -= tokens
+            # Avoid tiny floating-point residue after exact consumption.
+            if abs(self.tokens) < 1e-4:
+                self.tokens = 0.0
+            return True, 0.0
+
+        # Calculate retry after
+        needed_tokens = tokens - self.tokens
+        retry_after = needed_tokens / self.refill_rate
+        return False, retry_after
 
 
 class RateLimitingMiddleware(BaseHTTPMiddleware):
@@ -105,11 +101,10 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         
         # Storage for token buckets per client
         self.buckets: Dict[str, TokenBucket] = {}
-        self.bucket_lock = threading.Lock()
         
         # Cleanup old buckets periodically
         self.cleanup_interval = 300  # 5 minutes
-        self.last_cleanup = time.time()
+        self.last_cleanup = time.monotonic()
     
     def _get_client_id(self, request: Request) -> str:
         """Get client identifier from request."""
@@ -148,35 +143,34 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
     
     def _get_bucket(self, client_id: str, limit: int, window: int) -> TokenBucket:
         """Get or create token bucket for client."""
-        with self.bucket_lock:
-            key = f"{client_id}:{limit}:{window}"
-            
-            if key not in self.buckets:
-                refill_rate = limit / window
-                self.buckets[key] = TokenBucket(limit, refill_rate)
-            
-            return self.buckets[key]
+        key = f"{client_id}:{limit}:{window}"
+
+        if key not in self.buckets:
+            refill_rate = limit / window
+            self.buckets[key] = TokenBucket(limit, refill_rate)
+
+        return self.buckets[key]
     
     def _cleanup_old_buckets(self):
         """Remove unused token buckets."""
-        now = time.time()
+        now = time.monotonic()
         if now - self.last_cleanup < self.cleanup_interval:
             return
-        
-        with self.bucket_lock:
-            # Remove buckets that haven't been used recently
-            keys_to_remove = []
-            for key, bucket in self.buckets.items():
-                if now - bucket.last_refill > self.cleanup_interval:
-                    keys_to_remove.append(key)
-            
-            for key in keys_to_remove:
-                del self.buckets[key]
-            
-            if keys_to_remove:
-                logger.debug(f"Cleaned up {len(keys_to_remove)} old rate limit buckets")
-            
-            self.last_cleanup = now
+
+        # Remove buckets that haven't been used recently.
+        keys_to_remove = [
+            key
+            for key, bucket in self.buckets.items()
+            if now - bucket.last_refill > self.cleanup_interval
+        ]
+
+        for key in keys_to_remove:
+            self.buckets.pop(key, None)
+
+        if keys_to_remove:
+            logger.debug(f"Cleaned up {len(keys_to_remove)} old rate limit buckets")
+
+        self.last_cleanup = now
     
     async def dispatch(self, request: Request, call_next):
         # Skip rate limiting for health checks

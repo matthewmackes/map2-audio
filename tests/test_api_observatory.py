@@ -118,6 +118,8 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
 
     # Reset singleton state for deterministic assertions.
     monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache", None)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache_at", 0.0)
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_run_cache", {})
     monkeypatch.setattr(
         "app.services.service_orchestrator.get_orchestrator",
