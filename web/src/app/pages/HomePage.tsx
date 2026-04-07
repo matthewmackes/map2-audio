@@ -344,19 +344,10 @@ export function HomePage() {
         <div className="hp2-desktop__underlay" aria-hidden="true" />
         <div className="hp2-desktop__status">
           <header className="hp2-shellbar" aria-label="Workplace shell header">
-            <div className="hp2-shellbar__brand">
-              <span className="hp2-shellbar__mark-wrap">
-                <img src={map2Logo} alt="MAP2 logo" className="hp2-shellbar__mark" />
-              </span>
-              <div className="hp2-shellbar__copy">
-                <span>Pre-Warp OS/2 profile under Carbon token governance</span>
+            <div className="hp2-shellbar__hero">
+              <div className="hp2-shellbar__hero-plate">
+                <img src={map2Logo} alt="MAP2 logo" className="hp2-shellbar__hero-mark" />
               </div>
-            </div>
-            <div className="hp2-shellbar__menus" aria-hidden="true">
-              <span>Desktop</span>
-              <span>Programs</span>
-              <span>System</span>
-              <span>Help</span>
             </div>
           </header>
           <div className="hp2-desktop__workspace">

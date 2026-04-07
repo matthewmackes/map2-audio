@@ -122,60 +122,67 @@
 }
 
 .hp2-shellbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  min-height: 3rem;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--cds-border-subtle, #c6c6c6);
-  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 92%, transparent);
+  position: relative;
+  min-height: 5.1rem;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--interactive, #0f62fe) 36%, var(--cds-border-subtle, #c6c6c6));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--interactive, #0f62fe) 84%, white 16%) 0%,
+      color-mix(in srgb, var(--interactive, #0f62fe) 76%, black 14%) 100%
+    );
 }
 
-.hp2-shellbar__brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
+.hp2-shellbar::before,
+.hp2-shellbar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.hp2-shellbar__mark-wrap {
+.hp2-shellbar::before {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, white 13%, transparent) 0 1px, transparent 1px 2rem),
+    linear-gradient(color-mix(in srgb, white 10%, transparent) 0 1px, transparent 1px 2rem);
+  opacity: 0.4;
+}
+
+.hp2-shellbar::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 20%, transparent) 0%, transparent 62%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--accent, #78a9ff) 18%, transparent), transparent 54%);
+}
+
+.hp2-shellbar__hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: inherit;
+  padding: 0.9rem clamp(1rem, 3vw, 2rem);
+}
+
+.hp2-shellbar__hero-plate {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: clamp(6.5rem, 11vw, 8.5rem);
-  min-height: 2rem;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid var(--cds-border-subtle, #c6c6c6);
-  background: var(--cds-layer-01, #ffffff);
+  width: min(100%, clamp(16rem, 35vw, 26rem));
+  padding: clamp(0.5rem, 1.4vw, 0.85rem) clamp(0.9rem, 2vw, 1.4rem);
+  border: 1px solid color-mix(in srgb, var(--interactive, #0f62fe) 16%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 95%, transparent);
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, white 90%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent),
+    0 0 0 1px color-mix(in srgb, white 18%, transparent);
 }
 
-.hp2-shellbar__mark {
+.hp2-shellbar__hero-mark {
   width: 100%;
   height: auto;
   display: block;
-}
-
-.hp2-shellbar__copy {
-  display: grid;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.hp2-shellbar__copy span {
-  color: var(--cds-text-secondary, #525252);
-  font-size: 0.78rem;
-}
-
-.hp2-shellbar__menus {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: var(--cds-text-helper, #6f6f6f);
-  font-family: 'IBM Plex Mono', 'IBM Plex Sans', monospace;
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .hp2-desktop__workspace {
@@ -701,13 +708,7 @@
 
 @media (max-width: 960px) {
   .hp2-shellbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hp2-shellbar__menus {
-    flex-wrap: wrap;
-    gap: 0.7rem;
+    min-height: 4.6rem;
   }
 
   .hp2-desktop__workspace {

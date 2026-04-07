@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T795, T797-subE, and T778 remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE and T778 remain open.
 
 ## Performance Brain
 
@@ -17537,7 +17537,7 @@ Last updated: 2026-04-07 18:25 EDT - Codex
   - The audited service/hardware paths now publish through a thinner shared abstraction and the remaining hidden-state work is reduced to the lower-priority cleanup follow-ups tracked under `T795`.
 
 ID: T795
-Status: [>] In Progress
+Status: [✓] Done
 Title: Clean up backend maintainability debt captured by the architecture audit
 Description:
 - Goal / acceptance criteria: Close the audit's lower-severity cleanup items that still carry long-term maintenance cost, including model/package organization, logging hygiene, import consistency, config shape readability, and similar repo-wide cleanup work that should not be forgotten after the critical fixes land.
@@ -17547,7 +17547,7 @@ Description:
 - Required outputs: Cleanup changes, any small supporting refactors, and lightweight validation evidence.
 Subtasks:
   - ID: T795-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Split large backend model/config files into clearer packages
     Description:
     - Goal / acceptance criteria: Break up oversized single-file model/config definitions such as Performance Brain models and the large config schema dict into clearer module groupings without changing external behavior.
@@ -17555,8 +17555,14 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: File/package reorganization and focused import/regression checks.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 19:12 EDT - Codex
+    Completion notes: Split the monolithic Performance Brain model/update definitions out of `app/services/performance_brain_service.py` into the dedicated `app/services/performance_brain/` package while keeping the original service module as the stable public import surface for routes/tests. Also moved the oversized `CONFIG_SCHEMA` definition out of `app/config.py` into the new `app/config_schema.py` module with sectioned schema dictionaries, preserving `app.config` re-exports for `CONFIG_SCHEMA`, `ConfigOption`, and `ConfigSection` so existing runtime/config consumers kept their import contract unchanged.
+    - Validation:
+      - `CI=1 pytest -q tests/test_config_manager_validation.py tests/test_cluster_midi_foundation.py tests/test_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py` -> PASS (`32 passed, 1 warning`)
+      - `CI=1 pytest -q tests/test_config_api_runtime.py tests/test_config_hot_reload_cluster_sync.py tests/push_surface/test_config.py` -> PASS (`6 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py app/config_schema.py app/services/performance_brain_service.py app/services/performance_brain/models.py app/services/performance_brain/__init__.py tests/test_config_manager_validation.py tests/test_cluster_midi_foundation.py tests/test_brain_service.py tests/test_brain_routes.py tests/test_performance_brain_authority_sync.py tests/test_config_api_runtime.py tests/test_config_hot_reload_cluster_sync.py tests/push_surface/test_config.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T795-subB
     Status: [✓] Done
     Title: Remove avoidable blocking/threading primitives from async-only utility paths
@@ -17590,7 +17596,10 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/logging_utils.py app/utils/route_helpers.py app/middleware/rate_limiting.py app/middleware/traffic_capture.py app/main.py tests/test_logging_utils.py tests/test_route_helpers.py tests/test_rate_limiting.py tests/test_api_observatory.py tests/test_backend_audit_middleware.py` -> PASS
       - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 19:01 EDT - Codex
+Last updated: 2026-04-07 19:12 EDT - Codex
+- Completion notes:
+  - Finished the remaining backend maintainability follow-up by extracting the Performance Brain typed contract into a dedicated package and breaking the giant runtime config schema out into a dedicated module with sectioned groupings.
+  - The backend audit cleanup umbrella is now complete without changing the stable config or Performance Brain import surfaces consumed by routes, runtime services, or tests.
 
 ID: T780
 Status: [✓] Done

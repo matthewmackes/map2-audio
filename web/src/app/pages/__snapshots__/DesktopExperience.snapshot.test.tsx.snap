@@ -488,41 +488,17 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             class="hp2-shellbar"
           >
             <div
-              class="hp2-shellbar__brand"
+              class="hp2-shellbar__hero"
             >
-              <span
-                class="hp2-shellbar__mark-wrap"
+              <div
+                class="hp2-shellbar__hero-plate"
               >
                 <img
                   alt="MAP2 logo"
-                  class="hp2-shellbar__mark"
+                  class="hp2-shellbar__hero-mark"
                   src="MAP2-LOGO.png"
                 />
-              </span>
-              <div
-                class="hp2-shellbar__copy"
-              >
-                <span>
-                  Pre-Warp OS/2 profile under Carbon token governance
-                </span>
               </div>
-            </div>
-            <div
-              aria-hidden="true"
-              class="hp2-shellbar__menus"
-            >
-              <span>
-                Desktop
-              </span>
-              <span>
-                Programs
-              </span>
-              <span>
-                System
-              </span>
-              <span>
-                Help
-              </span>
             </div>
           </header>
           <div
@@ -1842,41 +1818,17 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
             class="hp2-shellbar"
           >
             <div
-              class="hp2-shellbar__brand"
+              class="hp2-shellbar__hero"
             >
-              <span
-                class="hp2-shellbar__mark-wrap"
+              <div
+                class="hp2-shellbar__hero-plate"
               >
                 <img
                   alt="MAP2 logo"
-                  class="hp2-shellbar__mark"
+                  class="hp2-shellbar__hero-mark"
                   src="MAP2-LOGO.png"
                 />
-              </span>
-              <div
-                class="hp2-shellbar__copy"
-              >
-                <span>
-                  Pre-Warp OS/2 profile under Carbon token governance
-                </span>
               </div>
-            </div>
-            <div
-              aria-hidden="true"
-              class="hp2-shellbar__menus"
-            >
-              <span>
-                Desktop
-              </span>
-              <span>
-                Programs
-              </span>
-              <span>
-                System
-              </span>
-              <span>
-                Help
-              </span>
             </div>
           </header>
           <div
