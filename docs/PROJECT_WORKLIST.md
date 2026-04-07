@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794-subA/T794-subB/T794-subC, T797-subA/T797-subB/T797-subD, and T798-T808. T794-subD, T795, T797-subC/T797-subE, and T778 remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T797-subA/T797-subB/T797-subD, and T798-T808. T795, T797-subC/T797-subE, and T778 remain open.
 
 ## Performance Brain
 
@@ -17444,7 +17444,7 @@ Assigned to: Codex
 Last updated: 2026-04-07 08:08 EDT - Codex
 
 ID: T794
-Status: [>] In Progress
+Status: [✓] Done
 Title: Finish cross-cutting backend control, config, and recovery hardening from the audit
 Description:
 - Goal / acceptance criteria: Address the audit's remaining medium-severity architecture concerns around automation, circuit breaking, graceful degradation, configuration validation, websocket/event decoupling, and module-level mutable state so the backend's control-plane primitives behave consistently under failure.
@@ -17511,7 +17511,7 @@ Subtasks:
       - `pytest -q tests/test_config_manager_validation.py tests/test_config_api_runtime.py tests/test_config_hot_reload_cluster_sync.py` -> PASS (`7 passed`)
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py tests/test_config_manager_validation.py` -> PASS
   - ID: T794-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Reduce module-level mutable state and websocket coupling across backend services
     Description:
     - Goal / acceptance criteria: Move hidden module globals into owned service objects where practical and introduce a thinner publish abstraction between backend services and websocket fanout so hardware/service code stops depending directly on websocket-manager internals.
@@ -17519,10 +17519,22 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: Refactors for the audited module-global/websocket-coupling hotspots and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 18:25 EDT - Codex
+    - Completion notes:
+      - Extended `EventPublisher` with a generic `publish_message(...)` fanout API and routed `ServiceOrchestrator`, `GroundControlProService`, `SysExDeviceBridge`, and `MidiRouter` through it so those services no longer depend directly on `ws_manager` internals.
+      - Replaced the orchestrator's broken `broadcast_to_topic(...)` call with the shared publish abstraction while keeping websocket-manager lifecycle wiring centralized through `set_websocket_manager(...)`.
+      - Added injected-publisher regressions for the orchestrator, Ground Control Pro, MIDI router, and MPX1/SysEx bridge publish paths so backend event fanout is now patchable without reaching into module-level websocket globals.
+    - Validation:
+      - `pytest -q tests/test_service_orchestrator_health.py tests/test_ground_control_pro_restart.py tests/midi_hub/test_router.py tests/test_mpx1.py` -> PASS (`51 passed`)
+      - `pytest -q tests/test_backend_audit_shared_state.py tests/test_backend_audit_network_lifecycle.py` -> PASS (`5 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/event_publisher.py app/services/service_orchestrator.py app/services/ground_control_pro/service.py app/services/sysex_device_bridge.py app/services/midi_hub/router.py tests/test_ground_control_pro_restart.py tests/midi_hub/test_router.py tests/test_service_orchestrator_health.py tests/test_mpx1.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 08:31 EDT - Codex
+Last updated: 2026-04-07 18:25 EDT - Codex
+- Completion notes:
+  - Closed the remaining medium-severity backend audit hardening slice by finishing automation, circuit-breaker, config-validation, and realtime publish-decoupling fixes under one restart-safe task umbrella.
+  - The audited service/hardware paths now publish through a thinner shared abstraction and the remaining hidden-state work is reduced to the lower-priority cleanup follow-ups tracked under `T795`.
 
 ID: T795
 Status: [ ] Todo

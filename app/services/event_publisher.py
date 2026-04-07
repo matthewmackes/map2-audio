@@ -6,7 +6,7 @@ Centralized event publishing for real-time WebSocket updates.
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,13 @@ class EventType(str, Enum):
     AUDIO_ENGINE_STATUS = "audio_engine_status"
 
 
+class RealtimeMessagePublisher(Protocol):
+    """Thin publish abstraction for backend services that fan out realtime events."""
+
+    async def publish_message(self, message: Dict[str, Any], *, topics: Iterable[str]) -> None:
+        """Broadcast a prebuilt realtime payload to one or more topics."""
+
+
 class EventPublisher:
     """
     Centralized event publishing service.
@@ -70,7 +77,28 @@ class EventPublisher:
     def set_websocket_manager(self, ws_manager):
         """Set the WebSocket manager instance."""
         self._ws_manager = ws_manager
-        logger.info("EventPublisher connected to WebSocket manager")
+        if ws_manager is None:
+            logger.info("EventPublisher disconnected from WebSocket manager")
+        else:
+            logger.info("EventPublisher connected to WebSocket manager")
+
+    async def publish_message(self, message: Dict[str, Any], *, topics: Iterable[str]) -> None:
+        """Broadcast a prebuilt message payload to one or more websocket topics."""
+        if not self._ws_manager:
+            logger.debug("Cannot publish realtime message: WebSocket manager not set")
+            return
+
+        delivered_topics = set()
+        for raw_topic in topics:
+            topic = str(raw_topic or "").strip()
+            if not topic or topic in delivered_topics:
+                continue
+            delivered_topics.add(topic)
+            try:
+                await self._ws_manager.broadcast_json(dict(message), topic=topic)
+                logger.debug("Published realtime message to topic '%s'", topic)
+            except Exception as exc:
+                logger.error("Error publishing realtime message to topic '%s': %s", topic, exc)
 
     async def publish(
         self,
@@ -98,11 +126,7 @@ class EventPublisher:
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }
 
-        try:
-            await self._ws_manager.broadcast_json(message, topic=topic)
-            logger.debug(f"Published {event_type.value} to topic '{topic}'")
-        except Exception as e:
-            logger.error(f"Error publishing event {event_type}: {e}")
+        await self.publish_message(message, topics=(topic,))
 
 
 # Global singleton instance

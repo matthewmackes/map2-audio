@@ -3,11 +3,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from app.services.ground_control_pro.service import GroundControlProService
+
+
+class _FakePublisher:
+    def __init__(self) -> None:
+        self.messages: list[tuple[tuple[str, ...], dict[str, object]]] = []
+
+    async def publish_message(self, message: dict[str, object], *, topics) -> None:
+        self.messages.append((tuple(topics), dict(message)))
 
 
 @pytest.fixture()
@@ -24,8 +32,7 @@ def mock_transport():
 
 @pytest.fixture()
 def service(gcp_dir, mock_transport):
-    with patch("app.services.ground_control_pro.service.ws_manager"):
-        return GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
+    return GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
 
 
 def _make_fixture_syx(gcp_dir):
@@ -63,8 +70,7 @@ class TestArtifactRestore:
         import yaml
         (artifacts_dir / "test-artifact-1.yml").write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
-        with patch("app.services.ground_control_pro.service.ws_manager"):
-            svc = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
+        svc = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
 
         assert "test-artifact-1" in svc.artifacts
         assert svc.artifacts["test-artifact-1"]["kind"] == "source_syx"
@@ -85,8 +91,7 @@ class TestArtifactRestore:
         import yaml
         (artifacts_dir / "missing-file.yml").write_text(yaml.safe_dump(manifest), encoding="utf-8")
 
-        with patch("app.services.ground_control_pro.service.ws_manager"):
-            svc = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
+        svc = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
 
         assert "missing-file" not in svc.artifacts
 
@@ -112,14 +117,29 @@ class TestSessionPersistence:
         if syx_data is None:
             pytest.skip("No fixture .syx available for restart test")
 
-        with patch("app.services.ground_control_pro.service.ws_manager"):
-            svc1 = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
+        svc1 = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
         result = await svc1.import_syx_bytes(syx_data, source_name="restart-test.syx")
         session_id = result["session_id"]
         assert session_id in svc1.sessions
 
-        with patch("app.services.ground_control_pro.service.ws_manager"):
-            svc2 = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
+        svc2 = GroundControlProService(base_dir=gcp_dir, transport=mock_transport)
 
         assert session_id in svc2.sessions
         assert svc2.sessions[session_id]["source_name"] == "restart-test.syx"
+
+    @pytest.mark.asyncio
+    async def test_emit_uses_injected_realtime_publisher(self, gcp_dir, mock_transport):
+        publisher = _FakePublisher()
+        svc = GroundControlProService(base_dir=gcp_dir, transport=mock_transport, publisher=publisher)
+
+        await svc._emit("ground-control-pro:session", {"session_id": "session-1"})
+
+        assert publisher.messages == [
+            (
+                ("ground-control-pro:session", "ground-control-pro"),
+                {
+                    "type": "ground-control-pro:session",
+                    "data": {"session_id": "session-1"},
+                },
+            )
+        ]

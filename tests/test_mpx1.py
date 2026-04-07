@@ -128,6 +128,41 @@ def test_extended_program_status_sysex_emits_inferred_panel_status(tmp_path: Pat
     assert panel_events[0]["data"]["control_value"] == 33
 
 
+def test_publish_event_uses_injected_realtime_publisher_and_local_queue(tmp_path: Path) -> None:
+    class _FakePublisher:
+        def __init__(self) -> None:
+            self.messages: list[tuple[tuple[str, ...], Dict[str, Any]]] = []
+
+        async def publish_message(self, message: Dict[str, Any], *, topics) -> None:
+            self.messages.append((tuple(topics), dict(message)))
+
+    publisher = _FakePublisher()
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow-publish-event.json",
+        library_path=tmp_path / "library-publish-event.json",
+        publisher=publisher,
+    )
+
+    async def _run() -> list[Dict[str, Any]]:
+        queue = await service.register_ws_client("test-publish-event")
+        await service._publish_event("param_verified", {"param_id": "program.pitch.algorithm", "value": 7.0})
+        events: list[Dict[str, Any]] = []
+        while not queue.empty():
+            events.append(queue.get_nowait())
+        service.unregister_ws_client("test-publish-event")
+        return events
+
+    events = asyncio.run(_run())
+
+    assert publisher.messages
+    topics, message = publisher.messages[0]
+    assert topics == ("mpx1",)
+    assert message["type"] == "mpx1:param_verified"
+    assert message["data"] == {"param_id": "program.pitch.algorithm", "value": 7.0}
+    assert events[0]["type"] == "mpx1:param_verified"
+
+
 def test_extended_panel_status_sysex_decodes_control_value(tmp_path: Path) -> None:
     service = MPX1Service(
         registry_path=_registry_path(),

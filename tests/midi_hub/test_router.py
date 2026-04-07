@@ -6,6 +6,14 @@ from app.services.midi_hub.ports import VirtualMidiPort
 from app.services.midi_hub.router import MidiRouter
 
 
+class _FakePublisher:
+    def __init__(self) -> None:
+        self.messages: list[tuple[tuple[str, ...], dict[str, object]]] = []
+
+    async def publish_message(self, message: dict[str, object], *, topics) -> None:
+        self.messages.append((tuple(topics), dict(message)))
+
+
 def _wait_until(predicate, timeout_s: float = 0.8) -> bool:
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -128,3 +136,29 @@ def test_router_delayed_dispatch_uses_bounded_worker_instead_of_thread_per_messa
     finally:
         hub.stop()
         router.stop()
+
+
+def test_router_uses_injected_realtime_publisher_for_route_events(tmp_path):
+    hub = MidiHub(auto_discover_alsa=False)
+    publisher = _FakePublisher()
+    router = MidiRouter(
+        hub=hub,
+        persist_path=Path(tmp_path / "routes.json"),
+        publisher=publisher,
+    )
+
+    route = router.add_route(
+        {
+            "route_id": "route-1",
+            "source_port": "src",
+            "destination_ports": ["dst"],
+        }
+    )
+
+    assert route["route_id"] == "route-1"
+    assert publisher.messages
+    topics, message = publisher.messages[0]
+    assert topics == ("midi:routes",)
+    assert message["type"] == "midi:route_changed"
+    assert message["data"]["action"] == "added"
+    assert message["data"]["route"]["route_id"] == "route-1"

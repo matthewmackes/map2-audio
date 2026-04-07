@@ -10,7 +10,7 @@ import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.services.websocket_manager import ws_manager
+from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,7 @@ class SysExDeviceBridge:
         library_path: Optional[Path] = None,
         midi_maps_path: Optional[Path] = None,
         coalesce_window_sec: float = 0.04,
+        publisher: Optional[RealtimeMessagePublisher] = None,
     ) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         self.registry_path = registry_path or (repo_root / "app" / "data" / self.REGISTRY_FILENAME)
@@ -64,6 +65,7 @@ class SysExDeviceBridge:
         self.midi_maps_path = midi_maps_path or (state_dir / self.MIDI_MAPS_FILENAME)
 
         self.coalesce_window_sec = max(0.001, float(coalesce_window_sec))
+        self._publisher = publisher or event_publisher
 
         self.registry: Dict[str, Any] = {}
         self.params_by_id: Dict[str, Dict[str, Any]] = {}
@@ -1676,9 +1678,9 @@ class SysExDeviceBridge:
         message_type = event_type if ":" in event_type else self._topic(event_type)
         message = {"type": message_type, "data": data, "timestamp": time.time()}
         try:
-            await ws_manager.broadcast_json(message, topic=self.DEVICE_TOPIC)
+            await self._publisher.publish_message(message, topics=(self.DEVICE_TOPIC,))
         except Exception as exc:
-            logger.debug("%s ws_manager broadcast failed: %s", self.DEVICE_LABEL, exc)
+            logger.debug("%s realtime publish failed: %s", self.DEVICE_LABEL, exc)
 
         stale: List[str] = []
         for client_id, queue in self._ws_subscribers.items():

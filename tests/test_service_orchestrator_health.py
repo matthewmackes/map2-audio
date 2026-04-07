@@ -3,6 +3,7 @@ import sys
 import time
 from types import SimpleNamespace
 
+from app.services.event_publisher import EventPublisher
 from app.services.service_orchestrator import ServiceHealth, ServiceOrchestrator
 
 
@@ -71,3 +72,26 @@ def test_check_juce_health_falls_back_to_runtime_flags_without_cache(monkeypatch
     assert payload.metrics["available"] is True
     assert payload.metrics["initialized"] is True
     assert payload.metrics["health_probe_error"] == "boom"
+
+
+def test_emit_event_uses_publish_abstraction_for_service_status_topic():
+    class _FakeWsManager:
+        def __init__(self) -> None:
+            self.messages = []
+
+        async def broadcast_json(self, message, topic=None):
+            self.messages.append((topic, message))
+
+    publisher = EventPublisher()
+    ws_manager = _FakeWsManager()
+    publisher.set_websocket_manager(ws_manager)
+    orchestrator = ServiceOrchestrator(publisher=publisher)
+
+    asyncio.run(orchestrator._emit_event("service_started", {"service": "database"}))
+
+    assert len(ws_manager.messages) == 1
+    topic, message = ws_manager.messages[0]
+    assert topic == "service_status"
+    assert message["type"] == "service_started"
+    assert message["data"] == {"service": "database"}
+    assert "timestamp" in message

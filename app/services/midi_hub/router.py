@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 from uuid import uuid4
 
+from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import MidiMessage
 from app.services.midi_hub.traffic_monitor import MidiTrafficMonitor, MidiTrafficRecord, get_midi_traffic_monitor
@@ -125,11 +126,13 @@ class MidiRouter:
         persist_path: Optional[Path] = None,
         transform_engine: Optional[MidiTransformEngine] = None,
         traffic_monitor: Optional[MidiTrafficMonitor] = None,
+        publisher: Optional[RealtimeMessagePublisher] = None,
     ) -> None:
         self._hub = hub or get_midi_hub()
         self._persist_path = persist_path or _default_routes_path()
         self._transform_engine = transform_engine or get_midi_transform_engine()
         self._traffic_monitor = traffic_monitor or get_midi_traffic_monitor()
+        self._publisher = publisher or event_publisher
         self.TRANSFORM_TYPES = list(self._transform_engine.TRANSFORM_TYPES)
         self._routes_by_id: Dict[str, MidiRoute] = {}
         self._route_snapshot: Tuple[MidiRoute, ...] = tuple()
@@ -708,12 +711,12 @@ class MidiRouter:
         }
         self._emit_websocket_message("midi:transform_error", payload, topic="midi:routes")
 
-    @staticmethod
-    def _emit_websocket_message(event_type: str, payload: Dict[str, Any], *, topic: str) -> None:
+    def _emit_websocket_message(self, event_type: str, payload: Dict[str, Any], *, topic: str) -> None:
         try:
-            from app.services.websocket_manager import ws_manager
-
-            coro = ws_manager.broadcast_json({"type": event_type, "data": payload}, topic=topic)
+            coro = self._publisher.publish_message(
+                {"type": event_type, "data": payload},
+                topics=(topic,),
+            )
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:

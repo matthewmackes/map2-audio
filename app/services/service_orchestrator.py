@@ -19,6 +19,7 @@ from typing import Optional, Dict, List, Callable, Any, Set
 from datetime import datetime
 from pathlib import Path
 
+from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.platform_checks import validate_platform, get_platform_status
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ class ServiceOrchestrator:
     _TRAFFIC_GATE_SERVICES = ("database", "command_queue", "websocket_manager")
     _JUCE_HEALTH_TIMEOUT_SECONDS = 0.05
 
-    def __init__(self):
+    def __init__(self, publisher: Optional[RealtimeMessagePublisher] = None):
         self._services: Dict[str, ServiceStatus] = {}
         self._startup_order: List[str] = []
         self._shutdown_order: List[str] = []
@@ -108,6 +109,7 @@ class ServiceOrchestrator:
         self._health_task: Optional[asyncio.Task] = None
         self._running = False
         self._websocket_manager = None
+        self._publisher = publisher or event_publisher
         self._event_callbacks: List[Callable] = []
         self._startup_time: Optional[datetime] = None
         self._plugin_loader_warm_task: Optional[asyncio.Task] = None
@@ -1010,6 +1012,9 @@ class ServiceOrchestrator:
     def set_websocket_manager(self, ws_manager):
         """Set WebSocket manager for event broadcasting."""
         self._websocket_manager = ws_manager
+        set_manager = getattr(self._publisher, "set_websocket_manager", None)
+        if callable(set_manager):
+            set_manager(ws_manager)
 
     def add_event_callback(self, callback: Callable):
         """Add callback for service events."""
@@ -1024,14 +1029,10 @@ class ServiceOrchestrator:
         }
 
         # Broadcast via WebSocket
-        if self._websocket_manager:
-            try:
-                await self._websocket_manager.broadcast_to_topic(
-                    "service_status",
-                    event
-                )
-            except Exception as e:
-                logger.debug(f"WebSocket broadcast error: {e}")
+        try:
+            await self._publisher.publish_message(event, topics=("service_status",))
+        except Exception as e:
+            logger.debug(f"Realtime publish error: {e}")
 
         # Call registered callbacks
         for callback in self._event_callbacks:
@@ -1337,6 +1338,9 @@ class ServiceOrchestrator:
         """Start WebSocket manager service."""
         from app.services.websocket_manager import ws_manager
         self._websocket_manager = ws_manager
+        set_manager = getattr(self._publisher, "set_websocket_manager", None)
+        if callable(set_manager):
+            set_manager(ws_manager)
 
     async def _stop_websocket_manager(self):
         """Stop WebSocket manager service."""
@@ -1346,6 +1350,9 @@ class ServiceOrchestrator:
                 await ws_manager.disconnect_all()
             elif hasattr(ws_manager, 'close_all'):
                 await ws_manager.close_all()
+            set_manager = getattr(self._publisher, "set_websocket_manager", None)
+            if callable(set_manager):
+                set_manager(None)
             logger.info("WebSocket manager stopped")
         except Exception as e:
             logger.debug(f"WebSocket manager cleanup: {e}")

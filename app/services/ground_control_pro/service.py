@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from app.services.websocket_manager import ws_manager
+from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 
 from .constants import PROFILE_ID
 from .field_map import expand_field_descriptors, load_field_map, offset_to_descriptors, unknown_byte_count
@@ -26,7 +26,12 @@ from .validator import validate_model, validate_sysex_bytes
 
 
 class GroundControlProService:
-    def __init__(self, base_dir: Optional[Path] = None, transport: Optional[GroundControlMidiTransport] = None) -> None:
+    def __init__(
+        self,
+        base_dir: Optional[Path] = None,
+        transport: Optional[GroundControlMidiTransport] = None,
+        publisher: Optional[RealtimeMessagePublisher] = None,
+    ) -> None:
         self.base_dir = base_dir or (Path.home() / ".map2" / "ground_control_pro")
         self.artifacts_dir = self.base_dir / "artifacts"
         self.exports_dir = self.base_dir / "exports"
@@ -34,6 +39,7 @@ class GroundControlProService:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.exports_dir.mkdir(parents=True, exist_ok=True)
         self.transport = transport or GroundControlMidiTransport()
+        self._publisher = publisher or event_publisher
         self.sessions: Dict[str, Dict[str, Any]] = {}
         self.jobs: Dict[str, GroundControlJob] = {}
         self.artifacts: Dict[str, Dict[str, Any]] = {}
@@ -132,8 +138,10 @@ class GroundControlProService:
         )
 
     async def _emit(self, topic: str, payload: Dict[str, Any]) -> None:
-        await ws_manager.broadcast_json({"type": topic, "data": payload}, topic=topic)
-        await ws_manager.broadcast_json({"type": topic, "data": payload}, topic="ground-control-pro")
+        await self._publisher.publish_message(
+            {"type": topic, "data": payload},
+            topics=(topic, "ground-control-pro"),
+        )
 
     def _create_job(self, job_type: str) -> GroundControlJob:
         now = self._timestamp()
