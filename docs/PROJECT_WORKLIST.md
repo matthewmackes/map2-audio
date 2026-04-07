@@ -17391,7 +17391,7 @@ Subtasks:
     - Validation:
       - `pytest tests/tesira/test_tesira_fleet.py tests/test_tesira_fleet_stop.py tests/tesira/test_ttp_client.py tests/tesira/test_ttp_ssh_client.py tests/tesira/test_sagevue_client.py` -> PASS
   - ID: T793-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Separate Push-surface discovery state from persisted config
     Description:
     - Goal / acceptance criteria: Ensure device scans do not mutate durable operator preferences and keep runtime discovery state in a separate contract.
@@ -17399,8 +17399,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Push-surface config/runtime separation and focused regressions.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-06
+    Assigned to: Codex
+    Last updated: 2026-04-07 08:01 EDT - Codex
+    - Completion notes:
+      - Stopped `PushSurfaceManager.scan_devices()` from writing discovered port ids/names/profile back into `PushSurfaceConfig`, so live device scans no longer mutate durable operator preferences just because a different Push-compatible device appears on the MIDI bus.
+      - Added manager-owned runtime discovery state and surfaced it through both the manager snapshot/health payloads and the new `GET /api/push-surface/discovery` route, separating ephemeral scan results from the persisted `/api/push-surface/config` contract.
+      - Added focused regressions proving Push scans preserve the existing configured selection and save count while routes expose the new discovery payload for UI/runtime consumers.
+    - Validation:
+      - `pytest -q tests/push_surface/test_manager.py tests/push_surface/test_routes.py` -> PASS (`9 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/manager.py app/routes/push_surface.py tests/push_surface/test_manager.py tests/push_surface/test_routes.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T793-subD
     Status: [ ] Todo
     Title: Make Ground Control Pro restart-safe and remove test-directory runtime dependencies
@@ -17424,7 +17432,7 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-06
 Assigned to: Codex
-Last updated: 2026-04-07 07:52 EDT - Codex
+Last updated: 2026-04-07 08:01 EDT - Codex
 
 ID: T794
 Status: [ ] Todo

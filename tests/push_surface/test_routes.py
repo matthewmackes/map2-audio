@@ -50,6 +50,25 @@ class _FakePushSurfaceManager:
         return {
             "running": self.running,
             "active_page": "home",
+            "discovery": {
+                "configured_selection": {
+                    "preferred_profile": None,
+                    "input_port_id": None,
+                    "output_port_id": None,
+                    "input_port_name": None,
+                    "output_port_name": None,
+                },
+                "ports": [{"port_id": "push-in", "name": "Push In", "direction": "input"}],
+                "matched_device": {
+                    "device_id": "push2:push",
+                    "input_port_id": "push-in",
+                    "output_port_id": "push-out",
+                    "input_port_name": "Push In",
+                    "output_port_name": "Push Out",
+                    "profile": {"profile_id": "push2"},
+                },
+                "active_device": None,
+            },
             "state": {
                 "diagnostics": {
                     "raw_events": ["90 24 7f"],
@@ -58,6 +77,27 @@ class _FakePushSurfaceManager:
                     "midi_events_out": 7,
                 }
             },
+        }
+
+    async def get_discovery_snapshot(self) -> dict[str, object]:
+        return {
+            "configured_selection": {
+                "preferred_profile": None,
+                "input_port_id": None,
+                "output_port_id": None,
+                "input_port_name": None,
+                "output_port_name": None,
+            },
+            "ports": [{"port_id": "push-in", "name": "Push In", "direction": "input"}],
+            "matched_device": {
+                "device_id": "push2:push",
+                "input_port_id": "push-in",
+                "output_port_id": "push-out",
+                "input_port_name": "Push In",
+                "output_port_name": "Push Out",
+                "profile": {"profile_id": "push2"},
+            },
+            "active_device": None,
         }
 
     async def apply_config(self, config: PushSurfaceConfig) -> None:
@@ -241,12 +281,15 @@ def test_get_push_surface_health_state_and_config(monkeypatch):
 
     health_response = client.get("/api/push-surface/health")
     state_response = client.get("/api/push-surface/state")
+    discovery_response = client.get("/api/push-surface/discovery")
     config_response = client.get("/api/push-surface/config")
 
     assert health_response.status_code == 200
     assert health_response.json()["health"]["midi_events_in"] == 11
     assert state_response.status_code == 200
     assert state_response.json()["snapshot"]["state"]["diagnostics"]["raw_events"] == ["90 24 7f"]
+    assert discovery_response.status_code == 200
+    assert discovery_response.json()["discovery"]["matched_device"]["device_id"] == "push2:push"
     assert config_response.status_code == 200
     assert config_response.json()["runtime_config"]["enabled"] is True
     assert config_response.json()["config"]["bank_size"] == 8

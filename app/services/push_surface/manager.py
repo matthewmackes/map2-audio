@@ -84,6 +84,7 @@ class PushSurfaceManager:
         self.unknown_messages = 0
         self._last_capability_dump: dict[str, Any] | None = None
         self._last_diagnostics_export: str | None = None
+        self._discovery_state: dict[str, Any] = self._empty_discovery_state()
 
     @staticmethod
     def _default_bridge(config: PushSurfaceConfig) -> Map2SurfaceAPI:
@@ -222,12 +223,17 @@ class PushSurfaceManager:
             "active_device_id": self.active_device.device_id if self.active_device is not None else None,
             "state": asdict(self.controller.state),
             "welcome_runtime": self._welcome_runtime_status,
+            "discovery": self._discovery_state,
         }
         return json.loads(json.dumps(snapshot, default=str))
+
+    async def get_discovery_snapshot(self) -> dict[str, Any]:
+        return json.loads(json.dumps(self._discovery_state, default=str))
 
     async def scan_devices(self) -> DiscoveredPushDevice | None:
         ports = self.hub.list_ports()
         device = self._resolve_device(ports)
+        self._discovery_state = self._build_discovery_state(ports, device)
         if device is None:
             if self.active_device is not None:
                 self.reconnect_count += 1
@@ -245,12 +251,6 @@ class PushSurfaceManager:
             self.parser = PushInputParser(device.profile)
             self.renderer = PushOutputRenderer(device.profile)
             self._welcome_pending = True
-            self.config.input_port_id = device.input_port_id
-            self.config.output_port_id = device.output_port_id
-            self.config.input_port_name = device.input_port_name
-            self.config.output_port_name = device.output_port_name
-            self.config.preferred_profile = device.profile.profile_id
-            self.config.save()
             logger.info(
                 "Push surface selected device %s (%s -> %s)",
                 device.device_id,
@@ -258,6 +258,45 @@ class PushSurfaceManager:
                 device.output_port_name,
             )
         return self.active_device
+
+    def _empty_discovery_state(self) -> dict[str, Any]:
+        return {
+            "configured_selection": {
+                "preferred_profile": self.config.preferred_profile,
+                "input_port_id": self.config.input_port_id,
+                "output_port_id": self.config.output_port_id,
+                "input_port_name": self.config.input_port_name,
+                "output_port_name": self.config.output_port_name,
+            },
+            "ports": [],
+            "matched_device": None,
+            "active_device": None,
+        }
+
+    def _build_discovery_state(
+        self,
+        ports: list[MidiPortInfo],
+        matched_device: DiscoveredPushDevice | None,
+    ) -> dict[str, Any]:
+        return {
+            "configured_selection": {
+                "preferred_profile": self.config.preferred_profile,
+                "input_port_id": self.config.input_port_id,
+                "output_port_id": self.config.output_port_id,
+                "input_port_name": self.config.input_port_name,
+                "output_port_name": self.config.output_port_name,
+            },
+            "ports": [
+                {
+                    "port_id": port.port_id,
+                    "name": port.name,
+                    "direction": port.direction,
+                }
+                for port in ports
+            ],
+            "matched_device": asdict(matched_device) if matched_device is not None else None,
+            "active_device": asdict(self.active_device) if self.active_device is not None else None,
+        }
 
     async def refresh_state(self) -> None:
         presets = await self.bridge.list_presets()
@@ -729,6 +768,7 @@ class PushSurfaceManager:
         return {
             "running": self._running,
             "active_device": asdict(self.active_device) if self.active_device is not None else None,
+            "discovery": self._discovery_state,
             "device_capabilities": asdict(self.active_device.capabilities) if self.active_device is not None else None,
             "midi_events_in": self.diagnostics.midi_events_in,
             "midi_events_out": self.diagnostics.midi_events_out,

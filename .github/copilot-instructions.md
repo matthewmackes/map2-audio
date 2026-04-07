@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (Shared SysEx hardware bridge documented)
+> **Last Updated**: April 7, 2026 (Push discovery/runtime split documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -987,6 +987,13 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: In `app/services/sysex_device_bridge.py`, normalize `_publish_event()` so it accepts either bare suffixes or already-prefixed event names, and keep device modules thin by overriding only curated library seeds, simulator hooks, protocol decode rules, and parser-specific `.syx` import paths.
 - **Verification**: `pytest -q tests/test_mpx1.py`; `pytest -q tests/test_intelfx.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/sysex_device_bridge.py app/services/mpx1_service.py app/services/intelfx_service.py`
 - **Lesson**: When deduplicating mirrored service scaffolding, preserve private-contract quirks that the public API does not expose yet. Shared bases should absorb those compatibility edges instead of forcing every old caller to migrate at once.
+
+**83. Push Device Scans Must Not Rewrite Operator Config**
+- **Problem**: The Push surface hotplug scan used to overwrite `PushSurfaceConfig` with whichever MIDI input/output pair happened to be live, which blurred durable operator intent with transient discovery results.
+- **Root Cause**: `PushSurfaceManager.scan_devices()` treated an auto-detected active device as if it were a user-approved config update and immediately persisted the discovered port ids, names, and profile.
+- **Fix**: Keep discovered device data in manager-owned runtime discovery state, expose it via the state/health snapshot and `GET /api/push-surface/discovery`, and leave `/api/push-surface/config` for explicit operator choices only.
+- **Verification**: `pytest -q tests/push_surface/test_manager.py tests/push_surface/test_routes.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/manager.py app/routes/push_surface.py tests/push_surface/test_manager.py tests/push_surface/test_routes.py`
+- **Lesson**: Hardware discovery is telemetry, not configuration. Persist only explicit operator choices; publish scan results through a separate runtime contract.
 
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
@@ -1990,6 +1997,12 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - Push Surface Discovery Runtime Split
+- **Section**: Gotchas & Learned Fixes (#83), Update Log
+- **Change**: Documented the `T793-subC` slice: Push surface scans now keep discovered devices in runtime state and a dedicated discovery route instead of writing transient MIDI matches back into the persisted config file.
+- **Reason**: The architecture audit explicitly called out discovery/config drift in hardware-facing services, and Push was still conflating hotplug telemetry with durable operator preferences.
+- **Impact**: Future Push UI and hardware workflows should read `/api/push-surface/discovery` or the manager snapshot for live scan results and reserve `/api/push-surface/config` for explicit saved selections only.
 
 ### [2026-04-07] - Shared SysEx Hardware Bridge Base
 - **Section**: Gotchas & Learned Fixes (#82), Update Log

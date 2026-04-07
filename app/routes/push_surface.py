@@ -174,6 +174,15 @@ async def get_push_surface_state() -> dict[str, Any]:
     }
 
 
+@router.get("/discovery")
+async def get_push_surface_discovery() -> dict[str, Any]:
+    manager = get_push_surface_manager()
+    return {
+        "status": "ok",
+        "discovery": await manager.get_discovery_snapshot(),
+    }
+
+
 @router.get("/config")
 async def get_push_surface_config() -> dict[str, Any]:
     config = _current_config()

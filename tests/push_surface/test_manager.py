@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 import pytest
 
@@ -120,4 +121,41 @@ async def test_manager_skips_welcome_on_control_press_and_processes_input(monkey
     assert snapshot["welcome_runtime"] is None
 
     await manager.stop()
+    hub.stop()
+
+
+@pytest.mark.asyncio
+async def test_scan_devices_keeps_discovery_state_out_of_persisted_config(monkeypatch):
+    hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.001, hotplug_interval_s=0.25)
+    bridge = MockMap2SurfaceBridge()
+    PushSurfaceSimulator(hub)
+    manager = PushSurfaceManager(hub=hub, bridge=bridge)
+
+    save_calls = 0
+
+    def _fake_save(_path=None):
+        nonlocal save_calls
+        save_calls += 1
+        return Path("/tmp/push-surface.json")
+
+    monkeypatch.setattr(manager.config, "save", _fake_save)
+    original_config = {
+        "preferred_profile": manager.config.preferred_profile,
+        "input_port_id": manager.config.input_port_id,
+        "output_port_id": manager.config.output_port_id,
+        "input_port_name": manager.config.input_port_name,
+        "output_port_name": manager.config.output_port_name,
+    }
+
+    await manager.scan_devices()
+    discovery = await manager.get_discovery_snapshot()
+
+    assert manager.active_device is not None
+    assert discovery["matched_device"]["device_id"] == manager.active_device.device_id
+    assert discovery["configured_selection"] == original_config
+    assert manager.config.input_port_id == original_config["input_port_id"]
+    assert manager.config.output_port_id == original_config["output_port_id"]
+    assert manager.config.preferred_profile == original_config["preferred_profile"]
+    assert save_calls == 0
+
     hub.stop()
