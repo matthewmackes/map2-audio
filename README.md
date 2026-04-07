@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**996** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1523** total commits | **3** stars | **0** forks | **0** open issues
+**997** Python | **1118** TypeScript | **136** C++/H | **132** Docs | **1528** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-07 |
 | [BACKEND AUDIT](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT.md) | 2026-04-06 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-06 |
 | [Observability Role Policy](https://github.com/matthewmackes/map2-audio/blob/master/docs/OBSERVABILITY_ROLE_POLICY.md) | 2026-04-04 |
 | [Web Server Port Configuration](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_PORTS.md) | 2026-04-04 |
 | [Workspace Catalog Storefront Reference](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md) | 2026-04-04 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`02e5a21c`](https://github.com/matthewmackes/map2-audio/commit/02e5a21ccbbe4904c0b5d51b594022da51f751e1) | Separate Push discovery from persisted config | Map2 Audio | 2026-04-07 |
+| [`3e6e59c8`](https://github.com/matthewmackes/map2-audio/commit/3e6e59c876c0f77b8d1e93c066a25ec88f4f5769) | Merge GitLab sync history | Map2 Audio | 2026-04-07 |
+| [`e91fe22c`](https://github.com/matthewmackes/map2-audio/commit/e91fe22cfafa99756fbfe55d9a74858922337e2e) | Refactor shared SysEx device bridges | Map2 Audio | 2026-04-07 |
+| [`d86458b8`](https://github.com/matthewmackes/map2-audio/commit/d86458b808f49f263c9e0afc36a448730ef3aa2d) | Refactor shared SysEx device bridges | Map2 Audio | 2026-04-07 |
+| [`876cae09`](https://github.com/matthewmackes/map2-audio/commit/876cae0941b6351017818d45046343187f83a18d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`c70c5769`](https://github.com/matthewmackes/map2-audio/commit/c70c57694563ea4e00f0531a204946b48bbb0c5e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
 | [`8c766a94`](https://github.com/matthewmackes/map2-audio/commit/8c766a9456de4f8b7c1aeb18000b8c81907c039b) | feat: add template bundle and community workflows | Map2 Audio | 2026-04-06 |
 | [`69f2ef85`](https://github.com/matthewmackes/map2-audio/commit/69f2ef85c81b6f54b4ed3c68f64a78c00d908065) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`7ba691ff`](https://github.com/matthewmackes/map2-audio/commit/7ba691ff4923aa9b625a0fcd199754610f325f69) | feat: cascade state authority template live links | Map2 Audio | 2026-04-06 |
-| [`2b3f694f`](https://github.com/matthewmackes/map2-audio/commit/2b3f694f195027e3985e2cdda1f72d18283a033d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`88d4b817`](https://github.com/matthewmackes/map2-audio/commit/88d4b817db98f42973806233354642f2a3aaecac) | test: complete desktop experience coverage | Map2 Audio | 2026-04-06 |
-| [`e44f500f`](https://github.com/matthewmackes/map2-audio/commit/e44f500fed9dbd637a34fed635118cea53fc3f2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-07 |
-| [`848da7bd`](https://github.com/matthewmackes/map2-audio/commit/848da7bdca6e6bdf029c25fea2a1ebadcb51993b) | 820px responsive redesign + backend hardening | Map2 Audio | 2026-04-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
