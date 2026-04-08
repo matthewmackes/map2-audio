@@ -481,7 +481,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         navigate('/juce-grid')
                       }}
                     >
-                      <SnapshotEditorIcon size={20} aria-hidden />
+                      <SnapshotEditorIcon aria-hidden />
                     </button>
                   ) : null}
                 </div>

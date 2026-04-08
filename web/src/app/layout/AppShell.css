@@ -321,7 +321,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
   padding: 1.1rem 1.2rem 1rem;
   border-bottom: 1px solid color-mix(in srgb, var(--window-shell-border) 82%, transparent);
   background: var(--cds-layer-02, #f4f4f4);
@@ -374,13 +374,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  border: 1px solid transparent;
+  align-self: stretch;
+  aspect-ratio: 1 / 1;
+  min-height: 3.4rem;
+  padding: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 72%, transparent);
   background: transparent;
   color: var(--cds-icon-primary, var(--cds-text-primary, var(--text-primary)));
   cursor: pointer;
+}
+
+.shell-launcher__header-action svg {
+  width: 100%;
+  height: 100%;
 }
 
 .shell-launcher__header-action:hover,
