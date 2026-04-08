@@ -19318,7 +19318,7 @@ Last updated: 2026-04-09 00:03 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/circuit_breaker.py tests/test_circuit_breaker.py` -> PASS
 
 ID: T839
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix cluster registry N+1 queries, TOCTOU upsert, timestamp format, and metrics PK
 Description:
 - Goal / acceptance criteria: Single-query summary. `INSERT OR REPLACE`. Consistent timestamps. Sub-second PK.
@@ -19327,8 +19327,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Single query, upsert, consistent formats, sub-second PK.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 00:12 EDT - Codex
+- Completion notes:
+  - Reworked `app/services/cluster/registry.py` so `get_cluster_summary()` now uses a single aggregate SQL query instead of fan-out reads through `get_all_nodes()`, `get_nodes_by_status()`, and `get_nodes_by_role()`.
+  - Normalized node `last_seen` / `last_updated` writes to timezone-aware UTC ISO timestamps on every upsert and status/health mutation, removing the prior mix of SQLite `CURRENT_TIMESTAMP` formats and app-generated timestamps.
+  - Updated metrics insertion to write explicit sub-second UTC timestamps, so rapid consecutive samples no longer collide on the `(node_id, timestamp)` primary key.
+- Validation:
+  - `pytest -q tests/test_cluster_midi_foundation.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/registry.py tests/test_cluster_midi_foundation.py` -> PASS
 
 ID: T840
 Status: [ ] Todo

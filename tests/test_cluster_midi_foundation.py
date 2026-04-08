@@ -1,4 +1,5 @@
 import subprocess
+from datetime import datetime, timezone
 
 from app.config import CONFIG_SCHEMA
 from app.services.cluster.distributed_event_bus import EventType
@@ -144,3 +145,70 @@ def test_cluster_registry_upsert_returns_normalized_json_fields(tmp_path):
     assert node["hostname"] == "host-a-2"
     assert node["audio_devices"] == ["hw:Loopback", "hw:USB"]
     assert node["metadata"] == {"api_port": 9100, "zone": "stage-right"}
+
+
+def test_cluster_registry_summary_uses_aggregate_query(tmp_path, monkeypatch):
+    registry = ClusterRegistry(db_path=tmp_path / "cluster.db")
+
+    assert registry.add_or_update_node(
+        node_id="mgmt-node",
+        hostname="mgmt",
+        role="MANAGEMENT-NODE",
+        status="online",
+        health_score=90.0,
+    )
+    assert registry.add_or_update_node(
+        node_id="audio-node",
+        hostname="audio",
+        role="AUDIO-NODE",
+        status="offline",
+        health_score=40.0,
+        midi_input_count=1,
+    )
+
+    monkeypatch.setattr(registry, "get_all_nodes", lambda: (_ for _ in ()).throw(AssertionError("unexpected get_all_nodes call")))
+    monkeypatch.setattr(registry, "get_nodes_by_status", lambda _status: (_ for _ in ()).throw(AssertionError("unexpected get_nodes_by_status call")))
+    monkeypatch.setattr(registry, "get_nodes_by_role", lambda _role: (_ for _ in ()).throw(AssertionError("unexpected get_nodes_by_role call")))
+
+    summary = registry.get_cluster_summary()
+
+    assert summary == {
+        "total_nodes": 2,
+        "online_nodes": 1,
+        "offline_nodes": 1,
+        "management_nodes": 1,
+        "audio_nodes": 1,
+        "midi_capable_nodes": 1,
+        "avg_health": 90.0,
+        "last_updated": summary["last_updated"],
+    }
+
+
+def test_cluster_registry_writes_timezone_aware_node_timestamps(tmp_path):
+    registry = ClusterRegistry(db_path=tmp_path / "cluster.db")
+
+    assert registry.add_or_update_node(node_id="node-a", hostname="host-a")
+
+    node = registry.get_node("node-a")
+
+    assert node is not None
+    assert datetime.fromisoformat(node["last_seen"]).tzinfo == timezone.utc
+    assert datetime.fromisoformat(node["last_updated"]).tzinfo == timezone.utc
+
+
+def test_cluster_registry_metrics_use_subsecond_primary_key(tmp_path):
+    registry = ClusterRegistry(db_path=tmp_path / "cluster.db")
+    assert registry.add_or_update_node(node_id="node-a", hostname="host-a")
+
+    assert registry.add_metrics("node-a", cpu_percent=10.0, memory_percent=20.0)
+    assert registry.add_metrics("node-a", cpu_percent=11.0, memory_percent=21.0)
+
+    with registry._connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT timestamp FROM node_metrics_history WHERE node_id = ? ORDER BY timestamp", ("node-a",))
+        rows = cursor.fetchall()
+
+    timestamps = [row["timestamp"] for row in rows]
+    assert len(timestamps) == 2
+    assert timestamps[0] != timestamps[1]
+    assert all(datetime.fromisoformat(timestamp).tzinfo == timezone.utc for timestamp in timestamps)

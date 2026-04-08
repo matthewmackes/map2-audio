@@ -83,6 +83,10 @@ class ClusterRegistry:
             return fallback
         return parsed if isinstance(parsed, type(fallback)) else fallback
 
+    @staticmethod
+    def _utc_timestamp() -> str:
+        return utc_now().isoformat()
+
     def _normalize_node_row(self, row: sqlite3.Row | Dict) -> Dict:
         payload = dict(row)
         payload["audio_devices"] = self._json_loads(payload.get("audio_devices"), fallback=[])
@@ -269,6 +273,15 @@ class ClusterRegistry:
                         self._json_dumps(metadata or {}),
                     ),
                 )
+                timestamp = self._utc_timestamp()
+                cursor.execute(
+                    """
+                    UPDATE cluster_nodes SET
+                        last_seen = ?, last_updated = ?
+                    WHERE id = ?
+                    """,
+                    (timestamp, timestamp, node_id),
+                )
                 conn.commit()
             return True
 
@@ -285,10 +298,10 @@ class ClusterRegistry:
                 cursor.execute(
                     """
                     UPDATE cluster_nodes SET
-                        status = ?, last_updated = CURRENT_TIMESTAMP
+                        status = ?, last_updated = ?
                     WHERE id = ?
                     """,
-                    (status, node_id),
+                    (status, self._utc_timestamp(), node_id),
                 )
 
                 conn.commit()
@@ -310,10 +323,10 @@ class ClusterRegistry:
                 cursor.execute(
                     """
                     UPDATE cluster_nodes SET
-                        health_score = ?, last_updated = CURRENT_TIMESTAMP
+                        health_score = ?, last_updated = ?
                     WHERE id = ?
                     """,
-                    (health_score, node_id),
+                    (health_score, self._utc_timestamp(), node_id),
                 )
 
                 conn.commit()
@@ -410,22 +423,42 @@ class ClusterRegistry:
     def get_cluster_summary(self) -> Dict:
         """Get cluster summary statistics"""
         try:
-            nodes = self.get_all_nodes()
-            online_nodes = self.get_nodes_by_status("online")
+            with self._connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT
+                        COUNT(*) AS total_nodes,
+                        SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) AS online_nodes,
+                        SUM(CASE WHEN status = 'offline' THEN 1 ELSE 0 END) AS offline_nodes,
+                        SUM(CASE WHEN role = 'MANAGEMENT-NODE' THEN 1 ELSE 0 END) AS management_nodes,
+                        SUM(CASE WHEN role = 'AUDIO-NODE' THEN 1 ELSE 0 END) AS audio_nodes,
+                        SUM(
+                            CASE
+                                WHEN COALESCE(midi_input_count, 0) > 0
+                                  OR COALESCE(midi_output_count, 0) > 0 THEN 1
+                                ELSE 0
+                            END
+                        ) AS midi_capable_nodes,
+                        AVG(CASE WHEN status = 'online' THEN health_score END) AS avg_health,
+                        MAX(last_updated) AS last_updated
+                    FROM cluster_nodes
+                    """
+                )
+                row = cursor.fetchone()
+
+            if row is None:
+                return {}
 
             return {
-                "total_nodes": len(nodes),
-                "online_nodes": len(online_nodes),
-                "offline_nodes": len(self.get_nodes_by_status("offline")),
-                "management_nodes": len(self.get_nodes_by_role("MANAGEMENT-NODE")),
-                "audio_nodes": len(self.get_nodes_by_role("AUDIO-NODE")),
-                "midi_capable_nodes": len([n for n in nodes if (n.get("midi_input_count", 0) or n.get("midi_output_count", 0))]),
-                "avg_health": (
-                    sum(n["health_score"] for n in online_nodes) / len(online_nodes)
-                    if online_nodes
-                    else 0.0
-                ),
-                "last_updated": utc_now().isoformat(),
+                "total_nodes": int(row["total_nodes"] or 0),
+                "online_nodes": int(row["online_nodes"] or 0),
+                "offline_nodes": int(row["offline_nodes"] or 0),
+                "management_nodes": int(row["management_nodes"] or 0),
+                "audio_nodes": int(row["audio_nodes"] or 0),
+                "midi_capable_nodes": int(row["midi_capable_nodes"] or 0),
+                "avg_health": float(row["avg_health"] or 0.0),
+                "last_updated": row["last_updated"] or self._utc_timestamp(),
             }
 
         except Exception as e:
@@ -449,12 +482,13 @@ class ClusterRegistry:
                 cursor.execute(
                     """
                     INSERT INTO node_metrics_history (
-                        node_id, cpu_percent, memory_percent,
+                        node_id, timestamp, cpu_percent, memory_percent,
                         dsp_load_percent, xrun_count, latency_ms
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         node_id,
+                        self._utc_timestamp(),
                         cpu_percent,
                         memory_percent,
                         dsp_load_percent,
