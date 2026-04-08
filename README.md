@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1024** Python | **1106** TypeScript | **136** C++/H | **140** Docs | **1570** total commits | **3** stars | **0** forks | **0** open issues
+**1029** Python | **1107** TypeScript | **136** C++/H | **140** Docs | **1577** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a20790ec`](https://github.com/matthewmackes/map2-audio/commit/a20790ec49a7023c3ae004d867fbbc9365fc70e9) | Land backend hardening batch and GUI audit cleanup | Map2 Audio | 2026-04-08 |
+| [`0838c2f4`](https://github.com/matthewmackes/map2-audio/commit/0838c2f44562c280214b1d92a477d4b1201c13b1) | Refine launcher shell layout and styling | Map2 Audio | 2026-04-08 |
+| [`192b6249`](https://github.com/matthewmackes/map2-audio/commit/192b624934dc8bbf99d858ec49ea982e6997954a) | Scale snapshot launcher to header slot | Map2 Audio | 2026-04-08 |
+| [`e94a1946`](https://github.com/matthewmackes/map2-audio/commit/e94a1946011184bd6e162a70eebd7bc6af639976) | Remove launcher menu scrolling | Map2 Audio | 2026-04-08 |
+| [`28eb1f5d`](https://github.com/matthewmackes/map2-audio/commit/28eb1f5dc7f9d323bc4a6a39dedbd2f2db72e16a) | Adjust launcher grid and snapshot header action | Map2 Audio | 2026-04-08 |
+| [`653f5395`](https://github.com/matthewmackes/map2-audio/commit/653f539574fabd75981490bdc74687c29d10f27b) | Fix desktop wallpaper theme path | Map2 Audio | 2026-04-08 |
+| [`3316e319`](https://github.com/matthewmackes/map2-audio/commit/3316e3190da5252e3fd2217a031c7249d7894212) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`edf9b9ab`](https://github.com/matthewmackes/map2-audio/commit/edf9b9ab693e993ee5f0eb00c6873dcfaf8fd85b) | Refactor platform shell and sync current web changes | Map2 Audio | 2026-04-08 |
-| [`f67f0b5e`](https://github.com/matthewmackes/map2-audio/commit/f67f0b5e24948146946ab243c6d48389bdcd0c7c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`4c2fc310`](https://github.com/matthewmackes/map2-audio/commit/4c2fc310d8ea5a83e21ef92ad0c0d662c945cb60) | Checkpoint built web shell refresh and version stamp | Map2 Audio | 2026-04-07 |
-| [`71b44626`](https://github.com/matthewmackes/map2-audio/commit/71b44626e3a7324afc84b1fe786a0c714e6a60ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`813ba0ae`](https://github.com/matthewmackes/map2-audio/commit/813ba0aee6ad0089bb900023300f2588a853f3a0) | Cycles 4-6: close stale audit backlog and checkpoint work... | Map2 Audio | 2026-04-07 |
-| [`0a2bbd6f`](https://github.com/matthewmackes/map2-audio/commit/0a2bbd6f62e42ddb6e9379c7e5c441ef6d5da244) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`b20bced7`](https://github.com/matthewmackes/map2-audio/commit/b20bced7fc07a150c894e8a9466d81763fccd76c) | Cycle 3: surface deferred Maschine transport policy | Map2 Audio | 2026-04-07 |
-| [`c3208a7b`](https://github.com/matthewmackes/map2-audio/commit/c3208a7bbc81f96a5f1ba0e5778a96010b158aed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
