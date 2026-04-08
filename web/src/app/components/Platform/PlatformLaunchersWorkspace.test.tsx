@@ -56,7 +56,7 @@ describe('PlatformLaunchersWorkspace', () => {
     })
   })
 
-  it('renders a storefront surface, launches routes, and configures placement from the catalog region', async () => {
+  it('renders a storefront surface, launches routes, and configures menu placement from the catalog region', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
     render(
@@ -90,38 +90,45 @@ describe('PlatformLaunchersWorkspace', () => {
       'href',
       '/api/system/docs/WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md',
     )
+    expect(screen.queryByLabelText('Desktop preview')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add to desktop' })).toBeNull()
+    expect(screen.getByLabelText('Menu tiles preview')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add to desktop' }))
-
-    await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [
-        { route: '/platforms/overview', size: 'medium' },
-        { route: '/artifacts', size: 'medium' },
-      ],
-    }))
-
-    expect(screen.getByLabelText('Desktop preview')).toBeInTheDocument()
-    expect(screen.getByLabelText('Start Menu preview')).toBeInTheDocument()
-
-    const pinToNavButton = screen.getByRole('button', { name: 'Pin to Start Menu' })
-    await waitFor(() => expect(pinToNavButton).toBeEnabled())
-    fireEvent.click(pinToNavButton)
+    fireEvent.click(screen.getByRole('button', { name: 'Add to menu' }))
 
     await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
       pinnedRoutes: ['/perform', '/artifacts'],
     }))
   })
 
-  it('updates tile sizing and enforces the pinned-nav cap inside the configure modal', async () => {
+  it('updates menu order inside the configure modal', async () => {
+    const updateSettings = jest.fn().mockResolvedValue(undefined)
+
+    render(
+      <PlatformLaunchersWorkspace
+        settings={buildSettings({
+          pinnedRoutes: ['/perform', '/artifacts'],
+        })}
+        isLoading={false}
+        updateSettings={updateSettings}
+      />,
+    )
+
+    fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure Audio Artifacts' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move up' }))
+
+    await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
+      pinnedRoutes: ['/artifacts', '/perform'],
+    }))
+  })
+
+  it('enforces the menu-entry cap inside the configure modal', async () => {
     const updateSettings = jest.fn().mockResolvedValue(undefined)
 
     render(
       <PlatformLaunchersWorkspace
         settings={buildSettings({
           pinnedRoutes: ['/artifacts', '/intelfx', '/perform', '/platforms/about'],
-          landingTiles: [
-            { route: '/mpx1', size: 'large' },
-          ],
         })}
         isLoading={false}
         updateSettings={updateSettings}
@@ -129,16 +136,8 @@ describe('PlatformLaunchersWorkspace', () => {
     )
 
     fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure MPX1 Rack' }))
-    fireEvent.click(screen.getByRole('button', { name: 'small' }))
 
-    await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [
-        { route: '/platforms/overview', size: 'medium' },
-        { route: '/mpx1', size: 'small' },
-      ],
-    }))
-
-    expect(screen.getByRole('button', { name: 'Start Menu full' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Menu full' })).toBeDisabled()
   })
 
   it('filters launcher cards by category and search terms', () => {
@@ -188,35 +187,19 @@ describe('PlatformLaunchersWorkspace', () => {
     expect(within(artifactsCard as HTMLElement).queryByText('Featured')).toBeNull()
   })
 
-  it('keeps Platforms locked on Home and first in landing order', async () => {
-    const updateSettings = jest.fn().mockResolvedValue(undefined)
-
+  it('removes desktop placement controls from the configure modal', () => {
     render(
       <PlatformLaunchersWorkspace
-        settings={buildSettings({
-          landingTiles: [
-            { route: '/artifacts', size: 'small' },
-            { route: '/platforms/overview', size: 'medium' },
-          ],
-        })}
+        settings={buildSettings()}
         isLoading={false}
-        updateSettings={updateSettings}
+        updateSettings={jest.fn().mockResolvedValue(undefined)}
       />,
     )
 
     fireEvent.click(within(getCatalogSection()).getByRole('button', { name: 'Configure Overview' }))
 
-    expect(screen.getByRole('button', { name: 'Required on desktop' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Move down' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Move up' })).toBeDisabled()
-
-    fireEvent.click(screen.getByRole('button', { name: 'small' }))
-
-    await waitFor(() => expect(updateSettings).toHaveBeenLastCalledWith({
-      landingTiles: [
-        { route: '/platforms/overview', size: 'small' },
-        { route: '/artifacts', size: 'small' },
-      ],
-    }))
+    expect(screen.queryByText('Desktop pin')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add to desktop' })).toBeNull()
+    expect(screen.getByText('Right-side menu placement')).toBeInTheDocument()
   })
 })

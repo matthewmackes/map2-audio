@@ -18,15 +18,9 @@ import './PlatformLaunchersWorkspace.css'
 
 import { MAX_PINNED_NAV_ITEMS, normalizePinnedRoutes } from '../../data/advancedMenuItems'
 import {
-  ensureRequiredHomeLauncher,
   getLauncherCatalogItem,
   getLauncherCatalogMaturityLabel,
   launcherCatalogItems,
-  normalizeLandingTiles,
-  prioritizeRequiredHomeLauncher,
-  REQUIRED_HOME_LAUNCHER_ROUTE,
-  type LandingTilePlacement,
-  type LandingTileSize,
   type LauncherCatalogItem,
 } from '../../data/launcherCatalog'
 import type { SpecialSettings } from '../../hooks/useSpecialSettings'
@@ -39,7 +33,6 @@ const DIRECTORY_LABELS: Record<LauncherCatalogItem['directory'], string> = {
   'nav-only': 'Nav only',
 }
 
-const SIZE_OPTIONS: LandingTileSize[] = ['small', 'medium', 'large']
 const CATEGORY_FILTER_OPTIONS = ['all', 'Audio Interface', 'Human Interface', 'Platform'] as const
 
 type LauncherCategoryFilter = typeof CATEGORY_FILTER_OPTIONS[number]
@@ -183,7 +176,6 @@ export function PlatformLaunchersWorkspace({
   const [configureRoute, setConfigureRoute] = useState<string | null>(null)
   const controlsDisabled = isLoading || !settings || Boolean(pendingAction)
 
-  const landingTiles = settings?.landingTiles ?? []
   const pinnedRoutes = settings?.pinnedRoutes ?? []
 
   const categoryCounts = useMemo(() => {
@@ -209,11 +201,7 @@ export function PlatformLaunchersWorkspace({
   }, [searchValue, selectedCategory])
 
   const configureItem = getLauncherCatalogItem(configureRoute)
-  const configureLandingIndex = configureItem ? landingTiles.findIndex((tile) => tile.route === configureItem.route) : -1
-  const configureLandingTile = configureLandingIndex >= 0 ? landingTiles[configureLandingIndex] : null
   const configureNavIndex = configureItem ? pinnedRoutes.findIndex((route) => route === configureItem.route) : -1
-  const requiredHomeTileIndex = landingTiles.findIndex((tile) => tile.route === REQUIRED_HOME_LAUNCHER_ROUTE)
-  const isRequiredHomeLauncher = configureItem?.route === REQUIRED_HOME_LAUNCHER_ROUTE
   const navFull = pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
 
   const runAction = async (key: string, fn: () => Promise<void>) => {
@@ -223,12 +211,6 @@ export function PlatformLaunchersWorkspace({
     } finally {
       setPendingAction(null)
     }
-  }
-
-  const saveLandingTiles = async (nextTiles: LandingTilePlacement[]) => {
-    const normalizedTiles = normalizeLandingTiles(nextTiles)
-    const requiredTiles = ensureRequiredHomeLauncher(normalizedTiles)
-    await updateSettings({ landingTiles: prioritizeRequiredHomeLauncher(requiredTiles) })
   }
 
   const savePinnedRoutes = async (nextRoutes: string[]) => {
@@ -247,7 +229,6 @@ export function PlatformLaunchersWorkspace({
   }
 
   const renderStatusTags = (item: LauncherCatalogItem) => {
-    const landingTile = landingTiles.find((tile) => tile.route === item.route) ?? null
     const navIndex = pinnedRoutes.findIndex((route) => route === item.route)
 
     return (
@@ -255,8 +236,7 @@ export function PlatformLaunchersWorkspace({
         <Tag type={categoryTagType(item.category)} size="sm">{item.category}</Tag>
         <Tag type={maturityTagType(item.maturity)} size="sm">{getLauncherCatalogMaturityLabel(item.maturity)}</Tag>
         <Tag type="blue" size="sm">{DIRECTORY_LABELS[item.directory]}</Tag>
-        {landingTile ? <Tag type="green" size="sm">{`Desktop ${landingTile.size}`}</Tag> : <Tag type="cool-gray" size="sm">Desktop off</Tag>}
-        {navIndex >= 0 ? <Tag type="cyan" size="sm">{`Start Menu ${navIndex + 1}`}</Tag> : <Tag type="cool-gray" size="sm">Start Menu off</Tag>}
+        {navIndex >= 0 ? <Tag type="cyan" size="sm">{`Menu ${navIndex + 1}`}</Tag> : <Tag type="cool-gray" size="sm">Menu off</Tag>}
       </div>
     )
   }
@@ -416,144 +396,23 @@ export function PlatformLaunchersWorkspace({
             <section className="platform-launchers__configure-card">
               <div className="platform-launchers__configure-head">
                 <div>
-                  <p className="platform-launchers__eyebrow">Desktop</p>
-                  <h4>Desktop pin</h4>
-                </div>
-                <Tag type={configureLandingTile ? 'green' : 'cool-gray'} size="sm">
-                  {configureLandingTile ? configureLandingTile.size : 'Not on Desktop'}
-                </Tag>
-              </div>
-              <PlacementPreview
-                title="Desktop"
-                subtitle="Icon grid preview"
-                active={Boolean(configureLandingTile)}
-                slots={6}
-              />
-
-              {configureItem.landingEligible ? (
-                <>
-                  <p>Pin this program object onto the desktop surface and control its tile scale and order.</p>
-                  <div className="platform-launchers__configure-actions">
-                    <Button
-                      size="sm"
-                      kind={configureLandingTile ? 'secondary' : 'primary'}
-                      disabled={controlsDisabled || (isRequiredHomeLauncher && Boolean(configureLandingTile))}
-                      onClick={() => {
-                        void runAction(`landing-toggle-${configureItem.route}`, async () => {
-                          if (configureLandingTile) {
-                            if (isRequiredHomeLauncher) {
-                              return
-                            }
-                            await saveLandingTiles(landingTiles.filter((tile) => tile.route !== configureItem.route))
-                            return
-                          }
-
-                          await saveLandingTiles([...landingTiles, { route: configureItem.route, size: 'medium' }])
-                        })
-                      }}
-                    >
-                      {configureLandingTile
-                        ? (isRequiredHomeLauncher ? 'Required on desktop' : 'Remove from desktop')
-                        : 'Add to desktop'}
-                    </Button>
-                  </div>
-                  {isRequiredHomeLauncher && configureLandingTile ? (
-                    <p className="platform-launchers__configure-note">
-                      Platforms is always visible on the desktop and remains the first launcher card.
-                    </p>
-                  ) : null}
-
-                  {configureLandingTile ? (
-                    <>
-                      <div className="platform-launchers__configure-section">
-                        <span className="platform-launchers__configure-label">Tile size</span>
-                        <div className="platform-launchers__configure-actions">
-                          {SIZE_OPTIONS.map((size) => (
-                            <Button
-                              key={`${configureItem.route}-${size}`}
-                              size="sm"
-                              kind={configureLandingTile.size === size ? 'primary' : 'tertiary'}
-                              disabled={controlsDisabled || configureLandingTile.size === size}
-                              onClick={() => {
-                                void runAction(`landing-size-${configureItem.route}-${size}`, async () => {
-                                  const nextTiles = landingTiles.map((tile) => (
-                                    tile.route === configureItem.route ? { ...tile, size } : tile
-                                  ))
-                                  await saveLandingTiles(nextTiles)
-                                })
-                              }}
-                            >
-                              {size}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="platform-launchers__configure-section">
-                        <span className="platform-launchers__configure-label">Desktop order</span>
-                        <div className="platform-launchers__configure-actions">
-                          <Button
-                            size="sm"
-                            kind="tertiary"
-                            disabled={
-                              controlsDisabled
-                              || isRequiredHomeLauncher
-                              || configureLandingIndex <= (requiredHomeTileIndex >= 0 ? 1 : 0)
-                            }
-                            onClick={() => {
-                              void runAction(`landing-up-${configureItem.route}`, async () => {
-                                const boundaryIndex = requiredHomeTileIndex >= 0 ? 1 : 0
-                                const targetIndex = Math.max(boundaryIndex, configureLandingIndex - 1)
-                                await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, targetIndex))
-                              })
-                            }}
-                          >
-                            Move up
-                          </Button>
-                          <Button
-                            size="sm"
-                            kind="tertiary"
-                            disabled={controlsDisabled || isRequiredHomeLauncher || configureLandingIndex === landingTiles.length - 1}
-                            onClick={() => {
-                              void runAction(`landing-down-${configureItem.route}`, async () => {
-                                await saveLandingTiles(moveItem(landingTiles, configureLandingIndex, configureLandingIndex + 1))
-                              })
-                            }}
-                          >
-                            Move down
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  ) : null}
-                </>
-              ) : (
-                <p>This workspace is Start Menu only and cannot appear on the desktop icon surface.</p>
-              )}
-            </section>
-          </Column>
-
-          <Column sm={4} md={4} lg={8} className="platform-launchers__configure-column">
-            <section className="platform-launchers__configure-card">
-              <div className="platform-launchers__configure-head">
-                <div>
-                  <p className="platform-launchers__eyebrow">Start Menu</p>
-                  <h4>Start Menu pin</h4>
+                  <p className="platform-launchers__eyebrow">Menu</p>
+                  <h4>Right-side menu placement</h4>
                 </div>
                 <Tag type={configureNavIndex >= 0 ? 'cyan' : 'cool-gray'} size="sm">
-                  {configureNavIndex >= 0 ? `Pinned ${configureNavIndex + 1}` : 'Not in Start Menu'}
+                  {configureNavIndex >= 0 ? `Slot ${configureNavIndex + 1}` : 'Not in menu'}
                 </Tag>
               </div>
               <PlacementPreview
-                title="Start Menu"
-                subtitle="Live tiles preview"
+                title="Menu tiles"
+                subtitle="Right-side menu preview"
                 active={configureNavIndex >= 0}
                 slots={9}
               />
 
               {configureItem.navEligible ? (
                 <>
-                  <p>Pin this program object into the ordered Start Menu tile list shared by the desktop shell.</p>
+                  <p>Add this program object to the ordered tile list shown on the right side of the desktop menu.</p>
                   <div className="platform-launchers__configure-actions">
                     <Button
                       size="sm"
@@ -570,13 +429,13 @@ export function PlatformLaunchersWorkspace({
                         })
                       }}
                     >
-                      {configureNavIndex >= 0 ? 'Remove from Start Menu' : navFull ? 'Start Menu full' : 'Pin to Start Menu'}
+                      {configureNavIndex >= 0 ? 'Remove from menu' : navFull ? 'Menu full' : 'Add to menu'}
                     </Button>
                   </div>
 
                   {configureNavIndex >= 0 ? (
                     <div className="platform-launchers__configure-section">
-                      <span className="platform-launchers__configure-label">Start Menu order</span>
+                      <span className="platform-launchers__configure-label">Menu order</span>
                       <div className="platform-launchers__configure-actions">
                         <Button
                           size="sm"
@@ -608,12 +467,12 @@ export function PlatformLaunchersWorkspace({
 
                   {navFull && configureNavIndex < 0 ? (
                     <p className="platform-launchers__configure-note">
-                      The Start Menu is already at its {MAX_PINNED_NAV_ITEMS}-item cap. Remove or reorder an existing pin first.
+                      The menu is already at its {MAX_PINNED_NAV_ITEMS}-item cap. Remove or reorder an existing entry first.
                     </p>
                   ) : null}
                 </>
               ) : (
-                <p>This workspace cannot be pinned into the Start Menu.</p>
+                <p>This workspace cannot be added to the right-side menu tile list.</p>
               )}
             </section>
           </Column>
@@ -641,11 +500,11 @@ export function PlatformLaunchersWorkspace({
               <h2>Program Manager object directory</h2>
               <p className="platform-launchers__hero-summary">
                 Browse routed MAP2 program objects, inspect their directory records, and launch or configure the same routed
-                surfaces without leaving this organizer.
+                surfaces without leaving this organizer. Custom additions now land only in the desktop menu tile list.
               </p>
               <div className="platform-launchers__summary-tags">
                 <Tag type="green">Launch ready</Tag>
-                <Tag type="cyan">Directory controls live</Tag>
+                <Tag type="cyan">Menu controls live</Tag>
                 <Tag type="cool-gray">{`${launcherCatalogItems.length} object records`}</Tag>
                 <Tag type="cool-gray">Program directory only</Tag>
               </div>
@@ -655,12 +514,12 @@ export function PlatformLaunchersWorkspace({
                   <strong>Program objects</strong>
                 </div>
                 <div className="platform-launchers__directory-strip-item" role="listitem">
-                  <span className="platform-launchers__directory-strip-label">Desktop objects</span>
-                  <strong>{landingTiles.length}</strong>
+                  <span className="platform-launchers__directory-strip-label">Menu entries</span>
+                  <strong>{pinnedRoutes.length}</strong>
                 </div>
                 <div className="platform-launchers__directory-strip-item" role="listitem">
-                  <span className="platform-launchers__directory-strip-label">Start Menu links</span>
-                  <strong>{pinnedRoutes.length}</strong>
+                  <span className="platform-launchers__directory-strip-label">Menu capacity</span>
+                  <strong>{`${pinnedRoutes.length}/${MAX_PINNED_NAV_ITEMS}`}</strong>
                 </div>
                 <div className="platform-launchers__directory-strip-item" role="listitem">
                   <span className="platform-launchers__directory-strip-label">Visible records</span>
@@ -701,8 +560,7 @@ export function PlatformLaunchersWorkspace({
 
               <div className="platform-launchers__toolbar-tags">
                 <Tag type="cool-gray">{`${catalogItems.length} visible`}</Tag>
-                <Tag type="cool-gray">{`${landingTiles.length} on Desktop`}</Tag>
-                <Tag type="cool-gray">{`${pinnedRoutes.length} in Start Menu`}</Tag>
+                <Tag type="cool-gray">{`${pinnedRoutes.length} in menu`}</Tag>
                 <Tag type={selectedCategory === 'all' ? 'cool-gray' : categoryTagType(selectedCategory)}>
                   {selectedCategory === 'all' ? 'All categories' : selectedCategory}
                 </Tag>

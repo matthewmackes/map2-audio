@@ -326,10 +326,10 @@ describe('AppShell desktop taskbar shell', () => {
       'Audio Grid',
       'MIDI Hub',
       'Audio Interfaces',
-      'Audio Artifacts',
       'IntelFX Rack',
-      'Overview',
       'Stage Mode',
+      'Audio Artifacts',
+      'Overview',
     ])
     expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(8)
   })
@@ -358,7 +358,7 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.queryByText('Pin apps from the Workspace Catalog.')).toBeNull()
+    expect(screen.queryByText('Add apps from the Workspace Catalog.')).toBeNull()
     for (const label of ['Brain', 'Audio Grid', 'MIDI Hub', 'Audio Interfaces']) {
       expect(screen.getByRole(label === 'Audio Interfaces' ? 'button' : 'link', { name: label })).toBeInTheDocument()
     }

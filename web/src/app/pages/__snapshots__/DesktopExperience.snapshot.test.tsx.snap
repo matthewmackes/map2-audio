@@ -504,100 +504,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           <div
             class="hp2-desktop__workspace"
           >
-            <aside
-              aria-label="Desktop object surface"
-              class="hp2-desktop__sidebar"
-            >
-              <div
-                class="hp2-desktop__sidebar-header"
-              >
-                <p
-                  class="hp2-window__eyebrow"
-                >
-                  Desktop Objects
-                </p>
-                <strong>
-                  System default only
-                </strong>
-              </div>
-              <div
-                aria-label="Desktop icons"
-                class="hp2-desktop__icons"
-                role="list"
-              >
-                <button
-                  aria-label="Open Audio Artifacts"
-                  class="hp2-desktop__icon"
-                  role="listitem"
-                  title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
-                  type="button"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="hp2-desktop__icon-glyph"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      height="34"
-                      viewBox="0 0 32 32"
-                      width="34"
-                    >
-                      <path
-                        d="M7 11h18v13H7z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M10 8h12l2 3H8z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M14 15h4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M12 19h8"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="hp2-desktop__icon-label"
-                  >
-                    Audio Artifacts
-                  </span>
-                </button>
-              </div>
-            </aside>
             <main
               class="hp2-desktop__panels"
             >
@@ -983,7 +889,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                             Program Catalog
                           </strong>
                           <span>
-                            Pin routed workspaces onto the desktop and Start Menu shell.
+                            Add routed workspaces to the desktop menu tile directory.
                           </span>
                         </span>
                       </button>
@@ -1071,102 +977,10 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       </button>
                     </div>
                   </div>
-                  <div
-                    class="hp2-workplace__inspector"
-                  >
-                    <div
-                      class="hp2-workplace__inspector-copy"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Selected Desktop Object
-                      </p>
-                      <strong>
-                        Audio Artifacts
-                      </strong>
-                      <span>
-                        Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
-                      </span>
-                    </div>
-                    <button
-                      class="hp2-object-button hp2-object-button--compact"
-                      type="button"
-                    >
-                      <span
-                        aria-hidden="true"
-                        class="hp2-object-button__icon"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          focusable="false"
-                          height="18"
-                          viewBox="0 0 32 32"
-                          width="18"
-                        >
-                          <path
-                            d="M7 11h18v13H7z"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M10 8h12l2 3H8z"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M14 15h4"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M12 19h8"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                        </svg>
-                      </span>
-                      <span
-                        class="hp2-object-button__copy"
-                      >
-                        <strong>
-                          Open Object
-                        </strong>
-                        <span>
-                          /artifacts
-                        </span>
-                      </span>
-                    </button>
-                  </div>
                 </div>
               </div>
               <div
-                class="hp2-desktop__panel-row"
+                class="hp2-desktop__panel-row hp2-desktop__panel-row--single"
               >
                 <div
                   class="cds--tile hp2-window hp2-window--status"
@@ -1297,80 +1111,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           0000000000000001
                         </span>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  class="cds--tile hp2-window hp2-window--notes"
-                >
-                  <div
-                    class="hp2-window__titlebar"
-                  >
-                    <div
-                      class="hp2-window__titlegroup"
-                    >
-                      <span
-                        aria-hidden="true"
-                        class="hp2-window__title-indicator"
-                      />
-                      <strong>
-                        Desktop Notes
-                      </strong>
-                    </div>
-                    <span
-                      class="hp2-window__titlemeta"
-                    >
-                      Object directory and maintenance
-                    </span>
-                  </div>
-                  <div
-                    class="hp2-window__body hp2-window__body--compact"
-                  >
-                    <div
-                      class="hp2-note-panel"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Pinned Object Directory
-                      </p>
-                      <div
-                        class="hp2-note-panel__directory"
-                      >
-                        <button
-                          class="hp2-note-panel__directory-item"
-                          type="button"
-                        >
-                          <span>
-                            Audio Artifacts
-                          </span>
-                          <strong>
-                            /artifacts
-                          </strong>
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      aria-label="Desktop watermarks"
-                      class="hp2-desktop__watermarks"
-                    >
-                      <button
-                        class="hp2-desktop__watermark"
-                        data-testid="home-desktop-empty-watermark"
-                        type="button"
-                      >
-                        <span
-                          class="hp2-desktop__watermark-eyebrow"
-                        >
-                          Desktop hint
-                        </span>
-                        <strong>
-                          Visit Workspace Catalog
-                        </strong>
-                        <span>
-                          Pin apps to the desktop to replace the system default object.
-                        </span>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -1834,100 +1574,6 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
           <div
             class="hp2-desktop__workspace"
           >
-            <aside
-              aria-label="Desktop object surface"
-              class="hp2-desktop__sidebar"
-            >
-              <div
-                class="hp2-desktop__sidebar-header"
-              >
-                <p
-                  class="hp2-window__eyebrow"
-                >
-                  Desktop Objects
-                </p>
-                <strong>
-                  System default only
-                </strong>
-              </div>
-              <div
-                aria-label="Desktop icons"
-                class="hp2-desktop__icons"
-                role="list"
-              >
-                <button
-                  aria-label="Open Audio Artifacts"
-                  class="hp2-desktop__icon"
-                  role="listitem"
-                  title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library."
-                  type="button"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="hp2-desktop__icon-glyph"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      height="34"
-                      viewBox="0 0 32 32"
-                      width="34"
-                    >
-                      <path
-                        d="M7 11h18v13H7z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M10 8h12l2 3H8z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M14 15h4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M12 19h8"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="hp2-desktop__icon-label"
-                  >
-                    Audio Artifacts
-                  </span>
-                </button>
-              </div>
-            </aside>
             <main
               class="hp2-desktop__panels"
             >
@@ -2313,7 +1959,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                             Program Catalog
                           </strong>
                           <span>
-                            Pin routed workspaces onto the desktop and Start Menu shell.
+                            Add routed workspaces to the desktop menu tile directory.
                           </span>
                         </span>
                       </button>
@@ -2401,102 +2047,10 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                       </button>
                     </div>
                   </div>
-                  <div
-                    class="hp2-workplace__inspector"
-                  >
-                    <div
-                      class="hp2-workplace__inspector-copy"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Selected Desktop Object
-                      </p>
-                      <strong>
-                        Audio Artifacts
-                      </strong>
-                      <span>
-                        Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
-                      </span>
-                    </div>
-                    <button
-                      class="hp2-object-button hp2-object-button--compact"
-                      type="button"
-                    >
-                      <span
-                        aria-hidden="true"
-                        class="hp2-object-button__icon"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          focusable="false"
-                          height="18"
-                          viewBox="0 0 32 32"
-                          width="18"
-                        >
-                          <path
-                            d="M7 11h18v13H7z"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M10 8h12l2 3H8z"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M14 15h4"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M12 19h8"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                          <path
-                            d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            vector-effect="non-scaling-stroke"
-                          />
-                        </svg>
-                      </span>
-                      <span
-                        class="hp2-object-button__copy"
-                      >
-                        <strong>
-                          Open Object
-                        </strong>
-                        <span>
-                          /artifacts
-                        </span>
-                      </span>
-                    </button>
-                  </div>
                 </div>
               </div>
               <div
-                class="hp2-desktop__panel-row"
+                class="hp2-desktop__panel-row hp2-desktop__panel-row--single"
               >
                 <div
                   class="cds--tile hp2-window hp2-window--status"
@@ -2627,80 +2181,6 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                           0000000000000001
                         </span>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  class="cds--tile hp2-window hp2-window--notes"
-                >
-                  <div
-                    class="hp2-window__titlebar"
-                  >
-                    <div
-                      class="hp2-window__titlegroup"
-                    >
-                      <span
-                        aria-hidden="true"
-                        class="hp2-window__title-indicator"
-                      />
-                      <strong>
-                        Desktop Notes
-                      </strong>
-                    </div>
-                    <span
-                      class="hp2-window__titlemeta"
-                    >
-                      Object directory and maintenance
-                    </span>
-                  </div>
-                  <div
-                    class="hp2-window__body hp2-window__body--compact"
-                  >
-                    <div
-                      class="hp2-note-panel"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Pinned Object Directory
-                      </p>
-                      <div
-                        class="hp2-note-panel__directory"
-                      >
-                        <button
-                          class="hp2-note-panel__directory-item"
-                          type="button"
-                        >
-                          <span>
-                            Audio Artifacts
-                          </span>
-                          <strong>
-                            /artifacts
-                          </strong>
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      aria-label="Desktop watermarks"
-                      class="hp2-desktop__watermarks"
-                    >
-                      <button
-                        class="hp2-desktop__watermark"
-                        data-testid="home-desktop-empty-watermark"
-                        type="button"
-                      >
-                        <span
-                          class="hp2-desktop__watermark-eyebrow"
-                        >
-                          Desktop hint
-                        </span>
-                        <strong>
-                          Visit Workspace Catalog
-                        </strong>
-                        <span>
-                          Pin apps to the desktop to replace the system default object.
-                        </span>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -3524,7 +3004,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                   Program objects
                 </p>
                 <strong>
-                  Pinned launchers
+                  Menu launchers
                 </strong>
               </div>
               <div

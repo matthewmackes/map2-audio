@@ -183,9 +183,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   )
 
   const pinnedStartMenuItems = useMemo(
-    () => [...pinnedTopNavItems]
-      .filter((item) => !FIXED_START_MENU_TILE_ROUTES.includes(item.to as (typeof FIXED_START_MENU_TILE_ROUTES)[number]))
-      .sort((left, right) => left.label.localeCompare(right.label)),
+    () => pinnedTopNavItems
+      .filter((item) => !FIXED_START_MENU_TILE_ROUTES.includes(item.to as (typeof FIXED_START_MENU_TILE_ROUTES)[number])),
     [pinnedTopNavItems],
   )
 
@@ -845,7 +844,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className="start-menu-panel__tiles-column">
                       <div className="start-menu-panel__column-header">
                         <p className="start-menu-panel__eyebrow">Program objects</p>
-                        <strong>{startMenuTileItems.length > 0 ? 'Pinned launchers' : 'No pinned objects'}</strong>
+                        <strong>{startMenuTileItems.length > 0 ? 'Menu launchers' : 'No menu objects'}</strong>
                       </div>
                       {startMenuTileItems.length > 0 ? (
                         <div className="start-menu-panel__grid">
@@ -853,7 +852,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </div>
                       ) : (
                         <div className="start-menu-panel__empty" role="note">
-                          <p>Pin apps from the Workspace Catalog.</p>
+                          <p>Add apps from the Workspace Catalog.</p>
                           <button
                             type="button"
                             className="start-menu-panel__empty-link"

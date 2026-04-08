@@ -122,6 +122,223 @@ def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, 
     asyncio.run(_run())
 
 
+def test_snapshot_service_resyncs_state_authority_document_after_compatibility_mutations(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="CompatProjectionSync",
+                detail_payload={
+                    "channels": [],
+                    "chains": [],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": None,
+                        "blend_positions": {},
+                        "series_order": [],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            with_chain = await service.create_chain(created["id"], "Primary Chain")
+            chain_id = with_chain["chains"][0]["id"]
+            with_plugin = await service.add_plugin(
+                created["id"],
+                chain_id,
+                "urn:test:drive",
+                plugin_name="Drive",
+            )
+            assert with_plugin is not None
+
+            with_channel = await service.add_channel(
+                created["id"],
+                {
+                    "channel_key": "channel-extra",
+                    "label": "InputA",
+                    "color": "#123456",
+                    "chain_id": chain_id,
+                },
+            )
+            assert with_channel is not None
+            added_channel = next(
+                channel
+                for channel in with_channel["channels"]
+                if channel["channel_key"] == "channel-extra"
+            )
+            channel_id = added_channel["id"]
+
+            updated_channel = await service.update_channel(
+                created["id"],
+                channel_id,
+                {"label": "InputAlpha", "dry_wet_mix": 55.0},
+            )
+            assert updated_channel is not None
+
+            updated_routing = await service.update_routing(
+                created["id"],
+                {
+                    "mode": "morph",
+                    "active_channel_key": "channel-extra",
+                    "morph_source_channel_key": "channel-extra",
+                    "morph_target_channel_key": "channel-extra",
+                    "series_order": ["channel-extra"],
+                },
+            )
+            assert updated_routing is not None
+
+            replaced_midi_map = await service.replace_midi_map(
+                created["id"],
+                [
+                    {
+                        "type": "program_change",
+                        "channel": 1,
+                        "program_number": 12,
+                    }
+                ],
+            )
+            assert replaced_midi_map is not None
+
+            session.expire_all()
+            snapshot_row = await session.get(database_module.Snapshot, created["id"])
+            assert snapshot_row is not None
+            graph = snapshot_row.document["graph"]
+            assert graph["routing"]["mode"] == "morph"
+            graph_channel = next(
+                channel
+                for channel in graph["channels"]
+                if channel["channel_key"] == "channel-extra"
+            )
+            assert graph_channel["label"] == "InputAlpha"
+            assert graph_channel["dry_wet_mix"] == pytest.approx(55.0)
+            assert any(
+                plugin["uri"] == "urn:test:drive"
+                for plugin in graph["chains"][0]["plugins"]
+            )
+            assert graph["midi_map"][0]["program_number"] == 12
+
+            await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
+            await session.execute(
+                delete(database_module.SnapshotChainPlugin).where(
+                    database_module.SnapshotChainPlugin.snapshot_chain_id.in_(
+                        select(database_module.SnapshotChain.id).where(
+                            database_module.SnapshotChain.snapshot_id == created["id"]
+                        )
+                    )
+                )
+            )
+            await session.execute(delete(database_module.SnapshotChain).where(database_module.SnapshotChain.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotRouting).where(database_module.SnapshotRouting.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotMidiMap).where(database_module.SnapshotMidiMap.snapshot_id == created["id"]))
+            await session.flush()
+            session.expire_all()
+
+            reloaded = await service.get_snapshot(created["id"])
+            assert reloaded is not None
+            reloaded_channel = next(
+                channel
+                for channel in reloaded["channels"]
+                if channel["channel_key"] == "channel-extra"
+            )
+            assert reloaded_channel["label"] == "InputAlpha"
+            assert reloaded["routing"]["mode"] == "morph"
+            assert any(
+                plugin["uri"] == "urn:test:drive"
+                for plugin in reloaded["chains"][0]["plugins"]
+            )
+            assert reloaded["midi_map"][0]["program_number"] == 12
+
+    asyncio.run(_run())
+
+
+def test_list_snapshots_uses_state_authority_document_when_projection_tables_are_missing(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="SummaryFallback",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:drive",
+                                    "name": "Drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"gain": 0.5},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))
+            await session.execute(
+                delete(database_module.SnapshotChainPlugin).where(
+                    database_module.SnapshotChainPlugin.snapshot_chain_id.in_(
+                        select(database_module.SnapshotChain.id).where(
+                            database_module.SnapshotChain.snapshot_id == created["id"]
+                        )
+                    )
+                )
+            )
+            await session.execute(delete(database_module.SnapshotChain).where(database_module.SnapshotChain.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotRouting).where(database_module.SnapshotRouting.snapshot_id == created["id"]))
+            await session.execute(delete(database_module.SnapshotMidiMap).where(database_module.SnapshotMidiMap.snapshot_id == created["id"]))
+            await session.flush()
+            session.expire_all()
+
+            summaries = await service.list_snapshots()
+            assert len(summaries) == 1
+            assert summaries[0]["channel_count"] == 1
+            assert summaries[0]["chain_count"] == 1
+            assert summaries[0]["channels"][0]["label"] == "A"
+            assert summaries[0]["channels"][0]["channel_key"] == "channel-0"
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

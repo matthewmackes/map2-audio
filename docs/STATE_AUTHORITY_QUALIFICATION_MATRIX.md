@@ -47,4 +47,5 @@ Runtime behavior:
 - Phase 3 is intentionally native-engine-specific. If the local JUCE build output is missing, the pytest file can report skipped rows while the runner still records a passing command with skip hints. That condition must still be written into `docs/PROJECT_WORKLIST.md` during `T778-subC`.
 - If a phase summary records a timeout note, that means the evidence command completed logically but required process reaping on this host. Preserve that note in the `T778-subC` evidence.
 - `T778-subA` only codifies the executable matrix and runbook. Fresh-start database cutover proof and legacy-table retirement are handled in later `T778` subtasks.
+- Fresh-start database cutover and table-retirement posture now live in `docs/STATE_AUTHORITY_CUTOVER_RUNBOOK.md` and `scripts/run_t778_state_authority_cutover_audit.py`.
 - Any blocked or failed phase result must be preserved in the worklist before claiming the parent epic complete.

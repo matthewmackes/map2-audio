@@ -1,9 +1,10 @@
 """
 Unified snapshot service.
 
-The snapshot schema is the new source of truth for editor state, but this
-service also emits legacy flow-snapshot payloads/events during the cutover so
-existing clients can keep operating while the frontend migrates.
+The State Authority graph document is the canonical snapshot representation.
+This service still maintains the legacy `snapshot_*` relational rows as a
+compatibility projection so older routes and runtime surfaces can keep
+operating during the cutover.
 """
 
 from __future__ import annotations
@@ -2321,6 +2322,7 @@ class SnapshotService:
         )
         self.session.add(channel)
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def update_channel(
@@ -2352,6 +2354,7 @@ class SnapshotService:
 
         channel.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         detail = await self._reload_snapshot_detail(snapshot_id)
         if detail is None:
             return None
@@ -2385,6 +2388,7 @@ class SnapshotService:
         await self.session.delete(channel)
         await self.session.flush()
         await self._resequence_channels(snapshot_id)
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def create_chain(self, snapshot_id: int, name: str) -> Optional[dict[str, Any]]:
@@ -2410,6 +2414,7 @@ class SnapshotService:
         )
         await self.session.flush()
         await self._sync_snapshot_tags(snapshot_id)
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def rename_chain(self, snapshot_id: int, chain_id: int, name: str) -> Optional[dict[str, Any]]:
@@ -2419,6 +2424,7 @@ class SnapshotService:
         chain.name = name.strip() or chain.name
         chain.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def add_plugin(
@@ -2448,6 +2454,7 @@ class SnapshotService:
         self.session.add(plugin)
         await self.session.flush()
         await self._sync_snapshot_tags(snapshot_id)
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def remove_plugin(
@@ -2465,6 +2472,7 @@ class SnapshotService:
         await self.session.flush()
         await self._resequence_plugins(chain_id)
         await self._sync_snapshot_tags(snapshot_id)
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def reorder_plugins(
@@ -2490,6 +2498,7 @@ class SnapshotService:
                 plugin.position = index
         await self.session.flush()
         await self._resequence_plugins(chain_id)
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def set_plugin_bypass(
@@ -2505,6 +2514,7 @@ class SnapshotService:
         plugin.bypass = bool(bypass)
         plugin.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def set_plugin_parameters(
@@ -2526,6 +2536,7 @@ class SnapshotService:
         plugin.parameters = next_parameters
         plugin.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
     async def update_routing(self, snapshot_id: int, payload: dict[str, Any]) -> Optional[dict[str, Any]]:
@@ -2573,6 +2584,7 @@ class SnapshotService:
             routing.series_order = list(series_order) if isinstance(series_order, list) else []
         routing.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         detail = await self._reload_snapshot_detail(snapshot_id)
         if detail is None:
             return None
@@ -2629,6 +2641,7 @@ class SnapshotService:
         )
         snapshot.updated_at = _utcnow()
         await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         detail = await self._reload_snapshot_detail(snapshot_id)
         if detail is None:
             return None
@@ -3600,7 +3613,14 @@ class SnapshotService:
         if isinstance(raw_chains, dict):
             chain_items = list(raw_chains.items())
         elif isinstance(raw_chains, list):
-            chain_items = [(str(item.get("id", f"chain-{index}")), item) for index, item in enumerate(raw_chains) if isinstance(item, dict)]
+            chain_items = [
+                (
+                    str(item.get("source_key") or item.get("id") or f"chain-{index}"),
+                    item,
+                )
+                for index, item in enumerate(raw_chains)
+                if isinstance(item, dict)
+            ]
         else:
             chain_items = []
 
@@ -3734,7 +3754,9 @@ class SnapshotService:
         for index, raw_channel in enumerate(raw_channels):
             if not isinstance(raw_channel, dict):
                 continue
-            chain_ref_value = raw_channel.get("chain_id", raw_channel.get("chainId"))
+            chain_ref_value = raw_channel.get("chain_ref")
+            if chain_ref_value is None:
+                chain_ref_value = raw_channel.get("chain_id", raw_channel.get("chainId"))
             chain_ref = str(chain_ref_value) if chain_ref_value is not None else None
             if chain_ref is not None and chain_ref not in seen_chain_refs:
                 normalized_chains.append(
@@ -4217,7 +4239,19 @@ class SnapshotService:
             preloaded_instance_ids=preloaded_instance_ids,
         )
 
-    async def _snapshot_to_normalized(self, snapshot: Snapshot) -> dict[str, Any]:
+    async def _snapshot_to_normalized(
+        self,
+        snapshot: Snapshot,
+        *,
+        prefer_document: bool = True,
+    ) -> dict[str, Any]:
+        if (
+            prefer_document
+            and isinstance(snapshot.document, dict)
+            and snapshot.document.get("version") == SNAPSHOT_GRAPH_VERSION
+        ):
+            return await self.state_authority_documents.document_to_normalized(snapshot.document)
+
         has_relational_projection = bool(snapshot.chains or snapshot.channels or snapshot.routing or snapshot.midi_map)
         if (
             not has_relational_projection
@@ -4321,6 +4355,22 @@ class SnapshotService:
                 else {}
             ),
         }
+
+    async def _sync_snapshot_document_from_relational_projection(
+        self,
+        snapshot_id: int,
+    ) -> None:
+        """Rebuild the canonical document from compatibility rows after legacy mutations."""
+        snapshot = await self._get_snapshot_model(snapshot_id)
+        if snapshot is None:
+            return
+        normalized = await self._snapshot_to_normalized(snapshot, prefer_document=False)
+        await self._persist_snapshot_document(
+            snapshot,
+            normalized,
+            document_type=self._snapshot_document_type(snapshot),
+        )
+        await self.session.flush()
 
     def _canonicalize_snapshot_normalized(self, normalized: dict[str, Any]) -> dict[str, Any]:
         chain_index_by_source_key = {
@@ -4459,6 +4509,16 @@ class SnapshotService:
     ) -> dict[str, Any]:
         chain_entries = normalized["chains"]
         channels = normalized["channels"]
+        ordered_snapshot_chains = (
+            sorted(snapshot_row.chains, key=lambda item: int(item.order_index))
+            if snapshot_row is not None
+            else []
+        )
+        ordered_snapshot_channels = (
+            sorted(snapshot_row.channels, key=lambda item: int(item.order_index))
+            if snapshot_row is not None
+            else []
+        )
         channel_key_to_index = {
             channel["channel_key"]: index
             for index, channel in enumerate(channels)
@@ -4470,9 +4530,11 @@ class SnapshotService:
             [int(chain.get("id")) for chain in chain_entries if chain.get("id") is not None] or [0]
         )
         for index, chain in enumerate(chain_entries):
-            chain_id = chain.get("id")
-            if chain_id is None and snapshot_row is not None and index < len(snapshot_row.chains):
-                chain_id = snapshot_row.chains[index].id
+            chain_id = (
+                ordered_snapshot_chains[index].id
+                if index < len(ordered_snapshot_chains)
+                else chain.get("id")
+            )
             if chain_id is None:
                 next_generated_chain_id += 1
                 chain_id = next_generated_chain_id
@@ -4504,7 +4566,11 @@ class SnapshotService:
         for index, channel in enumerate(channels):
             detail_channels.append(
                 {
-                    "id": channel.get("id"),
+                    "id": (
+                        ordered_snapshot_channels[index].id
+                        if index < len(ordered_snapshot_channels)
+                        else channel.get("id")
+                    ),
                     "snapshot_id": snapshot_id,
                     "channel_key": channel["channel_key"],
                     "label": channel["label"],
@@ -4590,16 +4656,47 @@ class SnapshotService:
         live_snapshot_id: int | None = None,
         live_activated_at: str | None = None,
     ) -> dict[str, Any]:
-        channel_summaries = [
-            {
-                "id": channel.id,
-                "channel_key": channel.channel_key,
-                "label": channel.label,
-                "color": channel.color,
-                "chain_id": channel.chain_id,
-            }
-            for channel in sorted(snapshot.channels, key=lambda item: int(item.order_index))
-        ]
+        document_graph = (
+            snapshot.document.get("graph")
+            if isinstance(snapshot.document, dict) and snapshot.document.get("version") == SNAPSHOT_GRAPH_VERSION
+            else None
+        )
+        if isinstance(document_graph, dict):
+            graph_channels = [
+                channel
+                for channel in (document_graph.get("channels") or [])
+                if isinstance(channel, dict)
+            ]
+            channel_rows = sorted(snapshot.channels, key=lambda item: int(item.order_index))
+            channel_summaries = [
+                {
+                    "id": channel_rows[index].id if index < len(channel_rows) else channel.get("id"),
+                    "channel_key": channel.get("channel_key"),
+                    "label": channel.get("label"),
+                    "color": channel.get("color"),
+                    "chain_id": (
+                        channel_rows[index].chain_id
+                        if index < len(channel_rows)
+                        else channel.get("chain_id", channel.get("chainId", channel.get("chain_ref")))
+                    ),
+                }
+                for index, channel in enumerate(graph_channels)
+            ]
+            chain_count = len(
+                [chain for chain in (document_graph.get("chains") or []) if isinstance(chain, dict)]
+            )
+        else:
+            channel_summaries = [
+                {
+                    "id": channel.id,
+                    "channel_key": channel.channel_key,
+                    "label": channel.label,
+                    "color": channel.color,
+                    "chain_id": channel.chain_id,
+                }
+                for channel in sorted(snapshot.channels, key=lambda item: int(item.order_index))
+            ]
+            chain_count = len(snapshot.chains)
         average_rating = None
         if snapshot.community_rating_count:
             average_rating = float(snapshot.community_rating_sum or 0.0) / float(snapshot.community_rating_count)
@@ -4648,7 +4745,7 @@ class SnapshotService:
             "display_order": int(snapshot.display_order),
             "channels": channel_summaries,
             "channel_count": len(channel_summaries),
-            "chain_count": len(snapshot.chains),
+            "chain_count": chain_count,
             "document_type": self._snapshot_document_type(snapshot),
             "community_uuid": snapshot.community_uuid,
             "community_shared": bool(snapshot.community_shared),

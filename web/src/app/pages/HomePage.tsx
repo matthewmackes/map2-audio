@@ -18,8 +18,6 @@ import { useNodeTopology } from '../hooks/useNodeTopology'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { getLauncherCatalogItem, normalizeLandingTiles, type LandingTilePlacement } from '../data/launcherCatalog'
 import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import map2Logo from '../../assets/MAP2-LOGO.png'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
@@ -46,17 +44,6 @@ function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string 
   return `${nodes.length} node${nodes.length !== 1 ? 's' : ''} online`
 }
 
-const DEFAULT_DESKTOP_TILES: LandingTilePlacement[] = [
-  { route: '/artifacts', size: 'medium' },
-]
-
-interface DesktopLauncher {
-  route: string
-  label: string
-  description: string
-  Icon: ComponentType<{ size?: number }>
-}
-
 interface WorkplaceObject {
   route: string
   label: string
@@ -64,23 +51,12 @@ interface WorkplaceObject {
   Icon: ComponentType<{ size?: number }>
 }
 
-interface DesktopContextMenuState {
-  kind: 'wallpaper' | 'icon'
+interface WallpaperContextMenuState {
   x: number
   y: number
-  route?: string
-  label?: string
 }
 
 type StatusTagTone = 'green' | 'red' | 'warm-gray' | 'cool-gray'
-
-const DESKTOP_ICON_OVERRIDES: Record<string, ComponentType<{ size?: number }>> = {
-  '/artifacts': MapArtifactsLibraryIcon,
-  '/perform': MapStagePerformanceIcon,
-  '/platforms/overview': MapOs2DrivesIcon,
-  '/platforms/theme': MapOs2HomeIcon,
-  '/platforms/workspace-catalog': MapOs2FileManagerIcon,
-}
 
 const WORKPLACE_OBJECTS: WorkplaceObject[] = [
   {
@@ -98,7 +74,7 @@ const WORKPLACE_OBJECTS: WorkplaceObject[] = [
   {
     route: '/platforms/workspace-catalog',
     label: 'Program Catalog',
-    summary: 'Pin routed workspaces onto the desktop and Start Menu shell.',
+    summary: 'Add routed workspaces to the desktop menu tile directory.',
     Icon: MapOs2FileManagerIcon,
   },
   {
@@ -108,36 +84,6 @@ const WORKPLACE_OBJECTS: WorkplaceObject[] = [
     Icon: MapOs2HomeIcon,
   },
 ]
-
-function resolveDesktopIcon(
-  route: string,
-  fallbackIcon: ComponentType<{ size?: number }>,
-): ComponentType<{ size?: number }> {
-  return DESKTOP_ICON_OVERRIDES[route] ?? fallbackIcon
-}
-
-function resolveDesktopLaunchers(
-  landingTiles: Array<LandingTilePlacement | { route?: string | null; size?: string | null }> | undefined,
-): DesktopLauncher[] {
-  const normalized = normalizeLandingTiles(landingTiles)
-  const sourceTiles = normalized.length > 0 ? normalized : DEFAULT_DESKTOP_TILES
-
-  return sourceTiles
-    .map((tile) => {
-      const launcher = getLauncherCatalogItem(tile.route)
-      if (!launcher) {
-        return null
-      }
-
-      return {
-        route: tile.route,
-        label: launcher.label,
-        description: launcher.description,
-        Icon: resolveDesktopIcon(tile.route, launcher.icon),
-      }
-    })
-    .filter((launcher): launcher is DesktopLauncher => Boolean(launcher))
-}
 
 function statusTagTone(state: string | undefined): StatusTagTone {
   if (state === 'ok') {
@@ -160,32 +106,18 @@ export function HomePage() {
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const topology = useNodeTopology()
   const remediationSummary = usePlatformRemediationSummary()
-  const { settings: specialSettings, updateSettings } = useSpecialSettings()
   const [activeRemediation, setActiveRemediation] = useState<{
     mode: RemediationWorkflow
     state: string | null
     nodeIds: string[]
   } | null>(null)
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
-  const [contextMenu, setContextMenu] = useState<DesktopContextMenuState | null>(null)
+  const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
   const nodes = topology.data?.nodes
-  const desktopLaunchers = useMemo(
-    () => resolveDesktopLaunchers(specialSettings?.landingTiles),
-    [specialSettings?.landingTiles],
-  )
-  const configuredDesktopTileCount = useMemo(
-    () => normalizeLandingTiles(specialSettings?.landingTiles).length,
-    [specialSettings?.landingTiles],
-  )
-  const hasPinnedDesktopIcons = useMemo(
-    () => configuredDesktopTileCount > 0,
-    [configuredDesktopTileCount],
-  )
-  const featuredDesktopLauncher = desktopLaunchers[0] ?? null
   const desktopStatusTags = [
     { label: platformStatus.avb.label, tone: statusTagTone(platformStatus.avb.state) },
     { label: platformStatus.avdecc.label, tone: statusTagTone(platformStatus.avdecc.state) },
@@ -248,21 +180,8 @@ export function HomePage() {
   const openWallpaperMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault()
     setContextMenu({
-      kind: 'wallpaper',
       x: event.clientX,
       y: event.clientY,
-    })
-  }
-
-  const openIconMenu = (event: MouseEvent<HTMLButtonElement>, launcher: DesktopLauncher) => {
-    event.preventDefault()
-    event.stopPropagation()
-    setContextMenu({
-      kind: 'icon',
-      x: event.clientX,
-      y: event.clientY,
-      route: launcher.route,
-      label: launcher.label,
     })
   }
 
@@ -274,16 +193,6 @@ export function HomePage() {
   const handleOpenDesktopRoute = (route: string) => {
     setContextMenu(null)
     navigate(route)
-  }
-
-  const handleUnpinDesktopRoute = async (route: string | undefined) => {
-    if (!route) {
-      return
-    }
-
-    const nextTiles = normalizeLandingTiles(specialSettings?.landingTiles).filter((tile) => tile.route !== route)
-    await updateSettings({ landingTiles: nextTiles })
-    setContextMenu(null)
   }
 
   const handleOpenRemediationWatermark = () => {
@@ -351,31 +260,6 @@ export function HomePage() {
             </div>
           </header>
           <div className="hp2-desktop__workspace">
-            <aside className="hp2-desktop__sidebar" aria-label="Desktop object surface">
-              <div className="hp2-desktop__sidebar-header">
-                <p className="hp2-window__eyebrow">Desktop Objects</p>
-                <strong>{hasPinnedDesktopIcons ? `${configuredDesktopTileCount} custom object${configuredDesktopTileCount !== 1 ? 's' : ''}` : 'System default only'}</strong>
-              </div>
-              <div className="hp2-desktop__icons" role="list" aria-label="Desktop icons">
-                {desktopLaunchers.map((launcher) => (
-                  <button
-                    key={launcher.route}
-                    type="button"
-                    className="hp2-desktop__icon"
-                    role="listitem"
-                    aria-label={`Open ${launcher.label}`}
-                    title={launcher.description}
-                    onClick={() => navigate(launcher.route)}
-                    onContextMenu={(event) => openIconMenu(event, launcher)}
-                  >
-                    <span className="hp2-desktop__icon-glyph" aria-hidden="true">
-                      <launcher.Icon size={34} />
-                    </span>
-                    <span className="hp2-desktop__icon-label">{launcher.label}</span>
-                  </button>
-                ))}
-              </div>
-            </aside>
             <main className="hp2-desktop__panels">
               <Tile className="hp2-window hp2-window--workplace">
                 <div className="hp2-window__titlebar">
@@ -427,29 +311,9 @@ export function HomePage() {
                       ))}
                     </div>
                   </div>
-                  <div className="hp2-workplace__inspector">
-                    <div className="hp2-workplace__inspector-copy">
-                      <p className="hp2-window__eyebrow">Selected Desktop Object</p>
-                      <strong>{featuredDesktopLauncher?.label ?? 'Audio Artifacts'}</strong>
-                      <span>{featuredDesktopLauncher?.description ?? 'Browse plugins, presets, captures, and processor assets.'}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="hp2-object-button hp2-object-button--compact"
-                      onClick={() => navigate(featuredDesktopLauncher?.route ?? '/artifacts')}
-                    >
-                      <span className="hp2-object-button__icon" aria-hidden="true">
-                        {featuredDesktopLauncher ? <featuredDesktopLauncher.Icon size={18} /> : <MapArtifactsLibraryIcon size={18} />}
-                      </span>
-                      <span className="hp2-object-button__copy">
-                        <strong>Open Object</strong>
-                        <span>{featuredDesktopLauncher?.route ?? '/artifacts'}</span>
-                      </span>
-                    </button>
-                  </div>
                 </div>
               </Tile>
-              <div className="hp2-desktop__panel-row">
+              <div className="hp2-desktop__panel-row hp2-desktop__panel-row--single">
                 <Tile className="hp2-window hp2-window--status">
                   <div className="hp2-window__titlebar">
                     <div className="hp2-window__titlegroup">
@@ -509,47 +373,8 @@ export function HomePage() {
                         </div>
                       ) : null}
                     </div>
-                  </div>
-                </Tile>
-                <Tile className="hp2-window hp2-window--notes">
-                  <div className="hp2-window__titlebar">
-                    <div className="hp2-window__titlegroup">
-                      <span className="hp2-window__title-indicator" aria-hidden="true" />
-                      <strong>Desktop Notes</strong>
-                    </div>
-                    <span className="hp2-window__titlemeta">Object directory and maintenance</span>
-                  </div>
-                  <div className="hp2-window__body hp2-window__body--compact">
-                    <div className="hp2-note-panel">
-                      <p className="hp2-window__eyebrow">Pinned Object Directory</p>
-                      <div className="hp2-note-panel__directory">
-                        {desktopLaunchers.map((launcher) => (
-                          <button
-                            key={`${launcher.route}-directory`}
-                            type="button"
-                            className="hp2-note-panel__directory-item"
-                            onClick={() => navigate(launcher.route)}
-                          >
-                            <span>{launcher.label}</span>
-                            <strong>{launcher.route}</strong>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
-                      {!hasPinnedDesktopIcons ? (
-                        <button
-                          type="button"
-                          className="hp2-desktop__watermark"
-                          data-testid="home-desktop-empty-watermark"
-                          onClick={() => navigate('/platforms/workspace-catalog')}
-                        >
-                          <span className="hp2-desktop__watermark-eyebrow">Desktop hint</span>
-                          <strong>Visit Workspace Catalog</strong>
-                          <span>Pin apps to the desktop to replace the system default object.</span>
-                        </button>
-                      ) : null}
-                      {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
+                    {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
+                      <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
                         <button
                           type="button"
                           className="hp2-desktop__watermark hp2-desktop__watermark--remediation"
@@ -560,8 +385,8 @@ export function HomePage() {
                           <strong>{totalRemediationCount > 0 ? `${totalRemediationCount} items need attention` : 'Sync unavailable'}</strong>
                           <span>Open the remediation workflow from the desktop shell.</span>
                         </button>
-                      ) : null}
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                 </Tile>
               </div>
@@ -579,31 +404,18 @@ export function HomePage() {
           <div
             className="hp2-desktop__context-menu"
             role="menu"
-            aria-label={contextMenu.kind === 'wallpaper' ? 'Desktop context menu' : `Desktop icon menu for ${contextMenu.label ?? 'item'}`}
+            aria-label="Desktop context menu"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
-            {contextMenu.kind === 'wallpaper' ? (
-              <>
-                <button type="button" className="hp2-desktop__context-item" onClick={handleRefreshDesktop}>
-                  Refresh
-                </button>
-                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/theme')}>
-                  Display settings
-                </button>
-                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/about')}>
-                  About
-                </button>
-              </>
-            ) : (
-              <>
-                <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute(contextMenu.route ?? '/')}>
-                  Open
-                </button>
-                <button type="button" className="hp2-desktop__context-item" onClick={() => void handleUnpinDesktopRoute(contextMenu.route)}>
-                  Unpin from Desktop
-                </button>
-              </>
-            )}
+            <button type="button" className="hp2-desktop__context-item" onClick={handleRefreshDesktop}>
+              Refresh
+            </button>
+            <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/theme')}>
+              Display settings
+            </button>
+            <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/about')}>
+              About
+            </button>
           </div>
         ) : null}
       </section>

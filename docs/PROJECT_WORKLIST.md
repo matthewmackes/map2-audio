@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA/T778-subC, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subB/T778-subD remain open.
+Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA/T778-subB/T778-subC, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subD remains open.
 
 ## Performance Brain
 
@@ -1210,7 +1210,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/run_t778_state_authority_qualification.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T778-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Capture the fresh-start database cutover and legacy-table retirement proof
     Description:
     - Goal / acceptance criteria: Document and validate the fresh-start State Authority cutover, including the required reset path, the exact legacy snapshot tables that remain compatibility-only, and the proof/automation needed before claiming the old relational authority has been retired.
@@ -1219,7 +1219,16 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Cutover runbook updates, table-retirement proof or blockers, and focused validation evidence.
     Assigned to: Codex
-    Last updated: 2026-04-07 19:27 EDT - Codex
+    Last updated: 2026-04-07 20:32 EDT - Codex
+    - Completion notes:
+      - Updated `app/services/snapshot_service.py` so document-backed reads now preserve the State Authority graph document as the canonical snapshot payload, while compatibility mutation routes re-sync `snapshots.document` after every relational `snapshot_*` edit instead of letting the document drift.
+      - Added `scripts/run_t778_state_authority_cutover_audit.py` and `tests/test_t778_state_authority_cutover_audit.py` to materialize a fresh-start SQLite schema, classify the exact compatibility-only snapshot projection tables, and fail loudly if the retired `snapshot_session_notes` table reappears.
+      - Added `docs/STATE_AUTHORITY_CUTOVER_RUNBOOK.md` and [docs/STATE_AUTHORITY_CUTOVER_CURRENT_HOST_2026-04-07.md](/home/mm/map2-audio/docs/STATE_AUTHORITY_CUTOVER_CURRENT_HOST_2026-04-07.md) so the reset path, current-host audit bundle, and the remaining full-retirement blocker are captured in repo-tracked evidence instead of staying implicit in test code.
+    - Validation:
+      - `pytest -q tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS (`14 passed`)
+      - `python3 scripts/run_t778_state_authority_cutover_audit.py --output-dir /tmp/t778-state-authority-cutover-20260407-2028` -> PASS (`retirement_status=blocked`; core authority tables present; `snapshot_session_notes` absent; compatibility projection tables explicitly listed)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py scripts/run_t778_state_authority_cutover_audit.py tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
+      - `git diff --check` -> PASS
   - ID: T778-subC
     Status: [✓] Done
     Title: Execute the qualification matrix on the current host and classify native-engine gaps
@@ -1253,7 +1262,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-07 19:27 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-07 19:49 EDT - Codex
+Last updated: 2026-04-07 20:32 EDT - Codex
 
 ID: T760
 Status: [✓] Done

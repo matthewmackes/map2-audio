@@ -211,23 +211,25 @@ describe('HomePage landing', () => {
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
   })
 
-  it('renders the desktop shell with the platform status card and online node summary', async () => {
+  it('renders the landing shell without the legacy desktop object surface', async () => {
     renderHome()
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
-    expect(screen.getByRole('list', { name: 'Desktop icons' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Open Audio Artifacts')).toBeInTheDocument()
+    expect(screen.queryByText('Desktop Objects')).toBeNull()
+    expect(screen.queryByText('Selected Desktop Object')).toBeNull()
+    expect(screen.queryByText('Pinned Object Directory')).toBeNull()
+    expect(screen.getByRole('button', { name: /^Audio Artifacts Browse plugins, captures, presets, and native processors\.$/ })).toBeInTheDocument()
     expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('1 node online')).toBeTruthy()
     expect(screen.getAllByText(/MAP2-TESTBED/).length).toBeGreaterThan(0)
   })
 
-  it('opens Audio Artifacts from the desktop icon using the canonical route', async () => {
+  it('opens Audio Artifacts from the program objects grid using the canonical route', async () => {
     renderHome()
     finishBootSplash()
 
-    fireEvent.click(await screen.findByLabelText('Open Audio Artifacts'))
+    fireEvent.click(await screen.findByRole('button', { name: /^Audio Artifacts Browse plugins, captures, presets, and native processors\.$/ }))
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/artifacts')
   })
@@ -273,22 +275,6 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders only the remaining catalog-backed desktop pins from landing tiles', async () => {
-    mockSpecialSettingsState.settings.landingTiles = [
-      { route: '/midi-hub', size: 'small' },
-      { route: '/platforms/overview', size: 'large' },
-    ]
-
-    renderHome()
-    finishBootSplash()
-
-    const desktopIcons = await screen.findAllByRole('listitem')
-    expect(desktopIcons).toHaveLength(1)
-    expect(screen.getByLabelText('Open Overview')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Open Audio Artifacts')).toBeNull()
-    expect(screen.queryByLabelText('Open MIDI Hub')).toBeNull()
-  })
-
   it('opens the wallpaper context menu and routes its actions', async () => {
     renderHome()
     finishBootSplash()
@@ -298,38 +284,6 @@ describe('HomePage landing', () => {
     expect(screen.getByRole('menu', { name: 'Desktop context menu' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Display settings' }))
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme')
-  })
-
-  it('opens the icon context menu and unpins desktop icons through special settings', async () => {
-    mockSpecialSettingsState.settings.landingTiles = [
-      { route: '/artifacts', size: 'medium' },
-      { route: '/perform', size: 'small' },
-    ]
-
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.contextMenu(await screen.findByLabelText('Open Stage Mode'), { clientX: 24, clientY: 36 })
-
-    expect(screen.getByRole('menu', { name: 'Desktop icon menu for Stage Mode' })).toBeInTheDocument()
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Unpin from Desktop' }))
-    })
-
-    expect(mockSpecialSettingsState.updateSettings).toHaveBeenCalledWith({
-      landingTiles: [{ route: '/artifacts', size: 'medium' }],
-    })
-  })
-
-  it('shows the empty-desktop watermark and routes it to Workspace Catalog when nothing is pinned', async () => {
-    mockSpecialSettingsState.settings.landingTiles = []
-
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByTestId('home-desktop-empty-watermark'))
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/workspace-catalog')
   })
 
   it('shows the remediation watermark and opens the remediation workflow modal', async () => {
