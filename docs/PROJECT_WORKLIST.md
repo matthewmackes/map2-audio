@@ -19544,7 +19544,7 @@ Last updated: 2026-04-08 17:37 EDT - Codex
 ## Frontend GUI Quality & Architecture
 
 ID: T848
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Split monolithic `index.css` into co-located CSS modules
 Description:
 - Goal / acceptance criteria: Break the 10,400+ line `web/src/index.css` into co-located CSS files alongside the components they style. Navigation styles (~1,200 lines) move next to `web/src/app/components/navigation/`, signal-chain styles next to `HorizontalSignalChain/`, plugin-card styles next to `PluginCards/`, and so on. The root `index.css` retains only global resets, CSS custom-property definitions, and body/root styling. Build output and visual appearance must remain identical.
@@ -19589,8 +19589,13 @@ Subtasks:
     Subtasks: None
     Assigned to: Unassigned
     Last updated: 2026-04-08
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 18:44 EDT - Codex
+- Progress notes:
+  - Starting with shell-owned global leakage: `web/src/index.css` still contains `app-shell`, `topbar-pro`, branded workspace-frame, and `app-content` blocks that belong with `web/src/app/layout/AppShell.tsx` rather than the global stylesheet.
+  - Existing page/component CSS co-location is already established across much of `web/src/app`, so the immediate slice is to migrate these remaining shell-scoped blocks into `web/src/app/layout/AppShell.css` and shrink the global root without changing route behavior.
+  - Moved the shell/frame/container ownership blocks (`.app-shell*`, `.platform-brand-frame*`, `.platform-brand-backdrop*`, `.app-content*`) out of `web/src/index.css` and into `web/src/app/layout/AppShell.css`, reducing the monolithic root stylesheet while keeping the shell behavior covered by focused AppShell tests and a production build.
+  - The broader decomposition remains open because `web/src/index.css` still carries additional shell-adjacent topbar/nav styling and many other page/component blocks that need follow-up extraction before the file can approach the target residual size.
 
 ID: T849
 Status: [ ] Todo
@@ -19606,7 +19611,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08
 
 ID: T850
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Decompose `AppShell` into focused hooks and sub-components
 Description:
 - Goal / acceptance criteria: Extract the following concerns from `web/src/app/layout/AppShell.tsx` into dedicated hooks and components: (1) `useRestartBackend()` hook encapsulating restart state machine, health polling, websocket status tracking, and progress steps (~80 lines); (2) `useRunningRoutes()` hook encapsulating route tracking, session persistence, and window close animation (~40 lines); (3) `ShellLauncherPanel` component for the start-menu flyout rendering (~120 lines); (4) `RestartOverlay` component for the restart progress UI (~50 lines). The resulting `AppShell` should be a thin composition root under 150 lines.
@@ -19615,8 +19620,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Extracted hooks/components, updated AppShell, existing test suite still passing, build validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 18:44 EDT - Codex
+- Progress notes:
+  - `web/src/app/layout/AppShell.tsx` still carries the restart workflow, running-route persistence, launcher rendering, and close-window animation in one component, matching the decomposition work identified in the task definition.
+  - Current slice will extract the restart state machine and launcher panel first so `AppShell` can become a thinner composition root before the later shared-navigation consolidation work.
+  - Extracted `web/src/app/layout/useRestartBackend.ts`, `web/src/app/layout/useRunningRoutes.ts`, `web/src/app/layout/ShellLauncherPanel.tsx`, and `web/src/app/layout/RestartOverlay.tsx`, and rewired `web/src/app/layout/AppShell.tsx` to compose them instead of owning the whole launcher/restart implementation inline.
+  - Focused Jest validation (`src/app/layout/AppShell.test.tsx`, `src/app/App.platformRoute.test.tsx`) and `npm --prefix web run build` now pass with the extracted structure, but the composition root is still larger than the final task target and the separate running-routes hook is not yet shared with the later navigation unification work.
 
 ID: T851
 Status: [ ] Todo
