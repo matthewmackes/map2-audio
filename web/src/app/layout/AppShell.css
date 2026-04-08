@@ -307,9 +307,8 @@
   left: 0;
   bottom: calc(100% + 0.85rem);
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto;
   width: min(48rem, calc(100vw - 2rem));
-  max-height: min(44rem, calc(100vh - 7rem));
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 92%, transparent);
   background: var(--cds-layer-01, #ffffff);
@@ -443,9 +442,8 @@
 }
 
 .shell-launcher__body {
-  min-height: 0;
   padding: 1.1rem 1.2rem;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .shell-launcher__tile-grid {
