@@ -1,5 +1,5 @@
 import { ApiError } from '../../map2/http'
-import type { Chain, SnapshotChain, SnapshotDetail, SnapshotLivePathState, SnapshotPath, SnapshotPlugin } from '../../map2/types'
+import type { Chain, SnapshotChain, SnapshotDetail, SnapshotLivePathState, SnapshotPath } from '../../map2/types'
 
 export const SNAPSHOT_ACTIVATION_TOAST_DURATION_MS = 3000
 

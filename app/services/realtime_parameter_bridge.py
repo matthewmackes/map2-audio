@@ -148,6 +148,7 @@ class RealTimeParameterBridge:
 
         # Lock-free update queue for engine integration
         self._update_queue: asyncio.Queue[ParameterUpdate] = asyncio.Queue(maxsize=10000)
+        self._queue_overflow_lock = asyncio.Lock()
 
         # Coalescing settings
         self._coalesce_interval_ms: float = 2.0  # 2ms coalesce window
@@ -172,6 +173,27 @@ class RealTimeParameterBridge:
         self._latency_samples: deque[float] = deque()
         self._max_latency_samples = 1000
         self._send_timeout_seconds = 0.05
+
+    async def _enqueue_update(self, update: ParameterUpdate) -> None:
+        try:
+            self._update_queue.put_nowait(update)
+            return
+        except asyncio.QueueFull:
+            pass
+
+        async with self._queue_overflow_lock:
+            try:
+                self._update_queue.put_nowait(update)
+                return
+            except asyncio.QueueFull:
+                try:
+                    self._update_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
+                try:
+                    self._update_queue.put_nowait(update)
+                except asyncio.QueueFull:
+                    logger.warning("RT parameter queue remained full after overflow eviction; dropping newest update")
 
     @staticmethod
     def _normalize_positive_int(value: Any) -> Optional[int]:
@@ -438,7 +460,19 @@ class RealTimeParameterBridge:
                 instance_id=msg.get('instance_id'),
                 plugin_position=msg.get('plugin_position'),
             )
-            value = self._param_cache.get(key)
+            with self._state_lock:
+                value = self._param_cache.get(key)
+            if value is None:
+                await client.websocket.send_text(json.dumps({
+                    'type': 'error',
+                    'code': 'uncached_param',
+                    'message': 'Parameter value is not cached',
+                    'plugin_uri': msg['plugin_uri'],
+                    'param_index': msg['param_index'],
+                    'instance_id': self._normalize_positive_int(msg.get('instance_id')),
+                    'plugin_position': self._normalize_non_negative_int(msg.get('plugin_position')),
+                }))
+                return
             payload = ParameterUpdate(
                 plugin_uri=msg['plugin_uri'],
                 param_index=msg['param_index'],
@@ -472,13 +506,14 @@ class RealTimeParameterBridge:
             client = self._clients.get(client_id)
             if client is not None:
                 client.subscribed_params.add(key)
+            cached_value = self._param_cache.get(key)
 
         # Send current value if cached
-        if key in self._param_cache:
+        if cached_value is not None:
             await self._send_to_client(client_id, ParameterUpdate(
                 plugin_uri=plugin_uri,
                 param_index=param_index,
-                value=self._param_cache[key],
+                value=cached_value,
                 instance_id=self._normalize_positive_int(instance_id),
                 plugin_position=self._normalize_non_negative_int(plugin_position),
             ))
@@ -526,18 +561,11 @@ class RealTimeParameterBridge:
             instance_id=update.instance_id,
             plugin_position=update.plugin_position,
         )
-        self._param_cache[key] = update.value
+        with self._state_lock:
+            self._param_cache[key] = update.value
 
         # Queue for engine (non-blocking)
-        try:
-            self._update_queue.put_nowait(update)
-        except asyncio.QueueFull:
-            # Drop oldest update if queue is full (shouldn't happen normally)
-            try:
-                self._update_queue.get_nowait()
-                self._update_queue.put_nowait(update)
-            except Exception:
-                pass
+        await self._enqueue_update(update)
 
         # Broadcast to subscribers (except source)
         await self._broadcast_update(key, update, exclude_client=source_client)
@@ -682,7 +710,8 @@ class RealTimeParameterBridge:
             instance_id=update.instance_id,
             plugin_position=update.plugin_position,
         )
-        self._param_cache[key] = value
+        with self._state_lock:
+            self._param_cache[key] = value
 
         # Broadcast to all subscribers
         await self._broadcast_update(key, update)
@@ -736,14 +765,15 @@ class RealTimeParameterBridge:
         plugin_position: Optional[int] = None,
     ) -> Optional[float]:
         """Get current cached value for a parameter."""
-        return self._param_cache.get(
-            self._parameter_key(
-                plugin_uri,
-                param_index,
-                instance_id=instance_id,
-                plugin_position=plugin_position,
+        with self._state_lock:
+            return self._param_cache.get(
+                self._parameter_key(
+                    plugin_uri,
+                    param_index,
+                    instance_id=instance_id,
+                    plugin_position=plugin_position,
+                )
             )
-        )
 
     def set_cached_value(
         self,
@@ -755,22 +785,31 @@ class RealTimeParameterBridge:
         plugin_position: Optional[int] = None,
     ):
         """Set cached value without triggering updates (for initialization)."""
-        self._param_cache[
-            self._parameter_key(
-                plugin_uri,
-                param_index,
-                instance_id=instance_id,
-                plugin_position=plugin_position,
-            )
-        ] = value
+        with self._state_lock:
+            self._param_cache[
+                self._parameter_key(
+                    plugin_uri,
+                    param_index,
+                    instance_id=instance_id,
+                    plugin_position=plugin_position,
+                )
+            ] = value
+
+    def clear_param_cache(self) -> None:
+        with self._state_lock:
+            self._param_cache.clear()
 
     def get_stats(self) -> Dict[str, Any]:
         """Get bridge statistics."""
+        with self._state_lock:
+            connected_clients = len(self._clients)
+            cached_params = len(self._param_cache)
+            active_subscriptions = sum(len(s) for s in self._subscriptions.values())
         return {
             **self._stats,
-            'connected_clients': len(self._clients),
-            'cached_params': len(self._param_cache),
-            'active_subscriptions': sum(len(s) for s in self._subscriptions.values()),
+            'connected_clients': connected_clients,
+            'cached_params': cached_params,
+            'active_subscriptions': active_subscriptions,
             'queue_size': self._update_queue.qsize(),
         }
 

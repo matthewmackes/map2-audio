@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+import app.main as main_module
 from app.main import create_app
 from app.middleware.api_auth import APIAuthMiddleware
 from app.middleware.cluster_proxy import ClusterProxyMiddleware
@@ -53,3 +54,23 @@ def test_cluster_proxy_forwards_existing_request_id(monkeypatch):
     asyncio.run(middleware._proxy_single("remote-node", request, [], b""))
 
     assert recorded["headers"]["X-Request-ID"] == "req-123"
+
+
+def test_create_app_uses_configured_cors_origins(monkeypatch):
+    monkeypatch.setattr(main_module, "_resolve_cors_settings", lambda: (["https://map2.local"], True))
+
+    app = create_app()
+    cors = next(mw for mw in app.user_middleware if mw.cls.__name__ == "CORSMiddleware")
+
+    assert cors.kwargs["allow_origins"] == ["https://map2.local"]
+    assert cors.kwargs["allow_credentials"] is True
+
+
+def test_create_app_disables_credentials_for_wildcard_cors(monkeypatch):
+    monkeypatch.setattr(main_module, "_resolve_cors_settings", lambda: (["*"], False))
+
+    app = create_app()
+    cors = next(mw for mw in app.user_middleware if mw.cls.__name__ == "CORSMiddleware")
+
+    assert cors.kwargs["allow_origins"] == ["*"]
+    assert cors.kwargs["allow_credentials"] is False

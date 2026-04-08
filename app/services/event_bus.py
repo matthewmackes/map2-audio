@@ -5,11 +5,12 @@ Provides async event publishing and subscription for cluster-wide events.
 """
 
 import asyncio
+import inspect
 import logging
 from enum import Enum
 import threading
 from typing import Callable, Dict, List, Any, Optional
-from datetime import datetime
+from collections import deque
 
 from app.utils.time import utc_now
 
@@ -34,8 +35,8 @@ class EventBus:
     
     def __init__(self):
         self._subscribers: Dict[EventType, List[Callable]] = {}
-        self._event_history: List[Dict[str, Any]] = []
         self._max_history = 1000
+        self._event_history = deque(maxlen=self._max_history)
         self._lock = threading.RLock()
     
     async def subscribe(self, event_type: EventType, callback: Callable):
@@ -68,8 +69,6 @@ class EventBus:
         }
         with self._lock:
             self._event_history.append(event)
-            if len(self._event_history) > self._max_history:
-                self._event_history = self._event_history[-self._max_history:]
             subscribers = list(self._subscribers.get(event_type, []))
 
         if subscribers:
@@ -82,10 +81,11 @@ class EventBus:
     async def _safe_callback(self, callback: Callable, data: Dict[str, Any]):
         """Call a subscriber callback safely."""
         try:
-            if asyncio.iscoroutinefunction(callback):
+            if inspect.iscoroutinefunction(callback):
                 await callback(data)
             else:
-                callback(data)
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(None, callback, data)
         except Exception as e:
             logger.error(f"Error in event callback {callback.__name__}: {e}", exc_info=True)
     

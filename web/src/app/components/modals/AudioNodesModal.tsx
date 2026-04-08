@@ -818,7 +818,11 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
 
   const saveTab = (idx: number) => {
     setTabIndex(idx)
-    try { localStorage.setItem(TAB_STORAGE_KEY, String(idx)) } catch {}
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, String(idx))
+    } catch {
+      // Ignore storage writes when the browser blocks localStorage.
+    }
   }
 
   // Queries — only fetch when modal is open

@@ -9,10 +9,12 @@ real-time style pipelines.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import threading
 from typing import Generic, Iterable, Iterator, List, Optional, TypeVar
 
 
 T = TypeVar("T")
+_EMPTY = object()
 
 
 @dataclass(frozen=True)
@@ -38,13 +40,14 @@ class MidiRingBuffer(Generic[T]):
         if capacity <= 0:
             raise ValueError("capacity must be > 0")
         self._capacity = int(capacity)
-        self._buf: List[Optional[T]] = [None] * self._capacity
+        self._buf: List[object] = [_EMPTY] * self._capacity
         self._head = 0
         self._tail = 0
         self._size = 0
         self._dropped_writes = 0
         self._overwritten_writes = 0
         self._overwrite_on_full = bool(overwrite_on_full)
+        self._lock = threading.Lock()
 
     @property
     def capacity(self) -> int:
@@ -55,19 +58,32 @@ class MidiRingBuffer(Generic[T]):
         return self._overwrite_on_full
 
     def __len__(self) -> int:
-        return self._size
+        with self._lock:
+            return self._size
 
     def is_empty(self) -> bool:
-        return self._size == 0
+        with self._lock:
+            return self._size == 0
 
     def is_full(self) -> bool:
-        return self._size >= self._capacity
+        with self._lock:
+            return self._size >= self._capacity
 
     def clear(self) -> None:
-        self._buf = [None] * self._capacity
-        self._head = 0
-        self._tail = 0
-        self._size = 0
+        with self._lock:
+            self._buf = [_EMPTY] * self._capacity
+            self._head = 0
+            self._tail = 0
+            self._size = 0
+
+    def _pop_unlocked(self) -> Optional[T]:
+        if self._size <= 0:
+            return None
+        raw = self._buf[self._head]
+        self._buf[self._head] = _EMPTY
+        self._head = (self._head + 1) % self._capacity
+        self._size -= 1
+        return raw if raw is not _EMPTY else None
 
     def push(self, value: T) -> bool:
         """
@@ -76,24 +92,23 @@ class MidiRingBuffer(Generic[T]):
         Returns True if enqueued. Returns False when full and overwrite mode is
         disabled.
         """
-        if self._size >= self._capacity:
-            if not self._overwrite_on_full:
-                self._dropped_writes += 1
-                return False
-            # Drop the oldest queued entry, then write the new value into the
-            # newly freed tail slot so overwrite mode preserves the freshest
-            # event instead of the stale head item.
-            self._overwritten_writes += 1
-            self._buf[self._head] = None
-            self._head = (self._head + 1) % self._capacity
+        with self._lock:
+            if self._size >= self._capacity:
+                if not self._overwrite_on_full:
+                    self._dropped_writes += 1
+                    return False
+                # Drop the oldest queued entry, then write the new value into the
+                # newly freed tail slot so overwrite mode preserves the freshest
+                # event instead of the stale head item.
+                self._overwritten_writes += 1
+                self._buf[self._head] = _EMPTY
+                self._head = (self._head + 1) % self._capacity
+                self._size -= 1
+
             self._buf[self._tail] = value
             self._tail = (self._tail + 1) % self._capacity
+            self._size += 1
             return True
-
-        self._buf[self._tail] = value
-        self._tail = (self._tail + 1) % self._capacity
-        self._size += 1
-        return True
 
     def extend(self, values: Iterable[T]) -> int:
         """Push a sequence of values. Returns count successfully enqueued."""
@@ -105,43 +120,49 @@ class MidiRingBuffer(Generic[T]):
 
     def pop(self) -> Optional[T]:
         """Pop one value from the ring, returning None when empty."""
-        if self._size <= 0:
-            return None
-        value = self._buf[self._head]
-        self._buf[self._head] = None
-        self._head = (self._head + 1) % self._capacity
-        self._size -= 1
-        return value
+        with self._lock:
+            return self._pop_unlocked()
 
     def drain(self, max_items: Optional[int] = None) -> List[T]:
         """Pop up to `max_items` values (or all queued values)."""
-        if max_items is None or max_items < 0:
-            max_items = self._size
         out: List[T] = []
-        remaining = min(int(max_items), self._size)
-        for _ in range(remaining):
-            value = self.pop()
-            if value is not None:
-                out.append(value)
+        with self._lock:
+            if max_items is None or max_items < 0:
+                max_items = self._size
+            remaining = min(int(max_items), self._size)
+            for _ in range(remaining):
+                raw = self._buf[self._head]
+                self._buf[self._head] = _EMPTY
+                self._head = (self._head + 1) % self._capacity
+                self._size -= 1
+                if raw is not _EMPTY:
+                    out.append(raw)  # type: ignore[arg-type]
         return out
 
     def peek(self) -> Optional[T]:
         """Read the oldest value without popping it."""
-        if self._size <= 0:
-            return None
-        return self._buf[self._head]
+        with self._lock:
+            if self._size <= 0:
+                return None
+            raw = self._buf[self._head]
+            return raw if raw is not _EMPTY else None  # type: ignore[return-value]
 
     def iter_snapshot(self) -> Iterator[T]:
         """Iterate current values in FIFO order without mutation."""
-        for idx in range(self._size):
-            raw = self._buf[(self._head + idx) % self._capacity]
-            if raw is not None:
-                yield raw
+        with self._lock:
+            snapshot = [
+                self._buf[(self._head + idx) % self._capacity]
+                for idx in range(self._size)
+                if self._buf[(self._head + idx) % self._capacity] is not _EMPTY
+            ]
+        for raw in snapshot:
+            yield raw  # type: ignore[misc]
 
     def stats(self) -> RingBufferStats:
-        return RingBufferStats(
-            capacity=self._capacity,
-            size=self._size,
-            dropped_writes=self._dropped_writes,
-            overwritten_writes=self._overwritten_writes,
-        )
+        with self._lock:
+            return RingBufferStats(
+                capacity=self._capacity,
+                size=self._size,
+                dropped_writes=self._dropped_writes,
+                overwritten_writes=self._overwritten_writes,
+            )

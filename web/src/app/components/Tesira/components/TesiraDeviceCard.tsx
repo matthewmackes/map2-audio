@@ -4,7 +4,7 @@ import { ClickableTile, Tag } from '@carbon/react'
 import type { TesiraDeviceSummary } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
-import { useCluster } from '../../../contexts/ClusterContext'
+import { useCluster } from '../../../contexts/useCluster'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDeviceCardProps {

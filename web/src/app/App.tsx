@@ -39,7 +39,7 @@ const MidiHubEventsPage     = lazy(() => import('./pages/midi-hub/MidiHubEventsP
 const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcessingPage').then(m => ({ default: m.MidiHubProcessingPage })))
 const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
-const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPage').then(m => ({ default: m.SnapshotEditorPage })))
+const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))

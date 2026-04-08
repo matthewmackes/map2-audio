@@ -1,27 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
-
-type ClusterContextValue = {
-  activeNodeId: string | null
-  nodes: NodeInfo[]
-  localNodeId: string
-  isClusterMode: boolean
-  setActiveNode: (nodeId: string | null) => void
-  getNodeApiPrefix: (nodeId?: string | null) => string
-  getNodeWsPrefix: (nodeId?: string | null) => string
-}
-
-export type NodeInfo = {
-  nodeId: string
-  hostname: string
-  role: string
-  isLocal: boolean
-  isOnline: boolean
-  latencyMs: number | null
-  lastSeen: string | null
-}
+import { ClusterContext, type ClusterContextValue, type NodeInfo } from './ClusterContextStore'
 
 type PeersResponse = {
   local_node_id: string
@@ -36,8 +17,6 @@ type PeersResponse = {
     is_online?: boolean
   }>
 }
-
-const ClusterContext = createContext<ClusterContextValue | null>(null)
 
 const ACTIVE_NODE_KEY = 'map2_active_node'
 
@@ -209,18 +188,4 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
   return <ClusterContext.Provider value={value}>{children}</ClusterContext.Provider>
 }
 
-export function useCluster(): ClusterContextValue {
-  const ctx = useContext(ClusterContext)
-  if (!ctx) {
-    throw new Error('useCluster must be used within a ClusterProvider')
-  }
-  return ctx
-}
-
-export function useNodeApiParams() {
-  const { activeNodeId, getNodeApiPrefix } = useCluster()
-  const queryParam = getNodeApiPrefix()
-  return { nodeId: activeNodeId, queryParam }
-}
-
-export default ClusterContext
+export type { ClusterContextValue, NodeInfo } from './ClusterContextStore'

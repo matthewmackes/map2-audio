@@ -1014,11 +1014,21 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
   // F11 — exit performance mode
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'F11') { e.preventDefault(); onExit ? onExit() : navigate(-1) }
+      if (e.key !== 'F11') {
+        return
+      }
+
+      e.preventDefault()
+      if (onExit) {
+        onExit()
+        return
+      }
+
+      navigate(-1)
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [navigate])
+  }, [navigate, onExit])
 
   // Activate chain
   const handleActivate = useCallback(async (chainId: number) => {

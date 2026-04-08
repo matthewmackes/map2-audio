@@ -157,11 +157,11 @@ jest.mock('../components/MidiHub/MidiHubQuickRouter', () => ({
   MidiHubQuickRouter: () => <div>Quick Router Mock</div>,
 }))
 
-const { MidiHubShell } = require('./MidiHubShell') as typeof import('./MidiHubShell')
+const { MidiHubShell } = jest.requireActual('./MidiHubShell') as typeof import('./MidiHubShell')
 const { MidiHubConnectionsPage } =
-  require('./midi-hub/MidiHubConnectionsPage') as typeof import('./midi-hub/MidiHubConnectionsPage')
+  jest.requireActual('./midi-hub/MidiHubConnectionsPage') as typeof import('./midi-hub/MidiHubConnectionsPage')
 const { MidiHubPresetsPage } =
-  require('./midi-hub/MidiHubPresetsPage') as typeof import('./midi-hub/MidiHubPresetsPage')
+  jest.requireActual('./midi-hub/MidiHubPresetsPage') as typeof import('./midi-hub/MidiHubPresetsPage')
 
 function renderShell(initialEntry = '/midi-hub/connections') {
   const queryClient = new QueryClient({

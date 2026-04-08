@@ -18,6 +18,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from app.main import _resolve_cors_settings
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/www", tags=["www"])
 
@@ -46,7 +48,7 @@ class BackendConfig(BaseModel):
 class CORSConfig(BaseModel):
     enabled: bool = True
     origins: List[str] = ["*"]
-    credentials: bool = True
+    credentials: bool = False
 
 
 class ConfigUpdate(BaseModel):
@@ -158,6 +160,8 @@ async def get_www_status() -> Dict[str, Any]:
     project_root = Path(__file__).resolve().parents[2]
     web_root = project_root / "web" / "dist"
 
+    cors_origins, cors_allow_credentials = _resolve_cors_settings()
+
     status = {
         "backend_running": False,
         "backend_host": "0.0.0.0",
@@ -174,8 +178,8 @@ async def get_www_status() -> Dict[str, Any]:
         "total_requests": _request_count,
         "requests_per_minute": 0,
         "cors_enabled": True,
-        "cors_origins": ["*"],
-        "cors_credentials": True,
+        "cors_origins": cors_origins,
+        "cors_credentials": cors_allow_credentials,
         "ssl_enabled": False,
         "ssl_cert": None,
         "ssl_expires": None,

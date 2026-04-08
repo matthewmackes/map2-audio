@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
+import re
 
 from app.services.juce_engine_service import JuceEngineService
 
@@ -93,3 +95,58 @@ def test_inject_midi_note_methods_use_worker_thread(monkeypatch):
         ("midi_inject_note_on", (1, 60, 100)),
         ("midi_inject_note_off", (1, 60, 0)),
     ]
+
+
+def test_shutdown_uses_worker_thread(monkeypatch):
+    service = JuceEngineService()
+
+    class _ShutdownEngine:
+        def stop_audio(self):
+            return True
+
+        def shutdown(self):
+            return True
+
+    service._engine = _ShutdownEngine()
+    seen: list[tuple[str, tuple[object, ...]]] = []
+
+    async def _fake_to_thread(func, *args, **kwargs):
+        seen.append((func.__name__, args))
+        return func(*args, **kwargs)
+
+    monkeypatch.setattr("app.services.juce_engine_service.asyncio.to_thread", _fake_to_thread)
+
+    asyncio.run(service.shutdown())
+
+    assert seen == [
+        ("stop_audio", ()),
+        ("shutdown", ()),
+    ]
+
+
+def test_async_methods_do_not_call_engine_directly_outside_to_thread():
+    lines = Path("app/services/juce_engine_service.py").read_text(encoding="utf-8").splitlines()
+    current_async = None
+    to_thread_depth = 0
+    direct_calls: list[str] = []
+
+    for lineno, line in enumerate(lines, 1):
+        stripped = line.lstrip()
+        if stripped.startswith("async def "):
+            current_async = stripped
+            to_thread_depth = 0
+        elif stripped.startswith("def "):
+            current_async = None
+            to_thread_depth = 0
+
+        if current_async:
+            if "await asyncio.to_thread(" in stripped:
+                to_thread_depth += stripped.count("(") - stripped.count(")")
+                continue
+            if to_thread_depth > 0:
+                to_thread_depth += stripped.count("(") - stripped.count(")")
+                continue
+            if re.search(r"self\._engine\.[A-Za-z_][A-Za-z0-9_]*\(", stripped):
+                direct_calls.append(f"{lineno}:{stripped}")
+
+    assert direct_calls == []

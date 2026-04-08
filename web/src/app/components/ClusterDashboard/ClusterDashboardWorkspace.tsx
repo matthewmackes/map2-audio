@@ -24,7 +24,7 @@ import {
 import { Launch } from '@carbon/icons-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import type { PlatformHealth, PlatformLayerData } from '../../platform/model'
 import { buildPlatformNodeWorkspaceHref } from '../../platform/routes'

@@ -48,8 +48,8 @@ jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
 }))
 
 jest.mock('../../components/MidiHub/AiLearnPanel', () => {
-  const { midiHubApi } = require('../../../map2/api')
-  const ReactLocal = require('react')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
+  const ReactLocal = jest.requireActual('react') as typeof import('react')
   return {
     AiLearnPanel: () => {
       const [confidence, setConfidence] = ReactLocal.useState('')
@@ -72,7 +72,7 @@ jest.mock('../../components/MidiHub/AiLearnPanel', () => {
 })
 
 jest.mock('../../components/MidiHub/MeshNetworkPanel', () => {
-  const { midiHubApi } = require('../../../map2/api')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
   return {
     MeshNetworkPanel: () => (
       <div>
@@ -88,8 +88,8 @@ jest.mock('../../components/MidiHub/MeshNetworkPanel', () => {
 })
 
 jest.mock('../../components/MidiHub/DeviceShadowPanel', () => {
-  const { midiHubApi } = require('../../../map2/api')
-  const ReactLocal = require('react')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
+  const ReactLocal = jest.requireActual('react') as typeof import('react')
   return {
     DeviceShadowPanel: () => {
       const [drift, setDrift] = ReactLocal.useState('')
@@ -111,7 +111,7 @@ jest.mock('../../components/MidiHub/DeviceShadowPanel', () => {
   }
 })
 
-const { MidiHubLabPage } = require('./MidiHubLabPage') as typeof import('./MidiHubLabPage')
+const { MidiHubLabPage } = jest.requireActual('./MidiHubLabPage') as typeof import('./MidiHubLabPage')
 
 describe('MidiHubLabPage', () => {
   beforeEach(() => {

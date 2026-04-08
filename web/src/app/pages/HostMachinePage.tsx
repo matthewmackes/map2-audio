@@ -11,7 +11,7 @@ import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
 import '../components/HostMachine/HostMachine.css'
 import { PageHeader } from '../components/PageHeader'
 import { useToasts } from '../components/Toasts'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { MapRackDeviceIcon } from '../components/icons/map'
 
 import {

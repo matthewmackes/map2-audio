@@ -95,3 +95,27 @@ def test_emit_event_uses_publish_abstraction_for_service_status_topic():
     assert message["type"] == "service_started"
     assert message["data"] == {"service": "database"}
     assert "timestamp" in message
+
+
+def test_stop_juce_engine_calls_stop_audio_then_shutdown(monkeypatch):
+    class _FakeService:
+        def __init__(self) -> None:
+            self.calls = []
+
+        async def stop_audio(self):
+            self.calls.append("stop_audio")
+
+        async def shutdown(self):
+            self.calls.append("shutdown")
+
+    service = _FakeService()
+    orchestrator = ServiceOrchestrator()
+    monkeypatch.setitem(
+        sys.modules,
+        "app.services.juce_engine_service",
+        SimpleNamespace(get_audio_engine=lambda: service),
+    )
+
+    asyncio.run(orchestrator._stop_juce_engine())
+
+    assert service.calls == ["stop_audio", "shutdown"]

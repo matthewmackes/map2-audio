@@ -152,7 +152,7 @@ jest.mock('../../components/MidiHub/useMidiHubOverview', () => ({
 }))
 
 const { MidiHubConnectionsPage } =
-  require('./MidiHubConnectionsPage') as typeof import('./MidiHubConnectionsPage')
+  jest.requireActual('./MidiHubConnectionsPage') as typeof import('./MidiHubConnectionsPage')
 
 function renderPage() {
   const queryClient = new QueryClient({

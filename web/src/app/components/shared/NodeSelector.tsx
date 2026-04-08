@@ -1,7 +1,7 @@
 import { Select, SelectItem } from '@carbon/react'
 import { memo, useMemo } from 'react'
 
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 
 export const NodeSelector = memo(function NodeSelector() {
   const { nodes, activeNodeId, setActiveNode, isClusterMode, localNodeId } = useCluster()

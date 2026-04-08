@@ -23,7 +23,7 @@ import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMete
 import { ClusterMeteringStrip } from '../components/Visualizations/ClusterMeteringStrip'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { withNodeTopic } from '../utils/clusterTransport'
 
 export function MeteringPage() {

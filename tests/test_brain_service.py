@@ -1,8 +1,12 @@
+import time
 from pathlib import Path
+
+import pytest
 
 from app.services.performance_brain_service import (
     BrainInputsStateModel,
     BrainInputsUpdateModel,
+    BrainSlotUpdateModel,
     BrainStateUpdateModel,
     BrainTransportUpdateModel,
     PerformanceBrainService,
@@ -100,6 +104,51 @@ def test_brain_service_derives_controller_qualification_from_scoped_state(tmp_pa
     assert qualification["routing"]["output_pair_count"] == 4
     assert qualification["routing"]["controller_assignment_count"] == 3
     assert qualification["summary"] == "4/4 surfaces ready · Tier A locked"
+
+
+def test_brain_service_update_slot_rejects_out_of_range_slot_id(tmp_path):
+    service = make_service(tmp_path)
+
+    with pytest.raises(IndexError, match="slot_id 99 out of range"):
+        service.update_slot(99, BrainSlotUpdateModel(name="Invalid"))
+
+
+def test_brain_service_get_library_is_cached_and_read_only(tmp_path, monkeypatch):
+    service = make_service(tmp_path)
+    counts = {"soundfonts": 0, "sfz": 0, "samples": 0, "kits": 0}
+
+    monkeypatch.setattr(
+        service,
+        "_scan_soundfont_assets",
+        lambda: counts.__setitem__("soundfonts", counts["soundfonts"] + 1) or [],
+    )
+    monkeypatch.setattr(
+        service,
+        "_scan_sfz_assets",
+        lambda: counts.__setitem__("sfz", counts["sfz"] + 1) or [],
+    )
+    monkeypatch.setattr(
+        service,
+        "_scan_sample_assets",
+        lambda: counts.__setitem__("samples", counts["samples"] + 1) or [],
+    )
+    monkeypatch.setattr(
+        service,
+        "_scan_kit_assets",
+        lambda: counts.__setitem__("kits", counts["kits"] + 1) or [],
+    )
+
+    first_library = service.get_library(instance_id="read-only")
+    state_path = service._state_path_for_key(service._build_instance_key("read-only", None))
+    before_mtime = state_path.stat().st_mtime_ns
+
+    time.sleep(0.01)
+    second_library = service.get_library(instance_id="read-only")
+    after_mtime = state_path.stat().st_mtime_ns
+
+    assert first_library == second_library
+    assert before_mtime == after_mtime
+    assert counts == {"soundfonts": 1, "sfz": 1, "samples": 1, "kits": 1}
 
 
 def test_brain_service_keeps_controller_qualification_scope_specific(tmp_path):

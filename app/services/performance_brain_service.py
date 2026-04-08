@@ -12,6 +12,7 @@ import json
 import os
 import re
 import threading
+import time
 import wave
 from pathlib import Path
 from typing import Any
@@ -96,6 +97,9 @@ class PerformanceBrainService(Singleton):
         self._state_dir.mkdir(parents=True, exist_ok=True)
         self._instances: dict[str, BrainStateModel] = {}
         self._lock = threading.RLock()
+        self._library_cache: BrainLibraryStateModel | None = None
+        self._library_cache_built_at_monotonic = 0.0
+        self._library_cache_ttl_s = 30.0
 
     def _build_instance_key(
         self,
@@ -415,7 +419,7 @@ class PerformanceBrainService(Singleton):
             )
         return kits[:24]
 
-    def _build_library_state(self) -> BrainLibraryStateModel:
+    def _scan_library_state(self) -> BrainLibraryStateModel:
         soundfonts = self._scan_soundfont_assets()
         sfz_assets = self._scan_sfz_assets()
         sample_assets = self._scan_sample_assets()
@@ -455,6 +459,45 @@ class PerformanceBrainService(Singleton):
             featured_assets=featured_assets,
             last_scan_iso=_utcnow_iso(),
         )
+
+    def _build_library_state(self) -> BrainLibraryStateModel:
+        now = time.monotonic()
+        if (
+            self._library_cache is not None
+            and (now - self._library_cache_built_at_monotonic) < self._library_cache_ttl_s
+        ):
+            return self._library_cache.model_copy(deep=True)
+
+        library_state = self._scan_library_state()
+        self._library_cache = library_state.model_copy(deep=True)
+        self._library_cache_built_at_monotonic = now
+        return library_state
+
+    def _build_runtime_library(
+        self,
+        existing_library: BrainLibraryStateModel | None = None,
+    ) -> BrainLibraryStateModel:
+        base_library = self._build_library_state()
+        if existing_library is None:
+            return base_library
+
+        existing_library = existing_library.model_copy(deep=True)
+        base_collection_ids = {collection.collection_id for collection in base_library.collections}
+        extra_collections = [
+            collection.model_copy(deep=True)
+            for collection in existing_library.collections
+            if collection.collection_id not in base_collection_ids
+        ]
+        if extra_collections:
+            # Preserve importer-owned library views such as SynthForge patch banks.
+            base_library.collections.extend(extra_collections)
+
+        merged_featured_assets: list[str] = []
+        for asset_id in [*existing_library.featured_assets, *base_library.featured_assets]:
+            if asset_id and asset_id not in merged_featured_assets:
+                merged_featured_assets.append(asset_id)
+        base_library.featured_assets = merged_featured_assets
+        return base_library
 
     def _build_sample_editor_state(
         self,
@@ -726,23 +769,7 @@ class PerformanceBrainService(Singleton):
         active_slot = max(0, min(active_slot, len(state.slots) - 1))
         state.active_slot = active_slot
         state.sample_editor = self._build_sample_editor_state(active_slot, state.slots[active_slot])
-        base_library = self._build_library_state()
-        existing_library = state.library.model_copy(deep=True)
-        base_collection_ids = {collection.collection_id for collection in base_library.collections}
-        extra_collections = [
-            collection.model_copy(deep=True)
-            for collection in existing_library.collections
-            if collection.collection_id not in base_collection_ids
-        ]
-        if extra_collections:
-            # Preserve importer-owned library views such as SynthForge patch banks.
-            base_library.collections.extend(extra_collections)
-        merged_featured_assets: list[str] = []
-        for asset_id in [*existing_library.featured_assets, *base_library.featured_assets]:
-            if asset_id and asset_id not in merged_featured_assets:
-                merged_featured_assets.append(asset_id)
-        base_library.featured_assets = merged_featured_assets
-        state.library = base_library
+        state.library = self._build_runtime_library(state.library)
         state.sequence.song_entry_count = len(state.song.entries)
         state.diagnostics.controller_qualification = self._build_controller_qualification(state)
         state.diagnostics.updated_at_iso = _utcnow_iso()
@@ -857,6 +884,8 @@ class PerformanceBrainService(Singleton):
     ) -> dict[str, Any]:
         with self._lock:
             state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
+            if not 0 <= slot_id < len(state.slots):
+                raise IndexError(f"slot_id {slot_id} out of range for {len(state.slots)} slots")
             slot = state.slots[slot_id]
             for key, value in patch.model_dump(exclude_none=True).items():
                 setattr(slot, key, value)
@@ -959,9 +988,7 @@ class PerformanceBrainService(Singleton):
     def get_library(self, instance_id: str | int | None = None, plugin_position: int | None = None) -> dict[str, Any]:
         with self._lock:
             state = self._load_instance(self._build_instance_key(instance_id, plugin_position))
-            state.library = self._build_library_state()
-            self._persist_state(state)
-            return state.library.model_dump()
+            return self._build_runtime_library(state.library).model_dump()
 
     def get_sample_editor(
         self,

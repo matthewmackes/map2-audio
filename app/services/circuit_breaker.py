@@ -9,6 +9,7 @@ Reference: https://martinfowler.com/bliki/CircuitBreaker.html
 
 import asyncio
 import logging
+import threading
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Callable, Any, Optional, TypeVar, Coroutine
@@ -104,7 +105,7 @@ class CircuitBreaker:
         self._half_open_probe_in_flight = False
         
         # Thread safety
-        self._lock = asyncio.Lock()
+        self._lock = threading.RLock()
         
         # Metrics
         self.metrics = CircuitBreakerMetrics()
@@ -126,7 +127,7 @@ class CircuitBreaker:
             CircuitBreakerException: If circuit is OPEN
             Exception: Any exception raised by func
         """
-        async with self._lock:
+        with self._lock:
             self.metrics.total_calls += 1
             # Check if we should attempt recovery
             if self.state == CircuitState.OPEN:
@@ -153,17 +154,17 @@ class CircuitBreaker:
             # Call the function
             result = await func(*args, **kwargs)
             
-            async with self._lock:
-                await self._on_success()
+            with self._lock:
+                self._on_success()
             
             return result
             
         except Exception as e:
-            async with self._lock:
-                await self._on_failure()
+            with self._lock:
+                self._on_failure()
             raise
     
-    async def _on_success(self) -> None:
+    def _on_success(self) -> None:
         """Handle successful call."""
         self.metrics.successful_calls += 1
         self.consecutive_successes += 1
@@ -191,7 +192,7 @@ class CircuitBreaker:
             self._prune_failure_history(datetime.now())
             self.failure_count = len(self._failure_history)
     
-    async def _on_failure(self) -> None:
+    def _on_failure(self) -> None:
         """Handle failed call."""
         self.metrics.failed_calls += 1
         self.consecutive_successes = 0
@@ -260,14 +261,15 @@ class CircuitBreaker:
     
     def reset(self) -> None:
         """Manually reset the circuit breaker to CLOSED state."""
-        self.state = CircuitState.CLOSED
-        self.failure_count = 0
-        self.success_count = 0
-        self.consecutive_successes = 0
-        self.last_failure_time = None
-        self.opened_at = None
-        self._failure_history.clear()
-        self._half_open_probe_in_flight = False
+        with self._lock:
+            self.state = CircuitState.CLOSED
+            self.failure_count = 0
+            self.success_count = 0
+            self.consecutive_successes = 0
+            self.last_failure_time = None
+            self.opened_at = None
+            self._failure_history.clear()
+            self._half_open_probe_in_flight = False
         logger.info(f"[{self.name}] Circuit manually reset to CLOSED")
     
     def __repr__(self) -> str:

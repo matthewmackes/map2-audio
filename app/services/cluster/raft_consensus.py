@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 import os
+import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -176,7 +177,9 @@ class RaftConsensus:
         # Task management
         self.is_running = False
         self._tasks: List[asyncio.Task] = []
-        
+        self._heartbeat_tasks: set[asyncio.Task] = set()
+        self._commit_waiters: Dict[int, List[asyncio.Event]] = {}
+
         self.logger = logging.getLogger("RaftConsensus")
         self._load_persistent_state()
 
@@ -184,7 +187,32 @@ class RaftConsensus:
     def _default_state_path(node_id: str) -> Path:
         configured = os.getenv("MAP2_RAFT_STATE_DIR", "").strip()
         root = Path(configured).expanduser() if configured else Path.home() / ".map2" / "cluster" / "raft"
-        return root / f"{node_id}.json"
+        return root / f"{node_id}.sqlite3"
+
+    def _connect_state_db(self) -> sqlite3.Connection:
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(self._state_path)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stable_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                current_term INTEGER NOT NULL,
+                voted_for TEXT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS log_entries (
+                idx INTEGER PRIMARY KEY,
+                term INTEGER NOT NULL,
+                command TEXT NOT NULL,
+                data TEXT NOT NULL,
+                timestamp REAL NOT NULL
+            )
+            """
+        )
+        return conn
 
     def _serialize_log_entry(self, entry: LogEntry) -> Dict[str, Any]:
         return {
@@ -196,41 +224,72 @@ class RaftConsensus:
         }
 
     def _persist_stable_state(self) -> None:
-        payload = {
-            "current_term": int(self.current_term),
-            "voted_for": self.voted_for,
-            "log": [self._serialize_log_entry(entry) for entry in self.log],
-        }
-        self._state_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = self._state_path.with_suffix(".tmp")
-        temp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-        temp_path.replace(self._state_path)
+        conn = self._connect_state_db()
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT INTO stable_state (id, current_term, voted_for)
+                    VALUES (1, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        current_term = excluded.current_term,
+                        voted_for = excluded.voted_for
+                    """,
+                    (int(self.current_term), self.voted_for),
+                )
+                conn.execute("DELETE FROM log_entries")
+                conn.executemany(
+                    """
+                    INSERT INTO log_entries (idx, term, command, data, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            int(entry.index),
+                            int(entry.term),
+                            str(entry.command),
+                            json.dumps(entry.data, sort_keys=True),
+                            float(entry.timestamp),
+                        )
+                        for entry in self.log
+                    ],
+                )
+        finally:
+            conn.close()
 
     def _load_persistent_state(self) -> None:
         if not self._state_path.exists():
             return
         try:
-            payload = json.loads(self._state_path.read_text(encoding="utf-8"))
+            conn = self._connect_state_db()
         except Exception as exc:
             self.logger.warning("Failed to load Raft stable state from %s: %s", self._state_path, exc)
             return
+        try:
+            state_row = conn.execute(
+                "SELECT current_term, voted_for FROM stable_state WHERE id = 1"
+            ).fetchone()
+            if state_row:
+                self.current_term = int(state_row[0] or 0)
+                self.voted_for = str(state_row[1]) if state_row[1] is not None else None
 
-        self.current_term = int(payload.get("current_term", 0) or 0)
-        raw_voted_for = payload.get("voted_for")
-        self.voted_for = str(raw_voted_for) if raw_voted_for is not None else None
-        self.log = []
-        for index, raw_entry in enumerate(payload.get("log", [])):
-            if not isinstance(raw_entry, dict):
-                continue
-            self.log.append(
-                LogEntry(
-                    term=int(raw_entry.get("term", 0) or 0),
-                    command=str(raw_entry.get("command", "")),
-                    data=dict(raw_entry.get("data", {}) or {}),
-                    timestamp=float(raw_entry.get("timestamp", time.time()) or time.time()),
-                    index=int(raw_entry.get("index", index) or index),
+            self.log = []
+            for raw_entry in conn.execute(
+                "SELECT idx, term, command, data, timestamp FROM log_entries ORDER BY idx ASC"
+            ).fetchall():
+                self.log.append(
+                    LogEntry(
+                        term=int(raw_entry[1] or 0),
+                        command=str(raw_entry[2] or ""),
+                        data=dict(json.loads(raw_entry[3] or "{}")),
+                        timestamp=float(raw_entry[4] or time.time()),
+                        index=int(raw_entry[0] or len(self.log)),
+                    )
                 )
-            )
+        except Exception as exc:
+            self.logger.warning("Failed to read Raft stable state from %s: %s", self._state_path, exc)
+        finally:
+            conn.close()
 
     def _cluster_size(self) -> int:
         return len(self.cluster_nodes) + 1
@@ -321,6 +380,18 @@ class RaftConsensus:
                 await task
             except asyncio.CancelledError:
                 pass
+        for task in list(self._heartbeat_tasks):
+            task.cancel()
+        for task in list(self._heartbeat_tasks):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        self._heartbeat_tasks.clear()
+        for waiters in self._commit_waiters.values():
+            for event in waiters:
+                event.set()
+        self._commit_waiters.clear()
 
     async def _election_timer(self):
         """Election timeout logic - triggers leader election."""
@@ -367,6 +438,7 @@ class RaftConsensus:
         self._persist_stable_state()
         self.last_heartbeat = utc_now()
         self.election_timeout = self._random_timeout(150, 300)
+        election_term = self.current_term
         
         # Request votes from all other nodes
         vote_tasks = []
@@ -379,7 +451,7 @@ class RaftConsensus:
 
         # Check if we won the election
         majority = self._majority_count()
-        if self.role == RaftRole.CANDIDATE and votes >= majority:
+        if self.role == RaftRole.CANDIDATE and self.current_term == election_term and votes >= majority:
             self.logger.info(f"Won election with {votes}/{self._cluster_size()} votes (term={self.current_term})")
             self.role = RaftRole.LEADER
 
@@ -424,7 +496,9 @@ class RaftConsensus:
             return
         
         for node_id, node_url in self.cluster_nodes.items():
-            asyncio.create_task(self._send_append_entries(node_id, node_url))
+            task = asyncio.create_task(self._send_append_entries(node_id, node_url))
+            self._heartbeat_tasks.add(task)
+            task.add_done_callback(self._heartbeat_tasks.discard)
 
     async def _send_append_entries(self, node_id: str, node_url: str):
         """Send AppendEntries RPC to a node."""
@@ -492,27 +566,36 @@ class RaftConsensus:
                         break
 
                     entry = self.log[next_index]
-
-                    # Advance only after a successful apply so committed entries are
-                    # neither skipped nor marked applied early.
-                    applied = await asyncio.to_thread(self.state_machine.apply_entry, entry)
+                    applied = await self._apply_committed_entry(entry)
                     if not applied:
                         break
 
-                    if entry.command == "update_special_settings":
-                        try:
-                            await self._apply_special_settings_to_db(entry)
-                        except Exception as e:
-                            logger.error(f"Failed to apply special settings to DB: {e}")
-                            break
-
                     self.last_applied = next_index
+                    self._resolve_commit_waiters()
 
                 await asyncio.sleep(0.01)
             
             except Exception as e:
                 self.logger.error(f"Error applying log entries: {e}")
                 await asyncio.sleep(0.1)
+
+    async def _apply_committed_entry(self, entry: LogEntry) -> bool:
+        """Apply one committed entry without double-applying on side-effect failure."""
+        if entry.command == "update_special_settings":
+            try:
+                await self._apply_special_settings_to_db(entry)
+            except Exception as e:
+                logger.error(f"Failed to apply special settings to DB: {e}")
+                return False
+
+        applied = await asyncio.to_thread(self.state_machine.apply_entry, entry)
+        return bool(applied)
+
+    def _resolve_commit_waiters(self) -> None:
+        ready_indices = [index for index in self._commit_waiters if index <= self.last_applied]
+        for index in ready_indices:
+            for event in self._commit_waiters.pop(index, []):
+                event.set()
 
     async def replicate_command(self, command: str, data: Dict[str, Any]) -> bool:
         """
@@ -527,6 +610,8 @@ class RaftConsensus:
         entry = LogEntry(term=self.current_term, command=command, data=data)
         entry.index = len(self.log)
         self.append_log_entry(entry)
+        commit_event = asyncio.Event()
+        self._commit_waiters.setdefault(entry.index, []).append(commit_event)
         
         self.logger.info(f"Appended log entry: {command} (index={entry.index})")
         
@@ -534,15 +619,19 @@ class RaftConsensus:
         await self._send_heartbeats()
         
         # Wait for commit
-        timeout = time.time() + 5.0
-        while time.time() < timeout:
-            if self.last_applied >= entry.index:
-                self.logger.info(f"Command committed: {command}")
-                return True
-            await asyncio.sleep(0.01)
-        
-        self.logger.error(f"Command commit timeout: {command}")
-        return False
+        try:
+            if self.last_applied < entry.index:
+                await asyncio.wait_for(commit_event.wait(), timeout=5.0)
+            self.logger.info(f"Command committed: {command}")
+            return True
+        except asyncio.TimeoutError:
+            self.logger.error(f"Command commit timeout: {command}")
+            waiters = self._commit_waiters.get(entry.index, [])
+            if commit_event in waiters:
+                waiters.remove(commit_event)
+                if not waiters:
+                    self._commit_waiters.pop(entry.index, None)
+            return False
 
     def get_leader(self) -> Optional[str]:
         """Get current leader node ID."""

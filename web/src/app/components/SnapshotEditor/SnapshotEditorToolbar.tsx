@@ -112,7 +112,9 @@ export function SnapshotEditorToolbar({
     }
     try {
       window.localStorage.setItem(TOOLBAR_COLLAPSE_STORAGE_KEY, collapsed ? 'true' : 'false')
-    } catch {}
+    } catch {
+      // Ignore storage writes when the browser blocks localStorage.
+    }
   }, [collapsed])
 
   return (

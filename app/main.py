@@ -207,6 +207,26 @@ def _midi_cluster_enabled() -> bool:
         return False
 
 
+def _resolve_cors_settings() -> tuple[list[str], bool]:
+    try:
+        from app.config import config_get
+
+        raw_origins = config_get("backend.cors_origins", ["*"])
+    except Exception:
+        raw_origins = ["*"]
+
+    if not isinstance(raw_origins, list):
+        raw_origins = [raw_origins]
+
+    origins = [
+        str(origin).strip()
+        for origin in raw_origins
+        if str(origin).strip()
+    ] or ["*"]
+    allow_credentials = "*" not in origins
+    return origins, allow_credentials
+
+
 async def start_cluster_midi_services(
     logger: logging.Logger,
     *,
@@ -701,15 +721,14 @@ async def lifespan(app):
         init_lcd_routes(None)
         await safe_stop_service(logger, "LCD Event Persistence", lcd_persistence.stop)
         
-        # Close database pool
-        pool_manager = get_pool_manager()
-        await safe_stop_service(logger, "Database connection pool", pool_manager.close)
         await safe_stop_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.shutdown)
         await safe_stop_service(logger, "Parameter routing", disconnect_parameter_routing)
         await safe_stop_service(logger, "Real-time parameter bridge", rt_parameter_bridge.stop)
         await safe_stop_service(logger, "Metrics daemon", stop_metrics_daemon)
         await safe_stop_service(logger, "Orchestrator services", orchestrator.stop_all)
         await safe_stop_service(logger, "Database checkpoint", checkpoint_database)
+        pool_manager = get_pool_manager()
+        await safe_stop_service(logger, "Database connection pool", pool_manager.close)
         logger.info("Shutdown complete")
     except Exception as e:
         import traceback
@@ -746,11 +765,13 @@ def create_app():
             access_logger.disabled = True
             access_logger.propagate = False
 
+        cors_origins, cors_allow_credentials = _resolve_cors_settings()
+
         # CORS middleware
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
+            allow_origins=cors_origins,
+            allow_credentials=cors_allow_credentials,
             allow_methods=["*"],
             allow_headers=["*"],
         )

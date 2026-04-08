@@ -19,11 +19,29 @@ import json
 import logging
 import os
 from pathlib import Path
+import tempfile
+import threading
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from app.config_schema import CONFIG_SCHEMA, ConfigOption, ConfigSection
 
 logger = logging.getLogger(__name__)
+
+
+def _atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
+    """Write JSON atomically within the destination directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 # ============================================================================
@@ -43,6 +61,7 @@ class ConfigManager:
     """
 
     _instance: Optional['ConfigManager'] = None
+    _instance_lock = threading.Lock()
     CONFIG_DIR = Path.home() / ".map2"
     CONFIG_FILE = Path.home() / ".map2" / "config.json"
     CONFIG_BACKUP = Path.home() / ".map2" / "config.backup.json"
@@ -69,8 +88,50 @@ class ConfigManager:
     def get_instance(cls) -> 'ConfigManager':
         """Get singleton instance."""
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
+
+    @staticmethod
+    def _mask_sensitive_value(value: Any) -> str:
+        return "***"
+
+    def _coerce_value(self, option: ConfigOption, value: Any) -> Any:
+        if value is None:
+            return None
+
+        if option.value_type is list:
+            if isinstance(value, str):
+                value = json.loads(value) if value.startswith('[') else value.split(',')
+            elif not isinstance(value, list):
+                value = list(value) if isinstance(value, (tuple, set)) else [value]
+            if option.element_type is not None:
+                coerced_items = []
+                for item in value:
+                    if item is None:
+                        coerced_items.append(None)
+                        continue
+                    if isinstance(item, option.element_type):
+                        coerced_items.append(item)
+                        continue
+                    try:
+                        if option.element_type is bool and isinstance(item, str):
+                            coerced_items.append(item.lower() in ('true', '1', 'yes', 'on'))
+                        else:
+                            coerced_items.append(option.element_type(item))
+                    except Exception as exc:
+                        raise TypeError(f"cannot coerce list element {item!r} to {option.element_type}") from exc
+                value = coerced_items
+            return value
+
+        if isinstance(value, option.value_type):
+            return value
+        if option.value_type is bool and isinstance(value, str):
+            return value.lower() in ('true', '1', 'yes', 'on')
+        if option.value_type in (int, float, str):
+            return option.value_type(value)
+        return value
 
     def _load(self) -> None:
         """Load configuration from file, environment, and defaults."""
@@ -134,7 +195,7 @@ class ConfigManager:
                 env_value = os.environ.get(option.env_var)
                 if env_value is not None:
                     try:
-                        converted = self._convert_type(env_value, option.value_type)
+                        converted = self._coerce_value(option, self._convert_type(env_value, option.value_type))
                         self._set_nested(self._config, key, converted)
                         if not option.sensitive:
                             logger.debug(f"Config override from env: {key}={converted}")
@@ -160,16 +221,21 @@ class ConfigManager:
         if not option:
             return True  # Unknown keys are allowed
 
+        if value is None:
+            return True
+
         # Type check
-        if value is not None and not isinstance(value, option.value_type):
+        if not isinstance(value, option.value_type):
             if option.value_type in (int, float) and isinstance(value, (int, float)):
                 pass  # Allow int/float conversion
             else:
                 logger.warning(f"Config type mismatch: {key} expected {option.value_type}, got {type(value)}")
                 return False
 
-        if option.value_type is list and value is not None and option.element_type is not None:
+        if option.value_type is list and option.element_type is not None:
             for index, item in enumerate(value):
+                if item is None:
+                    continue
                 if not isinstance(item, option.element_type):
                     logger.warning(
                         "Config list element type mismatch: %s[%s] expected %s, got %s",
@@ -259,16 +325,25 @@ class ConfigManager:
                 f"This setting can only be changed in the systemd service (map2-backend.service) and requires a service restart. "
                 f"Locked settings ensure <3ms round-trip latency and prevent buffer size mismatches."
             )
-        
-        if not self._validate_value(key, value):
+
+        option = CONFIG_SCHEMA.get(key)
+        coerced_value = value
+        if option is not None:
+            try:
+                coerced_value = self._coerce_value(option, value)
+            except Exception as exc:
+                logger.warning("Config coercion failed for %s: %s", key, exc)
+                return False
+
+        if not self._validate_value(key, coerced_value):
             return False
 
         old_value = self.get(key)
-        self._set_nested(self._config, key, value)
+        self._set_nested(self._config, key, coerced_value)
         self._dirty = True
 
         # Notify observers
-        self._notify_observers(key, old_value, value)
+        self._notify_observers(key, old_value, coerced_value)
 
         if save:
             self.save()
@@ -302,9 +377,7 @@ class ConfigManager:
                 import shutil
                 shutil.copy2(self.config_path, self.config_backup_path)
 
-            # Write new config
-            with open(self.config_path, 'w') as f:
-                json.dump(self._config, f, indent=2)
+            _atomic_write_json(self.config_path, self._config)
 
             self._dirty = False
             logger.info(f"Configuration saved to {self.config_path}")
@@ -345,9 +418,9 @@ class ConfigManager:
 
     def _notify_observers(self, key: str, old_value: Any, new_value: Any) -> None:
         """Notify all matching observers of a config change."""
-        for pattern, callbacks in self._observers.items():
+        for pattern, callbacks in list(self._observers.items()):
             if pattern == key or (pattern.endswith('.*') and key.startswith(pattern[:-2])):
-                for callback in callbacks:
+                for callback in list(callbacks):
                     try:
                         callback(key, old_value, new_value)
                     except Exception as e:
@@ -366,7 +439,7 @@ class ConfigManager:
         schema = {}
         for key, option in CONFIG_SCHEMA.items():
             schema[key] = {
-                "default": option.default,
+                "default": self._mask_sensitive_value(option.default) if option.sensitive else option.default,
                 "description": option.description,
                 "type": option.value_type.__name__,
                 "env_var": option.env_var,
@@ -383,12 +456,13 @@ class ConfigManager:
         """Get schema information for a specific option."""
         option = CONFIG_SCHEMA.get(key)
         if option:
+            current = self.get(key)
             return {
                 "key": option.key,
-                "default": option.default,
+                "default": self._mask_sensitive_value(option.default) if option.sensitive else option.default,
                 "description": option.description,
                 "type": option.value_type.__name__,
-                "current": self.get(key),
+                "current": self._mask_sensitive_value(current) if option.sensitive else current,
                 "locked": option.locked,
                 "element_type": option.element_type.__name__ if option.element_type else None,
             }

@@ -380,6 +380,28 @@ class TestCircuitBreakerTimeout:
         assert breaker.failure_count == 1
         assert breaker.state == CircuitState.CLOSED
 
+    @pytest.mark.asyncio
+    async def test_manual_reset_clears_state_during_inflight_call(self):
+        """Manual reset should acquire the same state lock as active calls."""
+        breaker = CircuitBreaker("test-service", failure_threshold=1)
+        release_call = asyncio.Event()
+        entered_call = asyncio.Event()
+
+        async def slow_success():
+            entered_call.set()
+            await release_call.wait()
+            return "ok"
+
+        call_task = asyncio.create_task(breaker.call(slow_success))
+        await entered_call.wait()
+
+        await asyncio.to_thread(breaker.reset)
+
+        release_call.set()
+        assert await call_task == "ok"
+        assert breaker.state == CircuitState.CLOSED
+        assert breaker.failure_count == 0
+
 
 class TestCircuitBreakerManager:
     """Test CircuitBreakerManager functionality."""

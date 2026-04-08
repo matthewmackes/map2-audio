@@ -4,7 +4,7 @@ import { Button, Tag } from '@carbon/react'
 import type { TesiraDeviceDetail } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useConnectDevice, useDisconnectDevice } from '../hooks/useTesiraApi'
-import { useCluster } from '../../../contexts/ClusterContext'
+import { useCluster } from '../../../contexts/useCluster'
 import './TesiraCarbonChrome.css'
 
 const BIAMP_RED = '#E31837'

@@ -4,6 +4,7 @@ import asyncio
 import pytest
 
 from app.services.realtime_parameter_bridge import RealTimeParameterBridge
+from app.services.realtime_parameter_bridge import ParameterUpdate
 
 
 class _FakeWebSocket:
@@ -149,3 +150,57 @@ async def test_handle_binary_message_rejects_truncated_payload_without_disconnec
 
     assert "client" in bridge._clients
     assert ws.text_messages == []
+
+
+@pytest.mark.asyncio
+async def test_get_value_returns_error_for_uncached_parameter():
+    bridge = RealTimeParameterBridge()
+    ws = _FakeWebSocket()
+
+    await bridge.connect_client(ws, "client")
+    ws.text_messages.clear()
+
+    await bridge.handle_message(
+        "client",
+        json.dumps(
+            {
+                "action": "get_value",
+                "plugin_uri": "urn:test:missing",
+                "param_index": 7,
+            }
+        ),
+    )
+
+    assert ws.text_messages == [
+        {
+            "type": "error",
+            "code": "uncached_param",
+            "message": "Parameter value is not cached",
+            "plugin_uri": "urn:test:missing",
+            "param_index": 7,
+            "instance_id": None,
+            "plugin_position": None,
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_queue_overflow_evicts_oldest_update_and_keeps_newest():
+    bridge = RealTimeParameterBridge()
+    bridge._update_queue = asyncio.Queue(maxsize=1)
+    old_update = ParameterUpdate(
+        plugin_uri="urn:test",
+        param_index=1,
+        value=0.1,
+    )
+    new_update = ParameterUpdate(
+        plugin_uri="urn:test",
+        param_index=1,
+        value=0.9,
+    )
+
+    await bridge._update_queue.put(old_update)
+    await bridge._process_update(new_update)
+
+    queued = await bridge._update_queue.get()
+    assert queued.value == pytest.approx(0.9)

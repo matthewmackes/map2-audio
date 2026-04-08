@@ -1,6 +1,8 @@
 import time
 import threading
+import logging
 
+from app.services.midi_hub import hub as hub_module
 from app.services.midi_hub.hub import MidiHub, RT_SAFE_MIDI_HUB_POLL_INTERVAL_FLOOR_S
 from app.services.midi_hub.ports import VirtualMidiPort
 
@@ -81,3 +83,54 @@ def test_hub_sets_running_before_worker_threads_begin(monkeypatch):
 
     assert observations
     assert all(flag is True for _, flag in observations)
+
+
+def test_hub_logs_warning_when_subscriber_raises(caplog):
+    hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.001, hotplug_interval_s=0.25)
+
+    source = VirtualMidiPort(port_id="src", name="Source")
+    hub.register_port(source)
+
+    seen = []
+
+    def _bad(_msg):
+        raise RuntimeError("boom")
+
+    def _good(msg):
+        seen.append(msg)
+
+    hub.subscribe("bad", _bad)
+    hub.subscribe("good", _good)
+
+    with caplog.at_level(logging.WARNING):
+        hub.start()
+        try:
+            assert source.inject(b"\x90\x3c\x64", source_port="external")
+            deadline = time.time() + 0.5
+            while time.time() < deadline and not seen:
+                time.sleep(0.01)
+        finally:
+            hub.stop()
+
+    assert seen
+    assert any("MidiHub subscriber callback failed: boom" in record.getMessage() for record in caplog.records)
+
+
+def test_get_midi_hub_singleton_is_guarded():
+    original = hub_module._midi_hub_singleton
+    try:
+        hub_module._midi_hub_singleton = None
+        seen = []
+
+        def _worker():
+            seen.append(id(hub_module.get_midi_hub()))
+
+        threads = [threading.Thread(target=_worker) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=0.5)
+
+        assert len(set(seen)) == 1
+    finally:
+        hub_module._midi_hub_singleton = original

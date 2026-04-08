@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-08 - Added Backend Audit Remediation epic (T817-T846): 30 tasks covering all Critical/High/Medium findings from the dual-pass backend architecture audit (docs/BACKEND_AUDIT_V2.md).
+Last updated: 2026-04-08 - Added TUI Carbon Compliance epic (T876-T885): 10 improvement suggestions for Textual and Ink TUIs from a Carbon Design System review.
 
 ## Performance Brain
 
@@ -18831,7 +18831,7 @@ Last updated: 2026-04-07 22:50 EDT - Codex
 ## Backend Audit Remediation
 
 ID: T817
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix Raft consensus correctness bugs (majority, persistence, off-by-one, term staleness)
 Description:
 - Goal / acceptance criteria: The Raft implementation must correctly elect leaders with any single node down in a 3-node cluster, persist term/vote/log to SQLite before responding to RPCs, apply all committed log entries starting from index 0, and step down when a higher term is discovered in RPC responses.
@@ -18841,7 +18841,7 @@ Description:
 - Required outputs: Fixed majority calculation including self-vote, SQLite-backed persistent state, corrected `_apply_log_entries` index, term comparison on all RPC responses, `asyncio.Event` replacing busy-wait in `replicate_command`, tests proving 3-node election with 1 node down.
 Subtasks:
   - ID: T817-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix majority calculation to include self-vote
     Description:
     - Goal / acceptance criteria: `_start_election` counts the local node's self-vote in the majority tally. A 3-node cluster elects a leader with 2 votes (self + 1 remote), not 3.
@@ -18849,10 +18849,10 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Code fix, unit test proving election succeeds with 1 of 2 remotes voting yes.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08 - Claude
+    Assigned to: Codex
+    Last updated: 2026-04-08 23:30 EDT - Codex
   - ID: T817-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add SQLite-backed persistent state for term, voted_for, and log
     Description:
     - Goal / acceptance criteria: `current_term`, `voted_for`, and `log` are written to a SQLite table before any RPC response is sent. On restart, state is restored from disk.
@@ -18860,10 +18860,10 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Persistence layer, recovery-on-init, test proving crash-restart preserves vote.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08 - Claude
+    Assigned to: Codex
+    Last updated: 2026-04-08 23:30 EDT - Codex
   - ID: T817-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix off-by-one in `_apply_log_entries` and prevent double-apply on DB failure
     Description:
     - Goal / acceptance criteria: `last_applied` is incremented after the entry is applied, not before. DB side-effect failure does not cause double-apply.
@@ -18871,10 +18871,10 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Code fix, test proving entry at index 0 is applied.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08 - Claude
+    Assigned to: Codex
+    Last updated: 2026-04-08 23:30 EDT - Codex
   - ID: T817-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Process response terms on all RPCs and re-check term after election gather
     Description:
     - Goal / acceptance criteria: `_request_vote` and `_send_append_entries` inspect the `term` field in RPC responses. `_start_election` verifies `current_term == captured_term` before declaring victory.
@@ -18882,10 +18882,10 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Code fix, test proving stale leader steps down.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08 - Claude
+    Assigned to: Codex
+    Last updated: 2026-04-08 23:30 EDT - Codex
   - ID: T817-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Track and cancel orphaned heartbeat tasks; replace busy-wait with asyncio.Event
     Description:
     - Goal / acceptance criteria: All tasks from `_send_heartbeats` tracked and cancelled in `stop()`. `replicate_command` uses `asyncio.Event` instead of polling.
@@ -18893,13 +18893,21 @@ Subtasks:
     - Estimated effort: Low
     - Required outputs: Code fix, test proving clean shutdown.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08 - Claude
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+    Assigned to: Codex
+    Last updated: 2026-04-08 23:30 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-08 23:30 EDT - Codex
+- Completion notes:
+  - Replaced the Raft JSON stable-state file with SQLite-backed `stable_state` and `log_entries` tables, keeping term, vote, and log durability coupled to every update before RPC handlers return.
+  - Tightened election correctness so majority handling still includes the self-vote but leadership is only declared if the node is still a candidate in the same captured term after vote gathering completes.
+  - Kept committed-entry application strictly ordered from index `0`, moved special-settings DB side effects ahead of local apply to avoid double-apply after DB failure, and replaced `replicate_command()` polling with `asyncio.Event` commit waiters.
+  - Added heartbeat task tracking/cancellation in `stop()` so leader fan-out tasks do not survive shutdown.
+- Validation:
+  - `pytest -q tests/test_raft_consensus.py` -> PASS (`10 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/raft_consensus.py tests/test_raft_consensus.py` -> PASS
 
 ID: T818
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix MIDI ring buffer overwrite mode and document threading contract
 Description:
 - Goal / acceptance criteria: In overwrite mode, the oldest message is correctly discarded and the newest retained. The buffer either has a `threading.Lock` or documents an explicit SPSC contract. `drain()` uses a sentinel for empty slots instead of dropping `None`.
@@ -18908,11 +18916,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Fixed overwrite arithmetic, threading contract, sentinel-based empty detection, round-trip tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 23:30 EDT - Codex
+- Completion notes:
+  - Wrapped the MIDI hub ring buffer with a `threading.Lock` so the implementation no longer relies on an implicit SPSC-only contract in multi-producer usage.
+  - Fixed overwrite mode to discard the oldest entry while preserving the newest write without corrupting size/head/tail accounting.
+  - Switched internal empty-slot tracking from `None` to a dedicated sentinel so `drain()` preserves real `None` payloads instead of silently dropping them.
+- Validation:
+  - `pytest -q tests/midi_hub/test_ring_buffer.py` -> PASS (`5 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/midi_hub/ring_buffer.py tests/midi_hub/test_ring_buffer.py` -> PASS
 
 ID: T819
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix shutdown ordering — stop services before closing database pool
 Description:
 - Goal / acceptance criteria: `orchestrator.stop_all()` completes before the database pool is closed. Services that persist state during shutdown succeed.
@@ -18921,11 +18936,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: Swapped shutdown order in `main.py`.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 23:30 EDT - Codex
+- Completion notes:
+  - Moved `orchestrator.stop_all()` and the shutdown checkpoint ahead of database-pool teardown in `app/main.py` so service shutdown work can still persist state before the pool is closed.
+  - Added a regression test that locks the shutdown ordering in the lifespan function.
+- Validation:
+  - `pytest -q tests/test_main_shutdown.py` -> PASS (`6 passed, 1 warning`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py tests/test_main_shutdown.py` -> PASS
 
 ID: T820
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix TTP client stale response queue on reconnect
 Description:
 - Goal / acceptance criteria: `_do_connect` drains `_response_queue` before new connection. Reconnect task stored and cancellable in `disconnect()`.
@@ -18934,11 +18955,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: Queue drain, cancellable reconnect task, test proving stale responses discarded.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 23:30 EDT - Codex
+- Completion notes:
+  - Added `_clear_response_queue()` and call it at the start of `_do_connect()` so reconnects cannot match stale pre-disconnect responses to new commands.
+  - Confirmed reconnect-task cancellation semantics in `disconnect()` remain intact and added a regression proving stale responses are discarded before reconnect.
+- Validation:
+  - `pytest -q tests/tesira/test_ttp_client.py` -> PASS (`6 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/tesira/ttp_client.py tests/tesira/test_ttp_client.py` -> PASS
 
 ID: T821
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix ServiceOrchestrator `_emit_event` calling non-existent WebSocket method
 Description:
 - Goal / acceptance criteria: `_emit_event` calls `broadcast_json(event, topic="service_status")` instead of non-existent `broadcast_to_topic`.
@@ -18947,11 +18974,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: Fixed method call, test proving lifecycle events reach WS subscribers.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 23:30 EDT - Codex
+- Completion notes:
+  - Verified the current `ServiceOrchestrator._emit_event()` implementation already routes lifecycle events through the publisher abstraction, which calls `broadcast_json(..., topic="service_status")` on the WebSocket manager instead of any non-existent topic helper.
+  - Kept the existing regression test as the authoritative proof that service lifecycle events still reach websocket subscribers through the supported publish path.
+- Validation:
+  - `pytest -q tests/test_service_orchestrator_health.py` -> PASS (`3 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/service_orchestrator.py tests/test_service_orchestrator_health.py` -> PASS
 
 ID: T822
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix `_stop_juce_engine` to call `service.shutdown()` for C++ cleanup
 Description:
 - Goal / acceptance criteria: Orchestrator calls both `stop_audio()` and `await asyncio.to_thread(service.shutdown)`. C++ engine, thread pool, and device handles released on shutdown.
@@ -18960,11 +18993,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: Added `shutdown()` call, validated device release.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 14:56 EDT - Codex
+- Completion notes:
+  - Updated `app/services/service_orchestrator.py` so `_stop_juce_engine()` now stops audio first and then invokes `shutdown()` when present, awaiting async implementations directly and offloading sync implementations to a worker thread.
+  - Confirmed `app/services/juce_engine_service.py` shutdown now releases the C++ engine through `asyncio.to_thread(...)` for both `stop_audio` and final engine teardown.
+- Validation:
+  - `pytest -q tests/test_service_orchestrator_health.py tests/test_juce_engine_service_threading.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/service_orchestrator.py app/services/juce_engine_service.py tests/test_service_orchestrator_health.py tests/test_juce_engine_service_threading.py` -> PASS
 
 ID: T823
-Status: [ ] Todo
+Status: [✓] Done
 Title: Make config `save()` and deployment `save()` atomic (write-temp-then-rename)
 Description:
 - Goal / acceptance criteria: Both write to temp file then `os.replace()`. Process kill during write cannot truncate config.
@@ -18973,11 +19012,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: Atomic write pattern in both files.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 14:56 EDT - Codex
+- Completion notes:
+  - Added atomic JSON write helpers in `app/config.py` and `app/deployment/deployment.py` that write to a temporary file in the destination directory, flush and `fsync`, then replace the target with `os.replace(...)`.
+  - The save path now avoids partial truncation if the process dies mid-write and cleans up temporary files on failure.
+- Validation:
+  - `pytest -q tests/test_atomic_config_writes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py app/deployment/deployment.py tests/test_atomic_config_writes.py` -> PASS
 
 ID: T824
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix automation engine dual-lock race, LFO mutation, and RANDOM waveform bug
 Description:
 - Goal / acceptance criteria: Single `asyncio.Lock` for all lane access. LFO state guarded. RANDOM waveform uses separate phase/amplitude fields. `save_to_database` uses UPSERT.
@@ -18986,11 +19031,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Single lock, guarded LFO, split RANDOM fields, UPSERT save, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 14:56 EDT - Codex
+- Completion notes:
+  - Reworked `app/services/automation_engine.py` to use a single `asyncio.Lock` for shared lane state, guard LFO mutation while processing, and defer callbacks until after lock release.
+  - Split RANDOM and SAMPLE_HOLD phase tracking in `LFOState`, preserving fallback compatibility for existing `_previous_phase`-based tests.
+  - Replaced delete-all persistence with SQLite UPSERT save behavior and updated database load/save paths to honor the shared async lock.
+- Validation:
+  - `pytest -q tests/test_automation_engine_fixes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/automation_engine.py tests/test_automation_engine_fixes.py` -> PASS
 
 ID: T825
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract `MidiSysexBridgeBase` from MPX1 and IntelFX services
 Description:
 - Goal / acceptance criteria: Shared base class (~600 LOC) with common logic. MPX1 and IntelFX become ~150 LOC subclasses with device-specific constants and decode methods only.
@@ -18999,11 +19051,17 @@ Description:
 - Estimated effort: High
 - Required outputs: Base class, two subclasses, all existing tests passing.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 14:56 EDT - Codex
+- Completion notes:
+  - Added shared `app/services/midi_sysex_bridge_base.py` with reusable runtime initialization, simulated-port wiring, and common `import_syx_bytes(...)` import flow.
+  - Reduced `app/services/mpx1_service.py` and `app/services/intelfx_service.py` to device-specific subclasses with parser constants and decode logic while preserving legacy module-level `RTMIDI_AVAILABLE`, `rtmidi`, and simulator monkeypatch seams used by the existing tests.
+- Validation:
+  - `pytest -q tests/test_midi_sysex_bridge_base.py tests/test_mpx1.py tests/test_intelfx.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/midi_sysex_bridge_base.py app/services/mpx1_service.py app/services/intelfx_service.py tests/test_midi_sysex_bridge_base.py` -> PASS
 
 ID: T826
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply `asyncio.to_thread` consistently across all JUCE engine C++ calls
 Description:
 - Goal / acceptance criteria: Every `async def` method calling `self._engine.*` uses `asyncio.to_thread`. No blocking C++ calls on event loop. Covers `set_bypass`, `get_current_snapshot`, `load_snapshot`, `enable_midi`, `get_midi_devices`, `reorder_chain`, `shutdown`, `stop_audio`.
@@ -19012,11 +19070,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Audited and wrapped all methods.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 14:56 EDT - Codex
+- Completion notes:
+  - Audited `app/services/juce_engine_service.py` and wrapped remaining async C++ engine calls with `await asyncio.to_thread(...)`, including initialization, shutdown, metering, snapshot/preset queries, and singleton guards.
+  - Added regression coverage proving shutdown runs on a worker thread and a static source-scan test that fails if new async methods call `self._engine.*` directly outside `asyncio.to_thread(...)`.
+- Validation:
+  - `pytest -q tests/test_juce_engine_service_threading.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py tests/test_juce_engine_service_threading.py` -> PASS
 
 ID: T827
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix WebSocket manager lock discipline and compression protocol
 Description:
 - Goal / acceptance criteria: `disconnect()` async with lock. Unified lock type. `send_personal_message` has timeout. Binary frame compression replaces gzip+base64+JSON.
@@ -19025,11 +19089,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Unified lock, timeout, binary frames, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 15:09 EDT - Codex
+- Completion notes:
+  - Refactored `app/services/websocket_manager.py` so connection lifecycle mutation runs through an async lock, `disconnect()` is now awaited everywhere, and `send_personal_message()` enforces the same timeout/disconnect policy used by broadcast fan-out.
+  - Replaced the old gzip+base64 JSON wrapper with direct binary gzip frames for large `broadcast_json(...)` payloads while preserving bounded event history and subscriber fan-out behavior.
+  - Updated `app/routes/websocket.py` and `tests/test_websocket_manager.py` for the awaited disconnect path, binary-frame compression coverage, and slow-client timeout behavior.
+- Validation:
+  - `pytest -q tests/test_websocket_manager.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/websocket_manager.py app/routes/websocket.py tests/test_websocket_manager.py` -> PASS
 
 ID: T828
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix RT parameter bridge: concurrent sends, cache locking, overflow handling
 Description:
 - Goal / acceptance criteria: Broadcast via `asyncio.gather()`. `_param_cache` locked. Atomic overflow. `get_value` returns error for uncached params.
@@ -19038,11 +19109,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Concurrent broadcast, locked cache, safe overflow, None guard, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 15:09 EDT - Codex
+- Completion notes:
+  - Hardened `app/services/realtime_parameter_bridge.py` by locking `_param_cache` access, adding an async overflow-eviction path for the bounded update queue, and returning an explicit `uncached_param` error payload for `get_value` misses.
+  - Kept subscriber fan-out concurrent via `asyncio.gather(...)` and added a small route-level cache-clear abstraction in `app/routes/websocket_rt.py` so callers no longer reach directly into bridge internals.
+- Validation:
+  - `pytest -q tests/test_websocket_rt_routes.py tests/test_realtime_parameter_bridge_identity.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/realtime_parameter_bridge.py app/routes/websocket_rt.py tests/test_websocket_rt_routes.py tests/test_realtime_parameter_bridge_identity.py` -> PASS
 
 ID: T829
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add missing ORM `UniqueConstraint` for PluginPreset and PresetRating
 Description:
 - Goal / acceptance criteria: Constraints declared in `__table_args__`. Duplicates rejected at DB level.
@@ -19051,11 +19128,18 @@ Description:
 - Estimated effort: Low
 - Required outputs: Constraints added, existing data deduplicated, test for rejection.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 15:09 EDT - Codex
+- Completion notes:
+  - Added real ORM `UniqueConstraint`s for `PluginPreset(plugin_uri, name)` and `PresetRating(preset_id, user_fingerprint)` in `app/database.py`.
+  - Added schema migration `preset_uniqueness_enforcement_sync` to deduplicate existing duplicate rows in SQLite, rebuild missing unique indexes, and recalculate `CommunityPreset` aggregate rating totals after rating dedupe.
+  - Added focused database tests covering both fresh-schema duplicate rejection and migration-time deduplication of pre-existing duplicate rows.
+- Validation:
+  - `pytest -q tests/test_plugin_preset_constraints.py tests/test_plugin_presets_routes.py tests/test_preset_exchange_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py tests/test_plugin_preset_constraints.py` -> PASS
 
 ID: T830
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix PerformanceBrain `update_slot` bounds check and library scan caching
 Description:
 - Goal / acceptance criteria: `update_slot` validates `slot_id` range. `_build_library_state` cached with TTL. `get_library` read-only.
@@ -19064,11 +19148,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Bounds validation, cached library, read-only GET, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 15:09 EDT - Codex
+- Completion notes:
+  - Updated `app/services/performance_brain_service.py` so `update_slot()` now rejects out-of-range slot IDs with a deterministic `IndexError` instead of indexing blindly into the slot list.
+  - Split library building into cached and uncached paths, added a TTL-backed in-memory library cache, and changed `get_library()` to return merged runtime library state without rewriting the persisted brain-state file on read.
+  - Added focused regression coverage proving repeated library GETs reuse the cached scan result and leave the persisted state file untouched.
+- Validation:
+  - `pytest -q tests/test_brain_service.py tests/test_brain_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/performance_brain_service.py tests/test_brain_service.py` -> PASS
 
 ID: T831
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix health monitor alert deduplication and unbounded growth
 Description:
 - Goal / acceptance criteria: Deduplicate by `(rule, service)`. Bounded `active_alerts`. `_alert_history` as `deque`. `update_service_metrics` locked.
@@ -19077,11 +19168,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Dedup logic, bounded history, locked metrics, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 15:09 EDT - Codex
+- Completion notes:
+  - Reworked `app/services/health_monitor.py` so `_alert_history` is now a bounded `deque`, active alerts are replaced in-place per `(alert_rule_name, service_name)`, and a max-active-alerts cap prunes the oldest remaining active alerts when needed.
+  - Switched the monitor’s shared state protection to a re-entrant sync lock so `update_service_metrics()` and the async alert/collection paths mutate service and alert state under the same lock discipline.
+  - Added regression coverage proving repeated rule evaluations stop duplicating active alerts while still recording history and that active alerts stay bounded when multiple services trigger at once.
+- Validation:
+  - `pytest -q tests/test_health_monitor.py tests/test_health_services.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/health_monitor.py tests/test_health_monitor.py` -> PASS
 
 ID: T832
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix MIDI hub lifecycle race and silent subscriber error swallowing
 Description:
 - Goal / acceptance criteria: `_running = True` before thread start. Subscriber exceptions logged at WARNING. Guarded singleton.
@@ -19090,11 +19188,18 @@ Description:
 - Estimated effort: Low
 - Required outputs: Reordered flag, logged exceptions, guarded singleton.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 16:23 EDT - Codex
+- Completion notes:
+  - Confirmed `MidiHub.start()` already sets `_running = True` before launching the worker thread, then added regression coverage to lock that lifecycle ordering in place.
+  - Updated `app/services/midi_hub/hub.py` so subscriber callback failures are logged at `WARNING` instead of being silently swallowed during inbound dispatch.
+  - Added guarded double-checked singleton initialization for both `get_midi_hub()` and `get_midi_gateway_manager()` to remove racy first-access construction.
+- Validation:
+  - `pytest -q tests/midi_hub/test_hub.py tests/midi_hub/test_gateway.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/midi_hub/hub.py app/services/midi_hub/gateway.py tests/midi_hub/test_hub.py tests/midi_hub/test_gateway.py` -> PASS
 
 ID: T833
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix MIDI router delayed dispatch eviction order and WebSocket emission
 Description:
 - Goal / acceptance criteria: Evict least urgent event on overflow. WS broadcasts use `call_soon_threadsafe`.
@@ -19103,11 +19208,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Correct eviction, threadsafe emission, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 16:23 EDT - Codex
+- Completion notes:
+  - Fixed `app/services/midi_hub/router.py` delayed-dispatch overflow handling so the queue keeps the most urgent event and evicts the least urgent pending item when capacity is exceeded.
+  - Reworked realtime route-event publishing to use the publisher’s threadsafe path, and updated `app/services/event_publisher.py` so worker-thread callers schedule onto a bound loop with `call_soon_threadsafe` while in-loop callers schedule onto the current running loop without `asyncio.run()`.
+  - Added regression coverage for overflow eviction order, worker-thread publish behavior, and the async-loop publisher edge case that initially surfaced as an unawaited-coroutine warning in the widened route suite.
+- Validation:
+  - `pytest -q tests/test_event_publisher.py tests/midi_hub/test_router.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/event_publisher.py app/services/midi_hub/router.py tests/test_event_publisher.py tests/midi_hub/test_router.py` -> PASS
 
 ID: T834
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix ConfigManager singleton, None validation, observer iteration, sensitive fields, list coercion
 Description:
 - Goal / acceptance criteria: Locked singleton. `None` handled. Snapshot iteration. Masked sensitive defaults. Element type coercion.
@@ -19116,11 +19228,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: All five fixes with tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 16:23 EDT - Codex
+- Completion notes:
+  - Added locked double-checked singleton initialization in `app/config.py` so concurrent `ConfigManager.get_instance()` callers cannot race object creation.
+  - Centralized config coercion and validation to allow `None`, coerce list/scalar element types deterministically, and reject only values that still violate the schema after coercion.
+  - Switched observer notification to snapshot iteration and masked sensitive defaults/current values in schema and option-info responses to prevent password disclosure.
+- Validation:
+  - `pytest -q tests/test_config_manager_validation.py tests/test_atomic_config_writes.py tests/test_config_hot_reload_cluster_sync.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py tests/test_config_manager_validation.py` -> PASS
 
 ID: T835
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix database retry flag scope and async `time.sleep` blocking
 Description:
 - Goal / acceptance criteria: `_sqlite_lock_retry_active` is instance-level. No `time.sleep()` in async paths.
@@ -19129,11 +19248,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Instance flag, async-safe retry.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 16:23 EDT - Codex
+- Completion notes:
+  - Moved `_sqlite_lock_retry_active` to per-session instance state for both `RetryingSession` and `RetryingAsyncSession` in `app/database.py`, eliminating cross-session retry suppression.
+  - Audited the async SQLite lock retry path and confirmed it already uses `await asyncio.sleep(...)`; added regression coverage to prevent a blocking `time.sleep()` fallback from being reintroduced.
+  - Added concurrency-focused tests proving retry flags no longer leak between session instances.
+- Validation:
+  - `pytest -q tests/test_database_lock_retry.py tests/test_plugin_presets_routes.py tests/test_preset_exchange_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py tests/test_database_lock_retry.py` -> PASS
 
 ID: T836
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix graceful degradation dual-lock race and wire recovery path
 Description:
 - Goal / acceptance criteria: Single lock. Locked status mutations. `should_attempt_recovery` wired. Health loop exception guard.
@@ -19142,11 +19268,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Single lock, wired recovery, guarded loop, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-08 16:23 EDT - Codex
+- Completion notes:
+  - Collapsed `app/services/graceful_degradation.py` to a single re-entrant lock and moved feature-state, metrics, and registry reads/writes onto that shared lock discipline.
+  - Wired recovery gating through `should_attempt_recovery(feature.last_failure_at)` during feature execution so degraded and limited features can stay on fallback until the recovery timeout elapses.
+  - Hardened the health-check loop by snapshotting the feature registry before iteration and catching per-iteration exceptions so one failure no longer kills the background task.
+- Validation:
+  - `pytest -q tests/test_graceful_degradation.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/graceful_degradation.py tests/test_graceful_degradation.py` -> PASS
 
 ID: T837
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix event bus subscriber lock, sync callback isolation, and history trimming
 Description:
 - Goal / acceptance criteria: Locked subscriber access. Sync callbacks via `run_in_executor`. `deque(maxlen=N)` history.
@@ -19155,11 +19288,18 @@ Description:
 - Estimated effort: Low
 - Required outputs: Locked access, executor dispatch, deque history.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 00:03 EDT - Codex
+- Completion notes:
+  - Replaced the in-memory event history list in `app/services/event_bus.py` with a bounded `deque(maxlen=1000)`, so history trimming is now O(1) and cannot grow beyond the configured cap.
+  - Kept subscriber reads and history writes under the existing shared lock, and retained snapshot-based subscriber fan-out so concurrent unsubscribe activity cannot mutate the active publish iteration.
+  - Moved synchronous subscriber callbacks onto the executor via `run_in_executor(...)`, which prevents blocking subscribers from stalling the event loop while preserving async callback support.
+- Validation:
+  - `pytest -q tests/test_backend_audit_shared_state.py tests/test_timestamp_foundations.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/event_bus.py tests/test_backend_audit_shared_state.py` -> PASS
 
 ID: T838
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix circuit breaker `reset()` lock and windowed failure counting
 Description:
 - Goal / acceptance criteria: `reset()` acquires lock. Sliding time window for failure counting.
@@ -19168,8 +19308,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Locked reset, windowed counter, tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 00:03 EDT - Codex
+- Completion notes:
+  - Completed the circuit-breaker state locking cleanup in `app/services/circuit_breaker.py` by moving state mutation onto a shared re-entrant lock, so `reset()` now serializes against active `call(...)` state transitions instead of racing them.
+  - Preserved the existing sliding failure-window logic and added focused regression coverage proving stale failures age out and manual reset can run safely while a protected call is in flight.
+- Validation:
+  - `pytest -q tests/test_circuit_breaker.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/circuit_breaker.py tests/test_circuit_breaker.py` -> PASS
 
 ID: T839
 Status: [ ] Todo
@@ -19198,7 +19344,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08 - Claude
 
 ID: T841
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix CORS misconfiguration — `allow_credentials=True` with wildcard origin
 Description:
 - Goal / acceptance criteria: CORS origins from config. `allow_credentials=False` with wildcard. Safe defaults.
@@ -19207,8 +19353,15 @@ Description:
 - Estimated effort: Low
 - Required outputs: Config-driven CORS, correct credentials flag.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 00:03 EDT - Codex
+- Completion notes:
+  - Added `_resolve_cors_settings()` in `app/main.py` so FastAPI CORS middleware now reads `backend.cors_origins` from config instead of hard-coding wildcard origins.
+  - The CORS bootstrap now disables credentials automatically whenever `*` is present in the allowed origins set, which avoids the browser-rejected wildcard-credentials combination while preserving credentialed mode for explicit origin lists.
+  - Updated `app/routes/www.py` so the web-status surface reports the same effective origins/credential setting used by the app middleware.
+- Validation:
+  - `pytest -q tests/test_backend_audit_middleware.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/routes/www.py tests/test_backend_audit_middleware.py` -> PASS
 
 ID: T842
 Status: [ ] Todo
@@ -19330,15 +19483,554 @@ Subtasks:
     - Required outputs: Validation command results, residual-risk notes, and worklist completion state.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-08 20:51 EDT - Codex
+    Last updated: 2026-04-08 23:02 EDT - Codex
     - Completion notes:
       - `npm --prefix web run typecheck` -> PASS
-      - `npm --prefix web run lint` -> PASS with warnings only (`35 warnings`, `0 errors`)
+      - `npm --prefix web run lint` -> PASS (`0 warnings`, `0 errors`) after the follow-up warning cleanup slice
       - `npm --prefix web run build` -> PASS
       - `CI=1 npm test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx src/app/pages/ThemePage.test.tsx` (run from `web/`) -> PASS (`3 suites, 36 tests`)
-      - Residual risks: lint still reports 35 warnings across pre-existing test style debt, a few empty blocks, `SnapshotEditorPage` / `ClusterContext` fast-refresh warnings, and a stale constant-truthiness warning in `web/src/app/pages/AudioArtifactsPage.tsx`. The dormant `ThemePage` legacy layout remains hidden behind `showLegacyThemeLayout = false` and should be deleted in a follow-up slice rather than left indefinitely.
+      - `CI=1 npm test -- --runInBand --runTestsByPath src/app/pages/MidiHubPage.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/GroundControlProPage.test.tsx src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx src/app/pages/midi-hub/MidiHubEventsPage.test.tsx src/app/pages/midi-hub/MidiHubLabPage.test.tsx src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx src/app/pages/midi-hub/MidiHubTransportPage.test.tsx` (run from `web/`) -> PASS (`10 suites, 14 tests`)
+      - Follow-up cleanup landed after the first validation pass: removed the fake loading branch in `web/src/app/pages/AudioArtifactsPage.tsx`, simplified the F11 handler in `web/src/app/pages/PerformPage.tsx`, deleted the `web/src/app/pages/SnapshotEditorPage.tsx` re-export shim, split cluster context/hooks into `web/src/app/contexts/ClusterContextStore.ts` plus `web/src/app/contexts/useCluster.ts`, and converted the remaining test `require()` imports to `jest.requireActual` / `jest.requireMock` patterns so lint is now clean.
+      - Residual risks: the dormant `ThemePage` legacy layout still exists behind `showLegacyThemeLayout = false`, and `web/src/app/pages/LabsPage.tsx` still looks removable but remains blocked by unrelated local edits detected during the audit.
 Assigned to: Codex
-Last updated: 2026-04-08 20:51 EDT - Codex
+Last updated: 2026-04-08 23:02 EDT - Codex
 - Completion notes:
   - Landed the first aggressive frontend-release cleanup slice with high-confidence dead page, loader, and debug-artifact removals while preserving unrelated local edits already present in the worktree.
-  - The workstream remains open because the audit found additional follow-up cleanup worth doing, especially deleting the dormant `ThemePage` legacy branch for real, resolving the remaining lint warnings, and revisiting `LabsPage` after its unrelated local modifications are sorted out.
+  - Landed a second hardening slice that brought the frontend back to clean lint, removed the snapshot editor shim layer, split cluster provider/context/hook responsibilities, and normalized the remaining page-test import patterns.
+  - The workstream remains open because the audit still found additional follow-up cleanup worth doing, especially deleting the dormant `ThemePage` legacy branch for real and revisiting `LabsPage` after its unrelated local modifications are sorted out.
+
+## Frontend GUI Quality & Architecture
+
+ID: T848
+Status: [ ] Todo
+Title: Split monolithic `index.css` into co-located CSS modules
+Description:
+- Goal / acceptance criteria: Break the 10,400+ line `web/src/index.css` into co-located CSS files alongside the components they style. Navigation styles (~1,200 lines) move next to `web/src/app/components/navigation/`, signal-chain styles next to `HorizontalSignalChain/`, plugin-card styles next to `PluginCards/`, and so on. The root `index.css` retains only global resets, CSS custom-property definitions, and body/root styling. Build output and visual appearance must remain identical.
+- Why it matters: A single 10K+ line stylesheet is the single biggest frontend maintainability risk. Co-located styles reduce merge conflicts, improve discoverability, and make dead-CSS detection trivial.
+- Dependencies: T847
+- Estimated effort: High
+- Required outputs: Co-located CSS files per component family, trimmed `index.css`, build/lint/typecheck validation, and visual regression evidence (before/after screenshots or build-hash comparison).
+Subtasks:
+  - ID: T848-subA
+    Status: [ ] Todo
+    Title: Extract navigation shell styles from `index.css`
+    Description:
+    - Goal / acceptance criteria: Move all `.topbar-pro`, `.nav-tab-*`, `.nav-mobile-*`, `.nav-hamburger-*`, `.nav-active-*`, `.nav-maturity-*`, `.advanced-menu-*`, and related responsive media queries into a new `web/src/app/components/navigation/NavigationShell.css` (or equivalent co-located file). Import from the consuming component. Verify no visual changes.
+    - Why it matters: Navigation styles are ~1,200 lines and form a self-contained block with no external dependents.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: New CSS file, updated imports, build validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08
+  - ID: T848-subB
+    Status: [ ] Todo
+    Title: Extract signal-chain, plugin-card, and routing-panel styles
+    Description:
+    - Goal / acceptance criteria: Move `.horizontal-chain`, `.h-plugin-*`, `.h-signal-*`, `.h-sidechain-*`, `.chain-panel*`, `.bottom-routing-panel*`, `.loader-card*`, `.plugin-tooltip*`, `.plugin-card*`, `.disclosure-*` and related blocks into CSS files co-located with `HorizontalSignalChain/`, `ChainPanel/`, `PluginCards/`, and `BottomRoutingPanel/` respectively.
+    - Why it matters: These are large self-contained visual systems (~2,000+ lines combined) with no cross-component style sharing.
+    - Dependencies: T848-subA
+    - Estimated effort: Medium
+    - Required outputs: Co-located CSS files, updated imports, build validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08
+  - ID: T848-subC
+    Status: [ ] Todo
+    Title: Extract remaining component-scoped styles and validate trimmed root
+    Description:
+    - Goal / acceptance criteria: Move remaining scoped blocks (platform modal, audio engine page, metering, React Flow overrides, notification panel, etc.) to co-located files. The residual `index.css` should be under 500 lines containing only `:root` variables, global resets, body/root styling, and shared utility classes.
+    - Why it matters: Completes the CSS decomposition so the monolith is fully retired.
+    - Dependencies: T848-subB
+    - Estimated effort: Medium
+    - Required outputs: Trimmed `index.css`, all component CSS co-located, full build/lint/test validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T849
+Status: [ ] Todo
+Title: Unify design tokens — eliminate dual `:root` / Carbon token layer
+Description:
+- Goal / acceptance criteria: Audit all CSS custom properties defined in `web/src/index.css` `:root` and identify those that duplicate Carbon tokens written by the theme system (`themes.ts`). Remove the raw `:root` defaults for any property already aliased to a `--cds-*` token. Ensure all component CSS references use the unified token (either the Carbon alias or the custom alias, not both interchangeably). Hard-coded hex values (`#60a5fa`, `#cbd5e1`, `#0f62fe`, etc.) scattered through `index.css` must be replaced with the appropriate token reference.
+- Why it matters: The dual-token layer undermines the theme system — switching themes via the Carbon provider leaves raw `:root` fallbacks unchanged, causing visual inconsistency. Hard-coded hex values bypass theming entirely.
+- Dependencies: T848
+- Estimated effort: Medium
+- Required outputs: Updated `index.css` `:root` block, updated component CSS references, theme switching validation across all four Carbon themes (white, g10, g90, g100), and build validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T850
+Status: [ ] Todo
+Title: Decompose `AppShell` into focused hooks and sub-components
+Description:
+- Goal / acceptance criteria: Extract the following concerns from `web/src/app/layout/AppShell.tsx` into dedicated hooks and components: (1) `useRestartBackend()` hook encapsulating restart state machine, health polling, websocket status tracking, and progress steps (~80 lines); (2) `useRunningRoutes()` hook encapsulating route tracking, session persistence, and window close animation (~40 lines); (3) `ShellLauncherPanel` component for the start-menu flyout rendering (~120 lines); (4) `RestartOverlay` component for the restart progress UI (~50 lines). The resulting `AppShell` should be a thin composition root under 150 lines.
+- Why it matters: AppShell currently manages ~15 state variables, 8+ useEffect hooks, and multiple refs, making it a re-render hotspot and difficult to reason about.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Extracted hooks/components, updated AppShell, existing test suite still passing, build validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T851
+Status: [ ] Todo
+Title: Consolidate overlapping navigation systems into a single adaptive component
+Description:
+- Goal / acceptance criteria: Unify the three navigation rendering paths — `shell-launcher` panel (start menu tiles), `topbar-pro` nav bar (pill-shaped tab items), and hamburger mobile menu (card grid) — into a single `NavigationItems` renderer that adapts to context (launcher panel vs. top bar vs. mobile). All three currently consume `launcherCatalog.ts` and `advancedMenuItems.ts` but render items with different markup and duplicated logic. The unified renderer should accept a `variant` prop (`'launcher' | 'topbar' | 'mobile'`) and share item rendering, active-state detection, and prefetch-on-hover behavior.
+- Why it matters: Three rendering paths for the same navigation data triples the maintenance surface and causes visual drift between desktop and mobile.
+- Dependencies: T848, T850
+- Estimated effort: High
+- Required outputs: Unified navigation renderer component, updated consumers, visual parity verification, build/test validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T852
+Status: [ ] Todo
+Title: Migrate custom CSS primitives to Carbon components
+Description:
+- Goal / acceptance criteria: Replace the custom CSS-only primitives defined in `index.css` (`.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.card`, `.dialog`, `.dialog-backdrop`, `.input`, `.combobox`, `.table`, `.badge`, `.pill`, `.menu`, `.menu-item`, `.modal`, `.toast`) with their Carbon Design System equivalents (`Button`, `Tile`, `ComposedModal`, `TextInput`, `DataTable`, `Tag`, `OverflowMenu`, `ToastNotification`, etc.) or with thin wrappers around Carbon components that preserve any domain-specific styling. Remove the replaced CSS blocks from `index.css`.
+- Why it matters: The codebase mixes Carbon components in some places with hand-rolled CSS classes elsewhere, creating visual inconsistency and duplicated effort. Carbon conformance is mandated by the project's own design standard (`docs/design/CARBON_CONFORMANCE_STANDARD.md`).
+- Dependencies: T848, T849
+- Estimated effort: High
+- Required outputs: Updated component files, removed CSS blocks, Carbon conformance checklist evidence, build/lint/test validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T853
+Status: [ ] Todo
+Title: Align responsive breakpoints to Carbon Design System standard
+Description:
+- Goal / acceptance criteria: Replace the ad-hoc responsive breakpoints (`768px`, `820px`, `960px`, `1200px`, `1600px`) used across `index.css` and `AppShell.css` with Carbon's standard breakpoints (`sm: 320px`, `md: 672px`, `lg: 1056px`, `xlg: 1312px`, `max: 1584px`) or documented deviations justified by the audio workspace's minimum-viewport requirements. Define breakpoint CSS custom properties in the global token layer and reference them consistently.
+- Why it matters: Inconsistent breakpoints cause overlapping or conflicting media-query rules and make responsive behavior unpredictable.
+- Dependencies: T848, T849
+- Estimated effort: Medium
+- Required outputs: Updated media queries, breakpoint token definitions, responsive behavior verification at each breakpoint, build validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T854
+Status: [ ] Todo
+Title: Improve page loading states and per-page error boundaries
+Description:
+- Goal / acceptance criteria: (1) Replace the generic `PageLoader` spinner with skeleton screens for the 5 most data-heavy pages (Audio Engine, Metering, DSP, Snapshot Editor, MIDI Hub). (2) Add per-page `ErrorBoundary` wrappers with retry-action buttons instead of silent redirects (currently `MeteringPage` and `PipeWirePage` silently redirect to `/engine` on load failure). (3) Add `prefers-reduced-motion` support to the boot splash — skip the 4-second timer and show content immediately.
+- Why it matters: Silent redirects on failure hide errors from operators. Skeleton screens reduce perceived latency for professional users who expect instant feedback.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Skeleton components, per-page error boundaries, reduced-motion boot splash, build/test validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T855
+Status: [ ] Todo
+Title: Accessibility hardening pass for shell and navigation
+Description:
+- Goal / acceptance criteria: (1) Replace the literal `X` text in `.app-window__close` with a Carbon `Close` icon and proper `aria-label`. (2) Add visible `:focus-visible` indicators to all interactive elements in `.nav-mobile-item`, `.start-menu-card`, and `.shell-launcher__button` that currently lack them in dark themes. (3) Ensure all menus and flyouts trap focus when open and return focus to the trigger on close. (4) Add `aria-live="polite"` to the latency-pressure readout and taskbar clock so screen readers announce status changes. (5) Run the Carbon accessibility audit checklist and fix any remaining gaps.
+- Why it matters: The platform has good accessibility foundations (ARIA labels, keyboard dismiss, role attributes) but has gaps in focus management and visible focus indicators that degrade the experience for keyboard and assistive-technology users.
+- Dependencies: T851
+- Estimated effort: Medium
+- Required outputs: Updated shell/navigation components, focus-trap implementation, Carbon a11y audit results, build/test validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - T855 end marker
+
+## Carbon Compliance & GUI Polish
+
+ID: T856
+Status: [ ] Todo
+Title: Purge hard-coded hex colors from `index.css` — replace with `--cds-*` tokens
+Description:
+- Goal / acceptance criteria: Audit every hard-coded hex color in `web/src/index.css` (estimated 200+ occurrences of `#60a5fa`, `#cbd5e1`, `#0f62fe`, `#93c5fd`, `#f1f5f9`, `#94a3b8`, `#1e293b`, `#fda4af`, etc.) and replace each with the semantically correct Carbon token (`--cds-link-primary`, `--cds-text-secondary`, `--cds-border-subtle`, `--cds-support-*`, etc.) or the matching custom alias from `themes.ts`. The FLAT/Monochrome design direction means no gradients or glow — only flat token-driven fills.
+- Why it matters: Hard-coded hex values bypass the theme system entirely, so switching between g100/g90/g10/white themes leaves hundreds of elements unchanged. This is the single highest-severity Carbon conformance violation per the project's own conformance matrix (severity: Critical).
+- Dependencies: T848 (CSS split makes this easier to audit per-component)
+- Estimated effort: High
+- Required outputs: Zero raw hex colors in component CSS (`:root` definitions excepted), theme-switching validation across all four Carbon shells.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T857
+Status: [ ] Todo
+Title: Replace custom `.btn` / `.btn-primary` / `.btn-ghost` with Carbon `Button` variants
+Description:
+- Goal / acceptance criteria: Remove the `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm` CSS classes from `index.css` and replace every usage with Carbon `<Button kind="primary|secondary|ghost|tertiary|danger" size="sm|md|lg">`. The FLAT style is already Carbon's default — no additional styling needed.
+- Why it matters: Carbon conformance standard §3.1 mandates `@carbon/react` components before bespoke controls. Custom buttons lack Carbon's built-in focus management, disabled states, icon placement, and theme token integration.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Removed CSS blocks, updated TSX files, build/test validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T858
+Status: [ ] Todo
+Title: Replace custom `.card` / `.stat-card` / `.hero` with Carbon `Tile` and `ClickableTile`
+Description:
+- Goal / acceptance criteria: Migrate all usages of the `.card`, `.stat-card`, `.hero`, `.loader-card`, `.list-item` CSS classes to Carbon `Tile`, `ClickableTile`, or `ExpandableTile` with Carbon layer tokens for backgrounds and borders. Stat values should use Carbon `heading-03` type tokens.
+- Why it matters: Carbon tiles provide built-in layering, focus treatment, and theme integration. The current cards use hard-coded borders (`2px solid var(--primary)`) that don't follow Carbon's flat border-subtle pattern.
+- Dependencies: T856
+- Estimated effort: Medium
+- Required outputs: Removed CSS blocks, Carbon Tile usage, visual parity validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T859
+Status: [ ] Todo
+Title: Replace custom `.dialog` / `.modal` with Carbon `ComposedModal`
+Description:
+- Goal / acceptance criteria: Remove the `.dialog`, `.dialog-backdrop`, `.modal`, `.modal-backdrop`, `.modal-header`, `.modal-body`, `.modal-footer` CSS classes and replace all usages with Carbon `ComposedModal`, `ModalHeader`, `ModalBody`, `ModalFooter`. Focus trap, ESC dismissal, and backdrop behavior come for free from Carbon.
+- Why it matters: Custom modals lack proper focus trapping and screen-reader announcements. Carbon conformance standard §3.12 requires Carbon dialog patterns.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Removed CSS blocks, Carbon modal usage, a11y validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T860
+Status: [ ] Todo
+Title: Replace custom `.table` with Carbon `DataTable` pattern
+Description:
+- Goal / acceptance criteria: Remove the `.table` CSS class and migrate usages to Carbon `DataTable`, `Table`, `TableHead`, `TableRow`, `TableHeader`, `TableBody`, `TableCell`. Apply Carbon's sortable/filterable patterns where applicable. The FLAT style uses Carbon's default `zebra={false}` with `--cds-border-subtle` row separators.
+- Why it matters: Carbon tables provide built-in keyboard navigation, sort semantics, and responsive overflow handling. Custom tables miss these and have inconsistent hover states.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Carbon DataTable migration, removed CSS, keyboard navigation validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T861
+Status: [ ] Todo
+Title: Replace custom `.input` / `.combobox` with Carbon `TextInput` / `ComboBox`
+Description:
+- Goal / acceptance criteria: Remove the `.input` and `.combobox` CSS classes and replace with Carbon `TextInput`, `TextArea`, `NumberInput`, `ComboBox`, `Dropdown`, and `Select` as appropriate. Apply Carbon form validation patterns (inline error, warning, helper text).
+- Why it matters: Carbon form controls provide label associations, error state semantics, helper text, and character count out of the box. The current inputs have bare focus rings and no validation states.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Carbon form control migration, removed CSS, form validation behavior.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T862
+Status: [ ] Todo
+Title: Normalize spacing to Carbon 2x grid (8px base unit)
+Description:
+- Goal / acceptance criteria: Audit all `padding`, `margin`, and `gap` values in `index.css` and co-located CSS files. Replace non-8px-aligned values (7px, 9px, 10px, 11px, 14px, etc.) with the nearest Carbon spacing token (`--cds-spacing-01` through `--cds-spacing-13`). The 2x grid uses an 8px base: 2, 4, 8, 12, 16, 24, 32, 48, 64, 96px.
+- Why it matters: Carbon conformance standard §3.8 requires 2x grid alignment. Inconsistent spacing creates subtle visual misalignment between Carbon components and custom elements.
+- Dependencies: T848
+- Estimated effort: Medium
+- Required outputs: All spacing values aligned to Carbon tokens, visual regression check.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T863
+Status: [ ] Todo
+Title: Standardize on Carbon type scale — remove non-token font sizes
+Description:
+- Goal / acceptance criteria: Replace all custom `font-size` values and the `--type-caption`, `--type-label`, `--type-body`, `--type-heading`, `--type-display`, `--type-subheading` custom tokens with Carbon's productive type scale tokens (`--cds-label-01-*`, `--cds-body-compact-01-*`, `--cds-body-01-*`, `--cds-heading-01-*` through `--cds-heading-07-*`). Maintain IBM Plex Sans as the primary face.
+- Why it matters: The custom type scale runs parallel to Carbon's and creates inconsistent text sizing when Carbon components sit adjacent to custom-styled text. Carbon conformance standard §3.3–§3.5.
+- Dependencies: T856
+- Estimated effort: Medium
+- Required outputs: Carbon type token usage throughout, consistent type hierarchy.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T864
+Status: [ ] Todo
+Title: Consolidate icon systems — standardize on `@carbon/icons-react`
+Description:
+- Goal / acceptance criteria: Audit all icon imports across `web/src/app/`. For each `@phosphor-icons/react`, `lucide-react`, and `@mui/icons-material` usage, find the equivalent Carbon icon in `@carbon/icons-react` and replace. Where no Carbon equivalent exists, document the exception. Target: eliminate Phosphor and Lucide as runtime dependencies, retain MUI icons only for MUI-specific surfaces pending full migration.
+- Why it matters: Carbon conformance standard §3.9 requires consistent Carbon/IBM iconography. Three parallel icon sets create visual inconsistency in weight, optical size, and stroke treatment.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Migrated icon imports, documented exceptions, dependency removal where possible.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T865
+Status: [ ] Todo
+Title: Replace custom notification/toast system with Carbon `ToastNotification` / `ActionableNotification`
+Description:
+- Goal / acceptance criteria: Replace the custom `.notification-panel`, `.notification-item`, `.toast`, `.toast-container` CSS classes and the `Toasts.tsx` implementation with Carbon `ToastNotification` and `ActionableNotification` rendered in a Carbon-aligned notification panel. Use Carbon severity tokens (success/warning/error/info) and Carbon's built-in close/action patterns.
+- Why it matters: Carbon conformance standard §3.12 requires Carbon notification patterns. Custom toasts miss Carbon's accessible role announcements and auto-dismiss timing.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Carbon notification migration, removed custom CSS, screen-reader validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T866
+Status: [ ] Todo
+Title: Apply Carbon `Layer` nesting for proper layering context throughout the app
+Description:
+- Goal / acceptance criteria: Wrap content regions in Carbon `<Layer>` components to establish proper Carbon layering context. Currently many surfaces hard-code `--cds-layer-01` / `--cds-layer-02` references directly instead of letting Carbon's `Layer` component manage the nesting. This matters for the FLAT design because layer-01 vs layer-02 background differentiation is the primary visual hierarchy mechanism when there are no gradients or shadows.
+- Why it matters: Carbon's layering model provides automatic token escalation (layer-01 → layer-02 → layer-03) for nested contexts. Hard-coding layer tokens breaks when components are composed in different nesting depths.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Layer-wrapped content regions, removed hard-coded layer references.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T867
+Status: [ ] Todo
+Title: Replace custom `.menu` / `.menu-item` with Carbon `OverflowMenu` / `MenuButton`
+Description:
+- Goal / acceptance criteria: Replace the `.menu`, `.menu-item`, `.menu-item-content`, `.menu-item-label`, `.menu-item-desc` CSS classes with Carbon `OverflowMenu` / `OverflowMenuItem` or `MenuButton` / `MenuItem` patterns. Apply to context menus (e.g. desktop right-click in `HomePage.tsx`), power menus, and action menus.
+- Why it matters: Carbon menus provide built-in focus management, keyboard navigation (arrow keys, type-ahead), and ARIA menu semantics. Custom menus currently lack type-ahead and have inconsistent focus treatment.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Carbon menu usage, removed CSS, keyboard navigation validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T868
+Status: [ ] Todo
+Title: Replace custom `.badge` / `.pill` with Carbon `Tag` variants
+Description:
+- Goal / acceptance criteria: Remove the `.badge`, `.pill`, `.pill.success`, `.pill.warn`, `.pill.muted` CSS classes and replace all usages with Carbon `<Tag type="red|magenta|purple|blue|cyan|teal|green|gray|cool-gray|warm-gray|high-contrast">`. The FLAT/Monochrome design uses Carbon's default flat tag style (no filter tag rounding).
+- Why it matters: Carbon tags provide consistent sizing, color semantics, and interactive variants (filter, dismissible). Custom badges use hard-coded border colors that don't theme.
+- Dependencies: T856
+- Estimated effort: Low
+- Required outputs: Carbon Tag migration, removed CSS.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T869
+Status: [ ] Todo
+Title: Add Carbon `GlobalHeader` / `HeaderPanel` for the app shell navigation
+Description:
+- Goal / acceptance criteria: Replace the custom `.topbar-pro` navigation bar with Carbon's `Header`, `HeaderName`, `HeaderNavigation`, `HeaderMenuItem`, `HeaderGlobalAction`, `HeaderPanel`, and `SideNav` components. The FLAT style aligns perfectly with Carbon's default flat header treatment. The hamburger/mobile menu should use Carbon's `SideNav` with `SideNavMenuItem` rather than the custom `.nav-mobile-menu`.
+- Why it matters: Carbon conformance standard §3.12 requires Carbon global header pattern. The current shell uses 1,200+ lines of custom CSS for navigation that Carbon provides out of the box with full a11y, keyboard navigation, and responsive behavior.
+- Dependencies: T848, T851
+- Estimated effort: High
+- Required outputs: Carbon header/sidenav implementation, removed custom nav CSS, responsive validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T870
+Status: [ ] Todo
+Title: Apply sentence-case and plain-language copy to all UI text per Carbon writing guidelines
+Description:
+- Goal / acceptance criteria: Audit all static UI text (button labels, headings, navigation items, tooltips, status messages) for: (1) sentence case instead of UPPER CASE or Title Case (Carbon §3.13), (2) explicit action wording ("Save changes" not "Submit"), (3) plain language avoiding jargon. Current violations include `UPPER_CASE` navigation labels, `text-transform: uppercase` on 50+ CSS classes, and button labels like "Power" and "X".
+- Why it matters: Carbon's writing guidelines mandate sentence case for product UI. The current shell uses aggressive uppercase treatment (`letter-spacing: 0.1em; text-transform: uppercase`) that conflicts with Carbon's productive type style.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T871
+Status: [ ] Todo
+Title: Replace custom loading patterns with Carbon `Loading` / `InlineLoading` / skeleton states
+Description:
+- Goal / acceptance criteria: (1) Replace the generic `PageLoader` with Carbon `Loading` component. (2) Add Carbon `SkeletonText`, `SkeletonPlaceholder`, and `DataTableSkeleton` for page-level skeleton loading on the 5 heaviest pages. (3) Replace the custom `.skeleton` CSS class and `@keyframes shimmer` with Carbon's skeleton components. (4) Use Carbon `InlineLoading` for in-context loading states (button actions, form submissions).
+- Why it matters: Carbon conformance standard §3.12 requires Carbon loading patterns. Custom skeletons don't follow Carbon's animation timing tokens.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Carbon loading components, removed custom skeleton CSS, visual consistency.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T872
+Status: [ ] Todo
+Title: Replace custom empty-state patterns with Carbon empty-state guidance
+Description:
+- Goal / acceptance criteria: Audit the codebase for empty-state rendering (empty lists, no-results search, first-use states). Replace custom implementations (`.h-empty-state`, `.chain-panel-empty`, italic placeholder text) with Carbon's empty-state pattern: illustration (optional for FLAT style), heading, description, and primary action. Use Carbon `Tile` as the container with `--cds-layer-01` background.
+- Why it matters: Carbon conformance standard §3.12 requires Carbon empty-state patterns. Current empty states are inconsistent — some show italic text, some show nothing, some show dashed-border CTAs.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Consistent empty-state component, Carbon-aligned rendering.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T873
+Status: [ ] Todo
+Title: Add Carbon focus management — visible focus indicators, focus trapping, focus return
+Description:
+- Goal / acceptance criteria: (1) Ensure all interactive elements have a visible `2px solid var(--cds-focus)` outline on `:focus-visible` — audit and fix the ~20 custom button/link/card classes that override or suppress focus outlines. (2) Add focus trapping to all overlay/flyout components (start-menu panel, power menu, advanced menu, context menu) using Carbon's built-in trap or `@carbon/react`'s `FocusScope`. (3) Return focus to the trigger element when overlays close. (4) Ensure focus order follows visual order in the navigation bar.
+- Why it matters: Carbon conformance standard §3.14 requires Carbon-level focus behavior. Several current components suppress focus via `outline: none` without providing a visible alternative.
+- Dependencies: T855
+- Estimated effort: Medium
+- Required outputs: Visible focus indicators on all interactives, focus-trap implementation, automated focus-order testing.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T874
+Status: [ ] Todo
+Title: Remove `border-radius` values that conflict with FLAT design intent
+Description:
+- Goal / acceptance criteria: The theme system defines `border-radius-sm: 0px`, `border-radius-md: 0px`, `border-radius-lg: 4px` which is correct for the FLAT/Monochrome design. However, `index.css` contains 30+ occurrences of `border-radius: 10px`, `12px`, `14px`, `16px`, `18px`, and `999px` (pill shapes) that override the theme intent. Audit all border-radius values: (1) Replace `999px` pill shapes with `0` for true FLAT or retain only on Carbon `Tag` where Carbon itself uses pill shapes. (2) Replace `10px–18px` rounded corners with `0` or the `--border-radius-lg: 4px` token. (3) Ensure Carbon component border-radius is not overridden.
+- Why it matters: Rounded corners conflict with the stated FLAT design direction and create visual inconsistency between Carbon's sharp-cornered components and custom rounded elements.
+- Dependencies: T856
+- Estimated effort: Low
+- Required outputs: Consistent border-radius treatment, FLAT design validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T875
+Status: [ ] Todo
+Title: Remove `box-shadow` and `backdrop-filter` remnants for true FLAT monochrome
+Description:
+- Goal / acceptance criteria: The theme system sets `shadow-strong: none` and `shadow-soft: none`, and the FLAT design intent is zero elevation shadows. However, `index.css` and `AppShell.css` still contain `box-shadow` declarations in 40+ places (including `inset` shadows for the Windows-style beveled button effect, `drop-shadow` filters on signal arrows, and overlay shadows). Audit all shadow declarations: (1) Remove `box-shadow` from buttons, cards, panels, and menus. (2) Remove `backdrop-filter: blur()` from overlay backgrounds. (3) Retain only `box-shadow` used for Carbon's focus ring system or explicit `inset` borders used as visual indicators (not elevation). The result should be a truly flat, monochrome, zero-elevation UI.
+- Why it matters: Shadows and blurs create depth perception that conflicts with the FLAT/Monochrome design intent. They also hurt rendering performance on embedded Linux devices.
+- Dependencies: T856
+- Estimated effort: Low
+- Required outputs: Zero non-functional shadows, FLAT visual validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+## TUI Carbon Compliance
+
+ID: T876
+Status: [ ] Todo
+Title: Adopt Carbon notification pattern — inline vs toast distinction in both TUIs
+Description:
+- Goal / acceptance criteria: (1) Route contextual API errors (e.g. "Audio start failed") to inline notification widgets rendered within the active route panel instead of transient toast popups. (2) Reserve toast notifications for global ephemeral events (theme changed, undo applied). (3) In the Ink TUI, add auto-dismiss timer, dismiss action, and leading severity icon to the Toast component per Carbon notification spec. (4) In the Textual TUI, add an InlineNotification widget that renders inside section panels with Carbon error/warning/info/success color mapping.
+- Why it matters: Carbon's notification pattern separates contextual feedback from global alerts; mixing them confuses operators about whether an issue is route-local or system-wide.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: InlineNotification widget (Textual), updated Toast component (Ink), route-level notification rendering, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T877
+Status: [ ] Todo
+Title: Replace plain-text header with structured Carbon UI Shell Header
+Description:
+- Goal / acceptance criteria: (1) Restructure `#shell-header` in the Textual TUI from two raw `Static` widgets with a concatenated metadata string into a left section (product name/version) and a right section with structured status badges (connection state dot + label, pending jobs count, environment, workspace). (2) Apply color-coded status indicators using `$carbon-success` / `$carbon-warning` / `$carbon-error` for connection state. (3) In the Ink TUI, update the `Header` component to match the same structured layout.
+- Why it matters: Carbon's UI Shell Header spec requires structured product identity and global status, not a single concatenated text line.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated Textual shell-header compose and TCSS, updated Ink Header component, visual validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T878
+Status: [ ] Todo
+Title: Implement Carbon loading/skeleton states for route mount and data fetch
+Description:
+- Goal / acceptance criteria: (1) Add an inline loading indicator or skeleton placeholder to every `section-panel` and `DataTable` in the Textual TUI that displays while waiting for the first subscription payload. (2) In the Ink TUI, add a Spinner or skeleton component to each screen that renders before data arrives. (3) Remove the current behavior where tables and panels appear empty with no visual feedback until the first poll completes.
+- Why it matters: Carbon's loading pattern requires visible feedback during data fetch; empty tables with no indicator leave operators uncertain whether data is loading or missing.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Loading/skeleton components for both TUIs, integration into route screens, visual validation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T879
+Status: [ ] Todo
+Title: Add structured Carbon empty states with icon, message, and action
+Description:
+- Goal / acceptance criteria: (1) Replace bare text fallbacks like `"No recent events."`, `"No runtime output."`, and empty chain/template tables with structured empty-state widgets containing an icon or illustration, a primary message explaining why data is absent, and an optional action button (e.g. "Refresh", "Create chain"). (2) Apply this consistently across Dashboard events, Chains screen, Runtime output panel, and any other surface that can be empty.
+- Why it matters: Carbon's empty-state pattern provides user guidance instead of leaving operators staring at blank panels.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Reusable EmptyState widget for both TUIs, integration into relevant screens.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T880
+Status: [ ] Todo
+Title: Improve form dialog validation to per-field inline errors per Carbon form pattern
+Description:
+- Goal / acceptance criteria: (1) Replace the single `#validation-error` label at the bottom of `FormDialog` and `InputDialog` with per-field inline error messages rendered directly below each offending input. (2) Add a required-field indicator (`*`) next to labels for required fields. (3) Tint input borders `$carbon-error` when validation fails. (4) Preserve existing `hint` (helper text) rendering.
+- Why it matters: Carbon's form pattern requires per-field inline validation for usability; a single bottom error forces operators to scan the entire form to find which field failed.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated FormDialog/InputDialog with per-field validation, TCSS error-state styles, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T881
+Status: [ ] Todo
+Title: Use Carbon status indicators (colored dot + label) for connection and service states
+Description:
+- Goal / acceptance criteria: (1) Replace the plain-text `_connection_status` string in the Textual header with a colored dot (green/yellow/red) plus label using `$carbon-success` / `$carbon-warning` / `$carbon-error`. (2) Apply the same pattern to service state rows in the Dashboard services table. (3) In the Ink TUI, integrate the existing `StatusDot` component into the StatusBar for connection state display.
+- Why it matters: Carbon's status-indicator pattern uses color + shape for accessibility; plain text status is harder to scan in operational contexts.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: StatusDot integration in both TUIs, updated header and service table rendering.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T882
+Status: [ ] Todo
+Title: Implement Carbon left-panel navigation with collapsible groups and arrow-key focus
+Description:
+- Goal / acceptance criteria: (1) Make nav groups in the Textual TUI collapsible/expandable sections instead of static labels. (2) Change the active-state indicator from a left border to a `$carbon-selected` background fill matching Carbon's side-nav spec. (3) Add arrow-key navigation within the nav pane so Tab moves focus out of the panel instead of cycling through all nav buttons. (4) Persist collapsed/expanded group state in session state.
+- Why it matters: Carbon's UI Shell Left Panel spec requires structured, keyboard-navigable side navigation with collapsible groups.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated nav-pane compose/TCSS, arrow-key focus management, session-state persistence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T883
+Status: [ ] Todo
+Title: Unify Ink OLED palette with Carbon color tokens for cross-TUI brand consistency
+Description:
+- Goal / acceptance criteria: (1) Replace the Ink `oledPalette` in `tui/src/palette.ts` (cyan `#36f4ff`, neon green `#7dff72`, coral `#ff6b6b`) with Carbon-aligned tokens (`$blue-60` / `#0f62fe`, `$green-40` / `#24a148`, `$red-50` / `#fa4d56`, `$yellow-30` / `#f1c21b`). (2) Update all Ink components and screens that reference `oledPalette` to use the new Carbon-aligned values. (3) Both TUIs should present the same product design language.
+- Why it matters: The Textual TUI uses Carbon's IBM color palette while the Ink TUI uses a completely different OLED-friendly palette, creating brand inconsistency for the same product.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Updated palette.ts, updated all Ink component color references, visual validation across all screens.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T884
+Status: [ ] Todo
+Title: Add breadcrumb/path context for deep route navigation
+Description:
+- Goal / acceptance criteria: (1) Add a breadcrumb or path indicator at the top of the Textual workspace panel showing the current navigation trail (e.g. `Dashboard / Audio / Engine Status`). (2) Make breadcrumb segments clickable to navigate back to parent routes. (3) In the Ink TUI, add a lightweight path indicator in the Header subtitle area showing the navigation context.
+- Why it matters: Carbon's breadcrumb component helps operators understand their position in the route hierarchy; currently `Escape` pops the route history with no visual trail showing what "Back" means.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Breadcrumb widget (Textual), path indicator (Ink), integration into shell layout.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08
+
+ID: T885
+Status: [ ] Todo
+Title: Improve DataTable rendering — column alignment, in-place updates, and interactive features
+Description:
+- Goal / acceptance criteria: (1) In the Textual TUI, replace the `_reset_table` + `add_row` rebuild pattern with in-place cell updates to eliminate flicker on every poll cycle. (2) In the Ink TUI, replace the pipe-delimited `columns.join(' | ')` DataTable with proper column-width padding, bold header styling, and a separator line. (3) Add row selection states for interactive tables (chains, services). (4) Where applicable, add sortable column headers per Carbon's Data Table spec.
+- Why it matters: Carbon's Data Table spec requires structured column headers, consistent widths, selection states, and optional sorting; the current implementations are minimal and flicker-prone.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Updated Textual subscription handlers with in-place updates, redesigned Ink DataTable component, row selection support, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08

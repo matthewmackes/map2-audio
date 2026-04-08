@@ -153,8 +153,7 @@ class FeatureAvailabilityManager:
         """
         self.features: Dict[str, Feature] = {}
         self.strategy = degradation_strategy or DegradationStrategy()
-        self._lock = asyncio.Lock()
-        self._state_lock = threading.RLock()
+        self._lock = threading.RLock()
         self._health_check_task: Optional[asyncio.Task] = None
         
         self._request_counts: Dict[str, int] = {}
@@ -165,7 +164,7 @@ class FeatureAvailabilityManager:
     
     def register_feature(self, feature: Feature) -> None:
         """Register a system feature."""
-        with self._state_lock:
+        with self._lock:
             self.features[feature.name] = feature
             self._request_counts[feature.name] = 0
             self._success_counts[feature.name] = 0
@@ -190,12 +189,12 @@ class FeatureAvailabilityManager:
         Returns:
             Result or fallback result
         """
-        with self._state_lock:
+        with self._lock:
             feature = self.features.get(feature_name)
         if not feature:
             raise ValueError(f"Unknown feature: {feature_name}")
 
-        with self._state_lock:
+        with self._lock:
             self._request_counts[feature_name] += 1
         
         try:
@@ -237,8 +236,9 @@ class FeatureAvailabilityManager:
     
     async def _check_dependencies(self, feature: Feature) -> bool:
         """Check if all dependencies are available."""
-        for dep_name in feature.dependencies:
-            dep = self.features.get(dep_name)
+        with self._lock:
+            dependencies = [self.features.get(dep_name) for dep_name in feature.dependencies]
+        for dep_name, dep in zip(feature.dependencies, dependencies):
             if not dep or not dep.is_operational:
                 logger.warning(
                     f"Feature {feature.name} dependency {dep_name} unavailable"
@@ -254,8 +254,9 @@ class FeatureAvailabilityManager:
         """Execute with fallback handler."""
         try:
             if level == "DEGRADED" and feature.degraded_handler:
-                feature.status = FeatureStatus.DEGRADED
-                self._degradation_events[feature.name] += 1
+                with self._lock:
+                    feature.status = FeatureStatus.DEGRADED
+                    self._degradation_events[feature.name] += 1
                 
                 result = await self._execute_handler(
                     feature.degraded_handler, *args, **kwargs
@@ -267,7 +268,8 @@ class FeatureAvailabilityManager:
                 }
             
             elif level == "LIMITED" and feature.limited_handler:
-                feature.status = FeatureStatus.LIMITED
+                with self._lock:
+                    feature.status = FeatureStatus.LIMITED
                 
                 result = await self._execute_handler(
                     feature.limited_handler, *args, **kwargs
@@ -279,7 +281,8 @@ class FeatureAvailabilityManager:
                 }
             
             else:
-                feature.status = FeatureStatus.UNAVAILABLE
+                with self._lock:
+                    feature.status = FeatureStatus.UNAVAILABLE
                 return {
                     "status": "unavailable",
                     "message": f"Feature {feature.name} unavailable"
@@ -287,7 +290,8 @@ class FeatureAvailabilityManager:
         
         except Exception as e:
             logger.error(f"Fallback execution failed: {e}")
-            feature.status = FeatureStatus.UNAVAILABLE
+            with self._lock:
+                feature.status = FeatureStatus.UNAVAILABLE
             return {"status": "unavailable", "message": str(e)}
     
     async def _execute_handler(self, 
@@ -302,7 +306,7 @@ class FeatureAvailabilityManager:
     
     async def _mark_success(self, feature_name: str) -> None:
         """Mark feature execution as successful."""
-        async with self._lock:
+        with self._lock:
             self._success_counts[feature_name] += 1
             
             feature = self.features[feature_name]
@@ -315,7 +319,7 @@ class FeatureAvailabilityManager:
     
     async def _mark_failure(self, feature_name: str, error: str) -> None:
         """Mark feature execution as failed."""
-        async with self._lock:
+        with self._lock:
             self._failure_counts[feature_name] += 1
             
             feature = self.features[feature_name]
@@ -356,13 +360,19 @@ class FeatureAvailabilityManager:
         try:
             while True:
                 await asyncio.sleep(interval_seconds)
-                await self._perform_health_checks()
+                try:
+                    await self._perform_health_checks()
+                except Exception as exc:
+                    logger.error("Feature health check loop iteration failed: %s", exc)
         except asyncio.CancelledError:
             pass
     
     async def _perform_health_checks(self) -> None:
         """Check health of all features."""
-        for feature in self.features.values():
+        with self._lock:
+            features = list(self.features.values())
+
+        for feature in features:
             if not feature.health_check:
                 continue
 
@@ -389,19 +399,19 @@ class FeatureAvailabilityManager:
     
     def get_feature_status(self, feature_name: str) -> Optional[FeatureStatus]:
         """Get current status of feature."""
-        with self._state_lock:
+        with self._lock:
             feature = self.features.get(feature_name)
         return feature.status if feature else None
     
     def get_feature_is_available(self, feature_name: str) -> bool:
         """Check if feature is available."""
-        with self._state_lock:
+        with self._lock:
             feature = self.features.get(feature_name)
         return feature.is_operational if feature else False
     
     def get_system_health(self) -> Dict[str, Any]:
         """Get overall system health."""
-        with self._state_lock:
+        with self._lock:
             features = list(self.features.values())
 
         core_features = [
@@ -436,7 +446,7 @@ class FeatureAvailabilityManager:
         """Get metrics for all features."""
         metrics = {}
         
-        with self._state_lock:
+        with self._lock:
             features = list(self.features.items())
             request_counts = dict(self._request_counts)
             success_counts = dict(self._success_counts)

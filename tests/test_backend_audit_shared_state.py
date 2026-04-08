@@ -35,6 +35,39 @@ def test_event_bus_publish_uses_subscriber_snapshot_during_unsubscribe():
     assert observed == [{"node": "a"}]
 
 
+def test_event_bus_sync_callbacks_run_off_event_loop_thread():
+    bus = EventBus()
+    callback_thread_ids: list[int] = []
+    event_loop_thread_ids: list[int] = []
+
+    def callback(data):
+        callback_thread_ids.append(threading.get_ident())
+
+    async def scenario():
+        event_loop_thread_ids.append(threading.get_ident())
+        await bus.subscribe(EventType.NODE_ONLINE, callback)
+        await bus.publish(EventType.NODE_ONLINE, {"node": "a"})
+
+    asyncio.run(scenario())
+
+    assert callback_thread_ids
+    assert callback_thread_ids[0] != event_loop_thread_ids[0]
+
+
+def test_event_bus_history_uses_bounded_deque():
+    bus = EventBus()
+
+    async def scenario():
+        for index in range(1005):
+            await bus.publish(EventType.NODE_ONLINE, {"node": f"node-{index}"})
+
+    asyncio.run(scenario())
+
+    assert bus._event_history.maxlen == 1000
+    assert len(bus._event_history) == 1000
+    assert bus.get_history(limit=1)[0]["data"]["node"] == "node-1004"
+
+
 def test_feature_manager_register_and_read_are_lock_safe():
     manager = FeatureAvailabilityManager()
 

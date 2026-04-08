@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Awaitable, Callable, Sequence
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text, inspect as sqlalchemy_inspect
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, UniqueConstraint, create_engine, event, text, inspect as sqlalchemy_inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -155,7 +155,9 @@ async def _run_async_sqlite_lock_retry(session: AsyncSession, operation_name: st
 class RetryingSession(Session):
     """SQLite session that retries transient writer-lock failures with UoW replay."""
 
-    _sqlite_lock_retry_active = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sqlite_lock_retry_active = False
 
     def flush(self, objects=None):
         if self._sqlite_lock_retry_active:
@@ -187,7 +189,9 @@ class RetryingSession(Session):
 class RetryingAsyncSession(AsyncSession):
     """Async SQLite session that retries transient writer-lock failures with UoW replay."""
 
-    _sqlite_lock_retry_active = False
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sqlite_lock_retry_active = False
 
     async def flush(self, objects=None):
         if self._sqlite_lock_retry_active:
@@ -858,12 +862,130 @@ async def _ensure_snapshot_graph_document_schema_async(conn) -> None:
     )
 
 
+def _ensure_preset_uniqueness_schema_sync() -> None:
+    """Deduplicate preset tables and enforce missing unique indexes."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        conn.execute(
+            text(
+                "DELETE FROM plugin_presets "
+                "WHERE id IN ("
+                "  SELECT newer.id "
+                "  FROM plugin_presets AS newer "
+                "  JOIN plugin_presets AS keeper "
+                "    ON newer.plugin_uri = keeper.plugin_uri "
+                "   AND newer.name = keeper.name "
+                "   AND newer.id > keeper.id"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "DELETE FROM preset_ratings "
+                "WHERE id IN ("
+                "  SELECT newer.id "
+                "  FROM preset_ratings AS newer "
+                "  JOIN preset_ratings AS keeper "
+                "    ON newer.preset_id = keeper.preset_id "
+                "   AND newer.user_fingerprint = keeper.user_fingerprint "
+                "   AND newer.id > keeper.id"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "UPDATE community_presets "
+                "SET rating_sum = COALESCE(("
+                "      SELECT SUM(rating) FROM preset_ratings "
+                "      WHERE preset_ratings.preset_id = community_presets.id"
+                "    ), 0.0), "
+                "    rating_count = COALESCE(("
+                "      SELECT COUNT(*) FROM preset_ratings "
+                "      WHERE preset_ratings.preset_id = community_presets.id"
+                "    ), 0)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_plugin_presets_plugin_uri_name_unique "
+                "ON plugin_presets (plugin_uri, name)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_preset_ratings_preset_fingerprint_unique "
+                "ON preset_ratings (preset_id, user_fingerprint)"
+            )
+        )
+
+
+async def _ensure_preset_uniqueness_schema_async(conn) -> None:
+    """Async variant of preset dedupe and uniqueness enforcement."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    await conn.execute(
+        text(
+            "DELETE FROM plugin_presets "
+            "WHERE id IN ("
+            "  SELECT newer.id "
+            "  FROM plugin_presets AS newer "
+            "  JOIN plugin_presets AS keeper "
+            "    ON newer.plugin_uri = keeper.plugin_uri "
+            "   AND newer.name = keeper.name "
+            "   AND newer.id > keeper.id"
+            ")"
+        )
+    )
+    await conn.execute(
+        text(
+            "DELETE FROM preset_ratings "
+            "WHERE id IN ("
+            "  SELECT newer.id "
+            "  FROM preset_ratings AS newer "
+            "  JOIN preset_ratings AS keeper "
+            "    ON newer.preset_id = keeper.preset_id "
+            "   AND newer.user_fingerprint = keeper.user_fingerprint "
+            "   AND newer.id > keeper.id"
+            ")"
+        )
+    )
+    await conn.execute(
+        text(
+            "UPDATE community_presets "
+            "SET rating_sum = COALESCE(("
+            "      SELECT SUM(rating) FROM preset_ratings "
+            "      WHERE preset_ratings.preset_id = community_presets.id"
+            "    ), 0.0), "
+            "    rating_count = COALESCE(("
+            "      SELECT COUNT(*) FROM preset_ratings "
+            "      WHERE preset_ratings.preset_id = community_presets.id"
+            "    ), 0)"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_plugin_presets_plugin_uri_name_unique "
+            "ON plugin_presets (plugin_uri, name)"
+        )
+    )
+    await conn.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_preset_ratings_preset_fingerprint_unique "
+            "ON preset_ratings (preset_id, user_fingerprint)"
+        )
+    )
+
+
 SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     (1, "special_settings_additive_sync", _ensure_special_settings_schema_sync, _ensure_special_settings_schema_async),
     (2, "midi_automation_identity_additive_sync", _ensure_midi_automation_identity_schema_sync, _ensure_midi_automation_identity_schema_async),
     (3, "chain_plugin_loader_state_additive_sync", _ensure_chain_plugin_loader_state_schema_sync, _ensure_chain_plugin_loader_state_schema_async),
     (4, "snapshot_device_additive_sync", _ensure_snapshot_device_schema_sync, _ensure_snapshot_device_schema_async),
     (5, "snapshot_graph_document_additive_sync", _ensure_snapshot_graph_document_schema_sync, _ensure_snapshot_graph_document_schema_async),
+    (6, "preset_uniqueness_enforcement_sync", _ensure_preset_uniqueness_schema_sync, _ensure_preset_uniqueness_schema_async),
 )
 
 
@@ -1061,7 +1183,7 @@ class PluginPreset(Base):
 
     # Composite unique constraint (plugin_uri + name)
     __table_args__ = (
-        # Allows multiple presets per plugin but not duplicate names per plugin
+        UniqueConstraint("plugin_uri", "name", name="uq_plugin_presets_plugin_uri_name"),
         {"sqlite_autoincrement": True},
     )
 
@@ -1141,7 +1263,7 @@ class PresetRating(Base):
 
     # Ensure one rating per user per preset
     __table_args__ = (
-        # UniqueConstraint ensures one rating per fingerprint per preset
+        UniqueConstraint("preset_id", "user_fingerprint", name="uq_preset_ratings_preset_fingerprint"),
         {"sqlite_autoincrement": True},
     )
 

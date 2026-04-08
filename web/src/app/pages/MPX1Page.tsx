@@ -6,7 +6,7 @@ import { Alert, Button, CircularProgress } from '@mui/material'
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MPX1/programNumber'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import '../components/MPX1/MPX1PageShell.css'
 

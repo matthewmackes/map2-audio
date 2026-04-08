@@ -25,7 +25,7 @@ import {
 import { Launch } from '@carbon/icons-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import type { PlatformLayerData } from '../../platform/model'
 import type { TesiraDeviceDetail, TesiraDeviceSummary } from '../Tesira/types'
 import { useTesiraDevice, useTesiraDevices } from '../Tesira/hooks/useTesiraApi'

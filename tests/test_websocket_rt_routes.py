@@ -38,6 +38,9 @@ class _FakeRealtimeBridge:
         self.disconnect_calls.append(client_id)
         self.clients.pop(client_id, None)
 
+    def clear_param_cache(self):
+        self._param_cache.clear()
+
     def get_stats(self):
         return {
             "connected_clients": len(self.clients),

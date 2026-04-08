@@ -3,6 +3,7 @@ Event Publisher Service
 Centralized event publishing for real-time WebSocket updates.
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from enum import Enum
@@ -73,14 +74,44 @@ class EventPublisher:
 
     def __init__(self):
         self._ws_manager = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def set_websocket_manager(self, ws_manager):
         """Set the WebSocket manager instance."""
         self._ws_manager = ws_manager
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
         if ws_manager is None:
             logger.info("EventPublisher disconnected from WebSocket manager")
         else:
             logger.info("EventPublisher connected to WebSocket manager")
+
+    def _schedule_publish(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        message: Dict[str, Any],
+        topics: tuple[str, ...],
+    ) -> None:
+        """Create the publish task on the target loop without pre-creating coroutines."""
+        loop.create_task(self.publish_message(message, topics=topics))
+
+    def publish_message_threadsafe(self, message: Dict[str, Any], *, topics: Iterable[str]) -> None:
+        """Schedule publish_message from worker threads without blocking them."""
+        normalized_topics = tuple(topics)
+        payload = dict(message)
+        if self._loop is not None and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._schedule_publish, self._loop, payload, normalized_topics)
+            return
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(self.publish_message(payload, topics=normalized_topics))
+            return
+
+        loop.call_soon(self._schedule_publish, loop, payload, normalized_topics)
 
     async def publish_message(self, message: Dict[str, Any], *, topics: Iterable[str]) -> None:
         """Broadcast a prebuilt message payload to one or more websocket topics."""

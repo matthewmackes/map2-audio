@@ -216,11 +216,12 @@ jest.mock('../theme', () => ({
   }),
 }))
 
-const { PhysicalSurfacesShell } = require('./PhysicalSurfacesShell') as typeof import('./PhysicalSurfacesShell')
+const { PhysicalSurfacesShell } =
+  jest.requireActual('./PhysicalSurfacesShell') as typeof import('./PhysicalSurfacesShell')
 const { PhysicalSurfacesOverviewPage } =
-  require('./PhysicalSurfacesOverviewPage') as typeof import('./PhysicalSurfacesOverviewPage')
+  jest.requireActual('./PhysicalSurfacesOverviewPage') as typeof import('./PhysicalSurfacesOverviewPage')
 const { PhysicalSurfaceUnitPage } =
-  require('./PhysicalSurfaceUnitPage') as typeof import('./PhysicalSurfaceUnitPage')
+  jest.requireActual('./PhysicalSurfaceUnitPage') as typeof import('./PhysicalSurfaceUnitPage')
 
 function renderShell(initialEntry = '/physical-surfaces') {
   const queryClient = new QueryClient({

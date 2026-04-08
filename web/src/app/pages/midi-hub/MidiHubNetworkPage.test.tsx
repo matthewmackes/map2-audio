@@ -54,7 +54,8 @@ jest.mock('../../components/MidiHub/StringInterfacePanel', () => ({
   StringInterfacePanel: () => <div>String Interface Panel Mock</div>,
 }))
 
-const { MidiHubNetworkPage } = require('./MidiHubNetworkPage') as typeof import('./MidiHubNetworkPage')
+const { MidiHubNetworkPage } =
+  jest.requireActual('./MidiHubNetworkPage') as typeof import('./MidiHubNetworkPage')
 
 function renderPage() {
   return render(

@@ -121,5 +121,9 @@ async def get_rt_stats() -> Dict[str, Any]:
 @router.post("/ws/rt/cache/clear")
 async def clear_param_cache() -> Dict[str, str]:
     """Clear the parameter value cache."""
-    rt_parameter_bridge._param_cache.clear()
+    clear_cache = getattr(rt_parameter_bridge, "clear_param_cache", None)
+    if callable(clear_cache):
+        clear_cache()
+    else:
+        rt_parameter_bridge._param_cache.clear()
     return {"status": "cleared"}

@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import sqlite3
 import threading
 import time
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.database import RetryingAsyncSession, RetryingSession
+from app import database as database_module
 
 
 Base = declarative_base()
@@ -105,3 +107,31 @@ async def test_retrying_async_session_replays_locked_update_and_delete():
         sync_engine.dispose()
         update_lock_thread.join(timeout=1.0)
         delete_lock_thread.join(timeout=1.0)
+
+
+def test_retry_flags_are_instance_local():
+    sync_session_a = RetryingSession()
+    sync_session_b = RetryingSession()
+    async_session_a = RetryingAsyncSession(bind=None)
+    async_session_b = RetryingAsyncSession(bind=None)
+    try:
+        assert sync_session_a._sqlite_lock_retry_active is False
+        assert sync_session_b._sqlite_lock_retry_active is False
+        sync_session_a._sqlite_lock_retry_active = True
+        assert sync_session_b._sqlite_lock_retry_active is False
+
+        assert async_session_a._sqlite_lock_retry_active is False
+        assert async_session_b._sqlite_lock_retry_active is False
+        async_session_a._sqlite_lock_retry_active = True
+        assert async_session_b._sqlite_lock_retry_active is False
+    finally:
+        sync_session_a.close()
+        sync_session_b.close()
+        asyncio.run(async_session_a.close())
+        asyncio.run(async_session_b.close())
+
+
+def test_async_sqlite_retry_uses_asyncio_sleep_not_time_sleep():
+    source = inspect.getsource(database_module._run_async_sqlite_lock_retry)
+    assert "await asyncio.sleep" in source
+    assert "time.sleep" not in source

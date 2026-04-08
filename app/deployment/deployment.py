@@ -12,11 +12,28 @@ import json
 import logging
 import os
 from pathlib import Path
+import tempfile
 from typing import Dict, List, Optional, Set
 from enum import Enum
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+def _atomic_write_json(path: Path, payload: Dict[str, object]) -> None:
+    """Persist JSON atomically in the destination directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 class DeploymentMode(Enum):
@@ -191,8 +208,6 @@ class DeploymentConfig:
     
     def save(self):
         """Persist configuration to file"""
-        self.config_dir.mkdir(parents=True, exist_ok=True)
-        
         data = {
             'mode': self.mode.value,
             'service_policies': {
@@ -202,10 +217,8 @@ class DeploymentConfig:
             'created_at': self.created_at,
             'updated_at': datetime.utcnow().isoformat(),
         }
-        
-        with open(self.config_file, 'w') as f:
-            json.dump(data, f, indent=2)
-        
+
+        _atomic_write_json(self.config_file, data)
         self.updated_at = data['updated_at']
         logger.info(f"Saved deployment config: {self.mode.value}")
     

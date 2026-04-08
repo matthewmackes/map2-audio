@@ -5,45 +5,24 @@ MPX1 MIDI bridge service.
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.services.sysex_device_bridge import SysExDeviceBridge
+from app.services.midi_sysex_bridge_base import MidiSysexBridgeBase, build_midi_sysex_runtime
 
 logger = logging.getLogger(__name__)
 
-try:
-    import rtmidi  # type: ignore
-
-    RTMIDI_AVAILABLE = True
-except ImportError:
-    RTMIDI_AVAILABLE = False
-    rtmidi = None
-    logger.warning("python-rtmidi not installed, MPX1 MIDI I/O running in simulation mode")
-
-_SIMULATOR_ENABLED = os.environ.get("MPX1_SIMULATOR", "").strip() in ("1", "true", "yes")
-
-if _SIMULATOR_ENABLED and not RTMIDI_AVAILABLE:
-    try:
-        import pathlib as _pathlib
-        import sys as _sys
-
-        _tests_dir = str(_pathlib.Path(__file__).resolve().parents[2] / "tests")
-        if _tests_dir not in _sys.path:
-            _sys.path.insert(0, _tests_dir)
-        from mpx1_simulator import MPX1Simulator, SimulatedMidiIn, SimulatedMidiOut, get_simulator  # type: ignore
-
-        _SIMULATOR_ACTIVE = True
-        logger.info("MPX1 SysEx simulator activated")
-    except ImportError:
-        _SIMULATOR_ACTIVE = False
-        logger.warning("MPX1_SIMULATOR requested but mpx1_simulator module not found")
-else:
-    _SIMULATOR_ACTIVE = False
+_MPX1_RUNTIME = build_midi_sysex_runtime(
+    simulator_env_var="MPX1_SIMULATOR",
+    simulator_module="mpx1_simulator",
+    device_label="MPX1",
+)
+RTMIDI_AVAILABLE = bool(_MPX1_RUNTIME["rtmidi_available"])
+rtmidi = _MPX1_RUNTIME["rtmidi_module"]
+_SIMULATOR_ACTIVE = bool(_MPX1_RUNTIME["simulator_active"])
 
 
-class MPX1Service(SysExDeviceBridge):
+class MPX1Service(MidiSysexBridgeBase):
     DEVICE_LABEL = "MPX1"
     DEVICE_TOPIC = "mpx1"
     BRIDGE_ID = "mpx1_service"
@@ -63,6 +42,9 @@ class MPX1Service(SysExDeviceBridge):
     PING_PARAM_ID = "program.pitch.algorithm"
     _SYSEX_PREFIX = [0xF0, 0x06, 0x7F, 0x11]
     _SYSEX_SUFFIX = 0xF7
+    _MIDI_RUNTIME = _MPX1_RUNTIME
+    SYX_PARSER_MODULE = "app.services.mpx1_syx_parser"
+    SYX_PARSER_CLASS = "MPX1SyxParser"
 
     def _rtmidi_available(self) -> bool:
         return RTMIDI_AVAILABLE
@@ -72,10 +54,6 @@ class MPX1Service(SysExDeviceBridge):
 
     def _simulator_active(self) -> bool:
         return _SIMULATOR_ACTIVE
-
-    def _create_simulated_ports(self) -> Tuple[Any, Any]:
-        sim = get_simulator()  # type: ignore[name-defined]
-        return SimulatedMidiIn(sim), SimulatedMidiOut(sim)  # type: ignore[name-defined]
 
     def _default_library_entries(self) -> List[Dict[str, Any]]:
         curated_names = [
@@ -163,23 +141,6 @@ class MPX1Service(SysExDeviceBridge):
                 "command": [0x01, 0x01],
             }
         return None
-
-    async def import_syx_bytes(
-        self, data: bytes, source_name: str = "<upload>", skip_duplicates: bool = True
-    ) -> Dict[str, Any]:
-        from app.services.mpx1_syx_parser import MPX1SyxParser, deduplicate_programs
-
-        parser = MPX1SyxParser()
-        try:
-            programs = parser.parse_bytes(data, source_name=source_name)
-        except Exception as exc:
-            logger.error("SysEx parse error: %s", exc)
-            return {"imported": 0, "skipped": 0, "errors": [str(exc)]}
-
-        if skip_duplicates:
-            programs = deduplicate_programs(programs)
-        return await self._import_parsed_programs(programs, source_name=source_name, skip_duplicates=skip_duplicates)
-
 
 _mpx1_service: Optional[MPX1Service] = None
 

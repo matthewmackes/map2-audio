@@ -203,12 +203,12 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 )
 
     except WebSocketDisconnect:
-        ws_manager.disconnect(client_id, reason="disconnect")
+        await ws_manager.disconnect(client_id, reason="disconnect")
         logger.info(f"Client {client_id} disconnected")
 
     except Exception as e:
         logger.error(f"WebSocket error for client {client_id}: {e}")
-        ws_manager.disconnect(client_id, reason="disconnect_error", error=str(e))
+        await ws_manager.disconnect(client_id, reason="disconnect_error", error=str(e))
 
 
 @router.websocket("/ws")

@@ -24,7 +24,7 @@ import {
 import { Launch } from '@carbon/icons-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import { usePeerDiscoveryStatus, usePeerLatencyHistory, type PeerDiscoveryPeer } from '../../hooks/usePeerDiscovery'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import type { PlatformLayerData } from '../../platform/model'

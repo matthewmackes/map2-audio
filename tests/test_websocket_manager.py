@@ -1,6 +1,6 @@
 import asyncio
-import threading
 import time
+import gzip
 
 from app.services.websocket_manager import WebSocketManager
 
@@ -10,6 +10,7 @@ class _FakeWebSocket:
         self.delay_seconds = delay_seconds
         self.should_fail = should_fail
         self.sent_messages: list[str] = []
+        self.sent_binary_messages: list[bytes] = []
         self.received_at: float | None = None
 
     async def send_text(self, message: str) -> None:
@@ -19,6 +20,14 @@ class _FakeWebSocket:
             raise RuntimeError("simulated send failure")
         self.received_at = time.perf_counter()
         self.sent_messages.append(message)
+
+    async def send_bytes(self, message: bytes) -> None:
+        if self.delay_seconds:
+            await asyncio.sleep(self.delay_seconds)
+        if self.should_fail:
+            raise RuntimeError("simulated send failure")
+        self.received_at = time.perf_counter()
+        self.sent_binary_messages.append(message)
 
 
 def test_broadcast_fans_out_in_parallel():
@@ -77,6 +86,19 @@ def test_broadcast_json_history_uses_bounded_queue():
     assert [event["idx"] for event in history["events"]] == [2, 3, 4]
 
 
+def test_broadcast_json_uses_binary_gzip_for_large_payloads():
+    manager = WebSocketManager(enable_compression=True)
+    websocket = _FakeWebSocket()
+    manager.active_connections["client"] = websocket
+
+    asyncio.run(manager.broadcast_json({"payload": "x" * 4096}))
+
+    assert websocket.sent_messages == []
+    assert len(websocket.sent_binary_messages) == 1
+    assert gzip.decompress(websocket.sent_binary_messages[0]).decode("utf-8").startswith('{"payload":')
+    assert manager.get_stats()["bytes_saved_by_compression"] > 0
+
+
 def test_broadcast_disconnects_slow_clients_without_blocking_fast_clients():
     manager = WebSocketManager(send_timeout_seconds=0.01)
     fast_ws = _FakeWebSocket()
@@ -102,14 +124,30 @@ def test_disconnect_cleans_subscriptions_consistently_under_concurrent_broadcast
     manager.subscriptions["meters"] = {"client"}
     manager.connection_info["client"] = {"subscriptions": {"meters"}, "path": "/ws"}
 
-    def _disconnect():
-        time.sleep(0.001)
-        manager.disconnect("client")
+    async def _run():
+        async def _disconnect_later():
+            await asyncio.sleep(0.001)
+            await manager.disconnect("client")
 
-    thread = threading.Thread(target=_disconnect)
-    thread.start()
-    asyncio.run(manager.broadcast("payload", topic="meters"))
-    thread.join(timeout=0.5)
+        disconnect_task = asyncio.create_task(_disconnect_later())
+        await manager.broadcast("payload", topic="meters")
+        await disconnect_task
+
+    asyncio.run(_run())
 
     assert "client" not in manager.active_connections
     assert manager.subscriptions == {}
+
+
+def test_send_personal_message_disconnects_slow_client_after_timeout():
+    manager = WebSocketManager(send_timeout_seconds=0.01)
+    websocket = _FakeWebSocket(delay_seconds=0.05)
+    manager.active_connections["client"] = websocket
+    manager.connection_info["client"] = {"subscriptions": set(), "path": "/ws"}
+
+    asyncio.run(manager.send_personal_message("payload", "client"))
+
+    assert "client" not in manager.active_connections
+    stats = manager.get_stats()
+    assert stats["slow_client_disconnects"] == 1
+    assert stats["send_failures"] == 1

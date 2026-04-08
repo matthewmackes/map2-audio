@@ -34,7 +34,7 @@ def engine():
 class TestAsyncLock:
     @pytest.mark.asyncio
     async def test_process_all_lanes_uses_async_lock(self, engine):
-        """_process_all_lanes should use asyncio.Lock, not threading.Lock."""
+        """_process_all_lanes should use the shared asyncio lane lock."""
         # Add a simple lane
         lane = AutomationLaneState(
             parameter_id="p1",
@@ -51,7 +51,7 @@ class TestAsyncLock:
     @pytest.mark.asyncio
     async def test_async_lock_is_asyncio_lock(self, engine):
         """Engine should have an asyncio.Lock for async methods."""
-        assert isinstance(engine._async_lock, asyncio.Lock)
+        assert isinstance(engine._lane_lock, asyncio.Lock)
 
 
 # ---------------------------------------------------------------------------
@@ -148,8 +148,7 @@ class TestSaveToDatabase:
         engine.lanes["save-test"] = lane
 
         # Track when the lock is held during snapshot
-        original_lock = engine._async_lock
-        snapshot_was_under_lock = False
+        original_lock = engine._lane_lock
 
         class LockTracker:
             def __init__(self):
@@ -174,10 +173,13 @@ class TestSaveToDatabase:
         mock_session.add = MagicMock()
 
         with patch("app.services.automation_engine.get_session", return_value=mock_session):
-            engine._async_lock = tracker
+            engine._lane_lock = tracker
             count = await engine.save_to_database()
 
         assert count == 1
+        statements = [str(call.args[0]) for call in mock_session.execute.await_args_list]
+        assert any("INSERT INTO automation_lanes" in statement for statement in statements)
+        assert all("DELETE FROM automation_lanes" not in statement for statement in statements)
 
     @pytest.mark.asyncio
     async def test_load_uses_async_lock(self, engine):

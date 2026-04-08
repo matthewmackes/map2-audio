@@ -39,7 +39,7 @@ jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
 }))
 
 jest.mock('../../components/MidiHub/MidiHubFilterPlanner', () => {
-  const { midiHubApi } = require('../../../map2/api')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
   return {
     MidiHubFilterPlanner: () => (
       <div>
@@ -54,7 +54,7 @@ jest.mock('../../components/MidiHub/MidiHubFilterPlanner', () => {
 })
 
 jest.mock('../../components/MidiHub/MidiHubMessageMapper', () => {
-  const ReactLocal = require('react')
+  const ReactLocal = jest.requireActual('react') as typeof import('react')
   return {
     MidiHubMessageMapper: () => {
       const [target, setTarget] = ReactLocal.useState('')
@@ -71,7 +71,7 @@ jest.mock('../../components/MidiHub/MidiHubMessageMapper', () => {
 })
 
 jest.mock('../../components/MidiHub/MidiScriptEditor', () => {
-  const { midiHubApi } = require('../../../map2/api')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
   return {
     MidiScriptEditor: () => (
       <div>
@@ -89,7 +89,7 @@ jest.mock('../../components/MidiHub/MidiScriptEditor', () => {
 })
 
 jest.mock('../../components/MidiHub/MidiMacroPanel', () => {
-  const { midiHubApi } = require('../../../map2/api')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
   return {
     MidiMacroPanel: () => (
       <div>
@@ -103,7 +103,7 @@ jest.mock('../../components/MidiHub/MidiMacroPanel', () => {
 })
 
 jest.mock('../../components/MidiHub/MidiSchedulerPanel', () => {
-  const { midiHubApi } = require('../../../map2/api')
+  const { midiHubApi } = jest.requireMock('../../../map2/api') as typeof import('../../../map2/api')
   return {
     MidiSchedulerPanel: () => (
       <div>
@@ -119,7 +119,7 @@ jest.mock('../../components/MidiHub/MidiSchedulerPanel', () => {
 })
 
 const { MidiHubProcessingPage } =
-  require('./MidiHubProcessingPage') as typeof import('./MidiHubProcessingPage')
+  jest.requireActual('./MidiHubProcessingPage') as typeof import('./MidiHubProcessingPage')
 
 describe('MidiHubProcessingPage', () => {
   beforeEach(() => {

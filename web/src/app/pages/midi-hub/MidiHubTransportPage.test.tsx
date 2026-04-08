@@ -33,7 +33,8 @@ jest.mock('../../components/MidiHub/MidiRecorderPanel', () => ({
   MidiRecorderPanel: () => <div>Recorder Panel Mock</div>,
 }))
 
-const { MidiHubTransportPage } = require('./MidiHubTransportPage') as typeof import('./MidiHubTransportPage')
+const { MidiHubTransportPage } =
+  jest.requireActual('./MidiHubTransportPage') as typeof import('./MidiHubTransportPage')
 
 describe('MidiHubTransportPage', () => {
   it('renders the transport route sections', () => {

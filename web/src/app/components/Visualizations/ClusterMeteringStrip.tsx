@@ -1,5 +1,6 @@
 import React from 'react'
-import { useCluster, type NodeInfo } from '../../contexts/ClusterContext'
+import type { NodeInfo } from '../../contexts/ClusterContextStore'
+import { useCluster } from '../../contexts/useCluster'
 import { useVuMeters } from '../../hooks/useVuMeters'
 import { useCPUMetrics } from '../../hooks/useCPUMetrics'
 

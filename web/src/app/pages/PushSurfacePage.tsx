@@ -38,7 +38,7 @@ import {
   type PushSurfaceWelcomeStep,
 } from '../../map2/clients/pushSurface'
 import { PageHeader } from '../components/PageHeader'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { type NodeSummary } from '../types/node'

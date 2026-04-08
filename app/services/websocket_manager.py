@@ -1,63 +1,61 @@
 """
 WebSocket Manager - Real-time communication for MAP2 Audio
-Handles WebSocket connections, message broadcasting, and subscription management
-
-Fix #8: Added optional message compression for large payloads
+Handles WebSocket connections, message broadcasting, and subscription management.
 """
 
 import asyncio
+import gzip
 import json
 import logging
-import gzip
-import base64
 from collections import deque
-import threading
-from typing import Dict, Set, Any, Optional, List, Deque
-from fastapi import WebSocket
 from datetime import datetime
+from typing import Any, Deque, Dict, List, Optional, Set
+
+from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
-# Fix #8: Message size threshold for compression (1KB)
 COMPRESSION_THRESHOLD = 1024
 DEFAULT_SEND_TIMEOUT_SECONDS = 0.25
 
 
 class WebSocketManager:
     """
-    Manages WebSocket connections and broadcasts real-time updates
-    
+    Manages WebSocket connections and broadcasts real-time updates.
+
     Features:
     - Connection pooling
     - Topic-based subscriptions
     - Selective broadcasting
     - Connection lifecycle management
-    - Fix #8: Optional gzip compression for large messages
+    - Optional binary gzip compression for large JSON payloads
     """
-    
-    def __init__(self, enable_compression: bool = True, send_timeout_seconds: float = DEFAULT_SEND_TIMEOUT_SECONDS):
-        # Active connections: client_id -> WebSocket
+
+    def __init__(
+        self,
+        enable_compression: bool = True,
+        send_timeout_seconds: float = DEFAULT_SEND_TIMEOUT_SECONDS,
+    ):
         self.active_connections: Dict[str, WebSocket] = {}
-
-        # Subscriptions: topic -> set of client_ids
         self.subscriptions: Dict[str, Set[str]] = {}
-
-        # Connection metadata
         self.connection_info: Dict[str, Dict[str, Any]] = {}
-
-        # Event history: topic -> bounded deque of recent events
         self.event_history: Dict[str, Deque[Dict[str, Any]]] = {}
-        self.history_limit = 10  # Keep last 10 events per topic
+        self.history_limit = 10
 
-        # Lock for thread-safe operations across async sends and sync disconnects.
-        self._lock = threading.RLock()
-        
-        # Fix #8: Compression settings
+        # Keep all lifecycle mutations on one async lock.
+        self._lock = asyncio.Lock()
+
         self.enable_compression = enable_compression
-        self.bytes_saved = 0  # Track compression savings
+        self.bytes_saved = 0
         self.send_timeout_seconds = send_timeout_seconds
         self.slow_client_disconnects = 0
         self.send_failures = 0
+
+    async def _send_payload(self, websocket: WebSocket, payload: str | bytes) -> None:
+        if isinstance(payload, bytes):
+            await websocket.send_bytes(payload)
+            return
+        await websocket.send_text(payload)
 
     def _record_observability_event(
         self,
@@ -123,20 +121,19 @@ class WebSocketManager:
             )
         except Exception:
             pass
-        
-    async def connect(self, websocket: WebSocket, client_id: str, metadata: Optional[Dict[str, Any]] = None) -> None:
-        """
-        Accept and register a new WebSocket connection
-        
-        Args:
-            websocket: FastAPI WebSocket instance
-            client_id: Unique identifier for this client
-        """
+
+    async def connect(
+        self,
+        websocket: WebSocket,
+        client_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Accept and register a new WebSocket connection."""
         await websocket.accept()
-        
-        with self._lock:
+        metadata = metadata or {}
+
+        async with self._lock:
             self.active_connections[client_id] = websocket
-            metadata = metadata or {}
             self.connection_info[client_id] = {
                 "connected_at": datetime.now().isoformat(),
                 "subscriptions": set(),
@@ -147,65 +144,50 @@ class WebSocketManager:
                 "protocol_version": metadata.get("protocol_version"),
                 "client_ip": metadata.get("client_ip", "unknown"),
             }
-        
-        logger.info(f"WebSocket client connected: {client_id}")
+
+        logger.info("WebSocket client connected: %s", client_id)
         self._record_observability_event(
             client_id,
             action="connect",
             path=str(metadata.get("path", "/ws")),
             status=101,
         )
-        
-    def disconnect(self, client_id: str, *, reason: str = "disconnect", error: Optional[str] = None) -> None:
-        """
-        Remove a client connection and clean up subscriptions
-        
-        Args:
-            client_id: Client to disconnect
-        """
-        info = self.connection_info.get(client_id, {})
-        path = str(info.get("path", "/ws"))
+
+    async def disconnect(
+        self,
+        client_id: str,
+        *,
+        reason: str = "disconnect",
+        error: Optional[str] = None,
+    ) -> None:
+        """Remove a client connection and clean up subscriptions."""
+        async with self._lock:
+            info = dict(self.connection_info.get(client_id, {}))
+
+            self.active_connections.pop(client_id, None)
+            for topic in list(self.subscriptions.keys()):
+                self.subscriptions[topic].discard(client_id)
+                if not self.subscriptions[topic]:
+                    del self.subscriptions[topic]
+            self.connection_info.pop(client_id, None)
+
         self._record_observability_event(
             client_id,
             action=reason,
-            path=path,
+            path=str(info.get("path", "/ws")),
             status=1000 if reason == "disconnect" else 1001,
             error=error,
         )
+        logger.info("WebSocket client disconnected: %s", client_id)
 
-        with self._lock:
-            if client_id in self.active_connections:
-                del self.active_connections[client_id]
-
-            for topic in list(self.subscriptions.keys()):
-                if client_id in self.subscriptions[topic]:
-                    self.subscriptions[topic].discard(client_id)
-                    if not self.subscriptions[topic]:
-                        del self.subscriptions[topic]
-
-            if client_id in self.connection_info:
-                del self.connection_info[client_id]
-        
-        logger.info(f"WebSocket client disconnected: {client_id}")
-        
     async def subscribe(self, client_id: str, topic: str) -> None:
-        """
-        Subscribe a client to a specific topic
-        
-        Args:
-            client_id: Client to subscribe
-            topic: Topic name (e.g., "meters", "automation", "chain_updates")
-        """
-        with self._lock:
-            if topic not in self.subscriptions:
-                self.subscriptions[topic] = set()
-            
-            self.subscriptions[topic].add(client_id)
-            
+        """Subscribe a client to a specific topic."""
+        async with self._lock:
+            self.subscriptions.setdefault(topic, set()).add(client_id)
             if client_id in self.connection_info:
                 self.connection_info[client_id]["subscriptions"].add(topic)
-        
-        logger.debug(f"Client {client_id} subscribed to topic: {topic}")
+
+        logger.debug("Client %s subscribed to topic: %s", client_id, topic)
         path = str(self.connection_info.get(client_id, {}).get("path", "/ws"))
         self._record_observability_event(
             client_id,
@@ -214,25 +196,18 @@ class WebSocketManager:
             status=200,
             topic=topic,
         )
-        
+
     async def unsubscribe(self, client_id: str, topic: str) -> None:
-        """
-        Unsubscribe a client from a topic
-        
-        Args:
-            client_id: Client to unsubscribe
-            topic: Topic name
-        """
-        with self._lock:
+        """Unsubscribe a client from a topic."""
+        async with self._lock:
             if topic in self.subscriptions:
                 self.subscriptions[topic].discard(client_id)
                 if not self.subscriptions[topic]:
                     del self.subscriptions[topic]
-            
             if client_id in self.connection_info:
                 self.connection_info[client_id]["subscriptions"].discard(topic)
-        
-        logger.debug(f"Client {client_id} unsubscribed from topic: {topic}")
+
+        logger.debug("Client %s unsubscribed from topic: %s", client_id, topic)
         path = str(self.connection_info.get(client_id, {}).get("path", "/ws"))
         self._record_observability_event(
             client_id,
@@ -241,41 +216,36 @@ class WebSocketManager:
             status=200,
             topic=topic,
         )
-        
-    async def send_personal_message(self, message: str, client_id: str) -> None:
-        """
-        Send a message to a specific client
-        
-        Args:
-            message: JSON string or plain text
-            client_id: Target client
-        """
-        with self._lock:
+
+    async def send_personal_message(self, message: str | bytes, client_id: str) -> None:
+        """Send a message to a specific client."""
+        async with self._lock:
             websocket = self.active_connections.get(client_id)
-        if websocket is not None:
-            try:
-                await websocket.send_text(message)
-            except Exception as e:
-                logger.error(f"Error sending message to {client_id}: {e}")
-                self.disconnect(client_id)
-                
-    async def broadcast(self, message: str, topic: Optional[str] = None) -> None:
-        """
-        Broadcast a message to all clients or topic subscribers
-        
-        Args:
-            message: JSON string or plain text
-            topic: If specified, only send to subscribers of this topic
-        """
-        # Determine target clients from a snapshot to avoid mutation during send.
-        with self._lock:
+        if websocket is None:
+            return
+
+        try:
+            await asyncio.wait_for(
+                self._send_payload(websocket, message),
+                timeout=self.send_timeout_seconds,
+            )
+        except Exception as exc:
+            logger.error("Error sending message to %s: %s", client_id, exc)
+            self.send_failures += 1
+            if isinstance(exc, asyncio.TimeoutError):
+                self.slow_client_disconnects += 1
+            await self.disconnect(client_id, reason="disconnect_error", error=str(exc))
+
+    async def broadcast(self, message: str | bytes, topic: Optional[str] = None) -> None:
+        """Broadcast a message to all clients or topic subscribers."""
+        async with self._lock:
             if topic:
                 target_clients = set(self.subscriptions.get(topic, set()))
             else:
                 target_clients = set(self.active_connections.keys())
 
             send_client_ids: List[str] = []
-            send_tasks = []
+            send_tasks: List[asyncio.Future] = []
             for client_id in target_clients:
                 websocket = self.active_connections.get(client_id)
                 if websocket is None:
@@ -283,7 +253,7 @@ class WebSocketManager:
                 send_client_ids.append(client_id)
                 send_tasks.append(
                     asyncio.wait_for(
-                        websocket.send_text(message),
+                        self._send_payload(websocket, message),
                         timeout=self.send_timeout_seconds,
                     )
                 )
@@ -292,140 +262,89 @@ class WebSocketManager:
             return
 
         send_results = await asyncio.gather(*send_tasks, return_exceptions=True)
-        disconnected_clients = []
+        disconnected_clients: list[str] = []
         for client_id, result in zip(send_client_ids, send_results):
-            if isinstance(result, Exception):
-                self.send_failures += 1
-                if isinstance(result, asyncio.TimeoutError):
-                    self.slow_client_disconnects += 1
-                    logger.warning(
-                        "Disconnecting slow WebSocket client %s after %.3fs send timeout",
-                        client_id,
-                        self.send_timeout_seconds,
-                    )
-                    self._record_observability_event(
-                        client_id,
-                        action="broadcast_timeout_error",
-                        path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
-                        status=504,
-                        topic=topic,
-                        error="send_timeout",
-                    )
-                else:
-                    logger.error(f"Error broadcasting to {client_id}: {result}")
-                    self._record_observability_event(
-                        client_id,
-                        action="broadcast_error",
-                        path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
-                        status=500,
-                        topic=topic,
-                        error=str(result),
-                    )
-                disconnected_clients.append(client_id)
+            if not isinstance(result, Exception):
+                continue
 
-        # Clean up disconnected clients
+            self.send_failures += 1
+            if isinstance(result, asyncio.TimeoutError):
+                self.slow_client_disconnects += 1
+                logger.warning(
+                    "Disconnecting slow WebSocket client %s after %.3fs send timeout",
+                    client_id,
+                    self.send_timeout_seconds,
+                )
+                self._record_observability_event(
+                    client_id,
+                    action="broadcast_timeout_error",
+                    path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
+                    status=504,
+                    topic=topic,
+                    error="send_timeout",
+                )
+            else:
+                logger.error("Error broadcasting to %s: %s", client_id, result)
+                self._record_observability_event(
+                    client_id,
+                    action="broadcast_error",
+                    path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
+                    status=500,
+                    topic=topic,
+                    error=str(result),
+                )
+            disconnected_clients.append(client_id)
+
         for client_id in disconnected_clients:
-            self.disconnect(client_id, reason="disconnect_error")
-            
-    async def broadcast_json(self, data: Dict[str, Any], topic: Optional[str] = None) -> None:
-        """
-        Broadcast a JSON message with optional compression
+            await self.disconnect(client_id, reason="disconnect_error")
 
-        Fix #8: Messages larger than COMPRESSION_THRESHOLD are gzip compressed
-        
-        Args:
-            data: Dictionary to serialize as JSON
-            topic: Optional topic filter
-        """
-        # Store in event history if topic is specified
+    async def broadcast_json(self, data: Dict[str, Any], topic: Optional[str] = None) -> None:
+        """Broadcast a JSON message with optional binary gzip compression."""
         if topic:
-            with self._lock:
+            async with self._lock:
                 history = self.event_history.get(topic)
                 if history is None:
                     history = deque(maxlen=self.history_limit)
                     self.event_history[topic] = history
                 history.append(data)
 
-        message = json.dumps(data)
-        
-        # Fix #8: Compress large messages
-        if self.enable_compression and len(message) > COMPRESSION_THRESHOLD:
-            compressed = gzip.compress(message.encode('utf-8'))
-            # Only use compression if it actually reduces size
-            if len(compressed) < len(message):
-                self.bytes_saved += len(message) - len(compressed)
-                # Send as base64-encoded compressed data with header
-                message = json.dumps({
-                    "_compressed": True,
-                    "_encoding": "gzip+base64",
-                    "data": base64.b64encode(compressed).decode('ascii')
-                })
-        
-        await self.broadcast(message, topic)
-        
+        encoded = json.dumps(data).encode("utf-8")
+        payload: str | bytes = encoded.decode("utf-8")
+        if self.enable_compression and len(encoded) > COMPRESSION_THRESHOLD:
+            compressed = gzip.compress(encoded)
+            if len(compressed) < len(encoded):
+                self.bytes_saved += len(encoded) - len(compressed)
+                payload = compressed
+
+        await self.broadcast(payload, topic)
+
     def get_subscribers(self, topic: str) -> List[str]:
-        """
-        Get list of client IDs subscribed to a topic
-        
-        Args:
-            topic: Topic name
-            
-        Returns:
-            List of client IDs
-        """
-        with self._lock:
-            return list(self.subscriptions.get(topic, set()))
-        
+        return list(self.subscriptions.get(topic, set()))
+
     def get_connection_count(self) -> int:
-        """Get number of active connections"""
-        with self._lock:
-            return len(self.active_connections)
-        
+        return len(self.active_connections)
+
     def get_event_history(self, topic: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Get recent event history
-
-        Args:
-            topic: If specified, get history for this topic only
-
-        Returns:
-            Dictionary with event history
-        """
         if topic:
-            with self._lock:
-                events = list(self.event_history.get(topic, []))
             return {
                 "topic": topic,
-                "events": events
-            }
-        else:
-            with self._lock:
-                all_topics = {
-                    topic_name: list(events)
-                    for topic_name, events in self.event_history.items()
-                }
-            return {
-                "all_topics": all_topics
-            }
-
-    def get_stats(self) -> Dict[str, Any]:
-        """
-        Get WebSocket statistics
-
-        Returns:
-            Dictionary with connection and subscription stats
-        """
-        with self._lock:
-            active_connections = len(self.active_connections)
-            topics = list(self.subscriptions.keys())
-            subscriptions_per_topic = {
-                topic: len(clients)
-                for topic, clients in self.subscriptions.items()
+                "events": list(self.event_history.get(topic, [])),
             }
         return {
-            "active_connections": active_connections,
-            "topics": topics,
-            "subscriptions_per_topic": subscriptions_per_topic,
+            "all_topics": {
+                topic_name: list(events)
+                for topic_name, events in self.event_history.items()
+            }
+        }
+
+    def get_stats(self) -> Dict[str, Any]:
+        return {
+            "active_connections": len(self.active_connections),
+            "topics": list(self.subscriptions.keys()),
+            "subscriptions_per_topic": {
+                topic: len(clients)
+                for topic, clients in self.subscriptions.items()
+            },
             "compression_enabled": self.enable_compression,
             "bytes_saved_by_compression": self.bytes_saved,
             "send_timeout_seconds": self.send_timeout_seconds,
@@ -434,5 +353,4 @@ class WebSocketManager:
         }
 
 
-# Global WebSocket manager instance
 ws_manager = WebSocketManager()

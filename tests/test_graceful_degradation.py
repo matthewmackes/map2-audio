@@ -328,6 +328,50 @@ class TestFeatureAvailabilityManager:
         assert health_calls == 1
         assert feature.status == FeatureStatus.AVAILABLE
         assert feature.consecutive_failures == 0
+
+    @pytest.mark.asyncio
+    async def test_health_checks_use_feature_snapshot_when_registry_mutates(self):
+        manager = FeatureAvailabilityManager()
+
+        async def health_check():
+            manager.register_feature(Feature(name="late", level=FeatureLevel.OPTIONAL))
+            return True
+
+        feature = Feature(
+            name="test",
+            level=FeatureLevel.STANDARD,
+            health_check=health_check,
+        )
+        manager.register_feature(feature)
+
+        await manager._perform_health_checks()
+
+        assert "late" in manager.features
+        assert feature.status == FeatureStatus.AVAILABLE
+
+    @pytest.mark.asyncio
+    async def test_health_check_loop_survives_iteration_exceptions(self, caplog):
+        manager = FeatureAvailabilityManager()
+        calls = 0
+
+        async def _flaky():
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("boom")
+            manager._health_check_task.cancel()
+
+        manager._perform_health_checks = _flaky  # type: ignore[method-assign]
+
+        with caplog.at_level("ERROR"):
+            await manager.start_health_checks(interval_seconds=0)
+            try:
+                await manager._health_check_task
+            except asyncio.CancelledError:
+                pass
+
+        assert calls >= 2
+        assert any("Feature health check loop iteration failed: boom" in record.getMessage() for record in caplog.records)
     
     def test_get_system_health(self):
         """Test getting system health."""

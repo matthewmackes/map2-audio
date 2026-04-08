@@ -5,44 +5,23 @@ IntelFX MIDI bridge service.
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.services.sysex_device_bridge import SysExDeviceBridge
+from app.services.midi_sysex_bridge_base import MidiSysexBridgeBase, build_midi_sysex_runtime
 
 logger = logging.getLogger(__name__)
 
-try:
-    import rtmidi  # type: ignore
-
-    RTMIDI_AVAILABLE = True
-except ImportError:
-    RTMIDI_AVAILABLE = False
-    rtmidi = None
-    logger.warning("python-rtmidi not installed, IntelFX MIDI I/O running in simulation mode")
-
-_SIMULATOR_ENABLED = os.environ.get("INTELFX_SIMULATOR", "").strip() in ("1", "true", "yes")
-
-if _SIMULATOR_ENABLED and not RTMIDI_AVAILABLE:
-    try:
-        import pathlib as _pathlib
-        import sys as _sys
-
-        _tests_dir = str(_pathlib.Path(__file__).resolve().parents[2] / "tests")
-        if _tests_dir not in _sys.path:
-            _sys.path.insert(0, _tests_dir)
-        from intelfx_simulator import IntelFXSimulator, SimulatedMidiIn, SimulatedMidiOut, get_simulator  # type: ignore
-
-        _SIMULATOR_ACTIVE = True
-        logger.info("IntelFX SysEx simulator activated")
-    except ImportError:
-        _SIMULATOR_ACTIVE = False
-        logger.warning("INTELFX_SIMULATOR requested but intelfx_simulator module not found")
-else:
-    _SIMULATOR_ACTIVE = False
+_INTELFX_RUNTIME = build_midi_sysex_runtime(
+    simulator_env_var="INTELFX_SIMULATOR",
+    simulator_module="intelfx_simulator",
+    device_label="IntelFX",
+)
+RTMIDI_AVAILABLE = bool(_INTELFX_RUNTIME["rtmidi_available"])
+rtmidi = _INTELFX_RUNTIME["rtmidi_module"]
+_SIMULATOR_ACTIVE = bool(_INTELFX_RUNTIME["simulator_active"])
 
 
-class IntelFXService(SysExDeviceBridge):
+class IntelFXService(MidiSysexBridgeBase):
     DEVICE_LABEL = "IntelFX"
     DEVICE_TOPIC = "intelfx"
     BRIDGE_ID = "intelfx_service"
@@ -62,6 +41,9 @@ class IntelFXService(SysExDeviceBridge):
     PING_PARAM_ID = "hush.threshold"
     _SYSEX_PREFIX = [0xF0, 0x00, 0x01, 0x56]
     _SYSEX_SUFFIX = 0xF7
+    _MIDI_RUNTIME = _INTELFX_RUNTIME
+    SYX_PARSER_MODULE = "app.services.intelfx_syx_parser"
+    SYX_PARSER_CLASS = "IntelFXSyxParser"
 
     def _rtmidi_available(self) -> bool:
         return RTMIDI_AVAILABLE
@@ -72,15 +54,11 @@ class IntelFXService(SysExDeviceBridge):
     def _simulator_active(self) -> bool:
         return _SIMULATOR_ACTIVE
 
-    def _create_simulated_ports(self) -> Tuple[Any, Any]:
-        sim = get_simulator()  # type: ignore[name-defined]
-        return SimulatedMidiIn(sim), SimulatedMidiOut(sim)  # type: ignore[name-defined]
-
     def _state_extras(self) -> Dict[str, Any]:
-        return {"simulator": _SIMULATOR_ACTIVE}
+        return {"simulator": self._simulator_active()}
 
     def _health_extras(self) -> Dict[str, Any]:
-        return {"simulator": _SIMULATOR_ACTIVE}
+        return {"simulator": self._simulator_active()}
 
     def _default_library_entries(self) -> List[Dict[str, Any]]:
         curated_names = [
@@ -168,23 +146,6 @@ class IntelFXService(SysExDeviceBridge):
                 "command": [0x01, 0x01],
             }
         return None
-
-    async def import_syx_bytes(
-        self, data: bytes, source_name: str = "<upload>", skip_duplicates: bool = True
-    ) -> Dict[str, Any]:
-        from app.services.intelfx_syx_parser import IntelFXSyxParser, deduplicate_programs
-
-        parser = IntelFXSyxParser()
-        try:
-            programs = parser.parse_bytes(data, source_name=source_name)
-        except Exception as exc:
-            logger.error("SysEx parse error: %s", exc)
-            return {"imported": 0, "skipped": 0, "errors": [str(exc)]}
-
-        if skip_duplicates:
-            programs = deduplicate_programs(programs)
-        return await self._import_parsed_programs(programs, source_name=source_name, skip_duplicates=skip_duplicates)
-
 
 _intelfx_service: Optional[IntelFXService] = None
 

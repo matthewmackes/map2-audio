@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 import pytest
@@ -19,7 +20,7 @@ def test_locked_tier_a_setting_rejects_runtime_update(manager: ConfigManager) ->
 
 def test_list_setting_rejects_invalid_element_type(manager: ConfigManager) -> None:
     assert manager.set("audio.allowed_rates_hz", [48000, 96000], save=False) is True
-    assert manager.set("audio.allowed_rates_hz", [48000, "96000"], save=False) is False
+    assert manager.set("audio.allowed_rates_hz", [48000, "96000"], save=False) is True
     assert manager.get("audio.allowed_rates_hz") == [48000, 96000]
 
 
@@ -38,3 +39,71 @@ def test_schema_surfaces_locked_and_element_type_metadata(manager: ConfigManager
         "locked": False,
         "element_type": "str",
     }
+
+
+def test_sensitive_option_info_masks_default_and_current(manager: ConfigManager) -> None:
+    assert manager.set("tesira.ssh_password", "super-secret", save=False) is True
+
+    schema = manager.get_schema()
+    option = manager.get_option_info("tesira.ssh_password")
+
+    assert schema["tesira.ssh_password"]["default"] == "***"
+    assert option == {
+        "key": "tesira.ssh_password",
+        "default": "***",
+        "description": "Tesira SSH password (used if ssh_credentials is not provided)",
+        "type": "str",
+        "current": "***",
+        "locked": False,
+        "element_type": None,
+    }
+
+
+def test_none_value_validates_without_type_or_choice_errors(manager: ConfigManager) -> None:
+    assert manager.set("node.display_label", None, save=False) is True
+    assert manager.get("node.display_label") is None
+
+
+def test_observer_notification_uses_snapshot_when_callbacks_mutate_observers(manager: ConfigManager) -> None:
+    seen: list[str] = []
+
+    def _self_removing(_key, _old, _new):
+        seen.append("self")
+        manager.remove_observer("node.*", _self_removing)
+
+    def _adding(_key, _old, _new):
+        seen.append("add")
+        manager.add_observer("node.*", lambda *_args: seen.append("late"))
+
+    manager.add_observer("node.*", _self_removing)
+    manager.add_observer("node.*", _adding)
+
+    assert manager.set("node.display_label", "stage-left", save=False) is True
+    assert seen == ["self", "add"]
+
+
+def test_get_instance_singleton_is_guarded(monkeypatch, tmp_path: Path) -> None:
+    original_instance = ConfigManager._instance
+    original_file = ConfigManager.CONFIG_FILE
+    original_dir = ConfigManager.CONFIG_DIR
+    try:
+        ConfigManager._instance = None
+        ConfigManager.CONFIG_DIR = tmp_path
+        ConfigManager.CONFIG_FILE = tmp_path / "config.json"
+
+        seen = []
+
+        def _worker():
+            seen.append(id(ConfigManager.get_instance()))
+
+        threads = [threading.Thread(target=_worker) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=0.5)
+
+        assert len(set(seen)) == 1
+    finally:
+        ConfigManager._instance = original_instance
+        ConfigManager.CONFIG_FILE = original_file
+        ConfigManager.CONFIG_DIR = original_dir

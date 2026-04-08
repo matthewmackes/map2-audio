@@ -9,7 +9,7 @@ import {
   WarningAlt as WarningCircle,
 } from '@carbon/icons-react'
 import type { Chain } from '../../../map2/types'
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import { useToasts } from '../Toasts'
 
 type ClusterPlugin = {

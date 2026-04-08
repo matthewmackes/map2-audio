@@ -2,7 +2,7 @@ let prefetchedRoutes = new Set<string>()
 
 function prefetchSnapshotEditor() {
   return Promise.allSettled([
-    import('./pages/SnapshotEditorPage').then((module) => module),
+    import('./pages/SnapshotEditorPageContent').then((module) => module),
   ])
 }
 

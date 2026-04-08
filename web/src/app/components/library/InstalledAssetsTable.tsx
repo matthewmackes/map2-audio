@@ -36,7 +36,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { foldersApi, irApi, namApi, pluginsApi, soundfontApi } from '../../../map2/api'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import type { IRFile, NAMModel } from '../../../map2/types'
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import type { SoundFont } from '../../types/library'
 import './InstalledAssetsTable.css'
 

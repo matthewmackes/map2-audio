@@ -6,7 +6,7 @@ import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceCard } from './TesiraDeviceCard'
 import { ManualAddDialog } from './ManualAddDialog'
-import { useCluster } from '../../../contexts/ClusterContext'
+import { useCluster } from '../../../contexts/useCluster'
 import './TesiraCarbonChrome.css'
 
 export function TesiraFleetPanel() {

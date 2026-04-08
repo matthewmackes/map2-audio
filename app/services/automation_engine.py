@@ -21,7 +21,6 @@ from typing import Dict, List, Optional, Tuple, Any, Callable, Awaitable
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
-from threading import Lock
 import json
 import math
 
@@ -122,6 +121,8 @@ class LFOState:
     # Runtime state
     current_phase: float = 0.0
     _previous_phase: float = 0.0  # Tracks last phase for wrap detection
+    random_previous_phase: float = 0.0
+    sample_hold_previous_phase: float = 0.0
     last_sample_hold_value: float = 0.5
     last_random_value: float = 0.5
     smoothed_value: float = 0.5
@@ -232,10 +233,8 @@ class AutomationEngine:
         self._process_task: Optional[asyncio.Task] = None
         self._running = False
 
-        # Thread safety (sync methods)
-        self._lock = Lock()
-        # Async-safe lock for async methods (avoids blocking the event loop)
-        self._async_lock = asyncio.Lock()
+        # All async lane processing/persistence flows serialize through one lock.
+        self._lane_lock = asyncio.Lock()
         self._snapshot_lane_ids: set[str] = set()
         self._snapshot_lane_backups: Dict[str, AutomationLaneState] = {}
 
@@ -345,30 +344,29 @@ class AutomationEngine:
 
     async def _process_all_lanes(self) -> None:
         """Process all automation lanes."""
-        async with self._async_lock:
-            lanes_to_process = list(self.lanes.values())
+        dispatch_updates: List[Tuple[str, int, float, Optional[int]]] = []
+        async with self._lane_lock:
+            for lane in self.lanes.values():
+                if not lane.enabled:
+                    continue
+                try:
+                    new_value = self._calculate_lane_value(lane, self.current_time)
+                    if new_value is not None and abs(new_value - lane.current_value) > 0.0001:
+                        lane.current_value = new_value
+                        lane.last_update_time = self.current_time
+                        dispatch_updates.append(
+                            (lane.plugin_uri, lane.param_index, new_value, lane.plugin_position)
+                        )
+                except Exception as e:
+                    logger.error(f"Error processing lane {lane.parameter_id}: {e}")
 
-        for lane in lanes_to_process:
-            if not lane.enabled:
-                continue
-
-            try:
-                new_value = self._calculate_lane_value(lane, self.current_time)
-
-                if new_value is not None and abs(new_value - lane.current_value) > 0.0001:
-                    lane.current_value = new_value
-                    lane.last_update_time = self.current_time
-
-                    # Send parameter update
-                    await self._dispatch_parameter_callback(
-                        lane.plugin_uri,
-                        lane.param_index,
-                        new_value,
-                        plugin_position=lane.plugin_position,
-                    )
-
-            except Exception as e:
-                logger.error(f"Error processing lane {lane.parameter_id}: {e}")
+        for plugin_uri, param_index, new_value, plugin_position in dispatch_updates:
+            await self._dispatch_parameter_callback(
+                plugin_uri,
+                param_index,
+                new_value,
+                plugin_position=plugin_position,
+            )
 
     def _calculate_lane_value(self, lane: AutomationLaneState, time: float) -> Optional[float]:
         """Calculate current value for a lane based on its modulation source."""
@@ -508,15 +506,27 @@ class AutomationEngine:
 
         elif waveform == LFOWaveform.RANDOM:
             # Detect phase wrap (current phase < previous phase means cycle restarted)
-            if phase < lfo._previous_phase:
+            previous_phase = (
+                lfo.random_previous_phase
+                if lfo.random_previous_phase != 0.0 or lfo._previous_phase == 0.0
+                else lfo._previous_phase
+            )
+            if phase < previous_phase:
                 lfo.last_random_value = random.random() * 2 - 1
+            lfo.random_previous_phase = phase
             lfo._previous_phase = phase
             return lfo.last_random_value
 
         elif waveform == LFOWaveform.SAMPLE_HOLD:
             # Detect phase wrap for new sample
-            if phase < lfo._previous_phase:
+            previous_phase = (
+                lfo.sample_hold_previous_phase
+                if lfo.sample_hold_previous_phase != 0.0 or lfo._previous_phase == 0.0
+                else lfo._previous_phase
+            )
+            if phase < previous_phase:
                 lfo.last_sample_hold_value = random.random() * 2 - 1
+            lfo.sample_hold_previous_phase = phase
             lfo._previous_phase = phase
             return lfo.last_sample_hold_value
 
@@ -596,31 +606,29 @@ class AutomationEngine:
         """Add new automation lane."""
         parameter_id = self.build_parameter_id(plugin_uri, param_index, plugin_position)
 
-        with self._lock:
-            if parameter_id in self.lanes:
-                return self.lanes[parameter_id]
+        if parameter_id in self.lanes:
+            return self.lanes[parameter_id]
 
-            lane = AutomationLaneState(
-                parameter_id=parameter_id,
-                plugin_uri=plugin_uri,
-                plugin_position=plugin_position,
-                param_index=param_index,
-                param_name=param_name or f"Param {param_index}",
-                modulation_source=modulation_source,
-            )
+        lane = AutomationLaneState(
+            parameter_id=parameter_id,
+            plugin_uri=plugin_uri,
+            plugin_position=plugin_position,
+            param_index=param_index,
+            param_name=param_name or f"Param {param_index}",
+            modulation_source=modulation_source,
+        )
 
-            self.lanes[parameter_id] = lane
-            logger.info(f"Added automation lane: {parameter_id} ({modulation_source.value})")
+        self.lanes[parameter_id] = lane
+        logger.info(f"Added automation lane: {parameter_id} ({modulation_source.value})")
 
-            return lane
+        return lane
 
     def remove_lane(self, parameter_id: str) -> bool:
         """Remove automation lane."""
-        with self._lock:
-            if parameter_id in self.lanes:
-                del self.lanes[parameter_id]
-                logger.info(f"Removed automation lane: {parameter_id}")
-                return True
+        if parameter_id in self.lanes:
+            del self.lanes[parameter_id]
+            logger.info(f"Removed automation lane: {parameter_id}")
+            return True
         return False
 
     def get_lane(self, parameter_id: str) -> Optional[AutomationLaneState]:
@@ -639,20 +647,18 @@ class AutomationEngine:
         curve: CurveType = CurveType.LINEAR,
     ) -> bool:
         """Compatibility helper for route-driven point insertion."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
-            lane.add_point(time, value, curve)
-            return True
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
+        lane.add_point(time, value, curve)
+        return True
 
     def remove_automation_point(self, parameter_id: str, time: float) -> bool:
         """Compatibility helper for route-driven point removal."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
-            return lane.remove_point(time)
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
+        return lane.remove_point(time)
 
     def export_automation(self, parameter_id: str) -> Optional[Dict[str, Any]]:
         """Export a single automation lane as a JSON-serializable payload."""
@@ -739,48 +745,46 @@ class AutomationEngine:
         pulse_width: float = 0.5,
     ) -> bool:
         """Configure LFO for a parameter lane."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
 
-            lane.modulation_source = ModulationSource.LFO
+        lane.modulation_source = ModulationSource.LFO
 
-            try:
-                wf = LFOWaveform(waveform)
-            except ValueError:
-                wf = LFOWaveform.SINE
+        try:
+            wf = LFOWaveform(waveform)
+        except ValueError:
+            wf = LFOWaveform.SINE
 
-            try:
-                td = TempoDivision(tempo_division)
-            except ValueError:
-                td = TempoDivision.QUARTER
+        try:
+            td = TempoDivision(tempo_division)
+        except ValueError:
+            td = TempoDivision.QUARTER
 
-            lane.lfo = LFOState(
-                rate_hz=rate_hz,
-                depth=depth,
-                phase_offset=phase_offset,
-                waveform=wf,
-                bipolar=bipolar,
-                pulse_width=pulse_width,
-                sync_to_tempo=sync_to_tempo,
-                tempo_division=td,
-                tempo_bpm=self.tempo_bpm,
-                smoothing=smoothing,
-            )
+        lane.lfo = LFOState(
+            rate_hz=rate_hz,
+            depth=depth,
+            phase_offset=phase_offset,
+            waveform=wf,
+            bipolar=bipolar,
+            pulse_width=pulse_width,
+            sync_to_tempo=sync_to_tempo,
+            tempo_division=td,
+            tempo_bpm=self.tempo_bpm,
+            smoothing=smoothing,
+        )
 
-            logger.info(f"Configured LFO for {parameter_id}: {rate_hz}Hz {waveform}")
-            return True
+        logger.info(f"Configured LFO for {parameter_id}: {rate_hz}Hz {waveform}")
+        return True
 
     def remove_lfo(self, parameter_id: str) -> bool:
         """Disable LFO modulation and fall back to timeline mode."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
-            lane.modulation_source = ModulationSource.TIMELINE
-            lane.lfo = LFOState()
-            return True
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
+        lane.modulation_source = ModulationSource.TIMELINE
+        lane.lfo = LFOState()
+        return True
 
     def configure_envelope_follower(
         self,
@@ -793,37 +797,35 @@ class AutomationEngine:
         invert: bool = False,
     ) -> bool:
         """Configure envelope follower for a parameter lane."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
 
-            lane.modulation_source = ModulationSource.ENVELOPE
+        lane.modulation_source = ModulationSource.ENVELOPE
 
-            lane.envelope = EnvelopeFollowerState(
-                input_source=input_source,
-                attack_ms=attack_ms,
-                release_ms=release_ms,
-                threshold_db=threshold_db,
-                sensitivity=sensitivity,
-                invert=invert,
-            )
+        lane.envelope = EnvelopeFollowerState(
+            input_source=input_source,
+            attack_ms=attack_ms,
+            release_ms=release_ms,
+            threshold_db=threshold_db,
+            sensitivity=sensitivity,
+            invert=invert,
+        )
 
-            logger.info(
-                f"Configured envelope follower for {parameter_id}: "
-                f"A={attack_ms}ms R={release_ms}ms"
-            )
-            return True
+        logger.info(
+            f"Configured envelope follower for {parameter_id}: "
+            f"A={attack_ms}ms R={release_ms}ms"
+        )
+        return True
 
     def remove_envelope_follower(self, parameter_id: str) -> bool:
         """Disable envelope follower modulation and fall back to timeline mode."""
-        with self._lock:
-            lane = self.lanes.get(parameter_id)
-            if not lane:
-                return False
-            lane.modulation_source = ModulationSource.TIMELINE
-            lane.envelope = EnvelopeFollowerState()
-            return True
+        lane = self.lanes.get(parameter_id)
+        if not lane:
+            return False
+        lane.modulation_source = ModulationSource.TIMELINE
+        lane.envelope = EnvelopeFollowerState()
+        return True
 
     # ==========================================================================
     # Playback Control
@@ -831,29 +833,25 @@ class AutomationEngine:
 
     def start_playback(self, start_time: float = 0.0) -> None:
         """Start automation playback."""
-        with self._lock:
-            self.is_playing = True
-            self.current_time = start_time
+        self.is_playing = True
+        self.current_time = start_time
         logger.info(f"Started automation playback at {start_time}s")
 
     def stop_playback(self) -> None:
         """Stop automation playback."""
-        with self._lock:
-            self.is_playing = False
+        self.is_playing = False
         logger.info("Stopped automation playback")
 
     def seek(self, time: float) -> None:
         """Seek to specific time."""
-        with self._lock:
-            self.current_time = max(0.0, time)
+        self.current_time = max(0.0, time)
 
     def set_tempo(self, bpm: float) -> None:
         """Set tempo for tempo-synced LFOs."""
         self.tempo_bpm = max(20.0, min(300.0, bpm))
         # Update all LFOs
-        with self._lock:
-            for lane in self.lanes.values():
-                lane.lfo.tempo_bpm = self.tempo_bpm
+        for lane in self.lanes.values():
+            lane.lfo.tempo_bpm = self.tempo_bpm
 
     # ==========================================================================
     # Persistence
@@ -867,47 +865,49 @@ class AutomationEngine:
         the inserts so a mid-save failure rolls back cleanly instead of
         losing all data.
         """
-        from sqlalchemy import delete
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-        async with self._async_lock:
-            lanes_snapshot = list(self.lanes.values())
+        async with self._lane_lock:
+            lanes_snapshot = copy.deepcopy(list(self.lanes.values()))
 
         count = 0
 
         async with get_session() as session:
-            # Delete and re-insert in one transaction — if inserts fail,
-            # the transaction rolls back and existing data is preserved.
-            await session.execute(delete(AutomationLaneModel))
-
             for lane in lanes_snapshot:
-                db_lane = AutomationLaneModel(
-                    parameter_id=lane.parameter_id,
-                    plugin_uri=lane.plugin_uri,
-                    plugin_position=lane.plugin_position,
-                    param_index=lane.param_index,
-                    param_name=lane.param_name,
-                    points=json.dumps([
+                payload = {
+                    "parameter_id": lane.parameter_id,
+                    "plugin_uri": lane.plugin_uri,
+                    "plugin_position": lane.plugin_position,
+                    "param_index": lane.param_index,
+                    "param_name": lane.param_name,
+                    "points": json.dumps([
                         {"time": p.time, "value": p.value, "curve": p.curve.value}
                         for p in lane.points
                     ]),
-                    enabled=lane.enabled,
-                    modulation_source=lane.modulation_source.value,
-                    lfo_rate_hz=lane.lfo.rate_hz,
-                    lfo_depth=lane.lfo.depth,
-                    lfo_waveform=lane.lfo.waveform.value,
-                    lfo_phase=lane.lfo.phase_offset,
-                    lfo_sync_to_tempo=lane.lfo.sync_to_tempo,
-                    lfo_tempo_division=lane.lfo.tempo_division.value,
-                    env_input_source=lane.envelope.input_source,
-                    env_attack_ms=lane.envelope.attack_ms,
-                    env_release_ms=lane.envelope.release_ms,
-                    env_threshold_db=lane.envelope.threshold_db,
-                    env_sensitivity=lane.envelope.sensitivity,
-                    loop_enabled=lane.loop_enabled,
-                    loop_start=lane.loop_start,
-                    loop_end=lane.loop_end,
+                    "enabled": lane.enabled,
+                    "modulation_source": lane.modulation_source.value,
+                    "lfo_rate_hz": lane.lfo.rate_hz,
+                    "lfo_depth": lane.lfo.depth,
+                    "lfo_waveform": lane.lfo.waveform.value,
+                    "lfo_phase": lane.lfo.phase_offset,
+                    "lfo_sync_to_tempo": lane.lfo.sync_to_tempo,
+                    "lfo_tempo_division": lane.lfo.tempo_division.value,
+                    "env_input_source": lane.envelope.input_source,
+                    "env_attack_ms": lane.envelope.attack_ms,
+                    "env_release_ms": lane.envelope.release_ms,
+                    "env_threshold_db": lane.envelope.threshold_db,
+                    "env_sensitivity": lane.envelope.sensitivity,
+                    "loop_enabled": lane.loop_enabled,
+                    "loop_start": lane.loop_start,
+                    "loop_end": lane.loop_end,
+                }
+                statement = sqlite_insert(AutomationLaneModel).values(**payload)
+                await session.execute(
+                    statement.on_conflict_do_update(
+                        index_elements=[AutomationLaneModel.parameter_id],
+                        set_={key: value for key, value in payload.items() if key != "parameter_id"},
+                    )
                 )
-                session.add(db_lane)
                 count += 1
 
         logger.info(f"Saved {count} automation lanes to database")
@@ -923,7 +923,7 @@ class AutomationEngine:
             result = await session.execute(select(AutomationLaneModel))
             db_lanes = result.scalars().all()
 
-            async with self._async_lock:
+            async with self._lane_lock:
                 self.lanes.clear()
 
                 for db_lane in db_lanes:
@@ -987,50 +987,48 @@ class AutomationEngine:
 
     def export_all(self) -> List[Dict[str, Any]]:
         """Export all automation data as JSON-serializable list."""
-        with self._lock:
-            return [
-                {
-                    "parameter_id": lane.parameter_id,
-                    "plugin_uri": lane.plugin_uri,
-                    "plugin_position": lane.plugin_position,
-                    "param_index": lane.param_index,
-                    "param_name": lane.param_name,
-                    "enabled": lane.enabled,
-                    "modulation_source": lane.modulation_source.value,
-                    "points": [
-                        {"time": p.time, "value": p.value, "curve": p.curve.value}
-                        for p in lane.points
-                    ],
-                    "lfo": {
-                        "rate_hz": lane.lfo.rate_hz,
-                        "depth": lane.lfo.depth,
-                        "waveform": lane.lfo.waveform.value,
-                        "phase_offset": lane.lfo.phase_offset,
-                        "sync_to_tempo": lane.lfo.sync_to_tempo,
-                        "tempo_division": lane.lfo.tempo_division.value,
-                        "smoothing": lane.lfo.smoothing,
-                    },
-                    "envelope": {
-                        "input_source": lane.envelope.input_source,
-                        "attack_ms": lane.envelope.attack_ms,
-                        "release_ms": lane.envelope.release_ms,
-                        "threshold_db": lane.envelope.threshold_db,
-                        "sensitivity": lane.envelope.sensitivity,
-                        "invert": lane.envelope.invert,
-                    },
-                    "loop_enabled": lane.loop_enabled,
-                    "loop_start": lane.loop_start,
-                    "loop_end": lane.loop_end,
-                }
-                for lane in self.lanes.values()
-            ]
+        return [
+            {
+                "parameter_id": lane.parameter_id,
+                "plugin_uri": lane.plugin_uri,
+                "plugin_position": lane.plugin_position,
+                "param_index": lane.param_index,
+                "param_name": lane.param_name,
+                "enabled": lane.enabled,
+                "modulation_source": lane.modulation_source.value,
+                "points": [
+                    {"time": p.time, "value": p.value, "curve": p.curve.value}
+                    for p in lane.points
+                ],
+                "lfo": {
+                    "rate_hz": lane.lfo.rate_hz,
+                    "depth": lane.lfo.depth,
+                    "waveform": lane.lfo.waveform.value,
+                    "phase_offset": lane.lfo.phase_offset,
+                    "sync_to_tempo": lane.lfo.sync_to_tempo,
+                    "tempo_division": lane.lfo.tempo_division.value,
+                    "smoothing": lane.lfo.smoothing,
+                },
+                "envelope": {
+                    "input_source": lane.envelope.input_source,
+                    "attack_ms": lane.envelope.attack_ms,
+                    "release_ms": lane.envelope.release_ms,
+                    "threshold_db": lane.envelope.threshold_db,
+                    "sensitivity": lane.envelope.sensitivity,
+                    "invert": lane.envelope.invert,
+                },
+                "loop_enabled": lane.loop_enabled,
+                "loop_start": lane.loop_start,
+                "loop_end": lane.loop_end,
+            }
+            for lane in self.lanes.values()
+        ]
 
     def clear_all(self) -> None:
         """Clear all automation data."""
-        with self._lock:
-            self.lanes.clear()
-            self._snapshot_lane_ids.clear()
-            self._snapshot_lane_backups.clear()
+        self.lanes.clear()
+        self._snapshot_lane_ids.clear()
+        self._snapshot_lane_backups.clear()
         logger.info("Cleared all automation data")
 
     def _restore_snapshot_lanes_locked(self) -> int:
@@ -1045,8 +1043,7 @@ class AutomationEngine:
         return cleared_count
 
     def replace_snapshot_lanes(self, entries: List[Dict[str, Any]]) -> Dict[str, int]:
-        with self._lock:
-            cleared_count = self._restore_snapshot_lanes_locked()
+        cleared_count = self._restore_snapshot_lanes_locked()
 
         applied_count = 0
         invalid_count = 0
@@ -1072,10 +1069,9 @@ class AutomationEngine:
                     continue
                 payload["parameter_id"] = parameter_id
 
-            with self._lock:
-                existing_lane = self.lanes.get(parameter_id)
-                if existing_lane is not None and parameter_id not in self._snapshot_lane_backups:
-                    self._snapshot_lane_backups[parameter_id] = copy.deepcopy(existing_lane)
+            existing_lane = self.lanes.get(parameter_id)
+            if existing_lane is not None and parameter_id not in self._snapshot_lane_backups:
+                self._snapshot_lane_backups[parameter_id] = copy.deepcopy(existing_lane)
 
             if not self.import_automation(payload):
                 invalid_count += 1
@@ -1109,12 +1105,10 @@ class AutomationEngine:
                     invert=bool(envelope_payload.get("invert", payload.get("invert", False))),
                 )
 
-            with self._lock:
-                self._snapshot_lane_ids.add(parameter_id)
+            self._snapshot_lane_ids.add(parameter_id)
             applied_count += 1
 
-        with self._lock:
-            active_snapshot_count = len(self._snapshot_lane_ids)
+        active_snapshot_count = len(self._snapshot_lane_ids)
         return {
             "cleared_count": cleared_count,
             "applied_count": applied_count,

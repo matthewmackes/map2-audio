@@ -18,7 +18,7 @@ import { Information, MachineLearningModel, VolumeUp, WarningAlt } from '@carbon
 import { snapshotsApi } from '../../../map2/clients/snapshots'
 import type { PluginLoaderState, SnapshotDetail, SnapshotPlugin } from '../../../map2/types'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import { useToasts } from '../Toasts'
 import './SnapshotDeployModal.css'
 

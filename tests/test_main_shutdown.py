@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 import os
 import signal
@@ -92,3 +93,11 @@ def test_emit_shutdown_notice_writes_stderr(monkeypatch):
     app_main._emit_shutdown_notice("shutdown notice")
 
     assert writes == [(2, b"shutdown notice\n")]
+
+
+def test_lifespan_stops_orchestrator_before_closing_database_pool():
+    source = inspect.getsource(app_main.lifespan)
+
+    assert source.index('await safe_stop_service(logger, "Orchestrator services", orchestrator.stop_all)') < source.index(
+        'await safe_stop_service(logger, "Database connection pool", pool_manager.close)'
+    )

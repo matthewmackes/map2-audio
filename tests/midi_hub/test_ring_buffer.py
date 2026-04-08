@@ -42,3 +42,11 @@ def test_ring_buffer_overwrite_mode_replaces_oldest_entry_across_wraparound():
 
     assert list(rb.iter_snapshot()) == [3, 4, 5]
     assert rb.drain() == [3, 4, 5]
+
+
+def test_ring_buffer_drain_preserves_none_payloads():
+    rb = MidiRingBuffer[object | None](3, overwrite_on_full=True)
+    assert rb.push(None)
+    assert rb.push("note-on")
+
+    assert rb.drain() == [None, "note-on"]

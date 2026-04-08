@@ -9,9 +9,13 @@ from app.services.midi_hub.router import MidiRouter
 class _FakePublisher:
     def __init__(self) -> None:
         self.messages: list[tuple[tuple[str, ...], dict[str, object]]] = []
+        self.threadsafe_messages: list[tuple[tuple[str, ...], dict[str, object]]] = []
 
     async def publish_message(self, message: dict[str, object], *, topics) -> None:
         self.messages.append((tuple(topics), dict(message)))
+
+    def publish_message_threadsafe(self, message: dict[str, object], *, topics) -> None:
+        self.threadsafe_messages.append((tuple(topics), dict(message)))
 
 
 def _wait_until(predicate, timeout_s: float = 0.8) -> bool:
@@ -156,9 +160,58 @@ def test_router_uses_injected_realtime_publisher_for_route_events(tmp_path):
     )
 
     assert route["route_id"] == "route-1"
-    assert publisher.messages
-    topics, message = publisher.messages[0]
+    published = publisher.threadsafe_messages or publisher.messages
+    assert published
+    topics, message = published[0]
     assert topics == ("midi:routes",)
     assert message["type"] == "midi:route_changed"
     assert message["data"]["action"] == "added"
     assert message["data"]["route"]["route_id"] == "route-1"
+
+
+def test_router_delayed_overflow_evicts_least_urgent_event(tmp_path):
+    hub = MidiHub(auto_discover_alsa=False)
+    router = MidiRouter(hub=hub, persist_path=Path(tmp_path / "routes.json"))
+    router._running = True
+    router._max_pending_delayed_events = 1
+
+    router._schedule_delayed_event(
+        source_port="src",
+        destination_port="dst",
+        event_data=b"first",
+        route_id="route-fast",
+        delay_ms=5,
+        metadata={},
+    )
+    router._schedule_delayed_event(
+        source_port="src",
+        destination_port="dst",
+        event_data=b"second",
+        route_id="route-slow",
+        delay_ms=50,
+        metadata={},
+    )
+
+    assert len(router._delay_queue) == 1
+    _, _, payload = router._delay_queue[0]
+    assert payload["route_id"] == "route-fast"
+
+
+def test_router_prefers_threadsafe_publisher_from_worker_threads(tmp_path):
+    hub = MidiHub(auto_discover_alsa=False)
+    publisher = _FakePublisher()
+    router = MidiRouter(
+        hub=hub,
+        persist_path=Path(tmp_path / "routes.json"),
+        publisher=publisher,
+    )
+
+    router._emit_websocket_message("midi:traffic", {"route_id": "route-1"}, topic="midi:traffic")
+
+    assert publisher.threadsafe_messages == [
+        (
+            ("midi:traffic",),
+            {"type": "midi:traffic", "data": {"route_id": "route-1"}},
+        )
+    ]
+    assert publisher.messages == []

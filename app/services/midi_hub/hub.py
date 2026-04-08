@@ -10,6 +10,8 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+import logging
+
 from app.services.midi_hub.ports import (
     MidiMessage,
     MidiPort,
@@ -21,6 +23,9 @@ from app.services.midi_hub.ring_buffer import MidiRingBuffer
 
 if TYPE_CHECKING:
     from app.services.midi_hub.cluster_router import MidiClusterRouter
+
+
+logger = logging.getLogger(__name__)
 
 
 Subscriber = Callable[[MidiMessage], Any]
@@ -364,8 +369,8 @@ class MidiHub:
             for callback in subscribers:
                 try:
                     callback(msg)
-                except Exception:
-                    continue
+                except Exception as exc:
+                    logger.warning("MidiHub subscriber callback failed: %s", exc)
 
     def _start_cluster_broadcast_if_enabled(self) -> None:
         try:
@@ -464,10 +469,13 @@ class MidiHub:
 
 
 _midi_hub_singleton: Optional[MidiHub] = None
+_midi_hub_singleton_lock = threading.Lock()
 
 
 def get_midi_hub() -> MidiHub:
     global _midi_hub_singleton
     if _midi_hub_singleton is None:
-        _midi_hub_singleton = MidiHub()
+        with _midi_hub_singleton_lock:
+            if _midi_hub_singleton is None:
+                _midi_hub_singleton = MidiHub()
     return _midi_hub_singleton

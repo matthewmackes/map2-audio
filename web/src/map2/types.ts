@@ -2729,7 +2729,7 @@ export interface SnapshotLoadedEvent {
   timestamp: string;
 }
 
-export interface CommunitySnapshot extends SnapshotSummary {}
+export type CommunitySnapshot = SnapshotSummary
 
 // ==================== Flow Snapshot Types ====================
 

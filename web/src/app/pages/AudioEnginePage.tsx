@@ -70,7 +70,7 @@ import type {
   PipeWireNodeInfo,
   PipeWireStreamInfo,
 } from '../../map2/types'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { ClusterEngineGrid } from '../components/AudioEngine/ClusterEngineGrid'
 import { PageHeader } from '../components/PageHeader'
 import { useNodePageContext } from '../hooks/useNodePageContext'

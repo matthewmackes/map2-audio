@@ -453,6 +453,50 @@ class TestAlertManagement:
         
         assert len(history) == 5
 
+    def test_check_alert_rules_deduplicates_active_alerts_by_rule_and_service(self):
+        monitor = HealthMonitor()
+        monitor.alert_rules = [
+            AlertRule(
+                name="high_error_rate",
+                metric="error_rate",
+                threshold=0.1,
+                comparison=">",
+            )
+        ]
+        monitor.services["service1"] = ServiceMetrics(
+            service_name="service1",
+            error_rate=0.5,
+        )
+
+        asyncio.run(monitor._check_alert_rules())
+        asyncio.run(monitor._check_alert_rules())
+
+        alerts = monitor.get_active_alerts("service1")
+        assert len(alerts) == 1
+        assert alerts[0].alert_rule_name == "high_error_rate"
+        assert len(monitor.get_alert_history(limit=10)) == 2
+
+    def test_active_alerts_are_bounded(self):
+        monitor = HealthMonitor()
+        monitor.max_active_alerts = 2
+        monitor.alert_rules = [
+            AlertRule(
+                name="high_error_rate",
+                metric="error_rate",
+                threshold=0.1,
+                comparison=">",
+            )
+        ]
+        monitor.services["service1"] = ServiceMetrics(service_name="service1", error_rate=0.5)
+        monitor.services["service2"] = ServiceMetrics(service_name="service2", error_rate=0.5)
+        monitor.services["service3"] = ServiceMetrics(service_name="service3", error_rate=0.5)
+
+        asyncio.run(monitor._check_alert_rules())
+
+        active_services = {alert.service_name for alert in monitor.get_active_alerts()}
+        assert len(active_services) == 2
+        assert active_services == {"service2", "service3"}
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

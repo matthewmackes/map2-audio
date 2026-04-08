@@ -365,10 +365,13 @@ class MidiGatewayManager:
 
 
 _midi_gateway_manager_singleton: Optional[MidiGatewayManager] = None
+_midi_gateway_manager_singleton_lock = threading.Lock()
 
 
 def get_midi_gateway_manager() -> MidiGatewayManager:
     global _midi_gateway_manager_singleton
     if _midi_gateway_manager_singleton is None:
-        _midi_gateway_manager_singleton = MidiGatewayManager()
+        with _midi_gateway_manager_singleton_lock:
+            if _midi_gateway_manager_singleton is None:
+                _midi_gateway_manager_singleton = MidiGatewayManager()
     return _midi_gateway_manager_singleton

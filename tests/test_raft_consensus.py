@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sqlite3
 from unittest.mock import AsyncMock
 
 import pytest
@@ -132,6 +133,85 @@ def test_persistent_state_round_trips_across_restart(tmp_path):
     assert len(reloaded.log) == 1
     assert reloaded.log[0].command == "set_node_status"
     assert reloaded.log[0].data == {"node_id": "n1", "status": "up"}
+    with sqlite3.connect(state_path) as conn:
+        stable_state = conn.execute("SELECT current_term, voted_for FROM stable_state WHERE id = 1").fetchone()
+        assert stable_state == (7, "node-a")
+
+
+@pytest.mark.asyncio
+async def test_start_election_does_not_win_if_term_changes_during_vote_gather(monkeypatch):
+    raft = RaftConsensus(
+        node_id="node-a",
+        cluster_nodes={
+            "node-a": "http://node-a",
+            "node-b": "http://node-b",
+            "node-c": "http://node-c",
+        },
+    )
+
+    async def _vote(node_id: str, node_url: str) -> bool:
+        if node_id == "node-c":
+            raft.current_term = 99
+        return True
+
+    monkeypatch.setattr(raft, "_request_vote", _vote)
+    monkeypatch.setattr(raft, "_send_heartbeats", AsyncMock())
+
+    await raft._start_election()
+
+    assert raft.role == RaftRole.FOLLOWER
+    assert raft.current_term == 99
+
+
+@pytest.mark.asyncio
+async def test_replicate_command_waits_on_commit_event(monkeypatch):
+    raft = RaftConsensus(
+        node_id="node-a",
+        cluster_nodes={"node-a": "http://node-a"},
+    )
+    raft.role = RaftRole.LEADER
+    raft.current_term = 3
+
+    async def _send_heartbeats() -> None:
+        await asyncio.sleep(0)
+        raft.commit_index = 0
+        raft.last_applied = 0
+        raft._resolve_commit_waiters()
+
+    monkeypatch.setattr(raft, "_send_heartbeats", _send_heartbeats)
+
+    replicated = await raft.replicate_command(
+        "set_node_status",
+        {"node_id": "n1", "status": "online"},
+    )
+
+    assert replicated is True
+
+
+@pytest.mark.asyncio
+async def test_stop_cancels_orphaned_heartbeat_tasks(monkeypatch):
+    raft = RaftConsensus(
+        node_id="node-a",
+        cluster_nodes={
+            "node-a": "http://node-a",
+            "node-b": "http://node-b",
+        },
+    )
+    raft.role = RaftRole.LEADER
+    raft.is_running = True
+    blocked = asyncio.Event()
+
+    async def _send_append_entries(node_id: str, node_url: str) -> None:
+        await blocked.wait()
+
+    monkeypatch.setattr(raft, "_send_append_entries", _send_append_entries)
+
+    await raft._send_heartbeats()
+    assert raft._heartbeat_tasks
+
+    await raft.stop()
+
+    assert not raft._heartbeat_tasks
 
 
 @pytest.mark.asyncio

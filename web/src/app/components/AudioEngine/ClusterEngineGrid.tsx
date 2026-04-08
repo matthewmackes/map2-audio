@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity as Pulse, Activity as Cpu, Flash as Lightning } from '@carbon/icons-react'
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 
 type ClusterAudioResponse = {
   nodes: Record<string, {

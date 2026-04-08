@@ -162,14 +162,14 @@ class JuceEngineService(Singleton):
             self._engine = juce_engine.create_engine()
 
             # Configure (sync, immediate)
-            self._engine.set_sample_rate(self.config.sample_rate)
-            self._engine.set_buffer_size(self.config.buffer_size)
-            self._engine.set_audio_device(self.config.audio_device)
-            self._engine.set_lv2_path(self.config.lv2_path)
+            await asyncio.to_thread(self._engine.set_sample_rate, self.config.sample_rate)
+            await asyncio.to_thread(self._engine.set_buffer_size, self.config.buffer_size)
+            await asyncio.to_thread(self._engine.set_audio_device, self.config.audio_device)
+            await asyncio.to_thread(self._engine.set_lv2_path, self.config.lv2_path)
 
             # Configure channel counts (for multi-channel interfaces like UA-1000)
-            self._engine.set_num_input_channels(self.config.input_channels)
-            self._engine.set_num_output_channels(self.config.output_channels)
+            await asyncio.to_thread(self._engine.set_num_input_channels, self.config.input_channels)
+            await asyncio.to_thread(self._engine.set_num_output_channels, self.config.output_channels)
             logger.info(f"Configuring audio: {self.config.input_channels} inputs, "
                        f"{self.config.output_channels} outputs")
 
@@ -183,11 +183,13 @@ class JuceEngineService(Singleton):
             if result:
                 # Enable MIDI if configured
                 if self.config.enable_midi:
-                    self._engine.enable_midi(True)
+                    await asyncio.to_thread(self._engine.enable_midi, True)
                 
                 self._initialized = True
-                logger.info(f"JUCE Audio Engine initialized: {self._engine.get_version()}")
-                logger.info(f"Config: {self._engine.get_system_info()}")
+                version = await asyncio.to_thread(self._engine.get_version)
+                system_info = await asyncio.to_thread(self._engine.get_system_info)
+                logger.info(f"JUCE Audio Engine initialized: {version}")
+                logger.info(f"Config: {system_info}")
             else:
                 logger.error("JUCE Audio Engine initialization failed")
             
@@ -202,8 +204,8 @@ class JuceEngineService(Singleton):
         """Shutdown engine"""
         if self._engine:
             try:
-                self._engine.stop_audio()
-                self._engine.shutdown()
+                await asyncio.to_thread(self._engine.stop_audio)
+                await asyncio.to_thread(self._engine.shutdown)
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
         
@@ -349,8 +351,8 @@ class JuceEngineService(Singleton):
         if not self._engine or not hasattr(self._engine, "load_lexicon_plugin"):
             return -1
         # Singleton guard
-        if hasattr(self._engine, "is_lexicon_loaded") and self._engine.is_lexicon_loaded():
-            return self._engine.get_lexicon_instance_id()
+        if hasattr(self._engine, "is_lexicon_loaded") and await asyncio.to_thread(self._engine.is_lexicon_loaded):
+            return await asyncio.to_thread(self._engine.get_lexicon_instance_id)
         instance_id = await asyncio.to_thread(self._engine.load_lexicon_plugin)
         if instance_id != -1 and hasattr(self._engine, "calibrate_lexicon_latency"):
             # Auto-calibrate S/PDIF latency
@@ -373,7 +375,7 @@ class JuceEngineService(Singleton):
             not self._engine
             or not hasattr(self._engine, "is_lexicon_loaded")
             or not hasattr(self._engine, "calibrate_lexicon_latency")
-            or not self._engine.is_lexicon_loaded()
+            or not await asyncio.to_thread(self._engine.is_lexicon_loaded)
         ):
             return False
         return await asyncio.to_thread(self._engine.calibrate_lexicon_latency)
@@ -1489,7 +1491,7 @@ class JuceEngineService(Singleton):
             cpu_percent = self._lookup_runtime_cpu_percent(per_plugin_percent, instance_id)
             if cpu_percent is None and isinstance(instance_id, int) and instance_id > 0:
                 try:
-                    cpu_percent = float(self._engine.get_plugin_cpu(instance_id))
+                    cpu_percent = float(await asyncio.to_thread(self._engine.get_plugin_cpu, instance_id))
                 except Exception:
                     cpu_percent = None
             if cpu_percent is not None:
@@ -1664,43 +1666,43 @@ class JuceEngineService(Singleton):
         """Load cabinet impulse response"""
         if not self._engine:
             return False
-        return self._engine.load_cabinet_ir(path)
+        return await asyncio.to_thread(self._engine.load_cabinet_ir, path)
 
     async def load_reverb_ir(self, path: str) -> bool:
         """Load reverb impulse response"""
         if not self._engine:
             return False
-        return self._engine.load_reverb_ir(path)
+        return await asyncio.to_thread(self._engine.load_reverb_ir, path)
 
     async def unload_cabinet_ir(self) -> None:
         """Unload cabinet IR"""
         if self._engine:
-            self._engine.unload_cabinet_ir()
+            await asyncio.to_thread(self._engine.unload_cabinet_ir)
 
     async def unload_reverb_ir(self) -> None:
         """Unload reverb IR"""
         if self._engine:
-            self._engine.unload_reverb_ir()
+            await asyncio.to_thread(self._engine.unload_reverb_ir)
 
     async def set_cabinet_mix(self, mix: float) -> None:
         """Set cabinet dry/wet mix (0.0-1.0)"""
         if self._engine:
-            self._engine.set_cabinet_mix(mix)
+            await asyncio.to_thread(self._engine.set_cabinet_mix, mix)
 
     async def set_reverb_mix(self, mix: float) -> None:
         """Set reverb dry/wet mix (0.0-1.0)"""
         if self._engine:
-            self._engine.set_reverb_mix(mix)
+            await asyncio.to_thread(self._engine.set_reverb_mix, mix)
 
     async def set_cabinet_bypass(self, bypass: bool) -> None:
         """Bypass cabinet IR"""
         if self._engine:
-            self._engine.set_cabinet_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_cabinet_bypass, bypass)
 
     async def set_reverb_bypass(self, bypass: bool) -> None:
         """Bypass reverb IR"""
         if self._engine:
-            self._engine.set_reverb_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_reverb_bypass, bypass)
 
     async def get_cabinet_ir_info(self) -> Dict[str, Any]:
         """Get cabinet IR info"""
@@ -1714,7 +1716,7 @@ class JuceEngineService(Singleton):
                 "sample_rate": 0.0,
                 "loaded": False
             }
-        return self._engine.get_cabinet_ir_info()
+        return await asyncio.to_thread(self._engine.get_cabinet_ir_info)
 
     async def get_reverb_ir_info(self) -> Dict[str, Any]:
         """Get reverb IR info"""
@@ -1728,13 +1730,13 @@ class JuceEngineService(Singleton):
                 "sample_rate": 0.0,
                 "loaded": False
             }
-        return self._engine.get_reverb_ir_info()
+        return await asyncio.to_thread(self._engine.get_reverb_ir_info)
 
     async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
         if not self._engine:
             return False
         try:
-            return bool(self._engine.load_cabinet_ir_instance(instance_id, path))
+            return bool(await asyncio.to_thread(self._engine.load_cabinet_ir_instance, instance_id, path))
         except AttributeError:
             return False
 
@@ -1742,7 +1744,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.load_reverb_ir_instance(instance_id, path))
+            return bool(await asyncio.to_thread(self._engine.load_reverb_ir_instance, instance_id, path))
         except AttributeError:
             return False
 
@@ -1750,7 +1752,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.unload_ir_instance(instance_id))
+            return bool(await asyncio.to_thread(self._engine.unload_ir_instance, instance_id))
         except AttributeError:
             return False
 
@@ -1758,7 +1760,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_ir_mix_instance(instance_id, mix_percent))
+            return bool(await asyncio.to_thread(self._engine.set_ir_mix_instance, instance_id, mix_percent))
         except AttributeError:
             return False
 
@@ -1766,7 +1768,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_ir_bypass_instance(instance_id, bypass))
+            return bool(await asyncio.to_thread(self._engine.set_ir_bypass_instance, instance_id, bypass))
         except AttributeError:
             return False
 
@@ -1784,7 +1786,7 @@ class JuceEngineService(Singleton):
                 "bypass": False,
             }
         try:
-            return self._engine.get_ir_info_instance(instance_id)
+            return await asyncio.to_thread(self._engine.get_ir_info_instance, instance_id)
         except AttributeError:
             return {
                 "path": "",
@@ -1805,42 +1807,42 @@ class JuceEngineService(Singleton):
     async def set_compressor_threshold(self, db: float) -> None:
         """Set compressor threshold in dB (-60 to 0)"""
         if self._engine:
-            self._engine.set_compressor_threshold(db)
+            await asyncio.to_thread(self._engine.set_compressor_threshold, db)
 
     async def set_compressor_ratio(self, ratio: float) -> None:
         """Set compressor ratio (1 to 20)"""
         if self._engine:
-            self._engine.set_compressor_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_compressor_ratio, ratio)
 
     async def set_compressor_attack(self, ms: float) -> None:
         """Set compressor attack time in ms (0.1 to 500)"""
         if self._engine:
-            self._engine.set_compressor_attack(ms)
+            await asyncio.to_thread(self._engine.set_compressor_attack, ms)
 
     async def set_compressor_release(self, ms: float) -> None:
         """Set compressor release time in ms (10 to 5000)"""
         if self._engine:
-            self._engine.set_compressor_release(ms)
+            await asyncio.to_thread(self._engine.set_compressor_release, ms)
 
     async def set_compressor_knee(self, db: float) -> None:
         """Set compressor knee width in dB (0 to 24)"""
         if self._engine:
-            self._engine.set_compressor_knee(db)
+            await asyncio.to_thread(self._engine.set_compressor_knee, db)
 
     async def set_compressor_makeup_gain(self, db: float) -> None:
         """Set compressor makeup gain in dB (-12 to 24)"""
         if self._engine:
-            self._engine.set_compressor_makeup_gain(db)
+            await asyncio.to_thread(self._engine.set_compressor_makeup_gain, db)
 
     async def set_compressor_auto_makeup(self, enabled: bool) -> None:
         """Enable/disable auto makeup gain"""
         if self._engine:
-            self._engine.set_compressor_auto_makeup(enabled)
+            await asyncio.to_thread(self._engine.set_compressor_auto_makeup, enabled)
 
     async def set_compressor_bypass(self, bypass: bool) -> None:
         """Bypass compressor"""
         if self._engine:
-            self._engine.set_compressor_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_compressor_bypass, bypass)
 
     async def get_compressor_parameters(self) -> Dict[str, Any]:
         """Get all compressor parameters"""
@@ -1855,12 +1857,12 @@ class JuceEngineService(Singleton):
                 "auto_makeup": False,
                 "bypass": False
             }
-        return self._engine.get_compressor_parameters()
+        return await asyncio.to_thread(self._engine.get_compressor_parameters)
 
     async def set_compressor_parameters(self, params: Dict[str, Any]) -> None:
         """Set all compressor parameters at once"""
         if self._engine:
-            self._engine.set_compressor_parameters(params)
+            await asyncio.to_thread(self._engine.set_compressor_parameters, params)
 
     async def get_compressor_metering(self) -> Dict[str, float]:
         """Get compressor metering (input, output, gain reduction)"""
@@ -1872,7 +1874,7 @@ class JuceEngineService(Singleton):
                 "input_rms": -100.0,
                 "output_rms": -100.0
             }
-        return self._engine.get_compressor_metering()
+        return await asyncio.to_thread(self._engine.get_compressor_metering)
 
     # ========================================
     # Dynamics - Limiter (NEW)
@@ -1881,17 +1883,17 @@ class JuceEngineService(Singleton):
     async def set_limiter_threshold(self, db: float) -> None:
         """Set limiter ceiling/threshold in dB"""
         if self._engine:
-            self._engine.set_limiter_threshold(db)
+            await asyncio.to_thread(self._engine.set_limiter_threshold, db)
 
     async def set_limiter_release(self, ms: float) -> None:
         """Set limiter release time in ms"""
         if self._engine:
-            self._engine.set_limiter_release(ms)
+            await asyncio.to_thread(self._engine.set_limiter_release, ms)
 
     async def set_limiter_bypass(self, bypass: bool) -> None:
         """Bypass limiter"""
         if self._engine:
-            self._engine.set_limiter_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_limiter_bypass, bypass)
 
     async def get_limiter_parameters(self) -> Dict[str, Any]:
         """Get all limiter parameters"""
@@ -1901,7 +1903,7 @@ class JuceEngineService(Singleton):
                 "release": 100.0,
                 "bypass": False
             }
-        return self._engine.get_limiter_parameters()
+        return await asyncio.to_thread(self._engine.get_limiter_parameters)
 
     async def get_limiter_metering(self) -> Dict[str, float]:
         """Get limiter metering (input, output, gain reduction)"""
@@ -1913,7 +1915,7 @@ class JuceEngineService(Singleton):
                 "input_rms": -100.0,
                 "output_rms": -100.0
             }
-        return self._engine.get_limiter_metering()
+        return await asyncio.to_thread(self._engine.get_limiter_metering)
 
     # ========================================
     # Dynamics - Noise Gate (NEW)
@@ -1922,27 +1924,27 @@ class JuceEngineService(Singleton):
     async def set_gate_threshold(self, db: float) -> None:
         """Set noise gate threshold in dB"""
         if self._engine:
-            self._engine.set_gate_threshold(db)
+            await asyncio.to_thread(self._engine.set_gate_threshold, db)
 
     async def set_gate_ratio(self, ratio: float) -> None:
         """Set noise gate ratio"""
         if self._engine:
-            self._engine.set_gate_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_gate_ratio, ratio)
 
     async def set_gate_attack(self, ms: float) -> None:
         """Set noise gate attack time in ms"""
         if self._engine:
-            self._engine.set_gate_attack(ms)
+            await asyncio.to_thread(self._engine.set_gate_attack, ms)
 
     async def set_gate_release(self, ms: float) -> None:
         """Set noise gate release time in ms"""
         if self._engine:
-            self._engine.set_gate_release(ms)
+            await asyncio.to_thread(self._engine.set_gate_release, ms)
 
     async def set_gate_bypass(self, bypass: bool) -> None:
         """Bypass noise gate"""
         if self._engine:
-            self._engine.set_gate_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_gate_bypass, bypass)
 
     async def get_gate_parameters(self) -> Dict[str, Any]:
         """Get all noise gate parameters"""
@@ -1954,7 +1956,7 @@ class JuceEngineService(Singleton):
                 "release": 100.0,
                 "bypass": False
             }
-        return self._engine.get_gate_parameters()
+        return await asyncio.to_thread(self._engine.get_gate_parameters)
 
     async def get_gate_metering(self) -> Dict[str, float]:
         """Get noise gate metering"""
@@ -1966,7 +1968,7 @@ class JuceEngineService(Singleton):
                 "input_rms": -100.0,
                 "output_rms": -100.0
             }
-        return self._engine.get_gate_metering()
+        return await asyncio.to_thread(self._engine.get_gate_metering)
 
     # ========================================
     # Dynamics - Combined Access (NEW)
@@ -1987,7 +1989,7 @@ class JuceEngineService(Singleton):
                 "limiter": empty_metering.copy(),
                 "gate": empty_metering.copy()
             }
-        return self._engine.get_dynamics_metering()
+        return await asyncio.to_thread(self._engine.get_dynamics_metering)
 
     # ========================================
     # EQ / Filter Processing (NEW)
@@ -1996,32 +1998,32 @@ class JuceEngineService(Singleton):
     async def set_eq_band(self, index: int, params: Dict[str, Any]) -> None:
         """Set EQ band parameters"""
         if self._engine:
-            self._engine.set_eq_band(index, params)
+            await asyncio.to_thread(self._engine.set_eq_band, index, params)
 
     async def set_eq_band_frequency(self, index: int, hz: float) -> None:
         """Set EQ band frequency"""
         if self._engine:
-            self._engine.set_eq_band_frequency(index, hz)
+            await asyncio.to_thread(self._engine.set_eq_band_frequency, index, hz)
 
     async def set_eq_band_gain(self, index: int, db: float) -> None:
         """Set EQ band gain"""
         if self._engine:
-            self._engine.set_eq_band_gain(index, db)
+            await asyncio.to_thread(self._engine.set_eq_band_gain, index, db)
 
     async def set_eq_band_q(self, index: int, q: float) -> None:
         """Set EQ band Q factor"""
         if self._engine:
-            self._engine.set_eq_band_q(index, q)
+            await asyncio.to_thread(self._engine.set_eq_band_q, index, q)
 
     async def set_eq_band_type(self, index: int, filter_type: str) -> None:
         """Set EQ band filter type"""
         if self._engine:
-            self._engine.set_eq_band_type(index, filter_type)
+            await asyncio.to_thread(self._engine.set_eq_band_type, index, filter_type)
 
     async def set_eq_band_enabled(self, index: int, enabled: bool) -> None:
         """Enable/disable EQ band"""
         if self._engine:
-            self._engine.set_eq_band_enabled(index, enabled)
+            await asyncio.to_thread(self._engine.set_eq_band_enabled, index, enabled)
 
     async def get_eq_band(self, index: int) -> Dict[str, Any]:
         """Get EQ band parameters"""
@@ -2033,29 +2035,29 @@ class JuceEngineService(Singleton):
                 "q": 1.0,
                 "enabled": True
             }
-        return self._engine.get_eq_band(index)
+        return await asyncio.to_thread(self._engine.get_eq_band, index)
 
     async def set_eq_output_gain(self, db: float) -> None:
         """Set EQ output gain"""
         if self._engine:
-            self._engine.set_eq_output_gain(db)
+            await asyncio.to_thread(self._engine.set_eq_output_gain, db)
 
     async def get_eq_output_gain(self) -> float:
         """Get EQ output gain"""
         if not self._engine:
             return 0.0
-        return self._engine.get_eq_output_gain()
+        return await asyncio.to_thread(self._engine.get_eq_output_gain)
 
     async def set_eq_bypass(self, bypass: bool) -> None:
         """Bypass EQ"""
         if self._engine:
-            self._engine.set_eq_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_eq_bypass, bypass)
 
     async def is_eq_bypassed(self) -> bool:
         """Check if EQ is bypassed"""
         if not self._engine:
             return False
-        return self._engine.is_eq_bypassed()
+        return await asyncio.to_thread(self._engine.is_eq_bypassed)
 
     async def get_eq_parameters(self) -> Dict[str, Any]:
         """Get all EQ parameters"""
@@ -2072,18 +2074,18 @@ class JuceEngineService(Singleton):
                 "output_gain": 0.0,
                 "bypass": False
             }
-        return self._engine.get_eq_parameters()
+        return await asyncio.to_thread(self._engine.get_eq_parameters)
 
     async def set_eq_parameters(self, params: Dict[str, Any]) -> None:
         """Set all EQ parameters"""
         if self._engine:
-            self._engine.set_eq_parameters(params)
+            await asyncio.to_thread(self._engine.set_eq_parameters, params)
 
     async def get_eq_frequency_response(self, frequencies: List[float]) -> List[float]:
         """Get EQ frequency response at given frequencies"""
         if not self._engine:
             return [0.0] * len(frequencies)
-        return self._engine.get_eq_frequency_response(frequencies)
+        return await asyncio.to_thread(self._engine.get_eq_frequency_response, frequencies)
 
     # ========================================
     # Parallel Processing Chains (NEW)
@@ -2093,55 +2095,55 @@ class JuceEngineService(Singleton):
         """Create a parallel processing group at given position"""
         if not self._engine:
             return -1
-        return self._engine.create_parallel_group(position, num_branches)
+        return await asyncio.to_thread(self._engine.create_parallel_group, position, num_branches)
 
     async def remove_parallel_group(self, group_id: int) -> bool:
         """Remove a parallel processing group"""
         if not self._engine:
             return False
-        return self._engine.remove_parallel_group(group_id)
+        return await asyncio.to_thread(self._engine.remove_parallel_group, group_id)
 
     async def add_to_parallel_branch(self, group_id: int, branch_index: int,
                                       plugin_id: int, position: int = -1) -> bool:
         """Add a plugin to a parallel branch"""
         if not self._engine:
             return False
-        return self._engine.add_to_parallel_branch(group_id, branch_index, plugin_id, position)
+        return await asyncio.to_thread(self._engine.add_to_parallel_branch, group_id, branch_index, plugin_id, position)
 
     async def remove_from_parallel_branch(self, group_id: int, branch_index: int,
                                            plugin_id: int) -> bool:
         """Remove a plugin from a parallel branch"""
         if not self._engine:
             return False
-        return self._engine.remove_from_parallel_branch(group_id, branch_index, plugin_id)
+        return await asyncio.to_thread(self._engine.remove_from_parallel_branch, group_id, branch_index, plugin_id)
 
     async def set_parallel_ab_blend(self, group_id: int, blend: float) -> None:
         """Set A/B blend for a parallel group (0.0 = all A, 1.0 = all B)"""
         if self._engine:
-            self._engine.set_parallel_ab_blend(group_id, blend)
+            await asyncio.to_thread(self._engine.set_parallel_ab_blend, group_id, blend)
 
     async def get_parallel_ab_blend(self, group_id: int) -> float:
         """Get A/B blend for a parallel group"""
         if not self._engine:
             return 0.5
-        return self._engine.get_parallel_ab_blend(group_id)
+        return await asyncio.to_thread(self._engine.get_parallel_ab_blend, group_id)
 
     async def set_parallel_branch_level(self, group_id: int, branch_index: int,
                                          level: float) -> None:
         """Set individual branch level (0.0 to 2.0)"""
         if self._engine:
-            self._engine.set_parallel_branch_level(group_id, branch_index, level)
+            await asyncio.to_thread(self._engine.set_parallel_branch_level, group_id, branch_index, level)
 
     async def set_parallel_bypass(self, group_id: int, bypass: bool) -> None:
         """Set bypass for a parallel group"""
         if self._engine:
-            self._engine.set_parallel_bypass(group_id, bypass)
+            await asyncio.to_thread(self._engine.set_parallel_bypass, group_id, bypass)
 
     async def get_parallel_groups(self) -> List[Dict[str, Any]]:
         """Get all parallel processing groups"""
         if not self._engine:
             return []
-        return self._engine.get_parallel_groups()
+        return await asyncio.to_thread(self._engine.get_parallel_groups)
 
     # ========================================
     # Neural Amp Modeler (RT-safe via JUCE C++)
@@ -2152,7 +2154,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.is_nam_available()
+            return await asyncio.to_thread(self._engine.is_nam_available)
         except AttributeError:
             return False
 
@@ -2172,7 +2174,7 @@ class JuceEngineService(Singleton):
             logger.error("Cannot load NAM model: engine not initialized")
             return False
         try:
-            result = self._engine.load_nam_model(path)
+            result = await asyncio.to_thread(self._engine.load_nam_model, path)
             if result:
                 logger.info(f"NAM model loading started: {path}")
             else:
@@ -2189,7 +2191,7 @@ class JuceEngineService(Singleton):
         """Unload the current NAM model"""
         if self._engine:
             try:
-                self._engine.unload_nam_model()
+                await asyncio.to_thread(self._engine.unload_nam_model)
                 logger.info("NAM model unloaded")
             except AttributeError:
                 pass
@@ -2199,7 +2201,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.is_nam_model_loaded()
+            return await asyncio.to_thread(self._engine.is_nam_model_loaded)
         except AttributeError:
             return False
 
@@ -2208,7 +2210,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.is_nam_loading()
+            return await asyncio.to_thread(self._engine.is_nam_loading)
         except AttributeError:
             return False
 
@@ -2228,7 +2230,7 @@ class JuceEngineService(Singleton):
                 "loaded": False
             }
         try:
-            return self._engine.get_nam_model_info()
+            return await asyncio.to_thread(self._engine.get_nam_model_info)
         except AttributeError:
             return {
                 "path": "",
@@ -2247,7 +2249,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.load_nam_model_instance(instance_id, path))
+            return bool(await asyncio.to_thread(self._engine.load_nam_model_instance, instance_id, path))
         except AttributeError:
             return False
 
@@ -2255,7 +2257,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.unload_nam_model_instance(instance_id))
+            return bool(await asyncio.to_thread(self._engine.unload_nam_model_instance, instance_id))
         except AttributeError:
             return False
 
@@ -2278,7 +2280,7 @@ class JuceEngineService(Singleton):
                 "bypass": False,
             }
         try:
-            return self._engine.get_nam_model_info_instance(instance_id)
+            return await asyncio.to_thread(self._engine.get_nam_model_info_instance, instance_id)
         except AttributeError:
             return {
                 "path": "",
@@ -2309,7 +2311,7 @@ class JuceEngineService(Singleton):
         """Set NAM input gain in dB"""
         if self._engine:
             try:
-                self._engine.set_nam_input_gain(db)
+                await asyncio.to_thread(self._engine.set_nam_input_gain, db)
             except AttributeError:
                 pass
 
@@ -2317,7 +2319,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_nam_input_gain_instance(instance_id, db))
+            return bool(await asyncio.to_thread(self._engine.set_nam_input_gain_instance, instance_id, db))
         except AttributeError:
             return False
 
@@ -2326,7 +2328,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return 0.0
         try:
-            return self._engine.get_nam_input_gain()
+            return await asyncio.to_thread(self._engine.get_nam_input_gain)
         except AttributeError:
             return 0.0
 
@@ -2341,7 +2343,7 @@ class JuceEngineService(Singleton):
         """Set NAM output gain in dB"""
         if self._engine:
             try:
-                self._engine.set_nam_output_gain(db)
+                await asyncio.to_thread(self._engine.set_nam_output_gain, db)
             except AttributeError:
                 pass
 
@@ -2349,7 +2351,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_nam_output_gain_instance(instance_id, db))
+            return bool(await asyncio.to_thread(self._engine.set_nam_output_gain_instance, instance_id, db))
         except AttributeError:
             return False
 
@@ -2358,7 +2360,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return 0.0
         try:
-            return self._engine.get_nam_output_gain()
+            return await asyncio.to_thread(self._engine.get_nam_output_gain)
         except AttributeError:
             return 0.0
 
@@ -2373,7 +2375,7 @@ class JuceEngineService(Singleton):
         """Set NAM bypass state"""
         if self._engine:
             try:
-                self._engine.set_nam_bypass(bypass)
+                await asyncio.to_thread(self._engine.set_nam_bypass, bypass)
             except AttributeError:
                 pass
 
@@ -2381,7 +2383,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_nam_bypass_instance(instance_id, bypass))
+            return bool(await asyncio.to_thread(self._engine.set_nam_bypass_instance, instance_id, bypass))
         except AttributeError:
             return False
 
@@ -2390,7 +2392,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return self._engine.is_nam_bypassed()
+            return await asyncio.to_thread(self._engine.is_nam_bypassed)
         except AttributeError:
             return False
 
@@ -2402,7 +2404,7 @@ class JuceEngineService(Singleton):
         """Enable/disable NAM output normalization"""
         if self._engine:
             try:
-                self._engine.set_nam_normalize(normalize)
+                await asyncio.to_thread(self._engine.set_nam_normalize, normalize)
             except AttributeError:
                 pass
 
@@ -2410,7 +2412,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return False
         try:
-            return bool(self._engine.set_nam_normalize_instance(instance_id, normalize))
+            return bool(await asyncio.to_thread(self._engine.set_nam_normalize_instance, instance_id, normalize))
         except AttributeError:
             return False
 
@@ -2419,7 +2421,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return True
         try:
-            return self._engine.is_nam_normalized()
+            return await asyncio.to_thread(self._engine.is_nam_normalized)
         except AttributeError:
             return True
 
@@ -2432,7 +2434,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return -100.0
         try:
-            return self._engine.get_nam_input_level()
+            return await asyncio.to_thread(self._engine.get_nam_input_level)
         except AttributeError:
             return -100.0
 
@@ -2448,7 +2450,7 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return -100.0
         try:
-            return self._engine.get_nam_output_level()
+            return await asyncio.to_thread(self._engine.get_nam_output_level)
         except AttributeError:
             return -100.0
 
@@ -2497,19 +2499,19 @@ class JuceEngineService(Singleton):
         """List VST3 plugins"""
         if not self._engine:
             return []
-        return self._engine.list_vst3_plugins()
+        return await asyncio.to_thread(self._engine.list_vst3_plugins)
 
     async def list_au_plugins(self) -> List[Dict[str, Any]]:
         """List AudioUnit plugins"""
         if not self._engine:
             return []
-        return self._engine.list_au_plugins()
+        return await asyncio.to_thread(self._engine.list_au_plugins)
 
     async def list_lv2_plugins(self) -> List[Dict[str, Any]]:
         """List LV2 plugins"""
         if not self._engine:
             return []
-        return self._engine.list_lv2_plugins()
+        return await asyncio.to_thread(self._engine.list_lv2_plugins)
 
     async def list_all_plugins(self) -> List[Dict[str, Any]]:
         """List all plugins across all formats (alias used by /api/plugins/all route)."""
@@ -2518,7 +2520,7 @@ class JuceEngineService(Singleton):
     async def scan_for_plugins(self, rescan_all: bool = False) -> None:
         """Scan for available plugins"""
         if self._engine:
-            self._engine.scan_for_plugins(rescan_all)
+            await asyncio.to_thread(self._engine.scan_for_plugins, rescan_all)
 
     async def scan_plugins(self, format: str = None) -> None:
         """Scan for plugins (route-compatible alias); format ignored — engine scans all."""
@@ -2572,138 +2574,138 @@ class JuceEngineService(Singleton):
 
     async def set_delay_time_l(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_delay_time_l(ms)
+            await asyncio.to_thread(self._engine.set_delay_time_l, ms)
 
     async def set_delay_time_r(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_delay_time_r(ms)
+            await asyncio.to_thread(self._engine.set_delay_time_r, ms)
 
     async def set_delay_feedback(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_feedback(percent)
+            await asyncio.to_thread(self._engine.set_delay_feedback, percent)
 
     async def set_delay_mix(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_mix(percent)
+            await asyncio.to_thread(self._engine.set_delay_mix, percent)
 
     async def set_delay_tempo(self, bpm: float) -> None:
         if self._engine:
-            self._engine.set_delay_tempo(bpm)
+            await asyncio.to_thread(self._engine.set_delay_tempo, bpm)
 
     async def set_delay_tempo_sync_l(self, division: int) -> None:
         if self._engine:
-            self._engine.set_delay_tempo_sync_l(division)
+            await asyncio.to_thread(self._engine.set_delay_tempo_sync_l, division)
 
     async def set_delay_tempo_sync_r(self, division: int) -> None:
         if self._engine:
-            self._engine.set_delay_tempo_sync_r(division)
+            await asyncio.to_thread(self._engine.set_delay_tempo_sync_r, division)
 
     async def set_delay_tap1_level(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap1_level(percent)
+            await asyncio.to_thread(self._engine.set_delay_tap1_level, percent)
 
     async def set_delay_tap2_level(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap2_level(percent)
+            await asyncio.to_thread(self._engine.set_delay_tap2_level, percent)
 
     async def set_delay_tap2_ratio(self, ratio: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap2_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_delay_tap2_ratio, ratio)
 
     async def set_delay_tap3_level(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap3_level(percent)
+            await asyncio.to_thread(self._engine.set_delay_tap3_level, percent)
 
     async def set_delay_tap3_ratio(self, ratio: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap3_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_delay_tap3_ratio, ratio)
 
     async def set_delay_tap4_level(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap4_level(percent)
+            await asyncio.to_thread(self._engine.set_delay_tap4_level, percent)
 
     async def set_delay_tap4_ratio(self, ratio: float) -> None:
         if self._engine:
-            self._engine.set_delay_tap4_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_delay_tap4_ratio, ratio)
 
     async def set_delay_stereo_mode(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_delay_stereo_mode(mode)
+            await asyncio.to_thread(self._engine.set_delay_stereo_mode, mode)
 
     async def set_delay_stereo_spread(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_stereo_spread(percent)
+            await asyncio.to_thread(self._engine.set_delay_stereo_spread, percent)
 
     async def set_delay_pan(self, pan: float) -> None:
         if self._engine:
-            self._engine.set_delay_pan(pan)
+            await asyncio.to_thread(self._engine.set_delay_pan, pan)
 
     async def set_delay_mod_rate(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_delay_mod_rate(hz)
+            await asyncio.to_thread(self._engine.set_delay_mod_rate, hz)
 
     async def set_delay_mod_depth(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_mod_depth(percent)
+            await asyncio.to_thread(self._engine.set_delay_mod_depth, percent)
 
     async def set_delay_mod_waveform(self, waveform: int) -> None:
         if self._engine:
-            self._engine.set_delay_mod_waveform(waveform)
+            await asyncio.to_thread(self._engine.set_delay_mod_waveform, waveform)
 
     async def set_delay_low_cut(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_delay_low_cut(hz)
+            await asyncio.to_thread(self._engine.set_delay_low_cut, hz)
 
     async def set_delay_high_cut(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_delay_high_cut(hz)
+            await asyncio.to_thread(self._engine.set_delay_high_cut, hz)
 
     async def set_delay_filter_in_loop(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_delay_filter_in_loop(enabled)
+            await asyncio.to_thread(self._engine.set_delay_filter_in_loop, enabled)
 
     async def set_delay_diffusion(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_diffusion(percent)
+            await asyncio.to_thread(self._engine.set_delay_diffusion, percent)
 
     async def set_delay_duck_threshold(self, db: float) -> None:
         if self._engine:
-            self._engine.set_delay_duck_threshold(db)
+            await asyncio.to_thread(self._engine.set_delay_duck_threshold, db)
 
     async def set_delay_duck_amount(self, percent: float) -> None:
         if self._engine:
-            self._engine.set_delay_duck_amount(percent)
+            await asyncio.to_thread(self._engine.set_delay_duck_amount, percent)
 
     async def set_delay_duck_release(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_delay_duck_release(ms)
+            await asyncio.to_thread(self._engine.set_delay_duck_release, ms)
 
     async def set_delay_output_level(self, db: float) -> None:
         if self._engine:
-            self._engine.set_delay_output_level(db)
+            await asyncio.to_thread(self._engine.set_delay_output_level, db)
 
     async def set_delay_spillover(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_delay_spillover(enabled)
+            await asyncio.to_thread(self._engine.set_delay_spillover, enabled)
 
     async def has_delay_spillover(self) -> bool:
         if not self._engine:
             return True
-        return bool(self._engine.has_delay_spillover())
+        return bool(await asyncio.to_thread(self._engine.has_delay_spillover))
 
     async def stage_delay_spillover(self) -> bool:
         if not self._engine or not hasattr(self._engine, "stage_delay_spillover"):
             return False
-        return bool(self._engine.stage_delay_spillover())
+        return bool(await asyncio.to_thread(self._engine.stage_delay_spillover))
 
     async def set_delay_bypass(self, bypass: bool) -> None:
         if self._engine:
-            self._engine.set_delay_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_delay_bypass, bypass)
 
     async def is_delay_bypassed(self) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.is_delay_bypassed())
+        return bool(await asyncio.to_thread(self._engine.is_delay_bypassed))
 
     async def get_delay_parameters(self) -> Dict[str, Any]:
         if not self._engine:
@@ -2739,7 +2741,7 @@ class JuceEngineService(Singleton):
                 "spillover": True,
                 "bypass": False,
             }
-        return dict(self._engine.get_delay_parameters())
+        return dict(await asyncio.to_thread(self._engine.get_delay_parameters))
 
     async def get_delay_metering(self) -> Dict[str, float]:
         if not self._engine:
@@ -2753,7 +2755,7 @@ class JuceEngineService(Singleton):
                 "ducking_gain": 0.0,
                 "mod_phase": 0.0,
             }
-        return dict(self._engine.get_delay_metering())
+        return dict(await asyncio.to_thread(self._engine.get_delay_metering))
 
     async def get_delay_effective_times(self) -> Dict[str, float]:
         params = await self.get_delay_parameters()
@@ -2796,107 +2798,107 @@ class JuceEngineService(Singleton):
     async def set_boss_xs1_shift_amount(self, semitones: float) -> None:
         """Set Boss XS-1 pitch shift amount in semitones (-7 to +7)"""
         if self._engine:
-            self._engine.set_boss_xs1_shift_amount(semitones)
+            await asyncio.to_thread(self._engine.set_boss_xs1_shift_amount, semitones)
 
     async def get_boss_xs1_shift_amount(self) -> float:
         """Get Boss XS-1 pitch shift amount"""
         if not self._engine:
             return 0.0
-        return self._engine.get_boss_xs1_shift_amount()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_shift_amount)
 
     async def set_boss_xs1_balance(self, percent: float) -> None:
         """Set Boss XS-1 wet/dry balance (0-100%)"""
         if self._engine:
-            self._engine.set_boss_xs1_balance(percent)
+            await asyncio.to_thread(self._engine.set_boss_xs1_balance, percent)
 
     async def get_boss_xs1_balance(self) -> float:
         """Get Boss XS-1 balance"""
         if not self._engine:
             return 50.0
-        return self._engine.get_boss_xs1_balance()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_balance)
 
     async def set_boss_xs1_detune_mode(self, enabled: bool) -> None:
         """Enable Boss XS-1 detune mode"""
         if self._engine:
-            self._engine.set_boss_xs1_detune_mode(enabled)
+            await asyncio.to_thread(self._engine.set_boss_xs1_detune_mode, enabled)
 
     async def is_boss_xs1_detune_mode(self) -> bool:
         """Check if Boss XS-1 is in detune mode"""
         if not self._engine:
             return False
-        return self._engine.is_boss_xs1_detune_mode()
+        return await asyncio.to_thread(self._engine.is_boss_xs1_detune_mode)
 
     async def set_boss_xs1_detune_amount(self, cents: float) -> None:
         """Set Boss XS-1 detune amount in cents"""
         if self._engine:
-            self._engine.set_boss_xs1_detune_amount(cents)
+            await asyncio.to_thread(self._engine.set_boss_xs1_detune_amount, cents)
 
     async def get_boss_xs1_detune_amount(self) -> float:
         """Get Boss XS-1 detune amount"""
         if not self._engine:
             return 20.0
-        return self._engine.get_boss_xs1_detune_amount()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_detune_amount)
 
     async def set_boss_xs1_glide(self, ms: float) -> None:
         """Set Boss XS-1 glide time in ms"""
         if self._engine:
-            self._engine.set_boss_xs1_glide(ms)
+            await asyncio.to_thread(self._engine.set_boss_xs1_glide, ms)
 
     async def get_boss_xs1_glide(self) -> float:
         """Get Boss XS-1 glide time"""
         if not self._engine:
             return 0.0
-        return self._engine.get_boss_xs1_glide()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_glide)
 
     async def set_boss_xs1_feedback(self, feedback: float) -> None:
         """Set Boss XS-1 feedback (0 to 0.7)"""
         if self._engine:
-            self._engine.set_boss_xs1_feedback(feedback)
+            await asyncio.to_thread(self._engine.set_boss_xs1_feedback, feedback)
 
     async def get_boss_xs1_feedback(self) -> float:
         """Get Boss XS-1 feedback"""
         if not self._engine:
             return 0.0
-        return self._engine.get_boss_xs1_feedback()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_feedback)
 
     async def set_boss_xs1_pedal_enabled(self, enabled: bool) -> None:
         """Enable Boss XS-1 expression pedal"""
         if self._engine:
-            self._engine.set_boss_xs1_pedal_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_boss_xs1_pedal_enabled, enabled)
 
     async def is_boss_xs1_pedal_enabled(self) -> bool:
         """Check if Boss XS-1 pedal is enabled"""
         if not self._engine:
             return False
-        return self._engine.is_boss_xs1_pedal_enabled()
+        return await asyncio.to_thread(self._engine.is_boss_xs1_pedal_enabled)
 
     async def set_boss_xs1_pedal_position(self, position: float) -> None:
         """Set Boss XS-1 pedal position (0-100%)"""
         if self._engine:
-            self._engine.set_boss_xs1_pedal_position(position)
+            await asyncio.to_thread(self._engine.set_boss_xs1_pedal_position, position)
 
     async def get_boss_xs1_pedal_position(self) -> float:
         """Get Boss XS-1 pedal position"""
         if not self._engine:
             return 0.0
-        return self._engine.get_boss_xs1_pedal_position()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_pedal_position)
 
     async def set_boss_xs1_pedal_range(self, min_st: float, max_st: float) -> None:
         """Set Boss XS-1 pedal range in semitones"""
         if self._engine:
-            self._engine.set_boss_xs1_pedal_range(min_st, max_st)
+            await asyncio.to_thread(self._engine.set_boss_xs1_pedal_range, min_st, max_st)
 
     async def get_boss_xs1_pedal_min(self) -> float:
         """Get Boss XS-1 pedal min"""
         if not self._engine:
             return -7.0
-        return self._engine.get_boss_xs1_pedal_min()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_pedal_min)
 
     async def get_boss_xs1_pedal_max(self) -> float:
         """Get Boss XS-1 pedal max"""
         if not self._engine:
             return 7.0
-        return self._engine.get_boss_xs1_pedal_max()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_pedal_max)
 
     async def set_boss_xs1_preset(self, preset_index: int) -> None:
         """Set Boss XS-1 preset by index"""
@@ -2911,24 +2913,24 @@ class JuceEngineService(Singleton):
                 "chord_shift", "detune_chorus", "spacey_vibrato", "robotic_mod"
             ]
             if 0 <= preset_index < len(presets):
-                self._engine.set_boss_xs1_preset(presets[preset_index])
+                await asyncio.to_thread(self._engine.set_boss_xs1_preset, presets[preset_index])
 
     async def get_boss_xs1_preset(self) -> str:
         """Get Boss XS-1 current preset name"""
         if not self._engine:
             return "manual"
-        return self._engine.get_boss_xs1_preset()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_preset)
 
     async def set_boss_xs1_bypass(self, bypass: bool) -> None:
         """Bypass Boss XS-1"""
         if self._engine:
-            self._engine.set_boss_xs1_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_boss_xs1_bypass, bypass)
 
     async def is_boss_xs1_bypassed(self) -> bool:
         """Check if Boss XS-1 is bypassed"""
         if not self._engine:
             return False
-        return self._engine.is_boss_xs1_bypassed()
+        return await asyncio.to_thread(self._engine.is_boss_xs1_bypassed)
 
     def _preset_name_to_index(self, preset_name: str) -> int:
         """Convert Boss XS-1 preset name to index"""
@@ -2963,7 +2965,7 @@ class JuceEngineService(Singleton):
                 "preset": 0,
                 "bypass": False
             }
-        params = self._engine.get_boss_xs1_parameters()
+        params = await asyncio.to_thread(self._engine.get_boss_xs1_parameters)
         # Convert preset name to index for frontend compatibility
         if isinstance(params.get("preset"), str):
             params["preset"] = self._preset_name_to_index(params["preset"])
@@ -2972,19 +2974,19 @@ class JuceEngineService(Singleton):
     async def set_boss_xs1_parameters(self, params: Dict[str, Any]) -> None:
         """Set all Boss XS-1 parameters at once"""
         if self._engine:
-            self._engine.set_boss_xs1_parameters(params)
+            await asyncio.to_thread(self._engine.set_boss_xs1_parameters, params)
 
     async def get_boss_xs1_input_level(self) -> float:
         """Get Boss XS-1 input level in dB"""
         if not self._engine:
             return -100.0
-        return self._engine.get_boss_xs1_input_level()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_input_level)
 
     async def get_boss_xs1_output_level(self) -> float:
         """Get Boss XS-1 output level in dB"""
         if not self._engine:
             return -100.0
-        return self._engine.get_boss_xs1_output_level()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_output_level)
 
     async def get_boss_xs1_metering(self) -> Dict[str, float]:
         """Get Boss XS-1 metering"""
@@ -2993,16 +2995,18 @@ class JuceEngineService(Singleton):
                 "input_level": -100.0,
                 "output_level": -100.0
             }
+        input_level = await asyncio.to_thread(self._engine.get_boss_xs1_input_level)
+        output_level = await asyncio.to_thread(self._engine.get_boss_xs1_output_level)
         return {
-            "input_level": self._engine.get_boss_xs1_input_level(),
-            "output_level": self._engine.get_boss_xs1_output_level()
+            "input_level": input_level,
+            "output_level": output_level,
         }
 
     async def get_boss_xs1_presets(self) -> List[Dict[str, Any]]:
         """Get all Boss XS-1 presets"""
         if not self._engine:
             return []
-        return self._engine.get_boss_xs1_presets()
+        return await asyncio.to_thread(self._engine.get_boss_xs1_presets)
 
     # ========================================
     # ShoeGaze Multi-Effect Processor
@@ -3011,117 +3015,117 @@ class JuceEngineService(Singleton):
     async def set_shoegaze_atmosphere(self, percent: float) -> None:
         """Set ShoeGaze atmosphere (master dreamy control)"""
         if self._engine:
-            self._engine.set_shoegaze_atmosphere(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_atmosphere, percent)
 
     async def set_shoegaze_decay(self, seconds: float) -> None:
         """Set ShoeGaze reverb decay time"""
         if self._engine:
-            self._engine.set_shoegaze_decay(seconds)
+            await asyncio.to_thread(self._engine.set_shoegaze_decay, seconds)
 
     async def set_shoegaze_shimmer(self, percent: float) -> None:
         """Set ShoeGaze shimmer amount"""
         if self._engine:
-            self._engine.set_shoegaze_shimmer(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_shimmer, percent)
 
     async def set_shoegaze_shimmer_pitch(self, semitones: float) -> None:
         """Set ShoeGaze shimmer pitch in semitones"""
         if self._engine:
-            self._engine.set_shoegaze_shimmer_pitch(semitones)
+            await asyncio.to_thread(self._engine.set_shoegaze_shimmer_pitch, semitones)
 
     async def set_shoegaze_modulation(self, percent: float) -> None:
         """Set ShoeGaze chorus modulation depth"""
         if self._engine:
-            self._engine.set_shoegaze_modulation(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_modulation, percent)
 
     async def set_shoegaze_mod_rate(self, hz: float) -> None:
         """Set ShoeGaze modulation rate in Hz"""
         if self._engine:
-            self._engine.set_shoegaze_mod_rate(hz)
+            await asyncio.to_thread(self._engine.set_shoegaze_mod_rate, hz)
 
     async def set_shoegaze_drive(self, percent: float) -> None:
         """Set ShoeGaze saturation drive"""
         if self._engine:
-            self._engine.set_shoegaze_drive(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_drive, percent)
 
     async def set_shoegaze_delay_time(self, ms: float) -> None:
         """Set ShoeGaze delay time in ms"""
         if self._engine:
-            self._engine.set_shoegaze_delay_time(ms)
+            await asyncio.to_thread(self._engine.set_shoegaze_delay_time, ms)
 
     async def set_shoegaze_delay_feedback(self, percent: float) -> None:
         """Set ShoeGaze delay feedback"""
         if self._engine:
-            self._engine.set_shoegaze_delay_feedback(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_delay_feedback, percent)
 
     async def set_shoegaze_delay_mod(self, percent: float) -> None:
         """Set ShoeGaze delay modulation/BBD wobble"""
         if self._engine:
-            self._engine.set_shoegaze_delay_mod(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_delay_mod, percent)
 
     async def set_shoegaze_low_cut(self, hz: float) -> None:
         """Set ShoeGaze low cut frequency"""
         if self._engine:
-            self._engine.set_shoegaze_low_cut(hz)
+            await asyncio.to_thread(self._engine.set_shoegaze_low_cut, hz)
 
     async def set_shoegaze_high_cut(self, hz: float) -> None:
         """Set ShoeGaze high cut frequency"""
         if self._engine:
-            self._engine.set_shoegaze_high_cut(hz)
+            await asyncio.to_thread(self._engine.set_shoegaze_high_cut, hz)
 
     async def set_shoegaze_mix(self, percent: float) -> None:
         """Set ShoeGaze wet/dry mix"""
         if self._engine:
-            self._engine.set_shoegaze_mix(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_mix, percent)
 
     async def set_shoegaze_stereo_width(self, percent: float) -> None:
         """Set ShoeGaze stereo width"""
         if self._engine:
-            self._engine.set_shoegaze_stereo_width(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_stereo_width, percent)
 
     async def set_shoegaze_reverb_diffusion(self, percent: float) -> None:
         """Set ShoeGaze reverb diffusion"""
         if self._engine:
-            self._engine.set_shoegaze_reverb_diffusion(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_reverb_diffusion, percent)
 
     async def set_shoegaze_reverb_damping(self, percent: float) -> None:
         """Set ShoeGaze reverb damping"""
         if self._engine:
-            self._engine.set_shoegaze_reverb_damping(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_reverb_damping, percent)
 
     async def set_shoegaze_shimmer_feedback(self, percent: float) -> None:
         """Set ShoeGaze shimmer feedback"""
         if self._engine:
-            self._engine.set_shoegaze_shimmer_feedback(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_shimmer_feedback, percent)
 
     async def set_shoegaze_chorus_voices(self, voices: int) -> None:
         """Set ShoeGaze chorus voices (1-6)"""
         if self._engine:
-            self._engine.set_shoegaze_chorus_voices(voices)
+            await asyncio.to_thread(self._engine.set_shoegaze_chorus_voices, voices)
 
     async def set_shoegaze_ducking(self, percent: float) -> None:
         """Set ShoeGaze ducking amount"""
         if self._engine:
-            self._engine.set_shoegaze_ducking(percent)
+            await asyncio.to_thread(self._engine.set_shoegaze_ducking, percent)
 
     async def set_shoegaze_preset(self, preset_name: str) -> None:
         """Set ShoeGaze preset by name"""
         if self._engine:
-            self._engine.set_shoegaze_preset(preset_name.lower())
+            await asyncio.to_thread(self._engine.set_shoegaze_preset, preset_name.lower())
 
     async def set_shoegaze_bypass(self, bypass: bool) -> None:
         """Set ShoeGaze bypass state"""
         if self._engine:
-            self._engine.set_shoegaze_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_shoegaze_bypass, bypass)
 
     async def set_shoegaze_spillover(self, enabled: bool) -> None:
         """Set ShoeGaze spillover (reverb tails when bypassed)"""
         if self._engine:
-            self._engine.set_shoegaze_spillover(enabled)
+            await asyncio.to_thread(self._engine.set_shoegaze_spillover, enabled)
 
     async def stage_shoegaze_spillover(self) -> bool:
         if not self._engine or not hasattr(self._engine, "stage_shoegaze_spillover"):
             return False
-        return bool(self._engine.stage_shoegaze_spillover())
+        return bool(await asyncio.to_thread(self._engine.stage_shoegaze_spillover))
 
     async def get_shoegaze_parameters(self) -> Dict[str, Any]:
         """Get all ShoeGaze parameters"""
@@ -3137,7 +3141,7 @@ class JuceEngineService(Singleton):
                 "ducking": 20.0, "preset": "manual",
                 "spillover": True, "bypass": False
             }
-        params = self._engine.get_shoegaze_parameters()
+        params = await asyncio.to_thread(self._engine.get_shoegaze_parameters)
         return {
             "atmosphere": params.get("atmosphere", 50.0),
             "decay": params.get("decay", 4.0),
@@ -3174,7 +3178,7 @@ class JuceEngineService(Singleton):
                 "saturation_level": 0.0, "stereo_correlation": 1.0,
                 "cpu_load": 0.0
             }
-        metering = self._engine.get_shoegaze_metering()
+        metering = await asyncio.to_thread(self._engine.get_shoegaze_metering)
         return {
             "input_level": metering.get("input_level", -100.0),
             "output_level": metering.get("output_level", -100.0),
@@ -3208,37 +3212,37 @@ class JuceEngineService(Singleton):
     async def set_pitch_shifter_pitch_l(self, cents: float) -> None:
         """Set pitch shifter left pitch in cents"""
         if self._engine:
-            self._engine.set_pitch_shifter_pitch_l(cents)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_pitch_l, cents)
 
     async def set_pitch_shifter_pitch_r(self, cents: float) -> None:
         """Set pitch shifter right pitch in cents"""
         if self._engine:
-            self._engine.set_pitch_shifter_pitch_r(cents)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_pitch_r, cents)
 
     async def set_pitch_shifter_delay_l(self, ms: float) -> None:
         """Set pitch shifter left delay in ms"""
         if self._engine:
-            self._engine.set_pitch_shifter_delay_l(ms)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_delay_l, ms)
 
     async def set_pitch_shifter_delay_r(self, ms: float) -> None:
         """Set pitch shifter right delay in ms"""
         if self._engine:
-            self._engine.set_pitch_shifter_delay_r(ms)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_delay_r, ms)
 
     async def set_pitch_shifter_feedback(self, amount: float) -> None:
         """Set pitch shifter feedback (0-0.9)"""
         if self._engine:
-            self._engine.set_pitch_shifter_feedback(amount)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_feedback, amount)
 
     async def set_pitch_shifter_mix(self, percent: float) -> None:
         """Set pitch shifter mix (0-100)"""
         if self._engine:
-            self._engine.set_pitch_shifter_mix(percent)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_mix, percent)
 
     async def set_pitch_shifter_spread(self, percent: float) -> None:
         """Set pitch shifter stereo spread (0-100)"""
         if self._engine:
-            self._engine.set_pitch_shifter_spread(percent)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_spread, percent)
 
     async def set_pitch_shifter_preset(self, preset_index: int) -> None:
         """Set pitch shifter preset by index"""
@@ -3251,12 +3255,12 @@ class JuceEngineService(Singleton):
                 "right_now", "cant_stop_lovin_you", "humans_being_outtro"
             ]
             if 0 <= preset_index < len(presets):
-                self._engine.set_pitch_shifter_preset(presets[preset_index])
+                await asyncio.to_thread(self._engine.set_pitch_shifter_preset, presets[preset_index])
 
     async def set_pitch_shifter_bypass(self, bypass: bool) -> None:
         """Set pitch shifter bypass state"""
         if self._engine:
-            self._engine.set_pitch_shifter_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_pitch_shifter_bypass, bypass)
 
     async def get_pitch_shifter_parameters(self) -> Dict[str, Any]:
         """Get pitch shifter parameters"""
@@ -3267,7 +3271,7 @@ class JuceEngineService(Singleton):
                 "feedback": 0.0, "mix": 50.0, "spread": 50.0,
                 "preset": "manual", "bypass": False
             }
-        params = self._engine.get_pitch_shifter_parameters()
+        params = await asyncio.to_thread(self._engine.get_pitch_shifter_parameters)
         return {
             "pitch_l": params.get("pitch_l", 0.0),
             "pitch_r": params.get("pitch_r", 0.0),
@@ -3288,7 +3292,7 @@ class JuceEngineService(Singleton):
                 "output_level_l": -100.0, "output_level_r": -100.0,
                 "pitch_l_actual": 0.0, "pitch_r_actual": 0.0
             }
-        metering = self._engine.get_pitch_shifter_metering()
+        metering = await asyncio.to_thread(self._engine.get_pitch_shifter_metering)
         return {
             "input_level_l": metering.get("input_level_l", -100.0),
             "input_level_r": metering.get("input_level_r", -100.0),
@@ -3301,7 +3305,7 @@ class JuceEngineService(Singleton):
     async def get_pitch_shifter_presets(self) -> List[Dict[str, Any]]:
         """Get pitch shifter presets"""
         if self._engine:
-            return self._engine.get_pitch_shifter_presets()
+            return await asyncio.to_thread(self._engine.get_pitch_shifter_presets)
         return []
 
     # ============================================================
@@ -3311,12 +3315,12 @@ class JuceEngineService(Singleton):
     async def set_h3000_bypass(self, bypass: bool) -> None:
         """Set H3000 bypass state"""
         if self._engine:
-            self._engine.set_h3000_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_h3000_bypass, bypass)
 
     async def set_h3000_algorithm(self, algorithm_index: int) -> None:
         """Set H3000 algorithm by index (0-9)"""
         if self._engine:
-            self._engine.set_h3000_algorithm(algorithm_index)
+            await asyncio.to_thread(self._engine.set_h3000_algorithm, algorithm_index)
 
     async def set_h3000_algorithm_by_name(self, name: str) -> None:
         """Set H3000 algorithm by name"""
@@ -3329,77 +3333,77 @@ class JuceEngineService(Singleton):
                 "patch_factory": 9
             }
             if name in algorithms:
-                self._engine.set_h3000_algorithm(algorithms[name])
+                await asyncio.to_thread(self._engine.set_h3000_algorithm, algorithms[name])
 
     async def set_h3000_pitch_l(self, cents: float) -> None:
         """Set H3000 left pitch shift in cents (-2400 to +2400)"""
         if self._engine:
-            self._engine.set_h3000_pitch_l(cents)
+            await asyncio.to_thread(self._engine.set_h3000_pitch_l, cents)
 
     async def set_h3000_pitch_r(self, cents: float) -> None:
         """Set H3000 right pitch shift in cents (-2400 to +2400)"""
         if self._engine:
-            self._engine.set_h3000_pitch_r(cents)
+            await asyncio.to_thread(self._engine.set_h3000_pitch_r, cents)
 
     async def set_h3000_delay_l(self, ms: float) -> None:
         """Set H3000 left delay in milliseconds (0-1000)"""
         if self._engine:
-            self._engine.set_h3000_delay_l(ms)
+            await asyncio.to_thread(self._engine.set_h3000_delay_l, ms)
 
     async def set_h3000_delay_r(self, ms: float) -> None:
         """Set H3000 right delay in milliseconds (0-1000)"""
         if self._engine:
-            self._engine.set_h3000_delay_r(ms)
+            await asyncio.to_thread(self._engine.set_h3000_delay_r, ms)
 
     async def set_h3000_feedback(self, percent: float) -> None:
         """Set H3000 feedback amount (0-100)"""
         if self._engine:
-            self._engine.set_h3000_feedback(percent)
+            await asyncio.to_thread(self._engine.set_h3000_feedback, percent)
 
     async def set_h3000_cross_feedback(self, percent: float) -> None:
         """Set H3000 cross-channel feedback (0-100)"""
         if self._engine:
-            self._engine.set_h3000_cross_feedback(percent)
+            await asyncio.to_thread(self._engine.set_h3000_cross_feedback, percent)
 
     async def set_h3000_mod_depth(self, percent: float) -> None:
         """Set H3000 modulation depth (0-100)"""
         if self._engine:
-            self._engine.set_h3000_mod_depth(percent)
+            await asyncio.to_thread(self._engine.set_h3000_mod_depth, percent)
 
     async def set_h3000_mod_rate(self, hz: float) -> None:
         """Set H3000 modulation rate in Hz (0.1-10)"""
         if self._engine:
-            self._engine.set_h3000_mod_rate(hz)
+            await asyncio.to_thread(self._engine.set_h3000_mod_rate, hz)
 
     async def set_h3000_low_cut(self, hz: float) -> None:
         """Set H3000 low cut frequency (20-500 Hz)"""
         if self._engine:
-            self._engine.set_h3000_low_cut(hz)
+            await asyncio.to_thread(self._engine.set_h3000_low_cut, hz)
 
     async def set_h3000_high_cut(self, hz: float) -> None:
         """Set H3000 high cut frequency (2000-20000 Hz)"""
         if self._engine:
-            self._engine.set_h3000_high_cut(hz)
+            await asyncio.to_thread(self._engine.set_h3000_high_cut, hz)
 
     async def set_h3000_mix(self, percent: float) -> None:
         """Set H3000 wet/dry mix (0-100)"""
         if self._engine:
-            self._engine.set_h3000_mix(percent)
+            await asyncio.to_thread(self._engine.set_h3000_mix, percent)
 
     async def set_h3000_level_l(self, percent: float) -> None:
         """Set H3000 left output level (0-100)"""
         if self._engine:
-            self._engine.set_h3000_level_l(percent)
+            await asyncio.to_thread(self._engine.set_h3000_level_l, percent)
 
     async def set_h3000_level_r(self, percent: float) -> None:
         """Set H3000 right output level (0-100)"""
         if self._engine:
-            self._engine.set_h3000_level_r(percent)
+            await asyncio.to_thread(self._engine.set_h3000_level_r, percent)
 
     async def set_h3000_glide(self, ms: float) -> None:
         """Set H3000 pitch glide time in ms (0-1000)"""
         if self._engine:
-            self._engine.set_h3000_glide(ms)
+            await asyncio.to_thread(self._engine.set_h3000_glide, ms)
 
     async def get_h3000_parameters(self) -> Dict[str, Any]:
         """Get all H3000 parameters"""
@@ -3414,7 +3418,7 @@ class JuceEngineService(Singleton):
                 "mix": 50.0, "level_l": 100.0, "level_r": 100.0,
                 "glide": 0.0, "bypass": False
             }
-        params = self._engine.get_h3000_parameters()
+        params = await asyncio.to_thread(self._engine.get_h3000_parameters)
         return {
             "algorithm": params.get("algorithm", "micropitch"),
             "algorithm_index": params.get("algorithm_index", 0),
@@ -3445,7 +3449,7 @@ class JuceEngineService(Singleton):
                 "delay_l_actual": 0.0, "delay_r_actual": 0.0,
                 "mod_phase": 0.0
             }
-        metering = self._engine.get_h3000_metering()
+        metering = await asyncio.to_thread(self._engine.get_h3000_metering)
         return {
             "input_level_l": metering.get("input_level_l", -100.0),
             "input_level_r": metering.get("input_level_r", -100.0),
@@ -3480,97 +3484,97 @@ class JuceEngineService(Singleton):
     async def set_lexilove_algorithm(self, algorithm_index: int) -> None:
         """Set Lexi Love algorithm by index (0-8)"""
         if self._engine:
-            self._engine.set_lexilove_algorithm(algorithm_index)
+            await asyncio.to_thread(self._engine.set_lexilove_algorithm, algorithm_index)
 
     async def set_lexilove_algorithm_by_name(self, name: str) -> None:
         """Set Lexi Love algorithm by name"""
         if self._engine:
-            self._engine.set_lexilove_algorithm_by_name(name)
+            await asyncio.to_thread(self._engine.set_lexilove_algorithm_by_name, name)
 
     async def set_lexilove_pre_delay(self, ms: float) -> None:
         """Set Lexi Love pre-delay in milliseconds"""
         if self._engine:
-            self._engine.set_lexilove_pre_delay(ms)
+            await asyncio.to_thread(self._engine.set_lexilove_pre_delay, ms)
 
     async def set_lexilove_decay_time(self, seconds: float) -> None:
         """Set Lexi Love decay time (RT60) in seconds"""
         if self._engine:
-            self._engine.set_lexilove_decay_time(seconds)
+            await asyncio.to_thread(self._engine.set_lexilove_decay_time, seconds)
 
     async def set_lexilove_diffusion(self, percent: float) -> None:
         """Set Lexi Love diffusion amount"""
         if self._engine:
-            self._engine.set_lexilove_diffusion(percent)
+            await asyncio.to_thread(self._engine.set_lexilove_diffusion, percent)
 
     async def set_lexilove_mix(self, percent: float) -> None:
         """Set Lexi Love wet/dry mix"""
         if self._engine:
-            self._engine.set_lexilove_mix(percent)
+            await asyncio.to_thread(self._engine.set_lexilove_mix, percent)
 
     async def set_lexilove_high_cut(self, hz: float) -> None:
         """Set Lexi Love high cut frequency"""
         if self._engine:
-            self._engine.set_lexilove_high_cut(hz)
+            await asyncio.to_thread(self._engine.set_lexilove_high_cut, hz)
 
     async def set_lexilove_low_cut(self, hz: float) -> None:
         """Set Lexi Love low cut frequency"""
         if self._engine:
-            self._engine.set_lexilove_low_cut(hz)
+            await asyncio.to_thread(self._engine.set_lexilove_low_cut, hz)
 
     async def set_lexilove_low_decay_mult(self, mult: float) -> None:
         """Set Lexi Love low frequency decay multiplier"""
         if self._engine:
-            self._engine.set_lexilove_low_decay_mult(mult)
+            await asyncio.to_thread(self._engine.set_lexilove_low_decay_mult, mult)
 
     async def set_lexilove_high_decay_mult(self, mult: float) -> None:
         """Set Lexi Love high frequency decay multiplier"""
         if self._engine:
-            self._engine.set_lexilove_high_decay_mult(mult)
+            await asyncio.to_thread(self._engine.set_lexilove_high_decay_mult, mult)
 
     async def set_lexilove_low_crossover(self, hz: float) -> None:
         """Set Lexi Love low crossover frequency"""
         if self._engine:
-            self._engine.set_lexilove_low_crossover(hz)
+            await asyncio.to_thread(self._engine.set_lexilove_low_crossover, hz)
 
     async def set_lexilove_high_crossover(self, hz: float) -> None:
         """Set Lexi Love high crossover frequency"""
         if self._engine:
-            self._engine.set_lexilove_high_crossover(hz)
+            await asyncio.to_thread(self._engine.set_lexilove_high_crossover, hz)
 
     async def set_lexilove_early_level(self, percent: float) -> None:
         """Set Lexi Love early reflections level"""
         if self._engine:
-            self._engine.set_lexilove_early_level(percent)
+            await asyncio.to_thread(self._engine.set_lexilove_early_level, percent)
 
     async def set_lexilove_early_pattern(self, percent: float) -> None:
         """Set Lexi Love early reflections pattern density"""
         if self._engine:
-            self._engine.set_lexilove_early_pattern(percent)
+            await asyncio.to_thread(self._engine.set_lexilove_early_pattern, percent)
 
     async def set_lexilove_mod_depth(self, percent: float) -> None:
         """Set Lexi Love modulation depth (sparkle)"""
         if self._engine:
-            self._engine.set_lexilove_mod_depth(percent)
+            await asyncio.to_thread(self._engine.set_lexilove_mod_depth, percent)
 
     async def set_lexilove_mod_rate(self, hz: float) -> None:
         """Set Lexi Love modulation rate"""
         if self._engine:
-            self._engine.set_lexilove_mod_rate(hz)
+            await asyncio.to_thread(self._engine.set_lexilove_mod_rate, hz)
 
     async def set_lexilove_bypass(self, bypass: bool) -> None:
         """Set Lexi Love bypass state"""
         if self._engine:
-            self._engine.set_lexilove_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_lexilove_bypass, bypass)
 
     async def set_lexilove_spillover(self, enabled: bool) -> None:
         """Set Lexi Love spillover (tail continues on bypass)"""
         if self._engine:
-            self._engine.set_lexilove_spillover(enabled)
+            await asyncio.to_thread(self._engine.set_lexilove_spillover, enabled)
 
     async def stage_lexilove_spillover(self) -> bool:
         if not self._engine or not hasattr(self._engine, "stage_lexilove_spillover"):
             return False
-        return bool(self._engine.stage_lexilove_spillover())
+        return bool(await asyncio.to_thread(self._engine.stage_lexilove_spillover))
 
     async def get_lexilove_parameters(self) -> Dict[str, Any]:
         """Get all Lexi Love parameters"""
@@ -3585,7 +3589,7 @@ class JuceEngineService(Singleton):
                 "mix": 35.0, "high_cut": 12000.0, "low_cut": 40.0,
                 "bypass": False, "spillover": True
             }
-        params = self._engine.get_lexilove_parameters()
+        params = await asyncio.to_thread(self._engine.get_lexilove_parameters)
         return {
             "algorithm_index": params.get("algorithm_index", 1),
             "algorithm": params.get("algorithm", "rich_plate"),
@@ -3617,7 +3621,7 @@ class JuceEngineService(Singleton):
                 "early_level": -100.0, "late_level": -100.0,
                 "mod_lfo_phase": 0.0, "current_decay": 2.5
             }
-        metering = self._engine.get_lexilove_metering()
+        metering = await asyncio.to_thread(self._engine.get_lexilove_metering)
         return {
             "input_level_l": metering.get("input_level_l", -100.0),
             "input_level_r": metering.get("input_level_r", -100.0),
@@ -3652,57 +3656,57 @@ class JuceEngineService(Singleton):
     async def set_peavey5150_bypass(self, bypass: bool) -> None:
         """Set Peavey 5150 bypass state"""
         if self._engine:
-            self._engine.set_peavey5150_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_peavey5150_bypass, bypass)
 
     async def set_peavey5150_pre_gain(self, value: float) -> None:
         """Set Peavey 5150 preamp gain (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_pre_gain(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_pre_gain, value)
 
     async def set_peavey5150_post_gain(self, value: float) -> None:
         """Set Peavey 5150 master volume (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_post_gain(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_post_gain, value)
 
     async def set_peavey5150_low(self, value: float) -> None:
         """Set Peavey 5150 bass tone (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_low(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_low, value)
 
     async def set_peavey5150_mid(self, value: float) -> None:
         """Set Peavey 5150 mid tone (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_mid(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_mid, value)
 
     async def set_peavey5150_high(self, value: float) -> None:
         """Set Peavey 5150 treble tone (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_high(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_high, value)
 
     async def set_peavey5150_presence(self, value: float) -> None:
         """Set Peavey 5150 presence (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_presence(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_presence, value)
 
     async def set_peavey5150_resonance(self, value: float) -> None:
         """Set Peavey 5150 resonance (0-10)"""
         if self._engine:
-            self._engine.set_peavey5150_resonance(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_resonance, value)
 
     async def set_peavey5150_bright(self, on: bool) -> None:
         """Set Peavey 5150 bright switch"""
         if self._engine:
-            self._engine.set_peavey5150_bright(on)
+            await asyncio.to_thread(self._engine.set_peavey5150_bright, on)
 
     async def set_peavey5150_bias(self, value: float) -> None:
         """Set Peavey 5150 power tube bias (0-10, 0=cold stock)"""
         if self._engine:
-            self._engine.set_peavey5150_bias(value)
+            await asyncio.to_thread(self._engine.set_peavey5150_bias, value)
 
     async def set_peavey5150_preset(self, preset_name: str) -> None:
         """Set Peavey 5150 preset by name"""
         if self._engine:
-            self._engine.set_peavey5150_preset(preset_name)
+            await asyncio.to_thread(self._engine.set_peavey5150_preset, preset_name)
 
     async def get_peavey5150_parameters(self) -> Dict[str, Any]:
         """Get all Peavey 5150 parameters"""
@@ -3715,7 +3719,7 @@ class JuceEngineService(Singleton):
                 "preset": 0, "preset_name": "manual",
                 "bypass": False
             }
-        params = self._engine.get_peavey5150_parameters()
+        params = await asyncio.to_thread(self._engine.get_peavey5150_parameters)
         return {
             "pre_gain": params.get("pre_gain", 5.0),
             "post_gain": params.get("post_gain", 3.0),
@@ -3739,7 +3743,7 @@ class JuceEngineService(Singleton):
                 "preamp_level": -100.0, "power_level": -100.0,
                 "supply_sag": 1.0, "cpu_load": 0.0
             }
-        metering = self._engine.get_peavey5150_metering()
+        metering = await asyncio.to_thread(self._engine.get_peavey5150_metering)
         return {
             "input_level": metering.get("input_level", -100.0),
             "output_level": metering.get("output_level", -100.0),
@@ -3766,91 +3770,91 @@ class JuceEngineService(Singleton):
 
     async def set_tweedbassman_bypass(self, bypass: bool) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_tweedbassman_bypass, bypass)
 
     async def set_tweedbassman_channel_mode(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_channel_mode(mode)
+            await asyncio.to_thread(self._engine.set_tweedbassman_channel_mode, mode)
 
     async def set_tweedbassman_normal_volume(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_normal_volume(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_normal_volume, value)
 
     async def set_tweedbassman_bright_volume(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_bright_volume(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_bright_volume, value)
 
     async def set_tweedbassman_bright_cap(self, on: bool) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_bright_cap(on)
+            await asyncio.to_thread(self._engine.set_tweedbassman_bright_cap, on)
 
     async def set_tweedbassman_v1_tube_type(self, type: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_v1_tube_type(type)
+            await asyncio.to_thread(self._engine.set_tweedbassman_v1_tube_type, type)
 
     async def set_tweedbassman_cathode_bypass(self, on: bool) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_cathode_bypass(on)
+            await asyncio.to_thread(self._engine.set_tweedbassman_cathode_bypass, on)
 
     async def set_tweedbassman_cathode_bias(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_cathode_bias(mode)
+            await asyncio.to_thread(self._engine.set_tweedbassman_cathode_bias, mode)
 
     async def set_tweedbassman_treble(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_treble(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_treble, value)
 
     async def set_tweedbassman_mid(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_mid(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_mid, value)
 
     async def set_tweedbassman_bass(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_bass(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_bass, value)
 
     async def set_tweedbassman_raw_switch(self, on: bool) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_raw_switch(on)
+            await asyncio.to_thread(self._engine.set_tweedbassman_raw_switch, on)
 
     async def set_tweedbassman_master_volume(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_master_volume(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_master_volume, value)
 
     async def set_tweedbassman_presence(self, value: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_presence(value)
+            await asyncio.to_thread(self._engine.set_tweedbassman_presence, value)
 
     async def set_tweedbassman_nfb_mode(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_nfb_mode(mode)
+            await asyncio.to_thread(self._engine.set_tweedbassman_nfb_mode, mode)
 
     async def set_tweedbassman_power_tube_type(self, type: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_power_tube_type(type)
+            await asyncio.to_thread(self._engine.set_tweedbassman_power_tube_type, type)
 
     async def set_tweedbassman_bias_mode(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_bias_mode(mode)
+            await asyncio.to_thread(self._engine.set_tweedbassman_bias_mode, mode)
 
     async def set_tweedbassman_rectifier_type(self, type: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_rectifier_type(type)
+            await asyncio.to_thread(self._engine.set_tweedbassman_rectifier_type, type)
 
     async def set_tweedbassman_output_level(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_output_level(dB)
+            await asyncio.to_thread(self._engine.set_tweedbassman_output_level, dB)
 
     async def set_tweedbassman_cabinet_enabled(self, on: bool) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_cabinet_enabled(on)
+            await asyncio.to_thread(self._engine.set_tweedbassman_cabinet_enabled, on)
 
     async def set_tweedbassman_cabinet_ir(self, index: int) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_cabinet_ir(index)
+            await asyncio.to_thread(self._engine.set_tweedbassman_cabinet_ir, index)
 
     async def set_tweedbassman_preset(self, preset_name: str) -> None:
         if self._engine:
-            self._engine.set_tweedbassman_preset(preset_name)
+            await asyncio.to_thread(self._engine.set_tweedbassman_preset, preset_name)
 
     async def get_tweedbassman_parameters(self) -> Dict[str, Any]:
         if not self._engine:
@@ -3863,7 +3867,7 @@ class JuceEngineService(Singleton):
                 "output_level": 0.0, "cabinet_enabled": True, "cabinet_ir": 0,
                 "preset": 0, "preset_name": "manual", "bypass": False
             }
-        params = self._engine.get_tweedbassman_parameters()
+        params = await asyncio.to_thread(self._engine.get_tweedbassman_parameters)
         return {
             "channel_mode": params.get("channel_mode", 0),
             "normal_volume": params.get("normal_volume", 5.0),
@@ -3897,7 +3901,7 @@ class JuceEngineService(Singleton):
                 "preamp_level": -100.0, "power_level": -100.0,
                 "supply_sag": 1.0, "cpu_load": 0.0
             }
-        metering = self._engine.get_tweedbassman_metering()
+        metering = await asyncio.to_thread(self._engine.get_tweedbassman_metering)
         return {
             "input_level": metering.get("input_level", -100.0),
             "output_level": metering.get("output_level", -100.0),
@@ -3932,255 +3936,255 @@ class JuceEngineService(Singleton):
 
     async def set_passionfx_bypass(self, bypass: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_bypass(bypass)
+            await asyncio.to_thread(self._engine.set_passionfx_bypass, bypass)
 
     async def set_passionfx_gate_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_gate_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_gate_enabled, enabled)
 
     async def set_passionfx_gate_threshold(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_gate_threshold(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_gate_threshold, dB)
 
     async def set_passionfx_gate_release(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_gate_release(ms)
+            await asyncio.to_thread(self._engine.set_passionfx_gate_release, ms)
 
     async def set_passionfx_comp_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_enabled, enabled)
 
     async def set_passionfx_comp_threshold(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_threshold(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_threshold, dB)
 
     async def set_passionfx_comp_ratio(self, ratio: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_ratio(ratio)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_ratio, ratio)
 
     async def set_passionfx_comp_attack(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_attack(ms)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_attack, ms)
 
     async def set_passionfx_comp_release(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_release(ms)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_release, ms)
 
     async def set_passionfx_comp_glassy(self, glassy: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_comp_glassy(glassy)
+            await asyncio.to_thread(self._engine.set_passionfx_comp_glassy, glassy)
 
     async def set_passionfx_wah_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_wah_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_wah_enabled, enabled)
 
     async def set_passionfx_wah_mode(self, mode: int) -> None:
         if self._engine:
-            self._engine.set_passionfx_wah_mode(mode)
+            await asyncio.to_thread(self._engine.set_passionfx_wah_mode, mode)
 
     async def set_passionfx_wah_position(self, position: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_wah_position(position)
+            await asyncio.to_thread(self._engine.set_passionfx_wah_position, position)
 
     async def set_passionfx_wah_q(self, q: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_wah_q(q)
+            await asyncio.to_thread(self._engine.set_passionfx_wah_q, q)
 
     async def set_passionfx_phaser_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_phaser_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_phaser_enabled, enabled)
 
     async def set_passionfx_phaser_rate(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_phaser_rate(hz)
+            await asyncio.to_thread(self._engine.set_passionfx_phaser_rate, hz)
 
     async def set_passionfx_phaser_depth(self, depth: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_phaser_depth(depth)
+            await asyncio.to_thread(self._engine.set_passionfx_phaser_depth, depth)
 
     async def set_passionfx_phaser_stages(self, stages: int) -> None:
         if self._engine:
-            self._engine.set_passionfx_phaser_stages(stages)
+            await asyncio.to_thread(self._engine.set_passionfx_phaser_stages, stages)
 
     async def set_passionfx_phaser_feedback(self, feedback: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_phaser_feedback(feedback)
+            await asyncio.to_thread(self._engine.set_passionfx_phaser_feedback, feedback)
 
     async def set_passionfx_chorus_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_chorus_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_chorus_enabled, enabled)
 
     async def set_passionfx_chorus_rate(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_chorus_rate(hz)
+            await asyncio.to_thread(self._engine.set_passionfx_chorus_rate, hz)
 
     async def set_passionfx_chorus_depth(self, depth: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_chorus_depth(depth)
+            await asyncio.to_thread(self._engine.set_passionfx_chorus_depth, depth)
 
     async def set_passionfx_chorus_voices(self, voices: int) -> None:
         if self._engine:
-            self._engine.set_passionfx_chorus_voices(voices)
+            await asyncio.to_thread(self._engine.set_passionfx_chorus_voices, voices)
 
     async def set_passionfx_chorus_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_chorus_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_chorus_mix, mix)
 
     async def set_passionfx_pitch_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_pitch_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_pitch_enabled, enabled)
 
     async def set_passionfx_pitch_semitones(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_pitch_semitones(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_pitch_semitones, semitones)
 
     async def set_passionfx_pitch_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_pitch_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_pitch_mix, mix)
 
     async def set_passionfx_harm_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_harm_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_harm_enabled, enabled)
 
     async def set_passionfx_harm_voice1_interval(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_harm_voice1_interval(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_harm_voice1_interval, semitones)
 
     async def set_passionfx_harm_voice2_interval(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_harm_voice2_interval(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_harm_voice2_interval, semitones)
 
     async def set_passionfx_harm_detune_cents(self, cents: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_harm_detune_cents(cents)
+            await asyncio.to_thread(self._engine.set_passionfx_harm_detune_cents, cents)
 
     async def set_passionfx_harm_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_harm_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_harm_mix, mix)
 
     async def set_passionfx_delay_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_enabled, enabled)
 
     async def set_passionfx_delay_time_l(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_time_l(ms)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_time_l, ms)
 
     async def set_passionfx_delay_time_r(self, ms: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_time_r(ms)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_time_r, ms)
 
     async def set_passionfx_delay_feedback(self, feedback: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_feedback(feedback)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_feedback, feedback)
 
     async def set_passionfx_delay_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_mix, mix)
 
     async def set_passionfx_delay_freeze(self, freeze: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_freeze(freeze)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_freeze, freeze)
 
     async def set_passionfx_delay_pitch_shift_l(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_pitch_shift_l(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_pitch_shift_l, semitones)
 
     async def set_passionfx_delay_pitch_shift_r(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_delay_pitch_shift_r(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_delay_pitch_shift_r, semitones)
 
     async def set_passionfx_reverb_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_enabled, enabled)
 
     async def set_passionfx_reverb_type(self, rtype: int) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_type(rtype)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_type, rtype)
 
     async def set_passionfx_reverb_decay(self, seconds: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_decay(seconds)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_decay, seconds)
 
     async def set_passionfx_reverb_shimmer_amount(self, amount: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_shimmer_amount(amount)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_shimmer_amount, amount)
 
     async def set_passionfx_reverb_shimmer_interval(self, semitones: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_shimmer_interval(semitones)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_shimmer_interval, semitones)
 
     async def set_passionfx_reverb_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_mix, mix)
 
     async def set_passionfx_reverb_freeze(self, freeze: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_reverb_freeze(freeze)
+            await asyncio.to_thread(self._engine.set_passionfx_reverb_freeze, freeze)
 
     async def set_passionfx_eq_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_eq_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_eq_enabled, enabled)
 
     async def set_passionfx_eq_low_gain(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_eq_low_gain(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_eq_low_gain, dB)
 
     async def set_passionfx_eq_mid_gain(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_eq_mid_gain(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_eq_mid_gain, dB)
 
     async def set_passionfx_eq_high_gain(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_eq_high_gain(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_eq_high_gain, dB)
 
     async def set_passionfx_eq_tilt(self, tilt: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_eq_tilt(tilt)
+            await asyncio.to_thread(self._engine.set_passionfx_eq_tilt, tilt)
 
     async def set_passionfx_exciter_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_exciter_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_exciter_enabled, enabled)
 
     async def set_passionfx_exciter_warmth(self, warmth: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_exciter_warmth(warmth)
+            await asyncio.to_thread(self._engine.set_passionfx_exciter_warmth, warmth)
 
     async def set_passionfx_exciter_presence(self, presence: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_exciter_presence(presence)
+            await asyncio.to_thread(self._engine.set_passionfx_exciter_presence, presence)
 
     async def set_passionfx_exciter_air(self, air: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_exciter_air(air)
+            await asyncio.to_thread(self._engine.set_passionfx_exciter_air, air)
 
     async def set_passionfx_trem_enabled(self, enabled: bool) -> None:
         if self._engine:
-            self._engine.set_passionfx_trem_enabled(enabled)
+            await asyncio.to_thread(self._engine.set_passionfx_trem_enabled, enabled)
 
     async def set_passionfx_trem_rate(self, hz: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_trem_rate(hz)
+            await asyncio.to_thread(self._engine.set_passionfx_trem_rate, hz)
 
     async def set_passionfx_trem_depth(self, depth: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_trem_depth(depth)
+            await asyncio.to_thread(self._engine.set_passionfx_trem_depth, depth)
 
     async def set_passionfx_trem_waveform(self, waveform: int) -> None:
         if self._engine:
-            self._engine.set_passionfx_trem_waveform(waveform)
+            await asyncio.to_thread(self._engine.set_passionfx_trem_waveform, waveform)
 
     async def set_passionfx_mix(self, mix: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_mix(mix)
+            await asyncio.to_thread(self._engine.set_passionfx_mix, mix)
 
     async def set_passionfx_output_level(self, dB: float) -> None:
         if self._engine:
-            self._engine.set_passionfx_output_level(dB)
+            await asyncio.to_thread(self._engine.set_passionfx_output_level, dB)
 
     async def set_passionfx_preset(self, preset_name: str) -> None:
         if self._engine:
-            self._engine.set_passionfx_preset(preset_name)
+            await asyncio.to_thread(self._engine.set_passionfx_preset, preset_name)
 
     async def get_passionfx_parameters(self) -> Dict[str, Any]:
         if not self._engine:
@@ -4210,7 +4214,7 @@ class JuceEngineService(Singleton):
                 "mix": 1.0, "output_level": 0.0,
                 "preset": 0, "preset_name": "manual", "bypass": False
             }
-        return dict(self._engine.get_passionfx_parameters())
+        return dict(await asyncio.to_thread(self._engine.get_passionfx_parameters))
 
     async def get_passionfx_metering(self) -> Dict[str, float]:
         if not self._engine:
@@ -4223,11 +4227,11 @@ class JuceEngineService(Singleton):
                 "phaser_lfo_phase": 0.0, "tremolo_lfo_phase": 0.0,
                 "wah_position": 0.5
             }
-        return dict(self._engine.get_passionfx_metering())
+        return dict(await asyncio.to_thread(self._engine.get_passionfx_metering))
 
     async def get_passionfx_presets(self) -> List[Dict[str, str]]:
         if self._engine:
-            return [dict(p) for p in self._engine.get_passionfx_presets()]
+            return [dict(p) for p in await asyncio.to_thread(self._engine.get_passionfx_presets)]
         return [
             {"id": "manual", "name": "Manual", "track": "", "description": "User-defined settings"},
             {"id": "liberty", "name": "Liberty", "track": "Track 1", "description": "Soaring clean lead"},
@@ -4264,39 +4268,39 @@ class JuceEngineService(Singleton):
                 }
                 for index in range(16)
             ]
-        return [dict(part) for part in self._engine.get_synthforge_parts_config()]
+        return [dict(part) for part in await asyncio.to_thread(self._engine.get_synthforge_parts_config)]
 
     async def set_synthforge_part_config(self, part_index: int, config: Dict[str, Any]) -> bool:
         if not self._engine:
             return False
         payload = dict(config)
         payload["part_index"] = part_index
-        return bool(self._engine.set_synthforge_part_config(part_index, payload))
+        return bool(await asyncio.to_thread(self._engine.set_synthforge_part_config, part_index, payload))
 
     async def set_synthforge_part_channel(self, part_index: int, midi_channel: int) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.set_synthforge_part_channel(part_index, midi_channel))
+        return bool(await asyncio.to_thread(self._engine.set_synthforge_part_channel, part_index, midi_channel))
 
     async def get_synthforge_part_channel(self, part_index: int) -> int:
         if not self._engine:
             return -1
-        return int(self._engine.get_synthforge_part_channel(part_index))
+        return int(await asyncio.to_thread(self._engine.get_synthforge_part_channel, part_index))
 
     async def get_synthforge_part_parameters(self, part_index: int) -> Dict[str, float]:
         if not self._engine:
             return {}
-        return dict(self._engine.get_synthforge_part_parameters(part_index))
+        return dict(await asyncio.to_thread(self._engine.get_synthforge_part_parameters, part_index))
 
     async def set_synthforge_parameter(self, part_index: int, param: str, value: float) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.set_synthforge_parameter(part_index, param, value))
+        return bool(await asyncio.to_thread(self._engine.set_synthforge_parameter, part_index, param, value))
 
     async def load_synthforge_sfz(self, part_index: int, sfz_path: str) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.load_synthforge_sfz(part_index, sfz_path))
+        return bool(await asyncio.to_thread(self._engine.load_synthforge_sfz, part_index, sfz_path))
 
     async def load_synthforge_soundfont(
         self,
@@ -4340,7 +4344,7 @@ class JuceEngineService(Singleton):
                 "last_error": "Engine not initialized",
                 "warnings": [],
             }
-        return dict(self._engine.get_synthforge_part_sample_status(part_index))
+        return dict(await asyncio.to_thread(self._engine.get_synthforge_part_sample_status, part_index))
 
     async def set_synthforge_part_sampler_backend(self, part_index: int, backend: str) -> bool:
         if not self._engine:
@@ -4600,12 +4604,12 @@ class JuceEngineService(Singleton):
         if not self._engine:
             return []
         category_filter = category or ""
-        return [dict(patch) for patch in self._engine.get_synthforge_patches(category_filter)]
+        return [dict(patch) for patch in await asyncio.to_thread(self._engine.get_synthforge_patches, category_filter)]
 
     async def load_synthforge_patch(self, part_index: int, bank: int, program: int) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.load_synthforge_patch(part_index, bank, program))
+        return bool(await asyncio.to_thread(self._engine.load_synthforge_patch, part_index, bank, program))
 
     async def save_synthforge_patch(
         self,
@@ -4616,7 +4620,7 @@ class JuceEngineService(Singleton):
     ) -> bool:
         if not self._engine:
             return False
-        return bool(self._engine.save_synthforge_patch(part_index, bank, program, name))
+        return bool(await asyncio.to_thread(self._engine.save_synthforge_patch, part_index, bank, program, name))
 
     async def get_synthforge_voice_metrics(self) -> Dict[str, Any]:
         if not self._engine:
@@ -4626,7 +4630,7 @@ class JuceEngineService(Singleton):
                 "voices_per_part": [0] * 16,
                 "cpu_percent": 0.0,
             }
-        return dict(self._engine.get_synthforge_voice_metrics())
+        return dict(await asyncio.to_thread(self._engine.get_synthforge_voice_metrics))
 
     async def get_synthforge_metering(self) -> Dict[str, Any]:
         if not self._engine:
@@ -4639,7 +4643,7 @@ class JuceEngineService(Singleton):
                 },
                 "part_levels": [0.0] * 16,
             }
-        return dict(self._engine.get_synthforge_metering())
+        return dict(await asyncio.to_thread(self._engine.get_synthforge_metering))
 
     # ========================================
     # External Effects Loops (Tesira AVB)

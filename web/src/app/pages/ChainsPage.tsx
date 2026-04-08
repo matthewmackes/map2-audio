@@ -34,7 +34,7 @@ import { ParallelRoutingPanel } from '../components/Routing/ParallelRoutingPanel
 import { EffectsLoopSummaryPanel } from '../components/Routing/EffectsLoopSummaryPanel'
 import { ChainDeployModal } from '../components/chains/ChainDeployModal'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../stores/viewedNodeStore'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'

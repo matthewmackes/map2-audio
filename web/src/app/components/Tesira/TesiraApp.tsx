@@ -20,7 +20,7 @@ import { TesiraFaultsTab } from './components/TesiraFaultsTab'
 import { TesiraLoopBuilderTab } from './components/TesiraLoopBuilderTab'
 import { TesiraOnboardingWizard } from './components/TesiraOnboardingWizard'
 import { useTesiraDevice, useTesiraDevices } from './hooks/useTesiraApi'
-import { useCluster } from '../../contexts/ClusterContext'
+import { useCluster } from '../../contexts/useCluster'
 import './components/TesiraCarbonChrome.css'
 
 /**

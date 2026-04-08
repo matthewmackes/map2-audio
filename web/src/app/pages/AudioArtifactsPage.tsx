@@ -50,7 +50,7 @@ import {
 import { pluginsApi, irApi, namApi, soundfontApi } from '../../map2/api'
 import { ArtifactDownloadModal } from '../components/artifacts/ArtifactDownloadModal'
 import { SnapshotArtifactsWorkspace } from '../components/artifacts/SnapshotArtifactsWorkspace'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
@@ -877,7 +877,6 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
 
   // ── Loading state ─────────────────────────────────────────────────────────
   const isLoading =
-    (activeCategory === 'snapshots' && false) ||
     (activeCategory === 'lv2-plugins' && pluginBrowser.isLoading) ||
     (activeCategory === 'nam-models' && namModelsQuery.isLoading) ||
     (activeCategory === 'cabinet-irs' && irCabinetsQuery.isLoading) ||

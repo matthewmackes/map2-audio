@@ -463,13 +463,21 @@ class MidiRouter:
         with self._delay_cv:
             if not self._running:
                 return
+            run_at = time.monotonic() + (float(delay_ms) / 1000.0)
             if len(self._delay_queue) >= self._max_pending_delayed_events:
-                heapq.heappop(self._delay_queue)
+                worst_index = max(range(len(self._delay_queue)), key=lambda index: (self._delay_queue[index][0], self._delay_queue[index][1]))
+                worst_run_at, worst_sequence, _ = self._delay_queue[worst_index]
+                if (run_at, self._delay_sequence + 1) >= (worst_run_at, worst_sequence):
+                    return
+                self._delay_queue[worst_index] = self._delay_queue[-1]
+                self._delay_queue.pop()
+                if self._delay_queue:
+                    heapq.heapify(self._delay_queue)
             self._delay_sequence += 1
             heapq.heappush(
                 self._delay_queue,
                 (
-                    time.monotonic() + (float(delay_ms) / 1000.0),
+                    run_at,
                     self._delay_sequence,
                     {
                         "source_port": source_port,
@@ -713,16 +721,19 @@ class MidiRouter:
 
     def _emit_websocket_message(self, event_type: str, payload: Dict[str, Any], *, topic: str) -> None:
         try:
-            coro = self._publisher.publish_message(
-                {"type": event_type, "data": payload},
-                topics=(topic,),
-            )
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                asyncio.run(coro)
+            message = {"type": event_type, "data": payload}
+            publish_threadsafe = getattr(self._publisher, "publish_message_threadsafe", None)
+            if callable(publish_threadsafe):
+                publish_threadsafe(message, topics=(topic,))
             else:
-                loop.create_task(coro)
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    asyncio.run(self._publisher.publish_message(message, topics=(topic,)))
+                else:
+                    loop.call_soon(
+                        lambda: loop.create_task(self._publisher.publish_message(message, topics=(topic,)))
+                    )
         except Exception:
             return
 

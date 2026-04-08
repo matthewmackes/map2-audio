@@ -12,11 +12,13 @@ Comprehensive health tracking for all services with:
 import asyncio
 import logging
 import psutil
+from collections import deque
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import json
+import threading
 
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
@@ -107,9 +109,10 @@ class HealthMonitor(Singleton):
         self.services: Dict[str, ServiceMetrics] = {}
         self.service_history: Dict[str, List[ServiceMetrics]] = {}
         self.active_alerts: Dict[str, List[Alert]] = {}
+        self.max_active_alerts = 256
         
         self.alert_rules: List[AlertRule] = []
-        self._alert_history: List[Alert] = []
+        self._alert_history = deque(maxlen=max_history_points)
         
         self.history_retention_hours = history_retention_hours
         self.check_interval_seconds = check_interval_seconds
@@ -117,7 +120,7 @@ class HealthMonitor(Singleton):
         
         self._monitoring_task: Optional[asyncio.Task] = None
         self._health_check_functions: Dict[str, Callable] = {}
-        self._lock = asyncio.Lock()
+        self._lock = threading.RLock()
         
         self._started_at = datetime.now()
         
@@ -214,7 +217,7 @@ class HealthMonitor(Singleton):
                 try:
                     metrics = await check_func()
                     
-                    async with self._lock:
+                    with self._lock:
                         self.services[service_name] = metrics
                         
                         # Add to history
@@ -232,7 +235,7 @@ class HealthMonitor(Singleton):
                     logger.error(f"Error collecting metrics for {service_name}: {e}")
                     
                     # Mark service as offline
-                    async with self._lock:
+                    with self._lock:
                         self.services[service_name] = ServiceMetrics(
                             service_name=service_name,
                             status=HealthStatus.OFFLINE,
@@ -244,7 +247,7 @@ class HealthMonitor(Singleton):
     
     async def _check_alert_rules(self) -> None:
         """Check alert rules against current metrics."""
-        async with self._lock:
+        with self._lock:
             for rule in self.alert_rules:
                 if not rule.enabled:
                     continue
@@ -262,14 +265,41 @@ class HealthMonitor(Singleton):
                             message=f"{rule.name} triggered for {service_name}"
                         )
                         
-                        # Add to active alerts
-                        if service_name not in self.active_alerts:
-                            self.active_alerts[service_name] = []
-                        
-                        self.active_alerts[service_name].append(alert)
-                        self._alert_history.append(alert)
+                        self._record_alert_locked(alert)
                         
                         logger.warning(f"Alert: {alert.message}")
+
+    def _record_alert_locked(self, alert: Alert) -> None:
+        service_alerts = self.active_alerts.setdefault(alert.service_name, [])
+        for index, existing in enumerate(service_alerts):
+            if existing.alert_rule_name == alert.alert_rule_name:
+                service_alerts[index] = alert
+                break
+        else:
+            service_alerts.append(alert)
+
+        self._alert_history.append(alert)
+        self._prune_active_alerts_locked()
+
+    def _prune_active_alerts_locked(self) -> None:
+        while sum(len(alerts) for alerts in self.active_alerts.values()) > self.max_active_alerts:
+            oldest_service: Optional[str] = None
+            oldest_index: Optional[int] = None
+            oldest_timestamp: Optional[datetime] = None
+
+            for service_name, alerts in self.active_alerts.items():
+                for index, alert in enumerate(alerts):
+                    if oldest_timestamp is None or alert.timestamp < oldest_timestamp:
+                        oldest_service = service_name
+                        oldest_index = index
+                        oldest_timestamp = alert.timestamp
+
+            if oldest_service is None or oldest_index is None:
+                return
+
+            del self.active_alerts[oldest_service][oldest_index]
+            if not self.active_alerts[oldest_service]:
+                del self.active_alerts[oldest_service]
     
     def _rule_triggered(self, rule: AlertRule, metrics: ServiceMetrics) -> bool:
         """Check if an alert rule is triggered."""
@@ -303,16 +333,17 @@ class HealthMonitor(Singleton):
     
     def update_service_metrics(self, metrics: ServiceMetrics) -> None:
         """Manually update metrics for a service (non-blocking)."""
-        self.services[metrics.service_name] = metrics
-        
-        if metrics.service_name not in self.service_history:
-            self.service_history[metrics.service_name] = []
-        
-        self.service_history[metrics.service_name].append(metrics)
-        if len(self.service_history[metrics.service_name]) > self.max_history_points:
-            self.service_history[metrics.service_name] = (
-                self.service_history[metrics.service_name][-self.max_history_points:]
-            )
+        with self._lock:
+            self.services[metrics.service_name] = metrics
+
+            if metrics.service_name not in self.service_history:
+                self.service_history[metrics.service_name] = []
+
+            self.service_history[metrics.service_name].append(metrics)
+            if len(self.service_history[metrics.service_name]) > self.max_history_points:
+                self.service_history[metrics.service_name] = (
+                    self.service_history[metrics.service_name][-self.max_history_points:]
+                )
     
     def get_overall_status(self) -> HealthStatus:
         """Get overall system health status."""
@@ -331,43 +362,51 @@ class HealthMonitor(Singleton):
     
     def get_service_status(self, service_name: str) -> Optional[ServiceMetrics]:
         """Get current status of a specific service."""
-        return self.services.get(service_name)
+        with self._lock:
+            return self.services.get(service_name)
     
     def get_all_services_status(self) -> Dict[str, ServiceMetrics]:
         """Get status of all services."""
-        return self.services.copy()
+        with self._lock:
+            return self.services.copy()
     
     def get_service_history(self, service_name: str, 
                            hours: int = 1) -> List[ServiceMetrics]:
         """Get historical metrics for a service."""
-        if service_name not in self.service_history:
-            return []
+        with self._lock:
+            if service_name not in self.service_history:
+                return []
+            history = list(self.service_history[service_name])
         
         cutoff = datetime.now() - timedelta(hours=hours)
-        return [m for m in self.service_history[service_name] 
-                if m.timestamp >= cutoff]
+        return [m for m in history if m.timestamp >= cutoff]
     
     def get_active_alerts(self, service_name: Optional[str] = None) -> List[Alert]:
         """Get active alerts."""
-        if service_name:
-            return self.active_alerts.get(service_name, [])
-        
-        alerts = []
-        for service_alerts in self.active_alerts.values():
-            alerts.extend(service_alerts)
-        return alerts
+        with self._lock:
+            if service_name:
+                return list(self.active_alerts.get(service_name, []))
+
+            alerts = []
+            for service_alerts in self.active_alerts.values():
+                alerts.extend(service_alerts)
+            return alerts
     
     def get_alert_history(self, limit: int = 100) -> List[Alert]:
         """Get recent alert history."""
-        return self._alert_history[-limit:]
+        with self._lock:
+            return list(self._alert_history)[-limit:]
     
     def acknowledge_alert(self, alert: Alert) -> None:
         """Remove/acknowledge an alert."""
-        if alert.service_name in self.active_alerts:
-            self.active_alerts[alert.service_name] = [
-                a for a in self.active_alerts[alert.service_name]
-                if a.timestamp != alert.timestamp
-            ]
+        with self._lock:
+            if alert.service_name in self.active_alerts:
+                self.active_alerts[alert.service_name] = [
+                    a for a in self.active_alerts[alert.service_name]
+                    if a.timestamp != alert.timestamp
+                ]
+                if not self.active_alerts[alert.service_name]:
+                    del self.active_alerts[alert.service_name]
     
     def get_system_health_summary(self) -> Dict[str, Any]:
         """Get comprehensive system health summary for dashboards."""

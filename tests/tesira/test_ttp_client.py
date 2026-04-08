@@ -137,6 +137,19 @@ async def test_send_timeout():
     assert response.error_code == 'TIMEOUT'
 
 
+@pytest.mark.asyncio
+async def test_do_connect_clears_stale_response_queue_before_reconnect():
+    reader, writer = make_reader_writer([])
+    client = TTPClient(host="192.168.1.10")
+    client._response_queue.put_nowait("+OK stale=true")
+
+    with patch('asyncio.open_connection', return_value=(reader, writer)):
+        await client._do_connect()
+        await client.disconnect()
+
+    assert client._response_queue.empty()
+
+
 def test_reconnect_task_is_singleton_until_done():
     client = TTPClient(host="192.168.1.10")
     original_create_task = asyncio.create_task

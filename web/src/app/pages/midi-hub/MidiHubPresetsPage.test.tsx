@@ -80,7 +80,7 @@ jest.mock('../../components/MidiHub/MidiRecorderPanel', () => ({
 }))
 
 const { MidiHubPresetsPage } =
-  require('./MidiHubPresetsPage') as typeof import('./MidiHubPresetsPage')
+  jest.requireActual('./MidiHubPresetsPage') as typeof import('./MidiHubPresetsPage')
 
 function renderPage() {
   const queryClient = new QueryClient({

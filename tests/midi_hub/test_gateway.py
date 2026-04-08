@@ -1,5 +1,7 @@
 import time
+import threading
 
+from app.services.midi_hub import gateway as gateway_module
 from app.services.midi_hub.gateway import MidiGateway, MidiGatewayManager
 from app.services.midi_hub.hub import MidiHub
 from app.services.midi_hub.ports import VirtualMidiPort
@@ -85,3 +87,23 @@ def test_gateway_manager_create_and_remove():
     assert manager.get_gateway("gw3") is not None
     assert manager.remove_gateway("gw3") is True
     assert manager.remove_gateway("gw3") is False
+
+
+def test_get_midi_gateway_manager_singleton_is_guarded():
+    original = gateway_module._midi_gateway_manager_singleton
+    try:
+        gateway_module._midi_gateway_manager_singleton = None
+        seen = []
+
+        def _worker():
+            seen.append(id(gateway_module.get_midi_gateway_manager()))
+
+        threads = [threading.Thread(target=_worker) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=0.5)
+
+        assert len(set(seen)) == 1
+    finally:
+        gateway_module._midi_gateway_manager_singleton = original

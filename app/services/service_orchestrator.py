@@ -10,6 +10,7 @@ Provides centralized management of all platform services with:
 """
 
 import asyncio
+import inspect
 import logging
 import time
 import os
@@ -1223,6 +1224,12 @@ class ServiceOrchestrator:
             from app.services.juce_engine_service import get_audio_engine
             service = get_audio_engine()
             await service.stop_audio()
+            shutdown = getattr(service, "shutdown", None)
+            if callable(shutdown):
+                if inspect.iscoroutinefunction(shutdown):
+                    await shutdown()
+                else:
+                    await asyncio.to_thread(shutdown)
         except Exception:
             pass
 

@@ -118,7 +118,8 @@ jest.mock('../../map2/groundControlProApi', () => ({
   default: mockGroundControlProApi,
 }))
 
-const { GroundControlProPage } = require('./GroundControlProPage') as typeof import('./GroundControlProPage')
+const { GroundControlProPage } =
+  jest.requireActual('./GroundControlProPage') as typeof import('./GroundControlProPage')
 
 describe('GroundControlProPage', () => {
   beforeEach(() => {

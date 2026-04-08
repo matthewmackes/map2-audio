@@ -67,7 +67,9 @@ export function SnapshotEditorOptionsRail({
     }
     try {
       window.localStorage.setItem(OPTIONS_RAIL_COLLAPSE_STORAGE_KEY, collapsed ? 'true' : 'false')
-    } catch {}
+    } catch {
+      // Ignore storage writes when the browser blocks localStorage.
+    }
   }, [collapsed])
 
   return (

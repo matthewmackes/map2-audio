@@ -30,7 +30,7 @@ import {
   type CarbonIconType,
 } from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import type { PipeWireMetrics } from '../../map2/types'
 import './PipeWirePage.css'
 

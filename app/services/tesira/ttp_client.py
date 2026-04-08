@@ -136,8 +136,16 @@ class TTPClient:
                 break
         logger.info("TTPClient[%s:%d] disconnected", self.host, self.port)
 
+    def _clear_response_queue(self) -> None:
+        while not self._response_queue.empty():
+            try:
+                self._response_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+
     async def _do_connect(self) -> None:
         """Attempt a single TCP connection, swallowing Telnet IAC negotiation bytes."""
+        self._clear_response_queue()
         logger.info("TTPClient connecting to %s:%d …", self.host, self.port)
         self._reader, self._writer = await asyncio.wait_for(
             asyncio.open_connection(self.host, self.port),

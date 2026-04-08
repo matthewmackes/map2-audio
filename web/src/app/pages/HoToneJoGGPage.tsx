@@ -2,7 +2,7 @@ import { Headphones } from '@carbon/icons-react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 import { PageHeader } from '../components/PageHeader'
 import { AudioInterfaceControl } from '../../map2/components/AudioInterfaceControl'
-import { useCluster } from '../contexts/ClusterContext'
+import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 
 export function HoToneJoGGPage() {
