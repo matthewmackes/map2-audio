@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1024** Python | **1123** TypeScript | **136** C++/H | **140** Docs | **1568** total commits | **3** stars | **0** forks | **0** open issues
+**1024** Python | **1106** TypeScript | **136** C++/H | **140** Docs | **1570** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,11 +175,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-08 |
 | [MAP2 Audio Platform — Backend Architecture Audit v2](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT_V2.md) | 2026-04-07 |
 | [Enriched MIDI Physical Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md) | 2026-04-07 |
 | [Maschine MK1 PyUSB Claim Validation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_PYUSB_CLAIM_VALIDATION_2026-04-07.md) | 2026-04-07 |
 | [MAP2 Audio Platform — Full Forensic Audit](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_AUDIT_2026-03-28.md) | 2026-04-07 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-07 |
 | [State Authority Cutover Current Host 2026-04-07](https://github.com/matthewmackes/map2-audio/blob/master/docs/STATE_AUTHORITY_CUTOVER_CURRENT_HOST_2026-04-07.md) | 2026-04-07 |
 <!-- RECENT-DOCS:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`edf9b9ab`](https://github.com/matthewmackes/map2-audio/commit/edf9b9ab693e993ee5f0eb00c6873dcfaf8fd85b) | Refactor platform shell and sync current web changes | Map2 Audio | 2026-04-08 |
+| [`f67f0b5e`](https://github.com/matthewmackes/map2-audio/commit/f67f0b5e24948146946ab243c6d48389bdcd0c7c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`4c2fc310`](https://github.com/matthewmackes/map2-audio/commit/4c2fc310d8ea5a83e21ef92ad0c0d662c945cb60) | Checkpoint built web shell refresh and version stamp | Map2 Audio | 2026-04-07 |
 | [`71b44626`](https://github.com/matthewmackes/map2-audio/commit/71b44626e3a7324afc84b1fe786a0c714e6a60ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`813ba0ae`](https://github.com/matthewmackes/map2-audio/commit/813ba0aee6ad0089bb900023300f2588a853f3a0) | Cycles 4-6: close stale audit backlog and checkpoint work... | Map2 Audio | 2026-04-07 |
 | [`0a2bbd6f`](https://github.com/matthewmackes/map2-audio/commit/0a2bbd6f62e42ddb6e9379c7e5c441ef6d5da244) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`b20bced7`](https://github.com/matthewmackes/map2-audio/commit/b20bced7fc07a150c894e8a9466d81763fccd76c) | Cycle 3: surface deferred Maschine transport policy | Map2 Audio | 2026-04-07 |
 | [`c3208a7b`](https://github.com/matthewmackes/map2-audio/commit/c3208a7bbc81f96a5f1ba0e5778a96010b158aed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`51f48687`](https://github.com/matthewmackes/map2-audio/commit/51f48687ded8058d999ae4990505cf55be2db44d) | Cycle 2: unify Maschine transport policy resolution | Map2 Audio | 2026-04-07 |
-| [`d01cb831`](https://github.com/matthewmackes/map2-audio/commit/d01cb83189441653f780254181efdcaa13b4fc97) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
