@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
@@ -172,7 +172,6 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/" element={<HomePage />} />
             <Route path="/artifacts" element={<div data-testid="artifacts-page">Audio Artifacts Workspace</div>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
-            <Route path="/platforms/workspace-catalog" element={<div data-testid="workspace-catalog-page">Workspace Catalog</div>} />
             <Route path="/platforms/theme" element={<div data-testid="theme-page">Theme Settings</div>} />
           </Routes>
           <LocationProbe />
@@ -264,13 +263,14 @@ describe('Desktop experience integration', () => {
     renderDesktopExperience(['/artifacts'])
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.getByRole('button', { name: 'Program Catalog' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Stage Mode/i })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Program Catalog' }))
+    fireEvent.click(screen.getByRole('link', { name: /Stage Mode/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
-    expect(screen.getByTestId('workspace-catalog-page')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Program Catalog' })).toBeNull()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/perform')
+    expect(screen.getByTestId('perform-page')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull()
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {
@@ -279,17 +279,17 @@ describe('Desktop experience integration', () => {
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh Page' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Refresh Desktop' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Restart Backend' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))
 
     await waitFor(() => expect(mockRestartBackend).toHaveBeenCalledTimes(1))

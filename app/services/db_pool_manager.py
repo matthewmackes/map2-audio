@@ -84,10 +84,9 @@ class DatabasePoolManager(Singleton):
             database_module.init_async_db(database_url)
             self._initialized = True
             logger.info(
-                "Database facade initialized against canonical async engine: "
-                "size=%s, max_overflow=%s",
-                self._config.pool_size,
-                self._config.max_overflow,
+                "Database facade initialized against canonical async engine",
+                pool_size=self._config.pool_size,
+                max_overflow=self._config.max_overflow,
             )
             
         except Exception as e:

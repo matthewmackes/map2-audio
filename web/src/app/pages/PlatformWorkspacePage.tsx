@@ -28,13 +28,12 @@ export function PlatformWorkspacePage() {
       initialPanel={target.panel ?? null}
       onNavigate={(params) => {
         if (!params) {
-          navigate('/platforms/workspace-catalog')
+          navigate(buildPlatformWorkspacePath('overview'))
           return
         }
 
         navigate(buildPlatformWorkspacePath((params.panel ?? params.layer) ?? 'overview'))
       }}
-      onLaunchRoute={(to) => navigate(to)}
       onClose={() => navigate('/')}
     />
   )

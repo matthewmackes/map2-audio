@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+import app.services.db_pool_manager as db_pool_manager_module
 from app.services.db_pool_manager import ConnectionPoolConfig, DatabasePoolManager
 
 
@@ -41,3 +42,36 @@ def test_database_session_module_reexports_canonical_get_session():
 
     assert session_module.get_session is database_module.get_session
     assert session_module.get_db_session is database_module.get_session
+
+
+def test_database_pool_manager_initialize_uses_structured_logger_fields(monkeypatch):
+    manager = DatabasePoolManager()
+    manager._initialized = False
+    manager._config = None
+    manager._database_url = None
+
+    init_calls: list[str] = []
+    info_calls: list[tuple[str, dict[str, object]]] = []
+
+    class _FakeLogger:
+        def info(self, message: str, **kwargs):
+            info_calls.append((message, kwargs))
+
+        def warning(self, message: str, **kwargs):
+            return None
+
+        def error(self, message: str, **kwargs):
+            return None
+
+    monkeypatch.setattr(db_pool_manager_module, "logger", _FakeLogger())
+    monkeypatch.setattr(db_pool_manager_module.database_module, "init_async_db", lambda database_url: init_calls.append(database_url))
+
+    manager.initialize("sqlite+aiosqlite:///tmp/map2-test.db", ConnectionPoolConfig(pool_size=3, max_overflow=7))
+
+    assert init_calls == ["sqlite+aiosqlite:///tmp/map2-test.db"]
+    assert info_calls == [
+        (
+            "Database facade initialized against canonical async engine",
+            {"pool_size": 3, "max_overflow": 7},
+        )
+    ]

@@ -66,6 +66,17 @@ class StructuredLogger:
             log_kwargs["extra"] = merged_extra
 
         return log_kwargs
+
+    @staticmethod
+    def _format_message(msg: str, args: tuple[Any, ...]) -> str:
+        """Support stdlib-style positional interpolation for legacy call sites."""
+        if not args:
+            return msg
+        try:
+            return msg % args
+        except Exception:
+            suffix = " ".join(str(arg) for arg in args)
+            return f"{msg} {suffix}".strip()
     
     def service_started(self, service_name: str, **kwargs):
         """Log service startup."""
@@ -86,7 +97,7 @@ class StructuredLogger:
         extra = {"service": service_name, "reason": reason, **kwargs}
         self.logger.error(f"{service_name} failed: {reason}", extra=extra)
     
-    def error(self, msg: str, exc: Optional[Exception] = None, **kwargs):
+    def error(self, msg: str, *args, exc: Optional[Exception] = None, **kwargs):
         """
         Log error with optional exception.
         
@@ -96,30 +107,30 @@ class StructuredLogger:
             **kwargs: Additional structured data
         """
         self.logger.error(
-            msg,
+            self._format_message(msg, tuple(args)),
             **self._build_log_kwargs(kwargs, default_exc_info=exc),
         )
     
-    def warning(self, msg: str, **kwargs) -> None:
+    def warning(self, msg: str, *args, **kwargs) -> None:
         """Log warning."""
-        self.logger.warning(msg, **self._build_log_kwargs(kwargs))
+        self.logger.warning(self._format_message(msg, tuple(args)), **self._build_log_kwargs(kwargs))
     
-    def info(self, msg: str, **kwargs):
+    def info(self, msg: str, *args, **kwargs):
         """Log info message."""
-        self.logger.info(msg, **self._build_log_kwargs(kwargs))
+        self.logger.info(self._format_message(msg, tuple(args)), **self._build_log_kwargs(kwargs))
     
-    def debug(self, msg: str, **kwargs):
+    def debug(self, msg: str, *args, **kwargs):
         """Log debug message."""
-        self.logger.debug(msg, **self._build_log_kwargs(kwargs))
+        self.logger.debug(self._format_message(msg, tuple(args)), **self._build_log_kwargs(kwargs))
     
-    def success(self, msg: str, **kwargs) -> None:
+    def success(self, msg: str, *args, **kwargs) -> None:
         """Log success message."""
-        self.logger.info(msg, **self._build_log_kwargs(kwargs))
+        self.logger.info(self._format_message(msg, tuple(args)), **self._build_log_kwargs(kwargs))
     
-    def critical(self, msg: str, exc: Optional[Exception] = None, **kwargs):
+    def critical(self, msg: str, *args, exc: Optional[Exception] = None, **kwargs):
         """Log critical error."""
         self.logger.critical(
-            msg,
+            self._format_message(msg, tuple(args)),
             **self._build_log_kwargs(kwargs, default_exc_info=exc),
         )
     

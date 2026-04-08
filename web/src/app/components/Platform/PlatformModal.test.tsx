@@ -424,7 +424,7 @@ describe('PlatformModalContent', () => {
     expect(screen.getByRole('heading', { name: 'Control Panel' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open Overview' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open Theme' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open Program Catalog' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Open Program Catalog' })).toBeNull()
   })
 
   it('keeps utility workspaces grouped at the bottom of the rail with utility styling', () => {
@@ -443,38 +443,16 @@ describe('PlatformModalContent', () => {
     const navLabels = within(nav).getAllByRole('link').map((link) => link.getAttribute('aria-label'))
 
     expect(navLabels.slice(0, 2)).toEqual(['Open Overview', 'Open Audio Engine'])
-    expect(navLabels.slice(-4)).toEqual([
+    expect(navLabels.slice(-3)).toEqual([
       'Open Host Machine',
       'Open Theme',
       'Open Platform Guide',
-      'Open Program Catalog',
     ])
 
-    for (const label of ['Open Host Machine', 'Open Theme', 'Open Platform Guide', 'Open Program Catalog']) {
+    for (const label of ['Open Host Machine', 'Open Theme', 'Open Platform Guide']) {
       expect(screen.getByRole('link', { name: label }).closest('.workspace-side-nav__item')).toHaveClass('is-utility')
     }
     expect(screen.getByRole('link', { name: 'Open Audio Engine' }).closest('.workspace-side-nav__item')).not.toHaveClass('is-utility')
-  })
-
-  it('shows the workspace catalog launcher organizer section', () => {
-    render(
-      <MemoryRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <PlatformModalContent onClose={() => undefined} />
-      </MemoryRouter>,
-    )
-
-    fireEvent.click(screen.getByRole('link', { name: 'Open Program Catalog' }))
-
-    expect(screen.getAllByText('Program Catalog').length).toBeGreaterThan(0)
-    expect(screen.getByRole('heading', { name: 'Program Manager object directory' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Program Directory' })).toBeInTheDocument()
-    expect(screen.getAllByText('Audio Artifacts').length).toBeGreaterThan(0)
-    expect(screen.queryByText('MIDI Hub')).not.toBeInTheDocument()
   })
 
   it('removes the launcher organizer entry from the Platforms rail', () => {
@@ -490,29 +468,7 @@ describe('PlatformModalContent', () => {
     )
 
     expect(screen.queryByRole('link', { name: 'Open Launchers' })).not.toBeInTheDocument()
-  })
-
-  it('delegates workspace-catalog route launches to the modal host callback', () => {
-    const handleLaunchRoute = jest.fn()
-
-    render(
-      <MemoryRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <PlatformModalContent onClose={() => undefined} onLaunchRoute={handleLaunchRoute} />
-      </MemoryRouter>,
-    )
-
-    fireEvent.click(screen.getByRole('link', { name: 'Open Program Catalog' }))
-    const catalogHeading = screen.getByRole('heading', { name: 'Program Directory' })
-    const catalogSection = catalogHeading.closest('section')
-    expect(catalogSection).not.toBeNull()
-    fireEvent.click(within(catalogSection as HTMLElement).getByRole('button', { name: 'Launch Audio Artifacts' }))
-
-    expect(handleLaunchRoute).toHaveBeenCalledWith('/artifacts')
+    expect(screen.queryByRole('link', { name: 'Open Program Catalog' })).toBeNull()
   })
 
   it('opens the update progress modal and triggers the management update workflow', () => {

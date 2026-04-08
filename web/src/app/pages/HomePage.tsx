@@ -1,7 +1,7 @@
 import type { ComponentType, MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ProgressBar, Tag, Tile } from '@carbon/react'
+import { ProgressBar, Tile } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
   MAP2_PLATFORM_VERSION,
@@ -9,7 +9,6 @@ import {
 import {
   MapArtifactsLibraryIcon,
   MapOs2DrivesIcon,
-  MapOs2FileManagerIcon,
   MapOs2HomeIcon,
   MapStagePerformanceIcon,
 } from '../components/icons/map'
@@ -56,8 +55,6 @@ interface WallpaperContextMenuState {
   y: number
 }
 
-type StatusTagTone = 'green' | 'red' | 'warm-gray' | 'cool-gray'
-
 const WORKPLACE_OBJECTS: WorkplaceObject[] = [
   {
     route: '/platforms/overview',
@@ -72,10 +69,10 @@ const WORKPLACE_OBJECTS: WorkplaceObject[] = [
     Icon: MapArtifactsLibraryIcon,
   },
   {
-    route: '/platforms/workspace-catalog',
-    label: 'Program Catalog',
-    summary: 'Add routed workspaces to the desktop menu tile directory.',
-    Icon: MapOs2FileManagerIcon,
+    route: '/perform',
+    label: 'Stage Mode',
+    summary: 'Open the full-screen live-performance surface for stage control.',
+    Icon: MapStagePerformanceIcon,
   },
   {
     route: '/platforms/theme',
@@ -84,22 +81,6 @@ const WORKPLACE_OBJECTS: WorkplaceObject[] = [
     Icon: MapOs2HomeIcon,
   },
 ]
-
-function statusTagTone(state: string | undefined): StatusTagTone {
-  if (state === 'ok') {
-    return 'green'
-  }
-
-  if (state === 'warn' || state === 'warning' || state === 'critical' || state === 'offline') {
-    return 'red'
-  }
-
-  if (!state || state === 'unknown') {
-    return 'cool-gray'
-  }
-
-  return 'warm-gray'
-}
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -118,11 +99,6 @@ export function HomePage() {
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
   const platformStatus = useHomePlatformStatus()
   const nodes = topology.data?.nodes
-  const desktopStatusTags = [
-    { label: platformStatus.avb.label, tone: statusTagTone(platformStatus.avb.state) },
-    { label: platformStatus.avdecc.label, tone: statusTagTone(platformStatus.avdecc.state) },
-    { label: platformStatus.nodes.label, tone: statusTagTone(platformStatus.nodes.state) },
-  ]
   const platformsStatusLabel = nodeStatusLabel(nodes)
   const remediationCounts = remediationSummary.data?.counts
   const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
@@ -269,28 +245,11 @@ export function HomePage() {
                   </div>
                   <span className="hp2-window__titlemeta">{hostname}</span>
                 </div>
-                <div className="hp2-window__body">
-                  <div className="hp2-workplace__hero">
-                    <div className="hp2-workplace__copy">
-                      <p className="hp2-window__eyebrow">Industrial Audio Workstation</p>
-                      <h2>MAP2 desktop session</h2>
-                      <p>
-                        The landing route now reads like a serious OS/2 control desktop: icon-first entry,
-                        flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
-                      </p>
-                    </div>
-                    <div className="hp2-workplace__tags" aria-label="Platform heartbeat">
-                      {desktopStatusTags.map((status) => (
-                        <Tag key={status.label} type={status.tone} size="sm">
-                          {status.label}
-                        </Tag>
-                      ))}
-                    </div>
-                  </div>
+                <div className="hp2-window__body hp2-window__body--launcher-grid">
                   <div className="hp2-workplace__section">
                     <div className="hp2-workplace__section-header">
-                      <p className="hp2-window__eyebrow">Program Objects</p>
-                      <span>Operator shortcuts</span>
+                      <p className="hp2-window__eyebrow">Launcher Directory</p>
+                      <span>Open workspace</span>
                     </div>
                     <div className="hp2-workplace__object-grid">
                       {WORKPLACE_OBJECTS.map((item) => (

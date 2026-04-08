@@ -1,32 +1,24 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronRight } from '@carbon/icons-react'
-import { Button, ComposedModal, Layer, ModalBody, ModalFooter, ModalHeader, ProgressBar, Tag } from '@carbon/react'
+import { Button, ComposedModal, Layer, ModalBody, ModalFooter, ModalHeader, ProgressBar } from '@carbon/react'
 
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
-import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { PageTransition } from '../components/PageTransition'
 import { Map2BrandMark } from '../components/branding/map2Branding'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
-import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
-import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
-  FIXED_START_MENU_TILE_ROUTES,
   allPinnableNavigationItems,
   allRouteNavigationItems,
-  defaultPinnedRoutes,
-  findPinnableNavigationItem,
-  hardwareInterfaceMenuItems,
-  MAX_PINNED_NAV_ITEMS,
-  normalizePinnedRoutes,
-  type HardwareInterfaceMenuItem,
   type NavigationMaturityState,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
+import {
+  getLauncherCatalogMaturityLabel,
+  launcherCatalogDisplayItems,
+  type LauncherCatalogItem,
+} from '../data/launcherCatalog'
 import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
 import { systemApi } from '../../map2/clients/platform'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
@@ -53,25 +45,18 @@ interface TopNavItem {
   kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
 }
 
-type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 type RestartProgressStage = 'idle' | 'stopping' | 'restarting' | 'reconnecting' | 'ready' | 'error'
 type TaskbarIndicatorItem = TopNavItem & { route: string; pinned: boolean; active: boolean; running: boolean }
+type StartMenuTileItem = Pick<
+  LauncherCatalogItem,
+  'route' | 'label' | 'shortLabel' | 'icon' | 'description' | 'color' | 'category' | 'maturity'
+>
 
 const APP_WINDOW_CLOSE_DURATION_MS = 180
 const PERMANENT_TASKBAR_ROUTE = '/artifacts'
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
-}
-
-function clamp01(value: number): number {
-  if (!Number.isFinite(value)) return 0
-  return Math.min(1, Math.max(0, value))
-}
-
-function normalizeMidiValue(value: number, max = 127): number {
-  if (!Number.isFinite(value)) return 0
-  return clamp01(value / max)
 }
 
 function formatShellRouteHint(pathname: string): string {
@@ -83,7 +68,16 @@ function formatShellRouteHint(pathname: string): string {
   return segments.join(' / ')
 }
 
-function toTopNavItem(item: PinnedMenuItem): TopNavItem {
+function toTopNavItem(item: {
+  to: string
+  label: string
+  shortLabel?: string
+  icon: ComponentType<Record<string, unknown>>
+  description: string
+  color: string
+  maturity: NavigationMaturityState
+  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
+}): TopNavItem {
   return {
     to: item.to,
     label: item.label,
@@ -115,16 +109,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
-  const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
-  const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false)
   const [restartProgressStage, setRestartProgressStage] = useState<RestartProgressStage>('idle')
   const [restartError, setRestartError] = useState<string | null>(null)
   const [performFullscreen, setPerformFullscreen] = useState(location.pathname === '/perform')
   const navMenuRef = useRef<HTMLDivElement>(null)
-  const mpx1MenuRef = useRef<HTMLDivElement>(null)
-  const topHardwareMenuRef = useRef<HTMLDivElement>(null)
   const restartSawUnavailableRef = useRef(false)
   const restartSawReconnectRef = useRef(false)
   const restartCompletionRequestedRef = useRef(false)
@@ -133,83 +123,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [runningRoutes, setRunningRoutes] = useState<string[]>(() => (
     readHomeDesktopSession()?.runningRoutes.filter((route) => route !== '/') ?? []
   ))
-
-  const {
-    state: mpx1State,
-    programs: mpx1Programs,
-    shadow: mpx1Shadow,
-    setProgram: setMpx1Program,
-    refresh: refreshMpx1State,
-  } = useMPX1State({ autoConnectWs: false })
-
-  const currentProgram = mpx1State?.current_program ?? 0
-  const currentProgramEntry = mpx1Programs.find((program) => program.program === currentProgram)
-  const currentProgramName = formatMpx1ProgramName(currentProgram, currentProgramEntry?.name)
-  const mixMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_mix'] ?? mpx1Shadow['program.mix'] ?? 0))
-  const levelMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_level'] ?? mpx1Shadow['program.level'] ?? 0))
-
-  const { settings: specialSettings } = useSpecialSettings()
-
-  const requestedPinnedRoutes = useMemo(
-    () => normalizePinnedRoutes(specialSettings?.pinnedRoutes ?? defaultPinnedRoutes),
-    [specialSettings?.pinnedRoutes],
-  )
-
-  const pinnedRouteKeys = useMemo(
-    () => requestedPinnedRoutes
-      .filter((route) => route !== '/')
-      .map((route) => findPinnableNavigationItem(route))
-      .filter((item): item is PinnedMenuItem => Boolean(item))
-      .slice(0, MAX_PINNED_NAV_ITEMS)
-      .map((item) => item.to),
-    [requestedPinnedRoutes],
-  )
-
-  const pinnedRouteSet = useMemo(() => new Set(pinnedRouteKeys), [pinnedRouteKeys])
-
-  const pinnedTopNavItems = useMemo<TopNavItem[]>(
-    () => pinnedRouteKeys
-      .map((route) => findPinnableNavigationItem(route))
-      .filter((item): item is PinnedMenuItem => Boolean(item))
-      .map(toTopNavItem),
-    [pinnedRouteKeys],
-  )
-
-  const fixedStartMenuItems = useMemo(
-    () => FIXED_START_MENU_TILE_ROUTES
-      .map((route) => findShellRouteItem(route))
-      .filter((item): item is TopNavItem => Boolean(item)),
+  const startMenuTileItems = useMemo<StartMenuTileItem[]>(
+    () => launcherCatalogDisplayItems.map((item) => ({
+      route: item.route,
+      label: item.label,
+      shortLabel: item.shortLabel,
+      icon: item.icon,
+      description: item.description,
+      color: item.color,
+      category: item.category,
+      maturity: item.maturity,
+    })),
     [],
   )
-
-  const pinnedStartMenuItems = useMemo(
-    () => pinnedTopNavItems
-      .filter((item) => !FIXED_START_MENU_TILE_ROUTES.includes(item.to as (typeof FIXED_START_MENU_TILE_ROUTES)[number])),
-    [pinnedTopNavItems],
-  )
-
-  const startMenuTileItems = useMemo(() => {
-    const seen = new Set<string>()
-    return [...fixedStartMenuItems, ...pinnedStartMenuItems].filter((item) => {
-      if (seen.has(item.to)) {
-        return false
-      }
-
-      seen.add(item.to)
-      return true
-    })
-  }, [fixedStartMenuItems, pinnedStartMenuItems])
-  const startMenuStaticItems = useMemo(() => [
-    { key: 'artifacts', label: 'Artifacts', to: '/artifacts' },
-    { key: 'platforms', label: 'System Setup', to: buildPlatformWorkspacePath('overview') },
-    { key: 'catalog', label: 'Program Catalog', to: '/platforms/workspace-catalog' },
-    { key: 'settings', label: 'Display Settings', to: buildPlatformWorkspacePath('theme') },
-    { key: 'power', label: 'Power', to: null },
-  ], [])
-  const hardwareSubmenuItems = useMemo(
-    () => hardwareInterfaceMenuItems.filter((hardwareItem) => hardwareItem.showInHardwareSubmenu !== false),
-    [],
-  )
+  const startMenuTileColumns = startMenuTileItems.length > 12 ? 4 : 3
+  const startMenuTileRows = Math.max(1, Math.ceil(startMenuTileItems.length / startMenuTileColumns))
   const currentShellItem = useMemo(() => {
     const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
       .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
@@ -266,33 +194,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute || showPerformFullscreen
   const showTaskbarShell = !showPerformFullscreen
-  const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   const closeShellMenus = () => {
     setNavOpen(false)
-    setMpx1MenuOpen(false)
-    setTopHardwareSubmenuOpen(false)
     setPowerMenuOpen(false)
   }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
-        setNavOpen(false)
-      }
-      if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
-        setMpx1MenuOpen(false)
-      }
-      if (topHardwareMenuRef.current && !topHardwareMenuRef.current.contains(event.target as Node)) {
-        setTopHardwareSubmenuOpen(false)
+        closeShellMenus()
       }
     }
 
-    if (navOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
+    if (navOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [navOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
+  }, [navOpen])
 
   useEffect(() => {
     closeShellMenus()
@@ -347,30 +266,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     })
   }, [location.pathname, runningRoutes])
 
-  useEffect(() => {
-    if (!pinnedRouteSet.has('/mpx1')) {
-      setMpx1MenuOpen(false)
-    }
-    if (!pinnedRouteSet.has('/hardware-interfaces')) {
-      setTopHardwareSubmenuOpen(false)
-    }
-  }, [pinnedRouteSet])
-
   const handleMenuToggle = () => {
     const nextOpen = !navOpen
     setNavOpen(nextOpen)
-    setMpx1MenuOpen(false)
-    setTopHardwareSubmenuOpen(false)
     setPowerMenuOpen(false)
-  }
-
-  const handleMpx1Rescan = async () => {
-    try {
-      await mpx1Api.getMidiPorts()
-      await refreshMpx1State()
-    } catch (err) {
-      console.error('MPX1 MIDI rescan failed:', err)
-    }
   }
 
   const handleStartMenuStaticAction = (to: string | null) => {
@@ -448,39 +347,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       setRestartProgressStage('error')
     }
   }
-
-  const handleMpx1Disconnect = async () => {
-    try {
-      await mpx1Api.disconnectMidi()
-      await refreshMpx1State()
-    } catch (err) {
-      console.error('MPX1 disconnect failed:', err)
-    }
-  }
-
-  const renderHardwareSubmenuPanel = () => (
-    <Layer id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
-      {hardwareSubmenuItems.map((hardwareItem) => (
-        <NavLink
-          key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
-          to={hardwareItem.to}
-          className="top-hardware-menu-link"
-          style={{ '--item-color': hardwareItem.color } as CSSProperties}
-          onClick={closeShellMenus}
-        >
-          <hardwareItem.icon size={16} aria-hidden />
-          <span className="top-hardware-menu-meta">
-            <span>{hardwareItem.label}</span>
-            {hardwareLocationNotes[hardwareItem.to] ? (
-              <Tag type="cool-gray" size="sm" className="top-hardware-menu-location">
-                On {hardwareLocationNotes[hardwareItem.to]?.hostname}
-              </Tag>
-            ) : null}
-          </span>
-        </NavLink>
-      ))}
-    </Layer>
-  )
 
   useEffect(() => {
     if (restartProgressStage === 'idle' || restartProgressStage === 'error') {
@@ -571,118 +437,41 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? null
     : restartProgressSteps[restartProgressIndex] ?? restartProgressSteps[0]
 
-  const renderStartMenuItem = (item: TopNavItem) => {
+  const startMenuStaticItems = [
+    { key: 'desktop', label: 'Desktop', to: '/' },
+    { key: 'platforms', label: 'System Setup', to: buildPlatformWorkspacePath('overview') },
+    { key: 'settings', label: 'Display Settings', to: buildPlatformWorkspacePath('theme') },
+    { key: 'refresh', label: 'Refresh Desktop', to: null },
+    { key: 'power', label: 'Power', to: null },
+  ] as const
+
+  const renderStartMenuItem = (item: StartMenuTileItem) => {
     const Icon = item.icon
-    const isItemActive = item.kind === 'hardware-submenu'
-      ? hardwareSubmenuItems.some((hardwareItem) => isRouteMatch(location.pathname, hardwareItem.to))
-      : isRouteMatch(location.pathname, item.to)
-
-    if (item.kind === 'mpx1-mega-menu') {
-      return (
-        <div
-          key={`start-mpx1-${item.to}`}
-          className="start-menu-card-root start-menu-card-root--submenu"
-          ref={mpx1MenuRef}
-        >
-          <button
-            type="button"
-            className={`start-menu-card start-menu-card--tile start-menu-card--submenu${isItemActive ? ' is-active' : ''}${mpx1MenuOpen ? ' is-open' : ''}`}
-            style={{ '--item-color': item.color } as CSSProperties}
-            title={`${item.description} • ${item.maturity}`}
-            onClick={() => {
-              const nextOpen = !mpx1MenuOpen
-              setMpx1MenuOpen(nextOpen)
-              if (nextOpen) {
-                setTopHardwareSubmenuOpen(false)
-              }
-            }}
-            aria-haspopup="menu"
-            aria-expanded={mpx1MenuOpen}
-            aria-controls="mpx1-mega-menu"
-          >
-            <span className="start-menu-card__icon start-menu-card__icon--tile">
-              <Icon size={18} aria-hidden />
-            </span>
-            <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
-            <ChevronRight size={14} className={`start-menu-card__caret start-menu-card__caret--tile${mpx1MenuOpen ? ' is-open' : ''}`} aria-hidden />
-          </button>
-
-          {mpx1MenuOpen && (
-            <MPX1MegaMenu
-              menuId="mpx1-mega-menu"
-              connected={Boolean(mpx1State?.connected)}
-              currentProgram={currentProgram}
-              currentProgramName={currentProgramName}
-              mixMeter={mixMeter}
-              levelMeter={levelMeter}
-              hasMidiMappings={false}
-              onClose={() => setMpx1MenuOpen(false)}
-              onRescan={handleMpx1Rescan}
-              onDisconnect={handleMpx1Disconnect}
-              onProgramStep={async (delta) => {
-                const nextProgram = Math.max(0, currentProgram + delta)
-                try {
-                  await setMpx1Program(nextProgram)
-                } catch (err) {
-                  console.error('MPX1 program change failed:', err)
-                }
-              }}
-            />
-          )}
-        </div>
-      )
-    }
-
-    if (item.kind === 'hardware-submenu') {
-      return (
-        <div
-          key={`start-hardware-${item.to}`}
-          className="start-menu-card-root start-menu-card-root--submenu"
-          ref={topHardwareMenuRef}
-        >
-          <button
-            type="button"
-            className={`start-menu-card start-menu-card--tile start-menu-card--submenu${isItemActive ? ' is-active' : ''}${topHardwareSubmenuOpen ? ' is-open' : ''}`}
-            style={{ '--item-color': item.color } as CSSProperties}
-            title={`${item.description} • ${item.maturity}`}
-            onClick={() => {
-              const nextOpen = !topHardwareSubmenuOpen
-              setTopHardwareSubmenuOpen(nextOpen)
-              if (nextOpen) {
-                setMpx1MenuOpen(false)
-              }
-            }}
-            aria-haspopup="menu"
-            aria-expanded={topHardwareSubmenuOpen}
-            aria-controls="top-hardware-menu"
-          >
-            <span className="start-menu-card__icon start-menu-card__icon--tile">
-              <Icon size={18} aria-hidden />
-            </span>
-            <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
-            <ChevronRight size={14} className={`start-menu-card__caret start-menu-card__caret--tile${topHardwareSubmenuOpen ? ' is-open' : ''}`} aria-hidden />
-          </button>
-
-          {topHardwareSubmenuOpen && renderHardwareSubmenuPanel()}
-        </div>
-      )
-    }
 
     return (
       <NavLink
-        key={`start-link-${item.to}`}
-        to={item.to}
+        key={`start-link-${item.route}`}
+        to={item.route}
+        end={item.route === '/'}
         className={({ isActive }) => `start-menu-card start-menu-card--tile${isActive ? ' is-active' : ''}`}
         style={{ '--item-color': item.color } as CSSProperties}
-        title={`${item.description} • ${item.maturity}`}
+        title={`${item.description} • ${getLauncherCatalogMaturityLabel(item.maturity)}`}
         onClick={closeShellMenus}
-        onMouseEnter={() => prefetchAppRoute(item.to)}
-        onFocus={() => prefetchAppRoute(item.to)}
+        onMouseEnter={() => prefetchAppRoute(item.route)}
+        onFocus={() => prefetchAppRoute(item.route)}
       >
-        <span className="start-menu-card__icon start-menu-card__icon--tile">
-          <Icon size={18} aria-hidden />
+        <span className="start-menu-card__kicker start-menu-card__kicker--tile">{item.category}</span>
+        <span className="start-menu-card__icon-frame" aria-hidden="true">
+          <span className="start-menu-card__icon start-menu-card__icon--tile">
+            <Icon size={20} aria-hidden />
+          </span>
         </span>
-        <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
+        <span className="start-menu-card__body">
+          <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
+          <span className="start-menu-card__meta">
+            {item.shortLabel && item.shortLabel !== item.label ? item.shortLabel : getLauncherCatalogMaturityLabel(item.maturity)}
+          </span>
+        </span>
       </NavLink>
     )
   }
@@ -769,19 +558,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <div className="start-menu-panel__brand-wrap">
                         <img src={map2Logo} alt="MAP2 logo" className="start-menu-panel__brand" />
                       </div>
-                      <strong>{isDesktopRoute ? 'Desktop Organizer' : 'Workplace Organizer'}</strong>
-                      <span>{isDesktopRoute ? 'System objects, routed programs, and operator utilities.' : `Current object: ${shellWorkspaceLabel}.`}</span>
+                      <strong>Desktop Menu</strong>
+                      <span>{isDesktopRoute ? 'Windows 10-style launcher layout with all available program objects.' : `Current object: ${shellWorkspaceLabel}.`}</span>
                     </div>
                     <div className="start-menu-panel__header-meta" aria-hidden="true">
-                      <span>{startMenuTileItems.length} objects</span>
-                      <span>{shellRouteHint}</span>
+                      <span>{`${startMenuTileItems.length} apps`}</span>
+                      <span>{isDesktopRoute ? 'start menu' : shellRouteHint}</span>
                     </div>
                   </div>
                   <div className="start-menu-panel__shell">
                     <div className="start-menu-panel__static-column" role="group" aria-label="Desktop menu shortcuts">
                       <div className="start-menu-panel__column-header">
-                        <p className="start-menu-panel__eyebrow">System actions</p>
-                        <strong>Desktop controls</strong>
+                        <p className="start-menu-panel__eyebrow">System</p>
+                        <strong>Quick actions</strong>
                       </div>
                       {startMenuStaticItems.map((item) => (
                         item.key === 'power' ? (
@@ -791,8 +580,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                               className={`start-menu-panel__static-item${powerMenuOpen ? ' is-active' : ''}`}
                               onClick={() => {
                                 setPowerMenuOpen((current) => !current)
-                                setMpx1MenuOpen(false)
-                                setTopHardwareSubmenuOpen(false)
                               }}
                               aria-haspopup="menu"
                               aria-expanded={powerMenuOpen}
@@ -817,7 +604,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                   className="start-menu-power-menu__item"
                                   onClick={handleRefreshPage}
                                 >
-                                  Refresh Page
+                                  Refresh Desktop
                                 </button>
                                 <button
                                   type="button"
@@ -841,27 +628,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                         )
                       ))}
                     </div>
-                    <div className="start-menu-panel__tiles-column">
+                    <div
+                      className="start-menu-panel__tiles-column"
+                      style={{
+                        '--start-menu-tile-columns': String(startMenuTileColumns),
+                        '--start-menu-tile-rows': String(startMenuTileRows),
+                      } as CSSProperties}
+                    >
                       <div className="start-menu-panel__column-header">
-                        <p className="start-menu-panel__eyebrow">Program objects</p>
-                        <strong>{startMenuTileItems.length > 0 ? 'Menu launchers' : 'No menu objects'}</strong>
+                        <p className="start-menu-panel__eyebrow">Programs</p>
+                        <strong>All launchers</strong>
                       </div>
-                      {startMenuTileItems.length > 0 ? (
-                        <div className="start-menu-panel__grid">
-                          {startMenuTileItems.map((item) => renderStartMenuItem(item))}
-                        </div>
-                      ) : (
-                        <div className="start-menu-panel__empty" role="note">
-                          <p>Add apps from the Workspace Catalog.</p>
-                          <button
-                            type="button"
-                            className="start-menu-panel__empty-link"
-                            onClick={() => handleStartMenuStaticAction('/platforms/workspace-catalog')}
-                          >
-                            Open Workspace Catalog
-                          </button>
-                        </div>
-                      )}
+                      <div className="start-menu-panel__grid">
+                        {startMenuTileItems.map((item) => renderStartMenuItem(item))}
+                      </div>
                     </div>
                   </div>
                 </Layer>

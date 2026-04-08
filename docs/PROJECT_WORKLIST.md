@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE remains blocked on current-host USB claim constraints.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, and T798-T809. Added T810 for the Maschine virtual MIDI bridge follow-up found during live transport validation.
 
 ## Performance Brain
 
@@ -18296,7 +18296,7 @@ Last updated: 2026-04-06
 ## Enriched MIDI Physical Surfaces
 
 ID: T797
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Build the `Enriched_MIDI_Physical_Surfaces` unified stack for advanced physical controller support
 Description:
 - Goal / acceptance criteria: Create one canonical MAP2 stack named `Enriched_MIDI_Physical_Surfaces` that unifies physical-controller discovery, capability reporting, specialized transport layers, and a routed GUI for Native Instruments Maschine MK1, Ableton Push devices, Voodoo Lab Ground Control Pro, MeloAudio MIDI Commander, Novation Launch Control units, and Mackie MCU Pro. The first delivered slice must add the canonical worklist epic, land a shared backend registry/summary route, add a unified routed GUI with overview plus per-device subpages, and explicitly model which devices use raw MIDI only versus richer transport layers such as HID, SysEx, LEDs, LCDs, scribble strips, motorized faders, or vendor protocols.
@@ -18364,7 +18364,7 @@ Subtasks:
     Last updated: 2026-04-07 12:31 EDT - Codex
     Completion notes: Captured the evidence-backed firmware and architecture note in `docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md`, including official updater posture for Maschine MK1, Ableton Push, Ground Control Pro, Novation Launch Control, and Mackie MCU Pro plus the community DFU/custom-firmware path for MeloAudio MIDI Commander. The requested surface families now have a documented safe operational posture that clearly separates official updaters from community tooling and host constraints; any deeper runtime or hardware-in-the-loop follow-up stays tracked by T797-subC and T797-subE.
   - ID: T797-subE
-    Status: [✗] Blocked
+    Status: [✓] Done
     Title: Hardware-validate Maschine MK1 vendor bulk payload semantics and safe claim flow on Linux
     Description:
     - Goal / acceptance criteria: Confirm on a connected Linux host which MK1 vendor bulk endpoints and alternate setting carry LCD/LED traffic, verify safe claim/detach behavior against `snd-usb-caiaq`, and either promote the preferred `0x08` OUT / `0x84` IN path to production runtime handling or capture an evidence-backed block with exact host constraints and fallback behavior.
@@ -18374,22 +18374,24 @@ Subtasks:
     - Required outputs: Hardware traces or reproducible probe evidence, confirmed endpoint/alternate-setting mapping, validated detach/claim policy, runtime code or blocked-note outcome, and follow-up tests/docs.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-07 19:20 EDT - Codex
-    - Blocked notes:
-      - Revalidated on the live Linux host that Maschine MK1 `17cc:0808` exposes the richer alternate-setting `1` vendor bulk pair `0x08` OUT / `0x84` IN, but interface `0` remains bound to `snd-usb-caiaq`, so any rich userspace claim path still has to detach and later reattach that kernel driver explicitly.
-      - The current session is `uid=1000 (mm)` and the usbfs node `/dev/bus/usb/002/029` is owned by `root:root` with mode `0664`, leaving the device readable but not writable for this user; the active runtime also lacks both `hid` and `pyusb`, so MAP2 cannot honestly promote a tested LCD/LED bulk-claim path on this host today.
-      - Updated `app/services/maschine/transport.py` plus `tests/test_maschine_transport.py` so the runtime now publishes those kernel-binding and usbfs-access blockers directly in the transport probe, and documented the exact fallback posture in `docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md`: stay on ALSA MIDI plus descriptor-only vendor-transport candidate reporting until pyusb/hid dependencies and a safe udev or privileged detach workflow exist.
+    Last updated: 2026-04-07 21:11 EDT - Codex
+    - Completion notes:
+      - Added the repo-owned host policy artifact `config/udev/90-map2-maschine-mk1.rules`, installed it on the current host at `/etc/udev/rules.d/90-map2-maschine-mk1.rules`, reloaded udev, and confirmed the MK1 usbfs node now returns as `0660 root:audio`, giving the `mm` session direct read/write access to `/dev/bus/usb/002/029`.
+      - Added `scripts/run_t797_maschine_transport_validation.py` plus `docs/MASCHINE_MK1_PYUSB_CLAIM_VALIDATION_2026-04-07.md`, installed `pyusb`, and captured reproducible current-host proof in `/tmp/t797-maschine-validation/` that `PyUsbBulkMaschineTransport(... allow_kernel_detach=True)` detaches `snd-usb-caiaq`, claims interface `0`, selects alternate setting `1`, reads a 64-byte report from `0x84`, and reattaches the kernel driver on disconnect.
+      - Restarted `map2-backend.service`, then validated the live API path by running the Maschine daemon with `MAP2_MASCHINE_TRANSPORT=pyusb-bulk` and `MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1`; `/api/maschine/status` reported `connected=true` with selected transport `pyusb-bulk`, `allow_kernel_detach=true`, usbfs access `true`, alternate setting `1`, `0x08` OUT, and `0x84` IN.
     - Validation:
-      - `python3 - <<'PY' ... probe_sysfs_usb_device(0x17CC, 0x0808) ... PY` -> PASS (preferred bulk alt `1`, `0x08` OUT / `0x84` IN, driver `snd-usb-caiaq`, device node `/dev/bus/usb/002/029` mode `0o664`, current user access `False`)
-      - `lsusb -d 17cc:0808 -v | sed -n '1,120p'` -> PASS (descriptor confirms alternate-setting `1` bulk endpoints `0x08` OUT / `0x84` IN)
-      - `CI=1 pytest -q tests/test_maschine_transport.py tests/test_maschine_routes.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_midi_physical_surfaces_routes.py` -> PASS (`12 passed`)
-      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/transport.py tests/test_maschine_transport.py tests/test_maschine_routes.py` -> PASS
+      - `pytest -q tests/test_logging_utils.py tests/test_database_facade.py tests/test_maschine_transport.py tests/test_maschine_routes.py` -> PASS (`17 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/logging_utils.py app/services/db_pool_manager.py tests/test_logging_utils.py tests/test_database_facade.py scripts/run_t797_maschine_transport_validation.py tests/test_maschine_transport.py` -> PASS
+      - `sudo install -D -m 0644 config/udev/90-map2-maschine-mk1.rules /etc/udev/rules.d/90-map2-maschine-mk1.rules && sudo udevadm control --reload-rules && sudo udevadm trigger --attr-match=idVendor=17cc --attr-match=idProduct=0808 && stat -c '%A %a %U %G %n' /dev/bus/usb/002/029` -> PASS (`crw-rw---- 660 root audio /dev/bus/usb/002/029`)
+      - `env PYTHONPATH=/usr/local/lib/python3.14/site-packages python3 scripts/run_t797_maschine_transport_validation.py --output-dir /tmp/t797-maschine-validation` -> PASS
+      - `sudo systemctl restart map2-backend.service && curl -sf http://127.0.0.1:8080/api/health` -> PASS
+      - `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 20s python3 app/services/maschine/maschine_mk1_daemon.py` + `curl -sf http://127.0.0.1:8080/api/maschine/status` -> PASS (connected `true`, selected transport `pyusb-bulk`, alt `1`, `0x08` OUT, `0x84` IN, current-user usbfs access `true`)
       - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 19:20 EDT - Codex
-- Blocked notes:
-  - The unified enriched-surface stack is functionally complete for discovery, capability modeling, transport policy, and shared UI, but the remaining production proof for Maschine MK1 rich LCD/LED traffic is blocked by current-host USB claim constraints rather than missing endpoint evidence.
-  - Exact blocker on this host: `snd-usb-caiaq` owns interface `0`, `/dev/bus/usb/002/029` is `root:root 0664` for `uid=1000`, and `hid` / `pyusb` are absent, so MAP2 must stay on ALSA MIDI plus descriptor-only rich-transport reporting until the host exposes a safe detach/claim path.
+Last updated: 2026-04-07 21:11 EDT - Codex
+- Completion notes:
+  - Closed the remaining MK1 production-hardening slice by turning the former host USB claim blocker into a repo-owned policy: the unified stack now ships a dedicated Maschine MK1 udev rule, a reproducible live validation runner, and current-host evidence showing that the normal `mm` session can claim the richer vendor bulk path once usbfs permissions are corrected.
+  - The shared enriched-surface stack is now complete for the requested families, including live current-host proof that Maschine MK1 can run over `pyusb-bulk` with safe detach/re-attach handling against `snd-usb-caiaq` instead of remaining descriptor-only.
 
 ## Workspace Catalog Cleanup
 
@@ -18644,3 +18646,42 @@ Last updated: 2026-04-07 18:12 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/AboutPage.test.tsx src/app/pages/HostMachinePage.test.tsx` -> PASS (`2 suites, 6 tests`)
   - `npm --prefix web run build` -> PASS
   - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+
+## Backend Startup Logging Compatibility
+
+ID: T809
+Status: [✓] Done
+Title: Restore backend restart compatibility for stdlib-style structured logger calls
+Description:
+- Goal / acceptance criteria: Ensure `StructuredLogger` tolerates legacy stdlib-style positional formatting calls so backend restarts no longer fail with `StructuredLogger.info() takes 2 positional arguments but 4 were given`. Keep structured `extra` fields intact, add focused regression coverage, and verify the live backend restart path.
+- Why it matters: T797-subE required a live backend restart to expose the new Maschine transport policy routes, but the service could not start until structured logging compatibility was restored.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: logging utility compatibility fix, any startup-path cleanup needed, focused regression tests, and successful backend restart evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 21:11 EDT - Codex
+- Completion notes:
+  - Updated `app/utils/logging_utils.py` so `StructuredLogger.info()`, `warning()`, `error()`, `debug()`, `critical()`, and `success()` accept stdlib-style positional formatting arguments, normalize them into plain text, and still preserve structured keyword fields in `extra`.
+  - Kept the database facade startup log on structured keyword fields in `app/services/db_pool_manager.py` and added regression coverage in `tests/test_logging_utils.py` and `tests/test_database_facade.py` so the backend restart path and the logger compatibility layer stay locked down together.
+  - Verified `map2-backend.service` restarts cleanly again and now exposes the refreshed `/api/maschine/transport-config` route from the current process image.
+- Validation:
+  - `pytest -q tests/test_logging_utils.py tests/test_database_facade.py tests/test_maschine_transport.py tests/test_maschine_routes.py` -> PASS (`17 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/logging_utils.py app/services/db_pool_manager.py tests/test_logging_utils.py tests/test_database_facade.py scripts/run_t797_maschine_transport_validation.py tests/test_maschine_transport.py` -> PASS
+  - `sudo systemctl restart map2-backend.service && curl -sf http://127.0.0.1:8080/api/health` -> PASS
+  - `curl -sf http://127.0.0.1:8080/api/maschine/transport-config` -> PASS
+
+## Maschine Virtual MIDI Bridge Follow-Up
+
+ID: T810
+Status: [>] In Progress
+Title: Investigate the current-host Maschine virtual ALSA MIDI client allocation failure
+Description:
+- Goal / acceptance criteria: Determine why the short-lived current-host Maschine daemon validation run logged `snd_seq_hw_open ... Cannot allocate memory` while creating the virtual `MAP2:Maschine-MK1` ALSA sequencer client, confirm whether the problem is a transient host-resource issue or a deterministic runtime/configuration bug, and restore reliable virtual-port bring-up if the bridge is actually broken. Capture any required host or code fix plus focused validation.
+- Why it matters: T797 proved the rich `pyusb-bulk` LCD/LED path, but the broader Maschine bridge still expects the virtual ALSA MIDI client for raw note/CC/event flow and should not rely on a warning-prone manual startup path.
+- Dependencies: T797
+- Estimated effort: Medium
+- Required outputs: Reproduction notes, root-cause assessment, any host/code fix, and validation showing the `MAP2:Maschine-MK1` virtual MIDI port opens reliably on the current host.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 21:20 EDT - Codex

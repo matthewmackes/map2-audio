@@ -240,6 +240,28 @@ function buildDefaultStorefrontCollections(route: string): LauncherStorefrontCol
   return collections
 }
 
+export function compareLauncherCatalogItems(left: LauncherCatalogItem, right: LauncherCatalogItem): number {
+  const leftWeight
+    = (left.storefrontCollections.includes('featured') ? 0 : 10)
+    + (left.storefrontCollections.includes('platform-essentials') ? 0 : 5)
+    + (left.storefrontCollections.includes('recently-added') ? 0 : 2)
+  const rightWeight
+    = (right.storefrontCollections.includes('featured') ? 0 : 10)
+    + (right.storefrontCollections.includes('platform-essentials') ? 0 : 5)
+    + (right.storefrontCollections.includes('recently-added') ? 0 : 2)
+
+  if (leftWeight !== rightWeight) {
+    return leftWeight - rightWeight
+  }
+
+  const categoryCompare = left.category.localeCompare(right.category)
+  if (categoryCompare !== 0) {
+    return categoryCompare
+  }
+
+  return left.heroTitle.localeCompare(right.heroTitle)
+}
+
 function buildDefaultFeatureBullets(item: LauncherCatalogCoreItem): string[] {
   if (item.category === 'Audio Interface') {
     return [
@@ -407,6 +429,7 @@ function buildLauncherCatalog(): LauncherCatalogItem[] {
 }
 
 export const launcherCatalogItems = buildLauncherCatalog()
+export const launcherCatalogDisplayItems = [...launcherCatalogItems].sort(compareLauncherCatalogItems)
 
 export const launcherCatalogByRoute = new Map(
   launcherCatalogItems.map((item) => [item.route, item] as const),

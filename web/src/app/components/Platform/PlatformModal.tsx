@@ -11,7 +11,6 @@ import {
   Information,
   Network_3,
   PaintBrush,
-  SettingsAdjust,
   Share,
   Terminal,
 } from '@carbon/icons-react'
@@ -40,7 +39,6 @@ import {
 } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
 import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
@@ -51,9 +49,7 @@ import {
   platformPanelItems,
   type StandalonePanel,
 } from '../../data/platformMenuItems'
-import { useSpecialSettings, type SpecialSettings } from '../../hooks/useSpecialSettings'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
-import { PlatformLaunchersWorkspace } from './PlatformLaunchersWorkspace'
 import { AvbRoutingWorkspace } from '../AvbRouting/AvbRoutingWorkspace'
 import { ClusterDashboardWorkspace } from '../ClusterDashboard/ClusterDashboardWorkspace'
 import { ManagementWorkspace } from '../ManagementWorkspace/ManagementWorkspace'
@@ -255,12 +251,10 @@ function SidebarNavigation({
   activeId,
   onOpenLayer,
   onOpenStandalone,
-  onOpenWorkspaceCatalog,
 }: {
   activeId: string | null
   onOpenLayer: (id: PlatformLayerId) => void
   onOpenStandalone: (id: StandalonePanel) => void
-  onOpenWorkspaceCatalog: () => void
 }) {
   const buildNavItem = (
     item: (typeof PLATFORM_CONTROL_PANEL_ITEMS)[number],
@@ -297,24 +291,13 @@ function SidebarNavigation({
     .filter((item) => item.target.panel && isPlatformUtilityPanel(item.target.panel))
     .map((item) => buildNavItem(item, 'utility'))
 
-  utilityItems.push({
-    key: '/platforms/workspace-catalog',
-    label: 'Program Catalog',
-    description: 'Program-manager object directory inside Platforms.',
-    to: '/platforms/workspace-catalog',
-    icon: SettingsAdjust,
-    active: activeId === 'workspace-catalog',
-    variant: 'utility',
-    onOpen: onOpenWorkspaceCatalog,
-  })
-
   return (
     <UnifiedWorkspaceSideNav
       className="platform-shell__sidebar"
       ariaLabel="Platforms interface navigation"
       eyebrow="System setup"
       title="Control Panel"
-      description="Open workstation setup objects first, with utility program objects grouped below."
+      description="Open workstation setup objects first, with utility controls grouped below."
       items={items}
       footerTitle="Utilities"
       footerItems={utilityItems}
@@ -905,44 +888,6 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   )
 }
 
-function WorkspaceCatalogWorkspace({
-  settings,
-  isLoading,
-  updateSettings,
-  onLaunchRoute,
-}: {
-  settings: SpecialSettings | null
-  isLoading: boolean
-  updateSettings: (newSettings: Partial<SpecialSettings>) => Promise<void>
-  onLaunchRoute: (to: string) => void
-}) {
-  return (
-    <motion.section key="workspace-catalog" className="platform-shell__workspace platform-shell__workspace--workspace-catalog"
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
-    >
-      <div className="platform-shell__ws-header">
-        <span className="platform-shell__ws-header-icon" aria-hidden><SettingsAdjust size={20} /></span>
-        <div className="platform-shell__ws-header-copy">
-          <span className="platform-shell__ws-header-eyebrow">Program Manager</span>
-          <h2 className="platform-shell__ws-header-title">Program Catalog</h2>
-          <p className="platform-shell__ws-header-summary">
-            Browse routed MAP2 program objects, inspect their directory records, and control desktop placement from one catalog window.
-          </p>
-        </div>
-      </div>
-      <div id="platform-launcher-organizer">
-        <PlatformLaunchersWorkspace
-          settings={settings}
-          isLoading={isLoading}
-          updateSettings={updateSettings}
-          onLaunchRoute={onLaunchRoute}
-        />
-      </div>
-    </motion.section>
-  )
-}
-
 // ── Shared Platforms Surface ────────────────────────────────────────────────
 // Route-native by default, with optional modal chrome retained for any narrow
 // legacy host that still needs an overlay wrapper.
@@ -954,12 +899,8 @@ export interface PlatformModalContentProps {
   initialLayer?: PlatformLayerId | null
   /** Initial standalone panel to open (from URL deep-link). */
   initialPanel?: StandalonePanel | null
-  /** Open Workspace Catalog as the initial routed destination. */
-  initialWorkspaceCatalog?: boolean
   /** Called when the user navigates to a layer/panel (for URL sync). */
   onNavigate?: (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => void
-  /** Called when the user launches a route from the unified host. */
-  onLaunchRoute?: (to: string) => void
   /** Called when user clicks the × close button. */
   onClose: () => void
 }
@@ -968,17 +909,9 @@ export function PlatformModalContent({
   surface = 'route',
   initialLayer,
   initialPanel,
-  initialWorkspaceCatalog = false,
   onNavigate,
-  onLaunchRoute,
   onClose,
 }: PlatformModalContentProps) {
-  const navigate = useNavigate()
-  const {
-    settings: specialSettings,
-    isLoading: specialSettingsLoading,
-    updateSettings: updateSpecialSettings,
-  } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
   const activeLayerId = usePlatformActiveLayer()
   const alerts = usePlatformAlerts()
@@ -987,7 +920,6 @@ export function PlatformModalContent({
   const _summaryMetrics = usePlatformSummaryMetrics()
 
   const [activePanel, setActivePanel] = useState<StandalonePanel | null>(initialPanel ?? null)
-  const [activeWorkspaceCatalog, setActiveWorkspaceCatalog] = useState(initialWorkspaceCatalog)
 
   // Sync live data into store
   useEffect(() => {
@@ -997,31 +929,22 @@ export function PlatformModalContent({
   }, [nextAlerts, nextLayerHealth, nextSummaryMetrics, setAlerts, setLayerHealth, setSummaryMetrics])
 
   useEffect(() => {
-    if (initialWorkspaceCatalog) {
-      startTransition(() => closeLayer())
-      setActivePanel(null)
-      setActiveWorkspaceCatalog(true)
-      return
-    }
-
     if (initialPanel) {
-      setActiveWorkspaceCatalog(false)
       setActivePanel(initialPanel)
       startTransition(() => closeLayer())
       return
     }
 
     if (initialLayer && isPlatformLayerId(initialLayer)) {
-      setActiveWorkspaceCatalog(false)
       setActivePanel(null)
       startTransition(() => openLayer(initialLayer))
       return
     }
 
-    if (!activeWorkspaceCatalog && activePanel === null && activeLayerId === null) {
+    if (activePanel === null && activeLayerId === null) {
       startTransition(() => openLayer(DEFAULT_PLATFORM_LAYER))
     }
-  }, [activeWorkspaceCatalog, activeLayerId, activePanel, closeLayer, initialWorkspaceCatalog, initialLayer, initialPanel, openLayer])
+  }, [activeLayerId, activePanel, closeLayer, initialLayer, initialPanel, openLayer])
 
   // Animation cleanup
   useEffect(() => {
@@ -1041,39 +964,20 @@ export function PlatformModalContent({
   }, [activeLayer, alerts])
 
   const handleOpenLayer = (layerId: PlatformLayerId) => {
-    setActiveWorkspaceCatalog(false)
     setActivePanel(null)
     startTransition(() => openLayer(layerId))
     onNavigate?.({ layer: layerId })
   }
 
   const handleOpenStandalone = (panel: StandalonePanel) => {
-    setActiveWorkspaceCatalog(false)
     startTransition(() => closeLayer())
     setActivePanel(panel)
     onNavigate?.({ panel })
   }
 
-  const handleOpenWorkspaceCatalog = () => {
-    startTransition(() => closeLayer())
-    setActivePanel(null)
-    setActiveWorkspaceCatalog(true)
-    onNavigate?.(null)
-  }
-
-  const handleLaunchRoute = (to: string) => {
-    if (onLaunchRoute) {
-      onLaunchRoute(to)
-      return
-    }
-
-    navigate(to)
-    onClose()
-  }
-
   const showStandalone = activePanel !== null
-  const showLayer = !activeWorkspaceCatalog && !showStandalone && activeLayer !== null
-  const activeId = activeWorkspaceCatalog ? 'workspace-catalog' : (activePanel ?? activeLayerId)
+  const showLayer = !showStandalone && activeLayer !== null
+  const activeId = activePanel ?? activeLayerId
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
       <WorkspacePageTemplate
@@ -1082,28 +986,18 @@ export function PlatformModalContent({
             activeId={activeId}
             onOpenLayer={handleOpenLayer}
             onOpenStandalone={handleOpenStandalone}
-            onOpenWorkspaceCatalog={handleOpenWorkspaceCatalog}
           />
         )}
         contentClassName="platform-shell__panel"
         content={(
           <AnimatePresence mode="wait">
-            {activeWorkspaceCatalog && (
-              <WorkspaceCatalogWorkspace
-                key="workspace-catalog"
-                settings={specialSettings}
-                isLoading={specialSettingsLoading}
-                updateSettings={updateSpecialSettings}
-                onLaunchRoute={handleLaunchRoute}
-              />
-            )}
             {showStandalone && activePanel && (
               <StandaloneWorkspace key={activePanel} panel={activePanel} />
             )}
             {showLayer && activeLayer && (
               <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
             )}
-            {!activeWorkspaceCatalog && !showStandalone && !showLayer && (
+            {!showStandalone && !showLayer && (
               <motion.section
                 key="platform-loading"
                 className="platform-shell__workspace platform-shell__workspace--empty"

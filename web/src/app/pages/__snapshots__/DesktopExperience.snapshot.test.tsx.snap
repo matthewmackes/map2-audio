@@ -531,68 +531,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                   </span>
                 </div>
                 <div
-                  class="hp2-window__body"
+                  class="hp2-window__body hp2-window__body--launcher-grid"
                 >
-                  <div
-                    class="hp2-workplace__hero"
-                  >
-                    <div
-                      class="hp2-workplace__copy"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Industrial Audio Workstation
-                      </p>
-                      <h2>
-                        MAP2 desktop session
-                      </h2>
-                      <p>
-                        The landing route now reads like a serious OS/2 control desktop: icon-first entry, flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
-                      </p>
-                    </div>
-                    <div
-                      aria-label="Platform heartbeat"
-                      class="hp2-workplace__tags"
-                    >
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_k_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="AVB: operational"
-                        >
-                          AVB: operational
-                        </span>
-                      </div>
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_l_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="AVDECC: 1 entity"
-                        >
-                          AVDECC: 1 entity
-                        </span>
-                      </div>
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_m_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="Nodes: 1 active"
-                        >
-                          Nodes: 1 active
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                   <div
                     class="hp2-workplace__section"
                   >
@@ -602,10 +542,10 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       <p
                         class="hp2-window__eyebrow"
                       >
-                        Program Objects
+                        Launcher Directory
                       </p>
                       <span>
-                        Operator shortcuts
+                        Open workspace
                       </span>
                     </div>
                     <div
@@ -797,7 +737,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                             width="22"
                           >
                             <path
-                              d="M7 9h11l3 3h4v13H7z"
+                              d="M8 7h16"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -806,7 +746,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M7 12h18"
+                              d="M12 7l-2 6"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -815,7 +755,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M12 14.5v8.5"
+                              d="M20 7l2 6"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -824,7 +764,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 16h7"
+                              d="M10 20h12"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -833,7 +773,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 19h7"
+                              d="M12 24h8"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -842,7 +782,16 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 22h5"
+                              d="M16 10v10"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M16 10c0-2.4 1.8-4 4-4"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -851,34 +800,10 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               vector-effect="non-scaling-stroke"
                             />
                             <circle
-                              cx="10"
-                              cy="16.5"
+                              cx="20"
+                              cy="6"
                               fill="currentColor"
-                              r="1"
-                            />
-                            <circle
-                              cx="10"
-                              cy="19.5"
-                              fill="currentColor"
-                              r="1"
-                            />
-                            <path
-                              d="M10 17.5v1"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="1.8"
-                              vector-effect="non-scaling-stroke"
-                            />
-                            <path
-                              d="M10 20.5v1.5h1.5"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="1.8"
-                              vector-effect="non-scaling-stroke"
+                              r="1.5"
                             />
                           </svg>
                         </span>
@@ -886,10 +811,10 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="hp2-object-button__copy"
                         >
                           <strong>
-                            Program Catalog
+                            Stage Mode
                           </strong>
                           <span>
-                            Add routed workspaces to the desktop menu tile directory.
+                            Open the full-screen live-performance surface for stage control.
                           </span>
                         </span>
                       </button>
@@ -1601,68 +1526,8 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                   </span>
                 </div>
                 <div
-                  class="hp2-window__body"
+                  class="hp2-window__body hp2-window__body--launcher-grid"
                 >
-                  <div
-                    class="hp2-workplace__hero"
-                  >
-                    <div
-                      class="hp2-workplace__copy"
-                    >
-                      <p
-                        class="hp2-window__eyebrow"
-                      >
-                        Industrial Audio Workstation
-                      </p>
-                      <h2>
-                        MAP2 desktop session
-                      </h2>
-                      <p>
-                        The landing route now reads like a serious OS/2 control desktop: icon-first entry, flat Carbon chrome, and workstation-grade routing into supervisory, library, and display workflows.
-                      </p>
-                    </div>
-                    <div
-                      aria-label="Platform heartbeat"
-                      class="hp2-workplace__tags"
-                    >
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_n_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="AVB: operational"
-                        >
-                          AVB: operational
-                        </span>
-                      </div>
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_o_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="AVDECC: 1 entity"
-                        >
-                          AVDECC: 1 entity
-                        </span>
-                      </div>
-                      <div
-                        class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_p_"
-                      >
-                        <span
-                          class="cds--tag__label"
-                          dir="auto"
-                          title="Nodes: 1 active"
-                        >
-                          Nodes: 1 active
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                   <div
                     class="hp2-workplace__section"
                   >
@@ -1672,10 +1537,10 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                       <p
                         class="hp2-window__eyebrow"
                       >
-                        Program Objects
+                        Launcher Directory
                       </p>
                       <span>
-                        Operator shortcuts
+                        Open workspace
                       </span>
                     </div>
                     <div
@@ -1867,7 +1732,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                             width="22"
                           >
                             <path
-                              d="M7 9h11l3 3h4v13H7z"
+                              d="M8 7h16"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1876,7 +1741,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M7 12h18"
+                              d="M12 7l-2 6"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1885,7 +1750,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M12 14.5v8.5"
+                              d="M20 7l2 6"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1894,7 +1759,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 16h7"
+                              d="M10 20h12"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1903,7 +1768,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 19h7"
+                              d="M12 24h8"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1912,7 +1777,16 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <path
-                              d="M15 22h5"
+                              d="M16 10v10"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              vector-effect="non-scaling-stroke"
+                            />
+                            <path
+                              d="M16 10c0-2.4 1.8-4 4-4"
                               fill="none"
                               stroke="currentColor"
                               stroke-linecap="round"
@@ -1921,34 +1795,10 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                               vector-effect="non-scaling-stroke"
                             />
                             <circle
-                              cx="10"
-                              cy="16.5"
+                              cx="20"
+                              cy="6"
                               fill="currentColor"
-                              r="1"
-                            />
-                            <circle
-                              cx="10"
-                              cy="19.5"
-                              fill="currentColor"
-                              r="1"
-                            />
-                            <path
-                              d="M10 17.5v1"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="1.8"
-                              vector-effect="non-scaling-stroke"
-                            />
-                            <path
-                              d="M10 20.5v1.5h1.5"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="1.8"
-                              vector-effect="non-scaling-stroke"
+                              r="1.5"
                             />
                           </svg>
                         </span>
@@ -1956,10 +1806,10 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
                           class="hp2-object-button__copy"
                         >
                           <strong>
-                            Program Catalog
+                            Stage Mode
                           </strong>
                           <span>
-                            Add routed workspaces to the desktop menu tile directory.
+                            Open the full-screen live-performance surface for stage control.
                           </span>
                         </span>
                       </button>
@@ -2546,7 +2396,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_s_"
+                  aria-labelledby="tooltip-_r_m_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -2570,7 +2420,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_s_"
+                id="tooltip-_r_m_"
                 role="tooltip"
               >
                 <span
@@ -2915,7 +2765,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 />
               </div>
               <strong>
-                Workplace Organizer
+                Desktop Menu
               </strong>
               <span>
                 Current object: Artifacts.
@@ -2926,8 +2776,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               class="start-menu-panel__header-meta"
             >
               <span>
-                5
-                 objects
+                14 apps
               </span>
               <span>
                 artifacts
@@ -2948,17 +2797,17 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 <p
                   class="start-menu-panel__eyebrow"
                 >
-                  System actions
+                  System
                 </p>
                 <strong>
-                  Desktop controls
+                  Quick actions
                 </strong>
               </div>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Artifacts
+                Desktop
               </button>
               <button
                 class="start-menu-panel__static-item"
@@ -2970,13 +2819,13 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Program Catalog
+                Display Settings
               </button>
               <button
                 class="start-menu-panel__static-item"
                 type="button"
               >
-                Display Settings
+                Refresh Desktop
               </button>
               <div
                 class="start-menu-panel__static-item-root"
@@ -2994,6 +2843,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
             </div>
             <div
               class="start-menu-panel__tiles-column"
+              style="--start-menu-tile-columns: 4; --start-menu-tile-rows: 4;"
             >
               <div
                 class="start-menu-panel__column-header"
@@ -3001,10 +2851,10 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 <p
                   class="start-menu-panel__eyebrow"
                 >
-                  Program objects
+                  Programs
                 </p>
                 <strong>
-                  Menu launchers
+                  All launchers
                 </strong>
               </div>
               <div
@@ -3012,162 +2862,489 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               >
                 <a
                   class="start-menu-card start-menu-card--tile"
-                  href="/brain"
-                  style="--item-color: var(--cds-link-primary);"
-                  title="Open the Performance Brain workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics. • beta"
+                  href="/platforms/overview"
+                  style="--item-color: var(--cds-support-warning);"
+                  title="Cluster-wide health, activity, and deployment readiness in one board. • Beta"
                 >
                   <span
-                    class="start-menu-card__icon start-menu-card__icon--tile"
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
                   >
-                    <svg
-                      aria-hidden="true"
-                      fill="currentColor"
-                      focusable="false"
-                      height="18"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="18"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
-                      />
-                    </svg>
+                    Platform
                   </span>
                   <span
-                    class="start-menu-card__label start-menu-card__label--tile"
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
                   >
-                    Brain
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <path
+                          d="M8 8h13l3 3H11z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M8 11h16a2 2 0 0 1 2 2v3H8z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M8 18h16a2 2 0 0 1 2 2v4H8z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M10 14h5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M10 21h5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="22"
+                          cy="14"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="19"
+                          cy="14"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="22"
+                          cy="21"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="19"
+                          cy="21"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Overview
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Beta
+                    </span>
+                  </span>
+                </a>
+                <a
+                  aria-current="page"
+                  class="start-menu-card start-menu-card--tile is-active"
+                  href="/artifacts"
+                  style="--item-color: #be95ff;"
+                  title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Platform
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <path
+                          d="M7 9h11l3 3h4v13H7z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M7 12h18"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M12 14.5v8.5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M15 16h7"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M15 19h7"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M15 22h5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="10"
+                          cy="16.5"
+                          fill="currentColor"
+                          r="1"
+                        />
+                        <circle
+                          cx="10"
+                          cy="19.5"
+                          fill="currentColor"
+                          r="1"
+                        />
+                        <path
+                          d="M10 17.5v1"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M10 20.5v1.5h1.5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Audio Artifacts
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Artifacts
+                    </span>
                   </span>
                 </a>
                 <a
                   class="start-menu-card start-menu-card--tile"
-                  href="/juce-grid"
-                  style="--item-color: var(--cds-link-primary);"
-                  title="Open Audio Grid to build signal flow, set routing, save snapshots, map MIDI, and control audio work from one editor. • beta"
+                  href="/perform"
+                  style="--item-color: var(--cds-support-warning);"
+                  title="Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation. • Beta"
                 >
                   <span
-                    class="start-menu-card__icon start-menu-card__icon--tile"
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
                   >
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      height="18"
-                      viewBox="0 0 32 32"
-                      width="18"
-                    >
-                      <rect
-                        fill="#0f172a"
-                        height="28"
-                        rx="6"
-                        width="28"
-                        x="2"
-                        y="2"
-                      />
-                      <rect
-                        fill="#3b82f6"
-                        height="26.4"
-                        rx="5.4"
-                        width="26.4"
-                        x="2.8"
-                        y="2.8"
-                      />
-                      <rect
-                        fill="#18181b"
-                        height="8.2"
-                        rx="1.2"
-                        width="8.2"
-                        x="6.6"
-                        y="6.6"
-                      />
-                      <rect
-                        fill="#18181b"
-                        height="8.2"
-                        rx="1.2"
-                        width="8.2"
-                        x="17.2"
-                        y="6.6"
-                      />
-                      <rect
-                        fill="#18181b"
-                        height="8.2"
-                        rx="1.2"
-                        width="8.2"
-                        x="6.6"
-                        y="17.2"
-                      />
-                      <rect
-                        fill="#18181b"
-                        height="8.2"
-                        rx="1.2"
-                        width="8.2"
-                        x="17.2"
-                        y="17.2"
-                      />
-                      <path
-                        d="M2.8 9.2c0-3.53 2.87-6.4 6.4-6.4h13.6c3.53 0 6.4 2.87 6.4 6.4v1.2H2.8z"
-                        fill="#ffffff"
-                        fill-opacity="0.16"
-                      />
-                      <rect
-                        fill="none"
-                        height="26.4"
-                        rx="5.4"
-                        stroke="#bfdbfe"
-                        stroke-opacity="0.32"
-                        width="26.4"
-                        x="2.8"
-                        y="2.8"
-                      />
-                    </svg>
+                    Platform
                   </span>
                   <span
-                    class="start-menu-card__label start-menu-card__label--tile"
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
                   >
-                    Audio Grid
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <path
+                          d="M8 7h16"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M12 7l-2 6"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M20 7l2 6"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M10 20h12"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M12 24h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M16 10v10"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M16 10c0-2.4 1.8-4 4-4"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="20"
+                          cy="6"
+                          fill="currentColor"
+                          r="1.5"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Stage Mode
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Stage
+                    </span>
                   </span>
                 </a>
                 <a
                   class="start-menu-card start-menu-card--tile"
-                  href="/midi-hub"
-                  style="--item-color: var(--cds-support-success);"
-                  title="Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration. • beta"
+                  href="/tesira"
+                  style="--item-color: var(--cds-support-error);"
+                  title="Work with Biamp Tesira AVB devices for fleet views, device pages, DSP surfaces, AVB context, and multi-device operational control. • Beta"
                 >
                   <span
-                    class="start-menu-card__icon start-menu-card__icon--tile"
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
                   >
-                    <svg
-                      aria-hidden="true"
-                      fill="currentColor"
-                      focusable="false"
-                      height="18"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="18"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
-                      />
-                    </svg>
+                    Platform
                   </span>
                   <span
-                    class="start-menu-card__label start-menu-card__label--tile"
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
                   >
-                    MIDI Hub
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <rect
+                          fill="none"
+                          height="22"
+                          rx="4"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                          width="22"
+                          x="5"
+                          y="5"
+                        />
+                        <path
+                          d="M11 9v14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M17 9v14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M23 9v14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 13h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 19h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="11"
+                          cy="19"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="17"
+                          cy="13"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="23"
+                          cy="19"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Tesira AVB
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Beta
+                    </span>
                   </span>
                 </a>
-                <div
-                  class="start-menu-card-root start-menu-card-root--submenu"
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/edirol-ua1000"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Open the Edirol UA-1000 control page to inspect device status and interface-specific audio controls for that hardware path. • Beta"
                 >
-                  <button
-                    aria-controls="top-hardware-menu"
-                    aria-expanded="false"
-                    aria-haspopup="menu"
-                    class="start-menu-card start-menu-card--tile start-menu-card--submenu"
-                    style="--item-color: var(--cds-support-info);"
-                    title="Open the audio-interface submenu for interface-specific control pages and connection-state views for supported hardware profiles. • beta"
-                    type="button"
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Audio Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
                   >
                     <span
                       class="start-menu-card__icon start-menu-card__icon--tile"
@@ -3176,10 +3353,10 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                         aria-hidden="true"
                         fill="currentColor"
                         focusable="false"
-                        height="18"
+                        height="20"
                         preserveAspectRatio="xMidYMid meet"
                         viewBox="0 0 32 32"
-                        width="18"
+                        width="20"
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
@@ -3193,108 +3370,568 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                         />
                       </svg>
                     </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
                     <span
                       class="start-menu-card__label start-menu-card__label--tile"
                     >
-                      Audio Interfaces
+                      Edirol UA-1000
                     </span>
-                    <svg
-                      aria-hidden="true"
-                      class="start-menu-card__caret start-menu-card__caret--tile"
-                      fill="currentColor"
-                      focusable="false"
-                      height="14"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="14"
-                      xmlns="http://www.w3.org/2000/svg"
+                    <span
+                      class="start-menu-card__meta"
                     >
-                      <path
-                        d="M22 16 12 26 10.6 24.6 19.2 16 10.6 7.4 12 6z"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      UA-1000
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/hotone-jogg"
+                  style="--item-color: var(--cds-support-error);"
+                  title="Open the HoTone JoGG interface page for connection-state visibility and device-specific controls when that interface profile is active. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Audio Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      HoTone JoGG
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      JoGG
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/ground-control-pro"
+                  style="--item-color: var(--cds-support-info);"
+                  title="Import, diff, validate, back up, and transmit full-memory SysEx dumps for the Voodoo Lab Ground Control Pro. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Ground Control Pro
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      GCP
+                    </span>
+                  </span>
+                </a>
                 <a
                   class="start-menu-card start-menu-card--tile"
                   href="/intelfx"
                   style="--item-color: #e53935;"
-                  title="Control the Rocktron Intellifex from MAP2, including signal flow editing, preset library, MIDI mapping, scenes, and real-time parameter control. • beta"
+                  title="Control the Rocktron Intellifex from MAP2, including signal flow editing, preset library, MIDI mapping, scenes, and real-time parameter control. • Beta"
                 >
                   <span
-                    class="start-menu-card__icon start-menu-card__icon--tile"
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
                   >
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      height="18"
-                      viewBox="0 0 32 32"
-                      width="18"
-                    >
-                      <rect
-                        fill="none"
-                        height="20"
-                        rx="4"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                        width="22"
-                        x="5"
-                        y="6"
-                      />
-                      <path
-                        d="M9 11h14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M9 16h14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M9 21h14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <circle
-                        cx="11"
-                        cy="11"
-                        fill="currentColor"
-                        r="1.2"
-                      />
-                      <circle
-                        cx="21"
-                        cy="16"
-                        fill="currentColor"
-                        r="1.2"
-                      />
-                      <circle
-                        cx="15"
-                        cy="21"
-                        fill="currentColor"
-                        r="1.2"
-                      />
-                    </svg>
+                    Human Interface
                   </span>
                   <span
-                    class="start-menu-card__label start-menu-card__label--tile"
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
                   >
-                    IntelFX Rack
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <rect
+                          fill="none"
+                          height="20"
+                          rx="4"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                          width="22"
+                          x="5"
+                          y="6"
+                        />
+                        <path
+                          d="M9 11h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 16h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 21h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="11"
+                          cy="11"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="21"
+                          cy="16"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="15"
+                          cy="21"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      IntelFX Rack
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Beta
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/lcd"
+                  style="--item-color: var(--cds-support-success);"
+                  title="Access the dedicated LCD console surface for external display and hardware-panel workflows that still depend on qualification evidence. • Hardware Not Detected"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M10,30H4a2,2,0,0,1-2-2V16a2,2,0,0,1,2-2h6a2,2,0,0,1,2,2V28A2,2,0,0,1,10,30ZM4,16V28h6V16Z"
+                        />
+                        <path
+                          d="M28,4H6A2,2,0,0,0,4,6v6H6V6H28V20H14v2h2v4H14v2h9V26H18V22H28a2,2,0,0,0,2-2V6A2,2,0,0,0,28,4Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      LCD Console
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Hardware Not Detected
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/maschine"
+                  style="--item-color: var(--cds-support-success);"
+                  title="Open the Maschine MK1 control page for daemon connectivity, encoder ownership, LCD simulation, LED state, HID traffic, and firmware diagnostics. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Maschine MK1
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Maschine
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/mpx1"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Control the Lexicon MPX-1 from MAP2, including editor access, live program changes, diagnostics, library tasks, and MIDI mapping tools. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 32 32"
+                        width="20"
+                      >
+                        <rect
+                          fill="none"
+                          height="20"
+                          rx="4"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                          width="22"
+                          x="5"
+                          y="6"
+                        />
+                        <path
+                          d="M9 11h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 16h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <path
+                          d="M9 21h14"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
+                        />
+                        <circle
+                          cx="11"
+                          cy="11"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="21"
+                          cy="16"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                        <circle
+                          cx="15"
+                          cy="21"
+                          fill="currentColor"
+                          r="1.2"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      MPX1 Rack
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Beta
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/physical-surfaces"
+                  style="--item-color: var(--cds-support-info);"
+                  title="Open the Enriched_MIDI_Physical_Surfaces shell for shared controller-family discovery, capability posture, and per-device subpages. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Physical Surfaces
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Surfaces
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/labs/push-surface"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Program Ableton Push mappings, layers, welcome routines, live feedback, and advanced control-surface behavior from a dedicated Labs route. • Beta"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Human Interface
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Push Surface
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Push
+                    </span>
+                  </span>
+                </a>
+                <a
+                  class="start-menu-card start-menu-card--tile"
+                  href="/"
+                  style="--item-color: var(--cds-support-warning);"
+                  title="Return to the navigation landing page where every MAP2 workflow is explained and available from the desktop shell. • Qualified With Waiver"
+                >
+                  <span
+                    class="start-menu-card__kicker start-menu-card__kicker--tile"
+                  >
+                    Platform
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-card__icon-frame"
+                  >
+                    <span
+                      class="start-menu-card__icon start-menu-card__icon--tile"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        focusable="false"
+                        height="20"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                  <span
+                    class="start-menu-card__body"
+                  >
+                    <span
+                      class="start-menu-card__label start-menu-card__label--tile"
+                    >
+                      Home
+                    </span>
+                    <span
+                      class="start-menu-card__meta"
+                    >
+                      Qualified With Waiver
+                    </span>
                   </span>
                 </a>
               </div>
@@ -3491,7 +4128,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_13_"
+                  aria-labelledby="tooltip-_r_t_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -3515,7 +4152,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_13_"
+                id="tooltip-_r_t_"
                 role="tooltip"
               >
                 <span

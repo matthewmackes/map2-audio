@@ -49,19 +49,6 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Open Labs when you want a standalone catalog of advanced MAP2 routes without collapsing them into the Platforms workspace.',
     bestFor: 'Advanced workflow discovery and launch',
   },
-  '/platforms/workspace-catalog': {
-    summary: 'Integrated Workspace Catalog for advanced, experimental, and hardware-sensitive MAP2 workflows, including launcher organization and route cards.',
-    capabilities: [
-      'Launcher Organizer and advanced route cards in one section',
-      'Direct access to the dedicated Push Surface route',
-      'Grouped view of experimental, advanced, and blocked workflows',
-      'Searchable launcher list with maturity and hardware context',
-      'Integrated with the Platforms workspace shell',
-      'Single surface for advanced MAP2 route discovery and launch',
-    ],
-    learnMore: 'Open Workspace Catalog when you need launcher management and advanced route discovery in one native Platforms section.',
-    bestFor: 'Advanced workflow discovery and launch',
-  },
   '/labs/push-surface': {
     summary: 'Dedicated Push programming surface with full-hardware WYSIWYG editing, layered mappings, Quick Assignments, and welcome-routine authoring.',
     capabilities: [

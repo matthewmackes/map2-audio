@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
@@ -238,8 +238,6 @@ describe('AppShell desktop taskbar shell', () => {
   })
 
   it('tracks running apps in the taskbar and reopens them from indicators', () => {
-    mockSpecialSettings.pinnedRoutes = ['/intelfx']
-
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -300,9 +298,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
   })
 
-  it('shows fixed Start Menu tiles first and appends user-managed pins after them', () => {
-    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/perform', '/audio-artifacts', '/platform']
-
+  it('shows every catalog launcher inside the Start menu by default', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -316,22 +312,28 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
     expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
 
-    for (const label of ['Artifacts', 'System Setup', 'Program Catalog', 'Display Settings', 'Power']) {
+    for (const label of ['Desktop', 'System Setup', 'Display Settings', 'Refresh Desktop', 'Power']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
     }
 
-    const labels = Array.from(container.querySelectorAll('.start-menu-card__label')).map((node) => node.textContent)
+    const labels = Array.from(container.querySelectorAll('.start-menu-card__label--tile')).map((node) => node.textContent)
     expect(labels).toEqual([
-      'Brain',
-      'Audio Grid',
-      'MIDI Hub',
-      'Audio Interfaces',
-      'IntelFX Rack',
-      'Stage Mode',
-      'Audio Artifacts',
       'Overview',
+      'Audio Artifacts',
+      'Stage Mode',
+      'Tesira AVB',
+      'Edirol UA-1000',
+      'HoTone JoGG',
+      'Ground Control Pro',
+      'IntelFX Rack',
+      'LCD Console',
+      'Maschine MK1',
+      'MPX1 Rack',
+      'Physical Surfaces',
+      'Push Surface',
+      'Home',
     ])
-    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(8)
+    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(14)
   })
 
   it('closes the Start menu when a static shortcut is used', () => {
@@ -343,13 +345,13 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Program Catalog' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Display Settings' }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/workspace-catalog')
-    expect(screen.queryByRole('button', { name: 'Artifacts' })).toBeNull()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/theme')
+    expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull()
   })
 
-  it('shows the fixed Start Menu tiles even when no user-managed tiles are pinned', () => {
+  it('routes catalog-backed Start Menu launchers as direct links', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -358,15 +360,13 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.queryByText('Add apps from the Workspace Catalog.')).toBeNull()
-    for (const label of ['Brain', 'Audio Grid', 'MIDI Hub', 'Audio Interfaces']) {
-      expect(screen.getByRole(label === 'Audio Interfaces' ? 'button' : 'link', { name: label })).toBeInTheDocument()
-    }
+    expect(screen.getByRole('link', { name: /MPX1 Rack/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /HoTone JoGG/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Home/i })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('link', { name: 'Brain' }))
+    fireEvent.click(screen.getByRole('link', { name: /Home/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/brain')
-    expect(screen.getByRole('button', { name: 'Close Brain' })).toBeInTheDocument()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
   })
 
   it('opens the Power submenu and runs refresh and logout actions', () => {
@@ -380,16 +380,17 @@ describe('AppShell desktop taskbar shell', () => {
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
 
-    expect(screen.getByRole('button', { name: 'Restart Backend' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Refresh Page' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Log Out' })).toBeInTheDocument()
+    const powerMenu = screen.getByRole('menu', { name: 'Power actions' })
+    expect(within(powerMenu).getByRole('button', { name: 'Restart Backend' })).toBeInTheDocument()
+    expect(within(powerMenu).getByRole('button', { name: 'Refresh Desktop' })).toBeInTheDocument()
+    expect(within(powerMenu).getByRole('button', { name: 'Log Out' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh Page' }))
+    fireEvent.click(within(powerMenu).getByRole('button', { name: 'Refresh Desktop' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
   })
 
@@ -420,25 +421,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getAllByText('Restarting service').length).toBeGreaterThan(0)
   })
 
-  it('renders MPX1 as a Start menu card that opens its pinned mega menu', () => {
-    mockSpecialSettings.pinnedRoutes = ['/mpx1']
-
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: /MPX1 Rack/i }))
-
-    expect(screen.getByTestId('mpx1-mega-menu')).toBeTruthy()
-  })
-
-  it('renders pinned platform deep links inside the Start menu as direct routed links', () => {
-    mockSpecialSettings.pinnedRoutes = ['/platforms/overview']
-
+  it('exposes routed launchers like Overview and MPX1 as direct Start Menu links', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -447,28 +430,10 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getAllByRole('link', { name: /Overview/i })[0])
+    expect(screen.getByRole('link', { name: /MPX1 Rack/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: /Overview/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
-  })
-
-  it('shows hardware submenu entries from the Start menu card', () => {
-    mockHardwareLocationNotes['/hotone-jogg'] = { hostname: 'rack-b' }
-
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: /Audio Interfaces/i }))
-
-    expect(screen.queryByText('Edirol UA-1000')).toBeNull()
-    expect(screen.queryByText('HoTone JoGG')).toBeNull()
-    expect(screen.getByText('Generic Interface')).toBeTruthy()
-    expect(screen.getByText('On rack-b')).toBeTruthy()
   })
 
   it('renders the reconnect banner above the taskbar when websocket state degrades', () => {

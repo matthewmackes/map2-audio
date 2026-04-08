@@ -43,3 +43,13 @@ def test_structured_logger_warning_and_error_preserve_context_without_glyphs(cap
     assert caplog.records[0].node_id == "node-a"
     assert caplog.records[1].worker == "sync"
     assert all(symbol not in caplog.text for symbol in ("✅", "❌", "⚠️", "🛑", "🔌", "🚨"))
+
+
+def test_structured_logger_supports_stdlib_style_positional_args(caplog):
+    logger = StructuredLogger("tests.logging_utils.compat")
+
+    with caplog.at_level(logging.INFO, logger="tests.logging_utils.compat"):
+        logger.info("Pool size=%s overflow=%s", 3, 7, subsystem="db")
+
+    assert [record.getMessage() for record in caplog.records] == ["Pool size=3 overflow=7"]
+    assert caplog.records[0].subsystem == "db"

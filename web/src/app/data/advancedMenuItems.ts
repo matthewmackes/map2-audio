@@ -120,7 +120,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     label: 'Home',
     shortLabel: 'Home',
     icon: House,
-    description: 'Return to the navigation landing page where every MAP2 workflow is explained and available for pinning into the shell.',
+    description: 'Return to the navigation landing page where every MAP2 workflow is explained and available from the desktop shell.',
     color: 'var(--cds-support-warning)',
     homeSection: 'System',
     includeInAdvancedMenu: false,

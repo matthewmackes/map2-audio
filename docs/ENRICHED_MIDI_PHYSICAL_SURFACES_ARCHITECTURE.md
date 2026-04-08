@@ -14,11 +14,11 @@ This note captures the first architecture posture for the `Enriched_MIDI_Physica
   - alternate setting `0`: bulk `0x01` OUT and `0x81` IN
   - alternate setting `1`: bulk `0x01` OUT, `0x81` IN, `0x08` OUT, and `0x84` IN
 - The Linux-facing rich path should therefore prefer the richer alternate-setting `1` pair `0x08` OUT and `0x84` IN when a userspace bulk transport is available and safe to claim.
-- Current host constraints block safe promotion of that rich path today:
-  - usbfs node `/dev/bus/usb/002/029` is owned by `root:root` with mode `0664`, so the active `uid=1000 (mm)` session does not have direct read/write access
-  - interface `0` remains bound to `snd-usb-caiaq`, so any rich claim path must explicitly detach and later reattach that kernel driver
-  - the current runtime environment does not have `hid` / `pyusb` installed, so MAP2 can only report the preferred bulk path rather than actively claim it
-- Resulting posture: keep Maschine MK1 on ALSA MIDI plus descriptor-only vendor-transport candidate reporting until the host has both userspace USB dependencies and a safe udev or privileged detach workflow.
+- Live validation on 2026-04-07 confirmed the rich path works on this host once userspace USB access is granted:
+  - with the default usbfs permissions (`root:root 0664`), the active `uid=1000 (mm)` session could read descriptors but could not open the device read/write
+  - after installing `pyusb` and granting `/dev/bus/usb/002/029` to the `audio` group as `0660`, `PyUsbBulkMaschineTransport(... allow_kernel_detach=True)` successfully detached `snd-usb-caiaq`, claimed interface `0`, switched to alternate setting `1`, read a 64-byte report from `0x84`, and reattached the kernel driver on disconnect
+  - the repo-owned host policy for this is `config/udev/90-map2-maschine-mk1.rules`, which makes the usbfs node writable by the MAP2 service user without requiring an ad hoc `chmod`
+- Resulting posture: keep ALSA MIDI as the conservative baseline, but promote `pyusb-bulk` to the supported rich-feedback path on Linux hosts that have `pyusb` installed, the MAP2 udev rule loaded, and `allow_kernel_detach` enabled.
 
 ## Shared architecture posture
 
@@ -109,6 +109,7 @@ Current behavior:
 - the Linux probe now also surfaces usbfs ownership/access posture so the operator can see when a rich claim path is blocked by `root:root` device-node permissions instead of endpoint discovery
 - bulk-endpoint selection prefers the richest alternate setting and the highest-address bulk IN/OUT pair, which matches the connected MK1’s `0x08` OUT and `0x84` IN topology on this host
 - when `pyusb-bulk` is used, the transport now records the chosen alternate setting and selected bulk endpoints in runtime status
+- live current-host validation now proves that `allow_kernel_detach=true` plus an `audio`-group usbfs rule is sufficient for the normal `mm` session to detach `snd-usb-caiaq`, claim the rich interface, read vendor traffic, and reattach the driver cleanly
 
 Environment knobs:
 
@@ -121,6 +122,11 @@ Operational posture:
 - The daemon now publishes selected transport and transport candidates through the Maschine status model
 - The unified physical-surface shell and Maschine page both expose this transport posture
 - The dedicated Maschine page now exposes transport policy controls plus endpoint-level candidate details so the operator can see the real MK1 USB posture, kernel binding, and usbfs access constraints before forcing a richer claim path
+- Production enablement on this host is now:
+  - install `config/udev/90-map2-maschine-mk1.rules` to `/etc/udev/rules.d/`
+  - reload udev and retrigger the MK1 so the usbfs node becomes `0660 root:audio`
+  - install `pyusb`
+  - enable `allow_kernel_detach=true` and use `transport_preference=pyusb-bulk` or `auto`
 
 ## Device-family posture
 
@@ -244,7 +250,7 @@ Sources:
 
 - Extract a shared rich-surface runtime from the existing Push stack.
 - Validate actual MK1 vendor-bulk payload semantics on hardware so the preferred `0x08` OUT / `0x84` IN path can be promoted from endpoint-aware candidate logic to production LCD/LED transport.
-- Install `pyusb` or an equivalent userspace USB stack plus a safe udev or privileged detach policy on the Linux host, then rerun claim validation against `snd-usb-caiaq`.
+- Keep the repo-owned Maschine MK1 udev rule installed on target hosts and preserve `pyusb` availability so the validated detach/claim path stays usable after reprovisioning.
 - Add a controller-profile branch for Launch Control and MIDI Commander.
 - Add an MCU runtime branch for Mackie MCU Pro.
 - Keep Ground Control Pro on the SysEx-specialized branch, but inside the same unified surface shell.

@@ -74,14 +74,6 @@ jest.mock('./pages/PlatformWorkspaceCatalogPage', () => ({
   },
 }))
 
-jest.mock('./pages/SynthForgePage', () => ({
-  SynthForgePage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="synthforge-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
 jest.mock('./pages/PerformanceBrainPage', () => ({
   PerformanceBrainPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -161,20 +153,20 @@ describe('App routing', () => {
     expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/adoption?state=claimable')
   })
 
-  it('keeps Workspace Catalog as a first-class routed surface', async () => {
+  it('redirects the retired Workspace Catalog route into the overview workspace', async () => {
     window.history.pushState({}, '', '/platforms/workspace-catalog')
 
     render(<App />)
 
-    expect(await screen.findByTestId('platform-workspace-catalog-route')).toHaveTextContent('/platforms/workspace-catalog')
+    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
   })
 
-  it('keeps SynthForge as a first-class routed surface', async () => {
+  it('retires the legacy SynthForge route back to the desktop landing page', async () => {
     window.history.pushState({}, '', '/synth-forge')
 
     render(<App />)
 
-    expect(await screen.findByTestId('synthforge-route')).toHaveTextContent('/synth-forge')
+    expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
   })
 
   it('keeps Performance Brain as a first-class routed surface', async () => {

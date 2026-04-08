@@ -359,10 +359,6 @@
   gap: 1rem;
 }
 
-.platform-shell__workspace--workspace-catalog {
-  gap: 1.1rem;
-}
-
 .platform-shell__workspace--standalone {
   gap: 1rem;
 }
@@ -413,11 +409,6 @@
     inset -1px -1px 0 var(--platform-shell-shadow);
 }
 
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header {
-  align-items: flex-start;
-  padding: 0.85rem 0.95rem;
-}
-
 .platform-shell__ws-header-icon {
   display: inline-flex;
   align-items: center;
@@ -428,24 +419,9 @@
   color: var(--cds-icon-primary);
 }
 
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header-icon {
-  width: 2.35rem;
-  height: 2.35rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-strong-01) 86%, transparent);
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer-01));
-  box-shadow:
-    inset 1px 1px 0 color-mix(in srgb, white 76%, transparent),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
-}
-
 .platform-shell__ws-header-copy {
   flex: 1;
   min-width: 0;
-}
-
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header-copy {
-  display: grid;
-  gap: 0.2rem;
 }
 
 .platform-shell__ws-header-eyebrow {
@@ -456,14 +432,6 @@
   margin-bottom: 0.2rem;
 }
 
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header-eyebrow {
-  margin-bottom: 0;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .platform-shell__ws-header-title {
   margin: 0;
   font-size: 1.25rem;
@@ -472,25 +440,12 @@
   color: var(--cds-text-primary);
 }
 
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header-title {
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1.08rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 .platform-shell__ws-header-summary {
   margin: 0.5rem 0 0;
   max-width: 42rem;
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--cds-text-secondary);
-}
-
-.platform-shell__workspace--workspace-catalog .platform-shell__ws-header-summary {
-  margin-top: 0;
-  max-width: 44rem;
-  font-size: 0.85rem;
 }
 
 .platform-shell__standalone-surface {

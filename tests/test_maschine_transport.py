@@ -50,6 +50,17 @@ class _FakeEndpoint:
         self.bmAttributes = attributes
         self.wMaxPacketSize = 0x0200
         self.bInterval = 0
+        self.read_calls: list[tuple[int, int]] = []
+        self.write_calls: list[bytes] = []
+
+    def read(self, max_length: int, *, timeout: int):
+        self.read_calls.append((max_length, timeout))
+        return bytes([(self.bEndpointAddress & 0xFF), max_length & 0xFF, timeout & 0xFF])
+
+    def write(self, payload: bytes) -> int:
+        encoded = bytes(payload)
+        self.write_calls.append(encoded)
+        return len(encoded)
 
 
 class _FakeInterface:
@@ -68,12 +79,24 @@ class _FakeInterface:
 class _FakeUsbDevice:
     def __init__(self, interfaces: list[_FakeInterface]) -> None:
         self._interfaces = interfaces
+        self.detached_interfaces: list[int] = []
+        self.attached_interfaces: list[int] = []
+        self.altsetting_calls: list[tuple[int, int]] = []
 
     def get_active_configuration(self) -> list[_FakeInterface]:
         return list(self._interfaces)
 
     def is_kernel_driver_active(self, _interface_number: int) -> bool:
         return False
+
+    def detach_kernel_driver(self, interface_number: int) -> None:
+        self.detached_interfaces.append(interface_number)
+
+    def attach_kernel_driver(self, interface_number: int) -> None:
+        self.attached_interfaces.append(interface_number)
+
+    def set_interface_altsetting(self, *, interface: int, alternate_setting: int) -> None:
+        self.altsetting_calls.append((interface, alternate_setting))
 
 
 def test_transport_controller_prefers_hidapi_in_auto_mode_when_available():
@@ -256,6 +279,148 @@ def test_pyusb_probe_reports_access_block_reason_when_device_node_is_unavailable
     assert "lacks direct read/write access" in str(payload["note"])
     assert connected is False
     assert connect_info["error"] == "device node access denied"
+
+
+def test_pyusb_probe_connectable_when_access_is_available_and_kernel_detach_is_allowed(monkeypatch):
+    monkeypatch.setattr(maschine_transport_module, "usb_core", object())
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "usb_util",
+        SimpleNamespace(
+            endpoint_type=lambda value: value,
+            endpoint_direction=lambda value: value,
+            ENDPOINT_TYPE_BULK=2,
+            ENDPOINT_IN=0x80,
+            ENDPOINT_OUT=0x00,
+        ),
+    )
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "probe_sysfs_usb_device",
+        lambda vendor_id, product_id: {
+            "vendor_id": f"{vendor_id:04x}",
+            "product_id": f"{product_id:04x}",
+            "interfaces": [{"name": "2-3.4.2:1.0"}],
+            "preferred_interface_driver": "snd-usb-caiaq",
+            "preferred_bulk_pair": {
+                "interface_number": 0,
+                "alternate_setting": 1,
+                "write_endpoint_address_hex": "0x08",
+                "read_endpoint_address_hex": "0x84",
+            },
+            "device_node": {
+                "path": "/dev/bus/usb/002/029",
+                "exists": True,
+                "mode_octal": "0o660",
+                "owner_name": "root",
+                "group_name": "audio",
+                "current_uid": 1000,
+                "current_user_can_access": True,
+            },
+        },
+    )
+
+    transport = PyUsbBulkMaschineTransport(vendor_id=0x17CC, product_id=0x0808, allow_kernel_detach=True)
+    monkeypatch.setattr(transport, "_find_device", lambda: object())
+    monkeypatch.setattr(
+        transport,
+        "_resolve_bulk_endpoints",
+        lambda device: {
+            "interface_number": 0,
+            "alternate_setting": 1,
+            "kernel_driver_active": True,
+            "read_endpoint_address": 0x84,
+            "read_endpoint_address_hex": "0x84",
+            "write_endpoint_address": 0x08,
+            "write_endpoint_address_hex": "0x08",
+        },
+    )
+
+    payload = transport.probe()
+
+    assert payload["access_blocked"] is False
+    assert payload["connectable"] is True
+    assert payload["alternate_setting"] == 1
+    assert payload["write_endpoint_address_hex"] == "0x08"
+    assert payload["read_endpoint_address_hex"] == "0x84"
+    assert payload["note"] == "Preferred bulk alt 1 OUT 0x08 IN 0x84."
+
+
+def test_pyusb_connect_detaches_claims_and_reattaches_kernel_driver(monkeypatch):
+    claim_calls: list[tuple[object, int]] = []
+    release_calls: list[tuple[object, int]] = []
+
+    monkeypatch.setattr(maschine_transport_module, "usb_core", object())
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "usb_util",
+        SimpleNamespace(
+            claim_interface=lambda device, interface_number: claim_calls.append((device, interface_number)),
+            release_interface=lambda device, interface_number: release_calls.append((device, interface_number)),
+        ),
+    )
+    monkeypatch.setattr(
+        maschine_transport_module,
+        "probe_sysfs_usb_device",
+        lambda vendor_id, product_id: {
+            "vendor_id": f"{vendor_id:04x}",
+            "product_id": f"{product_id:04x}",
+            "interfaces": [{"name": "2-3.4.2:1.0"}],
+            "preferred_interface_driver": "snd-usb-caiaq",
+            "preferred_bulk_pair": {
+                "interface_number": 0,
+                "alternate_setting": 1,
+                "write_endpoint_address_hex": "0x08",
+                "read_endpoint_address_hex": "0x84",
+            },
+            "device_node": {
+                "path": "/dev/bus/usb/002/029",
+                "exists": True,
+                "mode_octal": "0o660",
+                "owner_name": "root",
+                "group_name": "audio",
+                "current_uid": 1000,
+                "current_user_can_access": True,
+            },
+        },
+    )
+
+    read_endpoint = _FakeEndpoint(0x84)
+    write_endpoint = _FakeEndpoint(0x08)
+    fake_device = _FakeUsbDevice([])
+    transport = PyUsbBulkMaschineTransport(vendor_id=0x17CC, product_id=0x0808, allow_kernel_detach=True)
+    monkeypatch.setattr(transport, "_find_device", lambda: fake_device)
+    monkeypatch.setattr(
+        transport,
+        "_resolve_bulk_endpoints",
+        lambda device: {
+            "interface_number": 0,
+            "alternate_setting": 1,
+            "kernel_driver_active": True,
+            "read_endpoint_address": 0x84,
+            "read_endpoint_address_hex": "0x84",
+            "write_endpoint_address": 0x08,
+            "write_endpoint_address_hex": "0x08",
+            "read_endpoint": read_endpoint,
+            "write_endpoint": write_endpoint,
+        },
+    )
+
+    connected, info = transport.connect()
+
+    assert connected is True
+    assert info["connected"] is True
+    assert fake_device.detached_interfaces == [0]
+    assert claim_calls == [(fake_device, 0)]
+    assert fake_device.altsetting_calls == [(0, 1)]
+    assert transport.read_report(max_length=64, timeout_ms=7) == bytes([0x84, 64, 7])
+    assert transport.write_reports([b"\x01\x02"]) is True
+    assert write_endpoint.write_calls == [b"\x01\x02"]
+
+    transport.disconnect()
+
+    assert release_calls == [(fake_device, 0)]
+    assert fake_device.attached_interfaces == [0]
 
 
 def test_pyusb_probe_does_not_leak_endpoint_objects(monkeypatch):

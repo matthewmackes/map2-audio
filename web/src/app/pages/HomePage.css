@@ -196,6 +196,7 @@
 .hp2-desktop__panels {
   display: grid;
   grid-template-rows: minmax(0, auto) minmax(0, auto);
+  align-content: start;
   gap: 1rem;
   min-width: 0;
 }
@@ -249,46 +250,13 @@
   padding: 0.95rem 1rem 1rem;
 }
 
+.hp2-window__body--launcher-grid {
+  gap: 0.7rem;
+  padding-block: 0.85rem 0.95rem;
+}
+
 .hp2-window__body--compact {
   padding: 0.85rem 0.95rem 0.95rem;
-}
-
-.hp2-workplace__hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: start;
-}
-
-.hp2-workplace__copy {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.hp2-workplace__copy h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-}
-
-.hp2-workplace__copy p:last-child {
-  margin: 0;
-  color: var(--cds-text-secondary, #525252);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
-
-.hp2-workplace__tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.hp2-workplace__tags .cds--tag {
-  min-height: auto;
-  border-radius: 0;
 }
 
 .hp2-workplace__section {
@@ -588,7 +556,6 @@
 }
 
 @media (max-width: 1280px) {
-  .hp2-workplace__hero,
   .hp2-workplace__inspector,
   .hp2-desktop__panel-row {
     grid-template-columns: minmax(0, 1fr);

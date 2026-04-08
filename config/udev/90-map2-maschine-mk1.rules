@@ -1,0 +1,4 @@
+# Grant MAP2's backend/daemon access to the Maschine MK1 usbfs node so the
+# pyusb-bulk transport can safely detach snd-usb-caiaq, claim altsetting 1,
+# and reattach the kernel driver on disconnect.
+ACTION=="add|change", SUBSYSTEM=="usb", ATTR{idVendor}=="17cc", ATTR{idProduct}=="0808", MODE="0660", GROUP="audio", TAG+="uaccess"

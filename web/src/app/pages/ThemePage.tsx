@@ -414,7 +414,7 @@ export function ThemePage() {
     const nextSearchParams = new URLSearchParams(searchParams)
     nextSearchParams.delete('themeModal')
     const nextQuery = nextSearchParams.toString()
-    navigate(`/platforms/workspace-catalog${nextQuery ? `?${nextQuery}` : ''}`, { replace: true })
+    navigate(`/platforms/theme${nextQuery ? `?${nextQuery}` : ''}`, { replace: true })
   }, [navigate, searchParams])
 
   useEffect(() => {
