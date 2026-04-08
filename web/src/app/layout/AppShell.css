@@ -308,7 +308,7 @@
   bottom: calc(100% + 0.85rem);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
-  width: min(36rem, calc(100vw - 2rem));
+  width: min(48rem, calc(100vw - 2rem));
   max-height: min(44rem, calc(100vh - 7rem));
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 92%, transparent);
@@ -320,12 +320,19 @@
 
 .shell-launcher__header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
   align-items: start;
   padding: 1.1rem 1.2rem 1rem;
   border-bottom: 1px solid color-mix(in srgb, var(--window-shell-border) 82%, transparent);
   background: var(--cds-layer-02, #f4f4f4);
+}
+
+.shell-launcher__header-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  min-width: 0;
 }
 
 .shell-launcher__header-mark {
@@ -359,6 +366,29 @@
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.76rem;
   line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-launcher__header-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cds-icon-primary, var(--cds-text-primary, var(--text-primary)));
+  cursor: pointer;
+}
+
+.shell-launcher__header-action:hover,
+.shell-launcher__header-action:focus-visible {
+  border-color: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 28%, var(--window-shell-border));
+  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 10%, var(--cds-layer-01, #ffffff));
+  outline: none;
 }
 
 .shell-launcher__system-summary {
@@ -420,7 +450,7 @@
 
 .shell-launcher__tile-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.9rem;
 }
 

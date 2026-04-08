@@ -91,6 +91,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     })),
     [],
   )
+  const snapshotEditorNavItem = useMemo(
+    () => [...allPinnableNavigationItems, ...allRouteNavigationItems].find((item) => item.to === '/juce-grid'),
+    [],
+  )
   const currentShellItem = useMemo(() => {
     const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
       .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
@@ -379,6 +383,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     hostInfo?.os_version ?? hostInfo?.kernel_version ?? 'OS version unavailable',
     hostInfo?.hostname ?? 'Host unavailable',
   ]
+  const SnapshotEditorIcon = snapshotEditorNavItem?.icon
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
@@ -454,15 +459,31 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label="Platform menu"
               >
                 <div className="shell-launcher__header">
-                  <div className="shell-launcher__header-mark" aria-hidden="true">
-                    <Map2BrandMark className="shell-launcher__header-icon" />
+                  <div className="shell-launcher__header-main">
+                    <div className="shell-launcher__header-mark" aria-hidden="true">
+                      <Map2BrandMark className="shell-launcher__header-icon" />
+                    </div>
+                    <div className="shell-launcher__header-copy">
+                      <strong>{MAP2_PLATFORM_NAME}</strong>
+                      {launcherSummaryItems.map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="shell-launcher__header-copy">
-                    <strong>{MAP2_PLATFORM_NAME}</strong>
-                    {launcherSummaryItems.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
+                  {SnapshotEditorIcon ? (
+                    <button
+                      type="button"
+                      className="shell-launcher__header-action"
+                      aria-label="Open Snapshot Editor"
+                      title="Open Snapshot Editor"
+                      onClick={() => {
+                        closeShellMenus()
+                        navigate('/juce-grid')
+                      }}
+                    >
+                      <SnapshotEditorIcon size={20} aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="shell-launcher__system-summary" aria-label="System summary">

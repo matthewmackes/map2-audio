@@ -214,7 +214,22 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByText('AVDECC: 2 entities')).toBeInTheDocument()
     expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
     expect(screen.getAllByRole('link').length).toBeGreaterThan(6)
+  })
+
+  it('routes the header snapshot editor action through the existing audio grid entry point', () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Open Snapshot Editor' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/juce-grid')
   })
 
   it('routes launcher tiles as direct links', () => {
