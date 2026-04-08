@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
 
+from app.utils.rtmidi_utils import dispose_rtmidi_client
+
 logger = logging.getLogger(__name__)
 MIDI_ENGINE_EVENT_QUEUE_MAXSIZE = 1024
 MIDI_ENGINE_POLL_FALLBACK_INTERVAL_S = 0.005
@@ -283,6 +285,8 @@ class MIDIEngineService:
             logger.info("Using virtual MIDI devices (rtmidi not available)")
             return
 
+        midi_in = None
+        midi_out = None
         try:
             # Discover input devices
             midi_in = rtmidi.MidiIn()
@@ -297,8 +301,6 @@ class MIDIEngineService:
                         is_virtual=False,
                     )
                 )
-            del midi_in
-
             # Discover output devices
             midi_out = rtmidi.MidiOut()
             port_count = midi_out.get_port_count()
@@ -312,8 +314,6 @@ class MIDIEngineService:
                         is_virtual=False,
                     )
                 )
-            del midi_out
-
             logger.info(f"Found {len(self.input_devices)} MIDI inputs, {len(self.output_devices)} outputs")
 
         except Exception as e:
@@ -325,6 +325,9 @@ class MIDIEngineService:
             self.output_devices = [
                 MIDIDevice(index=0, name="Virtual Output 1", port_type="output", is_virtual=True)
             ]
+        finally:
+            dispose_rtmidi_client(midi_in)
+            dispose_rtmidi_client(midi_out)
 
     async def discover_devices(self) -> Dict[str, List[Dict[str, Any]]]:
         """Get available MIDI devices."""
@@ -429,8 +432,13 @@ class MIDIEngineService:
                 return True
             else:
                 logger.error(f"Invalid MIDI input port {input_port}")
+                dispose_rtmidi_client(self._midi_in)
+                self._midi_in = None
                 return False
         except Exception as e:
+            dispose_rtmidi_client(self._midi_in, cancel_callback=self._rtmidi_callback_enabled)
+            self._midi_in = None
+            self._rtmidi_callback_enabled = False
             logger.error(f"Failed to start MIDI engine: {e}")
             return False
 
@@ -453,17 +461,12 @@ class MIDIEngineService:
             self._process_task = None
 
         if self._midi_in:
-            if self._rtmidi_callback_enabled and hasattr(self._midi_in, "cancel_callback"):
-                try:
-                    self._midi_in.cancel_callback()
-                except Exception:
-                    logger.debug("Failed to cancel RTMidi callback cleanly", exc_info=True)
-            self._midi_in.close_port()
+            dispose_rtmidi_client(self._midi_in, cancel_callback=self._rtmidi_callback_enabled)
             self._midi_in = None
         self._rtmidi_callback_enabled = False
 
         if self._midi_out:
-            self._midi_out.close_port()
+            dispose_rtmidi_client(self._midi_out)
             self._midi_out = None
 
         logger.info("MIDI engine stopped")

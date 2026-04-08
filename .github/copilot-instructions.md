@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (PipeWire runtime assumptions documented)
+> **Last Updated**: April 7, 2026 (Maschine daemon hardening documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1001,6 +1001,20 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Build the PipeWire CLI environment dynamically from the current process/user, add a subprocess helper that returns stdout/stderr/exit code, reset observed daemon uptime when `wpctl status` disappears, and precompute link/client maps so stream discovery does not rescan the full dump for every node.
 - **Verification**: `pytest -q tests/test_pipewire_service.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/pipewire_service.py tests/test_pipewire_service.py`
 - **Lesson**: System-audio wrappers need explicit process-context and exit-status semantics. Do not hardcode per-user session paths or treat a subprocess spawn as success unless the command actually exited cleanly.
+
+**86. Maschine Virtual MIDI Bring-Up Depends On Destroying RTMidi Probe Clients And Ignoring Internal ALSA Ports**
+- **Problem**: Maschine daemon bring-up and even basic ALSA inspection (`aconnect -i`) could fail with `snd_seq_hw_open ... Cannot allocate memory`, which blocked `MAP2:Maschine-MK1` virtual-port creation after backend restarts.
+- **Root Cause**: Several MAP2 RTMidi probe/client paths only called `close_port()` without `delete()`, so transient ALSA sequencer clients leaked across discovery cycles, and MidiHub auto-discovery also re-ingested internal ports (`RtMidi*`, `MAP2 Audio Engine`, `JUCE`, `Midi Through`, PipeWire system endpoints) as if they were external hardware.
+- **Fix**: Add a shared `dispose_rtmidi_client()` helper and use it across the MIDI engine, MidiHub port probes, shared SysEx bridges, Ground Control Pro transport probing, and the Maschine daemon virtual MIDI lifecycle; also filter known internal ALSA client-name prefixes out of MidiHub auto-discovery.
+- **Verification**: `pytest -q tests/test_midi_engine_event_driven.py tests/test_maschine_mk1_daemon.py tests/test_ground_control_pro_service.py tests/midi_hub/test_ports.py tests/midi_hub/test_device_registry.py`; `sudo systemctl restart map2-backend.service`; `aconnect -i`; `python3 - <<'PY' ... rtmidi.MidiOut().open_virtual_port('MAP2:Maschine-MK1-debug') ... PY`; `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 12s python3 app/services/maschine/maschine_mk1_daemon.py`
+- **Lesson**: `close_port()` is not full RTMidi lifecycle cleanup. Any transient probe/output client that touches ALSA sequencer resources must be explicitly destroyed, and internal infrastructure ports must stay out of hardware discovery.
+
+**87. Maschine Runtime Override Polling Must Reload Config Only When The File Changes**
+- **Problem**: Live Maschine daemon sessions spammed `Loaded config from ~/.map2/config.json` and `Configuration reloaded` during steady-state transport refreshes even when the operator had not changed the transport policy.
+- **Root Cause**: `_refresh_transport_controller_from_runtime()` ran inside the HID loop and called `ConfigManager.reload()` every pass through `_load_runtime_transport_overrides()`, so a hot path kept reloading the same file over and over just to read two values.
+- **Fix**: Cache the runtime config file signature in `app/services/maschine/maschine_mk1_daemon.py` and reload the shared runtime config manager only when the backing file actually changes, while preserving reconnect-time application of updated `transport_preference` and `allow_kernel_detach` settings.
+- **Verification**: `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py`; `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 6s python3 app/services/maschine/maschine_mk1_daemon.py --backend-url http://127.0.0.1:8080 --log-level INFO > /tmp/maschine-t811.log 2>&1`; `rg -n "Loaded config from|Configuration reloaded" /tmp/maschine-t811.log`
+- **Lesson**: File-backed runtime config does not belong on a hot polling path without change detection. In daemon loops, prefer cached reads plus explicit file-signature checks over unconditional reloads.
 
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
@@ -2004,6 +2018,20 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-07] - Maschine Runtime Override Reload Gating
+- **Section**: Gotchas & Learned Fixes (#87), Update Log
+- **Change**: Documented the `T811` fix that caches the Maschine daemon runtime-config file signature and reloads the shared config manager only when the backing file changes, while keeping reconnect-time transport policy refresh intact.
+- **Reason**: Live validation after the ALSA sequencer repair showed the daemon still flooding logs with repeated config reloads during steady-state HID polling.
+- **Impact**: Future Maschine transport-policy work should treat `_load_runtime_transport_overrides()` as a change-detected read path rather than reintroducing unconditional `ConfigManager.reload()` calls inside the daemon loop.
+- **Files**: `.github/copilot-instructions.md`, `app/services/maschine/maschine_mk1_daemon.py`, `tests/test_maschine_mk1_daemon.py`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-04-07] - Maschine Sequencer Leak Hardening
+- **Section**: Gotchas & Learned Fixes (#86), Update Log
+- **Change**: Documented the `T810` fix that adds shared RTMidi client disposal and internal ALSA-port filtering so Maschine virtual MIDI bring-up no longer exhausts sequencer resources.
+- **Reason**: Live host validation traced the failing Maschine daemon and `aconnect -i` path to leaked transient RTMidi clients plus MidiHub discovery of MAP2/internal infrastructure ports.
+- **Impact**: Future MIDI hardware/discovery work should reuse `dispose_rtmidi_client()` and preserve the internal-port exclusion list instead of reopening ALSA sequencer churn through probe utilities.
+- **Files**: `.github/copilot-instructions.md`, `app/utils/rtmidi_utils.py`, `app/services/midi_engine.py`, `app/services/midi_hub/ports.py`, `app/services/sysex_device_bridge.py`, `app/services/ground_control_pro/midi_transport.py`, `app/services/maschine/maschine_mk1_daemon.py`, `tests/test_midi_engine_event_driven.py`, `tests/test_maschine_mk1_daemon.py`, `tests/midi_hub/test_ports.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-07] - State Authority Downstream Contract
 - **Section**: Gotchas & Learned Fixes (#85), Update Log

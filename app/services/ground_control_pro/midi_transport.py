@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.utils.rtmidi_utils import dispose_rtmidi_client
+
 from .model import GroundControlTransportOptions
 
 try:
@@ -61,17 +63,23 @@ class GroundControlMidiTransport:
                 "recommended_output_index": None,
             }
 
-        midi_in = self._make_midi_in()
-        midi_out = self._make_midi_out()
-        input_names = list(midi_in.get_ports())
-        output_names = list(midi_out.get_ports())
-        return {
-            "rtmidi_available": True,
-            "inputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(input_names)],
-            "outputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(output_names)],
-            "recommended_input_index": 0 if len(input_names) == 1 else None,
-            "recommended_output_index": 0 if len(output_names) == 1 else None,
-        }
+        midi_in = None
+        midi_out = None
+        try:
+            midi_in = self._make_midi_in()
+            midi_out = self._make_midi_out()
+            input_names = list(midi_in.get_ports())
+            output_names = list(midi_out.get_ports())
+            return {
+                "rtmidi_available": True,
+                "inputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(input_names)],
+                "outputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(output_names)],
+                "recommended_input_index": 0 if len(input_names) == 1 else None,
+                "recommended_output_index": 0 if len(output_names) == 1 else None,
+            }
+        finally:
+            dispose_rtmidi_client(midi_in)
+            dispose_rtmidi_client(midi_out)
 
     async def receive_sysex(self, options: GroundControlTransportOptions) -> Dict[str, Any]:
         midi_in = self._make_midi_in()
@@ -113,8 +121,7 @@ class GroundControlMidiTransport:
                 await asyncio.sleep(0.01)
             raise TimeoutError(f"Timed out waiting for SysEx on input port {port_index}")
         finally:
-            if hasattr(midi_in, "close_port"):
-                midi_in.close_port()
+            dispose_rtmidi_client(midi_in)
 
     async def send_sysex(self, data: bytes, options: GroundControlTransportOptions) -> Dict[str, Any]:
         traffic: List[Dict[str, Any]] = []
@@ -173,5 +180,4 @@ class GroundControlMidiTransport:
                 "port_name": port_names[port_index],
             }
         finally:
-            if hasattr(midi_out, "close_port"):
-                midi_out.close_port()
+            dispose_rtmidi_client(midi_out)

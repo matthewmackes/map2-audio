@@ -1,23 +1,10 @@
-import type { ComponentType, MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ProgressBar, Tile } from '@carbon/react'
+import { ProgressBar } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
-  MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
-import {
-  MapArtifactsLibraryIcon,
-  MapOs2DrivesIcon,
-  MapOs2HomeIcon,
-  MapStagePerformanceIcon,
-} from '../components/icons/map'
-import { useNodePageContext } from '../hooks/useNodePageContext'
-import { useNodeTopology } from '../hooks/useNodeTopology'
-import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
-import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
-import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
-import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import map2Logo from '../../assets/MAP2-LOGO.png'
 import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
@@ -26,101 +13,16 @@ import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 
-function nodeStatusLabel(nodes: Array<{ status?: string }> | undefined): string {
-  if (!Array.isArray(nodes) || nodes.length <= 0) {
-    return 'Nodes unavailable'
-  }
-
-  const unhealthyCount = nodes.filter((node) => (
-    node.status === 'warn'
-    || node.status === 'critical'
-    || node.status === 'offline'
-  )).length
-  if (unhealthyCount > 0) {
-    return `${unhealthyCount} of ${nodes.length} nodes need attention`
-  }
-
-  return `${nodes.length} node${nodes.length !== 1 ? 's' : ''} online`
-}
-
-interface WorkplaceObject {
-  route: string
-  label: string
-  summary: string
-  Icon: ComponentType<{ size?: number }>
-}
-
 interface WallpaperContextMenuState {
   x: number
   y: number
 }
 
-const WORKPLACE_OBJECTS: WorkplaceObject[] = [
-  {
-    route: '/platforms/overview',
-    label: 'System Setup',
-    summary: 'Supervise nodes, remediation pressure, and platform posture.',
-    Icon: MapOs2DrivesIcon,
-  },
-  {
-    route: '/artifacts',
-    label: 'Audio Artifacts',
-    summary: 'Browse plugins, captures, presets, and native processors.',
-    Icon: MapArtifactsLibraryIcon,
-  },
-  {
-    route: '/perform',
-    label: 'Stage Mode',
-    summary: 'Open the full-screen live-performance surface for stage control.',
-    Icon: MapStagePerformanceIcon,
-  },
-  {
-    route: '/platforms/theme',
-    label: 'Display Settings',
-    summary: 'Adjust Carbon theme tokens and wallpaper behavior for this browser.',
-    Icon: MapOs2HomeIcon,
-  },
-]
-
 export function HomePage() {
   const navigate = useNavigate()
-  const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
-  const topology = useNodeTopology()
-  const remediationSummary = usePlatformRemediationSummary()
-  const [activeRemediation, setActiveRemediation] = useState<{
-    mode: RemediationWorkflow
-    state: string | null
-    nodeIds: string[]
-  } | null>(null)
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
   const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
-
-  const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
-  const platformStatus = useHomePlatformStatus()
-  const nodes = topology.data?.nodes
-  const platformsStatusLabel = nodeStatusLabel(nodes)
-  const remediationCounts = remediationSummary.data?.counts
-  const syncWorkflowAvailable = remediationSummary.data?.workflows?.sync?.available !== false
-
-  const remediationPills = [
-    { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
-    { workflow: 'adoption' as const, state: 'claimable', count: remediationCounts?.adoption?.claimable ?? 0, label: 'Claimable' },
-    { workflow: 'adoption' as const, state: 'adopted', count: remediationCounts?.adoption?.adopted ?? 0, label: 'Adopted' },
-    { workflow: 'adoption' as const, state: 'ready', count: remediationCounts?.adoption?.ready ?? 0, label: 'Ready' },
-    { workflow: 'adoption' as const, state: 'blocked', count: remediationCounts?.adoption?.blocked ?? 0, label: 'Blocked' },
-    { workflow: 'sync' as const, state: 'outdated', count: remediationCounts?.sync?.outdated ?? 0, label: 'Outdated' },
-    { workflow: 'sync' as const, state: 'syncing', count: remediationCounts?.sync?.syncing ?? 0, label: 'Syncing' },
-    { workflow: 'sync' as const, state: 'failed', count: remediationCounts?.sync?.failed ?? 0, label: 'Failed' },
-    { workflow: 'sync' as const, state: 'held', count: remediationCounts?.sync?.held ?? 0, label: 'Held' },
-    { workflow: 'sync' as const, state: 'rollback_available', count: remediationCounts?.sync?.rollback_available ?? 0, label: 'Rollback' },
-    { workflow: 'clone' as const, state: 'confirmed_clone', count: remediationCounts?.clone?.confirmed_clone ?? 0, label: 'Confirmed Clone' },
-    { workflow: 'clone' as const, state: 'suspected_clone', count: remediationCounts?.clone?.suspected_clone ?? 0, label: 'Suspected Clone' },
-  ].filter((pill) => pill.count > 0 && (pill.workflow !== 'sync' || syncWorkflowAvailable))
-  const totalRemediationCount = remediationPills.reduce((sum, pill) => sum + pill.count, 0)
-  const remediationWatermarkEntry = remediationPills.find((pill) => pill.workflow === 'sync')
-    ?? remediationPills.find((pill) => pill.workflow === 'adoption')
-    ?? remediationPills[0]
 
   useEffect(() => {
     if (!showBootSplash) {
@@ -171,22 +73,6 @@ export function HomePage() {
     navigate(route)
   }
 
-  const handleOpenRemediationWatermark = () => {
-    if (!remediationWatermarkEntry) {
-      setActiveRemediation({ mode: 'sync', state: null, nodeIds: [] })
-      return
-    }
-
-    const nodeIds = (remediationSummary.data?.nodes ?? [])
-      .filter((node) => node.adoption_state === remediationWatermarkEntry.state || node.sync_states.includes(remediationWatermarkEntry.state) || node.clone_states.includes(remediationWatermarkEntry.state))
-      .map((node) => node.node_id)
-    setActiveRemediation({
-      mode: remediationWatermarkEntry.workflow,
-      state: remediationWatermarkEntry.state,
-      nodeIds,
-    })
-  }
-
   if (showBootSplash) {
     return (
       <section className="hp2-boot" aria-label="MAP2 boot splash">
@@ -227,138 +113,6 @@ export function HomePage() {
           />
         ) : null}
         <div className="hp2-desktop__underlay" aria-hidden="true" />
-        <div className="hp2-desktop__status">
-          <header className="hp2-shellbar" aria-label="Workplace shell header">
-            <div className="hp2-shellbar__hero">
-              <div className="hp2-shellbar__hero-plate">
-                <img src={map2Logo} alt="MAP2 logo" className="hp2-shellbar__hero-mark" />
-              </div>
-            </div>
-          </header>
-          <div className="hp2-desktop__workspace">
-            <main className="hp2-desktop__panels">
-              <Tile className="hp2-window hp2-window--workplace">
-                <div className="hp2-window__titlebar">
-                  <div className="hp2-window__titlegroup">
-                    <span className="hp2-window__title-indicator" aria-hidden="true" />
-                    <strong>Program Manager</strong>
-                  </div>
-                  <span className="hp2-window__titlemeta">{hostname}</span>
-                </div>
-                <div className="hp2-window__body hp2-window__body--launcher-grid">
-                  <div className="hp2-workplace__section">
-                    <div className="hp2-workplace__section-header">
-                      <p className="hp2-window__eyebrow">Launcher Directory</p>
-                      <span>Open workspace</span>
-                    </div>
-                    <div className="hp2-workplace__object-grid">
-                      {WORKPLACE_OBJECTS.map((item) => (
-                        <button
-                          key={item.route}
-                          type="button"
-                          className="hp2-object-button"
-                          onClick={() => navigate(item.route)}
-                        >
-                          <span className="hp2-object-button__icon" aria-hidden="true">
-                            <item.Icon size={22} />
-                          </span>
-                          <span className="hp2-object-button__copy">
-                            <strong>{item.label}</strong>
-                            <span>{item.summary}</span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Tile>
-              <div className="hp2-desktop__panel-row hp2-desktop__panel-row--single">
-                <Tile className="hp2-window hp2-window--status">
-                  <div className="hp2-window__titlebar">
-                    <div className="hp2-window__titlegroup">
-                      <span className="hp2-window__title-indicator" aria-hidden="true" />
-                      <strong>System Setup</strong>
-                    </div>
-                    <span className="hp2-window__titlemeta">Nodes and remediation</span>
-                  </div>
-                  <div className="hp2-window__body hp2-window__body--compact">
-                    <div
-                      className="hp2-desktop__platform-card"
-                      role="button"
-                      aria-label="Open Platforms overview"
-                      tabIndex={0}
-                      onClick={() => navigate('/platforms/overview')}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          navigate('/platforms/overview')
-                        }
-                      }}
-                    >
-                      <div className="hp2-desktop__platform-meta">
-                        <MapOs2DrivesIcon size={20} aria-hidden />
-                        <strong>Platforms</strong>
-                      </div>
-                      <p>{syncWorkflowAvailable ? platformsStatusLabel : 'Sync unavailable'}</p>
-                      <div className="hp2-desktop__platform-summary">
-                        <span>{hostname}</span>
-                        <span>{MAP2_PLATFORM_VERSION}</span>
-                      </div>
-                      {(remediationPills.length > 0 || !syncWorkflowAvailable) ? (
-                        <div className="hp2-card__pills" aria-label="Platforms remediation pills">
-                          {remediationPills.map((pill) => (
-                            <button
-                              key={`${pill.workflow}-${pill.state}`}
-                              type="button"
-                              className="hp2-card__pill"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                const nodeIds = (remediationSummary.data?.nodes ?? [])
-                                  .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
-                                  .map((node) => node.node_id)
-                                if (pill.workflow === 'adoption') {
-                                  navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
-                                  return
-                                }
-                                setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
-                              }}
-                            >
-                              {pill.label}: {pill.count}
-                            </button>
-                          ))}
-                          {!syncWorkflowAvailable ? (
-                            <span className="hp2-card__pill hp2-card__pill--neutral">Sync unavailable</span>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                    {(totalRemediationCount > 0 || !syncWorkflowAvailable) ? (
-                      <div className="hp2-desktop__watermarks" aria-label="Desktop watermarks">
-                        <button
-                          type="button"
-                          className="hp2-desktop__watermark hp2-desktop__watermark--remediation"
-                          data-testid="home-desktop-remediation-watermark"
-                          onClick={handleOpenRemediationWatermark}
-                        >
-                          <span className="hp2-desktop__watermark-eyebrow">Platform remediation</span>
-                          <strong>{totalRemediationCount > 0 ? `${totalRemediationCount} items need attention` : 'Sync unavailable'}</strong>
-                          <span>Open the remediation workflow from the desktop shell.</span>
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                </Tile>
-              </div>
-            </main>
-          </div>
-          <footer className="hp2-footer">
-            <span className="hp2-footer__cell">{MAP2_PLATFORM_VERSION}</span>
-            <span className="hp2-footer__cell">{hostname}</span>
-            <span className="hp2-footer__cell">{platformStatus.avb.label}</span>
-            <span className="hp2-footer__cell">{platformStatus.avdecc.label}</span>
-            <span className="hp2-footer__cell">{platformStatus.nodes.label}</span>
-          </footer>
-        </div>
         {contextMenu ? (
           <div
             className="hp2-desktop__context-menu"
@@ -378,15 +132,6 @@ export function HomePage() {
           </div>
         ) : null}
       </section>
-      {activeRemediation ? (
-        <PlatformRemediationWorkflow
-          mode={activeRemediation.mode}
-          stateFilter={activeRemediation.state}
-          initialNodeIds={activeRemediation.nodeIds}
-          summary={remediationSummary.data}
-          onRequestClose={() => setActiveRemediation(null)}
-        />
-      ) : null}
     </div>
   )
 }

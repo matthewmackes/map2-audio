@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from types import SimpleNamespace
 
+import app.config as app_config_module
+import app.services.maschine.maschine_mk1_daemon as maschine_mk1_daemon_module
 from app.services.maschine.maschine_mk1_daemon import (
+    DaemonConfig,
     LastTouchedControl,
     MaschineMK1Daemon,
+    VirtualMidiOutput,
     build_lcd_output_reports,
     build_led_output_report,
     build_reconnecting_frames,
@@ -112,6 +118,132 @@ def test_encoder_delta_wraparound_matches_relative_navigation_expectations() -> 
     assert MaschineMK1Daemon._resolve_encoder_delta(15, 10) == -1
     assert MaschineMK1Daemon._resolve_encoder_delta(126, 2) == 1
     assert MaschineMK1Daemon._resolve_encoder_delta(2, 126) == -1
+
+
+def test_virtual_midi_output_disposes_rtmidi_client(monkeypatch) -> None:
+    class _FakeMidiOut:
+        def __init__(self) -> None:
+            self.closed = False
+            self.deleted = False
+            self.opened_name = None
+
+        def open_virtual_port(self, name: str) -> None:
+            self.opened_name = name
+
+        def close_port(self) -> None:
+            self.closed = True
+
+        def delete(self) -> None:
+            self.deleted = True
+
+    created: list[_FakeMidiOut] = []
+
+    def _make_midi_out() -> _FakeMidiOut:
+        client = _FakeMidiOut()
+        created.append(client)
+        return client
+
+    monkeypatch.setattr(maschine_mk1_daemon_module, "rtmidi", SimpleNamespace(MidiOut=_make_midi_out))
+
+    output = VirtualMidiOutput("MAP2:Maschine-MK1")
+
+    assert output.open() is True
+    output.close()
+    assert created[0].opened_name == "MAP2:Maschine-MK1"
+    assert created[0].closed is True
+    assert created[0].deleted is True
+
+
+def test_load_runtime_transport_overrides_reloads_only_when_config_file_changes(monkeypatch, tmp_path) -> None:
+    class _FakeRuntimeConfigManager:
+        def __init__(self, config_path: Path) -> None:
+            self.config_path = config_path
+            self.reload_count = 0
+            self._values = {
+                "maschine.transport_preference": "hidapi",
+                "maschine.allow_kernel_detach": False,
+            }
+            self._pending_values = dict(self._values)
+
+        def get(self, key: str, default=None):
+            return self._values.get(key, default)
+
+        def stage(self, **values) -> None:
+            self._pending_values.update(values)
+
+        def reload(self) -> None:
+            self.reload_count += 1
+            self._values = dict(self._pending_values)
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text("{}", encoding="utf-8")
+    fake_manager = _FakeRuntimeConfigManager(config_path)
+
+    monkeypatch.setattr(app_config_module, "get_config", lambda: fake_manager)
+    maschine_mk1_daemon_module._reset_runtime_transport_override_cache()
+
+    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("hidapi", False)
+    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("hidapi", False)
+    assert fake_manager.reload_count == 0
+
+    fake_manager.stage(
+        **{
+            "maschine.transport_preference": "pyusb-bulk",
+            "maschine.allow_kernel_detach": True,
+        }
+    )
+    next_mtime_ns = config_path.stat().st_mtime_ns + 1_000_000
+    config_path.write_text('{"maschine":{"transport_preference":"pyusb-bulk"}}', encoding="utf-8")
+    os.utime(config_path, ns=(next_mtime_ns, next_mtime_ns))
+
+    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("pyusb-bulk", True)
+    assert fake_manager.reload_count == 1
+    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("pyusb-bulk", True)
+    assert fake_manager.reload_count == 1
+
+
+def test_refresh_transport_controller_applies_changed_runtime_overrides_when_disconnected(monkeypatch) -> None:
+    created: list[SimpleNamespace] = []
+
+    class _FakeTransportController:
+        def __init__(self, *, vendor_id: int, product_id: int, preference: str, allow_kernel_detach: bool) -> None:
+            self.connected = False
+            self.preference = preference
+            self.allow_kernel_detach = allow_kernel_detach
+            created.append(
+                SimpleNamespace(
+                    vendor_id=vendor_id,
+                    product_id=product_id,
+                    preference=preference,
+                    allow_kernel_detach=allow_kernel_detach,
+                )
+            )
+
+        def runtime_info(self) -> dict[str, object]:
+            return {"transport": self.preference, "candidates": []}
+
+        def disconnect(self) -> None:
+            return None
+
+    monkeypatch.setattr(maschine_mk1_daemon_module, "MaschineTransportController", _FakeTransportController)
+    monkeypatch.setattr(
+        maschine_mk1_daemon_module,
+        "_load_runtime_transport_overrides",
+        lambda: ("pyusb-bulk", True),
+    )
+
+    daemon = MaschineMK1Daemon(DaemonConfig(transport_preference="auto", allow_kernel_detach=False))
+
+    assert created[0].preference == "auto"
+    assert created[0].allow_kernel_detach is False
+
+    daemon._refresh_transport_controller_from_runtime()
+
+    assert daemon.config.transport_preference == "pyusb-bulk"
+    assert daemon.config.allow_kernel_detach is True
+    assert created[-1].preference == "pyusb-bulk"
+    assert created[-1].allow_kernel_detach is True
+    assert len(created) == 2
 
 
 def test_maschine_systemd_unit_targets_backend_and_daemon_script() -> None:

@@ -25,6 +25,7 @@ import signal
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlencode, urljoin, urlparse
 
@@ -42,6 +43,7 @@ from app.services.maschine_lcd_service import (
     _safe_label,
 )
 from app.services.maschine_service import MaschineService
+from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 try:
     import hid  # type: ignore
@@ -78,6 +80,8 @@ LED_STATE_CODES = {
 }
 TOP_LEVEL_MENU_ITEMS = ("Audio Grid", "Stats", "---", "---", "---")
 BACKEND_MESSAGE_QUEUE_LIMIT = 256
+_RUNTIME_TRANSPORT_CONFIG_MANAGER: Any | None = None
+_RUNTIME_TRANSPORT_CONFIG_SIGNATURE: tuple[bool, int | None, int | None] | None = None
 
 
 def _utcnow_iso() -> str:
@@ -125,20 +129,55 @@ def _normalize_backend_url(url: str) -> str:
     return normalized.rstrip("/")
 
 
+def _reset_runtime_transport_override_cache() -> None:
+    global _RUNTIME_TRANSPORT_CONFIG_MANAGER
+    global _RUNTIME_TRANSPORT_CONFIG_SIGNATURE
+    _RUNTIME_TRANSPORT_CONFIG_MANAGER = None
+    _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = None
+
+
+def _runtime_config_signature(runtime_config: Any) -> tuple[bool, int | None, int | None] | None:
+    config_path = getattr(runtime_config, "config_path", None)
+    if config_path is None:
+        return None
+    try:
+        stat_result = Path(config_path).expanduser().stat()
+    except FileNotFoundError:
+        return False, None, None
+    except Exception:
+        return None
+    return True, int(stat_result.st_mtime_ns), int(stat_result.st_size)
+
+
+def _read_runtime_transport_overrides(runtime_config: Any) -> tuple[str | None, bool | None]:
+    preference = str(runtime_config.get("maschine.transport_preference", "") or "").strip().lower()
+    if preference in {"pyusb", "usb", "bulk"}:
+        preference = "pyusb-bulk"
+    if preference not in {"auto", "hidapi", "pyusb-bulk"}:
+        preference = ""
+    allow_kernel_detach = runtime_config.get("maschine.allow_kernel_detach", None)
+    allow_value = None if allow_kernel_detach is None else bool(allow_kernel_detach)
+    return preference or None, allow_value
+
+
 def _load_runtime_transport_overrides() -> tuple[str | None, bool | None]:
+    global _RUNTIME_TRANSPORT_CONFIG_MANAGER
+    global _RUNTIME_TRANSPORT_CONFIG_SIGNATURE
+
     try:
         from app.config import get_config as get_runtime_config_manager
 
-        runtime_config = get_runtime_config_manager()
-        runtime_config.reload()
-        preference = str(runtime_config.get("maschine.transport_preference", "") or "").strip().lower()
-        if preference in {"pyusb", "usb", "bulk"}:
-            preference = "pyusb-bulk"
-        if preference not in {"auto", "hidapi", "pyusb-bulk"}:
-            preference = ""
-        allow_kernel_detach = runtime_config.get("maschine.allow_kernel_detach", None)
-        allow_value = None if allow_kernel_detach is None else bool(allow_kernel_detach)
-        return (preference or None), allow_value
+        runtime_config = _RUNTIME_TRANSPORT_CONFIG_MANAGER
+        if runtime_config is None:
+            runtime_config = get_runtime_config_manager()
+            _RUNTIME_TRANSPORT_CONFIG_MANAGER = runtime_config
+            _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = _runtime_config_signature(runtime_config)
+        else:
+            current_signature = _runtime_config_signature(runtime_config)
+            if current_signature != _RUNTIME_TRANSPORT_CONFIG_SIGNATURE:
+                runtime_config.reload()
+                _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = _runtime_config_signature(runtime_config)
+        return _read_runtime_transport_overrides(runtime_config)
     except Exception:
         return None, None
 
@@ -269,6 +308,7 @@ class VirtualMidiOutput:
             return True
         except Exception as exc:  # pragma: no cover - hardware runtime dependent
             LOGGER.warning("Failed to open virtual MIDI port %s: %s", self.name, exc)
+            dispose_rtmidi_client(self._port)
             self._port = None
             self._is_open = False
             return False
@@ -284,10 +324,7 @@ class VirtualMidiOutput:
 
     def close(self) -> None:
         if self._port is not None:
-            try:
-                self._port.close_port()
-            except Exception:
-                pass
+            dispose_rtmidi_client(self._port)
         self._port = None
         self._is_open = False
 

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, and T798-T809. Added T810 for the Maschine virtual MIDI bridge follow-up found during live transport validation.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T811. Added T812 for Maschine transport-policy resolution dedup discovered during the T811 cycle review.
 
 ## Performance Brain
 
@@ -18674,7 +18674,7 @@ Last updated: 2026-04-07 21:11 EDT - Codex
 ## Maschine Virtual MIDI Bridge Follow-Up
 
 ID: T810
-Status: [>] In Progress
+Status: [✓] Done
 Title: Investigate the current-host Maschine virtual ALSA MIDI client allocation failure
 Description:
 - Goal / acceptance criteria: Determine why the short-lived current-host Maschine daemon validation run logged `snd_seq_hw_open ... Cannot allocate memory` while creating the virtual `MAP2:Maschine-MK1` ALSA sequencer client, confirm whether the problem is a transient host-resource issue or a deterministic runtime/configuration bug, and restore reliable virtual-port bring-up if the bridge is actually broken. Capture any required host or code fix plus focused validation.
@@ -18684,4 +18684,55 @@ Description:
 - Required outputs: Reproduction notes, root-cause assessment, any host/code fix, and validation showing the `MAP2:Maschine-MK1` virtual MIDI port opens reliably on the current host.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-07 21:20 EDT - Codex
+Last updated: 2026-04-07 21:30 EDT - Codex
+- Completion notes:
+  - Reproduced the failure as a deterministic ALSA sequencer exhaustion bug rather than a transient host-memory issue: `aconnect -i` and direct `rtmidi.MidiOut()` creation both failed with `snd_seq_hw_open ... Cannot allocate memory` until the backend was restarted.
+  - Fixed the main leak by adding `app/utils/rtmidi_utils.py` and using explicit `delete()` cleanup for transient and long-lived `python-rtmidi` clients across the legacy MIDI engine discovery path, MidiHub ALSA probes, shared SysEx bridges, Ground Control Pro transport probes, and the Maschine daemon virtual MIDI output lifecycle.
+  - Fixed the startup amplification path in `app/services/midi_hub/ports.py` by filtering internal ALSA client names (`RtMidi*`, `MAP2 Audio Engine`, `JUCE`, `Midi Through`, and PipeWire system endpoints) out of hub auto-discovery, which stopped the backend from re-registering its own transient/internal ports as discoverable hardware during startup and hotplug sync.
+  - Live current-host validation now shows the sequencer state stays healthy after backend restart (`/proc/asound/seq/clients` reports 10 clients and `/proc/asound/seq/queues` reports 2 queues), `aconnect -i` succeeds again, direct `rtmidi.MidiOut().open_virtual_port('MAP2:Maschine-MK1-debug')` succeeds, and a timed live daemon run reaches `/api/maschine/status` with `connected=true`, `websocket_connected=true`, and the expected `MAP2:Maschine-MK1` virtual port plus `pyusb-bulk` transport posture.
+- Validation:
+  - `pytest -q tests/test_midi_engine_event_driven.py tests/test_maschine_mk1_daemon.py tests/test_ground_control_pro_service.py tests/midi_hub/test_ports.py tests/midi_hub/test_device_registry.py` -> PASS (`24 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/rtmidi_utils.py app/services/midi_engine.py app/services/midi_hub/ports.py app/services/sysex_device_bridge.py app/services/ground_control_pro/midi_transport.py app/services/maschine/maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/test_maschine_mk1_daemon.py tests/midi_hub/test_ports.py` -> PASS
+  - `sudo systemctl restart map2-backend.service` -> PASS
+  - `aconnect -i` -> PASS
+  - `python3 - <<'PY' ... rtmidi.MidiOut().open_virtual_port('MAP2:Maschine-MK1-debug') ... PY` -> PASS
+  - `python3 - <<'PY' ... /proc/asound/seq/clients + /proc/asound/seq/queues ... PY` -> PASS (`client_count=10`, `queue_count=2`)
+  - `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 12s python3 app/services/maschine/maschine_mk1_daemon.py` + `curl -sfm 5 http://127.0.0.1:8080/api/maschine/status` -> PASS (`connected=true`, `websocket_connected=true`, virtual port `MAP2:Maschine-MK1`)
+  - `git diff --check` -> PASS
+
+ID: T811
+Status: [✓] Done
+Title: Stop Maschine daemon runtime loops from reloading config on every transport refresh
+Description:
+- Goal / acceptance criteria: Remove the repeated `app.config` reload churn seen during the live Maschine daemon validation run while preserving runtime transport override support for `MAP2_MASCHINE_TRANSPORT` and `MAP2_MASCHINE_ALLOW_KERNEL_DETACH`. The daemon should no longer spam `Loaded config from ~/.map2/config.json` during normal steady-state operation, and focused tests should lock down the new refresh policy.
+- Why it matters: T810 restored reliable ALSA virtual-port bring-up, but the live daemon still burns unnecessary filesystem/config work and floods logs during steady-state hardware sessions.
+- Dependencies: T810
+- Estimated effort: Low
+- Required outputs: Root-cause assessment, daemon/config refresh fix, focused regression coverage, and live validation notes showing the log flood is gone or bounded.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 21:42 EDT - Codex
+- Completion notes:
+  - Added a cached runtime-config signature check in `app/services/maschine/maschine_mk1_daemon.py` so the daemon no longer calls `ConfigManager.reload()` on every HID-loop transport refresh; saved transport overrides are now reloaded only when the backing config file actually changes.
+  - Added focused regression coverage in `tests/test_maschine_mk1_daemon.py` proving unchanged config files do not trigger runtime reload churn while changed files still refresh the disconnected transport controller with the new preference and `allow_kernel_detach` policy.
+  - A timed live daemon run against the active backend opened `MAP2:Maschine-MK1`, connected the websocket bridge, and exited on timeout without any repeated `Loaded config from ~/.map2/config.json` or `Configuration reloaded` log lines.
+- Validation:
+  - `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py` -> PASS (`26 passed`, 1 existing deprecation warning)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `git diff --check` -> PASS
+  - `systemctl is-active map2-backend.service` -> PASS (`active`)
+  - `curl -sfm 5 http://127.0.0.1:8080/api/maschine/status` -> PASS
+  - `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 6s python3 app/services/maschine/maschine_mk1_daemon.py --backend-url http://127.0.0.1:8080 --log-level INFO > /tmp/maschine-t811.log 2>&1` + `rg -n "Loaded config from|Configuration reloaded" /tmp/maschine-t811.log` -> PASS (no matches)
+
+ID: T812
+Status: [ ] Todo
+Title: Deduplicate Maschine transport-policy resolution across startup and reconnect paths
+Description:
+- Goal / acceptance criteria: Move the duplicated transport-preference and `allow_kernel_detach` resolution logic out of `DaemonConfig.from_env()` and `_refresh_transport_controller_from_runtime()` into one shared helper that preserves the current precedence rules, alias normalization, and reconnect-only application policy, then cover that contract with focused tests.
+- Why it matters: T811 removed the hot-loop config reload churn, but the daemon still reimplements transport-policy precedence in two places, which risks startup/reconnect drift the next time Maschine transport rules evolve.
+- Dependencies: T811
+- Estimated effort: Low
+- Required outputs: shared resolution helper, daemon call-site cleanup, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 21:42 EDT - Codex

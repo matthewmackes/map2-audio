@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Literal, Optional
 
 from app.services.midi_hub.ring_buffer import MidiRingBuffer
+from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 try:
     import rtmidi  # type: ignore
@@ -21,6 +22,15 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 PortDirection = Literal["input", "output", "duplex"]
+_INTERNAL_ALSA_PORT_PREFIXES = (
+    "rtmidiin client:",
+    "rtmidiout client:",
+    "map2 audio engine:",
+    "juce:",
+    "midi through:",
+    "pipewire-system:",
+    "pipewire-rt-event:",
+)
 
 
 @dataclass
@@ -191,10 +201,7 @@ class AlsaMidiPort(MidiPort):
                 if idx is None:
                     self._open_error = f"output port '{self.name}' not found"
                     if self._midi_in is not None:
-                        try:
-                            self._midi_in.close_port()
-                        except Exception:
-                            pass
+                        dispose_rtmidi_client(self._midi_in)
                         self._midi_in = None
                     self._midi_out = None
                     self._is_open = False
@@ -212,15 +219,9 @@ class AlsaMidiPort(MidiPort):
 
     def close(self) -> None:
         if self._midi_in is not None:
-            try:
-                self._midi_in.close_port()
-            except Exception:
-                pass
+            dispose_rtmidi_client(self._midi_in)
         if self._midi_out is not None:
-            try:
-                self._midi_out.close_port()
-            except Exception:
-                pass
+            dispose_rtmidi_client(self._midi_out)
         self._midi_in = None
         self._midi_out = None
         self._is_open = False
@@ -279,33 +280,29 @@ def discover_alsa_ports() -> Dict[str, List[str]]:
         midi_in = rtmidi.MidiIn()
         for idx in range(int(midi_in.get_port_count())):
             try:
-                inputs.append(str(midi_in.get_port_name(idx)))
+                name = str(midi_in.get_port_name(idx))
+                if _is_discoverable_alsa_port_name(name):
+                    inputs.append(name)
             except Exception:
                 continue
     except Exception:
         inputs = []
     finally:
-        if midi_in is not None:
-            try:
-                midi_in.close_port()
-            except Exception:
-                pass
+        dispose_rtmidi_client(midi_in)
 
     try:
         midi_out = rtmidi.MidiOut()
         for idx in range(int(midi_out.get_port_count())):
             try:
-                outputs.append(str(midi_out.get_port_name(idx)))
+                name = str(midi_out.get_port_name(idx))
+                if _is_discoverable_alsa_port_name(name):
+                    outputs.append(name)
             except Exception:
                 continue
     except Exception:
         outputs = []
     finally:
-        if midi_out is not None:
-            try:
-                midi_out.close_port()
-            except Exception:
-                pass
+        dispose_rtmidi_client(midi_out)
 
     return {"inputs": inputs, "outputs": outputs}
 
@@ -336,6 +333,14 @@ def _read_text(path: Path) -> Optional[str]:
         return path.read_text(encoding="utf-8").strip()
     except Exception:
         return None
+
+
+def _is_discoverable_alsa_port_name(name: str) -> bool:
+    normalized = str(name or "").strip()
+    if not normalized:
+        return False
+    lowered = normalized.lower()
+    return not any(lowered.startswith(prefix) for prefix in _INTERNAL_ALSA_PORT_PREFIXES)
 
 
 def _lookup_usb_vid_pid_for_card(card_index: int) -> Dict[str, Any]:

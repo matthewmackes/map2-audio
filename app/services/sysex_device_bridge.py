@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
+from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 logger = logging.getLogger(__name__)
 
@@ -501,11 +502,7 @@ class SysExDeviceBridge:
             self._record_traffic("midi_ports_probe_error", None, direction="input", error=str(exc))
             logger.warning("%s MIDI input probe failed: %s", self.DEVICE_LABEL, exc)
         finally:
-            if midi_in is not None:
-                try:
-                    midi_in.close_port()
-                except Exception:
-                    pass
+            dispose_rtmidi_client(midi_in)
             gc.collect()
 
         midi_out: Any = None
@@ -523,11 +520,7 @@ class SysExDeviceBridge:
             self._record_traffic("midi_ports_probe_error", None, direction="output", error=str(exc))
             logger.warning("%s MIDI output probe failed: %s", self.DEVICE_LABEL, exc)
         finally:
-            if midi_out is not None:
-                try:
-                    midi_out.close_port()
-                except Exception:
-                    pass
+            dispose_rtmidi_client(midi_out)
             gc.collect()
 
         return {
@@ -645,17 +638,11 @@ class SysExDeviceBridge:
             self._midi_poll_task = None
 
         if self._midi_in is not None:
-            try:
-                self._midi_in.close_port()
-            except Exception:
-                pass
+            dispose_rtmidi_client(self._midi_in)
             self._midi_in = None
 
         if self._midi_out is not None:
-            try:
-                self._midi_out.close_port()
-            except Exception:
-                pass
+            dispose_rtmidi_client(self._midi_out)
             self._midi_out = None
 
         self._connected_input_index = None

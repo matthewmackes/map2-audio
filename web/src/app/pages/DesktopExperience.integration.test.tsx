@@ -240,7 +240,7 @@ describe('Desktop experience integration', () => {
       jest.advanceTimersByTime(4000)
     })
 
-    fireEvent.click(await screen.findByRole('button', { name: /^Audio Artifacts Browse plugins, captures, presets, and native processors\.$/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Audio Artifacts pinned taskbar app' }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
     expect(screen.getByTestId('artifacts-page')).toBeInTheDocument()

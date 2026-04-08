@@ -12,6 +12,7 @@ class _FakeMidiIn:
     def __init__(self):
         self.callback = None
         self.closed = False
+        self.deleted = False
         self.opened_port = None
         self.ignore_args = None
         _FakeMidiIn.instances.append(self)
@@ -40,8 +41,18 @@ class _FakeMidiIn:
     def close_port(self):
         self.closed = True
 
+    def delete(self):
+        self.deleted = True
+
 
 class _FakeMidiOut:
+    instances = []
+
+    def __init__(self):
+        self.closed = False
+        self.deleted = False
+        _FakeMidiOut.instances.append(self)
+
     def get_port_count(self):
         return 1
 
@@ -49,12 +60,40 @@ class _FakeMidiOut:
         return f"Output {index}"
 
     def close_port(self):
-        return None
+        self.closed = True
+
+    def delete(self):
+        self.deleted = True
+
+
+@pytest.mark.asyncio
+async def test_midi_engine_discover_devices_disposes_probe_clients(monkeypatch):
+    _FakeMidiIn.instances.clear()
+    _FakeMidiOut.instances.clear()
+    monkeypatch.setattr(midi_engine_module, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_engine_module, "RTMIDI_AVAILABLE", True)
+    monkeypatch.setattr(
+        midi_engine_module,
+        "rtmidi",
+        SimpleNamespace(MidiIn=_FakeMidiIn, MidiOut=_FakeMidiOut),
+    )
+
+    service = midi_engine_module.MIDIEngineService()
+
+    devices = await service.discover_devices()
+
+    assert devices["inputs"] == [{"index": 0, "name": "Input 0", "type": "input", "is_virtual": False, "is_connected": True}]
+    assert devices["outputs"] == [{"index": 0, "name": "Output 0", "type": "output", "is_virtual": False, "is_connected": True}]
+    assert _FakeMidiIn.instances[-1].closed is True
+    assert _FakeMidiIn.instances[-1].deleted is True
+    assert _FakeMidiOut.instances[-1].closed is True
+    assert _FakeMidiOut.instances[-1].deleted is True
 
 
 @pytest.mark.asyncio
 async def test_midi_engine_uses_rtmidi_callback_queue(monkeypatch):
     _FakeMidiIn.instances.clear()
+    _FakeMidiOut.instances.clear()
     monkeypatch.setattr(midi_engine_module, "MIDI_HUB_AVAILABLE", False)
     monkeypatch.setattr(midi_engine_module, "RTMIDI_AVAILABLE", True)
     monkeypatch.setattr(
@@ -92,3 +131,4 @@ async def test_midi_engine_uses_rtmidi_callback_queue(monkeypatch):
     assert received == [("plugin://gain", 0, 64 / 127.0)]
     assert midi_in.callback is None
     assert midi_in.closed is True
+    assert midi_in.deleted is True

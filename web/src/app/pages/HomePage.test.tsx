@@ -194,7 +194,7 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
     expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
@@ -216,36 +216,18 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(screen.queryByText('Program Manager')).toBeNull()
+    expect(screen.queryByText('System Setup')).toBeNull()
+    expect(screen.queryByText('Platforms')).toBeNull()
+    expect(screen.queryByText('1 node online')).toBeNull()
+    expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
     expect(screen.queryByText('Desktop Objects')).toBeNull()
     expect(screen.queryByText('Selected Desktop Object')).toBeNull()
     expect(screen.queryByText('Pinned Object Directory')).toBeNull()
     expect(screen.queryByText('Industrial Audio Workstation')).toBeNull()
     expect(screen.queryByText('MAP2 desktop session')).toBeNull()
     expect(screen.queryByText('Operator shortcuts')).toBeNull()
-    expect(screen.getByRole('button', { name: /^Audio Artifacts Browse plugins, captures, presets, and native processors\.$/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Stage Mode Open the full-screen live-performance surface for stage control\.$/ })).toBeInTheDocument()
     expect(screen.queryByText('Program Catalog')).toBeNull()
-    expect(screen.getByText('Platforms')).toBeTruthy()
-    expect(screen.getByText('1 node online')).toBeTruthy()
-    expect(screen.getAllByText(/MAP2-TESTBED/).length).toBeGreaterThan(0)
-  })
-
-  it('opens Audio Artifacts from the program objects grid using the canonical route', async () => {
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByRole('button', { name: /^Audio Artifacts Browse plugins, captures, presets, and native processors\.$/ }))
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/artifacts')
-  })
-
-  it('opens Platforms from the desktop status card using the canonical route', async () => {
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Open Platforms overview' }))
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
 
   it('renders the default wallpaper image when no desktop wallpaper preference exists', async () => {
@@ -291,195 +273,4 @@ describe('HomePage landing', () => {
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme')
   })
 
-  it('shows the remediation watermark and opens the remediation workflow modal', async () => {
-    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-
-        if (url === '/api/platform-remediation/summary') {
-          return makeJsonResponse({
-            status: 'ok',
-            workflows: {
-              sync: { available: true },
-            },
-            counts: {
-              adoption: {},
-              sync: {
-                failed: 2,
-              },
-              clone: {},
-            },
-            nodes: [
-              {
-                node_id: 'NODE-2',
-                hostname: 'NODE-2',
-                adoption_state: null,
-                sync_states: ['failed'],
-                clone_states: [],
-              },
-            ],
-          })
-        }
-
-        return defaultFetchResponse(input, init)
-      },
-    )
-
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByTestId('home-desktop-remediation-watermark'))
-
-    expect((await screen.findAllByText('Platforms remediation')).length).toBeGreaterThan(0)
-  })
-
-  it('routes adoption pills into the dedicated Platforms adoption workflow', async () => {
-    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-        if (url === '/api/platform-remediation/summary') {
-          return makeJsonResponse({
-            status: 'ok',
-            counts: {
-              adoption: { claimable: 1 },
-              sync: {},
-              clone: {},
-            },
-            nodes: [
-              {
-                node_id: 'NODE-2',
-                hostname: 'MAP2-REMOTE-2',
-                visible: true,
-                registered: false,
-                is_online: true,
-                adoption_state: 'claimable',
-                sync_states: [],
-                clone_states: [],
-                is_source_of_truth: false,
-                rollback_available: false,
-              },
-            ],
-          })
-        }
-        return defaultFetchResponse(input, init)
-      },
-    )
-
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Claimable: 1' }))
-
-    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/adoption?state=claimable')
-  })
-
-  it('opens the remediation modal when a sync pill is clicked', async () => {
-    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-        if (url === '/api/platform-remediation/summary') {
-          return makeJsonResponse({
-            status: 'ok',
-            counts: {
-              adoption: {},
-              sync: { outdated: 1, held: 1 },
-              clone: {},
-            },
-            manifest: {
-              source_node: 'MANAGEMENT-NODE-1',
-              timestamp: '2026-03-25T10:00:00Z',
-            },
-            nodes: [
-              {
-                node_id: 'NODE-2',
-                hostname: 'MAP2-REMOTE-2',
-                visible: true,
-                registered: true,
-                is_online: true,
-                adoption_state: 'ready',
-                version: '1.2.3',
-                sync_states: ['outdated'],
-                clone_states: [],
-                is_source_of_truth: false,
-                rollback_available: false,
-              },
-              {
-                node_id: 'MANAGEMENT-NODE-1',
-                hostname: 'MAP2-TESTBED',
-                visible: true,
-                registered: true,
-                is_online: true,
-                adoption_state: 'ready',
-                version: '1.2.4',
-                sync_states: ['held'],
-                clone_states: [],
-                is_source_of_truth: true,
-                rollback_available: false,
-              },
-            ],
-          })
-        }
-        return defaultFetchResponse(input, init)
-      },
-    )
-
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Outdated: 1' }))
-
-    expect((await screen.findAllByText('Platforms remediation')).length).toBeGreaterThan(0)
-    expect(screen.getByText('Source-of-truth sync')).toBeTruthy()
-    expect(screen.getByText('MAP2-REMOTE-2')).toBeTruthy()
-  })
-
-  it('shows a neutral sync unavailable indicator instead of sync remediation pills when manifest storage is unavailable', async () => {
-    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-        if (url === '/api/platform-remediation/summary') {
-          return makeJsonResponse({
-            status: 'degraded',
-            counts: {
-              adoption: { ready: 1 },
-              sync: { outdated: 2, held: 1 },
-              clone: {},
-            },
-            workflows: {
-              adoption: { available: true, state: 'ready' },
-              sync: {
-                available: false,
-                state: 'unavailable',
-                reason: 'read_only_filesystem',
-                detail: 'Version manifest storage is unavailable at /var/lib/map2/version_manifest_history because /var/lib/map2 is mounted read-only.',
-              },
-              clone: { available: true, state: 'ready' },
-            },
-            nodes: [
-              {
-                node_id: 'NODE-2',
-                hostname: 'MAP2-REMOTE-2',
-                visible: true,
-                registered: true,
-                is_online: true,
-                adoption_state: 'ready',
-                version: '1.2.3',
-                sync_states: [],
-                clone_states: [],
-                is_source_of_truth: false,
-                rollback_available: false,
-              },
-            ],
-          })
-        }
-        return defaultFetchResponse(input, init)
-      },
-    )
-
-    renderHome()
-    finishBootSplash()
-
-    expect((await screen.findAllByText('Sync unavailable')).length).toBeGreaterThanOrEqual(2)
-    expect(screen.queryByRole('button', { name: 'Outdated: 2' })).toBeNull()
-  })
 })
