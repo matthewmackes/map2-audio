@@ -79,16 +79,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   ))
 
   const startMenuTileItems = useMemo<StartMenuTileItem[]>(
-    () => launcherCatalogDisplayItems.map((item) => ({
-      route: item.route,
-      label: item.label,
-      shortLabel: item.shortLabel,
-      icon: item.icon,
-      description: item.description,
-      color: item.color,
-      maturity: item.maturity,
-      featured: item.route === '/platforms/overview' || item.route === '/artifacts',
-    })),
+    () => launcherCatalogDisplayItems
+      .filter((item) => item.route !== '/')
+      .map((item) => ({
+        route: item.route,
+        label:
+          item.route === '/platforms/overview'
+            ? 'Platforms'
+            : item.route === '/artifacts'
+              ? 'Files'
+              : item.label,
+        shortLabel:
+          item.route === '/platforms/overview'
+            ? 'Platforms'
+            : item.route === '/artifacts'
+              ? 'Files'
+              : item.shortLabel,
+        icon: item.icon,
+        description: item.description,
+        color: item.color,
+        maturity: item.maturity,
+        featured: item.route === '/platforms/overview' || item.route === '/artifacts',
+      })),
     [],
   )
   const snapshotEditorNavItem = useMemo(
@@ -120,7 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const isFullBleedRoute = location.pathname === '/' || isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute || showPerformFullscreen
-  const showTaskbarShell = !showPerformFullscreen
+  const showLauncherShell = !showPerformFullscreen
 
   const closeShellMenus = () => {
     setNavOpen(false)
@@ -370,9 +382,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
         <span className="start-menu-card__body">
           <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
-          <span className="start-menu-card__meta">
-            {item.shortLabel && item.shortLabel !== item.label ? item.shortLabel : getLauncherCatalogMaturityLabel(item.maturity)}
-          </span>
+          {item.maturity === 'hardware-blocked' ? (
+            <span className="start-menu-card__meta">{getLauncherCatalogMaturityLabel(item.maturity)}</span>
+          ) : null}
         </span>
       </NavLink>
     )
@@ -386,7 +398,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const SnapshotEditorIcon = snapshotEditorNavItem?.icon
 
   return (
-    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showLauncherShell ? ' app-shell--windowed' : ''}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         {isDesktopRoute ? (
           <PageTransition>{children}</PageTransition>
@@ -436,7 +448,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      {showTaskbarShell ? (
+      {showLauncherShell ? (
         <div className="shell-launcher" ref={navMenuRef} style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}>
           <div className="shell-launcher__button-wrap">
             <button

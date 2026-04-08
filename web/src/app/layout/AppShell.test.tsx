@@ -213,6 +213,9 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByText('AVB: operational')).toBeInTheDocument()
     expect(screen.getByText('AVDECC: 2 entities')).toBeInTheDocument()
     expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
+    expect(screen.getByText('Platforms')).toBeInTheDocument()
+    expect(screen.getByText('Files')).toBeInTheDocument()
+    expect(screen.queryByText('Home')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
     expect(screen.getAllByRole('link').length).toBeGreaterThan(6)
@@ -241,9 +244,9 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('link', { name: /Home/i }))
+    fireEvent.click(screen.getByRole('link', { name: /Platforms/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
   })
 
   it('opens the power menu and runs refresh and logout actions', () => {
