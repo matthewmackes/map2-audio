@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T812. Added T813 for deferred Maschine transport-policy visibility discovered during the T812 cycle review.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T813. No new non-blocked follow-up tasks remain in the current Maschine daemon slice.
 
 ## Performance Brain
 
@@ -18746,7 +18746,7 @@ Last updated: 2026-04-07 22:10 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T813
-Status: [ ] Todo
+Status: [✓] Done
 Title: Surface deferred Maschine transport-policy changes while the daemon is already connected
 Description:
 - Goal / acceptance criteria: When the desired Maschine transport policy differs from the current live controller but the daemon is already connected, emit bounded operator-facing logging that the change has been accepted and deferred until the next reconnect, without reintroducing loop spam, and add focused tests for the defer/apply behavior.
@@ -18756,4 +18756,12 @@ Description:
 - Required outputs: daemon defer-state tracking/logging, focused regression coverage, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-07 22:10 EDT - Codex
+Last updated: 2026-04-07 22:22 EDT - Codex
+- Completion notes:
+  - Added `_deferred_transport_policy` tracking in `app/services/maschine/maschine_mk1_daemon.py` so the daemon emits one bounded info log when a saved transport-policy change is noticed during an already-connected session and explicitly states that application is deferred until reconnect.
+  - Kept the defer path non-destructive: the live controller stays untouched while connected, the defer log does not spam on every loop iteration, and the new policy is applied automatically the next time the transport becomes disconnected.
+  - Added focused regression coverage proving the defer notice is logged once, not repeated while the same desired policy remains pending, and the updated policy is applied after disconnect.
+- Validation:
+  - `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py` -> PASS (`29 passed`, 1 existing deprecation warning)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `git diff --check` -> PASS

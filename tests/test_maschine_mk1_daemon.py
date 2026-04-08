@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -285,6 +286,60 @@ def test_refresh_transport_controller_applies_changed_runtime_overrides_when_dis
     assert created[-1].preference == "pyusb-bulk"
     assert created[-1].allow_kernel_detach is True
     assert len(created) == 2
+
+
+def test_refresh_transport_controller_logs_deferred_policy_once_and_applies_after_disconnect(monkeypatch, caplog) -> None:
+    created: list[SimpleNamespace] = []
+
+    class _FakeTransportController:
+        def __init__(self, *, vendor_id: int, product_id: int, preference: str, allow_kernel_detach: bool) -> None:
+            self.connected = False
+            self.preference = preference
+            self.allow_kernel_detach = allow_kernel_detach
+            created.append(
+                SimpleNamespace(
+                    vendor_id=vendor_id,
+                    product_id=product_id,
+                    preference=preference,
+                    allow_kernel_detach=allow_kernel_detach,
+                )
+            )
+
+        def runtime_info(self) -> dict[str, object]:
+            return {"transport": self.preference, "candidates": []}
+
+        def disconnect(self) -> None:
+            return None
+
+    monkeypatch.setattr(maschine_mk1_daemon_module, "MaschineTransportController", _FakeTransportController)
+    monkeypatch.setattr(
+        maschine_mk1_daemon_module,
+        "_resolve_transport_policy",
+        lambda **_: ("pyusb-bulk", True),
+    )
+
+    daemon = MaschineMK1Daemon(DaemonConfig(transport_preference="auto", allow_kernel_detach=False))
+    daemon._transport.connected = True
+
+    caplog.set_level(logging.INFO, logger="maschine_mk1_daemon")
+    daemon._refresh_transport_controller_from_runtime()
+
+    assert "deferring apply until reconnect" in caplog.text
+    assert len(created) == 1
+    assert daemon.config.transport_preference == "auto"
+    assert daemon.config.allow_kernel_detach is False
+
+    caplog.clear()
+    daemon._refresh_transport_controller_from_runtime()
+    assert "deferring apply until reconnect" not in caplog.text
+    assert len(created) == 1
+
+    daemon._transport.connected = False
+    daemon._refresh_transport_controller_from_runtime()
+
+    assert len(created) == 2
+    assert daemon.config.transport_preference == "pyusb-bulk"
+    assert daemon.config.allow_kernel_detach is True
 
 
 def test_maschine_systemd_unit_targets_backend_and_daemon_script() -> None:

@@ -715,6 +715,7 @@ class MaschineMK1Daemon:
         self._stop_event = threading.Event()
         self._render_requested = threading.Event()
         self._state_lock = threading.Lock()
+        self._deferred_transport_policy: tuple[str, bool] | None = None
         self._state = SharedRuntimeState()
         self._state.lcd_frames = build_reconnecting_frames()
         self._transport = MaschineTransportController(
@@ -1192,14 +1193,25 @@ class MaschineMK1Daemon:
             default_preference=self.config.transport_preference or "auto",
             default_allow_kernel_detach=self.config.allow_kernel_detach,
         )
+        desired_policy = (str(desired_preference), bool(desired_allow_kernel_detach))
+        current_policy = (str(self.config.transport_preference or "auto"), bool(self.config.allow_kernel_detach))
 
-        if (
-            desired_preference == self.config.transport_preference
-            and bool(desired_allow_kernel_detach) == bool(self.config.allow_kernel_detach)
-        ):
+        if desired_policy == current_policy:
+            self._deferred_transport_policy = None
             return
         if self._transport.connected:
+            if self._deferred_transport_policy != desired_policy:
+                LOGGER.info(
+                    "Maschine transport policy change detected while connected; deferring apply until reconnect "
+                    "(current=%s/%s desired=%s/%s)",
+                    current_policy[0],
+                    current_policy[1],
+                    desired_policy[0],
+                    desired_policy[1],
+                )
+                self._deferred_transport_policy = desired_policy
             return
+        self._deferred_transport_policy = None
         self.config.transport_preference = str(desired_preference)
         self.config.allow_kernel_detach = bool(desired_allow_kernel_detach)
         self._transport = MaschineTransportController(
